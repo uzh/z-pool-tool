@@ -131,7 +131,7 @@ This section discusses high-level principles that guide the development of the a
 # Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
 
-![Overview of software containers](/econ/study-coordination/pool/-/blob/documentation/architecture/doc/images/container.svg "Container diagram")
+![Overview of software containers](doc/images/container.svg "Container diagram")
 
 - TODO What does the "big picture" look like?
 - TODO Is there are clear structure?
