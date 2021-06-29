@@ -131,7 +131,25 @@ This section discusses high-level principles that guide the development of the a
 # Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
 
+## Container diagram
+
 ![Overview of software containers](doc/images/container.svg "Container diagram")
+
+* Operator:
+* Recruiter:
+* Experimenter:
+* Participant:
+* Website:
+* Web App:
+* Infrastructure DB:
+* Queue Worker:
+* Cache:
+* SMS Gateway:
+* E-Mail Transport:
+* Pools:
+
+## Component diagram
+TODO [jerben]
 
 - TODO What does the "big picture" look like?
 - TODO Is there are clear structure?
