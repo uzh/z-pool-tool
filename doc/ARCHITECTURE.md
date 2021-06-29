@@ -25,6 +25,7 @@ This section summarizes the key quality attributes & the non-functional requirem
 - TODO [andy]
 
 ## Security
+Security is concerned with making sure that the person really is who she claims she is (authentication), making sure that a person can only do actions that she is allowed to do and that the right people can see the right data.
 
 ### Authentication
 - The default way of authentication is by providing an email address and a password
@@ -91,6 +92,9 @@ TODO describe what each GDPR right does
 - An engineer who knows the technology stack but not the system should be able to contribute within days
 - The system should be adaptable to changing requirements and environments
 
+## Data consistency & integrity
+- The number of duplicate participant records should be kept at a minimum with automated processes
+
 # Constraints
 This section describes the existing constraints for the project, the products and the people involved.
 
@@ -126,6 +130,8 @@ This section discusses high-level principles that guide the development of the a
 
 # Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
+
+![Overview of software containers](/econ/study-coordination/pool/-/blob/documentation/architecture/doc/images/container.svg "Container diagram")
 
 - TODO What does the "big picture" look like?
 - TODO Is there are clear structure?
