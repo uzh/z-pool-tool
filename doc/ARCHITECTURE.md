@@ -4,7 +4,7 @@ This section describes the tool that is being built as a software product, the e
 ## Goal
 The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities. Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools. In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
 
-## User roles
+## User types
 * Operator: super admin priviliges, primary users
 * Recruiter: owns pool, almost admin except for infrastructure & system settings, primary user
 * Experimenter: admin on an experiment, secondary user
@@ -16,12 +16,16 @@ This section summarizes the key quality attributes & the non-functional requirem
 ## Performance (e.g. latency and throughput)
 * When 1000 subjects sign up for an experiment at the same time after being invited, 99th percentile response time is under 500ms
 * When interacting with the system as admin, the 99th percentile response time is under 1 second
+
 ## Scalability (e.g. data and traffic volumes)
 * With increasing traffic, the number of queue workers and HTTP workers can be increased
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
+
 ## Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
 - TODO [andy]
+
 ## Security
+
 ### Authentication
 - The default way of authentication is by providing an email address and a password
 - The default password policy should be strong enough according to best practices to render brute force attacks useless
@@ -31,28 +35,35 @@ This section summarizes the key quality attributes & the non-functional requirem
 - Only users who where given permission to export some data should be able to export it
 ### Data confidentiality
 - The right people have access to the right data (as defined in section "Data")
+
 ## Extensibility
 - An engineers with no previous knowledge about the system but only about the technology used should be able to contribute & fix within days not weeks
+
 ## Flexibility
 - The parts that face the participants is optimized as white label website which makes it easy to add custom branding
 - The structure of the pools varies between primary users, which means that the data collection from participants have to be configurable (custom on-boarding process)
 - The structure of the experiments varies between primary users
+
 ## Auditing
 - Every activity that mutates data is logged and kept in an activity log
 - Every activity that extracts a larger amount of data (CSV Export, JSON API Query) is logged and kept in an activity log
+
 ## Monitoring and management
 - It should be possible to monitor the health and status of the application with common monitoring tools (TODO [andy])
 - The system should proactively report degraded health to operators
+
 ## Reliability
 - Data integrity should be maintained by respecting defined invariants
+
 ## Failover/disaster recovery targets (e.g. manual vs automatic, how long will this take?)
 - TODO [andy]
+
 ## Interoperability
 - It should be possible to query data using a JSON API, crawling is actively discouraged
 - It should be possible to export the pool
+
 ## Legal, compliance and regulatory requirements (e.g. data protection act)
-### GDPR
-TODO describe what each right does
+TODO describe what each GDPR right does
 * The Right to Information
 * The Right of Access
 * The Right to Rectification
@@ -61,39 +72,57 @@ TODO describe what each right does
 * The Right to Data Portability
 * The Right to Object
 * The Right to Avoid Automated Decision-Making
+- TODO [andy] do we have any other legal requirements?
+
 ## Internationalisation (i18n) and localisation (L10n)
-* EN/DE
+- The participant facing part should support German and English initially
+- The admin facing part should be English only
+- Localisation settings should be read from the browser and it should be possible to override them in the user settings
+
 ## Accessibility
-- TODO [andy]
+- Common best practices regarding accessibility in web development should be followed to enable everyone to participate in studies
+
 ## Usability
-* Primary users should be able to create a pool with sane defaults
+- Primary users should be able to create a pool with sane defaults
+- Participants should be able to register initially with just an email address and a password in order to keep the friction as low as possible
+- The part that is facing participants should work on mobile devices just as much as on desktop devices
+
 ## Maintanability
-- TODO small team, effectiveness long-term, mention phase planning of project
+- An engineer who knows the technology stack but not the system should be able to contribute within days
+- The system should be adaptable to changing requirements and environments
 
 # Constraints
 This section describes the existing constraints for the project, the products and the people involved.
 
-- TODO Time, budget and resources.
-- TODO Approved technology lists and technology constraints.
-- TODO Existing systems and integration standards. (SMS gateway, E-Mail, Slack, ...)
-- TODO Size of the software development team.
-- TODO Skill profile of the software development team.
+## Time, budget and resources
+- TODO [andy] Timeline?
+- TODO [andy] Budget?
+- TODO [andy] Engineers?
+- TODO [andy] Testers?
+
+## Peripheral Systems
+- TODO [andy] SMS Gateway?
+- TODO [andy] SMTP Server?
+- TODO [andy] Webhooks?
 
 # Principles
-This section describes high-level principles that guide the development of the architecture.
+This section discusses high-level principles that guide the development of the architecture.
 
-- TODO Architectural layering strategy. (monolith, CQRS)
-- No business logic in views.
-- No database access in views.
-- Use of module interfaces. (information hiding)
-- Never use an ORM.
-- Async
-- High cohesion, low coupling.
-- A little copying is better than the wrong abstraction.
-- Ensure all components are stateless (e.g. to ease scaling).
-- Never use stored procedures.
-- Common approaches for error handling, logging, etc.
-- CLI first, UI second
+- The system is divided in two sub-systems: One that deals with Commands and one that deals with Queries
+- Keep the amount of customly written JavaScript at a minimum
+- Separate pure code that has no side-effects from code that has side-effects
+- Declarative & functional core, imperative shell
+- Separate generic infrastructure components from domain components
+- Use module interfaces to achieve information hiding
+- Put as many business rules into pure code as possible
+- Prefer end-to-end testing to unit tests
+- No business logic in views
+- No database access in views
+- Don't use an ORM but write SQL queries by hand in order to have full control over the queries
+- Don't block when doing I/O
+- High cohesion, low coupling
+- A little copying is better than the wrong abstraction
+- Ensure all components are stateless, the only stateful part it the persistence layer
 
 # Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
