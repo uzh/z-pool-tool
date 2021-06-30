@@ -157,21 +157,34 @@ This section describes the big picture of the software containers & components a
 ![Overview of software components](doc/images/component.svg "Component diagram")
 
 ### Command & Domain
-* User Settings:
-* Experiment:
-* Payout:
-* Participant Pool:
+
+#### Settings
+The settings component takes care of email templates and user specific settings such as i18n. It uses the main database.
+
+#### Experiment
+The experiment component takes care of managing experiments and sessions and of inviting participants. It uses the `Messaging` component.
+
+#### Payout
+Payout lists can be downloaded or forwarded to a payout tool
+
+#### Participant Pool
+Participants can register and fill in their details that make them eligible for certain studies
 
 ### Query
-* Dashboard:
-* Statistics:
+
+#### Dashboard
+Overview of future sessions per assistant, list of assigned open experiments, list of incomplete list of sessions
+
+#### Statistics
+Calculation of response rate, number of invitations per user
 
 ### Infrastructure
-* Authorization:
-* Customization:
-* Activity Log:
-* Messaging:
-* Calendar:
+
+#### Authorization
+#### Customization
+#### Activity Log
+#### Messaging
+#### Calendar
 
 # Code
 This section describes implementation details of parts of the system.
