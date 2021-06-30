@@ -2,7 +2,11 @@
 This section describes the tool that is being built as a software product, the existing environment and the user types.
 
 ## Goal
-The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities. Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools. In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
+The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities.
+
+Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools.
+
+In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
 
 ## User types
 * Operator: super admin priviliges, primary users
@@ -135,31 +139,39 @@ This section describes the big picture of the software containers & components a
 
 ![Overview of software containers](doc/images/container.svg "Container diagram")
 
-* Operator:
-* Recruiter:
-* Experimenter:
-* Participant:
-* Website:
-* Web App:
-* Infrastructure DB:
-* Queue Worker:
-* Cache:
-* SMS Gateway:
-* E-Mail Transport:
-* Pools:
+* Operator: The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
+* Recruiter: The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
+* Experimenter: The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
+* Participant: The participant uses the system through both the desktop and mobile website.
+* Website: The website is the entry point to the system, every user interacts with the system through it.
+* Backend: The backend serves the website and runs the business logic.
+* Infrastructure DB: This DB is used to persist data that is not related to participant data.
+* Queue Worker: The queue worker runs business logic in a separate process than the backend.
+* Cache: The backend uses the cache to persist transient data to reduce the load in the infrastructure database. The cache must not cache pool data!
+* SMS Gateway: This external service is used to send SMS.
+* E-Mail Transport: This external service is used to send emails.
+* Participant Pools: Participant pools are external systems from the point of view of the Z-Pool instance.
 
 ## Component diagram
-TODO [jerben]
 
-- TODO What does the "big picture" look like?
-- TODO Is there are clear structure?
-- TODO Is it clear how the system works from the "30,000 foot view"?
-- TODO Does it show the major containers and technology choices?
-- TODO Does it show the major components and their interactions?
-- TODO What are the key internal interfaces? (e.g. a web service between your web and business tiers)
+![Overview of software components](doc/images/component.svg "Component diagram")
 
-- TODO: https://structurizr.com/help/container-diagram
-- TODO: https://structurizr.com/help/component-diagram
+### Command & Domain
+* User Settings:
+* Experiment:
+* Payout:
+* Participant Pool:
+
+### Query
+* Dashboard:
+* Statistics:
+
+### Infrastructure
+* Authorization:
+* Customization:
+* Activity Log:
+* Messaging:
+* Calendar:
 
 # Code
 This section describes implementation details of parts of the system.
