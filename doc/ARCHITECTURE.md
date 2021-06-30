@@ -208,76 +208,79 @@ The activity log keeps track of all actions done by super admins, recruiters and
 The messaging component implements various messaging channels such as email and SMS.
 
 ##### Dependencies
-- SMS Gateway
-- E-Mail Transport (SMTP)
-- Queue Worker
+- `SMS Gateway`
+- `E-Mail Transport (SMTP)`
+- `Queue Worker`
 
 #### Calendar
+TODO [jerben] Check whether we have some system dependencies
+
 The calendar component provides a calendar.
 
 # Code
 This section describes implementation details of parts of the system.
 
 ## Generating/rendering HTML
-TODO a short description of the framework that was created for generating HTML, including the major classes and concepts.
+HTML is rendered on the server which is served as static HTML document to the client.
 
 ## Data binding
-TODO the approach to updating business objects as the result of HTTP POST requests.
+HTTP requests are parsed as either commands or queries. Commands and queries are then validated and authorized and passed to the service layer.
+The service layer uses repositories to access the database.
 
 ## Multi-page data collection
-TODO a short description of the framework used for building forms that spanned multiple web pages.
-
-## Web MVC
-TODO an example usage of the web MVC framework being used.
+No framework is used to collect data spanning multiple web pages. Instead, a ad-hoc case-by-case modeling of the multi-page as stateful process is required.
 
 ## Security
-TODO the approach to using Windows Identity Foundation (WIF) for authentication and authorisation.
-Domain model: an overview of the important parts of the domain model.
-Component framework: a short description of the framework that we built to allow components to be reconfigured at runtime.
+TODO [jerben] Sihl authentication & user management
+
+## Domain model
+TODO [jerben] Draw domain model
+
+## Customizations
+TODO [jerben] Describe the customization framework
 
 ## Configuration
-TODO a short description of the standard component configuration mechanism in use across the codebase.
+TODO [jerben] 12 factor, Sihl configurations
 
 ## Architectural layering
-TODO an overview of the layering strategy and the patterns in use to implement it.
+TODO [jerben] model, repository, entity, command/query handler
 
 ## Exceptions and logging
-TODO a summary of the approach to exception handling and logging across the various architectural layers.
+TODO [jerben] stdout/stderr, application level reporting (email, slack & gitlab)
 
 ## Patterns and principles
-TODO an explanation of how patterns and principles are implemented.
+TODO [jerben] OCaml, FP, TDD, static typing
 
 # Data
 This section discusses the data model, the persistence layer technology and data ownership.
 
-- TODO data model
-- TODO the data is stored in MariaDB, can be owned by anyone
-- TODO Backup is handled by hoster
-- TODO GDPR: Long-term storage Are there any regulatory requirements for the long term archival of business data?
+## Data model
+TODO [jerben] data model
 
-# Operation and Support
-- TODO Is it clear how the software provides the ability for operation/support teams to monitor and manage the system?
-- TODO How is this achieved across all tiers of the architecture?
-- TODO How can operational staff diagnose problems?
-- TODO Where are errors and information logged? (e.g. log files, Windows Event Log, SMNP, JMX, WMI, custom diagnostics, etc)
-- TODO Do configuration changes require a restart?
-- TODO Are there any manual housekeeping tasks that need to be performed on a regular basis?
-- TODO Does old data need to be periodically archived?
+## Main Database
+TODO [jerben]
+
+## Participant Pool Database
+TODO [jerben]
+
+## Backup
+Backups are not the concern of Z-Pool.
+
+## GDPR
+TODO
 
 # Decision Log
-- TODO Why did you choose technology or framework "X" over "Y" and "Z"?
-- TODO How did you do this? Product evaluation or proof of concept?
-- TODO Were you forced into making a decision about "X" based upon corporate policy or enterprise architecture strategies?
-- TODO Why did you choose the selected software architecture? What other options did you consider?
-- TODO How do you know that the solution satisfies the major quality attributes?
+The decision log is a list of all decisions made regarding the architecture.
 
-TODO structure
-Title These documents have names that are short noun phrases. For example, "ADR 1: Deployment on Ruby on Rails 3.0.10" or "ADR 9: LDAP for Multitenant Integration"
+## YEAR-MONTH-DAY: TITLE
+### Context
+This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
 
-Context This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
+### Decision
+This section describes our response to these forces. It is stated in full sentences, with active voice. "We will …"
 
-Decision This section describes our response to these forces. It is stated in full sentences, with active voice. "We will …"
+### Status
+A decision may be "proposed" if the project stakeholders haven't agreed with it yet, or "accepted" once it is agreed. If a later ADR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to its replacement.
 
-Status A decision may be "proposed" if the project stakeholders haven't agreed with it yet, or "accepted" once it is agreed. If a later ADR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to its replacement.
-
-Consequences This section describes the resulting context, after applying the decision. All consequences should be listed here, not just the "positive" ones. A particular decision may have positive, negative, and neutral consequences, but all of them affect the team and project in the future.
+### Consequences
+This section describes the resulting context, after applying the decision. All consequences should be listed here, not just the "positive" ones. A particular decision may have positive, negative, and neutral consequences, but all of them affect the team and project in the future.
