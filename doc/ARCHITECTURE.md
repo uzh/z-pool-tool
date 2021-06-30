@@ -68,16 +68,7 @@ Security is concerned with making sure that the person really is who she claims 
 - It should be possible to export the pool
 
 ## Legal, compliance and regulatory requirements (e.g. data protection act)
-TODO describe what each GDPR right does
-* The Right to Information
-* The Right of Access
-* The Right to Rectification
-* The Right to Erasure
-* The Right to Restriction of Processing
-* The Right to Data Portability
-* The Right to Object
-* The Right to Avoid Automated Decision-Making
-- TODO [andy] do we have any other legal requirements?
+- TODO Does the system need to conform to GDPR?
 
 ## Internationalisation (i18n) and localisation (L10n)
 - The participant facing part should support German and English initially
@@ -154,23 +145,42 @@ This section describes the big picture of the software containers & components a
 
 ## Component diagram
 
+Every component is assumed to have access to the `Main Database`, so this dependency is not explicitly listed.
+
 ![Overview of software components](doc/images/component.svg "Component diagram")
 
 ### Command & Domain
 
+The domain model contains all the business rules. Users interact with it by sending it commands to mutate data.
+
 #### Settings
-The settings component takes care of email templates and user specific settings such as i18n. It uses the main database.
+The settings component takes care of user settings and message data such as email templates.
 
 #### Experiment
-The experiment component takes care of managing experiments and sessions and of inviting participants. It uses the `Messaging` component.
+The experiment component takes care of managing experiments, session experiments and participations.
+
+##### Dependencies
+- `Participant Pool`
+- `Messages`
+- `Calendar`
+- `Customization`
 
 #### Payout
 Payout lists can be downloaded or forwarded to a payout tool
 
+##### Dependencies
+- `Payout Tool`
+
 #### Participant Pool
 Participants can register and fill in their details that make them eligible for certain studies
 
+##### Dependencies
+- `Participant Pool Database`
+- `Customization`
+
 ### Query
+
+Users send queries over HTTP to read aggregate data.
 
 #### Dashboard
 Overview of future sessions per assistant, list of assigned open experiments, list of incomplete list of sessions
@@ -180,11 +190,30 @@ Calculation of response rate, number of invitations per user
 
 ### Infrastructure
 
+Infrastructure components don't contain any business logic and are generic enough to be re-used in other projects.
+
 #### Authorization
+The authorization component ensures that person can only do send commands and queries they are allowed to send.
+
+##### Dependencies
+- `Cache`
+
 #### Customization
+The customization component is a generic library that can be used to add custom fields to entities. The custom fields can be managed at runtime without the need to apply database schema migrations.
+
 #### Activity Log
+The activity log keeps track of all actions done by super admins, recruiters and experimenters.
+
 #### Messaging
+The messaging component implements various messaging channels such as email and SMS.
+
+##### Dependencies
+- SMS Gateway
+- E-Mail Transport (SMTP)
+- Queue Worker
+
 #### Calendar
+The calendar component provides a calendar.
 
 # Code
 This section describes implementation details of parts of the system.
