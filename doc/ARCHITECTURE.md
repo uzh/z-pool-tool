@@ -275,25 +275,46 @@ The service layer uses repositories to access the database.
 No framework is used to collect data spanning multiple web pages. Instead, a ad-hoc case-by-case modeling of the multi-page as stateful process is required.
 
 ### Security
-TODO [jerben] Sihl authentication & user management
+Use management, authentication and protection against CSRF and SQL injection is provided by [Sihl](https://github.com/oxidizing/sihl "Sihl web framework")
 
 ### Domain model
-TODO [jerben] Draw domain model
+Check out [ddd.ml](ddd.ml "Domain-driven Design file")
 
 ### Customizations
-TODO [jerben] Describe the customization framework
+Different primary users need different participant and experiement fields. Apart from a small hard-coded entity `Participant` and `Experiment`, the entities are data-driven. Because their structure is defined as persisted as data, correctness can not be checked at compile-time.
+
+We build a customization framework that allows to attach arbitrary data to entities. It should be ergonomic to read, updte and list customized entities. Every domain component needs to use the customization framework in order to work with customized entities.
 
 ### Configuration
-TODO [jerben] 12 factor, Sihl configurations
+Z-Pool and Sihl follow the [12 Factor App](https://12factor.net/ "12 Factor App") convention. Configurations are set using environment variables or, at run-time, using Sihl's configuration service.
 
 ### Architectural layering
-TODO [jerben] model, repository, entity, command/query handler
+The architectural layering borrows concepts and from [Domain-driven design](https://martinfowler.com/tags/domain%20driven%20design.html) and [Hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)).
+
+#### Domain
+The domain is split up in entities, repositories and commands.
+
+##### Entity
+Entities are commonly referred to as "business models" or "business types". They represent things such as `Experiment`, `Invitation` or `Experimenter`. Some of the business logic lives here. They are allowed to depend on other entities only.
+
+##### Repository
+Repositories abstract away database access. They are only allowed to depend on entities of the same model. Ideally, there should be no business logic in a repository. Sometimes it makes sense to push parts of business logic into the database to improve performance.
+
+##### Model
+A model contains repositories, entities and business logic. Models are allowed to depend on other models and their entities, but never their repositories.
+
+##### Command
+A command represents a user intent to change some data. In a command handler, multiple models are called in order to run business logic.
+
+#### Infrastructure
+The infrastructure is the generic part that contains no code related to the specific problem of recruiting participents.
+
+#### App
+The app is the glue between the domain part and the infrastructure part.
 
 ### Exceptions and logging
-TODO [jerben] stdout/stderr, application level reporting (email, slack & gitlab)
-
-### Patterns and principles
-TODO [jerben] OCaml, FP, TDD, static typing
+The system logs to `stdout` and `stderr` and reports `404` and `500` via email.
+Log levels of `INFO`, `DEBUG`, `WARNING` and `ERROR` can be configured.
 
 ## Data
 This section discusses the data model, the persistence layer technology and data ownership.
