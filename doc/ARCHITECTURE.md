@@ -322,14 +322,16 @@ This section discusses the data model, the persistence layer technology and data
 ### Data model
 TODO [andy & jerben] data model
 
-### Main Database
+### Database
+
+#### Main
 TODO [jerben]
 
-### Participant Pool Database
+### Participant Pool
 TODO [jerben]
 
 ### Backup
-Backups are not the concern of Z-Pool.
+Any backup strategy that works with traditional RDBM can be applied.
 
 ### GDPR
 TODO [andy]

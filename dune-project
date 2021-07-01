@@ -1,0 +1,25 @@
+(lang dune 2.8)
+(generate_opam_files true)
+
+(name pool)
+(version 0.0.1)
+
+(authors
+  "Department of Economics, University of Zurich")
+
+(source (uri https://gitlab.uzh.ch/econ/study-coordination/pool))
+(license PRIVATE)
+(maintainers "engineering@uzh.econ.ch")
+(homepage "https://gitlab.uzh.ch/econ/study-coordination/pool")
+(bug_reports "https://gitlab.uzh.ch/econ/study-coordination/pool")
+(documentation "https://gitlab.uzh.ch/econ/study-coordination/pool/doc")
+
+(package
+ (name pool)
+ (synopsis "The Z-Pool tool")
+ (description "
+TODO
+")
+ (depends
+  dune
+  (ocaml (>= 4.12.0))))
