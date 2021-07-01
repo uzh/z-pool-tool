@@ -4,15 +4,29 @@ This section describes the tool that is being built as a software product, the e
 ## Goal
 The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities.
 
-Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools.
-
-In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
+Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools. In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
 
 ## User types
-* Operator: super admin priviliges, primary users
-* Recruiter: owns pool, almost admin except for infrastructure & system settings, primary user
-* Experimenter: admin on an experiment, secondary user
-* Participant: can do stuff in assigned experiements
+
+#### Operator
+The operator's job is to run a participant pool instance. If Z-Pool is hosted on-premise, then the operator has to run the Z-Pool instance, too.
+
+The operator is a primary user.
+
+#### Recruiter
+The recruiter creates, populates and owns a participant pool. The recruiter has almost the same capabilities as the operator, except for accessing and modifying infrastructure.
+
+The recruiter is a primary user.
+
+#### Experimenter
+The experimenter is tasked to create and conduct experiments and consequentially owns experiments.
+
+The experimenter is a secondary user.
+
+#### Participant
+The participant joins a participant pool and is invited to experiments by experimenters.
+
+They are the end users of the system.
 
 # Quality Attributes
 This section summarizes the key quality attributes & the non-functional requirements.
@@ -26,7 +40,7 @@ This section summarizes the key quality attributes & the non-functional requirem
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
 
 ## Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
-- TODO [andy]
+- TODO What do we want to define for the system? Best-effort up-time? [andy]
 
 ## Security
 Security is concerned with making sure that the person really is who she claims she is (authentication), making sure that a person can only do actions that she is allowed to do and that the right people can see the right data.
@@ -54,21 +68,21 @@ Security is concerned with making sure that the person really is who she claims 
 - Every activity that extracts a larger amount of data (CSV Export, JSON API Query) is logged and kept in an activity log
 
 ## Monitoring and management
-- It should be possible to monitor the health and status of the application with common monitoring tools (TODO [andy])
+- TODO [andy] It should be possible to monitor the health and status of the application with common monitoring tools
 - The system should proactively report degraded health to operators
 
 ## Reliability
 - Data integrity should be maintained by respecting defined invariants
 
 ## Failover/disaster recovery targets (e.g. manual vs automatic, how long will this take?)
-- TODO [andy]
+- TODO [andy] How does it look right now with ZI?
 
 ## Interoperability
 - It should be possible to query data using a JSON API, crawling is actively discouraged
 - It should be possible to export the pool
 
 ## Legal, compliance and regulatory requirements (e.g. data protection act)
-- TODO Does the system need to conform to GDPR?
+- TODO [andy] Does the system need to conform to GDPR?
 
 ## Internationalisation (i18n) and localisation (L10n)
 - The participant facing part should support German and English initially
@@ -97,12 +111,13 @@ This section describes the existing constraints for the project, the products an
 - TODO [andy] Timeline?
 - TODO [andy] Budget?
 - TODO [andy] Engineers?
-- TODO [andy] Testers?
+- TODO [andy] Who is going to test and when?
 
 ## Peripheral Systems
 - TODO [andy] SMS Gateway?
 - TODO [andy] SMTP Server?
 - TODO [andy] Webhooks?
+- TODO [andy] Other constraints coming from systems we have to talk to?
 
 # Principles
 This section discusses high-level principles that guide the development of the architecture.
@@ -130,27 +145,48 @@ This section describes the big picture of the software containers & components a
 
 ![Overview of software containers](doc/images/container.svg "Container diagram")
 
-* Operator: The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
-* Recruiter: The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
-* Experimenter: The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
-* Participant: The participant uses the system through both the desktop and mobile website.
-* Website: The website is the entry point to the system, every user interacts with the system through it.
-* Backend: The backend serves the website and runs the business logic.
-* Infrastructure DB: This DB is used to persist data that is not related to participant data.
-* Queue Worker: The queue worker runs business logic in a separate process than the backend.
-* Cache: The backend uses the cache to persist transient data to reduce the load in the infrastructure database. The cache must not cache pool data!
-* SMS Gateway: This external service is used to send SMS.
-* E-Mail Transport: This external service is used to send emails.
-* Participant Pools: Participant pools are external systems from the point of view of the Z-Pool instance.
+#### Operator
+The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
+
+#### Recruiter
+The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
+
+#### Experimenter
+The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
+
+#### Participant
+The participant uses the system through both the desktop and mobile website.
+
+#### Website
+The website is the entry point to the system, every user interacts with the system through it.
+
+#### Backend
+The backend serves the website and runs the business logic.
+
+#### Infrastructure DB
+This DB is used to persist data that is not related to participant data.
+
+#### Queue Worker
+The queue worker runs business logic in a separate process than the backend.
+
+#### Cache
+The backend uses the cache to persist transient data to reduce the load in the infrastructure database. The cache must not cache pool data!
+
+#### SMS Gateway
+This external service is used to send SMS.
+
+#### E-Mail Transport
+This external service is used to send emails.
+
+#### Participant Pools
+Participant pools are external systems from the point of view of the Z-Pool instance.
 
 ## Component diagram
-
 Every component is assumed to have access to the `Main Database`, so this dependency is not explicitly listed.
 
 ![Overview of software components](doc/images/component.svg "Component diagram")
 
 ### Command & Domain
-
 The domain model contains all the business rules. Users interact with it by sending it commands to mutate data.
 
 #### Settings
@@ -255,7 +291,7 @@ TODO [jerben] OCaml, FP, TDD, static typing
 This section discusses the data model, the persistence layer technology and data ownership.
 
 ## Data model
-TODO [jerben] data model
+TODO [andy & jerben] data model
 
 ## Main Database
 TODO [jerben]
@@ -267,7 +303,7 @@ TODO [jerben]
 Backups are not the concern of Z-Pool.
 
 ## GDPR
-TODO
+TODO [andy]
 
 # Decision Log
 The decision log is a list of all decisions made regarding the architecture.
