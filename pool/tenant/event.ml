@@ -7,7 +7,7 @@ type t =
   | `Operator_deactivated of Sihl.User.t
   ]
 
-type handle_event = t -> unit Sihl.io
+type handle_event = t -> unit Lwt.t
 
 let handle_event : handle_event = function
   | `Tenant_added tenant -> Repo.insert tenant

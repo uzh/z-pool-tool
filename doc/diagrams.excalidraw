@@ -9423,8 +9423,8 @@
     },
     {
       "type": "text",
-      "version": 921,
-      "versionNonce": 233809177,
+      "version": 927,
+      "versionNonce": 1678507735,
       "isDeleted": false,
       "id": "-lbPlv2zyeiIZiJCVrfqb",
       "fillStyle": "hachure",
@@ -9437,7 +9437,7 @@
       "y": 527.9214503861632,
       "strokeColor": "#000000",
       "backgroundColor": "#ced4da",
-      "width": 54,
+      "width": 70,
       "height": 26,
       "seed": 871003831,
       "groupIds": [],
@@ -9445,7 +9445,7 @@
       "boundElementIds": [],
       "fontSize": 20,
       "fontFamily": 1,
-      "text": "Client",
+      "text": "Tenant",
       "baseline": 18,
       "textAlign": "left",
       "verticalAlign": "top"

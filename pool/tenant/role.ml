@@ -1,1 +1,1 @@
-let operator (client : Entity.tenant) = [ "manage_tenant", client.id ]
+let operator (client : Entity.tenant) = [ "operate_tenant", client.id ]

@@ -3,11 +3,10 @@
 let todo = failwith "todo"
 
 module User = struct
-  type t
+  type t = { id : string }
 
   let activate _ = todo
   let deactivate _ = todo
 end
 
 type timestamp = unit
-type 'a io = unit

@@ -3,7 +3,7 @@ type list_recruiters =
   ; offset : int
   }
 
-type handle_list_recruiters = list_recruiters -> Sihl.User.t list Sihl.io
+type handle_list_recruiters = list_recruiters -> Sihl.User.t list Lwt.t
 
 type list_tenants =
   { limit : int
@@ -11,4 +11,4 @@ type list_tenants =
   ; fitler : string
   }
 
-type handle_tenants = list_tenants -> Entity.tenant list Sihl.io
+type handle_tenants = list_tenants -> Entity.tenant list Lwt.t
