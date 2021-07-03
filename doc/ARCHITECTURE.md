@@ -69,7 +69,7 @@ This section summarizes the key quality attributes that represent the non-functi
 
 ### Data confidentiality
 - The right people have access to the right data (as defined in section "Data")
-- A client can not access other client's data
+- A tenant can not access other tenant's data
 
 ### Extensibility
 - An engineers with no previous knowledge about the system but only about the technology used should be able to contribute & fix within days not weeks
@@ -186,7 +186,7 @@ This external service is used to send SMS.
 #### E-Mail Transport
 This external service is used to send emails.
 
-#### Client Database
+#### Tenant Database
 Participant pools are external systems from the point of view of the Z-Pool instance.
 
 ### Component diagram
@@ -204,7 +204,7 @@ The settings component takes care of user settings and message data such as emai
 The experiment component takes care of managing experiments, session experiments and participations.
 
 ###### Dependencies
-- `Client Database`
+- `Tenant Database`
 - `Messages`
 - `Calendar`
 - `Customization`
@@ -215,11 +215,11 @@ Payout lists can be downloaded or forwarded to a payout tool
 ###### Dependencies
 - `Payout Tool`
 
-##### Client Database
+##### Tenant Database
 Participants can register and fill in their details that make them eligible for certain studies
 
 ###### Dependencies
-- `Client Database`
+- `Tenant Database`
 - `Customization`
 
 #### Query
@@ -263,7 +263,7 @@ The calendar component provides a calendar.
 This section describes implementation details of parts of the system.
 
 ### Generating/rendering HTML
-HTML is rendered on the server which is served as static HTML document to the client.
+HTML is rendered on the server which is served as static HTML document to the tenant.
 
 ### Data binding
 HTTP requests are parsed as either commands or queries. Commands and queries are then validated and authorized and passed to the service layer.
@@ -323,10 +323,10 @@ TODO [andy & jerben] data model
 ### Database
 
 #### Main
-The main database stores meta information about the clients and their pools. This meta information can be queried by all clients.
+The main database stores meta information about the tenants and their pools. This meta information can be queried by all tenants.
 
-#### Client
-The client database stores participants, experiements, sessions, locations, permissions, calendar events and message templates.
+#### Tenant
+The tenant database stores participants, experiements, sessions, locations, permissions, calendar events and message templates.
 
 ### Backup
 Any backup strategy that works with traditional RDBM can be applied.

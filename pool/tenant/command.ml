@@ -1,4 +1,4 @@
-type add_client_command =
+type add_tenant_command =
   { title : string
   ; description : string
   ; url : string
@@ -9,10 +9,10 @@ type add_client_command =
   ; partner_logos : string
   }
 
-type handle_add_client = add_client_command -> (Event.t list, string) Result.t
+type handle_add_tenant = add_tenant_command -> (Event.t list, string) Result.t
 
-type edit_client_command =
-  { client_id : string
+type edit_tenant_command =
+  { tenant_id : string
   ; title : string
   ; description : string
   ; url : string
@@ -23,18 +23,18 @@ type edit_client_command =
   ; partner_logos : string
   }
 
-type handle_edit_client =
-  add_client_command -> Entity.client -> (Event.t list, string) Result.t
+type handle_edit_tenant =
+  add_tenant_command -> Entity.tenant -> (Event.t list, string) Result.t
 
-type add_operator_to_client_command =
+type add_operator_to_tenant_command =
   { operator_id : string
-  ; client_id : string
+  ; tenant_id : string
   }
 
-type handle_app_operator_to_client =
-  add_operator_to_client_command
+type handle_app_operator_to_tenant =
+  add_operator_to_tenant_command
   -> Sihl.User.t
-  -> Entity.client
+  -> Entity.tenant
   -> (Event.t list, string) Result.t
 
 type active_operator_command = { operator_id : string }

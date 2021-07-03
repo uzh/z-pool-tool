@@ -5,10 +5,10 @@ type list_recruiters =
 
 type handle_list_recruiters = list_recruiters -> Sihl.User.t list Sihl.io
 
-type list_clients =
+type list_tenants =
   { limit : int
   ; offset : int
   ; fitler : string
   }
 
-type handle_clients = list_clients -> Entity.client list Sihl.io
+type handle_tenants = list_tenants -> Entity.tenant list Sihl.io

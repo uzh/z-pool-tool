@@ -1,4 +1,4 @@
-type client =
+type tenant =
   { id : string
   ; title : string
   ; description : string
