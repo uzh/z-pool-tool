@@ -10,6 +10,9 @@ Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizationa
 
 ### User types
 
+#### Root
+Is responsible for running a Z-Pool instance.
+
 #### Operator
 The operator's job is to run a participant pool instance. If Z-Pool is hosted on-premise, then the operator has to run the Z-Pool instance, too.
 
@@ -20,8 +23,18 @@ The recruiter creates, populates and owns a participant pool. The recruiter has 
 
 The recruiter is a primary user.
 
+#### Location manager
+Sees all sessions for a location, is responsible for that location. Can not edit, only view.
+
+The experimenter is a secondary user.
+
 #### Experimenter
 The experimenter is tasked to create and conduct experiments and consequentially owns experiments.
+
+The experimenter is a secondary user.
+
+#### Assistant (of Experimenter)
+Is responsible for one session, deals with payout and checks show-up/no-show on-site.
 
 The experimenter is a secondary user.
 
@@ -42,8 +55,8 @@ This section summarizes the key quality attributes & the non-functional requirem
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
 
 ### Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
-- TODO What do we want to define for the system? Best-effort up-time? [andy]
-
+* Scheduled maintance should notify users
+- TODO What do we want to define for the system? Best-effort up-time? [steering committee]
 
 ### Authentication
 - The default way of authentication is by providing an email address and a password
@@ -70,21 +83,18 @@ This section summarizes the key quality attributes & the non-functional requirem
 - Every activity that extracts a larger amount of data (CSV Export, JSON API Query) is logged and kept in an activity log
 
 ### Monitoring and management
-- TODO [andy] It should be possible to monitor the health and status of the application with common monitoring tools
+- The health of the system can be read using endpoints
 - The system should proactively report degraded health to operators
 
 ### Reliability
 - Data integrity should be maintained by respecting defined invariants
-
-### Failover/disaster recovery targets (e.g. manual vs automatic, how long will this take?)
-- TODO [andy] How does it look right now with ZI?
 
 ### Interoperability
 - It should be possible to query data using a JSON API, crawling is actively discouraged
 - It should be possible to export the pool
 
 ### Legal, compliance and regulatory requirements (e.g. data protection act)
-- TODO [andy] Does the system need to conform to GDPR?
+- TODO [steering committee] Does the system need to conform to GDPR?
 
 ### Internationalisation (i18n) and localisation (L10n)
 - The participant facing part should support German and English initially
@@ -109,23 +119,12 @@ This section summarizes the key quality attributes & the non-functional requirem
 ## Constraints
 This section describes the existing constraints for the project, the products and the people involved.
 
-### Timeline
-- TODO [andy] Timeline?
-
-### Budget
-- TODO [andy] Budget?
-
-### Engineers
-- TODO [andy] Engineers?
-
-### Testing
-- TODO [andy] Who is going to test and when?
-
 ### Peripheral Systems
-- TODO [andy] SMS Gateway?
-- TODO [andy] SMTP Server?
-- TODO [andy] Webhooks?
-- TODO [andy] Other constraints coming from systems we have to talk to?
+- SMS Gateway (GTX Messaging), HTTP API
+- TODO [ZI] UZH SMTP Server with rate limit
+- MariaDB Cluster with one write instance and 3 read clones
+- TODO [ZI] Edu-ID Authorization
+- Gitlab API
 
 ## Principles
 This section discusses high-level principles that guide the development of the architecture.
@@ -334,12 +333,12 @@ TODO [jerben]
 Any backup strategy that works with traditional RDBM can be applied.
 
 ### GDPR
-TODO [andy]
+TODO [steering committee]
 
 ## Decision Log
 The decision log is a list of all decisions made regarding the architecture.
 
-### YEAR-MONTH-DAY: TITLE
+### TITLE
 #### Context
 This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
 

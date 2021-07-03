@@ -11,11 +11,13 @@ type 'a io = 'a
 
 (* Application Infrastructure *)
 
-type setting =
-  | Languages
-  | Email_suffixes
+type language =
+  | En
+  | De
 
-type setting_value = setting * string
+type setting =
+  | Languages of language list
+  | Email_suffixes of string list
 
 type event =
   | SignedUp of User.t
@@ -40,9 +42,10 @@ end
 (* https://gitlab.uzh.ch/econ/study-coordination/pool/-/issues/9 *)
 
 type recruitment_channel =
-  | Friends
-  | Ads
-  | Search
+  | Friend
+  | Online
+  | Lecture
+  | Mailing
 
 module SignUp : sig
   type t
@@ -51,7 +54,6 @@ module SignUp : sig
     :  t
     -> ?allowed_email_suffixes:string list
     -> ?password_policy:(string -> (unit, string) Result.t)
-    -> User.t list
     -> command_result
 end = struct
   type t =
@@ -63,7 +65,7 @@ end = struct
     ; terms_accepted_at : timestamp
     }
 
-  let handle _ ?allowed_email_suffixes:_ ?password_policy:_ _ = todo
+  let handle _ ?allowed_email_suffixes:_ ?password_policy:_ = todo
 end
 
 (* https://gitlab.uzh.ch/econ/study-coordination/pool/-/issues/3 *)
@@ -113,7 +115,7 @@ end = struct
   let handle _ _ = todo
 end
 
-module ActiveOperator : sig
+module ActivateOperator : sig
   type t
 
   val handle : t -> operator -> command_result
