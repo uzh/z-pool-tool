@@ -13,8 +13,6 @@ module Sign_up = struct
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
     -> (Event.t list, string) Result.t
-
-  type can = Sihl.User.t -> bool Lwt.t
 end
 
 module Update = struct
@@ -22,13 +20,30 @@ module Update = struct
     { id : string
     ; firstname : string
     ; lastname : string
-    ; email : string
-    ; password : string
     ; paused : string
     }
 
-  type handle_update_command =
-    t -> Entity.participant -> (Event.t list, string) Result.t
+  type handle = t -> Entity.participant -> (Event.t list, string) Result.t
+  type can = Sihl.User.t -> bool Lwt.t
+end
 
+module UpdatePassword = struct
+  type t =
+    { id : string
+    ; current_password : string
+    ; password : string
+    }
+
+  type handle = t -> Entity.participant -> (Event.t list, string) Result.t
+  type can = Sihl.User.t -> bool Lwt.t
+end
+
+module UpdateEmail = struct
+  type t =
+    { id : string
+    ; email : string
+    }
+
+  type handle = t -> Entity.participant -> (Event.t list, string) Result.t
   type can = Sihl.User.t -> bool Lwt.t
 end

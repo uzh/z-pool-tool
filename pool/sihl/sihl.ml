@@ -7,6 +7,7 @@ module User = struct
 
   let activate _ = todo
   let deactivate _ = todo
+  let create _ = todo
 end
 
 type timestamp = unit
