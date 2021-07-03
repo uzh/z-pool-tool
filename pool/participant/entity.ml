@@ -5,7 +5,8 @@ type recruitment_channel =
   | Mailing
 
 type participant =
-  { email : string
+  { user : Sihl.User.t
+  ; email : string
   ; password : string
   ; firstname : string
   ; lastname : string

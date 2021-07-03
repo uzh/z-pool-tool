@@ -1,54 +1,48 @@
-type add_client_command = { client : Entity.client }
+type add_client_command =
+  { title : string
+  ; description : string
+  ; url : string
+  ; database : string
+  ; styles : string
+  ; icon : string
+  ; logos : string
+  ; partner_logos : string
+  }
+
 type handle_add_client = add_client_command -> (Event.t list, string) Result.t
 
-module AddClient : sig
-  type t
+type edit_client_command =
+  { client_id : string
+  ; title : string
+  ; description : string
+  ; url : string
+  ; database : string
+  ; styles : string
+  ; icon : string
+  ; logos : string
+  ; partner_logos : string
+  }
 
-  val handle : t -> (Event.t list, string) Result.t
-end = struct
-  type t
+type handle_edit_client =
+  add_client_command -> Entity.client -> (Event.t list, string) Result.t
 
-  let handle = Sihl.todo
-end
+type add_operator_to_client_command =
+  { operator_id : string
+  ; client_id : string
+  }
 
-module EditClient : sig
-  type t
+type handle_app_operator_to_client =
+  add_operator_to_client_command
+  -> Sihl.User.t
+  -> Entity.client
+  -> (Event.t list, string) Result.t
 
-  val handle : t -> Entity.client -> (Event.t list, string) Result.t
-end = struct
-  type t
+type active_operator_command = { operator_id : string }
 
-  let handle _ _ = Sihl.todo
-end
+type handle_activate_operator_command =
+  Sihl.User.t -> (Event.t list, string) Result.t
 
-type operator = unit
+type deactive_operator_command = { operator_id : string }
 
-module AddOperator : sig
-  type t
-
-  val handle : t -> Entity.client -> (Event.t list, string) Result.t
-end = struct
-  type t
-
-  let handle _ _ = Sihl.todo
-end
-
-module ActivateOperator : sig
-  type t
-
-  val handle : t -> operator -> (Event.t list, string) Result.t
-end = struct
-  type t
-
-  let handle _ _ = Sihl.todo
-end
-
-module DeactivateOperator : sig
-  type t
-
-  val handle : t -> operator -> (Event.t list, string) Result.t
-end = struct
-  type t
-
-  let handle _ _ = Sihl.todo
-end
+type handle_deactivate_operator_command =
+  Sihl.User.t -> (Event.t list, string) Result.t

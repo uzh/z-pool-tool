@@ -9,4 +9,6 @@ type client =
   ; logos : string
   ; partner_logos : string
   ; disabled : bool
+  ; created_at : bool
+  ; updated_at : bool
   }
