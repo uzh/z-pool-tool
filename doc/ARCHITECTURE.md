@@ -44,19 +44,19 @@ The participant joins a participant pool and is invited to experiments by experi
 They are the end users of the system.
 
 # Quality Attributes
-This section summarizes the key quality attributes & the non-functional requirements.
+This section summarizes the key quality attributes that represent the non-functional requirements.
 
 ### Performance (e.g. latency and throughput)
 * When 1000 subjects sign up for an experiment at the same time after being invited, 99th percentile response time is under 500ms
 * When interacting with the system as admin, the 99th percentile response time is under 1 second
 
 ### Scalability (e.g. data and traffic volumes)
-* With increasing traffic, the number of queue workers and HTTP workers can be increased
+* With increasing traffic, the number of queue workers and HTTP workers can be increased independently
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
 
 ### Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
 * Scheduled maintance should notify users
-- TODO What do we want to define for the system? Best-effort up-time? [steering committee]
+- TODO [steering committee] What do we want to define for the system? Best-effort up-time?
 
 ### Authentication
 - The default way of authentication is by providing an email address and a password
@@ -69,6 +69,7 @@ This section summarizes the key quality attributes & the non-functional requirem
 
 ### Data confidentiality
 - The right people have access to the right data (as defined in section "Data")
+- A client can not access other client's data
 
 ### Extensibility
 - An engineers with no previous knowledge about the system but only about the technology used should be able to contribute & fix within days not weeks
@@ -170,7 +171,7 @@ The website is the entry point to the system, every user interacts with the syst
 #### Backend
 The backend serves the website and runs the business logic.
 
-#### Infrastructure DB
+#### Main Database
 This DB is used to persist data that is not related to participant data.
 
 #### Queue Worker
@@ -185,7 +186,7 @@ This external service is used to send SMS.
 #### E-Mail Transport
 This external service is used to send emails.
 
-#### Participant Pools
+#### Client Database
 Participant pools are external systems from the point of view of the Z-Pool instance.
 
 ### Component diagram
@@ -203,7 +204,7 @@ The settings component takes care of user settings and message data such as emai
 The experiment component takes care of managing experiments, session experiments and participations.
 
 ###### Dependencies
-- `Participant Pool`
+- `Client Database`
 - `Messages`
 - `Calendar`
 - `Customization`
@@ -214,11 +215,11 @@ Payout lists can be downloaded or forwarded to a payout tool
 ###### Dependencies
 - `Payout Tool`
 
-##### Participant Pool
+##### Client Database
 Participants can register and fill in their details that make them eligible for certain studies
 
 ###### Dependencies
-- `Participant Pool Database`
+- `Client Database`
 - `Customization`
 
 #### Query
@@ -256,8 +257,6 @@ The messaging component implements various messaging channels such as email and 
 - `Queue Worker`
 
 ##### Calendar
-TODO [jerben] Check whether we have some system dependencies
-
 The calendar component provides a calendar.
 
 ## Code
@@ -324,10 +323,10 @@ TODO [andy & jerben] data model
 ### Database
 
 #### Main
-TODO [jerben]
+The main database stores meta information about the clients and their pools. This meta information can be queried by all clients.
 
-### Participant Pool
-TODO [jerben]
+#### Client
+The client database stores participants, experiements, sessions, locations, permissions, calendar events and message templates.
 
 ### Backup
 Any backup strategy that works with traditional RDBM can be applied.
@@ -338,15 +337,61 @@ TODO [steering committee]
 ## Decision Log
 The decision log is a list of all decisions made regarding the architecture.
 
-### TITLE
+### OCaml vs. JS vs. Ruby vs. Python
+#### Context
+- A range of programming languages were evaluated considering the experience of the development team with the language and the quality attributes of Z-Pool. Among the candidates were OCaml, JavaScript, Ruby and Python.
+- The order of the combined experience of the development team in descending order is: JavaScript, Ruby, OCaml, Python.
+- There are projects at the Department of Economics written in each of the languages mentioned.
+- It is important to fulfill the non-functional requirements regarding maintanability, extensibility, performance, reliability and data consistency & integrity.
+
+#### Decision
+OCaml was chosen because of its strict and powerful compile-time type system.
+
+#### Consequences
+- A steeper learning curve requires more effort and time spent in preparing the implementation of Z-Pool
+- The initial development is slower with OCaml than with the other 3 options
+- Long-term development is faster and cheaper, the longer the project exists the higher the return of invest
+- Increased efficiency: the system can process a higher load using the same resources as the other 3 options
+
+### Domain-driven development & Type-driven development vs. Top-down domain modelling
+#### Context
+- Given OCaml as the choice of language, type-driven development becomes possible. This approach enables developers to encode business rules into the static types in order to mathematically prove their correctness.
+- The business rules of Z-Pool should be apparent, easy to understand and separated from other code.
+- Manually creating costly diagrams should be kept at minimum in order to keep the iteration cycles small
+- The development team has experience in Domain-driven development & Type-driven development as well as with the top-down doamin modelling approach
+
+#### Decision
+Domain model discussions are held based on code that declaratively expresses business logic instead of diagrams.
+
+#### Consequences
+- Non-technical team members need to be open to read and understand OCaml type signatures
+- Business logic is clearly separated from infrastructure code (non-business logic) which increases maintanability
+- The compiler mathematically proves that certain parts of the specification have been implemented correctly
+
+### Sihl vs. JS vs. Rails vs. Django
+#### Context
+#### Decision
+#### Consequences
+TODO [jerben]
+
+### Monolith vs. Micro Services
+#### Context
+#### Decision
+#### Consequences
+TODO [jerben]
+
+### Server-side rendering vs. SPA
+#### Context
+#### Decision
+#### Consequences
+TODO [jerben]
+
+### SAMPLE
 #### Context
 This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
 
 #### Decision
 This section describes our response to these forces. It is stated in full sentences, with active voice. "We will …"
-
-#### Status
-A decision may be "proposed" if the project stakeholders haven't agreed with it yet, or "accepted" once it is agreed. If a later ADR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to its replacement.
 
 #### Consequences
 This section describes the resulting context, after applying the decision. All consequences should be listed here, not just the "positive" ones. A particular decision may have positive, negative, and neutral consequences, but all of them affect the team and project in the future.
