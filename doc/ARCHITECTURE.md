@@ -1,176 +1,422 @@
-# Context
+## Z-Pool
+
+## Context
 This section describes the tool that is being built as a software product, the existing environment and the user types.
 
-## Goal
-The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities. Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools. In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
+### Goal
+The "Z-Pool-Tool" project aims to create an integral technical platform for all existing and future subject Pools for the DIZH universities. The "Z-Pool-Tool" should enable a technologically uniform, operationally independent recruitment of test persons as well as the administration of test person pools for all organizational units of the DIZH universities.
 
-## User roles
-* Operator: super admin priviliges, primary users
-* Recruiter: owns pool, almost admin except for infrastructure & system settings, primary user
-* Experimenter: admin on an experiment, secondary user
-* Participant: can do stuff in assigned experiements
+Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizational units that want to set up subject pools for specific purposes and maintain them according to their individual needs. The pools themselves are then available to researchers according to the specifications of the individual pools. In addition, a new DIZH volunteer pool of several 10,000 people is to be established as a strategic resource for the search for volunteers for online and offline research, independent of commercial service providers.
+
+### User types
+
+#### Root
+Is responsible for running a Z-Pool instance.
+
+#### Operator
+The operator's job is to run a participant pool instance. If Z-Pool is hosted on-premise, then the operator has to run the Z-Pool instance, too.
+
+The operator is a primary user.
+
+#### Recruiter
+The recruiter creates, populates and owns a participant pool. The recruiter has almost the same capabilities as the operator, except for accessing and modifying infrastructure.
+
+The recruiter is a primary user.
+
+#### Location manager
+Sees all sessions for a location, is responsible for that location. Can not edit, only view.
+
+The experimenter is a secondary user.
+
+#### Experimenter
+The experimenter is tasked to create and conduct experiments and consequentially owns experiments.
+
+The experimenter is a secondary user.
+
+#### Assistant (of Experimenter)
+Is responsible for one session, deals with payout and checks show-up/no-show on-site.
+
+The experimenter is a secondary user.
+
+#### Participant
+The participant joins a participant pool and is invited to experiments by experimenters.
+
+They are the end users of the system.
 
 # Quality Attributes
-This section summarizes the key quality attributes & the non-functional requirements.
+This section summarizes the key quality attributes that represent the non-functional requirements.
 
-## Performance (e.g. latency and throughput)
+### Performance (e.g. latency and throughput)
 * When 1000 subjects sign up for an experiment at the same time after being invited, 99th percentile response time is under 500ms
 * When interacting with the system as admin, the 99th percentile response time is under 1 second
-## Scalability (e.g. data and traffic volumes)
-* With increasing traffic, the number of queue workers and HTTP workers can be increased
+
+### Scalability (e.g. data and traffic volumes)
+* With increasing traffic, the number of queue workers and HTTP workers can be increased independently
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
-## Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
-- TODO [andy]
-## Security
+
+### Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
+* Scheduled maintance should notify users
+- TODO [steering committee] What do we want to define for the system? Best-effort up-time?
+
 ### Authentication
 - The default way of authentication is by providing an email address and a password
 - The default password policy should be strong enough according to best practices to render brute force attacks useless
+
 ### Authorization
 - Only users who where given permission to mutate some data should be able to mutate it
 - Only users who where given permission to read some data should be able to read it
 - Only users who where given permission to export some data should be able to export it
+
 ### Data confidentiality
 - The right people have access to the right data (as defined in section "Data")
-## Extensibility
+- A client can not access other client's data
+
+### Extensibility
 - An engineers with no previous knowledge about the system but only about the technology used should be able to contribute & fix within days not weeks
-## Flexibility
+
+### Flexibility
 - The parts that face the participants is optimized as white label website which makes it easy to add custom branding
 - The structure of the pools varies between primary users, which means that the data collection from participants have to be configurable (custom on-boarding process)
 - The structure of the experiments varies between primary users
-## Auditing
+
+### Auditing
 - Every activity that mutates data is logged and kept in an activity log
 - Every activity that extracts a larger amount of data (CSV Export, JSON API Query) is logged and kept in an activity log
-## Monitoring and management
-- It should be possible to monitor the health and status of the application with common monitoring tools (TODO [andy])
+
+### Monitoring and management
+- The health of the system can be read using endpoints
 - The system should proactively report degraded health to operators
-## Reliability
+
+### Reliability
 - Data integrity should be maintained by respecting defined invariants
-## Failover/disaster recovery targets (e.g. manual vs automatic, how long will this take?)
-- TODO [andy]
-## Interoperability
+
+### Interoperability
 - It should be possible to query data using a JSON API, crawling is actively discouraged
 - It should be possible to export the pool
-## Legal, compliance and regulatory requirements (e.g. data protection act)
-### GDPR
-TODO describe what each right does
-* The Right to Information
-* The Right of Access
-* The Right to Rectification
-* The Right to Erasure
-* The Right to Restriction of Processing
-* The Right to Data Portability
-* The Right to Object
-* The Right to Avoid Automated Decision-Making
-## Internationalisation (i18n) and localisation (L10n)
-* EN/DE
-## Accessibility
-- TODO [andy]
-## Usability
-* Primary users should be able to create a pool with sane defaults
-## Maintanability
-- TODO small team, effectiveness long-term, mention phase planning of project
 
-# Constraints
+### Legal, compliance and regulatory requirements (e.g. data protection act)
+- TODO [steering committee] Does the system need to conform to GDPR?
+
+### Internationalisation (i18n) and localisation (L10n)
+- The participant facing part should support German and English initially
+- The admin facing part should be English only
+- Localisation settings should be read from the browser and it should be possible to override them in the user settings
+
+### Accessibility
+- Common best practices regarding accessibility in web development should be followed to enable everyone to participate in studies
+
+### Usability
+- Primary users should be able to create a pool with sane defaults
+- Participants should be able to register initially with just an email address and a password in order to keep the friction as low as possible
+- The part that is facing participants should work on mobile devices just as much as on desktop devices
+
+### Maintanability
+- An engineer who knows the technology stack but not the system should be able to contribute within days
+- The system should be adaptable to changing requirements and environments
+
+### Data consistency & integrity
+- The number of duplicate participant records should be kept at a minimum with automated processes
+
+## Constraints
 This section describes the existing constraints for the project, the products and the people involved.
 
-- TODO Time, budget and resources.
-- TODO Approved technology lists and technology constraints.
-- TODO Existing systems and integration standards. (SMS gateway, E-Mail, Slack, ...)
-- TODO Size of the software development team.
-- TODO Skill profile of the software development team.
+### Peripheral Systems
+- SMS Gateway (GTX Messaging), HTTP API
+- TODO [ZI] UZH SMTP Server with rate limit
+- MariaDB Cluster with one write instance and 3 read clones
+- TODO [ZI] Edu-ID Authorization
+- Gitlab API
 
-# Principles
-This section describes high-level principles that guide the development of the architecture.
+## Principles
+This section discusses high-level principles that guide the development of the architecture.
 
-- TODO Architectural layering strategy. (monolith, CQRS)
-- No business logic in views.
-- No database access in views.
-- Use of module interfaces. (information hiding)
-- Never use an ORM.
-- Async
-- High cohesion, low coupling.
-- A little copying is better than the wrong abstraction.
-- Ensure all components are stateless (e.g. to ease scaling).
-- Never use stored procedures.
-- Common approaches for error handling, logging, etc.
-- CLI first, UI second
+- The system is divided in two sub-systems; One that deals with Commands and one that deals with Queries
+- Keep the amount of customly written JavaScript at a minimum
+- Separate pure code that has no side-effects from code that has side-effects
+- Declarative & functional core, imperative shell
+- Separate generic infrastructure components from domain components
+- Use module interfaces to achieve information hiding
+- Put as many business rules into pure code as possible
+- Prefer end-to-end testing to unit tests
+- No business logic in views
+- No database access in views
+- Don't use an ORM but write SQL queries by hand in order to have full control over the queries
+- Don't block when doing I/O
+- High cohesion, low coupling
+- A little copying is better than the wrong abstraction
+- Ensure all components are stateless, the only stateful part it the persistence layer
 
-# Software Architecture
+## Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
 
-- TODO What does the "big picture" look like?
-- TODO Is there are clear structure?
-- TODO Is it clear how the system works from the "30,000 foot view"?
-- TODO Does it show the major containers and technology choices?
-- TODO Does it show the major components and their interactions?
-- TODO What are the key internal interfaces? (e.g. a web service between your web and business tiers)
+### Container diagram
 
-- TODO: https://structurizr.com/help/container-diagram
-- TODO: https://structurizr.com/help/component-diagram
+![Overview of software containers](doc/images/container.svg "Container diagram")
 
-# Code
+#### Operator
+The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
+
+#### Recruiter
+The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
+
+#### Experimenter
+The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
+
+#### Participant
+The participant uses the system through both the desktop and mobile website.
+
+#### Website
+The website is the entry point to the system, every user interacts with the system through it.
+
+#### Backend
+The backend serves the website and runs the business logic.
+
+#### Main Database
+This DB is used to persist data that is not related to participant data.
+
+#### Queue Worker
+The queue worker runs business logic in a separate process than the backend.
+
+#### Cache
+The backend uses the cache to persist transient data to reduce the load in the infrastructure database. The cache must not cache pool data!
+
+#### SMS Gateway
+This external service is used to send SMS.
+
+#### E-Mail Transport
+This external service is used to send emails.
+
+#### Client Database
+Participant pools are external systems from the point of view of the Z-Pool instance.
+
+### Component diagram
+Every component is assumed to have access to the `Main Database`, so this dependency is not explicitly listed.
+
+![Overview of software components](doc/images/component.svg "Component diagram")
+
+#### Command & Domain
+The domain model contains all the business rules. Users interact with it by sending it commands to mutate data.
+
+##### Settings
+The settings component takes care of user settings and message data such as email templates.
+
+##### Experiment
+The experiment component takes care of managing experiments, session experiments and participations.
+
+###### Dependencies
+- `Client Database`
+- `Messages`
+- `Calendar`
+- `Customization`
+
+##### Payout
+Payout lists can be downloaded or forwarded to a payout tool
+
+###### Dependencies
+- `Payout Tool`
+
+##### Client Database
+Participants can register and fill in their details that make them eligible for certain studies
+
+###### Dependencies
+- `Client Database`
+- `Customization`
+
+#### Query
+
+Users send queries over HTTP to read aggregate data.
+
+##### Dashboard
+Overview of future sessions per assistant, list of assigned open experiments, list of incomplete list of sessions
+
+##### Statistics
+Calculation of response rate, number of invitations per user
+
+#### Infrastructure
+
+Infrastructure components don't contain any business logic and are generic enough to be re-used in other projects.
+
+##### Authorization
+The authorization component ensures that person can only do send commands and queries they are allowed to send.
+
+###### Dependencies
+- `Cache`
+
+##### Customization
+The customization component is a generic library that can be used to add custom fields to entities. The custom fields can be managed at runtime without the need to apply database schema migrations.
+
+##### Activity Log
+The activity log keeps track of all actions done by super admins, recruiters and experimenters.
+
+##### Messaging
+The messaging component implements various messaging channels such as email and SMS.
+
+###### Dependencies
+- `SMS Gateway`
+- `E-Mail Transport (SMTP)`
+- `Queue Worker`
+
+##### Calendar
+The calendar component provides a calendar.
+
+## Code
 This section describes implementation details of parts of the system.
 
-## Generating/rendering HTML
-TODO a short description of the framework that was created for generating HTML, including the major classes and concepts.
+### Generating/rendering HTML
+HTML is rendered on the server which is served as static HTML document to the client.
 
-## Data binding
-TODO the approach to updating business objects as the result of HTTP POST requests.
+### Data binding
+HTTP requests are parsed as either commands or queries. Commands and queries are then validated and authorized and passed to the service layer.
+The service layer uses repositories to access the database.
 
-## Multi-page data collection
-TODO a short description of the framework used for building forms that spanned multiple web pages.
+### Multi-page data collection
+No framework is used to collect data spanning multiple web pages. Instead, a ad-hoc case-by-case modeling of the multi-page as stateful process is required.
 
-## Web MVC
-TODO an example usage of the web MVC framework being used.
+### Security
+Use management, authentication and protection against CSRF and SQL injection is provided by [Sihl](https://github.com/oxidizing/sihl "Sihl web framework")
 
-## Security
-TODO the approach to using Windows Identity Foundation (WIF) for authentication and authorisation.
-Domain model: an overview of the important parts of the domain model.
-Component framework: a short description of the framework that we built to allow components to be reconfigured at runtime.
+### Domain model
+Check out [ddd.ml](ddd.ml "Domain-driven Design file")
 
-## Configuration
-TODO a short description of the standard component configuration mechanism in use across the codebase.
+### Customizations
+Different primary users need different participant and experiement fields. Apart from a small hard-coded entity `Participant` and `Experiment`, the entities are data-driven. Because their structure is defined as persisted as data, correctness can not be checked at compile-time.
 
-## Architectural layering
-TODO an overview of the layering strategy and the patterns in use to implement it.
+We build a customization framework that allows to attach arbitrary data to entities. It should be ergonomic to read, updte and list customized entities. Every domain component needs to use the customization framework in order to work with customized entities.
 
-## Exceptions and logging
-TODO a summary of the approach to exception handling and logging across the various architectural layers.
+### Configuration
+Z-Pool and Sihl follow the [12 Factor App](https://12factor.net/ "12 Factor App") convention. Configurations are set using environment variables or, at run-time, using Sihl's configuration service.
 
-## Patterns and principles
-TODO an explanation of how patterns and principles are implemented.
+### Architectural layering
+The architectural layering borrows concepts and from [Domain-driven design](https://martinfowler.com/tags/domain%20driven%20design.html) and [Hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)).
 
-# Data
+#### Domain
+The domain is split up in entities, repositories and commands.
+
+##### Entity
+Entities are commonly referred to as "business models" or "business types". They represent things such as `Experiment`, `Invitation` or `Experimenter`. Some of the business logic lives here. They are allowed to depend on other entities only.
+
+##### Repository
+Repositories abstract away database access. They are only allowed to depend on entities of the same model. Ideally, there should be no business logic in a repository. Sometimes it makes sense to push parts of business logic into the database to improve performance.
+
+##### Model
+A model contains repositories, entities and business logic. Models are allowed to depend on other models and their entities, but never their repositories.
+
+##### Command
+A command represents a user intent to change some data. In a command handler, multiple models are called in order to run business logic.
+
+#### Infrastructure
+The infrastructure is the generic part that contains no code related to the specific problem of recruiting participents.
+
+#### App
+The app is the glue between the domain part and the infrastructure part.
+
+### Exceptions and logging
+The system logs to `stdout` and `stderr` and reports `404` and `500` via email.
+Log levels of `INFO`, `DEBUG`, `WARNING` and `ERROR` can be configured.
+
+## Data
 This section discusses the data model, the persistence layer technology and data ownership.
 
-- TODO data model
-- TODO the data is stored in MariaDB, can be owned by anyone
-- TODO Backup is handled by hoster
-- TODO GDPR: Long-term storage Are there any regulatory requirements for the long term archival of business data?
+### Data model
+TODO [andy & jerben] data model
 
-# Operation and Support
-- TODO Is it clear how the software provides the ability for operation/support teams to monitor and manage the system?
-- TODO How is this achieved across all tiers of the architecture?
-- TODO How can operational staff diagnose problems?
-- TODO Where are errors and information logged? (e.g. log files, Windows Event Log, SMNP, JMX, WMI, custom diagnostics, etc)
-- TODO Do configuration changes require a restart?
-- TODO Are there any manual housekeeping tasks that need to be performed on a regular basis?
-- TODO Does old data need to be periodically archived?
+### Database
 
-# Decision Log
-- TODO Why did you choose technology or framework "X" over "Y" and "Z"?
-- TODO How did you do this? Product evaluation or proof of concept?
-- TODO Were you forced into making a decision about "X" based upon corporate policy or enterprise architecture strategies?
-- TODO Why did you choose the selected software architecture? What other options did you consider?
-- TODO How do you know that the solution satisfies the major quality attributes?
+#### Main
+The main database stores meta information about the clients and their pools. This meta information can be queried by all clients.
 
-TODO structure
-Title These documents have names that are short noun phrases. For example, "ADR 1: Deployment on Ruby on Rails 3.0.10" or "ADR 9: LDAP for Multitenant Integration"
+#### Client
+The client database stores participants, experiements, sessions, locations, permissions, calendar events and message templates.
 
-Context This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
+### Backup
+Any backup strategy that works with traditional RDBM can be applied.
 
-Decision This section describes our response to these forces. It is stated in full sentences, with active voice. "We will …"
+### GDPR
+TODO [steering committee]
 
-Status A decision may be "proposed" if the project stakeholders haven't agreed with it yet, or "accepted" once it is agreed. If a later ADR changes or reverses a decision, it may be marked as "deprecated" or "superseded" with a reference to its replacement.
+## Decision Log
+The decision log is a list of all decisions made regarding the architecture.
 
-Consequences This section describes the resulting context, after applying the decision. All consequences should be listed here, not just the "positive" ones. A particular decision may have positive, negative, and neutral consequences, but all of them affect the team and project in the future.
+### OCaml vs. JS vs. Ruby vs. Python
+#### Context
+- A range of programming languages were evaluated considering the experience of the development team with the language and the quality attributes of Z-Pool. Among the candidates were OCaml, JavaScript, Ruby and Python.
+- The order of the combined experience of the development team in descending order is: JavaScript, Ruby, OCaml, Python.
+- There are projects at the Department of Economics written in each of the languages mentioned.
+- It is important to fulfill the non-functional requirements regarding maintanability, extensibility, performance, reliability and data consistency & integrity.
+
+#### Decision
+OCaml was chosen because of its strict and powerful compile-time type system.
+
+#### Consequences
+- A steeper learning curve requires more effort and time spent in preparing the implementation of Z-Pool
+- The initial development is slower with OCaml than with the other 3 options
+- Long-term development is faster and cheaper, the longer the project exists the higher the return of invest
+- Increased efficiency: the system can process a higher load using the same resources as the other 3 options
+
+### Domain-driven development & Type-driven development vs. Top-down domain modelling
+#### Context
+- Given OCaml as the choice of language, type-driven development becomes possible. This approach enables developers to encode business rules into the static types in order to mathematically prove their correctness.
+- The business rules of Z-Pool should be apparent, easy to understand and separated from other code.
+- Manually creating costly diagrams should be kept at minimum in order to keep the iteration cycles small
+- The development team has experience in Domain-driven development & Type-driven development as well as with the top-down doamin modelling approach
+
+#### Decision
+Domain model discussions are held based on code that declaratively expresses business logic instead of diagrams.
+
+#### Consequences
+- Non-technical team members need to be open to read and understand OCaml type signatures
+- Business logic is clearly separated from infrastructure code (non-business logic) which increases maintanability
+- The compiler mathematically proves that certain parts of the specification have been implemented correctly
+
+### Sihl vs. JS vs. Rails vs. Django
+TODO [jerben]
+#### Context
+- all technologies in use
+- most production experience with rails
+- current system in rails
+#### Decision
+- us sihl
+#### Consequences
+- steeper learning curve
+- dependency on a smaller framework with smaller user base
+- sustainable development (maintanability, correctness)
+
+### Monolith vs. Micro Services
+#### Context
+- TODO [ZI] Do we have a UZH-wide container infrastructure?
+- Experience with monoliths & micro services
+- Micro services harder to operate, but easier to scale development
+- Team size small than 7
+
+#### Decision
+Modular but monolithic architecture
+
+#### Consequences
+- Easier to deploy, operate and introspect
+- Lower requirements for infrastructure
+- Max team size limited
+
+### Server-side rendering vs. Single-page application (SPA)
+#### Context
+- No dedicted UI/UX part
+- People who develop backend are the same ones developing UI
+- The ecosystem and build processes of a typical SPA add a considerable amount of overhead
+
+#### Decision
+No SPA, but server-side rendered pages with enhanced bits and pieces.
+
+#### Consequences
+- Use [HTMX](https://htmx.org/) where sensible to implement dynamic parts without maintaining JavaScript
+- Z-Pool can only offer basic interactive & dynamic elements
+- Adding complex interactive features might justify the use of an SPA
+- There is no JavaScript to maintain
+
+### SAMPLE
+#### Context
+This section describes the forces at play, including technological, political, social, and project local. These forces are probably in tension, and should be called out as such. The language in this section is value-neutral. It is simply describing facts.
+
+#### Decision
+This section describes our response to these forces. It is stated in full sentences, with active voice. "We will …"
+
+#### Consequences
+This section describes the resulting context, after applying the decision. All consequences should be listed here, not just the "positive" ones. A particular decision may have positive, negative, and neutral consequences, but all of them affect the team and project in the future.
