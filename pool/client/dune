@@ -1,0 +1,3 @@
+(library
+ (name client)
+ (libraries sihl))
