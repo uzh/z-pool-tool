@@ -369,22 +369,47 @@ Domain model discussions are held based on code that declaratively expresses bus
 - The compiler mathematically proves that certain parts of the specification have been implemented correctly
 
 ### Sihl vs. JS vs. Rails vs. Django
-#### Context
-#### Decision
-#### Consequences
 TODO [jerben]
+#### Context
+- all technologies in use
+- most production experience with rails
+- current system in rails
+#### Decision
+- us sihl
+#### Consequences
+- steeper learning curve
+- dependency on a smaller framework with smaller user base
+- sustainable development (maintanability, correctness)
 
 ### Monolith vs. Micro Services
 #### Context
-#### Decision
-#### Consequences
-TODO [jerben]
+- TODO [ZI] Do we have a UZH-wide container infrastructure?
+- Experience with monoliths & micro services
+- Micro services harder to operate, but easier to scale development
+- Team size small than 7
 
-### Server-side rendering vs. SPA
-#### Context
 #### Decision
+Modular but monolithic architecture
+
 #### Consequences
-TODO [jerben]
+- Easier to deploy, operate and introspect
+- Lower requirements for infrastructure
+- Max team size limited
+
+### Server-side rendering vs. Single-page application (SPA)
+#### Context
+- No dedicted UI/UX part
+- People who develop backend are the same ones developing UI
+- The ecosystem and build processes of a typical SPA add a considerable amount of overhead
+
+#### Decision
+No SPA, but server-side rendered pages with enhanced bits and pieces.
+
+#### Consequences
+- Use [HTMX](https://htmx.org/) where sensible to implement dynamic parts without maintaining JavaScript
+- Z-Pool can only offer basic interactive & dynamic elements
+- Adding complex interactive features might justify the use of an SPA
+- There is no JavaScript to maintain
 
 ### SAMPLE
 #### Context
