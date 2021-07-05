@@ -40,7 +40,7 @@ module UpdateDetails : sig
     -> password:string
     -> (Participant.event list, string) Result.t
 
-  val permission : t -> Authz.permission
+  val can : t -> Participant.participant -> bool Lwt.t
 end = struct
   type t =
     { id : string
@@ -50,7 +50,17 @@ end = struct
     }
 
   let handle _ ~email:_ ~password:_ = Sihl.todo
-  let permission _ = Sihl.todo
+
+  let can command participant =
+    let open Lwt.Syntax in
+    let* tenant = Tenant.find_by_participant participant in
+    Authz.can
+      participant.Participant.user
+      ~any_of:
+        [ Authz.Update (Authz.Participant, Some command.id)
+        ; Authz.Update (Authz.Tenant, Some tenant.id)
+        ]
+  ;;
 end
 
 module UpdatePassword : sig

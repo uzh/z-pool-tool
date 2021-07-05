@@ -1,23 +1,41 @@
 type thing =
-  | User
+  | Participant
   | Tenant
   | Tenant_infrastructure
   | Location
   | Experiment
   | Experiment_session
 
-type context = thing * string option
-
 type permission =
-  | Create of context
-  | Read of context
-  | Update of context
-  | Destroy of context
-  | Manage of context
+  | Create of (thing * string option)
+  | Read of (thing * string option)
+  | Update of (thing * string option)
+  | Destroy of (thing * string option)
+  | Manage of (thing * string option)
+
+type assign = Sihl.User.t -> permission list -> unit Lwt.t
+
+let assign : assign = fun user permissions -> Repo.insert user.id permissions
+
+type divest = Sihl.User.t -> permission list -> unit Lwt.t
+
+let divest : divest = fun user permissions -> Repo.delete user.id permissions
+
+type can = Sihl.User.t -> any_of:permission list -> bool Lwt.t
+
+let can : can = fun user ~any_of:permissions -> Repo.has_any user.id permissions
 
 (* Default roles *)
 
-let root = [ Manage (User, None) ]
+let root =
+  [ Manage (Participant, None)
+  ; Manage (Tenant, None)
+  ; Manage (Tenant_infrastructure, None)
+  ; Manage (Location, None)
+  ; Manage (Experiment, None)
+  ; Manage (Experiment_session, None)
+  ]
+;;
 
 let operator tenant_id =
   [ Manage (Tenant_infrastructure, Some tenant_id)
@@ -36,22 +54,8 @@ let assistant experiment_id =
 ;;
 
 let participant user_id =
-  [ Create (User, Some user_id)
-  ; Read (User, Some user_id)
-  ; Update (User, Some user_id)
+  [ Create (Participant, Some user_id)
+  ; Read (Participant, Some user_id)
+  ; Update (Participant, Some user_id)
   ]
 ;;
-
-let recruiter = [ Manage (User, None) ]
-
-type assign = Sihl.User.t -> permission list -> unit Lwt.t
-
-let assign : assign = fun user permissions -> Repo.insert user.id permissions
-
-type divest = Sihl.User.t -> permission list -> unit Lwt.t
-
-let divest : divest = fun user permissions -> Repo.delete user.id permissions
-
-type can = Sihl.User.t -> any_of:permission list -> bool Lwt.t
-
-let can : can = fun user ~any_of:permissions -> Repo.has_any user.id permissions

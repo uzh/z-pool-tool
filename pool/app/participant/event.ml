@@ -17,6 +17,9 @@ let handle_event : event -> unit Lwt.t =
   function
   | `Created participant ->
     let* () = Sihl.User.create participant.user in
+    let* () =
+      Authz.assign participant.user (Authz.participant participant.user.id)
+    in
     Repo.insert participant
   | `Details_updated user -> Repo.update user
   | `Password_updated (participant, password) ->

@@ -1,6 +1,8 @@
 include Entity
 include Event
 
+let find_by_participant _ = Sihl.todo
+
 type list_recruiters =
   { limit : int
   ; offset : int
