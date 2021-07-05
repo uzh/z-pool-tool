@@ -1,4 +1,4 @@
-module Change : sig
+module Update : sig
   type t = { new_settings : (string * string) list }
 
   val handle : t -> (I18n.event list, string) Result.t

@@ -12,15 +12,14 @@ type event =
   | `Email_updated of Entity.participant * string
   ]
 
-type handle_event = event -> unit Lwt.t
-
-let handle_event : handle_event =
+let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | `Created participant ->
     let* () = Sihl.User.create participant.user in
     Repo.insert participant
   | `Details_updated user -> Repo.update user
-  | `Password_updated (_, _) -> Sihl.todo
+  | `Password_updated (participant, password) ->
+    Sihl.User.set_password participant.user password
   | `Email_updated (_, _) -> Sihl.todo
 ;;

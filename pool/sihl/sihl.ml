@@ -5,6 +5,7 @@ let todo = failwith "todo"
 module User = struct
   type t = { id : string }
 
+  let set_password _ _ = todo
   let activate _ = todo
   let deactivate _ = todo
   let create _ = todo
