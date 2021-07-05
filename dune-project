@@ -22,4 +22,6 @@ TODO
 ")
  (depends
   dune
-  (ocaml (>= 4.12.0))))
+  (ocaml (>= 4.12.0))
+  (lwt (>= 5.4.1))
+  (containers (>= 3.4))))

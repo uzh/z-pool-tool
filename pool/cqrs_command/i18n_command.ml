@@ -7,5 +7,12 @@ end = struct
   type t = { new_settings : (string * string) list }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+
+  let can user _ =
+    let open Lwt.Syntax in
+    let* tenant = Tenant.find_by_user user in
+    Authz.can
+      user
+      ~any_of:[ Authz.Update (Authz.Tenant, Some tenant.Tenant.id) ]
+  ;;
 end

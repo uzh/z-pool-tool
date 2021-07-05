@@ -1,61 +1,22 @@
-type thing =
-  | Participant
-  | Tenant
-  | Tenant_infrastructure
-  | Location
-  | Experiment
-  | Experiment_session
+include Core
 
-type permission =
-  | Create of (thing * string option)
-  | Read of (thing * string option)
-  | Update of (thing * string option)
-  | Destroy of (thing * string option)
-  | Manage of (thing * string option)
-
-type assign = Sihl.User.t -> permission list -> unit Lwt.t
+type assign = Sihl.User.t -> Core.permission list -> unit Lwt.t
 
 let assign : assign = fun user permissions -> Repo.insert user.id permissions
 
-type divest = Sihl.User.t -> permission list -> unit Lwt.t
+type divest = Sihl.User.t -> Core.permission list -> unit Lwt.t
 
 let divest : divest = fun user permissions -> Repo.delete user.id permissions
 
-type can = Sihl.User.t -> any_of:permission list -> bool Lwt.t
+type can = Sihl.User.t -> any_of:Core.permission list -> bool Lwt.t
 
-let can : can = fun user ~any_of:permissions -> Repo.has_any user.id permissions
-
-(* Default roles *)
-
-let root =
-  [ Manage (Participant, None)
-  ; Manage (Tenant, None)
-  ; Manage (Tenant_infrastructure, None)
-  ; Manage (Location, None)
-  ; Manage (Experiment, None)
-  ; Manage (Experiment_session, None)
-  ]
-;;
-
-let operator tenant_id =
-  [ Manage (Tenant_infrastructure, Some tenant_id)
-  ; Manage (Tenant, Some tenant_id)
-  ]
-;;
-
-let recruiter tenant_id = [ Manage (Tenant, Some tenant_id) ]
-let location_manager location_id = [ Read (Location, Some location_id) ]
-let experimenter experiment_id = [ Manage (Experiment, Some experiment_id) ]
-
-let assistant experiment_id =
-  [ Read (Experiment, Some experiment_id)
-  ; Update (Experiment, Some experiment_id)
-  ]
-;;
-
-let participant user_id =
-  [ Create (Participant, Some user_id)
-  ; Read (Participant, Some user_id)
-  ; Update (Participant, Some user_id)
-  ]
+let can : can =
+ fun user ~any_of:any_of_these ->
+  let open Lwt.Syntax in
+  let* permissions = Repo.find_all_by_user user.id in
+  let intersection =
+    (* TODO to improve performance, abort if one match was found *)
+    CCList.inter ~eq:Core.permission_eq permissions any_of_these
+  in
+  Lwt.return @@ (List.length intersection > 0)
 ;;

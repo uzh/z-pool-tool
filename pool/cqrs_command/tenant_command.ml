@@ -25,7 +25,7 @@ end = struct
     }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+  let can user _ = Authz.can user ~any_of:[ Authz.Create Authz.Tenant ]
 end
 
 module Edit_tenant : sig
@@ -57,7 +57,12 @@ end = struct
     }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+
+  let can user command =
+    Authz.can
+      user
+      ~any_of:[ Authz.Update (Authz.Tenant, Some command.tenant_id) ]
+  ;;
 end
 
 module Destroy_tenant : sig
@@ -69,7 +74,12 @@ end = struct
   type t = { tenant_id : string }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+
+  let can user command =
+    Authz.can
+      user
+      ~any_of:[ Authz.Destroy (Authz.Tenant, Some command.tenant_id) ]
+  ;;
 end
 
 module Add_root : sig
@@ -81,7 +91,7 @@ end = struct
   type t = { user_id : string }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+  let can user _ = Authz.can user ~any_of:[ Authz.Manage (Authz.System, None) ]
 end
 
 module Add_operator : sig
@@ -104,5 +114,13 @@ end = struct
     }
 
   let handle = Sihl.todo
-  let can = Sihl.todo
+
+  let can user command =
+    Authz.can
+      user
+      ~any_of:
+        [ Authz.Manage (Authz.System, None)
+        ; Authz.Manage (Authz.Tenant, Some command.tenant_id)
+        ]
+  ;;
 end
