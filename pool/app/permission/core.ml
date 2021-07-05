@@ -49,34 +49,3 @@ let explode_permission = function
     ]
   | other -> [ other ]
 ;;
-
-(* Default roles *)
-
-let root =
-  [ Manage (Participant, None)
-  ; Manage (Tenant, None)
-  ; Manage (Tenant_recruiting, None)
-  ; Manage (Location, None)
-  ; Manage (Experiment, None)
-  ; Manage (Experiment_session, None)
-  ; Manage (System, None)
-  ]
-;;
-
-let operator tenant_id = [ Manage (Tenant, Some tenant_id) ]
-let recruiter tenant_id = [ Manage (Tenant_recruiting, Some tenant_id) ]
-let location_manager location_id = [ Read (Location, Some location_id) ]
-let experimenter experiment_id = [ Manage (Experiment, Some experiment_id) ]
-
-let assistant experiment_id =
-  [ Read (Experiment, Some experiment_id)
-  ; Update (Experiment, Some experiment_id)
-  ]
-;;
-
-let participant user_id =
-  [ Create Participant
-  ; Read (Participant, Some user_id)
-  ; Update (Participant, Some user_id)
-  ]
-;;

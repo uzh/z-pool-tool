@@ -55,11 +55,11 @@ end = struct
     let open Lwt.Syntax in
     let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
-    Authz.can
+    Permission.can
       user
       ~any_of:
-        [ Authz.Update (Authz.Participant, Some command.id)
-        ; Authz.Update (Authz.Tenant, Some tenant.id)
+        [ Permission.Update (Permission.Participant, Some command.id)
+        ; Permission.Update (Permission.Tenant, Some tenant.id)
         ]
   ;;
 end
@@ -90,11 +90,11 @@ end = struct
     let open Lwt.Syntax in
     let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
-    Authz.can
+    Permission.can
       participant.Participant.user
       ~any_of:
-        [ Authz.Update (Authz.Participant, Some command.id)
-        ; Authz.Update (Authz.Tenant, Some tenant.id)
+        [ Permission.Update (Permission.Participant, Some command.id)
+        ; Permission.Update (Permission.Tenant, Some tenant.id)
         ]
   ;;
 end
@@ -123,11 +123,11 @@ end = struct
     let open Lwt.Syntax in
     let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
-    Authz.can
+    Permission.can
       participant.Participant.user
       ~any_of:
-        [ Authz.Update (Authz.Participant, Some command.id)
-        ; Authz.Update (Authz.Tenant, Some tenant.id)
+        [ Permission.Update (Permission.Participant, Some command.id)
+        ; Permission.Update (Permission.Tenant, Some tenant.id)
         ]
   ;;
 end

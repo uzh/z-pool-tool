@@ -9,7 +9,7 @@ let handle_event : event -> unit Lwt.t = function
   | `Tenant_added tenant -> Repo.insert tenant
   | `Tenant_edited tenant -> Repo.update tenant
   | `Operator_assigned_to_tenant (tenant, user) ->
-    Authz.assign user (Authz.operator tenant.id)
+    Permission.assign user (Role.operator tenant.id)
   | `Operator_divested_from_tenant (tenant, user) ->
-    Authz.divest user (Authz.operator tenant.id)
+    Permission.divest user (Role.operator tenant.id)
 ;;

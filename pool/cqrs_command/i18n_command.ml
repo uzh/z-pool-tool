@@ -11,8 +11,8 @@ end = struct
   let can user _ =
     let open Lwt.Syntax in
     let* tenant = Tenant.find_by_user user in
-    Authz.can
+    Permission.can
       user
-      ~any_of:[ Authz.Update (Authz.Tenant, Some tenant.Tenant.id) ]
+      ~any_of:[ Permission.Update (Permission.Tenant, Some tenant.Tenant.id) ]
   ;;
 end

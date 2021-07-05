@@ -1,0 +1,3 @@
+(library
+ (name role)
+ (libraries sihl permission))
