@@ -1,4 +1,4 @@
-(* This is provided by Sihl *)
+(* This is provided by Sihl and can be removed later on, use it for TDD *)
 
 let todo = failwith "todo"
 

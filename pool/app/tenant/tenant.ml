@@ -1,3 +1,6 @@
+include Entity
+include Event
+
 type list_recruiters =
   { limit : int
   ; offset : int
@@ -11,4 +14,4 @@ type list_tenants =
   ; fitler : string
   }
 
-type handle_tenants = list_tenants -> Entity.tenant list Lwt.t
+type handle_tenants = list_tenants -> tenant list Lwt.t

@@ -1,4 +1,4 @@
-type permission = string * string
+type permission = string * string option
 type assign = Sihl.User.t -> permission list -> unit Lwt.t
 
 let assign : assign = fun user permissions -> Repo.insert user.id permissions

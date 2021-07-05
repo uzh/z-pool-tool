@@ -5,14 +5,14 @@ type update =
   ; paused : string
   }
 
-type t =
+type event =
   [ `Created of Entity.participant
   | `Details_updated of Entity.participant * update
   | `Password_updated of Entity.participant * string
   | `Email_updated of Entity.participant * string
   ]
 
-type handle_event = t -> unit Lwt.t
+type handle_event = event -> unit Lwt.t
 
 let handle_event : handle_event =
   let open Lwt.Syntax in

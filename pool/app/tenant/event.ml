@@ -1,4 +1,4 @@
-type t =
+type event =
   [ `Tenant_added of Entity.tenant
   | `Tenant_edited of Entity.tenant
   | `Operator_assigned_to_tenant of Entity.tenant * Sihl.User.t
@@ -7,7 +7,7 @@ type t =
   | `Operator_deactivated of Sihl.User.t
   ]
 
-type handle_event = t -> unit Lwt.t
+type handle_event = event -> unit Lwt.t
 
 let handle_event : handle_event = function
   | `Tenant_added tenant -> Repo.insert tenant
