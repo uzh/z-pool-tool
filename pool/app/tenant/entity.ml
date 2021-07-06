@@ -12,3 +12,4 @@ type tenant =
   ; created_at : bool
   ; updated_at : bool
   }
+[@@deriving eq, show]

@@ -11,10 +11,10 @@ Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizationa
 ### User types
 
 #### Root
-Is responsible for running a Z-Pool instance.
+Is responsible for running a Pool Tool instance.
 
 #### Operator
-The operator's job is to run a participant pool instance. If Z-Pool is hosted on-premise, then the operator has to run the Z-Pool instance, too.
+The operator's job is to run a participant pool instance. If Pool Tool is hosted on-premise, then the operator has to run the Pool Tool instance, too.
 
 The operator is a primary user.
 
@@ -145,6 +145,15 @@ This section discusses high-level principles that guide the development of the a
 - High cohesion, low coupling
 - A little copying is better than the wrong abstraction
 - Ensure all components are stateless, the only stateful part it the persistence layer
+- HTTP Handlers are fetching things
+- Command has to be easily serializable, no entities only ids
+- Authorization outside of command, the caller of a command handler needs to call `can` as well (usually HTTP handler)
+- Queries are implicit and exposed throught the models
+- Big chunk of business logic in pure command handler functions, test those thorougly
+- One test for each event handling
+- Side effects (mutations) only in event handlers
+- Command VerbThing, Event is ThingVerbInPast
+- It is not allowed to create an event in an event handler
 
 ## Software Architecture
 This section describes the big picture of the software containers & components and their interactions.
@@ -187,7 +196,7 @@ This external service is used to send SMS.
 This external service is used to send emails.
 
 #### Tenant Database
-Participant pools are external systems from the point of view of the Z-Pool instance.
+Participant pools are external systems from the point of view of the Pool Tool instance.
 
 ### Component diagram
 Every component is assumed to have access to the `Main Database`, so this dependency is not explicitly listed.
@@ -284,7 +293,7 @@ Different primary users need different participant and experiement fields. Apart
 We build a customization framework that allows to attach arbitrary data to entities. It should be ergonomic to read, updte and list customized entities. Every domain component needs to use the customization framework in order to work with customized entities.
 
 ### Configuration
-Z-Pool and Sihl follow the [12 Factor App](https://12factor.net/ "12 Factor App") convention. Configurations are set using environment variables or, at run-time, using Sihl's configuration service.
+Pool Tool and Sihl follow the [12 Factor App](https://12factor.net/ "12 Factor App") convention. Configurations are set using environment variables or, at run-time, using Sihl's configuration service.
 
 ### Architectural layering
 The architectural layering borrows concepts and from [Domain-driven design](https://martinfowler.com/tags/domain%20driven%20design.html) and [Hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)).
@@ -339,7 +348,7 @@ The decision log is a list of all decisions made regarding the architecture.
 
 ### OCaml vs. JS vs. Ruby vs. Python
 #### Context
-- A range of programming languages were evaluated considering the experience of the development team with the language and the quality attributes of Z-Pool. Among the candidates were OCaml, JavaScript, Ruby and Python.
+- A range of programming languages were evaluated considering the experience of the development team with the language and the quality attributes of Pool Tool. Among the candidates were OCaml, JavaScript, Ruby and Python.
 - The order of the combined experience of the development team in descending order is: JavaScript, Ruby, OCaml, Python.
 - There are projects at the Department of Economics written in each of the languages mentioned.
 - It is important to fulfill the non-functional requirements regarding maintanability, extensibility, performance, reliability and data consistency & integrity.
@@ -348,7 +357,7 @@ The decision log is a list of all decisions made regarding the architecture.
 OCaml was chosen because of its strict and powerful compile-time type system.
 
 #### Consequences
-- A steeper learning curve requires more effort and time spent in preparing the implementation of Z-Pool
+- A steeper learning curve requires more effort and time spent in preparing the implementation of Pool Tool
 - The initial development is slower with OCaml than with the other 3 options
 - Long-term development is faster and cheaper, the longer the project exists the higher the return of invest
 - Increased efficiency: the system can process a higher load using the same resources as the other 3 options
@@ -356,7 +365,7 @@ OCaml was chosen because of its strict and powerful compile-time type system.
 ### Domain-driven development & Type-driven development vs. Top-down domain modelling
 #### Context
 - Given OCaml as the choice of language, type-driven development becomes possible. This approach enables developers to encode business rules into the static types in order to mathematically prove their correctness.
-- The business rules of Z-Pool should be apparent, easy to understand and separated from other code.
+- The business rules of Pool Tool should be apparent, easy to understand and separated from other code.
 - Manually creating costly diagrams should be kept at minimum in order to keep the iteration cycles small
 - The development team has experience in Domain-driven development & Type-driven development as well as with the top-down doamin modelling approach
 
@@ -407,7 +416,7 @@ No SPA, but server-side rendered pages with enhanced bits and pieces.
 
 #### Consequences
 - Use [HTMX](https://htmx.org/) where sensible to implement dynamic parts without maintaining JavaScript
-- Z-Pool can only offer basic interactive & dynamic elements
+- Pool Tool can only offer basic interactive & dynamic elements
 - Adding complex interactive features might justify the use of an SPA
 - There is no JavaScript to maintain
 

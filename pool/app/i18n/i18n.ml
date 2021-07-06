@@ -3,8 +3,8 @@ include Event
 (* This can be cached in memory for a limited period of time *)
 type translate = Settings.language -> string -> string Lwt.t
 
-let translate : translate = fun _ _ -> Sihl.todo
+let translate : translate = fun _ -> Sihl.todo
 
 type find_all = unit -> Entity.property list Lwt.t
 
-let find_all _ = Sihl.todo
+let find_all = Sihl.todo

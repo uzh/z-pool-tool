@@ -12,7 +12,7 @@ module Sign_up : sig
     :  ?allowed_email_suffixes:string list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> (Participant.event list, string) Result.t
+    -> ([> Participant.event ] list, string) Result.t
 end = struct
   type t =
     { email : string
@@ -23,7 +23,33 @@ end = struct
     ; terms_accepted_at : Sihl.timestamp
     }
 
-  let handle ?allowed_email_suffixes:_ ?password_policy:_ _ = Sihl.todo
+  let default_password_policy p =
+    if String.length p < 8 then Error "password_policy_text" else Ok ()
+  ;;
+
+  let handle
+      ?allowed_email_suffixes
+      ?(password_policy = default_password_policy)
+      command
+    =
+    let ( let* ) = Result.bind in
+    let* () = password_policy command.password in
+    let* recruitment_channel =
+      Participant.recruitment_channel_of_string command.recruitment_channel
+    in
+    let* () = Participant.validate_email allowed_email_suffixes command.email in
+    let participant =
+      Participant.
+        { email = command.email
+        ; password = command.password
+        ; firstname = command.firstname
+        ; lastname = command.lastname
+        ; recruitment_channel
+        ; terms_accepted_at = command.terms_accepted_at
+        }
+    in
+    Ok [ `Created participant ]
+  ;;
 end
 
 module UpdateDetails : sig
@@ -49,7 +75,7 @@ end = struct
     ; paused : string
     }
 
-  let handle _ ~email:_ ~password:_ = Sihl.todo
+  let handle _ ~email:_ ~password:_ = Sihl.todo ()
 
   let can user command =
     let open Lwt.Syntax in
@@ -84,7 +110,7 @@ end = struct
     ; new_password : string
     }
 
-  let handle = Sihl.todo
+  let handle _ = Sihl.todo
 
   let can user command =
     let open Lwt.Syntax in
@@ -117,7 +143,7 @@ end = struct
     ; email : string
     }
 
-  let handle = Sihl.todo
+  let handle _ = Sihl.todo
 
   let can user command =
     let open Lwt.Syntax in

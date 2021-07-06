@@ -1,5 +1,5 @@
-let insert _ _ = Sihl.todo
-let delete _ _ = Sihl.todo
+let insert _ = Sihl.todo
+let delete _ = Sihl.todo
 
 let find_all_by_user _ =
   let result_from_db = [] in

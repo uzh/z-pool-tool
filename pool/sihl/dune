@@ -1,3 +1,4 @@
 (library
  (name sihl)
- (libraries lwt))
+ (libraries lwt)
+ (preprocess (pps ppx_deriving.show ppx_deriving.eq)))

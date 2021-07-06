@@ -4,6 +4,7 @@ type event =
   | `Operator_assigned_to_tenant of Entity.tenant * Sihl.User.t
   | `Operator_divested_from_tenant of Entity.tenant * Sihl.User.t
   ]
+[@@deriving eq, show]
 
 let handle_event : event -> unit Lwt.t = function
   | `Tenant_added tenant -> Repo.insert tenant

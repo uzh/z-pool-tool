@@ -3,6 +3,7 @@ type recruitment_channel =
   | Online
   | Lecture
   | Mailing
+[@@deriving eq, show]
 
 type participant =
   { user : Sihl.User.t
@@ -13,3 +14,4 @@ type participant =
   ; recruitment_channel : recruitment_channel
   ; terms_accepted_at : Sihl.timestamp
   }
+[@@deriving eq, show]

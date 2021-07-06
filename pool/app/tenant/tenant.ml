@@ -1,8 +1,8 @@
 include Entity
 include Event
 
-let find_by_participant _ = Sihl.todo
-let find_by_user _ = Sihl.todo
+let find_by_participant = Sihl.todo
+let find_by_user = Sihl.todo
 
 type list_recruiters =
   { limit : int

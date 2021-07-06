@@ -8,8 +8,8 @@
    invitation_text invitation_without_self_registration_subject
    invitation_without_self_registration_text reminder_sms_text reminder_subject
    reminder_text session_finish_subject session_finish_text terms_and_conditions
-   welcome_text *)
+   welcome_text password_policy_text *)
 
-let update _ = Sihl.todo
-let insert _ = Sihl.todo
-let delete _ = Sihl.todo
+let update = Sihl.todo
+let insert = Sihl.todo
+let delete = Sihl.todo

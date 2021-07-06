@@ -7,5 +7,5 @@ end = struct
   type t = { name : string }
 
   let handle = Sihl.todo
-  let can _ _ = Sihl.todo
+  let can _ = Sihl.todo
 end
