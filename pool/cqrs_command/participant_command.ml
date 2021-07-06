@@ -12,6 +12,8 @@ module Sign_up : sig
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
     -> ([> Participant.event ] list, string) Result.t
+
+  val decode : (string * string list) list -> (t, string) Result.t
 end = struct
   type t =
     { email : string
@@ -48,6 +50,8 @@ end = struct
     in
     Ok [ `Created participant ]
   ;;
+
+  let decode = Sihl.todo
 end
 
 module UpdateDetails : sig

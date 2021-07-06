@@ -11,6 +11,10 @@ module User = struct
   let create ~email:_ ~password:_ = todo ()
 end
 
+module Database = struct
+  let with_transaction _ = todo
+end
+
 type timestamp = unit [@@deriving eq, show]
 
 let now () = ()

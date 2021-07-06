@@ -1,0 +1,3 @@
+(library
+ (name http)
+ (libraries cqrs_command sihl lwt))
