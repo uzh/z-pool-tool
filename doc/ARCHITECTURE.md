@@ -263,6 +263,9 @@ The messaging component implements various messaging channels such as email and 
 ##### Calendar
 The calendar component provides a calendar.
 
+##### Scheduler
+The scheduler allows running jobs periodically.
+
 ## Code
 This section describes implementation details of parts of the system.
 
