@@ -211,21 +211,18 @@ The experiment component takes care of managing experiments, session experiments
 - `Calendar`
 - `Customization`
 
-##### Payout
-Payout lists can be downloaded or forwarded to a payout tool
-
-###### Dependencies
-- `Payout Tool`
-
-##### Tenant Database
+##### Participant
 Participants can register and fill in their details that make them eligible for certain studies
 
 ###### Dependencies
 - `Tenant Database`
 - `Customization`
 
-#### Query
+##### Tenant
+Tenants are managed centrally.
+- `Main Database`
 
+#### Query
 Users send queries over HTTP to read aggregate data.
 
 ##### Dashboard
@@ -235,14 +232,19 @@ Overview of future sessions per assistant, list of assigned open experiments, li
 Calculation of response rate, number of invitations per user
 
 #### Infrastructure
-
 Infrastructure components don't contain any business logic and are generic enough to be re-used in other projects.
 
-##### Authorization
-The authorization component ensures that person can only do send commands and queries they are allowed to send.
+##### Permission
+The permission component ensures that person can only do send commands and queries they are allowed to send.
 
 ###### Dependencies
 - `Cache`
+
+##### Role
+The role component provides functionality to manage permission roles.
+
+###### Dependencies
+- `Permission`
 
 ##### Customization
 The customization component is a generic library that can be used to add custom fields to entities. The custom fields can be managed at runtime without the need to apply database schema migrations.
@@ -268,17 +270,16 @@ This section describes implementation details of parts of the system.
 HTML is rendered on the server which is served as static HTML document to the tenant.
 
 ### Data binding
-HTTP requests are parsed as either commands or queries. Commands and queries are then validated and authorized and passed to the service layer.
-The service layer uses repositories to access the database.
+HTTP requests are parsed as either commands or queries. Commands and queries are then validated and authorized and passed to the service layer. The service layer uses repositories to access the database.
 
 ### Multi-page data collection
-No framework is used to collect data spanning multiple web pages. Instead, a ad-hoc case-by-case modeling of the multi-page as stateful process is required.
+No framework is used to collect data spanning multiple web pages. Instead, an ad-hoc case-by-case modeling of the multi-page as stateful process is required.
 
 ### Security
-Use management, authentication and protection against CSRF and SQL injection is provided by [Sihl](https://github.com/oxidizing/sihl "Sihl web framework")
+Use management, authentication and protection against CSRF and SQL injection is provided by [Sihl](https://github.com/oxidizing/sihl "Sihl web framework").
 
 ### Domain model
-Check out [ddd.ml](ddd.ml "Domain-driven Design file")
+Check out [the apps](pool/app "Apps")
 
 ### Customizations
 Different primary users need different participant and experiement fields. Apart from a small hard-coded entity `Participant` and `Experiment`, the entities are data-driven. Because their structure is defined as persisted as data, correctness can not be checked at compile-time.
@@ -289,10 +290,10 @@ We build a customization framework that allows to attach arbitrary data to entit
 Pool Tool and Sihl follow the [12 Factor App](https://12factor.net/ "12 Factor App") convention. Configurations are set using environment variables or, at run-time, using Sihl's configuration service.
 
 ### Architectural layering
-The architectural layering borrows concepts and from [Domain-driven design](https://martinfowler.com/tags/domain%20driven%20design.html) and [Hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)).
+The architectural layering borrows concepts from [Domain-driven design](https://martinfowler.com/tags/domain%20driven%20design.html) and [Hexagonal architecture](https://en.wikipedia.org/wiki/Hexagonal_architecture_(software)).
 
 #### Domain
-The domain is split up in entities, repositories and commands.
+The domain is split up in entities, repositories, models and commands.
 
 ##### Entity
 Entities are commonly referred to as "business models" or "business types". They represent things such as `Experiment`, `Invitation` or `Experimenter`. Some of the business logic lives here. They are allowed to depend on other entities only.
@@ -304,7 +305,7 @@ Repositories abstract away database access. They are only allowed to depend on e
 A model contains repositories, entities and business logic. Models are allowed to depend on other models and their entities, but never their repositories.
 
 ##### Command
-A command represents a user intent to change some data. In a command handler, multiple models are called in order to run business logic.
+A command represents a user intent to change some data. In a command handler, models are called in order to run business logic.
 
 #### Infrastructure
 The infrastructure is the generic part that contains no code related to the specific problem of recruiting participents.
@@ -320,15 +321,16 @@ Log levels of `INFO`, `DEBUG`, `WARNING` and `ERROR` can be configured.
 This section discusses the data model, the persistence layer technology and data ownership.
 
 ### Data model
-TODO [andy & jerben] data model
+TODO once the domain is somewhat ready
 
 ### Database
+There are two types of databases used by the Pool Tool instance.
 
 #### Main
 The main database stores meta information about the tenants and their pools. This meta information can be queried by all tenants.
 
 #### Tenant
-The tenant database stores participants, experiements, sessions, locations, permissions, calendar events and message templates.
+The tenant database stores customized participants, customized experiments, sessions, locations, permissions, calendar events and message templates.
 
 ### Backup
 Any backup strategy that works with traditional RDBM can be applied.
