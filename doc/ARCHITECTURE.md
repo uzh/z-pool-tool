@@ -1,4 +1,4 @@
-## Z-Pool
+# Pool Tool
 
 ## Context
 This section describes the tool that is being built as a software product, the existing environment and the user types.
@@ -11,35 +11,35 @@ Users of the "Z-Pool-Tool" are therefore institutes and other DIZH organizationa
 ### User types
 
 #### Root
-Is responsible for running a Pool Tool instance.
+The root is responsible for running a Pool Tool instance.
 
 #### Operator
-The operator's job is to run a participant pool instance. If Pool Tool is hosted on-premise, then the operator has to run the Pool Tool instance, too.
+The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
 
 The operator is a primary user.
 
 #### Recruiter
-The recruiter creates, populates and owns a participant pool. The recruiter has almost the same capabilities as the operator, except for accessing and modifying infrastructure.
+The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
 
 The recruiter is a primary user.
 
 #### Location manager
-Sees all sessions for a location, is responsible for that location. Can not edit, only view.
+The location manager sees all sessions for a location and is responsible for that location. Can not update, only read.
 
 The experimenter is a secondary user.
 
 #### Experimenter
-The experimenter is tasked to create and conduct experiments and consequentially owns experiments.
+The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
 
 The experimenter is a secondary user.
 
 #### Assistant (of Experimenter)
-Is responsible for one session, deals with payout and checks show-up/no-show on-site.
+The assistant is responsible for one session, deals with payout and checks show-up/no-show on-site.
 
 The experimenter is a secondary user.
 
 #### Participant
-The participant joins a participant pool and is invited to experiments by experimenters.
+The participant joins a participant pool and is invited to experiments by experimenters. The participant uses the system through both the desktop and mobile website.
 
 They are the end users of the system.
 
@@ -55,11 +55,12 @@ This section summarizes the key quality attributes that represent the non-functi
 * With increasing traffic, the application can be running on multiple physical hosts behind a load balancer since the processes are stateless
 
 ### Availability (e.g. uptime, downtime, scheduled maintenance, 24x7, 99.9%, etc)
-* Scheduled maintance should notify users
-- TODO [steering committee] What do we want to define for the system? Best-effort up-time?
+* Scheduled maintenance should notify users
+* Best-effort availability is required
 
 ### Authentication
 - The default way of authentication is by providing an email address and a password
+- Authentication using Edu-ID needs to be supported as well
 - The default password policy should be strong enough according to best practices to render brute force attacks useless
 
 ### Authorization
@@ -69,15 +70,15 @@ This section summarizes the key quality attributes that represent the non-functi
 
 ### Data confidentiality
 - The right people have access to the right data (as defined in section "Data")
-- A tenant can not access other tenant's data
+- A tenant can not access other data of other tenants
 
 ### Extensibility
-- An engineers with no previous knowledge about the system but only about the technology used should be able to contribute & fix within days not weeks
+- An engineers with no previous knowledge about the system but only about the technology used should be able to contribute and fix within days not weeks
 
 ### Flexibility
-- The parts that face the participants is optimized as white label website which makes it easy to add custom branding
-- The structure of the pools varies between primary users, which means that the data collection from participants have to be configurable (custom on-boarding process)
-- The structure of the experiments varies between primary users
+- The part that face the participants is optimized as a white label website which makes it easy to add custom branding
+- The structure of the pools varies between tenants, which means that the data collection from participants have to be configurable (custom on-boarding process)
+- The structure of the experiments varies between tenants
 
 ### Auditing
 - Every activity that mutates data is logged and kept in an activity log
@@ -92,13 +93,13 @@ This section summarizes the key quality attributes that represent the non-functi
 
 ### Interoperability
 - It should be possible to query data using a JSON API, crawling is actively discouraged
-- It should be possible to export the pool
+- It should be possible to export pools
 
 ### Legal, compliance and regulatory requirements (e.g. data protection act)
 - TODO [steering committee] Does the system need to conform to GDPR?
 
 ### Internationalisation (i18n) and localisation (L10n)
-- The participant facing part should support German and English initially
+- The participant facing part should support German and English
 - The admin facing part should be English only
 - Localisation settings should be read from the browser and it should be possible to override them in the user settings
 
@@ -115,7 +116,7 @@ This section summarizes the key quality attributes that represent the non-functi
 - The system should be adaptable to changing requirements and environments
 
 ### Data consistency & integrity
-- The number of duplicate participant records should be kept at a minimum with automated processes
+- The number of duplicate participant records within a pool should be kept at a minimum with automated processes
 
 ## Constraints
 This section describes the existing constraints for the project, the products and the people involved.
@@ -124,35 +125,34 @@ This section describes the existing constraints for the project, the products an
 - SMS Gateway (GTX Messaging), HTTP API
 - TODO [ZI] UZH SMTP Server with rate limit
 - MariaDB Cluster with one write instance and 3 read clones
-- TODO [ZI] Edu-ID Authorization
+- TODO [ZI] Edu-ID Authentication
 - Gitlab API
 
 ## Principles
 This section discusses high-level principles that guide the development of the architecture.
 
-- The system is divided in two sub-systems; One that deals with Commands and one that deals with Queries
-- Keep the amount of customly written JavaScript at a minimum
+- The system is divided in two sub-systems; one that deals with Commands and one that deals with Queries
+- Keep the amount of custom JavaScript at a minimum
 - Separate pure code that has no side-effects from code that has side-effects
 - Declarative & functional core, imperative shell
 - Separate generic infrastructure components from domain components
 - Use module interfaces to achieve information hiding
 - Put as many business rules into pure code as possible
-- Prefer end-to-end testing to unit tests
+- End-to-end tests happy paths, unit test command handlers
 - No business logic in views
 - No database access in views
 - Don't use an ORM but write SQL queries by hand in order to have full control over the queries
 - Don't block when doing I/O
-- High cohesion, low coupling
 - A little copying is better than the wrong abstraction
-- Ensure all components are stateless, the only stateful part it the persistence layer
-- HTTP Handlers are fetching things
-- Command has to be easily serializable, no entities only ids
-- Authorization outside of command, the caller of a command handler needs to call `can` as well (usually HTTP handler)
-- Queries are implicit and exposed throught the models
-- Big chunk of business logic in pure command handler functions, test those thorougly
-- One test for each event handling
-- Side effects (mutations) only in event handlers
-- Command VerbThing, Event is ThingVerbInPast
+- Ensure all components are stateless, the only stateful part it the persistence layer (and the cache)
+- HTTP handlers are responsible for authorizing, parsing and calling a command handler
+- Authorization is done before the command is handled, the caller of a command handler needs to call `can` as well (usually HTTP handler)
+- Queries are implicit and exposed throught the model API
+- A big chunk of the business logic lives pure command handler functions, test those thoroughly including edge cases
+- Ideally there should be an integration test for every event
+- Side effects (mutations) can only occur in event handlers
+- The name of a command starts with a present verb, such as `SignUpParticipant` because is represents user intent
+- The name of an event starts with the thing, such as `ParticipantSignedUp` because it represents an immutable fact
 - It is not allowed to create an event in an event handler
 
 ## Software Architecture
@@ -162,40 +162,33 @@ This section describes the big picture of the software containers & components a
 
 ![Overview of software containers](doc/images/container.svg "Container diagram")
 
-#### Operator
-The operators make sure that the system runs smoothly. They use the system mostly through the desktop website and they have access to the underlying infrastructure. They are the technical partners of the recruiters.
-
-#### Recruiter
-The recruiters build and own participant pools. They use the system mostly through the desktop website. They don't have access to infrastructure components.
-
-#### Experimenter
-The experimenter is assigned to experiments by recruiters. They use both the desktop and the mobile website in order to conduct experiments.
-
-#### Participant
-The participant uses the system through both the desktop and mobile website.
+See the section "User types".
 
 #### Website
 The website is the entry point to the system, every user interacts with the system through it.
 
-#### Backend
+#### Load balancer
+The load balancer distributes incoming traffic to multiple running web app instances.
+
+#### Web app instance
 The backend serves the website and runs the business logic.
 
-#### Main Database
-This DB is used to persist data that is not related to participant data.
+#### Main database
+This database is used to persist data that is not related to a tenant. It contains the meta data of all tenants.
 
-#### Queue Worker
+#### Queue worker
 The queue worker runs business logic in a separate process than the backend.
 
 #### Cache
 The backend uses the cache to persist transient data to reduce the load in the infrastructure database. The cache must not cache pool data!
 
-#### SMS Gateway
+#### SMS gateway
 This external service is used to send SMS.
 
-#### E-Mail Transport
+#### E-Mail transport
 This external service is used to send emails.
 
-#### Tenant Database
+#### Tenant database
 Participant pools are external systems from the point of view of the Pool Tool instance.
 
 ### Component diagram
@@ -214,7 +207,7 @@ The experiment component takes care of managing experiments, session experiments
 
 ###### Dependencies
 - `Tenant Database`
-- `Messages`
+- `Messaging`
 - `Calendar`
 - `Customization`
 
@@ -378,46 +371,47 @@ Domain model discussions are held based on code that declaratively expresses bus
 - The compiler mathematically proves that certain parts of the specification have been implemented correctly
 
 ### Sihl vs. JS vs. Rails vs. Django
-TODO [jerben]
+
 #### Context
-- all technologies in use
-- most production experience with rails
-- current system in rails
+- All listed technologies are in use at the engineering team
+- The framework that has been used most is Rails
+- The legacy Pool Tool system is written in Rails
+- Sihl is the only framework that uses OCaml
+
 #### Decision
-- us sihl
+We use Sihl as the web framework.
+
 #### Consequences
-- steeper learning curve
-- dependency on a smaller framework with smaller user base
-- sustainable development (maintanability, correctness)
+- The learning curve is steeper, since there is only a small community around Sihl
+- The dependency on a web framework that is not established is risky
+- Sihl allows the development to be sustainable long-term
 
 ### Monolith vs. Micro Services
 #### Context
-- TODO [ZI] Do we have a UZH-wide container infrastructure?
-- Experience with monoliths & micro services
-- Micro services harder to operate, but easier to scale development
-- Team size small than 7
+- The team has experience with both monolithic and micro service architectures
+- Micro services are harder to operate, but it's easier to scale development (the number of developers)
+- The team size is smaller than 5
 
 #### Decision
-Modular but monolithic architecture
+A monolithic architecture is chosen.
 
 #### Consequences
-- Easier to deploy, operate and introspect
+- It's easier  o deploy, operate and introspect
 - Lower requirements for infrastructure
 - Max team size limited
 
 ### Server-side rendering vs. Single-page application (SPA)
 #### Context
-- No dedicted UI/UX part
+- There is no dedicated UI/UX/frontend role that knows only frontend technology well
 - People who develop backend are the same ones developing UI
 - The ecosystem and build processes of a typical SPA add a considerable amount of overhead
 
 #### Decision
-No SPA, but server-side rendered pages with enhanced bits and pieces.
+No SPA is used, but server-side rendered pages with enhanced bits and pieces.
 
 #### Consequences
-- Use [HTMX](https://htmx.org/) where sensible to implement dynamic parts without maintaining JavaScript
-- Pool Tool can only offer basic interactive & dynamic elements
-- Adding complex interactive features might justify the use of an SPA
+- [HTMX](https://htmx.org/) is used where sensible to implement dynamic parts without maintaining JavaScript
+- The Pool Tool can only offer basic interactive & dynamic elements
 - There is no JavaScript to maintain
 
 ### SAMPLE
