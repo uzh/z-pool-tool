@@ -5,7 +5,6 @@ module Sign_up : sig
     ; firstname : string
     ; lastname : string
     ; recruitment_channel : string
-    ; terms_accepted_at : Sihl.timestamp
     }
 
   val handle
@@ -20,7 +19,6 @@ end = struct
     ; firstname : string
     ; lastname : string
     ; recruitment_channel : string
-    ; terms_accepted_at : Sihl.timestamp
     }
 
   let default_password_policy p =
@@ -45,7 +43,7 @@ end = struct
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; recruitment_channel
-        ; terms_accepted_at = command.terms_accepted_at
+        ; terms_accepted_at = Sihl.now ()
         }
     in
     Ok [ `Created participant ]
