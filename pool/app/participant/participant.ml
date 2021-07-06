@@ -12,6 +12,13 @@ let recruitment_channel_of_string = function
   | _ -> Error "Invalid recruitment channel provided"
 ;;
 
+let recruitment_channel_to_string = function
+  | Friend -> "friend"
+  | Online -> "online"
+  | Lecture -> "lecture"
+  | Mailing -> "mailing"
+;;
+
 let strip_email_suffix email =
   (* TODO check whether this is stable *)
   let tail = String.split_on_char '@' email |> CCList.tail_opt in

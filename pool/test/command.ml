@@ -10,10 +10,6 @@ let () =
     [ "canary", [ test_case "test suite works" `Quick canary_test ]
     ; ( "participant"
       , [ test_case
-            "sign up invalid channel"
-            `Quick
-            Participant_test.sign_up_invalid_channel
-        ; test_case
             "sign up not allowed suffix"
             `Quick
             Participant_test.sign_up_not_allowed_suffix

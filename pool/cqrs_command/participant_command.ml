@@ -4,7 +4,7 @@ module Sign_up : sig
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : string
+    ; recruitment_channel : Participant.recruitment_channel
     }
 
   val handle
@@ -13,18 +13,40 @@ module Sign_up : sig
     -> t
     -> ([> Participant.event ] list, string) Result.t
 
-  val decode : (string * string list) list -> (t, string) Result.t
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
 end = struct
   type t =
     { email : string
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : string
+    ; recruitment_channel : Participant.recruitment_channel
     }
+
+  let command email password firstname lastname recruitment_channel =
+    { email; password; firstname; lastname; recruitment_channel }
+  ;;
 
   let default_password_policy p =
     if String.length p < 8 then Error "password_policy_text" else Ok ()
+  ;;
+
+  let schema =
+    Conformist.(
+      make
+        [ string "email"
+        ; string "password"
+        ; string "firstname"
+        ; string "lastname"
+        ; custom
+            (fun l -> l |> List.hd |> Participant.recruitment_channel_of_string)
+            (fun l -> [ Participant.recruitment_channel_to_string l ])
+            "recruitment_channel"
+            ~meta:()
+        ]
+        command)
   ;;
 
   let handle
@@ -34,9 +56,6 @@ end = struct
     =
     let ( let* ) = Result.bind in
     let* () = password_policy command.password in
-    let* recruitment_channel =
-      Participant.recruitment_channel_of_string command.recruitment_channel
-    in
     let* () = Participant.validate_email allowed_email_suffixes command.email in
     let participant =
       Participant.
@@ -44,14 +63,14 @@ end = struct
         ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
-        ; recruitment_channel
+        ; recruitment_channel = command.recruitment_channel
         ; terms_accepted_at = Sihl.now ()
         }
     in
     Ok [ `Created participant ]
   ;;
 
-  let decode = Sihl.todo
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module UpdateDetails : sig
