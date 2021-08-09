@@ -4,7 +4,7 @@ module Sign_up : sig
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : Participant.recruitment_channel
+    ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   val handle
@@ -22,7 +22,7 @@ end = struct
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : Participant.recruitment_channel
+    ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   let command email password firstname lastname recruitment_channel =

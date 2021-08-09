@@ -1,4 +1,5 @@
-(* Following list of i18n properties needs to be created by default per tenant *)
+(* Following list of i18n properties needs to be created by default per
+   tenant *)
 
 (* confirmation_subject confirmation_text
    confirmation_without_self_registration_subject

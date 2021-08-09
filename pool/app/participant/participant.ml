@@ -4,7 +4,9 @@ include Entity
 let login _ ~email:_ ~password:_ = Sihl.todo ()
 let find_by_user = Sihl.todo
 
-let recruitment_channel_of_string = function
+let recruitment_channel_of_string =
+  let open RecruitmentChannel in
+  function
   | "friend" -> Ok Friend
   | "online" -> Ok Online
   | "lecture" -> Ok Lecture
@@ -12,7 +14,9 @@ let recruitment_channel_of_string = function
   | _ -> Error "Invalid recruitment channel provided"
 ;;
 
-let recruitment_channel_to_string = function
+let recruitment_channel_to_string =
+  let open RecruitmentChannel in
+  function
   | Friend -> "friend"
   | Online -> "online"
   | Lecture -> "lecture"

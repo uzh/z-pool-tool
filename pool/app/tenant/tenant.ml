@@ -17,4 +17,4 @@ type list_tenants =
   ; fitler : string
   }
 
-type handle_tenants = list_tenants -> tenant list Lwt.t
+type handle_tenants = list_tenants -> t list Lwt.t

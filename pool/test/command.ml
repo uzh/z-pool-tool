@@ -1,4 +1,3 @@
-;;
 Printexc.record_backtrace true
 
 let canary_test () = Alcotest.(check int) "impossible" 4 (2 + 2)

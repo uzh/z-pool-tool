@@ -8,7 +8,7 @@ let sign_up_not_allowed_suffix () =
       ; password = "password"
       ; firstname = "Jane"
       ; lastname = "Doe"
-      ; recruitment_channel = Participant.Friend
+      ; recruitment_channel = Participant.RecruitmentChannel.Friend
       }
   in
   let events =
@@ -26,7 +26,7 @@ let sign_up () =
       ; password = "password"
       ; firstname = "Jane"
       ; lastname = "Doe"
-      ; recruitment_channel = Participant.Friend
+      ; recruitment_channel = Participant.RecruitmentChannel.Friend
       }
   in
   let events =

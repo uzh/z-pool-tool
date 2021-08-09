@@ -1,1 +1,1 @@
-type event = [ `Settings_changed of Entity.setting list ]
+type event = [ `Settings_changed of Entity.Setting.t list ]

@@ -1,17 +1,17 @@
 type create =
-  { email : string
-  ; password : string
-  ; firstname : string
-  ; lastname : string
-  ; recruitment_channel : Entity.recruitment_channel
+  { email : Entity.Email.t
+  ; password : Entity.Password.t
+  ; firstname : Entity.Firstname.t
+  ; lastname : Entity.Lastname.t
+  ; recruitment_channel : Entity.RecruitmentChannel.t
   ; terms_accepted_at : Sihl.timestamp
   }
 [@@deriving eq, show]
 
 type update =
-  { email : string
-  ; firstname : string
-  ; lastname : string
+  { email : Entity.Email.t
+  ; firstname : Entity.Firstname.t
+  ; lastname : Entity.Lastname.t
   ; paused : string
   }
 [@@deriving eq, show]
@@ -19,8 +19,8 @@ type update =
 type event =
   [ `Created of create
   | `Details_updated of Entity.participant * update
-  | `Password_updated of Entity.participant * string
-  | `Email_updated of Entity.participant * string
+  | `Password_updated of Entity.participant * Entity.Password.t
+  | `Email_updated of Entity.participant * Entity.Email.t
   ]
 [@@deriving eq, show]
 

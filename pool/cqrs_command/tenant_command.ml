@@ -44,7 +44,7 @@ module Edit_tenant : sig
     ; partner_logos : string
     }
 
-  val handle : t -> Tenant.tenant -> (Tenant.event list, string) result
+  val handle : t -> Tenant.t -> (Tenant.event list, string) result
   val can : Sihl.User.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -109,7 +109,7 @@ module Add_operator : sig
   val handle
     :  t
     -> Sihl.User.t
-    -> Tenant.tenant
+    -> Tenant.t
     -> (Tenant.event list, string) result
 
   val can : Sihl.User.t -> t -> bool Lwt.t

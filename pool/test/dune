@@ -1,4 +1,5 @@
 (test
  (name command)
  (libraries alcotest cqrs_command participant tenant)
- (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))
