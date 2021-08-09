@@ -18,6 +18,7 @@ depends: [
   "conformist" {>= "0.6.0"}
   "lwt" {>= "5.4.1"}
   "containers" {>= "3.4"}
+  "ocamlformat" {>= "0.18.0"}
   "alcotest-lwt" {>= "1.4.0"}
   "ppx_deriving" {>= "5.2.1"}
   "odoc" {with-doc}
@@ -36,4 +37,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "https://gitlab.uzh.ch/econ/study-coordination/pool"
+dev-repo: "git+https://gitlab.uzh.ch/econ/study-coordination/pool"
