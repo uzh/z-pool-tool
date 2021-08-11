@@ -1,5 +1,5 @@
 (library
  (name participant)
- (libraries sihl permission role)
+ (libraries sihl permission role utils ptime)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

@@ -10,6 +10,13 @@ module Language = struct
   type t =
     | En
     | De
+
+  let code = function
+    | En -> "EN"
+    | De -> "DE"
+  ;;
+
+  let label country_code = country_code |> code |> Utils.Countries.find
 end
 
 module EmailSuffix : sig
@@ -26,11 +33,11 @@ end
 
 module InactiveUser = struct
   module DisableAfter = struct
-    type t = Week.t
+    type t = Ptime.Span.t
   end
 
-  module WarnUser = struct
-    type t = Day.t
+  module Warning = struct
+    type t = Ptime.Span.t
   end
 end
 
@@ -40,7 +47,7 @@ module SettingValue = struct
     | EmailContact of ContactEmail.t
     | EmailSuffixes of EmailSuffix.t list
     | UserSetToInactiveAfter of InactiveUser.DisableAfter.t
-    | UserSendWarningBeforeInactive of InactiveUser.WarnUser.t
+    | UserSendWarningBeforeInactive of InactiveUser.Warning.t
 end
 
 module Setting = struct

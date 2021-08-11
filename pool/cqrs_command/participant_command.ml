@@ -11,7 +11,7 @@ module Sign_up : sig
     :  ?allowed_email_suffixes:string list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> ([> Participant.event ] list, string) Result.t
+    -> (Participant.event list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -67,7 +67,7 @@ end = struct
         ; terms_accepted_at = Sihl.now ()
         }
     in
-    Ok [ `Created participant ]
+    Ok [ Participant.Created participant ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data
@@ -82,7 +82,7 @@ module UpdateDetails : sig
     }
 
   val handle
-    :  Participant.participant
+    :  Participant.participant Participant.t
     -> email:string
     -> password:string
     -> (Participant.event list, string) Result.t
@@ -120,7 +120,7 @@ module UpdatePassword : sig
 
   val handle
     :  t
-    -> Participant.participant
+    -> Participant.participant Participant.t
     -> (Participant.event list, string) Result.t
 
   val can : Sihl.User.t -> t -> bool Lwt.t
@@ -154,7 +154,7 @@ module UpdateEmail : sig
 
   val handle
     :  t
-    -> Participant.participant
+    -> Participant.participant Participant.t
     -> (Participant.event list, string) Result.t
 
   val can : Sihl.User.t -> t -> bool Lwt.t

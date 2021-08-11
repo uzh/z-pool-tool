@@ -18,3 +18,13 @@ end
 type timestamp = unit [@@deriving eq, show]
 
 let now () = ()
+
+module Time = struct
+  module Span = struct
+    let seconds n = Ptime.Span.of_int_s n
+    let minutes n = Ptime.Span.of_int_s (60 * n)
+    let hours n = Ptime.Span.of_int_s (60 * 60 * n)
+    let days n = Ptime.Span.of_int_s (24 * 60 * 60 * n)
+    let weeks n = Ptime.Span.of_int_s (7 * 24 * 60 * 60 * n)
+  end
+end

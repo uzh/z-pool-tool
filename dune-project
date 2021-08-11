@@ -40,4 +40,6 @@
   (alcotest-lwt
    (>= 1.4.0))
   (ppx_deriving
-   (>= 5.2.1))))
+   (>= 5.2.1))
+  (ppx_variants_conv
+   (>= 0.14.1))))
