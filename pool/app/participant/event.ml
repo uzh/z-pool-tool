@@ -37,12 +37,18 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
 ;;
 
 let pp_person_event formatter (event : 'a person_event) : unit =
+  let person_pp = Entity.pp formatter in
   match event with
-  | DetailsUpdated (p1, _)
-  | PasswordUpdated (p1, _)
-  | EmailUpdated (p1, _)
-  | Disabled p1
-  | Verified p1 -> Entity.pp formatter p1
+  | DetailsUpdated (p1, updated) ->
+    let () = person_pp p1 in
+    pp_update formatter updated
+  | PasswordUpdated (p1, updated) ->
+    let () = person_pp p1 in
+    Entity.Password.pp formatter updated
+  | EmailUpdated (p1, updated) ->
+    let () = person_pp p1 in
+    Entity.Email.pp formatter updated
+  | Disabled p1 | Verified p1 -> person_pp p1
 ;;
 
 type event =
@@ -77,6 +83,14 @@ let pp_event formatter event =
   | OperatorEvents m -> pp_person_event formatter m
 ;;
 
+let handle_person_event : 'a person_event -> unit Lwt.t = function
+  | DetailsUpdated _ as user -> Repo.update user
+  | PasswordUpdated (person, password) -> Sihl.User.set_password person password
+  | EmailUpdated (_, _) -> Sihl.todo ()
+  | Disabled _ -> Sihl.todo ()
+  | Verified _ -> Sihl.todo ()
+;;
+
 let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
@@ -86,13 +100,10 @@ let handle_event : event -> unit Lwt.t =
     in
     let* () = Permission.assign user (Role.participant user.id) in
     Repo.insert participant
-  | ParticipantEvents event ->
-    (match event with
-    | DetailsUpdated _ as user -> Repo.update user
-    | PasswordUpdated (Participant person, password) ->
-      Sihl.User.set_password person.user password
-    | EmailUpdated (_, _) -> Sihl.todo ()
-    | Disabled _ -> Sihl.todo ()
-    | Verified _ -> Sihl.todo ())
-  | _ -> Lwt.return_unit
+  | ParticipantEvents event -> handle_person_event event
+  | AssistantEvents event -> handle_person_event event
+  | ExperimenterEvents event -> handle_person_event event
+  | LocationManagerEvents event -> handle_person_event event
+  | RecruiterEvents event -> handle_person_event event
+  | OperatorEvents event -> handle_person_event event
 ;;
