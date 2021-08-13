@@ -27,10 +27,12 @@ type 'a person_event =
 
 let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
   match one, two with
-  | DetailsUpdated (_, one), DetailsUpdated (_, two) -> equal_update one two
+  | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
+    Entity.equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one), PasswordUpdated (p2, two) ->
     Entity.equal p1 p2 && Password.equal one two
-  | EmailUpdated (_, one), EmailUpdated (_, two) -> Email.equal one two
+  | EmailUpdated (p1, one), EmailUpdated (p2, two) ->
+    Entity.equal p1 p2 && Email.equal one two
   | Disabled p1, Disabled p2 -> Entity.equal p1 p2
   | Verified p1, Verified p2 -> Entity.equal p1 p2
   | _ -> false
@@ -85,7 +87,9 @@ let pp_event formatter event =
 
 let handle_person_event : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated _ as user -> Repo.update user
-  | PasswordUpdated (person, password) -> Sihl.User.set_password person password
+  | PasswordUpdated (person, password) ->
+    (* Unpack Sihl.User from variant *)
+    Sihl.User.set_password person password
   | EmailUpdated (_, _) -> Sihl.todo ()
   | Disabled _ -> Sihl.todo ()
   | Verified _ -> Sihl.todo ()

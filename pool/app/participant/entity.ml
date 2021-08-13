@@ -72,7 +72,7 @@ type _ carrier =
   | RecruiterC : recruiter carrier
   | OperatorC : operator carrier
 
-let equal : type person1 person2. person1 t -> person2 t -> bool =
+let equal : type person. person t -> person t -> bool =
  fun p1 p2 ->
   match p1, p2 with
   | Participant one, Participant two
@@ -81,15 +81,7 @@ let equal : type person1 person2. person1 t -> person2 t -> bool =
   | LocationManager one, LocationManager two
   | Recruiter one, Recruiter two
   | Operator one, Operator two -> equal_person one two
-  | _ -> false
 ;;
-
-let equal_participant = equal
-let equal_assistant = equal
-let equal_experimenter = equal
-let equal_location_manager = equal
-let equal_recruiter = equal
-let equal_operator = equal
 
 let pp : type person. Format.formatter -> person t -> unit =
  fun formatter person ->
