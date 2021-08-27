@@ -19,7 +19,7 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV SIHL_ENV development
 
 RUN apt-get update -q \
-  && apt-get install -yqq \
+  && apt-get install -yqq --no-install-recommends \
   default-jre \
   # emacs-nox for emacs, but sihl cannot be installed without
   emacs-nox \

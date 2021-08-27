@@ -30,7 +30,7 @@ services:
     command: /workspace/.devcontainer/wait-for-database.sh test sleep infinity
 
   database:
-    image: mariadb:10.3
+    image: mariadb:10.4
     command: --max_allowed_packet=629145600
     ports: [3316:3306]
     environment:
