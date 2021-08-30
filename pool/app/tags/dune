@@ -1,3 +1,3 @@
 (library
  (name tags)
- (libraries sihl ptime))
+ (libraries sihl person ptime))

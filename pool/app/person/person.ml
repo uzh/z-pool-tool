@@ -1,27 +1,8 @@
 include Event
 include Entity
 
-let login _ ~email:_ ~password:_ = Sihl.todo ()
-let find_by_user = Sihl.todo
-
-let recruitment_channel_of_string =
-  let open RecruitmentChannel in
-  function
-  | "friend" -> Ok Friend
-  | "online" -> Ok Online
-  | "lecture" -> Ok Lecture
-  | "mailing" -> Ok Mailing
-  | _ -> Error "Invalid recruitment channel provided"
-;;
-
-let recruitment_channel_to_string =
-  let open RecruitmentChannel in
-  function
-  | Friend -> "friend"
-  | Online -> "online"
-  | Lecture -> "lecture"
-  | Mailing -> "mailing"
-;;
+let login _ ~email:_ ~password:_ = Utils.todo ()
+let find_by_user = Utils.todo
 
 let strip_email_suffix email =
   (* TODO check whether this is stable *)
@@ -43,4 +24,4 @@ let validate_email allowed_email_suffixes email =
       else Error "Invalid email suffix provided")
 ;;
 
-let find_duplicates = Sihl.todo
+let find_duplicates = Utils.todo

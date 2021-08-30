@@ -1,5 +1,7 @@
 (library
  (name person)
- (libraries sihl permission role utils ptime)
+ (libraries sihl sihl-user service permission role utils ptime)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))
+
+(include_subdirs unqualified)

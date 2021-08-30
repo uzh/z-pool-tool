@@ -7,18 +7,18 @@ type request = unit
 type response = unit
 type handler = request -> response Lwt.t
 
-let urlencoded_of_request = Sihl.todo
-let response_of_redirect = Sihl.todo
-let response = Sihl.todo
+let urlencoded_of_request = Utils.todo
+let response_of_redirect = Utils.todo
+let response = Utils.todo
 
 module Tenant_middleware = struct
   let tenant_db_of_request _ =
     (* TODO fetch tenant connection pool based on subdomain *)
-    Sihl.todo
+    Utils.todo
   ;;
 end
 
-let handle_events _ = Sihl.todo
+let handle_events _ = Utils.todo
 
 let sign_up : handler =
  fun req ->
@@ -30,7 +30,7 @@ let sign_up : handler =
   match command with
   | Ok command ->
     let events = Command.Sign_up.handle ~allowed_email_suffixes command in
-    Sihl.Database.with_transaction
+    Utils.Database.with_transaction
       (fun conn ->
         match events with
         | Ok events ->

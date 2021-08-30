@@ -31,10 +31,16 @@
    (>= 4.12.0))
   (conformist
    (>= 0.6.0))
+  (sihl
+   (= 1.0.0~rc3))
+  (sihl-user
+   (= 1.0.0~rc3))
   (lwt
    (>= 5.4.1))
   (containers
    (>= 3.4))
+  (caqti-driver-mariadb
+   (>= 1.6.0))
   (ocamlformat
    (>= 0.18.0))
   (alcotest-lwt

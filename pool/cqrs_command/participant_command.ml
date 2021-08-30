@@ -41,8 +41,8 @@ end = struct
         ; string "firstname"
         ; string "lastname"
         ; custom
-            (fun l -> l |> List.hd |> Person.recruitment_channel_of_string)
-            (fun l -> [ Person.recruitment_channel_to_string l ])
+            (fun l -> l |> List.hd |> Person.RecruitmentChannel.of_string)
+            (fun l -> [ Person.RecruitmentChannel.to_string l ])
             "recruitment_channel"
             ~meta:()
         ]
@@ -64,7 +64,7 @@ end = struct
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; recruitment_channel = command.recruitment_channel
-        ; terms_accepted_at = Sihl.now ()
+        ; terms_accepted_at = Ptime_clock.now ()
         }
     in
     Ok [ Person.Created participant ]
@@ -87,7 +87,7 @@ module UpdateDetails : sig
     -> password:string
     -> (Person.event list, string) Result.t
 
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : string
@@ -96,7 +96,7 @@ end = struct
     ; paused : string
     }
 
-  let handle _ ~email:_ ~password:_ = Sihl.todo ()
+  let handle _ ~email:_ ~password:_ = Utils.todo ()
 
   let can user command =
     let open Lwt.Syntax in
@@ -123,7 +123,7 @@ module UpdatePassword : sig
     -> Person.participant Person.t
     -> (Person.event list, string) Result.t
 
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : string
@@ -131,7 +131,7 @@ end = struct
     ; new_password : string
     }
 
-  let handle _ = Sihl.todo
+  let handle _ = Utils.todo
 
   let can user command =
     let open Lwt.Syntax in
@@ -157,14 +157,14 @@ module UpdateEmail : sig
     -> Person.participant Person.t
     -> (Person.event list, string) Result.t
 
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : string
     ; email : string
     }
 
-  let handle _ = Sihl.todo
+  let handle _ = Utils.todo
 
   let can user command =
     let open Lwt.Syntax in

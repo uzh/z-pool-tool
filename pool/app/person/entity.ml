@@ -16,14 +16,26 @@ end
 
 module Paused = struct
   type t = bool [@@deriving eq, show]
+
+  let t = Caqti_type.bool
 end
 
 module Disabled = struct
   type t = bool [@@deriving eq, show]
+
+  let t = Caqti_type.bool
+end
+
+module TermsAccepted = struct
+  type t = Ptime.t [@@deriving eq, show]
+
+  let t = Caqti_type.ptime
 end
 
 module Verified = struct
   type t = Ptime.t [@@deriving eq, show]
+
+  let t = Caqti_type.ptime
 end
 
 module RecruitmentChannel = struct
@@ -33,15 +45,41 @@ module RecruitmentChannel = struct
     | Lecture
     | Mailing
   [@@deriving eq, show]
+
+  let of_string = function
+    | "friend" -> Ok Friend
+    | "online" -> Ok Online
+    | "lecture" -> Ok Lecture
+    | "mailing" -> Ok Mailing
+    | _ -> Error "Invalid recruitment channel provided"
+  ;;
+
+  let to_string = function
+    | Friend -> "friend"
+    | Online -> "online"
+    | Lecture -> "lecture"
+    | Mailing -> "mailing"
+  ;;
+
+  let t =
+    Caqti_type.(
+      custom
+        ~encode:(fun m -> m |> to_string |> Result.ok)
+        ~decode:of_string
+        string)
+  ;;
 end
 
 type person =
-  { user : Sihl.User.t
+  { user : Sihl_user.t
+        [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Sihl.timestamp
+  ; terms_accepted_at : TermsAccepted.t
   ; paused : Paused.t
   ; disabled : Disabled.t
   ; verified : Verified.t
+  ; created_at : Ptime.t
+  ; updated_at : Ptime.t
   }
 [@@deriving eq, show]
 
@@ -93,6 +131,9 @@ let pp : type person. Format.formatter -> person t -> unit =
   | Recruiter m
   | Operator m -> pp_person formatter m
 ;;
+
+let equal_operator = equal
+let pp_operator = pp
 
 type duplicate =
   { first : (participant t, experimenter t) Utils.OneOf2.t

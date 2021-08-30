@@ -6,7 +6,7 @@ type create =
   ; firstname : Firstname.t
   ; lastname : Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Sihl.timestamp
+  ; terms_accepted_at : TermsAccepted.t
   }
 [@@deriving eq, show]
 
@@ -85,14 +85,16 @@ let pp_event formatter event =
   | OperatorEvents m -> pp_person_event formatter m
 ;;
 
-let handle_person_event : 'a person_event -> unit Lwt.t = function
+let handle_person_event : 'a person_event -> unit Lwt.t =
+  let open Lwt.Syntax in
+  function
   | DetailsUpdated _ as user -> Repo.update user
   | PasswordUpdated (person, password) ->
-    (* Unpack Sihl.User from variant *)
-    Sihl.User.set_password person password
-  | EmailUpdated (_, _) -> Sihl.todo ()
-  | Disabled _ -> Sihl.todo ()
-  | Verified _ -> Sihl.todo ()
+    let* _ = Repo.set_password person password in
+    Lwt.return_unit
+  | EmailUpdated (_, _) -> Utils.todo ()
+  | Disabled _ -> Utils.todo ()
+  | Verified _ -> Utils.todo ()
 ;;
 
 let handle_event : event -> unit Lwt.t =
@@ -100,7 +102,11 @@ let handle_event : event -> unit Lwt.t =
   function
   | Created participant ->
     let* user =
-      Sihl.User.create ~email:participant.email ~password:participant.password
+      Service.User.create_user
+        ~name:participant.firstname
+        ~given_name:participant.lastname
+        ~password:participant.password
+        participant.email
     in
     let* () = Permission.assign user (Role.participant user.id) in
     Repo.insert participant

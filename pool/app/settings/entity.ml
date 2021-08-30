@@ -53,7 +53,7 @@ end
 module Setting = struct
   type t =
     { setting : SettingValue.t
-    ; created_at : Sihl.timestamp
-    ; updated_at : Sihl.timestamp
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
     }
 end

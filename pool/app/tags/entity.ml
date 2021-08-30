@@ -17,14 +17,12 @@ module Description = struct
   type t = string
 end
 
-type owner = User of Sihl.User.t
-
-type tag =
+type 'a tag =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; relation : Relation.t
-  ; owner : Sihl.User.t
+  ; owner : 'a Person.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }

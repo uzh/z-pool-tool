@@ -1,5 +1,0 @@
-(library
- (name sihl)
- (libraries lwt ptime)
- (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))

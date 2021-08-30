@@ -1,2 +1,2 @@
-let insert = Sihl.todo
-let update = Sihl.todo
+let insert = Utils.todo
+let update = Utils.todo

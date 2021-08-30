@@ -11,7 +11,7 @@ module Add_tenant : sig
     }
 
   val handle : t -> (Tenant.event list, string) result
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { title : string
@@ -24,7 +24,7 @@ end = struct
     ; partner_logos : string
     }
 
-  let handle = Sihl.todo
+  let handle = Utils.todo
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
@@ -45,7 +45,7 @@ module Edit_tenant : sig
     }
 
   val handle : t -> Tenant.t -> (Tenant.event list, string) result
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { tenant_id : string
@@ -59,7 +59,7 @@ end = struct
     ; partner_logos : string
     }
 
-  let handle = Sihl.todo
+  let handle = Utils.todo
 
   let can user command =
     Permission.can
@@ -72,11 +72,11 @@ module Destroy_tenant : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Tenant.event list, string) result
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle = Sihl.todo
+  let handle = Utils.todo
 
   let can user command =
     Permission.can
@@ -88,12 +88,12 @@ end
 module Add_root : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl.User.t -> (Tenant.event list, string) result
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val handle : t -> Sihl_user.t -> (Tenant.event list, string) result
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
-  let handle = Sihl.todo
+  let handle = Utils.todo
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
@@ -108,18 +108,18 @@ module Add_operator : sig
 
   val handle
     :  t
-    -> Sihl.User.t
+    -> Sihl_user.t
     -> Tenant.t
     -> (Tenant.event list, string) result
 
-  val can : Sihl.User.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { user_id : string
     ; tenant_id : string
     }
 
-  let handle = Sihl.todo
+  let handle = Utils.todo
 
   let can user command =
     Permission.can
