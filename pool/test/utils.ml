@@ -1,10 +1,10 @@
 (* All events that are possible in the whole system *)
 type event =
-  | ParticipantEvents of Participant.event
+  | PersonEvents of Person.event
   | TenantEvents of Tenant.event
 [@@deriving eq, show]
 
-let participant_events events = ParticipantEvents events
+let person_events events = PersonEvents events
 let tenant_events events = TenantEvents events
 
 (* Testable *)
