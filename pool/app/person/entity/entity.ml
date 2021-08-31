@@ -1,8 +1,10 @@
-module Email = struct
+module Email = Entity_email
+
+module Password = struct
   type t = string [@@deriving eq, show]
 end
 
-module Password = struct
+module PasswordConfirmed = struct
   type t = string [@@deriving eq, show]
 end
 
@@ -132,11 +134,28 @@ let pp : type person. Format.formatter -> person t -> unit =
   | Operator m -> pp_person formatter m
 ;;
 
-let equal_operator = equal
-let pp_operator = pp
+type any = Any : 'a t -> any
 
-type duplicate =
-  { first : (participant t, experimenter t) Utils.OneOf2.t
-  ; second : (participant t, experimenter t) Utils.OneOf2.t
-  ; ignored_at : Ptime.t option
-  }
+let equal_any one two =
+  let id model =
+    match model with
+    | Any (Participant { user; _ })
+    | Any (Assistant { user; _ })
+    | Any (Experimenter { user; _ })
+    | Any (LocationManager { user; _ })
+    | Any (Recruiter { user; _ })
+    | Any (Operator { user; _ }) -> user.Sihl_user.id
+  in
+  String.equal (id one) (id two)
+;;
+
+let pp_any f (Any m) = pp f m
+
+module Duplicate = struct
+  type t =
+    { first : any [@equal equal_any] [@printer pp_any]
+    ; second : any [@equal equal_any] [@printer pp_any]
+    ; ignored_at : Ptime.t option
+    }
+  [@@deriving eq, show]
+end

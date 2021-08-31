@@ -1,7 +1,7 @@
 open Entity
 
 type create =
-  { email : Email.t
+  { email : Email.unverified Email.t [@equal Email.equal] [@printer Email.pp]
   ; password : Password.t
   ; firstname : Firstname.t
   ; lastname : Lastname.t
@@ -11,17 +11,20 @@ type create =
 [@@deriving eq, show]
 
 type update =
-  { email : Email.t
-  ; firstname : Firstname.t
+  { firstname : Firstname.t
   ; lastname : Lastname.t
   ; paused : Paused.t
   }
 [@@deriving eq, show]
 
+type update_email =
+  { email : Email.unverified Email.t [@equal Email.equal] [@printer Email.pp] }
+[@@deriving eq, show]
+
 type 'a person_event =
   | DetailsUpdated of 'a t * update
-  | PasswordUpdated of 'a t * Password.t
-  | EmailUpdated of 'a t * Email.t
+  | PasswordUpdated of 'a t * Password.t * PasswordConfirmed.t
+  | EmailUpdated of 'a t * Email.unverified Email.t
   | Disabled of 'a t
   | Verified of 'a t
 
@@ -29,7 +32,7 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
   match one, two with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     Entity.equal p1 p2 && equal_update one two
-  | PasswordUpdated (p1, one), PasswordUpdated (p2, two) ->
+  | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
     Entity.equal p1 p2 && Password.equal one two
   | EmailUpdated (p1, one), EmailUpdated (p2, two) ->
     Entity.equal p1 p2 && Email.equal one two
@@ -44,9 +47,9 @@ let pp_person_event formatter (event : 'a person_event) : unit =
   | DetailsUpdated (p1, updated) ->
     let () = person_pp p1 in
     pp_update formatter updated
-  | PasswordUpdated (p1, updated) ->
+  | PasswordUpdated (p1, _, _) ->
     let () = person_pp p1 in
-    Entity.Password.pp formatter updated
+    Entity.Password.pp formatter "******"
   | EmailUpdated (p1, updated) ->
     let () = person_pp p1 in
     Entity.Email.pp formatter updated
@@ -55,6 +58,7 @@ let pp_person_event formatter (event : 'a person_event) : unit =
 
 type event =
   | Created of create
+  | VerifyEmail of update_email
   | ParticipantEvents of participant person_event
   | AssistantEvents of assistant person_event
   | ExperimenterEvents of experimenter person_event
@@ -77,6 +81,7 @@ let equal_event event1 event2 : bool =
 let pp_event formatter event =
   match event with
   | Created m -> pp_create formatter m
+  | VerifyEmail m -> pp_update_email formatter m
   | ParticipantEvents m -> pp_person_event formatter m
   | AssistantEvents m -> pp_person_event formatter m
   | ExperimenterEvents m -> pp_person_event formatter m
@@ -88,9 +93,9 @@ let pp_event formatter event =
 let handle_person_event : 'a person_event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
-  | DetailsUpdated _ as user -> Repo.update user
-  | PasswordUpdated (person, password) ->
-    let* _ = Repo.set_password person password in
+  | DetailsUpdated (params, person) -> Repo.update person params
+  | PasswordUpdated (person, password, confirmed) ->
+    let* _ = Repo.set_password person password confirmed in
     Lwt.return_unit
   | EmailUpdated (_, _) -> Utils.todo ()
   | Disabled _ -> Utils.todo ()
@@ -101,15 +106,30 @@ let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Created participant ->
+    let email_address = participant.email |> Email.show in
     let* user =
       Service.User.create_user
         ~name:participant.firstname
         ~given_name:participant.lastname
         ~password:participant.password
-        participant.email
+        email_address
     in
     let* () = Permission.assign user (Role.participant user.id) in
     Repo.insert participant
+  | VerifyEmail { email } ->
+    let* _ =
+      let open Lwt.Syntax in
+      let* user = Service.User.find_by_email_opt (email |> Email.show) in
+      match user with
+      | Some user ->
+        let _ = Service.User.update { user with confirmed = true } in
+        Lwt.return_unit
+      | None ->
+        Logs.warn (fun m -> m "Could not be verified!");
+        Lwt.return_unit
+    in
+    let () = Utils.todo email in
+    Lwt.return_unit
   | ParticipantEvents event -> handle_person_event event
   | AssistantEvents event -> handle_person_event event
   | ExperimenterEvents event -> handle_person_event event

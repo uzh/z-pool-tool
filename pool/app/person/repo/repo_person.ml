@@ -1,24 +1,5 @@
 open Entity
 
-let to_person
-    : type a.
-      a carrier
-      -> [< `Assistant
-         | `Experimenter
-         | `LocationManager
-         | `Operator
-         | `Participant
-         | `Recruiter
-         ]
-  = function
-  | ParticipantC -> `Participant
-  | AssistantC -> `Assistant
-  | ExperimenterC -> `Experimenter
-  | LocationManagerC -> `LocationManager
-  | RecruiterC -> `Recruiter
-  | OperatorC -> `Operator
-;;
-
 let user_caqti =
   let status =
     let encode m = m |> Sihl_user.status_to_string |> Result.ok in
@@ -48,19 +29,24 @@ let user_caqti =
                 , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
             ) ) ) )
     =
-    Ok
-      { id
-      ; email
-      ; username
-      ; name
-      ; given_name
-      ; password
-      ; status
-      ; admin
-      ; confirmed
-      ; created_at
-      ; updated_at
-      }
+    (* TODO checks for confirmed users only, a Person should just be valid, if
+       it was confirmed. Check if there is a better place for this. *)
+    if not confirmed
+    then Error "User is not confirmed"
+    else
+      Ok
+        { id
+        ; email
+        ; username
+        ; name
+        ; given_name
+        ; password
+        ; status
+        ; admin
+        ; confirmed
+        ; created_at
+        ; updated_at
+        }
   in
   Caqti_type.(
     custom

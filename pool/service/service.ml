@@ -2,3 +2,4 @@
    implementation to use. *)
 module Migration = Sihl.Database.Migration.MariaDb
 module User = Sihl_user.MariaDb
+module Token = Sihl_token.MariaDb
