@@ -8,6 +8,8 @@ module Add_tenant : sig
     ; icon : string
     ; logos : string
     ; partner_logos : string
+    ; disabled : bool
+    ; default_language : string
     }
 
   val handle : t -> (Tenant.event list, string) result
@@ -22,6 +24,8 @@ end = struct
     ; icon : string
     ; logos : string
     ; partner_logos : string
+    ; disabled : bool
+    ; default_language : string
     }
 
   let handle = Utils.todo
@@ -42,6 +46,8 @@ module Edit_tenant : sig
     ; icon : string
     ; logos : string
     ; partner_logos : string
+    ; disabled : bool
+    ; default_language : string
     }
 
   val handle : t -> Tenant.t -> (Tenant.event list, string) result
@@ -57,6 +63,8 @@ end = struct
     ; icon : string
     ; logos : string
     ; partner_logos : string
+    ; disabled : bool
+    ; default_language : string
     }
 
   let handle = Utils.todo
@@ -129,4 +137,45 @@ end = struct
         ; Permission.Manage (Permission.Tenant, Some command.tenant_id)
         ]
   ;;
+end
+
+module Divest_operator : sig
+  type t =
+    { user_id : string
+    ; tenant_id : string
+    }
+
+  val handle
+    :  t
+    -> Sihl_user.t
+    -> Tenant.t
+    -> (Tenant.event list, string) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t =
+    { user_id : string
+    ; tenant_id : string
+    }
+
+  let handle = Utils.todo
+
+  let can user command =
+    Permission.can
+      user
+      ~any_of:
+        [ Permission.Manage (Permission.System, None)
+        ; Permission.Manage (Permission.Tenant, Some command.tenant_id)
+        ]
+  ;;
+end
+
+module Generate_status_report : sig
+  type t = { tenant_id : string }
+
+  val handle : t -> Tenant.t -> (Tenant.event list, string) result
+end = struct
+  type t = { tenant_id : string }
+
+  let handle = Utils.todo
 end

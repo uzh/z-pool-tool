@@ -10,10 +10,22 @@ module Language = struct
   type t =
     | En
     | De
+  [@@deriving eq, show]
 
   let code = function
     | En -> "EN"
     | De -> "DE"
+  ;;
+
+  let of_string = function
+    | "EN" -> Ok En
+    | "DE" -> Ok De
+    | _ -> Error "Invalid Language privided"
+  ;;
+
+  let t =
+    Caqti_type.(
+      custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
   ;;
 
   let label country_code = country_code |> code |> Utils.Countries.find

@@ -5,24 +5,29 @@ let equal_operator_event (t1, o1) (t2, o2) =
 ;;
 
 type event =
-  | TenantAdded of t
+  | TenantAdded of t [@equal equal]
   | TenantEdited of t
+  | TenantDestroyed of t
   | OperatorAssignedToTenant of t * Sihl_user.t
   | OperatorDivestedFromTenant of t * Sihl_user.t
+  | StatusReportGenerated of unit
 
 let handle_event : event -> unit Lwt.t = function
   | TenantAdded tenant -> Repo.insert tenant
   | TenantEdited tenant -> Repo.update tenant
+  | TenantDestroyed tenant -> Repo.destroy tenant
   | OperatorAssignedToTenant (tenant, user) ->
     Permission.assign user (Role.operator (tenant.id |> Id.to_human))
   | OperatorDivestedFromTenant (tenant, user) ->
     Permission.divest user (Role.operator (tenant.id |> Id.to_human))
+  | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
 let equal_event event1 event2 =
   match event1, event2 with
-  | TenantAdded one, TenantAdded two | TenantEdited one, TenantEdited two ->
-    equal one two
+  | TenantAdded one, TenantAdded two
+  | TenantEdited one, TenantEdited two
+  | TenantDestroyed one, TenantDestroyed two -> equal one two
   | ( OperatorAssignedToTenant (tenant_one, user_one)
     , OperatorAssignedToTenant (tenant_two, user_two) )
   | ( OperatorDivestedFromTenant (tenant_one, user_one)
@@ -34,9 +39,10 @@ let equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | TenantAdded m | TenantEdited m -> pp formatter m
+  | TenantAdded m | TenantEdited m | TenantDestroyed m -> pp formatter m
   | OperatorAssignedToTenant (tenant, user)
   | OperatorDivestedFromTenant (tenant, user) ->
     let () = pp formatter tenant in
     Sihl_user.pp formatter user
+  | StatusReportGenerated () -> Utils.todo ()
 ;;
