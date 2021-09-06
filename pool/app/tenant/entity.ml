@@ -80,6 +80,7 @@ type t =
   }
 [@@deriving eq, show]
 
+(* The system should proactively report degraded health to operators *)
 module StatusReport = struct
   module CreatedAt = struct
     type t = Ptime.t [@@deriving eq, show]
