@@ -79,7 +79,7 @@ let equal_event (one : event) (two : event) : bool =
   | _ -> false
 ;;
 
-let pp_person_event formatter (event : event) : unit =
+let pp_event formatter (event : event) : unit =
   let person_pp = pp formatter in
   match event with
   | Created m -> pp_create formatter m

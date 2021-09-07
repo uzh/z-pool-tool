@@ -5,7 +5,6 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
   let open Utils.Stringify in
   function
-  | ParticipantC -> participant, person `Participant
   | AssistantC -> assistant, person `Assistant
   | ExperimenterC -> experimenter, person `Experimenter
   | LocationManagerC -> location_manager, person `LocationManager
@@ -23,7 +22,6 @@ let set_password
  fun person password password_confirmation ->
   let open Lwt_result.Infix in
   match person with
-  | Participant { user; _ }
   | Assistant { user; _ }
   | Experimenter { user; _ }
   | LocationManager { user; _ }

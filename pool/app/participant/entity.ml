@@ -1,4 +1,5 @@
 open Common.Entity
+module Email = Email
 
 module RecruitmentChannel = struct
   type t =

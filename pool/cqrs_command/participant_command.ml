@@ -5,14 +5,14 @@ module Sign_up : sig
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : Person.RecruitmentChannel.t
+    ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   val handle
     :  ?allowed_email_suffixes:string list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> (Person.event list, string) Result.t
+    -> (Participant.event list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -24,7 +24,7 @@ end = struct
     ; password : string
     ; firstname : string
     ; lastname : string
-    ; recruitment_channel : Person.RecruitmentChannel.t
+    ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   let command email token password firstname lastname recruitment_channel =
@@ -44,8 +44,8 @@ end = struct
         ; string "firstname"
         ; string "lastname"
         ; custom
-            (fun l -> l |> List.hd |> Person.RecruitmentChannel.of_string)
-            (fun l -> [ Person.RecruitmentChannel.to_string l ])
+            (fun l -> l |> List.hd |> Participant.RecruitmentChannel.of_string)
+            (fun l -> [ Participant.RecruitmentChannel.to_string l ])
             "recruitment_channel"
             ~meta:()
         ]
@@ -59,10 +59,10 @@ end = struct
     =
     let ( let* ) = Result.bind in
     let* () = password_policy command.password in
-    let* () = Person.validate_email allowed_email_suffixes command.email in
-    let* email = Person.Email.create command.email command.token in
+    let* () = Participant.validate_email allowed_email_suffixes command.email in
+    let* email = Participant.Email.create command.email command.token in
     let participant =
-      Person.
+      Participant.
         { email
         ; password = command.password
         ; firstname = command.firstname
@@ -71,7 +71,7 @@ end = struct
         ; terms_accepted_at = Ptime_clock.now ()
         }
     in
-    Ok [ Person.Created participant ]
+    Ok [ Participant.Created participant ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data
@@ -86,10 +86,10 @@ module UpdateDetails : sig
     }
 
   val handle
-    :  Person.participant Person.t
+    :  Participant.t
     -> email:string
     -> password:string
-    -> (Person.event list, string) Result.t
+    -> (Participant.event list, string) Result.t
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -104,7 +104,7 @@ end = struct
 
   let can user command =
     let open Lwt.Syntax in
-    let* participant = Person.find_by_user user in
+    let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
     Permission.can
       user
@@ -122,11 +122,7 @@ module UpdatePassword : sig
     ; new_password : string
     }
 
-  val handle
-    :  t
-    -> Person.participant Person.t
-    -> (Person.event list, string) Result.t
-
+  val handle : t -> Participant.t -> (Participant.event list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -139,10 +135,10 @@ end = struct
 
   let can user command =
     let open Lwt.Syntax in
-    let* participant = Person.find_by_user user in
+    let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
     Permission.can
-      participant.Person.user
+      participant.Participant.user
       ~any_of:
         [ Permission.Update (Permission.Participant, Some command.id)
         ; Permission.Update (Permission.Tenant, Some tenant.id)
@@ -156,11 +152,7 @@ module UpdateEmail : sig
     ; email : string
     }
 
-  val handle
-    :  t
-    -> Person.participant Person.t
-    -> (Person.event list, string) Result.t
-
+  val handle : t -> Participant.t -> (Participant.event list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -172,10 +164,10 @@ end = struct
 
   let can user command =
     let open Lwt.Syntax in
-    let* participant = Person.find_by_user user in
+    let* participant = Participant.find_by_user user in
     let* tenant = Tenant.find_by_participant participant in
     Permission.can
-      participant.Person.user
+      participant.Participant.user
       ~any_of:
         [ Permission.Update (Permission.Participant, Some command.id)
         ; Permission.Update (Permission.Tenant, Some tenant.id)
