@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # default user is "opam"
+      - ..:/workspace:cached
+      - node_modules:/workspace/node_modules:cached
+      - opam:/home/opam/.opam:cached
+      - build:/workspace/_build:cached
+      - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
+      - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
+      - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
+    environment:
+      - DATABASE_URL=mariadb://root@database:3306/development
+      - OPAMSOLVERTIMEOUT=180
+      - PUBLIC_URL=http://localhost:3016
+      - SMTP_HOST=smtp.uzh.ch
+      - SMTP_PASSWORD=${ECON_SMTP_APP_PASSWORD}
+      - SMTP_PORT=587
+      - SMTP_SENDER=test@econ.uzh.ch
+      - SMTP_START_TLS=true
+      - SMTP_USERNAME=ecserv
+      - VERSION=dev
+    depends_on: [database]
+    ports: [3016:3000]
+    command: /workspace/.devcontainer/wait-for-database.sh test sleep infinity
+
+  database:
+    image: mariadb:10.4
+    command: --max_allowed_packet=629145600
+    ports: [3316:3306]
+    environment:
+      - TZ=Europe/Zurich
+      - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_DATABASE=development
+      - MYSQL_USER=root
+    volumes:
+      - ./data/db:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d/:ro
+
+  adminer:
+    image: adminer:4.7.6-standalone
+    restart: always
+    ports: [8080:8080]
+    depends_on: [database]
+
+volumes:
+  opam:
+  node_modules:
+  build:
