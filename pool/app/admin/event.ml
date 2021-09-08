@@ -1,4 +1,4 @@
-open Common.Entity
+module Common = Common
 open Entity
 
 type creatable_admin =
@@ -10,22 +10,22 @@ type creatable_admin =
 [@@deriving eq, show]
 
 type create =
-  { email : Email.Address.t
-  ; password : Password.t
-  ; firstname : Firstname.t
-  ; lastname : Lastname.t
+  { email : Common.Email.Address.t
+  ; password : Common.Password.t
+  ; firstname : Common.Firstname.t
+  ; lastname : Common.Lastname.t
   }
 [@@deriving eq, show]
 
 type update =
-  { firstname : Firstname.t
-  ; lastname : Lastname.t
+  { firstname : Common.Firstname.t
+  ; lastname : Common.Lastname.t
   }
 [@@deriving eq, show]
 
 type 'a person_event =
   | DetailsUpdated of 'a t * update
-  | PasswordUpdated of 'a t * Password.t * PasswordConfirmed.t
+  | PasswordUpdated of 'a t * Common.Password.t * Common.PasswordConfirmed.t
   | Disabled of 'a t
   | Verified of 'a t
 
@@ -57,7 +57,7 @@ let handle_event : event -> unit Lwt.t =
         ~name:admin.firstname
         ~given_name:admin.lastname
         ~password:admin.password
-        (Email.Address.show admin.email)
+        (Common.Email.Address.show admin.email)
     in
     let* () =
       match role with
@@ -81,7 +81,7 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
-    equal p1 p2 && Password.equal one two
+    equal p1 p2 && Common.Password.equal one two
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -95,7 +95,7 @@ let pp_person_event formatter (event : 'a person_event) : unit =
     pp_update formatter updated
   | PasswordUpdated (m, _, _) ->
     let () = person_pp m in
-    Password.pp formatter "******"
+    Common.Password.pp formatter "******"
   | Disabled m | Verified m -> person_pp m
 ;;
 

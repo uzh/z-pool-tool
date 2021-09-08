@@ -19,9 +19,7 @@ module Language = struct
   let label country_code = country_code |> code |> Utils.Countries.find
 end
 
-module EmailSuffix : sig
-  type t
-end = struct
+module EmailSuffix = struct
   type t = string
 end
 

@@ -1,14 +1,14 @@
 module Sign_up : sig
   type t =
-    { email : string
-    ; password : string
-    ; firstname : string
-    ; lastname : string
+    { email : Common.Email.Address.t
+    ; password : Common.Password.t
+    ; firstname : Common.Firstname.t
+    ; lastname : Common.Lastname.t
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   val handle
-    :  ?allowed_email_suffixes:string list
+    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
     -> (Participant.event list, string) Result.t
@@ -18,10 +18,10 @@ module Sign_up : sig
     -> (t, Conformist.error list) Result.t
 end = struct
   type t =
-    { email : string
-    ; password : string
-    ; firstname : string
-    ; lastname : string
+    { email : Common.Email.Address.t
+    ; password : Common.Password.t
+    ; firstname : Common.Firstname.t
+    ; lastname : Common.Lastname.t
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 

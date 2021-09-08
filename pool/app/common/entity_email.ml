@@ -30,7 +30,10 @@ module Address = struct
     CCOpt.bind tail CCList.head_opt
   ;;
 
-  let validate_suffix allowed_email_suffixes email =
+  let validate_suffix
+      (allowed_email_suffixes : Settings.EmailSuffix.t list option)
+      email
+    =
     match allowed_email_suffixes with
     | None -> Ok email
     | Some allowed_email_suffixes ->

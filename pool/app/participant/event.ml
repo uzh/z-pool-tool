@@ -1,27 +1,27 @@
-open Common.Entity
+module Common = Common
 open Entity
 
 type create =
   { email : Email.Address.t
-  ; password : Password.t
-  ; firstname : Firstname.t
-  ; lastname : Lastname.t
+  ; password : Common.Password.t
+  ; firstname : Common.Firstname.t
+  ; lastname : Common.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : TermsAccepted.t
+  ; terms_accepted_at : Common.TermsAccepted.t
   }
 [@@deriving eq, show]
 
 type update =
-  { firstname : Firstname.t
-  ; lastname : Lastname.t
-  ; paused : Paused.t
+  { firstname : Common.Firstname.t
+  ; lastname : Common.Lastname.t
+  ; paused : Common.Paused.t
   }
 [@@deriving eq, show]
 
 type event =
   | Created of create
   | DetailsUpdated of t * update
-  | PasswordUpdated of t * Password.t * PasswordConfirmed.t
+  | PasswordUpdated of t * Common.Password.t * Common.PasswordConfirmed.t
   | Disabled of t
   | Verified of t
 
@@ -52,7 +52,7 @@ let equal_event (one : event) (two : event) : bool =
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
-    equal p1 p2 && Password.equal one two
+    equal p1 p2 && Common.Password.equal one two
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -65,8 +65,8 @@ let pp_event formatter (event : event) : unit =
   | DetailsUpdated (p1, updated) ->
     let () = person_pp p1 in
     pp_update formatter updated
-  | PasswordUpdated (p1, _, _) ->
-    let () = person_pp p1 in
-    Password.pp formatter "******"
+  | PasswordUpdated (person, password, _) ->
+    let () = person_pp person in
+    Common.Password.pp formatter password
   | Disabled p1 | Verified p1 -> person_pp p1
 ;;
