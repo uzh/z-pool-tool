@@ -2,7 +2,7 @@ open Common.Entity
 open Entity
 
 type create =
-  { email : Email.unverified Email.t [@equal Email.equal] [@printer Email.pp]
+  { email : Email.Address.t
   ; password : Password.t
   ; firstname : Firstname.t
   ; lastname : Lastname.t
@@ -21,7 +21,7 @@ type update =
 type event =
   | Created of create
   | EmailUpdated of t * Email.unverified Email.t
-  | EmailVerify of Email.unverified Email.t
+  | EmailVerified of Email.unverified Email.t
   | DetailsUpdated of t * update
   | PasswordUpdated of t * Password.t * PasswordConfirmed.t
   | Disabled of t
@@ -31,30 +31,25 @@ let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Created participant ->
-    let email_address = participant.email |> Email.show in
+    let email_address = participant.email |> Email.Address.show in
+    let* token =
+      Service.Token.create
+        [ "email", email_address
+        ; "firstname", participant.firstname
+        ; "lastname", participant.lastname
+        ]
+    in
+    let email = Email.Unverified { address = email_address; token } in
     let* user =
       Service.User.create_user
         ~name:participant.firstname
         ~given_name:participant.lastname
         ~password:participant.password
-        email_address
+        (Email.show email)
     in
     let* () = Permission.assign user (Role.participant user.id) in
     Repo.insert participant
-  | EmailVerify email ->
-    let* _ =
-      let open Lwt.Syntax in
-      let* user = Service.User.find_by_email_opt (email |> Email.show) in
-      match user with
-      | Some user ->
-        let _ = Service.User.update { user with confirmed = true } in
-        Lwt.return_unit
-      | None ->
-        Logs.warn (fun m -> m "Could not be verified!");
-        Lwt.return_unit
-    in
-    let () = Utils.todo email in
-    Lwt.return_unit
+  | EmailVerified email -> Common.Event.Email.(handle_event @@ Verified email)
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
     let* _ = Repo.set_password person password confirmed in
@@ -67,7 +62,7 @@ let handle_event : event -> unit Lwt.t =
 let equal_event (one : event) (two : event) : bool =
   match one, two with
   | Created m, Created p -> equal_create m p
-  | EmailVerify m, EmailVerify p -> Email.equal m p
+  | EmailVerified m, EmailVerified p -> Email.equal m p
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
@@ -83,7 +78,7 @@ let pp_event formatter (event : event) : unit =
   let person_pp = pp formatter in
   match event with
   | Created m -> pp_create formatter m
-  | EmailVerify m -> Email.pp formatter m
+  | EmailVerified m -> Email.pp formatter m
   | DetailsUpdated (p1, updated) ->
     let () = person_pp p1 in
     pp_update formatter updated

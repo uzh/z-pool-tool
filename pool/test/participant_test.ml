@@ -5,7 +5,6 @@ let sign_up_not_allowed_suffix () =
   let command =
     Participant_command.Sign_up.
       { email = "john@bluewin.ch"
-      ; token = "email_token"
       ; password = "password"
       ; firstname = "Jane"
       ; lastname = "Doe"
@@ -25,7 +24,6 @@ let sign_up () =
   let command =
     Participant_command.Sign_up.
       { email = "john@gmail.com"
-      ; token = "email_token"
       ; password = "password"
       ; firstname = "Jane"
       ; lastname = "Doe"

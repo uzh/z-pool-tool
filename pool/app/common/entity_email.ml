@@ -7,18 +7,51 @@ end
 module Address = struct
   type t = string [@@deriving eq, show]
 
-  let create email =
+  let remove_whitespaces =
     let open Re in
-    (* Removes all whitespaces from the email address and checks for more than 1
-       character before and more than 2 characters after the @ sign *)
-    let email = replace_string (space |> compile) ~by:"" email in
+    replace_string (space |> compile) ~by:""
+  ;;
+
+  let validate_characters email =
+    let open Re in
+    (* Checks for more than 1 character before and more than 2 characters after
+       the @ sign *)
     let regex =
       seq [ repn any 1 None; char '@'; repn any 2 None ]
       |> whole_string
       |> compile
     in
-    if Re.execp regex email then Ok email else Error "Invalid email address!"
+    if Re.execp regex email then Ok email else Error "Invalid email provided"
   ;;
+
+  let strip_email_suffix email =
+    (* TODO check whether this is stable *)
+    let tail = CCString.split_on_char '@' email |> CCList.tail_opt in
+    CCOpt.bind tail CCList.head_opt
+  ;;
+
+  let validate_suffix allowed_email_suffixes email =
+    match allowed_email_suffixes with
+    | None -> Ok email
+    | Some allowed_email_suffixes ->
+      (match strip_email_suffix email with
+      (* TODO check whether this is really the case *)
+      | None -> Error "Email malformed"
+      | Some suffix ->
+        if CCList.mem ~eq:String.equal suffix allowed_email_suffixes
+        then Ok email
+        else Error "Invalid email suffix provided")
+  ;;
+
+  let validate allowed_email_suffixes email =
+    let open CCResult in
+    email
+    |> remove_whitespaces
+    |> validate_characters
+    >>= validate_suffix allowed_email_suffixes
+  ;;
+
+  let create email = email
 end
 
 module VerifiedAt = struct

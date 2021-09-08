@@ -27,7 +27,6 @@ let set_password
   | LocationManager { user; _ }
   | Recruiter { user; _ }
   | Operator { user; _ } ->
-    (* TODO add password confirmation *)
     Service.User.set_password user ~password ~password_confirmation
     >|= CCFun.const ()
 ;;

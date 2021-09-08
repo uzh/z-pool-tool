@@ -10,8 +10,7 @@ type creatable_admin =
 [@@deriving eq, show]
 
 type create =
-  { role : creatable_admin
-  ; email : Email.unverified Email.t [@equal Email.equal] [@printer Email.pp]
+  { email : Email.Address.t
   ; password : Password.t
   ; firstname : Firstname.t
   ; lastname : Lastname.t
@@ -24,20 +23,14 @@ type update =
   }
 [@@deriving eq, show]
 
-type update_email =
-  { email : Email.unverified Email.t [@equal Email.equal] [@printer Email.pp] }
-[@@deriving eq, show]
-
 type 'a person_event =
   | DetailsUpdated of 'a t * update
   | PasswordUpdated of 'a t * Password.t * PasswordConfirmed.t
-  | EmailUpdated of 'a t * Email.unverified Email.t
   | Disabled of 'a t
   | Verified of 'a t
 
 type event =
-  | Created of create
-  | VerifyEmail of update_email
+  | Created of creatable_admin * create
   | AssistantEvents of assistant person_event
   | ExperimenterEvents of experimenter person_event
   | LocationManagerEvents of location_manager person_event
@@ -51,7 +44,6 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   | PasswordUpdated (person, password, confirmed) ->
     let* _ = Repo.set_password person password confirmed in
     Lwt.return_unit
-  | EmailUpdated (_, _) -> Utils.todo ()
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
 ;;
@@ -59,31 +51,24 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
 let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
-  | Created participant ->
-    let email_address = participant.email |> Email.show in
+  | Created (role, admin) ->
     let* user =
       Service.User.create_user
-        ~name:participant.firstname
-        ~given_name:participant.lastname
-        ~password:participant.password
-        email_address
+        ~name:admin.firstname
+        ~given_name:admin.lastname
+        ~password:admin.password
+        (Email.Address.show admin.email)
     in
-    let* () = Permission.assign user (Role.participant user.id) in
-    Repo.insert participant
-  | VerifyEmail { email } ->
-    let* _ =
-      let open Lwt.Syntax in
-      let* user = Service.User.find_by_email_opt (email |> Email.show) in
-      match user with
-      | Some user ->
-        let _ = Service.User.update { user with confirmed = true } in
-        Lwt.return_unit
-      | None ->
-        Logs.warn (fun m -> m "Could not be verified!");
-        Lwt.return_unit
+    let* () =
+      match role with
+      | Assistant -> Permission.assign user (Role.assistant user.id)
+      | Experimenter -> Permission.assign user (Role.experimenter user.id)
+      | Recruiter -> Permission.assign user (Role.recruiter user.id)
+      | LocationManager ->
+        Permission.assign user (Role.location_manager user.id)
+      | Operator -> Permission.assign user (Role.operator user.id)
     in
-    let () = Utils.todo email in
-    Lwt.return_unit
+    Repo.insert user
   | AssistantEvents event -> handle_person_event event
   | ExperimenterEvents event -> handle_person_event event
   | LocationManagerEvents event -> handle_person_event event
@@ -97,8 +82,6 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
     equal p1 p2 && Password.equal one two
-  | EmailUpdated (p1, one), EmailUpdated (p2, two) ->
-    equal p1 p2 && Email.equal one two
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -107,21 +90,19 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
 let pp_person_event formatter (event : 'a person_event) : unit =
   let person_pp = pp formatter in
   match event with
-  | DetailsUpdated (p1, updated) ->
-    let () = person_pp p1 in
+  | DetailsUpdated (m, updated) ->
+    let () = person_pp m in
     pp_update formatter updated
-  | PasswordUpdated (p1, _, _) ->
-    let () = person_pp p1 in
+  | PasswordUpdated (m, _, _) ->
+    let () = person_pp m in
     Password.pp formatter "******"
-  | EmailUpdated (p1, updated) ->
-    let () = person_pp p1 in
-    Email.pp formatter updated
-  | Disabled p1 | Verified p1 -> person_pp p1
+  | Disabled m | Verified m -> person_pp m
 ;;
 
 let equal_event event1 event2 : bool =
   match event1, event2 with
-  | Created m, Created p -> equal_create m p
+  | Created (role1, m), Created (role2, p) ->
+    equal_creatable_admin role1 role2 && equal_create m p
   | AssistantEvents m, AssistantEvents p -> equal_person_event m p
   | ExperimenterEvents m, ExperimenterEvents p -> equal_person_event m p
   | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
@@ -132,8 +113,9 @@ let equal_event event1 event2 : bool =
 
 let pp_event formatter event =
   match event with
-  | Created m -> pp_create formatter m
-  | VerifyEmail m -> pp_update_email formatter m
+  | Created (role, m) ->
+    let () = pp_creatable_admin formatter role in
+    pp_create formatter m
   | AssistantEvents m -> pp_person_event formatter m
   | ExperimenterEvents m -> pp_person_event formatter m
   | LocationManagerEvents m -> pp_person_event formatter m

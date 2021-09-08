@@ -1,7 +1,6 @@
 module Sign_up : sig
   type t =
     { email : string
-    ; token : string
     ; password : string
     ; firstname : string
     ; lastname : string
@@ -20,15 +19,14 @@ module Sign_up : sig
 end = struct
   type t =
     { email : string
-    ; token : string
     ; password : string
     ; firstname : string
     ; lastname : string
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
-  let command email token password firstname lastname recruitment_channel =
-    { email; token; password; firstname; lastname; recruitment_channel }
+  let command email password firstname lastname recruitment_channel =
+    { email; password; firstname; lastname; recruitment_channel }
   ;;
 
   let default_password_policy p =
@@ -39,7 +37,6 @@ end = struct
     Conformist.(
       make
         [ string "email"
-        ; string "token"
         ; string "password"
         ; string "firstname"
         ; string "lastname"
@@ -59,8 +56,9 @@ end = struct
     =
     let ( let* ) = Result.bind in
     let* () = password_policy command.password in
-    let* () = Participant.validate_email allowed_email_suffixes command.email in
-    let* email = Participant.Email.create command.email command.token in
+    let* email =
+      Participant.Email.Address.validate allowed_email_suffixes command.email
+    in
     let participant =
       Participant.
         { email

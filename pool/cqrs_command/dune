@@ -8,5 +8,6 @@
   settings
   participant
   admin
+  common
   tenant
   conformist))
