@@ -10,7 +10,6 @@ type create =
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogo.t
-  ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }
 [@@deriving eq, show]
@@ -37,7 +36,7 @@ let equal_operator_event (t1, o1) (t2, o2) =
 type event =
   | Added of create [@equal equal]
   | Edited of t * update
-  | Destroyed of t
+  | Destroyed of Id.t
   | Disabled of t
   | Enabled of t
   | ActivateMaintenance of t
@@ -58,7 +57,7 @@ let handle_event : event -> unit Lwt.t = function
       create_t.icon
       create_t.logos
       create_t.partner_logos
-      create_t.disabled
+      (* create_t.disabled *)
       create_t.default_language
       ()
     |> Repo.insert
@@ -90,7 +89,7 @@ let handle_event : event -> unit Lwt.t = function
     ; updated_at
     }
     |> Repo.update
-  | Destroyed tenant -> Repo.destroy (tenant.id |> Id.to_human)
+  | Destroyed tenant_id -> Repo.destroy (tenant_id |> Id.to_human)
   | Disabled tenant ->
     let disabled = true in
     { tenant with disabled } |> Repo.update
@@ -115,7 +114,8 @@ let equal_event event1 event2 =
   | Added one, Added two -> equal_create one two
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
     equal tenant_one tenant_two && equal_update update_one update_two
-  | Destroyed one, Destroyed two
+  | Destroyed one, Destroyed two ->
+    String.equal (one |> Id.to_human) (two |> Id.to_human)
   | Enabled one, Enabled two
   | Disabled one, Disabled two
   | ActivateMaintenance one, ActivateMaintenance two
@@ -135,11 +135,9 @@ let pp_event formatter event =
   | Edited (tenant, update) ->
     let () = pp formatter tenant in
     pp_update formatter update
-  | Destroyed m
-  | Disabled m
-  | Enabled m
-  | ActivateMaintenance m
-  | DeactivateMaintenance m -> pp formatter m
+  | Destroyed m -> Id.pp formatter m
+  | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
+    pp formatter m
   | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->
     let () = pp formatter tenant in
     Sihl_user.pp formatter user

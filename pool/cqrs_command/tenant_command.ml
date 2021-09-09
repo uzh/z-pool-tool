@@ -42,7 +42,7 @@ end = struct
 
   let handle (t : t) =
     let open Tenant in
-    let go () =
+    let create =
       let open CCResult in
       let* title = Title.create t.title in
       let* description = Description.create t.description in
@@ -61,7 +61,7 @@ end = struct
       let* icon = Icon.create t.icon in
       let* logos = Logos.create t.logos in
       let* partner_logos = PartnerLogo.create t.partner_logos in
-      let* disabled = Disabled.create t.disabled in
+      (* let* disabled = Disabled.create t.disabled in *)
       let* default_language = Settings.Language.of_string t.default_language in
       Ok
         { title
@@ -73,15 +73,12 @@ end = struct
         ; icon
         ; logos
         ; partner_logos
-        ; disabled
         ; default_language
         }
     in
-    (* TODO [timhub]: Type error *)
-    () |> go |> failwith ""
+    let event (t : Tenant.create) = Tenant.Added t in
+    create >|= event
   ;;
-
-  (* let event (t : Tenant.create) = Tenant.Added t in () |> go >|= event *)
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
@@ -132,7 +129,7 @@ end = struct
 
   let handle (t : t) (tenant : Tenant.t) =
     let open Tenant in
-    let go () =
+    let update =
       let open CCResult in
       let* title = Title.create t.title in
       let* description = Description.create t.description in
@@ -168,7 +165,7 @@ end = struct
         }
     in
     let event (t : Tenant.update) = Tenant.Edited (tenant, t) in
-    () |> go >|= event
+    update >|= event
   ;;
 
   let can user command =
@@ -181,17 +178,12 @@ end
 module Destroy_tenant : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Tenant.event, string) Lwt_result.t
+  val handle : t -> (Tenant.event, 'a) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle t =
-    let open Lwt_result.Infix in
-    let go () = t.tenant_id |> Tenant.find_by_id in
-    let event (t : Tenant.t) = Tenant.Destroyed t in
-    () |> go >|= event
-  ;;
+  let handle t = Ok (Tenant.Destroyed t.tenant_id)
 
   let can user command =
     Permission.can
@@ -203,17 +195,12 @@ end
 module Disable_tenant : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Tenant.event, string) Lwt_result.t
+  val handle : Tenant.t -> (Tenant.event, 'b) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle t =
-    let open Lwt_result.Infix in
-    let go () = t.tenant_id |> Tenant.find_by_id in
-    let event (t : Tenant.t) = Tenant.Disabled t in
-    () |> go >|= event
-  ;;
+  let handle tenant = Ok (Tenant.Disabled tenant)
 
   let can user command =
     Permission.can
@@ -225,17 +212,12 @@ end
 module Enable_tenant : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Tenant.event, string) Lwt_result.t
+  val handle : Tenant.t -> (Tenant.event, 'b) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle t =
-    let open Lwt_result.Infix in
-    let go () = t.tenant_id |> Tenant.find_by_id in
-    let event (t : Tenant.t) = Tenant.Enabled t in
-    () |> go >|= event
-  ;;
+  let handle tenant = Ok (Tenant.Enabled tenant)
 
   let can user command =
     Permission.can
@@ -250,7 +232,7 @@ module Assign_operator : sig
     ; tenant_id : string
     }
 
-  val handle : t -> Sihl_user.t -> Tenant.t -> (Tenant.event, string) result
+  val handle : Tenant.t -> Sihl_user.t -> (Tenant.event, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -258,7 +240,7 @@ end = struct
     ; tenant_id : string
     }
 
-  let handle _ user tenant = Ok (Tenant.OperatorAssigned (tenant, user))
+  let handle tenant user = Ok (Tenant.OperatorAssigned (tenant, user))
 
   let can user command =
     Permission.can
@@ -276,7 +258,7 @@ module Divest_operator : sig
     ; tenant_id : string
     }
 
-  val handle : t -> (Tenant.event, string) result Lwt.t
+  val handle : Tenant.t -> Sihl_user.t -> (Tenant.event, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -284,16 +266,7 @@ end = struct
     ; tenant_id : string
     }
 
-  let handle t =
-    let open CCResult.Infix in
-    let open Lwt.Syntax in
-    let* user = Service.User.find t.user_id in
-    let* tenant = Tenant.find_by_id t.tenant_id in
-    let event (user : Sihl_user.t) (tenant : Tenant.t) =
-      Ok (Tenant.OperatorDivested (tenant, user))
-    in
-    tenant >>= event user |> Lwt_result.lift
-  ;;
+  let handle tenant user = Ok (Tenant.OperatorDivested (tenant, user))
 
   let can user command =
     Permission.can

@@ -138,7 +138,6 @@ let create
     icon
     logos
     partner_logos
-    disabled
     default_language
     ()
   =
@@ -153,7 +152,7 @@ let create
   ; logos
   ; partner_logos
   ; maintenance = false
-  ; disabled
+  ; disabled = false
   ; default_language
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
