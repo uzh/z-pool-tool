@@ -1,8 +1,24 @@
 open Entity
 
+type create =
+  { title : Title.t
+  ; description : Description.t
+  ; experiment_date : ExperimentDate.t
+  ; location : Location.t
+  }
+[@@deriving eq, show]
+
+type update =
+  { title : Title.t
+  ; description : Description.t
+  ; experiment_date : ExperimentDate.t
+  ; location : Location.t
+  }
+[@@deriving eq, show]
+
 type event =
-  | ExperimentAdded of t [@equal equal]
-  | ExperimentEdited of t
+  | ExperimentAdded of create
+  | ExperimentEdited of t * update
   | ExperimentDestroyed of t
   | ExperimenterAssignedToExperiment of t * Sihl_user.t
   | ExperimenterDivestedFromExperiment of t * Sihl_user.t
@@ -10,8 +26,20 @@ type event =
   | AssistantDivestedFromExperiment of t * Sihl_user.t
 
 let handle_event : event -> unit Lwt.t = function
-  | ExperimentAdded experiment -> Repo.insert experiment
-  | ExperimentEdited experiment -> Repo.update experiment
+  | ExperimentAdded create_t ->
+    create
+      create_t.title
+      create_t.description
+      create_t.experiment_date
+      create_t.location
+    |> Repo.insert
+  | ExperimentEdited (experiment, update_t) ->
+    let title = update_t.title in
+    let description = update_t.description in
+    let experiment_date = update_t.experiment_date in
+    let location = update_t.location in
+    { experiment with title; description; experiment_date; location }
+    |> Repo.update
   | ExperimentDestroyed experiment -> Repo.destroy experiment
   | ExperimenterAssignedToExperiment (experiment, user)
   | ExperimenterDivestedFromExperiment (experiment, user)
@@ -22,8 +50,10 @@ let handle_event : event -> unit Lwt.t = function
 
 let equal_event event1 event2 =
   match event1, event2 with
-  | ExperimentAdded one, ExperimentAdded two
-  | ExperimentEdited one, ExperimentEdited two
+  | ExperimentAdded one, ExperimentAdded two -> equal_create one two
+  | ( ExperimentEdited (experiment_one, update_one)
+    , ExperimentEdited (experiment_two, update_two) ) ->
+    equal experiment_one experiment_two && equal_update update_one update_two
   | ExperimentDestroyed one, ExperimentDestroyed two -> equal one two
   | ( ExperimenterAssignedToExperiment (experiment_one, user_one)
     , ExperimenterDivestedFromExperiment (experiment_two, user_two) ) ->
@@ -34,8 +64,11 @@ let equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | ExperimentAdded m | ExperimentEdited m | ExperimentDestroyed m ->
-    pp formatter m
+  | ExperimentAdded m -> pp_create formatter m
+  | ExperimentEdited (experiment, update) ->
+    let () = pp formatter experiment in
+    pp_update formatter update
+  | ExperimentDestroyed m -> pp formatter m
   | ExperimenterAssignedToExperiment (experiment, user)
   | ExperimenterDivestedFromExperiment (experiment, user)
   | AssistantAssignedToExperiment (experiment, user)
