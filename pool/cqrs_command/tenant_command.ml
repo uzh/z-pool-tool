@@ -6,6 +6,11 @@ module Add_tenant : sig
     ; description : string
     ; url : string
     ; database : string
+    ; smtp_server : string
+    ; smtp_port : string
+    ; smtp_username : string
+    ; smtp_authentication_method : string
+    ; smtp_protocol : string
     ; styles : string
     ; icon : string
     ; logos : string
@@ -22,6 +27,11 @@ end = struct
     ; description : string
     ; url : string
     ; database : string
+    ; smtp_server : string
+    ; smtp_port : string
+    ; smtp_username : string
+    ; smtp_authentication_method : string
+    ; smtp_protocol : string
     ; styles : string
     ; icon : string
     ; logos : string
@@ -37,6 +47,15 @@ end = struct
       let* title = Title.create t.title in
       let* description = Description.create t.description in
       let* url = Url.create t.url in
+      let* smtp_auth =
+        SmtpAuth.create
+          t.smtp_server
+          t.smtp_port
+          t.smtp_username
+          t.smtp_authentication_method
+          t.smtp_protocol
+          ()
+      in
       let* database = Database.create t.database in
       let* styles = Styles.create t.styles in
       let* icon = Icon.create t.icon in
@@ -49,6 +68,7 @@ end = struct
         ; description
         ; url
         ; database
+        ; smtp_auth
         ; styles
         ; icon
         ; logos
@@ -75,6 +95,11 @@ module Edit_tenant : sig
     ; description : string
     ; url : string
     ; database : string
+    ; smtp_server : string
+    ; smtp_port : string
+    ; smtp_username : string
+    ; smtp_authentication_method : string
+    ; smtp_protocol : string
     ; styles : string
     ; icon : string
     ; logos : string
@@ -92,6 +117,11 @@ end = struct
     ; description : string
     ; url : string
     ; database : string
+    ; smtp_server : string
+    ; smtp_port : string
+    ; smtp_username : string
+    ; smtp_authentication_method : string
+    ; smtp_protocol : string
     ; styles : string
     ; icon : string
     ; logos : string
@@ -107,6 +137,15 @@ end = struct
       let* title = Title.create t.title in
       let* description = Description.create t.description in
       let* url = Url.create t.url in
+      let* smtp_auth =
+        SmtpAuth.create
+          t.smtp_server
+          t.smtp_port
+          t.smtp_username
+          t.smtp_authentication_method
+          t.smtp_protocol
+          ()
+      in
       let* database = Database.create t.database in
       let* styles = Styles.create t.styles in
       let* icon = Icon.create t.icon in
@@ -119,6 +158,7 @@ end = struct
         ; description
         ; url
         ; database
+        ; smtp_auth
         ; styles
         ; icon
         ; logos
@@ -231,11 +271,6 @@ end = struct
 end
 
 module Divest_operator : sig
-  (* TODO [timhub]: pass ids or User & Tenant => see module Add_operator *)
-
-  (* val handle : t -> Sihl_user.t -> Tenant.t -> (Tenant.event, string)
-     result *)
-  (* let handle _ user tenant = Ok (Tenant.OperatorDivested (tenant, user)) *)
   type t =
     { user_id : string
     ; tenant_id : string

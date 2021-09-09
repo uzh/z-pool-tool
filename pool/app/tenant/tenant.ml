@@ -2,7 +2,6 @@ include Entity
 include Event
 module Filter = Utils.Filter
 
-(* TODO [timhub]: Where to call e.g. find by id *)
 let find_by_id (id : string) : (t, string) result Lwt.t = Utils.todo id
 let find_by_participant = Utils.todo
 let find_by_user = Utils.todo

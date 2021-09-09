@@ -1,3 +1,5 @@
+module SmtpAuth = Entity_smtp_auth
+
 module Id = struct
   type t = string [@@deriving eq, show]
 
@@ -92,6 +94,13 @@ module PartnerLogo = struct
   let t = Caqti_type.string
 end
 
+module Maintenance = struct
+  type t = bool [@@deriving eq, show]
+
+  let create t = Ok t
+  let t = Caqti_type.bool
+end
+
 module Disabled = struct
   type t = bool [@@deriving eq, show]
 
@@ -99,20 +108,18 @@ module Disabled = struct
   let t = Caqti_type.bool
 end
 
-(* Peropheral Systems
-
-   - Do we need an email address ( & phone number ) as sender for emails/sms? *)
-
 type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
   ; database : Database.t
+  ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogo.t
+  ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   ; created_at : Ptime.t
@@ -126,6 +133,7 @@ let create
     description
     url
     database
+    smtp_auth
     styles
     icon
     logos
@@ -139,25 +147,18 @@ let create
   ; description
   ; url
   ; database
+  ; smtp_auth
   ; styles
   ; icon
   ; logos
   ; partner_logos
+  ; maintenance = false
   ; disabled
   ; default_language
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }
 ;;
-
-(* TODO [timhub]: could that work?? *)
-(* type create = { title : Title.t ; description : Description.t ; url : Url.t ;
-   database : Database.t ; styles : Styles.t ; icon : Icon.t ; logos : Logos.t ;
-   partner_logos : PartnerLogo.t ; disabled : Disabled.t ; default_language :
-   Settings.Language.t } [@@deriving eq, show]
-
-   let create (model : create) : t = let id = Id.create () in { model with id ;
-   created_at = Ptime_clock.now () ; updated_at = Ptime_clock.now () } ;; *)
 
 (* The system should proactively report degraded health to operators *)
 module StatusReport = struct

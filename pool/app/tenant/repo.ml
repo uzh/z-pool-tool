@@ -8,13 +8,15 @@ let t =
         , ( m.description
           , ( m.url
             , ( m.database
-              , ( m.styles
-                , ( m.icon
-                  , ( m.logos
-                    , ( m.partner_logos
-                      , ( m.disabled
-                        , (m.default_language, (m.created_at, m.updated_at)) )
-                      ) ) ) ) ) ) ) ) )
+              , ( m.smtp_auth
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.logos
+                      , ( m.partner_logos
+                        , ( m.maintenance
+                          , ( m.disabled
+                            , (m.default_language, (m.created_at, m.updated_at))
+                            ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
@@ -22,12 +24,15 @@ let t =
         , ( description
           , ( url
             , ( database
-              , ( styles
-                , ( icon
-                  , ( logos
-                    , ( partner_logos
-                      , (disabled, (default_language, (created_at, updated_at)))
-                      ) ) ) ) ) ) ) ) )
+              , ( smtp_auth
+                , ( styles
+                  , ( icon
+                    , ( logos
+                      , ( partner_logos
+                        , ( maintenance
+                          , ( disabled
+                            , (default_language, (created_at, updated_at)) ) )
+                        ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -35,10 +40,12 @@ let t =
       ; description
       ; url
       ; database
+      ; smtp_auth
       ; styles
       ; icon
       ; logos
       ; partner_logos
+      ; maintenance
       ; disabled
       ; default_language
       ; created_at
@@ -60,18 +67,22 @@ let t =
                   (tup2
                      Database.t
                      (tup2
-                        Styles.t
+                        SmtpAuth.t
                         (tup2
-                           Icon.t
+                           Styles.t
                            (tup2
-                              Logos.t
+                              Icon.t
                               (tup2
-                                 PartnerLogo.t
+                                 Logos.t
                                  (tup2
-                                    Disabled.t
+                                    PartnerLogo.t
                                     (tup2
-                                       Settings.Language.t
-                                       (tup2 ptime ptime)))))))))))))
+                                       Maintenance.t
+                                       (tup2
+                                          Disabled.t
+                                          (tup2
+                                             Settings.Language.t
+                                             (tup2 ptime ptime)))))))))))))))
 ;;
 
 let find_by_id (id : string) : (t, string) result Lwt.t = Utils.todo id
