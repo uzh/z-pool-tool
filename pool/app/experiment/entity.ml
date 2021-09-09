@@ -54,19 +54,15 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
-  ; experiment_date : ExperimentDate.t
-  ; location : Location.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 [@@deriving eq, show]
 
-let create ?id title description experiment_date location () =
+let create ?id title description () =
   { id = id |> Option.value ~default:(Id.create ())
   ; title
   ; description
-  ; experiment_date
-  ; location
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }

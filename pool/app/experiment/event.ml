@@ -3,16 +3,12 @@ open Entity
 type create =
   { title : Title.t
   ; description : Description.t
-  ; experiment_date : ExperimentDate.t
-  ; location : Location.t
   }
 [@@deriving eq, show]
 
 type update =
   { title : Title.t
   ; description : Description.t
-  ; experiment_date : ExperimentDate.t
-  ; location : Location.t
   }
 [@@deriving eq, show]
 
@@ -27,19 +23,11 @@ type event =
 
 let handle_event : event -> unit Lwt.t = function
   | ExperimentAdded create_t ->
-    create
-      create_t.title
-      create_t.description
-      create_t.experiment_date
-      create_t.location
-    |> Repo.insert
+    create create_t.title create_t.description |> Repo.insert
   | ExperimentEdited (experiment, update_t) ->
     let title = update_t.title in
     let description = update_t.description in
-    let experiment_date = update_t.experiment_date in
-    let location = update_t.location in
-    { experiment with title; description; experiment_date; location }
-    |> Repo.update
+    { experiment with title; description } |> Repo.update
   | ExperimentDestroyed experiment -> Repo.destroy experiment
   | ExperimenterAssignedToExperiment (experiment, user)
   | ExperimenterDivestedFromExperiment (experiment, user)
