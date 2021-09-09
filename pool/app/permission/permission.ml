@@ -16,7 +16,7 @@ let can : can =
   let* permissions = Repo.find_all_by_user user.id in
   let intersection =
     (* TODO to improve performance, abort if one match was found *)
-    CCList.inter ~eq:Core.permission_eq permissions any_of_these
+    CCList.inter ~eq:Core.equal_permission permissions any_of_these
   in
   Lwt.return @@ (List.length intersection > 0)
 ;;

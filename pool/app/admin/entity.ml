@@ -1,0 +1,73 @@
+type person =
+  { user : Sihl_user.t
+        [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
+  ; created_at : Ptime.t
+  ; updated_at : Ptime.t
+  }
+[@@deriving eq, show]
+
+(* TODO hide private constructors if possible *)
+(* Don't use these private constructors *)
+(* They are needed so the typechecker understands they are disjoint *)
+type assistant = private XAssistantP
+type experimenter = private XExperimenterP
+type location_manager = private XLocationManagerP
+type recruiter = private XRecruiterP
+type operator = private XOperatorP
+
+type _ t =
+  | Assistant : person -> assistant t
+  | Experimenter : person -> experimenter t
+  | LocationManager : person -> location_manager t
+  | Recruiter : person -> recruiter t
+  | Operator : person -> operator t
+
+(* Carries type information, is a type "witness" *)
+type _ carrier =
+  | AssistantC : assistant carrier
+  | ExperimenterC : experimenter carrier
+  | LocationManagerC : location_manager carrier
+  | RecruiterC : recruiter carrier
+  | OperatorC : operator carrier
+
+let equal : type person. person t -> person t -> bool =
+ fun p1 p2 ->
+  match p1, p2 with
+  | Assistant one, Assistant two
+  | Experimenter one, Experimenter two
+  | LocationManager one, LocationManager two
+  | Recruiter one, Recruiter two
+  | Operator one, Operator two -> equal_person one two
+;;
+
+let pp : type person. Format.formatter -> person t -> unit =
+ fun formatter person ->
+  match person with
+  | Assistant m | Experimenter m | LocationManager m | Recruiter m | Operator m
+    -> pp_person formatter m
+;;
+
+type any = Any : 'a t -> any
+
+let equal_any one two =
+  let id model =
+    match model with
+    | Any (Assistant { user; _ })
+    | Any (Experimenter { user; _ })
+    | Any (LocationManager { user; _ })
+    | Any (Recruiter { user; _ })
+    | Any (Operator { user; _ }) -> user.Sihl_user.id
+  in
+  String.equal (id one) (id two)
+;;
+
+let pp_any f (Any m) = pp f m
+
+module Duplicate = struct
+  type t =
+    { first : any [@equal equal_any] [@printer pp_any]
+    ; second : any [@equal equal_any] [@printer pp_any]
+    ; ignored_at : Ptime.t option
+    }
+  [@@deriving eq, show]
+end

@@ -6,7 +6,9 @@
   role
   i18n
   settings
-  person
+  participant
+  admin
+  common
   tenant
   experiment
   conformist))

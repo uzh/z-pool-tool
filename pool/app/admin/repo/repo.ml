@@ -5,7 +5,6 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
   let open Utils.Stringify in
   function
-  | ParticipantC -> participant, person `Participant
   | AssistantC -> assistant, person `Assistant
   | ExperimenterC -> experimenter, person `Experimenter
   | LocationManagerC -> location_manager, person `LocationManager
@@ -15,21 +14,19 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 
 let find = Utils.todo
 let insert = Utils.todo
-let update = Utils.todo
+let update _ = Utils.todo
 
 let set_password
-    : type person. person t -> string -> (unit, string) result Lwt.t
+    : type person. person t -> string -> string -> (unit, string) result Lwt.t
   =
- fun person password ->
+ fun person password password_confirmation ->
   let open Lwt_result.Infix in
   match person with
-  | Participant m
-  | Assistant m
-  | Experimenter m
-  | LocationManager m
-  | Recruiter m
-  | Operator m ->
-    (* TODO add password confirmation *)
-    Service.User.set_password m.user ~password ~password_confirmation:password
+  | Assistant { user; _ }
+  | Experimenter { user; _ }
+  | LocationManager { user; _ }
+  | Recruiter { user; _ }
+  | Operator { user; _ } ->
+    Service.User.set_password user ~password ~password_confirmation
     >|= CCFun.const ()
 ;;
