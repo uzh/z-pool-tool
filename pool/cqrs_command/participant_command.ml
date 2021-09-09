@@ -1,9 +1,9 @@
 module Sign_up : sig
   type t =
-    { email : Common.Email.Address.t
-    ; password : Common.Password.t
-    ; firstname : Common.Firstname.t
-    ; lastname : Common.Lastname.t
+    { email : string
+    ; password : string
+    ; firstname : string
+    ; lastname : string
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
@@ -18,19 +18,15 @@ module Sign_up : sig
     -> (t, Conformist.error list) Result.t
 end = struct
   type t =
-    { email : Common.Email.Address.t
-    ; password : Common.Password.t
-    ; firstname : Common.Firstname.t
-    ; lastname : Common.Lastname.t
+    { email : string
+    ; password : string
+    ; firstname : string
+    ; lastname : string
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
   let command email password firstname lastname recruitment_channel =
     { email; password; firstname; lastname; recruitment_channel }
-  ;;
-
-  let default_password_policy p =
-    if String.length p < 8 then Error "password_policy_text" else Ok ()
   ;;
 
   let schema =
@@ -49,27 +45,31 @@ end = struct
         command)
   ;;
 
-  let handle
-      ?allowed_email_suffixes
-      ?(password_policy = default_password_policy)
-      command
-    =
+  let handle ?allowed_email_suffixes ?password_policy command =
     let ( let* ) = Result.bind in
-    let* () = password_policy command.password in
+    let* password =
+      Common.Password.create ?password_policy command.password ()
+    in
     let* email =
       Participant.Email.Address.validate allowed_email_suffixes command.email
     in
+    let* firstname = Common.Firstname.create command.firstname in
+    let* lastname = Common.Lastname.create command.lastname in
+    let* terms_accepted_at = Common.TermsAccepted.create_now in
     let participant =
       Participant.
         { email
-        ; password = command.password
-        ; firstname = command.firstname
-        ; lastname = command.lastname
+        ; password
+        ; firstname
+        ; lastname
         ; recruitment_channel = command.recruitment_channel
-        ; terms_accepted_at = Ptime_clock.now ()
+        ; terms_accepted_at
         }
     in
-    Ok [ Participant.Created participant ]
+    Ok
+      [ Participant.Created participant
+      ; Participant.Email (Common.Event.Email.Created email)
+      ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data

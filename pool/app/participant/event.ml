@@ -24,6 +24,7 @@ type event =
   | PasswordUpdated of t * Common.Password.t * Common.PasswordConfirmed.t
   | Disabled of t
   | Verified of t
+  | Email of Common.Event.Email.event
 
 let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
@@ -44,6 +45,7 @@ let handle_event : event -> unit Lwt.t =
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
+  | Email event -> Common.Event.Email.handle_event event
 ;;
 
 let equal_event (one : event) (two : event) : bool =
@@ -69,4 +71,5 @@ let pp_event formatter (event : event) : unit =
     let () = person_pp person in
     Common.Password.pp formatter password
   | Disabled p1 | Verified p1 -> person_pp p1
+  | Email m -> Common.Event.Email.pp_event formatter m
 ;;

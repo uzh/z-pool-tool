@@ -93,9 +93,9 @@ let pp_person_event formatter (event : 'a person_event) : unit =
   | DetailsUpdated (m, updated) ->
     let () = person_pp m in
     pp_update formatter updated
-  | PasswordUpdated (m, _, _) ->
+  | PasswordUpdated (m, p, _) ->
     let () = person_pp m in
-    Common.Password.pp formatter "******"
+    Common.Password.pp formatter p
   | Disabled m | Verified m -> person_pp m
 ;;
 

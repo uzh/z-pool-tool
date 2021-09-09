@@ -1,4 +1,3 @@
-open Common.Repo
 open Entity
 
 module RecruitmentChannel = struct
@@ -108,6 +107,7 @@ let t =
       ; updated_at
       }
   in
+  let open Common.Repo in
   Caqti_type.(
     custom
       ~encode
