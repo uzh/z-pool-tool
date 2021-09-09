@@ -74,8 +74,8 @@ let t =
                                        (tup2 ptime ptime)))))))))))))
 ;;
 
-let find_by_id = Utils.todo
+let find_by_id (id : string) : (t, string) result Lwt.t = Utils.todo id
 let list_all = Utils.todo
-let insert = Utils.todo
-let update = Utils.todo
+let insert (t : t) = Utils.todo t
+let update (t : t) = Utils.todo t
 let destroy = Utils.todo

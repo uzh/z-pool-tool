@@ -1,37 +1,114 @@
 open Entity
 
+type create =
+  { title : Title.t
+  ; description : Description.t
+  ; url : Url.t
+  ; database : Database.t
+  ; styles : Styles.t
+  ; icon : Icon.t
+  ; logos : Logos.t
+  ; partner_logos : PartnerLogo.t
+  ; disabled : Disabled.t
+  ; default_language : Settings.Language.t
+  }
+[@@deriving eq, show]
+
+type update =
+  { title : Title.t
+  ; description : Description.t
+  ; url : Url.t
+  ; database : Database.t
+  ; styles : Styles.t
+  ; icon : Icon.t
+  ; logos : Logos.t
+  ; partner_logos : PartnerLogo.t
+  ; disabled : Disabled.t
+  ; default_language : Settings.Language.t
+  }
+[@@deriving eq, show]
+
 let equal_operator_event (t1, o1) (t2, o2) =
   equal t1 t2 && String.equal o1.Sihl_user.id o2.Sihl_user.id
 ;;
 
 type event =
-  | TenantAdded of t [@equal equal]
-  | TenantEdited of t
-  | TenantDestroyed of t
-  | OperatorAssignedToTenant of t * Sihl_user.t
-  | OperatorDivestedFromTenant of t * Sihl_user.t
+  | Added of create [@equal equal]
+  | Edited of t * update
+  | Destroyed of t
+  | Disabled of t
+  | Enabled of t
+  | OperatorAssigned of t * Sihl_user.t
+  | OperatorDivested of t * Sihl_user.t
   | StatusReportGenerated of unit
 
 let handle_event : event -> unit Lwt.t = function
-  | TenantAdded tenant -> Repo.insert tenant
-  | TenantEdited tenant -> Repo.update tenant
-  | TenantDestroyed tenant -> Repo.destroy tenant
-  | OperatorAssignedToTenant (tenant, user) ->
+  | Added create_t ->
+    create
+      create_t.title
+      create_t.description
+      create_t.url
+      create_t.database
+      create_t.styles
+      create_t.icon
+      create_t.logos
+      create_t.partner_logos
+      create_t.disabled
+      create_t.default_language
+      ()
+    |> Repo.insert
+  | Edited (tenant, update_t) ->
+    let title = update_t.title in
+    let description = update_t.description in
+    let url = update_t.url in
+    let database = update_t.database in
+    let styles = update_t.styles in
+    let icon = update_t.icon in
+    let logos = update_t.logos in
+    let partner_logos = update_t.partner_logos in
+    let disabled = update_t.disabled in
+    let default_language = update_t.default_language in
+    let updated_at = Ptime_clock.now () in
+    { tenant with
+      title
+    ; description
+    ; url
+    ; database
+    ; styles
+    ; icon
+    ; logos
+    ; partner_logos
+    ; disabled
+    ; default_language
+    ; updated_at
+    }
+    |> Repo.update
+  | Destroyed tenant -> Repo.destroy (tenant.id |> Id.to_human)
+  | Disabled tenant ->
+    let disabled = true in
+    { tenant with disabled } |> Repo.update
+  | Enabled tenant ->
+    let disabled = false in
+    { tenant with disabled } |> Repo.update
+  | OperatorAssigned (tenant, user) ->
     Permission.assign user (Role.operator (tenant.id |> Id.to_human))
-  | OperatorDivestedFromTenant (tenant, user) ->
+  | OperatorDivested (tenant, user) ->
     Permission.divest user (Role.operator (tenant.id |> Id.to_human))
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
 let equal_event event1 event2 =
   match event1, event2 with
-  | TenantAdded one, TenantAdded two
-  | TenantEdited one, TenantEdited two
-  | TenantDestroyed one, TenantDestroyed two -> equal one two
-  | ( OperatorAssignedToTenant (tenant_one, user_one)
-    , OperatorAssignedToTenant (tenant_two, user_two) )
-  | ( OperatorDivestedFromTenant (tenant_one, user_one)
-    , OperatorDivestedFromTenant (tenant_two, user_two) ) ->
+  | Added one, Added two -> equal_create one two
+  | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
+    equal tenant_one tenant_two && equal_update update_one update_two
+  | Destroyed one, Destroyed two
+  | Enabled one, Enabled two
+  | Disabled one, Disabled two -> equal one two
+  | ( OperatorAssigned (tenant_one, user_one)
+    , OperatorAssigned (tenant_two, user_two) )
+  | ( OperatorDivested (tenant_one, user_one)
+    , OperatorDivested (tenant_two, user_two) ) ->
     equal tenant_one tenant_two
     && String.equal user_one.Sihl_user.id user_two.Sihl_user.id
   | _ -> false
@@ -39,9 +116,12 @@ let equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | TenantAdded m | TenantEdited m | TenantDestroyed m -> pp formatter m
-  | OperatorAssignedToTenant (tenant, user)
-  | OperatorDivestedFromTenant (tenant, user) ->
+  | Added m -> pp_create formatter m
+  | Edited (tenant, update) ->
+    let () = pp formatter tenant in
+    pp_update formatter update
+  | Destroyed m | Disabled m | Enabled m -> pp formatter m
+  | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->
     let () = pp formatter tenant in
     Sihl_user.pp formatter user
   | StatusReportGenerated () -> Utils.todo ()
