@@ -1,11 +1,5 @@
 open Entity
 
-module Id = struct
-  include Id
-
-  let t = Caqti_type.string
-end
-
 module Paused = struct
   include Paused
 

@@ -14,9 +14,9 @@ let handle_event : event -> unit Lwt.t = function
   | TenantAdded tenant -> Repo.insert tenant
   | TenantEdited tenant -> Repo.update tenant
   | OperatorAssignedToTenant (tenant, user) ->
-    Permission.assign user (Role.operator (tenant.id |> Id.to_human))
+    Permission.assign user (Role.operator tenant.id)
   | OperatorDivestedFromTenant (tenant, user) ->
-    Permission.divest user (Role.operator (tenant.id |> Id.to_human))
+    Permission.divest user (Role.operator tenant.id)
 ;;
 
 let equal_event event1 event2 =

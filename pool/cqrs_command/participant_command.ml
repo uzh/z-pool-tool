@@ -1,11 +1,12 @@
-module Common = Common_user
+module User = Common_user
+module Id = Common.Id
 
 module Sign_up : sig
   type t =
-    { email : string
-    ; password : string
-    ; firstname : string
-    ; lastname : string
+    { email : User.Email.Address.t
+    ; password : User.Password.t
+    ; firstname : User.Firstname.t
+    ; lastname : User.Lastname.t
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
@@ -20,10 +21,10 @@ module Sign_up : sig
     -> (t, Conformist.error list) Result.t
 end = struct
   type t =
-    { email : string
-    ; password : string
-    ; firstname : string
-    ; lastname : string
+    { email : User.Email.Address.t
+    ; password : User.Password.t
+    ; firstname : User.Firstname.t
+    ; lastname : User.Lastname.t
     ; recruitment_channel : Participant.RecruitmentChannel.t
     }
 
@@ -34,10 +35,22 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ string "email"
-        ; string "password"
-        ; string "firstname"
-        ; string "lastname"
+        [ custom
+            (fun l -> l |> List.hd |> User.Email.Address.create)
+            (fun l -> [ User.Email.Address.show l ])
+            "email"
+        ; custom
+            (fun l -> l |> List.hd |> User.Password.create)
+            (fun l -> [ User.Password.to_sihl l ])
+            "password"
+        ; custom
+            (fun l -> l |> List.hd |> User.Firstname.create)
+            (fun l -> [ User.Firstname.show l ])
+            "firstname"
+        ; custom
+            (fun l -> l |> List.hd |> User.Lastname.create)
+            (fun l -> [ User.Lastname.show l ])
+            "lastname"
         ; custom
             (fun l -> l |> List.hd |> Participant.RecruitmentChannel.of_string)
             (fun l -> [ Participant.RecruitmentChannel.to_string l ])
@@ -49,28 +62,23 @@ end = struct
 
   let handle ?allowed_email_suffixes ?password_policy command =
     let ( let* ) = Result.bind in
-    let* password =
-      Common.Password.create ?password_policy command.password ()
-    in
-    let* email =
+    let* () = User.Password.validate ?password_policy command.password in
+    let* () =
       Participant.Email.Address.validate allowed_email_suffixes command.email
     in
-    let* firstname = Common.Firstname.create command.firstname in
-    let* lastname = Common.Lastname.create command.lastname in
-    let terms_accepted_at = Common.TermsAccepted.create_now in
     let participant =
       Participant.
-        { email
-        ; password
-        ; firstname
-        ; lastname
+        { email = command.email
+        ; password = command.password
+        ; firstname = command.firstname
+        ; lastname = command.lastname
         ; recruitment_channel = command.recruitment_channel
-        ; terms_accepted_at
+        ; terms_accepted_at = User.TermsAccepted.create_now
         }
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; Common.Event.Email.Created email |> Pool_event.email_address
+      ; User.Event.Email.Created command.email |> Pool_event.email_address
       ]
   ;;
 
@@ -79,25 +87,25 @@ end
 
 module UpdateDetails : sig
   type t =
-    { id : string
-    ; firstname : string
-    ; lastname : string
-    ; paused : string
+    { id : Id.t
+    ; firstname : User.Firstname.t
+    ; lastname : User.Lastname.t
+    ; paused : User.Paused.t
     }
 
   val handle
     :  Participant.t
-    -> email:string
-    -> password:string
+    -> email:User.Email.Address.t
+    -> password:User.Password.t
     -> (Pool_event.t list, string) Result.t
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { id : string
-    ; firstname : string
-    ; lastname : string
-    ; paused : string
+    { id : Id.t
+    ; firstname : User.Firstname.t
+    ; lastname : User.Lastname.t
+    ; paused : User.Paused.t
     }
 
   let handle _ ~email:_ ~password:_ = Utils.todo ()
@@ -117,18 +125,18 @@ end
 
 module UpdatePassword : sig
   type t =
-    { id : string
-    ; current_password : string
-    ; new_password : string
+    { id : Id.t
+    ; current_password : User.Password.t
+    ; new_password : User.Password.t
     }
 
   val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { id : string
-    ; current_password : string
-    ; new_password : string
+    { id : Id.t
+    ; current_password : User.Password.t
+    ; new_password : User.Password.t
     }
 
   let handle _ = Utils.todo
@@ -148,16 +156,16 @@ end
 
 module UpdateEmail : sig
   type t =
-    { id : string
-    ; email : string
+    { id : Id.t
+    ; email : User.Email.Address.t
     }
 
   val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { id : string
-    ; email : string
+    { id : Id.t
+    ; email : User.Email.Address.t
     }
 
   let handle _ = Utils.todo

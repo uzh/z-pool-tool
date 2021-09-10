@@ -33,7 +33,7 @@ end
 
 module Edit_tenant : sig
   type t =
-    { tenant_id : string
+    { tenant_id : Common.Id.t
     ; title : string
     ; description : string
     ; url : string
@@ -48,7 +48,7 @@ module Edit_tenant : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { tenant_id : string
+    { tenant_id : Common.Id.t
     ; title : string
     ; description : string
     ; url : string
@@ -69,12 +69,12 @@ end = struct
 end
 
 module Destroy_tenant : sig
-  type t = { tenant_id : string }
+  type t = { tenant_id : Common.Id.t }
 
   val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { tenant_id : string }
+  type t = { tenant_id : Common.Id.t }
 
   let handle = Utils.todo
 
@@ -102,8 +102,8 @@ end
 
 module Add_operator : sig
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Common.Id.t
+    ; tenant_id : Common.Id.t
     }
 
   val handle
@@ -115,8 +115,8 @@ module Add_operator : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Common.Id.t
+    ; tenant_id : Common.Id.t
     }
 
   let handle = Utils.todo

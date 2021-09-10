@@ -3,13 +3,17 @@ module Participant_command = Cqrs_command.Participant_command
 let sign_up_not_allowed_suffix () =
   let allowed_email_suffixes = [ "@gmail.com" ] in
   let command =
-    Participant_command.Sign_up.
-      { email = "john@bluewin.ch"
-      ; password = "password"
-      ; firstname = "Jane"
-      ; lastname = "Doe"
-      ; recruitment_channel = Participant.RecruitmentChannel.Friend
-      }
+    CCResult.get_exn
+    @@ Participant_command.Sign_up.decode
+         [ "email", [ "john@bluewin.com" ]
+         ; "password", [ "password" ]
+         ; "firstname", [ "Jane" ]
+         ; "lastname", [ "Doe" ]
+         ; ( "recruitment_channel"
+           , [ Participant.RecruitmentChannel.Friend
+               |> Participant.RecruitmentChannel.to_string
+             ] )
+         ]
   in
   let events =
     Participant_command.Sign_up.handle command ~allowed_email_suffixes
@@ -21,13 +25,17 @@ let sign_up_not_allowed_suffix () =
 let sign_up () =
   let allowed_email_suffixes = [ "@gmail.com" ] in
   let command =
-    Participant_command.Sign_up.
-      { email = "john@gmail.com"
-      ; password = "password"
-      ; firstname = "Jane"
-      ; lastname = "Doe"
-      ; recruitment_channel = Participant.RecruitmentChannel.Friend
-      }
+    CCResult.get_exn
+    @@ Participant_command.Sign_up.decode
+         [ "email", [ "john@gmail.com" ]
+         ; "password", [ "password" ]
+         ; "firstname", [ "Jane" ]
+         ; "lastname", [ "Doe" ]
+         ; ( "recruitment_channel"
+           , [ Participant.RecruitmentChannel.Friend
+               |> Participant.RecruitmentChannel.to_string
+             ] )
+         ]
   in
   let events =
     Participant_command.Sign_up.handle command ~allowed_email_suffixes

@@ -13,9 +13,6 @@ end = struct
     let* tenant = Tenant.find_by_user user in
     Permission.can
       user
-      ~any_of:
-        [ Permission.Update
-            (Permission.Tenant, Some (tenant |> Tenant.Id.to_human))
-        ]
+      ~any_of:[ Permission.Update (Permission.Tenant, Some tenant) ]
   ;;
 end

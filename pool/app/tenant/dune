@@ -1,5 +1,5 @@
 (library
  (name tenant)
- (libraries sihl admin permission role ptime)
+ (libraries sihl admin permission role common ptime)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

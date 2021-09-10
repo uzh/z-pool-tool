@@ -1,9 +1,3 @@
-module Id = struct
-  type t = string [@@deriving eq, show]
-
-  let to_human id = id
-end
-
 module Title = struct
   type t = string [@@deriving eq, show]
 end
@@ -41,7 +35,7 @@ module Disabled = struct
 end
 
 type t =
-  { id : Id.t
+  { id : Common.Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
