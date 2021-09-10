@@ -1,7 +1,7 @@
 module Create : sig
   type t = { name : string }
 
-  val handle : t -> (Role.event list, string) Result.t
+  val handle : t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { name : string }

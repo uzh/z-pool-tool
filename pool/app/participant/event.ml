@@ -1,4 +1,4 @@
-module Common = Common
+module Common = Common_user
 open Entity
 
 type create =
@@ -32,16 +32,21 @@ let handle_event : event -> unit Lwt.t =
   | Created participant ->
     let* user =
       Service.User.create_user
-        ~name:participant.firstname
-        ~given_name:participant.lastname
-        ~password:participant.password
+        ~name:(participant.firstname |> Common.Firstname.show)
+        ~given_name:(participant.lastname |> Common.Lastname.show)
+        ~password:(participant.password |> Common.Password.to_sihl)
       @@ Email.Address.show participant.email
     in
     let* () = Permission.assign user (Role.participant user.id) in
     Repo.insert participant
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ = Repo.set_password person password confirmed in
+    let* _ =
+      Repo.set_password
+        person
+        (password |> Common.Password.to_sihl)
+        (confirmed |> Common.PasswordConfirmed.to_sihl)
+    in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()

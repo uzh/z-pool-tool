@@ -10,7 +10,7 @@ module Add_tenant : sig
     ; partner_logos : string
     }
 
-  val handle : t -> (Tenant.event list, string) result
+  val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -44,7 +44,7 @@ module Edit_tenant : sig
     ; partner_logos : string
     }
 
-  val handle : t -> Tenant.t -> (Tenant.event list, string) result
+  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -71,7 +71,7 @@ end
 module Destroy_tenant : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Tenant.event list, string) result
+  val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
@@ -88,7 +88,7 @@ end
 module Add_root : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl_user.t -> (Tenant.event list, string) result
+  val handle : t -> Sihl_user.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
@@ -110,7 +110,7 @@ module Add_operator : sig
     :  t
     -> Sihl_user.t
     -> Tenant.t
-    -> (Tenant.event list, string) result
+    -> (Pool_event.t list, string) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct

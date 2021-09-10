@@ -1,6 +1,6 @@
 (library
  (name admin)
- (libraries sihl sihl-user service permission role common utils ptime)
+ (libraries sihl sihl-user service permission role common_user utils ptime)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))
 

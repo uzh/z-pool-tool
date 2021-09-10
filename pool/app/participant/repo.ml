@@ -83,12 +83,15 @@ let participant_caqti =
 
 let t =
   let encode m =
+    let open Common_user in
     Ok
       ( m.user
       , ( m.recruitment_channel
-        , ( m.terms_accepted_at
-          , (m.paused, (m.disabled, (m.verified, (m.created_at, m.updated_at))))
-          ) ) )
+        , ( TermsAccepted.value m.terms_accepted_at
+          , ( Paused.value m.paused
+            , ( Disabled.value m.disabled
+              , (Verified.value m.verified, (m.created_at, m.updated_at)) ) ) )
+        ) )
   in
   let decode
       ( user
@@ -96,18 +99,19 @@ let t =
         , ( terms_accepted_at
           , (paused, (disabled, (verified, (created_at, updated_at)))) ) ) )
     =
+    let open Common_user in
     Ok
       { user
       ; recruitment_channel
-      ; terms_accepted_at
-      ; paused
-      ; disabled
-      ; verified
+      ; terms_accepted_at = TermsAccepted.create terms_accepted_at
+      ; paused = Paused.create paused
+      ; disabled = Disabled.create disabled
+      ; verified = Verified.create verified
       ; created_at
       ; updated_at
       }
   in
-  let open Common.Repo in
+  let open Common_user.Repo in
   Caqti_type.(
     custom
       ~encode

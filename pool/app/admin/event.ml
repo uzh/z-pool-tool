@@ -1,4 +1,4 @@
-module Common = Common
+module Common = Common_user
 open Entity
 
 type creatable_admin =
@@ -42,7 +42,12 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   function
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ = Repo.set_password person password confirmed in
+    let* _ =
+      Repo.set_password
+        person
+        (password |> Common.Password.to_sihl)
+        (confirmed |> Common.PasswordConfirmed.to_sihl)
+    in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
@@ -54,9 +59,9 @@ let handle_event : event -> unit Lwt.t =
   | Created (role, admin) ->
     let* user =
       Service.User.create_user
-        ~name:admin.firstname
-        ~given_name:admin.lastname
-        ~password:admin.password
+        ~name:(admin.firstname |> Common.Firstname.show)
+        ~given_name:(admin.lastname |> Common.Lastname.show)
+        ~password:(admin.password |> Common.Password.to_sihl)
         (Common.Email.Address.show admin.email)
     in
     let* () =

@@ -1,3 +1,5 @@
+module Common = Common_user
+
 module Sign_up : sig
   type t =
     { email : string
@@ -11,7 +13,7 @@ module Sign_up : sig
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> (Participant.event list, string) Result.t
+    -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -55,7 +57,7 @@ end = struct
     in
     let* firstname = Common.Firstname.create command.firstname in
     let* lastname = Common.Lastname.create command.lastname in
-    let* terms_accepted_at = Common.TermsAccepted.create_now in
+    let terms_accepted_at = Common.TermsAccepted.create_now in
     let participant =
       Participant.
         { email
@@ -67,8 +69,8 @@ end = struct
         }
     in
     Ok
-      [ Participant.Created participant
-      ; Participant.Email (Common.Event.Email.Created email)
+      [ Participant.Created participant |> Pool_event.participant
+      ; Common.Event.Email.Created email |> Pool_event.email_address
       ]
   ;;
 
@@ -87,7 +89,7 @@ module UpdateDetails : sig
     :  Participant.t
     -> email:string
     -> password:string
-    -> (Participant.event list, string) Result.t
+    -> (Pool_event.t list, string) Result.t
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -120,7 +122,7 @@ module UpdatePassword : sig
     ; new_password : string
     }
 
-  val handle : t -> Participant.t -> (Participant.event list, string) Result.t
+  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -150,7 +152,7 @@ module UpdateEmail : sig
     ; email : string
     }
 
-  val handle : t -> Participant.t -> (Participant.event list, string) Result.t
+  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
