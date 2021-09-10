@@ -1,26 +1,30 @@
+open CCResult.Infix
+
 module AddExperiment : sig
   type t =
-    { experiment_id : string
-    ; room : string
-    ; building : string
-    ; street : string
-    ; zip : string
-    ; city : string
+    { title : string
+    ; description : string
     }
 
-  val handle : t -> (Experiment.event list, string) result
+  val handle : Experiment.create -> (Experiment.event, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { experiment_id : string
-    ; room : string
-    ; building : string
-    ; street : string
-    ; zip : string
-    ; city : string
+    { title : string
+    ; description : string
     }
 
-  let handle = Utils.todo
+  let handle t =
+    let open Experiment in
+    let create =
+      let open CCResult in
+      let* title = Title.create t.title in
+      let* description = Description.create t.description in
+      Ok { title; description }
+    in
+    let event (t : Experiment.create) = Experiment.ExperimentAdded t in
+    create >|= event
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]

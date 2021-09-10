@@ -61,7 +61,6 @@ end = struct
       let* icon = Icon.create t.icon in
       let* logos = Logos.create t.logos in
       let* partner_logos = PartnerLogo.create t.partner_logos in
-      (* let* disabled = Disabled.create t.disabled in *)
       let* default_language = Settings.Language.of_string t.default_language in
       Ok
         { title

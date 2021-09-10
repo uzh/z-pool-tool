@@ -25,9 +25,11 @@ let handle_event : event -> unit Lwt.t = function
   | ExperimentAdded create_t ->
     create create_t.title create_t.description |> Repo.insert
   | ExperimentEdited (experiment, update_t) ->
-    let title = update_t.title in
-    let description = update_t.description in
-    { experiment with title; description } |> Repo.update
+    { experiment with
+      title = update_t.title
+    ; description = update_t.description
+    }
+    |> Repo.update
   | ExperimentDestroyed experiment -> Repo.destroy experiment
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
