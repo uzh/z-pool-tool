@@ -16,10 +16,10 @@ type event =
   | ExperimentAdded of create
   | ExperimentEdited of t * update
   | ExperimentDestroyed of t
-  | ExperimenterAssignedToExperiment of t * Sihl_user.t
-  | ExperimenterDivestedFromExperiment of t * Sihl_user.t
-  | AssistantAssignedToExperiment of t * Sihl_user.t
-  | AssistantDivestedFromExperiment of t * Sihl_user.t
+  | ExperimenterAssigned of t * Admin.experimenter Admin.t
+  | ExperimenterDivested of t * Admin.experimenter Admin.t
+  | AssistantAssigned of t * Admin.assistant Admin.t
+  | AssistantDivested of t * Admin.assistant Admin.t
 
 let handle_event : event -> unit Lwt.t = function
   | ExperimentAdded create_t ->
@@ -29,11 +29,16 @@ let handle_event : event -> unit Lwt.t = function
     let description = update_t.description in
     { experiment with title; description } |> Repo.update
   | ExperimentDestroyed experiment -> Repo.destroy experiment
-  | ExperimenterAssignedToExperiment (experiment, user)
-  | ExperimenterDivestedFromExperiment (experiment, user)
-  | AssistantAssignedToExperiment (experiment, user)
-  | AssistantDivestedFromExperiment (experiment, user) ->
-    Utils.todo (experiment, user)
+  | ExperimenterAssigned (experiment, user)
+  | ExperimenterDivested (experiment, user) ->
+    Permission.divest
+      (Admin.user user)
+      (Role.operator (experiment.id |> Id.to_human))
+  | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
+    ->
+    Permission.divest
+      (Admin.user user)
+      (Role.operator (experiment.id |> Id.to_human))
 ;;
 
 let equal_event event1 event2 =
@@ -43,10 +48,12 @@ let equal_event event1 event2 =
     , ExperimentEdited (experiment_two, update_two) ) ->
     equal experiment_one experiment_two && equal_update update_one update_two
   | ExperimentDestroyed one, ExperimentDestroyed two -> equal one two
-  | ( ExperimenterAssignedToExperiment (experiment_one, user_one)
-    , ExperimenterDivestedFromExperiment (experiment_two, user_two) ) ->
+  | ( ExperimenterAssigned (experiment_one, user_one)
+    , ExperimenterDivested (experiment_two, user_two) ) ->
     equal experiment_one experiment_two
-    && String.equal user_one.Sihl_user.id user_two.Sihl_user.id
+    && String.equal
+         (Admin.user user_one).Sihl_user.id
+         (Admin.user user_two).Sihl_user.id
   | _ -> false
 ;;
 
@@ -57,10 +64,12 @@ let pp_event formatter event =
     let () = pp formatter experiment in
     pp_update formatter update
   | ExperimentDestroyed m -> pp formatter m
-  | ExperimenterAssignedToExperiment (experiment, user)
-  | ExperimenterDivestedFromExperiment (experiment, user)
-  | AssistantAssignedToExperiment (experiment, user)
-  | AssistantDivestedFromExperiment (experiment, user) ->
+  | ExperimenterAssigned (experiment, user)
+  | ExperimenterDivested (experiment, user) ->
     let () = pp formatter experiment in
-    Sihl_user.pp formatter user
+    Admin.pp formatter user
+  | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
+    ->
+    let () = pp formatter experiment in
+    Admin.pp formatter user
 ;;

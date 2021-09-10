@@ -232,7 +232,11 @@ module AssignOperator : sig
     ; tenant_id : string
     }
 
-  val handle : Tenant.t -> Sihl_user.t -> (Tenant.event, string) result
+  val handle
+    :  Tenant.t
+    -> Admin.operator Admin.t
+    -> (Tenant.event, string) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -258,7 +262,11 @@ module DivestOperator : sig
     ; tenant_id : string
     }
 
-  val handle : Tenant.t -> Sihl_user.t -> (Tenant.event, string) result
+  val handle
+    :  Tenant.t
+    -> Admin.operator Admin.t
+    -> (Tenant.event, string) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =

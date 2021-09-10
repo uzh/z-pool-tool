@@ -82,12 +82,18 @@ end
 module AddExperimenter : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl_user.t -> (Experiment.event list, string) result
+  val handle
+    :  Experiment.t
+    -> Admin.experimenter Admin.t
+    -> (Experiment.event, 'a) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
-  let handle = Utils.todo
+  let handle experiment user =
+    Ok (Experiment.ExperimenterAssigned (experiment, user))
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
@@ -101,10 +107,9 @@ module DivestExperimenter : sig
     }
 
   val handle
-    :  t
-    -> Sihl_user.t
-    -> Experiment.t
-    -> (Experiment.event list, string) result
+    :  Experiment.t
+    -> Admin.experimenter Admin.t
+    -> (Experiment.event, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -113,7 +118,9 @@ end = struct
     ; experiment_id : string
     }
 
-  let handle = Utils.todo
+  let handle experiment user =
+    Ok (Experiment.ExperimenterDivested (experiment, user))
+  ;;
 
   let can user command =
     Permission.can
@@ -128,12 +135,18 @@ end
 module AddAssistant : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl_user.t -> (Experiment.event list, string) result
+  val handle
+    :  Experiment.t
+    -> Admin.assistant Admin.t
+    -> (Experiment.event, 'a) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
-  let handle = Utils.todo
+  let handle experiment user =
+    Ok (Experiment.AssistantAssigned (experiment, user))
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
@@ -147,10 +160,9 @@ module DivestAssistant : sig
     }
 
   val handle
-    :  t
-    -> Sihl_user.t
-    -> Experiment.t
-    -> (Experiment.event list, string) result
+    :  Experiment.t
+    -> Admin.assistant Admin.t
+    -> (Experiment.event, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -159,7 +171,9 @@ end = struct
     ; experiment_id : string
     }
 
-  let handle = Utils.todo
+  let handle experiment user =
+    Ok (Experiment.AssistantDivested (experiment, user))
+  ;;
 
   let can user command =
     Permission.can

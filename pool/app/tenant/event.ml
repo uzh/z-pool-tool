@@ -41,8 +41,8 @@ type event =
   | Enabled of t
   | ActivateMaintenance of t
   | DeactivateMaintenance of t
-  | OperatorAssigned of t * Sihl_user.t
-  | OperatorDivested of t * Sihl_user.t
+  | OperatorAssigned of t * Admin.operator Admin.t
+  | OperatorDivested of t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
 let handle_event : event -> unit Lwt.t = function
@@ -90,9 +90,13 @@ let handle_event : event -> unit Lwt.t = function
     let maintenance = false in
     { tenant with maintenance } |> Repo.update
   | OperatorAssigned (tenant, user) ->
-    Permission.assign user (Role.operator (tenant.id |> Id.to_human))
+    Permission.assign
+      (Admin.user user)
+      (Role.operator (tenant.id |> Id.to_human))
   | OperatorDivested (tenant, user) ->
-    Permission.divest user (Role.operator (tenant.id |> Id.to_human))
+    Permission.divest
+      (Admin.user user)
+      (Role.operator (tenant.id |> Id.to_human))
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
@@ -112,7 +116,9 @@ let equal_event event1 event2 =
   | ( OperatorDivested (tenant_one, user_one)
     , OperatorDivested (tenant_two, user_two) ) ->
     equal tenant_one tenant_two
-    && String.equal user_one.Sihl_user.id user_two.Sihl_user.id
+    && String.equal
+         (Admin.user user_one).Sihl_user.id
+         (Admin.user user_two).Sihl_user.id
   | _ -> false
 ;;
 
@@ -127,6 +133,6 @@ let pp_event formatter event =
     pp formatter m
   | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->
     let () = pp formatter tenant in
-    Sihl_user.pp formatter user
+    Admin.pp formatter user
   | StatusReportGenerated () -> Utils.todo ()
 ;;
