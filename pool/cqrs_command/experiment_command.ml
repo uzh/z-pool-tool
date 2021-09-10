@@ -1,4 +1,4 @@
-module Add_experiment : sig
+module AddExperiment : sig
   type t =
     { experiment_id : string
     ; room : string
@@ -27,7 +27,7 @@ end = struct
   ;;
 end
 
-module Edit_experiment : sig
+module EditExperiment : sig
   type t =
     { experiment_id : string
     ; room : string
@@ -60,7 +60,7 @@ end = struct
   ;;
 end
 
-module Destroy_experiment : sig
+module DestroyExperiment : sig
   type t = { experiment_id : string }
 
   val handle : t -> (Experiment.event list, string) result
@@ -79,7 +79,7 @@ end = struct
   ;;
 end
 
-module Add_experimenter : sig
+module AddExperimenter : sig
   type t = { user_id : string }
 
   val handle : t -> Sihl_user.t -> (Experiment.event list, string) result
@@ -94,7 +94,7 @@ end = struct
   ;;
 end
 
-module Divest_experimenter : sig
+module DivestExperimenter : sig
   type t =
     { user_id : string
     ; experiment_id : string
@@ -125,7 +125,7 @@ end = struct
   ;;
 end
 
-module Add_assistant : sig
+module AddAssistant : sig
   type t = { user_id : string }
 
   val handle : t -> Sihl_user.t -> (Experiment.event list, string) result
@@ -140,7 +140,7 @@ end = struct
   ;;
 end
 
-module Divest_assistant : sig
+module DivestAssistant : sig
   type t =
     { user_id : string
     ; experiment_id : string

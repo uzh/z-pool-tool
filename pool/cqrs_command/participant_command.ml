@@ -1,4 +1,4 @@
-module Sign_up : sig
+module SignUp : sig
   type t =
     { email : string
     ; password : string

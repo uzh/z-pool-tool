@@ -1,6 +1,6 @@
 open CCResult.Infix
 
-module Add_tenant : sig
+module AddTenant : sig
   type t =
     { title : string
     ; description : string
@@ -85,7 +85,7 @@ end = struct
   ;;
 end
 
-module Edit_tenant : sig
+module EditTenant : sig
   type t =
     { tenant_id : string
     ; title : string
@@ -175,7 +175,7 @@ end = struct
   ;;
 end
 
-module Destroy_tenant : sig
+module DestroyTenant : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Tenant.event, 'a) result
@@ -192,7 +192,7 @@ end = struct
   ;;
 end
 
-module Disable_tenant : sig
+module DisableTenant : sig
   type t = { tenant_id : string }
 
   val handle : Tenant.t -> (Tenant.event, 'b) result
@@ -209,7 +209,7 @@ end = struct
   ;;
 end
 
-module Enable_tenant : sig
+module EnableTenant : sig
   type t = { tenant_id : string }
 
   val handle : Tenant.t -> (Tenant.event, 'b) result
@@ -226,7 +226,7 @@ end = struct
   ;;
 end
 
-module Assign_operator : sig
+module AssignOperator : sig
   type t =
     { user_id : string
     ; tenant_id : string
@@ -252,7 +252,7 @@ end = struct
   ;;
 end
 
-module Divest_operator : sig
+module DivestOperator : sig
   type t =
     { user_id : string
     ; tenant_id : string
@@ -278,7 +278,7 @@ end = struct
   ;;
 end
 
-module Generate_status_report : sig
+module GenerateStatusReport : sig
   type t = { tenant_id : string }
 
   val handle : t -> Tenant.t -> (Tenant.event list, string) result
@@ -288,7 +288,7 @@ end = struct
   let handle = Utils.todo
 end
 
-module Add_root : sig
+module AddRoot : sig
   type t = { user_id : string }
 
   val handle : t -> Sihl_user.t -> (Tenant.event list, string) result
