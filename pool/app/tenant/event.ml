@@ -57,36 +57,23 @@ let handle_event : event -> unit Lwt.t = function
       create_t.icon
       create_t.logos
       create_t.partner_logos
-      (* create_t.disabled *)
       create_t.default_language
       ()
     |> Repo.insert
   | Edited (tenant, update_t) ->
-    let title = update_t.title in
-    let description = update_t.description in
-    let url = update_t.url in
-    let database = update_t.database in
-    let smtp_auth = update_t.smtp_auth in
-    let styles = update_t.styles in
-    let icon = update_t.icon in
-    let logos = update_t.logos in
-    let partner_logos = update_t.partner_logos in
-    let disabled = update_t.disabled in
-    let default_language = update_t.default_language in
-    let updated_at = Ptime_clock.now () in
     { tenant with
-      title
-    ; description
-    ; url
-    ; database
-    ; smtp_auth
-    ; styles
-    ; icon
-    ; logos
-    ; partner_logos
-    ; disabled
-    ; default_language
-    ; updated_at
+      title = update_t.title
+    ; description = update_t.description
+    ; url = update_t.url
+    ; database = update_t.database
+    ; smtp_auth = update_t.smtp_auth
+    ; styles = update_t.styles
+    ; icon = update_t.icon
+    ; logos = update_t.logos
+    ; partner_logos = update_t.partner_logos
+    ; disabled = update_t.disabled
+    ; default_language = update_t.default_language
+    ; updated_at = Ptime_clock.now ()
     }
     |> Repo.update
   | Destroyed tenant_id -> Repo.destroy (tenant_id |> Id.to_human)
