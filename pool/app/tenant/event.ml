@@ -36,7 +36,7 @@ let equal_operator_event (t1, o1) (t2, o2) =
 type event =
   | Added of create [@equal equal]
   | Edited of t * update
-  | Destroyed of Id.t
+  | Destroyed of Common.Id.t
   | Disabled of t
   | Enabled of t
   | ActivateMaintenance of t
@@ -76,7 +76,7 @@ let handle_event : event -> unit Lwt.t = function
     ; updated_at = Ptime_clock.now ()
     }
     |> Repo.update
-  | Destroyed tenant_id -> Repo.destroy (tenant_id |> Id.to_human)
+  | Destroyed tenant_id -> Repo.destroy tenant_id
   | Disabled tenant ->
     let disabled = true in
     { tenant with disabled } |> Repo.update
@@ -90,13 +90,9 @@ let handle_event : event -> unit Lwt.t = function
     let maintenance = false in
     { tenant with maintenance } |> Repo.update
   | OperatorAssigned (tenant, user) ->
-    Permission.assign
-      (Admin.user user)
-      (Role.operator (tenant.id |> Id.to_human))
+    Permission.assign (Admin.user user) (Role.operator tenant.id)
   | OperatorDivested (tenant, user) ->
-    Permission.divest
-      (Admin.user user)
-      (Role.operator (tenant.id |> Id.to_human))
+    Permission.divest (Admin.user user) (Role.operator tenant.id)
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
@@ -106,7 +102,7 @@ let equal_event event1 event2 =
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
     equal tenant_one tenant_two && equal_update update_one update_two
   | Destroyed one, Destroyed two ->
-    String.equal (one |> Id.to_human) (two |> Id.to_human)
+    String.equal (one |> Common.Id.show) (two |> Common.Id.show)
   | Enabled one, Enabled two
   | Disabled one, Disabled two
   | ActivateMaintenance one, ActivateMaintenance two
@@ -128,7 +124,7 @@ let pp_event formatter event =
   | Edited (tenant, update) ->
     let () = pp formatter tenant in
     pp_update formatter update
-  | Destroyed m -> Id.pp formatter m
+  | Destroyed m -> Common.Id.pp formatter m
   | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
     pp formatter m
   | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->

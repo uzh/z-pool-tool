@@ -1,9 +1,115 @@
 open Entity
 
+module Title = struct
+  include Title
+
+  let t = Caqti_type.string
+end
+
+module Description = struct
+  include Description
+
+  let t = Caqti_type.string
+end
+
+module Url = struct
+  include Url
+
+  let t = Caqti_type.string
+end
+
+module Database = struct
+  include Database
+
+  let t = Caqti_type.string
+end
+
+module Styles = struct
+  include Styles
+
+  let t = Caqti_type.string
+end
+
+module Icon = struct
+  include Icon
+
+  let t = Caqti_type.string
+end
+
+module Logos = struct
+  include Logos
+
+  let t = Caqti_type.string
+end
+
+module PartnerLogo = struct
+  include PartnerLogo
+
+  let t = Caqti_type.string
+end
+
+module Maintenance = struct
+  include Maintenance
+
+  let t = Caqti_type.bool
+end
+
+module Disabled = struct
+  include Disabled
+
+  let t = Caqti_type.bool
+end
+
+module SmtpAuth = struct
+  include SmtpAuth
+
+  module Server = struct
+    include SmtpAuth.Server
+
+    let t = Caqti_type.string
+  end
+
+  module Port = struct
+    include SmtpAuth.Port
+
+    let t = Caqti_type.string
+  end
+
+  module Username = struct
+    include SmtpAuth.Username
+
+    let t = Caqti_type.string
+  end
+
+  module AuthenticationMethod = struct
+    include SmtpAuth.AuthenticationMethod
+
+    let t = Caqti_type.string
+  end
+
+  module Protocol = struct
+    include SmtpAuth.Protocol
+
+    let t = Caqti_type.string
+  end
+
+  let t =
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Server.t
+           (tup2
+              Port.t
+              (tup2 Username.t (tup2 AuthenticationMethod.t Protocol.t)))))
+  ;;
+end
+
 let t =
   let encode m =
     Ok
-      ( m.id
+      ( Common.Id.show m.id
       , ( m.title
         , ( m.description
           , ( m.url
@@ -35,7 +141,7 @@ let t =
                         ) ) ) ) ) ) ) ) ) )
     =
     Ok
-      { id
+      { id = Common.Id.of_string id
       ; title
       ; description
       ; url
@@ -57,7 +163,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         Id.t
+         Common.Repo.Id.t
          (tup2
             Title.t
             (tup2

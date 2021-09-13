@@ -1,11 +1,5 @@
 module Email = Entity_email
 
-module Id = struct
-  type t = string
-
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
-end
-
 module Password = struct
   type t = string [@@deriving eq]
 
@@ -13,12 +7,14 @@ module Password = struct
     if String.length p < 8 then Error "password_policy_text" else Ok ()
   ;;
 
-  let create ?(password_policy = default_password_policy) password () =
+  let validate ?(password_policy = default_password_policy) password =
     let ( let* ) = Result.bind in
     let* () = password_policy password in
-    Ok password
+    Ok ()
   ;;
 
+  let create password = Ok password
+  let to_sihl m = m
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let pp (formatter : Format.formatter) (m : t) : unit =
@@ -29,6 +25,8 @@ end
 module PasswordConfirmed = struct
   type t = string [@@deriving eq]
 
+  let create m = m
+  let to_sihl m = m
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let pp (formatter : Format.formatter) (m : t) : unit =
@@ -39,36 +37,43 @@ end
 module Firstname = struct
   type t = string [@@deriving eq, show]
 
-  let create m = Ok m
+  let create m =
+    if String.length m <= 0 then Error "Invalid firstname" else Ok m
+  ;;
 end
 
 module Lastname = struct
   type t = string [@@deriving eq, show]
 
-  let create m = Ok m
+  let create m = if String.length m <= 0 then Error "Invalid lastname" else Ok m
 end
 
 module Paused = struct
   type t = bool [@@deriving eq, show]
 
-  let create m = Ok m
+  let create m = m
+  let value m = m
 end
 
 module Disabled = struct
   type t = bool [@@deriving eq, show]
 
-  let create m = Ok m
+  let create m = m
+  let value m = m
 end
 
 module TermsAccepted = struct
   type t = Ptime.t [@@deriving eq, show]
 
-  let create m = Ok m
-  let create_now = Ok (Ptime_clock.now ())
+  let create m = m
+  let create_now = Ptime_clock.now ()
+  let value m = m
 end
 
 module Verified = struct
   type t = Ptime.t [@@deriving eq, show]
 
-  let create m = Ok m
+  let create m = m
+  let create_now = Ptime_clock.now ()
+  let value m = m
 end

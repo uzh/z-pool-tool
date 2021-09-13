@@ -1,21 +1,11 @@
 module SmtpAuth = Entity_smtp_auth
 
-module Id = struct
-  type t = string [@@deriving eq, show]
-
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
-  let to_human id = id
-  let t = Caqti_type.string
-end
-
 module Title = struct
   type t = string [@@deriving eq, show]
 
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Description = struct
@@ -26,8 +16,6 @@ module Description = struct
     then Error "Invalid description!"
     else Ok description
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Url = struct
@@ -36,8 +24,6 @@ module Url = struct
   let create url =
     if String.length url <= 0 then Error "Invalid url!" else Ok url
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Database = struct
@@ -48,8 +34,6 @@ module Database = struct
     then Error "Invalid database!"
     else Ok database
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Styles = struct
@@ -58,8 +42,6 @@ module Styles = struct
   let create styles =
     if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Icon = struct
@@ -68,8 +50,6 @@ module Icon = struct
   let create icon =
     if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Logos = struct
@@ -78,8 +58,6 @@ module Logos = struct
   let create logos =
     if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
   ;;
-
-  let t = Caqti_type.string
 end
 
 module PartnerLogo = struct
@@ -90,26 +68,22 @@ module PartnerLogo = struct
     then Error "Invalid partner logo!"
     else Ok partner_logo
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Maintenance = struct
   type t = bool [@@deriving eq, show]
 
   let create t = Ok t
-  let t = Caqti_type.bool
 end
 
 module Disabled = struct
   type t = bool [@@deriving eq, show]
 
   let create t = Ok t
-  let t = Caqti_type.bool
 end
 
 type t =
-  { id : Id.t
+  { id : Common.Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
@@ -141,7 +115,7 @@ let create
     default_language
     ()
   =
-  { id = id |> Option.value ~default:(Id.create ())
+  { id = id |> Option.value ~default:(Common.Id.create ())
   ; title
   ; description
   ; url

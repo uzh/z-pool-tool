@@ -10,10 +10,10 @@ type thing =
 
 type permission =
   | Create of thing
-  | Read of (thing * string option)
-  | Update of (thing * string option)
-  | Destroy of (thing * string option)
-  | Manage of (thing * string option)
+  | Read of (thing * Common.Id.t option)
+  | Update of (thing * Common.Id.t option)
+  | Destroy of (thing * Common.Id.t option)
+  | Manage of (thing * Common.Id.t option)
 [@@deriving eq, show]
 
 let explode_permission = function

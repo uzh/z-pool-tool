@@ -2,13 +2,14 @@
  (name cqrs_command)
  (libraries
   sihl
+  pool_event
   permission
   role
   i18n
   settings
   participant
   admin
-  common
+  common_user
   tenant
   experiment
   conformist))

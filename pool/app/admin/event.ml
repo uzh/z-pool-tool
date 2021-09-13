@@ -1,4 +1,5 @@
-module Common = Common
+module User = Common_user
+module Id = Common.Id
 open Entity
 
 type creatable_admin =
@@ -10,22 +11,22 @@ type creatable_admin =
 [@@deriving eq, show]
 
 type create =
-  { email : Common.Email.Address.t
-  ; password : Common.Password.t
-  ; firstname : Common.Firstname.t
-  ; lastname : Common.Lastname.t
+  { email : User.Email.Address.t
+  ; password : User.Password.t
+  ; firstname : User.Firstname.t
+  ; lastname : User.Lastname.t
   }
 [@@deriving eq, show]
 
 type update =
-  { firstname : Common.Firstname.t
-  ; lastname : Common.Lastname.t
+  { firstname : User.Firstname.t
+  ; lastname : User.Lastname.t
   }
 [@@deriving eq, show]
 
 type 'a person_event =
   | DetailsUpdated of 'a t * update
-  | PasswordUpdated of 'a t * Common.Password.t * Common.PasswordConfirmed.t
+  | PasswordUpdated of 'a t * User.Password.t * User.PasswordConfirmed.t
   | Disabled of 'a t
   | Verified of 'a t
 
@@ -42,7 +43,12 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   function
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ = Repo.set_password person password confirmed in
+    let* _ =
+      Repo.set_password
+        person
+        (password |> User.Password.to_sihl)
+        (confirmed |> User.PasswordConfirmed.to_sihl)
+    in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
@@ -54,19 +60,23 @@ let handle_event : event -> unit Lwt.t =
   | Created (role, admin) ->
     let* user =
       Service.User.create_user
-        ~name:admin.firstname
-        ~given_name:admin.lastname
-        ~password:admin.password
-        (Common.Email.Address.show admin.email)
+        ~name:(admin.firstname |> User.Firstname.show)
+        ~given_name:(admin.lastname |> User.Lastname.show)
+        ~password:(admin.password |> User.Password.to_sihl)
+        (User.Email.Address.show admin.email)
     in
     let* () =
       match role with
-      | Assistant -> Permission.assign user (Role.assistant user.id)
-      | Experimenter -> Permission.assign user (Role.experimenter user.id)
-      | Recruiter -> Permission.assign user (Role.recruiter user.id)
+      | Assistant ->
+        Permission.assign user (Role.assistant (user.id |> Id.of_string))
+      | Experimenter ->
+        Permission.assign user (Role.experimenter (user.id |> Id.of_string))
+      | Recruiter ->
+        Permission.assign user (Role.recruiter (user.id |> Id.of_string))
       | LocationManager ->
-        Permission.assign user (Role.location_manager user.id)
-      | Operator -> Permission.assign user (Role.operator user.id)
+        Permission.assign user (Role.location_manager (user.id |> Id.of_string))
+      | Operator ->
+        Permission.assign user (Role.operator (user.id |> Id.of_string))
     in
     Repo.insert user
   | AssistantEvents event -> handle_person_event event
@@ -81,7 +91,7 @@ let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
-    equal p1 p2 && Common.Password.equal one two
+    equal p1 p2 && User.Password.equal one two
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -95,7 +105,7 @@ let pp_person_event formatter (event : 'a person_event) : unit =
     pp_update formatter updated
   | PasswordUpdated (m, p, _) ->
     let () = person_pp m in
-    Common.Password.pp formatter p
+    User.Password.pp formatter p
   | Disabled m | Verified m -> person_pp m
 ;;
 

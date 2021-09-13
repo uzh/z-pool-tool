@@ -6,8 +6,6 @@ module Server = struct
     then Error "Invalid SMTP server !"
     else Ok server
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Port = struct
@@ -18,8 +16,6 @@ module Port = struct
     then Error "Invalid SMTP port!"
     else Ok port
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Username = struct
@@ -30,21 +26,16 @@ module Username = struct
     then Error "Invalid SMTP username!"
     else Ok username
   ;;
-
-  let t = Caqti_type.string
 end
 
 module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
 
-  (* TODO: define possible methods *)
   let create authentication_method =
     if String.length authentication_method <= 0
     then Error "Invalid SMTP authentication method!"
     else Ok authentication_method
   ;;
-
-  let t = Caqti_type.string
 end
 
 module Protocol = struct
@@ -55,8 +46,6 @@ module Protocol = struct
     then Error "Invalid SMTP protocol!"
     else Ok protocol
   ;;
-
-  let t = Caqti_type.string
 end
 
 type t =
@@ -86,16 +75,4 @@ let encode m =
 
 let decode (server, (port, (username, (authentication_method, protocol)))) =
   Ok { server; port; username; authentication_method; protocol }
-;;
-
-let t =
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2
-         Server.t
-         (tup2
-            Port.t
-            (tup2 Username.t (tup2 AuthenticationMethod.t Protocol.t)))))
 ;;

@@ -35,26 +35,19 @@ module Address = struct
       email
     =
     match allowed_email_suffixes with
-    | None -> Ok email
+    | None -> Ok ()
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
       (* TODO check whether this is really the case *)
       | None -> Error "Email malformed"
       | Some suffix ->
         if CCList.mem ~eq:String.equal suffix allowed_email_suffixes
-        then Ok email
+        then Ok ()
         else Error "Invalid email suffix provided")
   ;;
 
-  let validate allowed_email_suffixes email =
-    let open CCResult in
-    email
-    |> remove_whitespaces
-    |> validate_characters
-    >>= validate_suffix allowed_email_suffixes
-  ;;
-
-  let create email = email
+  let validate = validate_suffix
+  let create email = email |> remove_whitespaces |> validate_characters
 end
 
 module VerifiedAt = struct
@@ -103,11 +96,7 @@ let show : type state. state t -> 'a = function
 ;;
 
 let token (Unverified email) = Token.show email.token
-
-let create email token =
-  let open CCResult.Infix in
-  email |> Address.create >|= fun address -> Unverified { address; token }
-;;
+let create address token = Ok (Unverified { address; token })
 
 let verify (Unverified email) =
   Verified { address = email.address; verified_at = Ptime_clock.now () }

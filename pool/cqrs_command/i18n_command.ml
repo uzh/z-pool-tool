@@ -1,7 +1,7 @@
 module Update : sig
   type t = { new_settings : (string * string) list }
 
-  val handle : t -> (I18n.event list, string) Result.t
+  val handle : t -> (Pool_event.t list, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { new_settings : (string * string) list }
@@ -13,9 +13,6 @@ end = struct
     let* tenant = Tenant.find_by_user user in
     Permission.can
       user
-      ~any_of:
-        [ Permission.Update
-            (Permission.Tenant, Some (tenant |> Tenant.Id.to_human))
-        ]
+      ~any_of:[ Permission.Update (Permission.Tenant, Some tenant) ]
   ;;
 end

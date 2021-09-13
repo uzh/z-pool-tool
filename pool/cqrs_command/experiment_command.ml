@@ -6,7 +6,7 @@ module AddExperiment : sig
     ; description : string
     }
 
-  val handle : Experiment.create -> (Experiment.event, string) result
+  val handle : Experiment.create -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -22,7 +22,9 @@ end = struct
       let* description = Description.create t.description in
       Ok { title; description }
     in
-    let event (t : Experiment.create) = Experiment.ExperimentAdded t in
+    let event (t : Experiment.create) =
+      [ Experiment.ExperimentAdded t |> Pool_event.experiment ]
+    in
     create >|= event
   ;;
 
@@ -41,7 +43,7 @@ module EditExperiment : sig
     ; city : string
     }
 
-  val handle : t -> Experiment.t -> (Experiment.event list, string) result
+  val handle : t -> Experiment.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -59,7 +61,9 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Update (Permission.Experiment, Some command.experiment_id)
+        [ Permission.Update
+            ( Permission.Experiment
+            , Some (command.experiment_id |> Common.Id.of_string) )
         ]
   ;;
 end
@@ -67,7 +71,7 @@ end
 module DestroyExperiment : sig
   type t = { experiment_id : string }
 
-  val handle : t -> (Experiment.event list, string) result
+  val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { experiment_id : string }
@@ -78,7 +82,9 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
+        [ Permission.Destroy
+            ( Permission.Experiment
+            , Some (command.experiment_id |> Common.Id.of_string) )
         ]
   ;;
 end
@@ -89,14 +95,17 @@ module AddExperimenter : sig
   val handle
     :  Experiment.t
     -> Admin.experimenter Admin.t
-    -> (Experiment.event, 'a) result
+    -> (Pool_event.t list, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
   let handle experiment user =
-    Ok (Experiment.ExperimenterAssigned (experiment, user))
+    Ok
+      [ Experiment.ExperimenterAssigned (experiment, user)
+        |> Pool_event.experiment
+      ]
   ;;
 
   let can user _ =
@@ -113,7 +122,7 @@ module DivestExperimenter : sig
   val handle
     :  Experiment.t
     -> Admin.experimenter Admin.t
-    -> (Experiment.event, 'a) result
+    -> (Pool_event.t list, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -123,7 +132,10 @@ end = struct
     }
 
   let handle experiment user =
-    Ok (Experiment.ExperimenterDivested (experiment, user))
+    Ok
+      [ Experiment.ExperimenterDivested (experiment, user)
+        |> Pool_event.experiment
+      ]
   ;;
 
   let can user command =
@@ -131,7 +143,9 @@ end = struct
       user
       ~any_of:
         [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
+        ; Permission.Manage
+            ( Permission.Experiment
+            , Some (command.experiment_id |> Common.Id.of_string) )
         ]
   ;;
 end
@@ -142,14 +156,16 @@ module AddAssistant : sig
   val handle
     :  Experiment.t
     -> Admin.assistant Admin.t
-    -> (Experiment.event, 'a) result
+    -> (Pool_event.t list, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
   let handle experiment user =
-    Ok (Experiment.AssistantAssigned (experiment, user))
+    Ok
+      [ Experiment.AssistantAssigned (experiment, user) |> Pool_event.experiment
+      ]
   ;;
 
   let can user _ =
@@ -166,7 +182,7 @@ module DivestAssistant : sig
   val handle
     :  Experiment.t
     -> Admin.assistant Admin.t
-    -> (Experiment.event, 'a) result
+    -> (Pool_event.t list, 'a) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -176,7 +192,9 @@ end = struct
     }
 
   let handle experiment user =
-    Ok (Experiment.AssistantDivested (experiment, user))
+    Ok
+      [ Experiment.AssistantDivested (experiment, user) |> Pool_event.experiment
+      ]
   ;;
 
   let can user command =
@@ -184,7 +202,9 @@ end = struct
       user
       ~any_of:
         [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
+        ; Permission.Manage
+            ( Permission.Experiment
+            , Some (command.experiment_id |> Common.Id.of_string) )
         ]
   ;;
 end

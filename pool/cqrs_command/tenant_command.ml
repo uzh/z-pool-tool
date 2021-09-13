@@ -19,7 +19,7 @@ module AddTenant : sig
     ; default_language : string
     }
 
-  val handle : t -> (Tenant.event, string) result
+  val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -75,7 +75,7 @@ end = struct
         ; default_language
         }
     in
-    let event (t : Tenant.create) = Tenant.Added t in
+    let event (t : Tenant.create) = [ Tenant.Added t |> Pool_event.tenant ] in
     create >|= event
   ;;
 
@@ -86,7 +86,7 @@ end
 
 module EditTenant : sig
   type t =
-    { tenant_id : string
+    { tenant_id : Common.Id.t
     ; title : string
     ; description : string
     ; url : string
@@ -104,11 +104,11 @@ module EditTenant : sig
     ; default_language : string
     }
 
-  val handle : t -> Tenant.t -> (Tenant.event, string) result
+  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { tenant_id : string
+    { tenant_id : Common.Id.t
     ; title : string
     ; description : string
     ; url : string
@@ -163,7 +163,9 @@ end = struct
         ; default_language
         }
     in
-    let event (t : Tenant.update) = Tenant.Edited (tenant, t) in
+    let event (t : Tenant.update) =
+      [ Tenant.Edited (tenant, t) |> Pool_event.tenant ]
+    in
     update >|= event
   ;;
 
@@ -177,73 +179,89 @@ end
 module DestroyTenant : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Tenant.event, 'a) result
+  val handle : t -> (Pool_event.t list, 'a) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle t = Ok (Tenant.Destroyed t.tenant_id)
+  let handle t =
+    Ok
+      [ Tenant.Destroyed (t.tenant_id |> Common.Id.of_string)
+        |> Pool_event.tenant
+      ]
+  ;;
 
   let can user command =
     Permission.can
       user
-      ~any_of:[ Permission.Destroy (Permission.Tenant, Some command.tenant_id) ]
+      ~any_of:
+        [ Permission.Destroy
+            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+        ]
   ;;
 end
 
 module DisableTenant : sig
   type t = { tenant_id : string }
 
-  val handle : Tenant.t -> (Tenant.event, 'b) result
+  val handle : Tenant.t -> (Pool_event.t list, 'b) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle tenant = Ok (Tenant.Disabled tenant)
+  let handle tenant = Ok [ Tenant.Disabled tenant |> Pool_event.tenant ]
 
   let can user command =
     Permission.can
       user
-      ~any_of:[ Permission.Destroy (Permission.Tenant, Some command.tenant_id) ]
+      ~any_of:
+        [ Permission.Destroy
+            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+        ]
   ;;
 end
 
 module EnableTenant : sig
   type t = { tenant_id : string }
 
-  val handle : Tenant.t -> (Tenant.event, 'b) result
+  val handle : Tenant.t -> (Pool_event.t list, 'b) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
 
-  let handle tenant = Ok (Tenant.Enabled tenant)
+  let handle tenant = Ok [ Tenant.Enabled tenant |> Pool_event.tenant ]
 
   let can user command =
     Permission.can
       user
-      ~any_of:[ Permission.Destroy (Permission.Tenant, Some command.tenant_id) ]
+      ~any_of:
+        [ Permission.Destroy
+            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+        ]
   ;;
 end
 
 module AssignOperator : sig
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Common.Id.t
+    ; tenant_id : Common.Id.t
     }
 
   val handle
     :  Tenant.t
     -> Admin.operator Admin.t
-    -> (Tenant.event, string) result
+    -> (Pool_event.t list, string) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : string
-    ; tenant_id : string
+    { user_id : Common.Id.t
+    ; tenant_id : Common.Id.t
     }
 
-  let handle tenant user = Ok (Tenant.OperatorAssigned (tenant, user))
+  let handle tenant user =
+    Ok [ Tenant.OperatorAssigned (tenant, user) |> Pool_event.tenant ]
+  ;;
 
   let can user command =
     Permission.can
@@ -264,7 +282,7 @@ module DivestOperator : sig
   val handle
     :  Tenant.t
     -> Admin.operator Admin.t
-    -> (Tenant.event, string) result
+    -> (Pool_event.t list, string) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -273,14 +291,17 @@ end = struct
     ; tenant_id : string
     }
 
-  let handle tenant user = Ok (Tenant.OperatorDivested (tenant, user))
+  let handle tenant user =
+    Ok [ Tenant.OperatorDivested (tenant, user) |> Pool_event.tenant ]
+  ;;
 
   let can user command =
     Permission.can
       user
       ~any_of:
         [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Tenant, Some command.tenant_id)
+        ; Permission.Manage
+            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
         ]
   ;;
 end
@@ -288,7 +309,7 @@ end
 module GenerateStatusReport : sig
   type t = { tenant_id : string }
 
-  val handle : t -> Tenant.t -> (Tenant.event list, string) result
+  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
 end = struct
   type t = { tenant_id : string }
 
@@ -298,7 +319,7 @@ end
 module AddRoot : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl_user.t -> (Tenant.event list, string) result
+  val handle : t -> Sihl_user.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }

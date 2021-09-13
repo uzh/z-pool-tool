@@ -33,14 +33,9 @@ let handle_event : event -> unit Lwt.t = function
   | ExperimentDestroyed experiment -> Repo.destroy experiment
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
-    Permission.divest
-      (Admin.user user)
-      (Role.operator (experiment.id |> Id.to_human))
+    Permission.divest (Admin.user user) (Role.operator experiment.id)
   | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
-    ->
-    Permission.divest
-      (Admin.user user)
-      (Role.operator (experiment.id |> Id.to_human))
+    -> Permission.divest (Admin.user user) (Role.operator experiment.id)
 ;;
 
 let equal_event event1 event2 =
