@@ -1,78 +1,66 @@
 open CCResult.Infix
+open Tenant
 
 module AddTenant : sig
   type t =
-    { title : string
-    ; description : string
-    ; url : string
-    ; database : string
-    ; smtp_server : string
-    ; smtp_port : string
-    ; smtp_username : string
-    ; smtp_authentication_method : string
-    ; smtp_protocol : string
-    ; styles : string
-    ; icon : string
-    ; logos : string
-    ; partner_logos : string
-    ; disabled : bool
-    ; default_language : string
+    { title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database : Database.t
+    ; smtp_server : SmtpAuth.Server.t
+    ; smtp_port : SmtpAuth.Port.t
+    ; smtp_username : SmtpAuth.Protocol.t
+    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogo.t
+    ; default_language : Settings.Language.t
     }
 
   val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { title : string
-    ; description : string
-    ; url : string
-    ; database : string
-    ; smtp_server : string
-    ; smtp_port : string
-    ; smtp_username : string
-    ; smtp_authentication_method : string
-    ; smtp_protocol : string
-    ; styles : string
-    ; icon : string
-    ; logos : string
-    ; partner_logos : string
-    ; disabled : bool
-    ; default_language : string
+    { title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database : Database.t
+    ; smtp_server : SmtpAuth.Server.t
+    ; smtp_port : SmtpAuth.Port.t
+    ; smtp_username : SmtpAuth.Protocol.t
+    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogo.t
+    ; default_language : Settings.Language.t
     }
 
-  let handle (t : t) =
-    let open Tenant in
+  let handle (command : t) =
     let create =
-      let open CCResult in
-      let* title = Title.create t.title in
-      let* description = Description.create t.description in
-      let* url = Url.create t.url in
       let* smtp_auth =
         SmtpAuth.create
-          t.smtp_server
-          t.smtp_port
-          t.smtp_username
-          t.smtp_authentication_method
-          t.smtp_protocol
+          command.smtp_server
+          command.smtp_port
+          command.smtp_username
+          command.smtp_authentication_method
+          command.smtp_protocol
           ()
       in
-      let* database = Database.create t.database in
-      let* styles = Styles.create t.styles in
-      let* icon = Icon.create t.icon in
-      let* logos = Logos.create t.logos in
-      let* partner_logos = PartnerLogo.create t.partner_logos in
-      let* default_language = Settings.Language.of_string t.default_language in
       Ok
-        { title
-        ; description
-        ; url
-        ; database
+        { title = command.title
+        ; description = command.description
+        ; url = command.url
+        ; database = command.database
         ; smtp_auth
-        ; styles
-        ; icon
-        ; logos
-        ; partner_logos
-        ; default_language
+        ; styles = command.styles
+        ; icon = command.icon
+        ; logos = command.logos
+        ; partner_logos = command.partner_logos
+        ; default_language = command.default_language
         }
     in
     let event (t : Tenant.create) = [ Tenant.Added t |> Pool_event.tenant ] in
@@ -86,81 +74,69 @@ end
 
 module EditTenant : sig
   type t =
-    { tenant_id : Common.Id.t
-    ; title : string
-    ; description : string
-    ; url : string
-    ; database : string
-    ; smtp_server : string
-    ; smtp_port : string
-    ; smtp_username : string
-    ; smtp_authentication_method : string
-    ; smtp_protocol : string
-    ; styles : string
-    ; icon : string
-    ; logos : string
-    ; partner_logos : string
-    ; disabled : bool
-    ; default_language : string
+    { id : Common.Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database : Database.t
+    ; smtp_server : SmtpAuth.Server.t
+    ; smtp_port : SmtpAuth.Port.t
+    ; smtp_username : SmtpAuth.Protocol.t
+    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogo.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
     }
 
   val handle : t -> Tenant.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { tenant_id : Common.Id.t
-    ; title : string
-    ; description : string
-    ; url : string
-    ; database : string
-    ; smtp_server : string
-    ; smtp_port : string
-    ; smtp_username : string
-    ; smtp_authentication_method : string
-    ; smtp_protocol : string
-    ; styles : string
-    ; icon : string
-    ; logos : string
-    ; partner_logos : string
-    ; disabled : bool
-    ; default_language : string
+    { id : Common.Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database : Database.t
+    ; smtp_server : SmtpAuth.Server.t
+    ; smtp_port : SmtpAuth.Port.t
+    ; smtp_username : SmtpAuth.Protocol.t
+    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogo.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
     }
 
-  let handle (t : t) (tenant : Tenant.t) =
-    let open Tenant in
+  let handle (command : t) (tenant : Tenant.t) =
     let update =
-      let open CCResult in
-      let* title = Title.create t.title in
-      let* description = Description.create t.description in
-      let* url = Url.create t.url in
       let* smtp_auth =
         SmtpAuth.create
-          t.smtp_server
-          t.smtp_port
-          t.smtp_username
-          t.smtp_authentication_method
-          t.smtp_protocol
+          command.smtp_server
+          command.smtp_port
+          command.smtp_username
+          command.smtp_authentication_method
+          command.smtp_protocol
           ()
       in
-      let* database = Database.create t.database in
-      let* styles = Styles.create t.styles in
-      let* icon = Icon.create t.icon in
-      let* logos = Logos.create t.logos in
-      let* partner_logos = PartnerLogo.create t.partner_logos in
-      let* disabled = Disabled.create t.disabled in
-      let* default_language = Settings.Language.of_string t.default_language in
       Ok
-        { title
-        ; description
-        ; url
-        ; database
+        { title = command.title
+        ; description = command.description
+        ; url = command.url
+        ; database = command.database
         ; smtp_auth
-        ; styles
-        ; icon
-        ; logos
-        ; partner_logos
-        ; disabled
-        ; default_language
+        ; styles = command.styles
+        ; icon = command.icon
+        ; logos = command.logos
+        ; partner_logos = command.partner_logos
+        ; disabled = command.disabled
+        ; default_language = command.default_language
         }
     in
     let event (t : Tenant.update) =
@@ -172,7 +148,7 @@ end = struct
   let can user command =
     Permission.can
       user
-      ~any_of:[ Permission.Update (Permission.Tenant, Some command.tenant_id) ]
+      ~any_of:[ Permission.Update (Permission.Tenant, Some command.id) ]
   ;;
 end
 

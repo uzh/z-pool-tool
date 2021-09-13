@@ -1,31 +1,27 @@
-open CCResult.Infix
+open Experiment
 
 module AddExperiment : sig
   type t =
-    { title : string
-    ; description : string
+    { title : Experiment.Title.t
+    ; description : Experiment.Description.t
     }
 
-  val handle : Experiment.create -> (Pool_event.t list, string) result
+  val handle : t -> (Pool_event.t list, 'a) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { title : string
-    ; description : string
+    { title : Experiment.Title.t
+    ; description : Experiment.Description.t
     }
 
-  let handle t =
-    let open Experiment in
-    let create =
-      let open CCResult in
-      let* title = Title.create t.title in
-      let* description = Description.create t.description in
-      Ok { title; description }
+  let handle command =
+    let create : Experiment.create =
+      { title = command.title; description = command.description }
     in
     let event (t : Experiment.create) =
-      [ Experiment.ExperimentAdded t |> Pool_event.experiment ]
+      Ok [ Experiment.ExperimentAdded t |> Pool_event.experiment ]
     in
-    create >|= event
+    create |> event
   ;;
 
   let can user _ =
@@ -35,24 +31,24 @@ end
 
 module EditExperiment : sig
   type t =
-    { experiment_id : string
-    ; room : string
-    ; building : string
-    ; street : string
-    ; zip : string
-    ; city : string
+    { experiment_id : Common.Id.t
+    ; room : Experiment.Location.Room.t
+    ; building : Experiment.Location.Building.t
+    ; street : Experiment.Location.Street.t
+    ; zip : Experiment.Location.Zip.t
+    ; city : Experiment.Location.City.t
     }
 
   val handle : t -> Experiment.t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { experiment_id : string
-    ; room : string
-    ; building : string
-    ; street : string
-    ; zip : string
-    ; city : string
+    { experiment_id : Common.Id.t
+    ; room : Experiment.Location.Room.t
+    ; building : Experiment.Location.Building.t
+    ; street : Experiment.Location.Street.t
+    ; zip : Experiment.Location.Zip.t
+    ; city : Experiment.Location.City.t
     }
 
   let handle = Utils.todo
@@ -61,20 +57,18 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Update
-            ( Permission.Experiment
-            , Some (command.experiment_id |> Common.Id.of_string) )
+        [ Permission.Update (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
 end
 
 module DestroyExperiment : sig
-  type t = { experiment_id : string }
+  type t = { experiment_id : Common.Id.t }
 
   val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { experiment_id : string }
+  type t = { experiment_id : Common.Id.t }
 
   let handle = Utils.todo
 
@@ -82,15 +76,13 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Destroy
-            ( Permission.Experiment
-            , Some (command.experiment_id |> Common.Id.of_string) )
+        [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
 end
 
 module AddExperimenter : sig
-  type t = { user_id : string }
+  type t = { user_id : Common.Id.t }
 
   val handle
     :  Experiment.t
@@ -99,7 +91,7 @@ module AddExperimenter : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { user_id : string }
+  type t = { user_id : Common.Id.t }
 
   let handle experiment user =
     Ok
@@ -115,8 +107,8 @@ end
 
 module DivestExperimenter : sig
   type t =
-    { user_id : string
-    ; experiment_id : string
+    { user_id : Common.Id.t
+    ; experiment_id : Common.Id.t
     }
 
   val handle
@@ -127,8 +119,8 @@ module DivestExperimenter : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : string
-    ; experiment_id : string
+    { user_id : Common.Id.t
+    ; experiment_id : Common.Id.t
     }
 
   let handle experiment user =
@@ -143,15 +135,13 @@ end = struct
       user
       ~any_of:
         [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage
-            ( Permission.Experiment
-            , Some (command.experiment_id |> Common.Id.of_string) )
+        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
 end
 
 module AddAssistant : sig
-  type t = { user_id : string }
+  type t = { user_id : Common.Id.t }
 
   val handle
     :  Experiment.t
@@ -160,7 +150,7 @@ module AddAssistant : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { user_id : string }
+  type t = { user_id : Common.Id.t }
 
   let handle experiment user =
     Ok
@@ -175,8 +165,8 @@ end
 
 module DivestAssistant : sig
   type t =
-    { user_id : string
-    ; experiment_id : string
+    { user_id : Common.Id.t
+    ; experiment_id : Common.Id.t
     }
 
   val handle
@@ -187,8 +177,8 @@ module DivestAssistant : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : string
-    ; experiment_id : string
+    { user_id : Common.Id.t
+    ; experiment_id : Common.Id.t
     }
 
   let handle experiment user =
@@ -202,9 +192,7 @@ end = struct
       user
       ~any_of:
         [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage
-            ( Permission.Experiment
-            , Some (command.experiment_id |> Common.Id.of_string) )
+        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
 end
