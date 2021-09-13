@@ -80,6 +80,11 @@ module Disabled = struct
   type t = bool [@@deriving eq, show]
 
   let create t = Ok t
+
+  let to_bool = function
+    | "on" -> true
+    | _ -> false
+  ;;
 end
 
 type t =

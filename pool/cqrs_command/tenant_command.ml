@@ -7,11 +7,11 @@ module AddTenant : sig
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_server : SmtpAuth.Server.t
-    ; smtp_port : SmtpAuth.Port.t
-    ; smtp_username : SmtpAuth.Protocol.t
-    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; smtp_auth_server : SmtpAuth.Server.t
+    ; smtp_auth_port : SmtpAuth.Port.t
+    ; smtp_auth_username : SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : SmtpAuth.Protocol.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -20,6 +20,7 @@ module AddTenant : sig
     }
 
   val handle : t -> (Pool_event.t list, string) result
+  val decode : Conformist.input -> (create, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -27,11 +28,11 @@ end = struct
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_server : SmtpAuth.Server.t
-    ; smtp_port : SmtpAuth.Port.t
-    ; smtp_username : SmtpAuth.Protocol.t
-    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; smtp_auth_server : SmtpAuth.Server.t
+    ; smtp_auth_port : SmtpAuth.Port.t
+    ; smtp_auth_username : SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : SmtpAuth.Protocol.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -39,15 +40,122 @@ end = struct
     ; default_language : Settings.Language.t
     }
 
+  let command
+      title
+      description
+      url
+      database
+      smtp_auth_server
+      smtp_auth_port
+      smtp_auth_username
+      smtp_auth_authentication_method
+      smtp_auth_protocol
+      styles
+      icon
+      logos
+      partner_logos
+      default_language
+    =
+    { title
+    ; description
+    ; url
+    ; database
+    ; smtp_auth =
+        { server = smtp_auth_server
+        ; port = smtp_auth_port
+        ; username = smtp_auth_username
+        ; authentication_method = smtp_auth_authentication_method
+        ; protocol = smtp_auth_protocol
+        }
+    ; styles
+    ; icon
+    ; logos
+    ; partner_logos
+    ; default_language
+    }
+  ;;
+
+  let schema =
+    Conformist.(
+      make
+        [ custom
+            (fun l -> l |> List.hd |> Title.create)
+            (fun l -> [ Title.show l ])
+            "title"
+        ; custom
+            (fun l -> l |> List.hd |> Description.create)
+            (fun l -> [ Description.show l ])
+            "description"
+        ; custom
+            (fun l -> l |> List.hd |> Url.create)
+            (fun l -> [ Url.show l ])
+            "url"
+        ; custom
+            (fun l -> l |> List.hd |> Database.create)
+            (fun l -> [ Database.show l ])
+            "daetabase"
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Server.create)
+            (fun l -> [ SmtpAuth.Server.show l ])
+            "smtp_auth_server"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Port.create)
+            (fun l -> [ SmtpAuth.Port.show l ])
+            "smtp_auth_port"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Username.create)
+            (fun l -> [ SmtpAuth.Username.show l ])
+            "smtp_auth_username"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.AuthenticationMethod.create)
+            (fun l -> [ SmtpAuth.AuthenticationMethod.show l ])
+            "smtp_auth_authentication_method"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Protocol.create)
+            (fun l -> [ SmtpAuth.Protocol.show l ])
+            "smtp_auth_authentication_protocol"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Styles.create)
+            (fun l -> [ Styles.show l ])
+            "styles"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Icon.create)
+            (fun l -> [ Icon.show l ])
+            "icon"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Logos.create)
+            (fun l -> [ Logos.show l ])
+            "logos"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> PartnerLogo.create)
+            (fun l -> [ PartnerLogo.show l ])
+            "partner_logo"
+        ; custom
+            (fun l -> l |> List.hd |> Settings.Language.of_string)
+            (fun l -> [ Settings.Language.show l ])
+            "default_language"
+            ~meta:()
+        ]
+        command)
+  ;;
+
   let handle (command : t) =
     let create =
       let* smtp_auth =
         SmtpAuth.create
-          command.smtp_server
-          command.smtp_port
-          command.smtp_username
-          command.smtp_authentication_method
-          command.smtp_protocol
+          command.smtp_auth_server
+          command.smtp_auth_port
+          command.smtp_auth_username
+          command.smtp_auth_authentication_method
+          command.smtp_auth_protocol
           ()
       in
       Ok
@@ -70,20 +178,21 @@ end = struct
   let can user _ =
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
   ;;
+
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module EditTenant : sig
   type t =
-    { id : Common.Id.t
-    ; title : Title.t
+    { title : Title.t
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_server : SmtpAuth.Server.t
-    ; smtp_port : SmtpAuth.Port.t
-    ; smtp_username : SmtpAuth.Protocol.t
-    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; smtp_auth_server : SmtpAuth.Server.t
+    ; smtp_auth_port : SmtpAuth.Port.t
+    ; smtp_auth_username : SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : SmtpAuth.Protocol.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -93,19 +202,19 @@ module EditTenant : sig
     }
 
   val handle : t -> Tenant.t -> (Pool_event.t list, string) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val decode : Conformist.input -> (update, Conformist.error list) result
+  val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
 end = struct
   type t =
-    { id : Common.Id.t
-    ; title : Title.t
+    { title : Title.t
     ; description : Description.t
     ; url : Url.t
     ; database : Database.t
-    ; smtp_server : SmtpAuth.Server.t
-    ; smtp_port : SmtpAuth.Port.t
-    ; smtp_username : SmtpAuth.Protocol.t
-    ; smtp_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_protocol : SmtpAuth.Protocol.t
+    ; smtp_auth_server : SmtpAuth.Server.t
+    ; smtp_auth_port : SmtpAuth.Port.t
+    ; smtp_auth_username : SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : SmtpAuth.Protocol.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -114,15 +223,129 @@ end = struct
     ; default_language : Settings.Language.t
     }
 
+  let command
+      title
+      description
+      url
+      database
+      smtp_auth_server
+      smtp_auth_port
+      smtp_auth_username
+      smtp_auth_authentication_method
+      smtp_auth_protocol
+      styles
+      icon
+      logos
+      partner_logos
+      disabled
+      default_language
+    =
+    { title
+    ; description
+    ; url
+    ; database
+    ; smtp_auth =
+        { server = smtp_auth_server
+        ; port = smtp_auth_port
+        ; username = smtp_auth_username
+        ; authentication_method = smtp_auth_authentication_method
+        ; protocol = smtp_auth_protocol
+        }
+    ; styles
+    ; icon
+    ; logos
+    ; partner_logos
+    ; disabled = disabled |> Disabled.to_bool
+    ; default_language
+    }
+  ;;
+
+  let schema =
+    Conformist.(
+      make
+        [ custom
+            (fun l -> l |> List.hd |> Title.create)
+            (fun l -> [ Title.show l ])
+            "title"
+        ; custom
+            (fun l -> l |> List.hd |> Description.create)
+            (fun l -> [ Description.show l ])
+            "description"
+        ; custom
+            (fun l -> l |> List.hd |> Url.create)
+            (fun l -> [ Url.show l ])
+            "url"
+        ; custom
+            (fun l -> l |> List.hd |> Database.create)
+            (fun l -> [ Database.show l ])
+            "daetabase"
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Server.create)
+            (fun l -> [ SmtpAuth.Server.show l ])
+            "smtp_auth_server"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Port.create)
+            (fun l -> [ SmtpAuth.Port.show l ])
+            "smtp_auth_port"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Username.create)
+            (fun l -> [ SmtpAuth.Username.show l ])
+            "smtp_auth_username"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.AuthenticationMethod.create)
+            (fun l -> [ SmtpAuth.AuthenticationMethod.show l ])
+            "smtp_auth_authentication_method"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> SmtpAuth.Protocol.create)
+            (fun l -> [ SmtpAuth.Protocol.show l ])
+            "smtp_auth_authentication_protocol"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Styles.create)
+            (fun l -> [ Styles.show l ])
+            "styles"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Icon.create)
+            (fun l -> [ Icon.show l ])
+            "icon"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> Logos.create)
+            (fun l -> [ Logos.show l ])
+            "logos"
+            ~meta:()
+        ; custom
+            (fun l -> l |> List.hd |> PartnerLogo.create)
+            (fun l -> [ PartnerLogo.show l ])
+            "partner_logo"
+          (* TODO [timhub]: how to deal with booleans? *)
+        ; custom
+            (fun l -> l |> List.hd |> Disabled.create)
+            (fun l -> [ l ])
+            "disabled"
+        ; custom
+            (fun l -> l |> List.hd |> Settings.Language.of_string)
+            (fun l -> [ Settings.Language.show l ])
+            "default_language"
+            ~meta:()
+        ]
+        command)
+  ;;
+
   let handle (command : t) (tenant : Tenant.t) =
     let update =
       let* smtp_auth =
         SmtpAuth.create
-          command.smtp_server
-          command.smtp_port
-          command.smtp_username
-          command.smtp_authentication_method
-          command.smtp_protocol
+          command.smtp_auth_server
+          command.smtp_auth_port
+          command.smtp_auth_username
+          command.smtp_auth_authentication_method
+          command.smtp_auth_protocol
           ()
       in
       Ok
@@ -144,6 +367,8 @@ end = struct
     in
     update >|= event
   ;;
+
+  let decode data = Conformist.decode_and_validate schema data
 
   let can user command =
     Permission.can
