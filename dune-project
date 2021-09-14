@@ -32,9 +32,11 @@
   (conformist
    (>= 0.6.0))
   (sihl
-   (= 1.0.0~rc3))
+   (>= 1.0.0))
   (sihl-user
-   (= 1.0.0~rc3))
+   (>= 1.0.0))
+  (sihl-token
+   (>= 1.0.0))
   (lwt
    (>= 5.4.1))
   (containers

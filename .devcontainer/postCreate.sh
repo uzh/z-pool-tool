@@ -5,6 +5,10 @@ sudo chown -R opam: node_modules
 
 opam init -a --shell=zsh
 
+# get newest opam packages
+opam remote remove --all default
+opam remote add default https://opam.ocaml.org
+
 # ensure all system dependencies are installed
 opam pin add -yn pool .
 opam depext -y pool
