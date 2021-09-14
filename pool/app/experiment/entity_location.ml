@@ -1,11 +1,3 @@
-module Id = struct
-  type t = string [@@deriving eq, show]
-
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
-  let to_human id = id
-  let t = Caqti_type.string
-end
-
 module Room = struct
   type t = string [@@deriving eq, show]
 
@@ -14,7 +6,6 @@ module Room = struct
   ;;
 
   let to_human room = room
-  let t = Caqti_type.string
 end
 
 module Building = struct
@@ -27,7 +18,6 @@ module Building = struct
   ;;
 
   let to_human building = building
-  let t = Caqti_type.string
 end
 
 module Street = struct
@@ -38,7 +28,6 @@ module Street = struct
   ;;
 
   let to_human street = street
-  let t = Caqti_type.string
 end
 
 module Zip = struct
@@ -55,7 +44,6 @@ module Zip = struct
   ;;
 
   let to_human zip = zip
-  let t = Caqti_type.string
 end
 
 module City = struct
@@ -66,11 +54,10 @@ module City = struct
   ;;
 
   let to_human city = city
-  let t = Caqti_type.string
 end
 
 type t =
-  { id : Id.t
+  { id : Common.Id.t
   ; room : Room.t
   ; building : Building.t
   ; street : Street.t
@@ -78,19 +65,3 @@ type t =
   ; city : City.t
   }
 [@@deriving eq, show]
-
-let encode m = Ok (m.id, (m.room, (m.building, (m.street, (m.zip, m.city)))))
-
-let decode (id, (room, (building, (street, (zip, city))))) =
-  Ok { id; room; building; street; zip; city }
-;;
-
-let t =
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2
-         Id.t
-         (tup2 Room.t (tup2 Building.t (tup2 Street.t (tup2 Zip.t City.t))))))
-;;

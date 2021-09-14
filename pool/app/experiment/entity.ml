@@ -1,13 +1,6 @@
 module Location = Entity_location
 
-module Title : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-end = struct
+module Title = struct
   type t = string [@@deriving eq, show]
 
   let create title =
@@ -15,14 +8,7 @@ end = struct
   ;;
 end
 
-module Description : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-end = struct
+module Description = struct
   type t = string [@@deriving eq, show]
 
   let create description =
@@ -32,15 +18,7 @@ end = struct
   ;;
 end
 
-module ExperimentDate : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Ptime.date -> (t, string) result
-  val value : t -> Ptime.t
-end = struct
+module ExperimentDate = struct
   type t = Ptime.t [@@deriving eq, show]
 
   let create date =
