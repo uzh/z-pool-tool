@@ -48,7 +48,7 @@ end = struct
     let ( let* ) = Result.bind in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
-      Participant.Email.Address.validate allowed_email_suffixes command.email
+      Common_user.Email.Address.validate allowed_email_suffixes command.email
     in
     let participant =
       Participant.

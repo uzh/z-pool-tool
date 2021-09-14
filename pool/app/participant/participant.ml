@@ -1,5 +1,5 @@
-include Event
 include Entity
+include Event
 
 let login _ ~email:_ ~password:_ = Utils.todo ()
 let find_by_user = Utils.todo
