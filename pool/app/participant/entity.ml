@@ -23,6 +23,13 @@ module RecruitmentChannel = struct
     | Lecture -> "lecture"
     | Mailing -> "mailing"
   ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> of_string)
+      (fun l -> [ to_string l ])
+      "recruitment_channel"
+  ;;
 end
 
 type t =

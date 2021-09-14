@@ -7,11 +7,19 @@ module Title : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "title"
   ;;
 end
 
@@ -22,6 +30,7 @@ module Description : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -29,6 +38,13 @@ end = struct
     if String.length description <= 0
     then Error "Invalid description!"
     else Ok description
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "description"
   ;;
 end
 
@@ -39,11 +55,19 @@ module Url : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
   let create url =
     if String.length url <= 0 then Error "Invalid url!" else Ok url
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "url"
   ;;
 end
 
@@ -54,6 +78,7 @@ module Database : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -61,6 +86,13 @@ end = struct
     if String.length database <= 0
     then Error "Invalid database!"
     else Ok database
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "database"
   ;;
 end
 
@@ -71,11 +103,19 @@ module Styles : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
   let create styles =
     if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "styles"
   ;;
 end
 
@@ -86,11 +126,19 @@ module Icon : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
   let create icon =
     if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "icon"
   ;;
 end
 
@@ -101,11 +149,19 @@ module Logos : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
   let create logos =
     if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "logos"
   ;;
 end
 
@@ -116,6 +172,7 @@ module PartnerLogo : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -123,6 +180,13 @@ end = struct
     if String.length partner_logo <= 0
     then Error "Invalid partner logo!"
     else Ok partner_logo
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "partner_logo"
   ;;
 end
 
@@ -135,6 +199,7 @@ module Maintenance : sig
   val create : bool -> t
   val value : t -> bool
   val stringify : t -> string
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = bool [@@deriving eq, show]
 
@@ -144,6 +209,21 @@ end = struct
   let stringify = function
     | true -> "true"
     | false -> "false"
+  ;;
+
+  let of_string = function
+    | "true" -> true
+    | _ -> false
+  ;;
+
+  let schema () =
+    (* TODO [timhub]: correctly handle booleands
+       https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
+       => Passes boolean as string "true" *)
+    Conformist.custom
+      (fun l -> l |> List.hd |> of_string |> CCResult.return)
+      (fun l -> [ stringify l ])
+      "maintenance"
   ;;
 end
 
@@ -156,6 +236,7 @@ module Disabled : sig
   val create : bool -> t
   val value : t -> bool
   val stringify : t -> string
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = bool [@@deriving eq, show]
 
@@ -165,6 +246,21 @@ end = struct
   let stringify = function
     | true -> "true"
     | false -> "false"
+  ;;
+
+  let of_string = function
+    | "true" -> true
+    | _ -> false
+  ;;
+
+  let schema () =
+    (* TODO [timhub]: correctly handle booleands
+       https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
+       => Passes boolean as strin "true" *)
+    Conformist.custom
+      (fun l -> l |> List.hd |> of_string |> CCResult.return)
+      (fun l -> [ stringify l ])
+      "disabled"
   ;;
 end
 

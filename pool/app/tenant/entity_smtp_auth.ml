@@ -5,6 +5,7 @@ module Server : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -12,6 +13,13 @@ end = struct
     if String.length server <= 0
     then Error "Invalid SMTP server !"
     else Ok server
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "smtp_auth_username"
   ;;
 end
 
@@ -22,6 +30,7 @@ module Port : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -29,6 +38,13 @@ end = struct
     if CCList.mem port [ "25"; "465"; "587" ]
     then Error "Invalid SMTP port!"
     else Ok port
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "smtp_auth_port"
   ;;
 end
 
@@ -39,6 +55,7 @@ module Username : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -46,6 +63,13 @@ end = struct
     if String.length username <= 0
     then Error "Invalid SMTP username!"
     else Ok username
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "smtp_auth_username"
   ;;
 end
 
@@ -56,6 +80,7 @@ module AuthenticationMethod : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -63,6 +88,13 @@ end = struct
     if String.length authentication_method <= 0
     then Error "Invalid SMTP authentication method!"
     else Ok authentication_method
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "smtp_auth_authentication_method"
   ;;
 end
 
@@ -73,6 +105,7 @@ module Protocol : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end = struct
   type t = string [@@deriving eq, show]
 
@@ -80,6 +113,13 @@ end = struct
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
     then Error "Invalid SMTP protocol!"
     else Ok protocol
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "smtp_auth_protocol"
   ;;
 end
 

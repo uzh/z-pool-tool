@@ -20,6 +20,13 @@ module Password = struct
   let pp (formatter : Format.formatter) (m : t) : unit =
     Format.fprintf formatter "%s" m
   ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ l ])
+      "password"
+  ;;
 end
 
 module PasswordConfirmed = struct
@@ -40,12 +47,26 @@ module Firstname = struct
   let create m =
     if String.length m <= 0 then Error "Invalid firstname" else Ok m
   ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ l ])
+      "firstname"
+  ;;
 end
 
 module Lastname = struct
   type t = string [@@deriving eq, show]
 
   let create m = if String.length m <= 0 then Error "Invalid lastname" else Ok m
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ l ])
+      "lastname"
+  ;;
 end
 
 module Paused = struct

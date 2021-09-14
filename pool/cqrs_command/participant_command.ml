@@ -35,27 +35,11 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ custom
-            (fun l -> l |> List.hd |> User.Email.Address.create)
-            (fun l -> [ User.Email.Address.show l ])
-            "email"
-        ; custom
-            (fun l -> l |> List.hd |> User.Password.create)
-            (fun l -> [ User.Password.to_sihl l ])
-            "password"
-        ; custom
-            (fun l -> l |> List.hd |> User.Firstname.create)
-            (fun l -> [ User.Firstname.show l ])
-            "firstname"
-        ; custom
-            (fun l -> l |> List.hd |> User.Lastname.create)
-            (fun l -> [ User.Lastname.show l ])
-            "lastname"
-        ; custom
-            (fun l -> l |> List.hd |> Participant.RecruitmentChannel.of_string)
-            (fun l -> [ Participant.RecruitmentChannel.to_string l ])
-            "recruitment_channel"
-            ~meta:()
+        [ User.Email.Address.schema ()
+        ; User.Password.schema ()
+        ; User.Firstname.schema ()
+        ; User.Lastname.schema ()
+        ; Participant.RecruitmentChannel.schema ()
         ]
         command)
   ;;

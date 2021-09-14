@@ -24,11 +24,19 @@ module Language = struct
   ;;
 
   let t =
+    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
     Caqti_type.(
       custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
   ;;
 
   let label country_code = country_code |> code |> Utils.Countries.find
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> of_string)
+      (fun l -> [ show l ])
+      "default_language"
+  ;;
 end
 
 module EmailSuffix = struct

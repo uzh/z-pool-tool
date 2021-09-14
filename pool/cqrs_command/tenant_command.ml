@@ -78,71 +78,20 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ custom
-            (fun l -> l |> List.hd |> Title.create)
-            (fun l -> [ Title.show l ])
-            "title"
-        ; custom
-            (fun l -> l |> List.hd |> Description.create)
-            (fun l -> [ Description.show l ])
-            "description"
-        ; custom
-            (fun l -> l |> List.hd |> Url.create)
-            (fun l -> [ Url.show l ])
-            "url"
-        ; custom
-            (fun l -> l |> List.hd |> Database.create)
-            (fun l -> [ Database.show l ])
-            "daetabase"
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Server.create)
-            (fun l -> [ SmtpAuth.Server.show l ])
-            "smtp_auth_server"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Port.create)
-            (fun l -> [ SmtpAuth.Port.show l ])
-            "smtp_auth_port"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Username.create)
-            (fun l -> [ SmtpAuth.Username.show l ])
-            "smtp_auth_username"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.AuthenticationMethod.create)
-            (fun l -> [ SmtpAuth.AuthenticationMethod.show l ])
-            "smtp_auth_authentication_method"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Protocol.create)
-            (fun l -> [ SmtpAuth.Protocol.show l ])
-            "smtp_auth_authentication_protocol"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Styles.create)
-            (fun l -> [ Styles.show l ])
-            "styles"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Icon.create)
-            (fun l -> [ Icon.show l ])
-            "icon"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Logos.create)
-            (fun l -> [ Logos.show l ])
-            "logos"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> PartnerLogo.create)
-            (fun l -> [ PartnerLogo.show l ])
-            "partner_logo"
-        ; custom
-            (fun l -> l |> List.hd |> Settings.Language.of_string)
-            (fun l -> [ Settings.Language.show l ])
-            "default_language"
-            ~meta:()
+        [ Tenant.Title.schema ()
+        ; Tenant.Description.schema ()
+        ; Tenant.Url.schema ()
+        ; Tenant.Database.schema ()
+        ; Tenant.SmtpAuth.Server.schema ()
+        ; Tenant.SmtpAuth.Port.schema ()
+        ; Tenant.SmtpAuth.Username.schema ()
+        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+        ; Tenant.SmtpAuth.Protocol.schema ()
+        ; Tenant.Styles.schema ()
+        ; Tenant.Icon.schema ()
+        ; Tenant.Logos.schema ()
+        ; Tenant.PartnerLogo.schema ()
+        ; Settings.Language.schema ()
         ]
         command)
   ;;
@@ -260,84 +209,21 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ custom
-            (fun l -> l |> List.hd |> Title.create)
-            (fun l -> [ Title.show l ])
-            "title"
-        ; custom
-            (fun l -> l |> List.hd |> Description.create)
-            (fun l -> [ Description.show l ])
-            "description"
-        ; custom
-            (fun l -> l |> List.hd |> Url.create)
-            (fun l -> [ Url.show l ])
-            "url"
-        ; custom
-            (fun l -> l |> List.hd |> Database.create)
-            (fun l -> [ Database.show l ])
-            "daetabase"
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Server.create)
-            (fun l -> [ SmtpAuth.Server.show l ])
-            "smtp_auth_server"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Port.create)
-            (fun l -> [ SmtpAuth.Port.show l ])
-            "smtp_auth_port"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Username.create)
-            (fun l -> [ SmtpAuth.Username.show l ])
-            "smtp_auth_username"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.AuthenticationMethod.create)
-            (fun l -> [ SmtpAuth.AuthenticationMethod.show l ])
-            "smtp_auth_authentication_method"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> SmtpAuth.Protocol.create)
-            (fun l -> [ SmtpAuth.Protocol.show l ])
-            "smtp_auth_authentication_protocol"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Styles.create)
-            (fun l -> [ Styles.show l ])
-            "styles"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Icon.create)
-            (fun l -> [ Icon.show l ])
-            "icon"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> Logos.create)
-            (fun l -> [ Logos.show l ])
-            "logos"
-            ~meta:()
-        ; custom
-            (fun l -> l |> List.hd |> PartnerLogo.create)
-            (fun l -> [ PartnerLogo.show l ])
-            "partner_logo"
-          (* TODO [timhub]: correctly handle booleands
-
-             https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
-             => Passes boolean as strin "true" *)
-        ; custom
-            (fun l ->
-              l
-              |> List.hd
-              |> CCString.equal "1"
-              |> Disabled.create
-              |> CCResult.return)
-            (fun l -> [ l |> Disabled.stringify ])
-            "disabled"
-        ; custom
-            (fun l -> l |> List.hd |> Settings.Language.of_string)
-            (fun l -> [ Settings.Language.show l ])
-            "default_language"
-            ~meta:()
+        [ Tenant.Title.schema ()
+        ; Tenant.Description.schema ()
+        ; Tenant.Url.schema ()
+        ; Tenant.Database.schema ()
+        ; Tenant.SmtpAuth.Server.schema ()
+        ; Tenant.SmtpAuth.Port.schema ()
+        ; Tenant.SmtpAuth.Username.schema ()
+        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+        ; Tenant.SmtpAuth.Protocol.schema ()
+        ; Tenant.Styles.schema ()
+        ; Tenant.Icon.schema ()
+        ; Tenant.Logos.schema ()
+        ; Tenant.PartnerLogo.schema ()
+        ; Tenant.Disabled.schema ()
+        ; Settings.Language.schema ()
         ]
         command)
   ;;

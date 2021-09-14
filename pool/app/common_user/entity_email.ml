@@ -48,6 +48,13 @@ module Address = struct
 
   let validate = validate_suffix
   let create email = email |> remove_whitespaces |> validate_characters
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ show l ])
+      "email"
+  ;;
 end
 
 module VerifiedAt = struct
