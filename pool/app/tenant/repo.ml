@@ -94,6 +94,25 @@ module SmtpAuth = struct
   end
 
   let t =
+    let encode m =
+      Ok
+        ( Server.show m.server
+        , ( Port.show m.port
+          , ( Username.show m.username
+            , ( AuthenticationMethod.show m.authentication_method
+              , Protocol.show m.protocol ) ) ) )
+    in
+    let decode (server, (port, (username, (authentication_method, protocol)))) =
+      let ( let* ) = Result.bind in
+      let* server = Server.create server in
+      let* port = Port.create port in
+      let* username = Username.create username in
+      let* authentication_method =
+        AuthenticationMethod.create authentication_method
+      in
+      let* protocol = Protocol.create protocol in
+      Ok { server; port; username; authentication_method; protocol }
+    in
     Caqti_type.(
       custom
         ~encode

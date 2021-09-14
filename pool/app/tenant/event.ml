@@ -46,19 +46,18 @@ type event =
   | StatusReportGenerated of unit
 
 let handle_event : event -> unit Lwt.t = function
-  | Added create_t ->
+  | Added m ->
     create
-      create_t.title
-      create_t.description
-      create_t.url
-      create_t.database
-      create_t.smtp_auth
-      create_t.styles
-      create_t.icon
-      create_t.logos
-      create_t.partner_logos
-      create_t.default_language
-      ()
+      m.title
+      m.description
+      m.url
+      m.database
+      m.smtp_auth
+      m.styles
+      m.icon
+      m.logos
+      m.partner_logos
+      m.default_language
     |> Repo.insert
   | Edited (tenant, update_t) ->
     { tenant with

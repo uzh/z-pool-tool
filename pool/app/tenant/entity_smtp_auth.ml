@@ -1,12 +1,4 @@
-module Server : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Server = struct
   type t = string [@@deriving eq, show]
 
   let create server =
@@ -23,15 +15,7 @@ end = struct
   ;;
 end
 
-module Port : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Port = struct
   type t = string [@@deriving eq, show]
 
   let create port =
@@ -48,15 +32,7 @@ end = struct
   ;;
 end
 
-module Username : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Username = struct
   type t = string [@@deriving eq, show]
 
   let create username =
@@ -73,15 +49,7 @@ end = struct
   ;;
 end
 
-module AuthenticationMethod : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
 
   let create authentication_method =
@@ -98,15 +66,7 @@ end = struct
   ;;
 end
 
-module Protocol : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Protocol = struct
   type t = string [@@deriving eq, show]
 
   let create protocol =
@@ -132,29 +92,8 @@ type t =
   }
 [@@deriving eq, show]
 
-let create server port username authentication_method protocol () =
+let create server port username authentication_method protocol =
   let open CCResult in
-  let* server = Server.create server in
-  let* port = Port.create port in
-  let* username = Username.create username in
-  let* authentication_method =
-    AuthenticationMethod.create authentication_method
-  in
-  let* protocol = Protocol.create protocol in
-  Ok { server; port; username; authentication_method; protocol }
-;;
-
-let encode m =
-  Ok
-    ( Server.show m.server
-    , ( Port.show m.port
-      , ( Username.show m.username
-        , ( AuthenticationMethod.show m.authentication_method
-          , Protocol.show m.protocol ) ) ) )
-;;
-
-let decode (server, (port, (username, (authentication_method, protocol)))) =
-  let ( let* ) = Result.bind in
   let* server = Server.create server in
   let* port = Port.create port in
   let* username = Username.create username in

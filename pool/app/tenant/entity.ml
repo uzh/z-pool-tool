@@ -1,14 +1,6 @@
 module SmtpAuth = Entity_smtp_auth
 
-module Title : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Title = struct
   type t = string [@@deriving eq, show]
 
   let create title =
@@ -23,15 +15,7 @@ end = struct
   ;;
 end
 
-module Description : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Description = struct
   type t = string [@@deriving eq, show]
 
   let create description =
@@ -48,15 +32,7 @@ end = struct
   ;;
 end
 
-module Url : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Url = struct
   type t = string [@@deriving eq, show]
 
   let create url =
@@ -71,15 +47,7 @@ end = struct
   ;;
 end
 
-module Database : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Database = struct
   type t = string [@@deriving eq, show]
 
   let create database =
@@ -96,15 +64,7 @@ end = struct
   ;;
 end
 
-module Styles : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Styles = struct
   type t = string [@@deriving eq, show]
 
   let create styles =
@@ -119,15 +79,7 @@ end = struct
   ;;
 end
 
-module Icon : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Icon = struct
   type t = string [@@deriving eq, show]
 
   let create icon =
@@ -142,15 +94,7 @@ end = struct
   ;;
 end
 
-module Logos : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Logos = struct
   type t = string [@@deriving eq, show]
 
   let create logos =
@@ -165,15 +109,7 @@ end = struct
   ;;
 end
 
-module PartnerLogo : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module PartnerLogo = struct
   type t = string [@@deriving eq, show]
 
   let create partner_logo =
@@ -190,17 +126,7 @@ end = struct
   ;;
 end
 
-module Maintenance : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-  val stringify : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Maintenance = struct
   type t = bool [@@deriving eq, show]
 
   let create t = t
@@ -227,17 +153,7 @@ end = struct
   ;;
 end
 
-module Disabled : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-  val stringify : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
-end = struct
+module Disabled = struct
   type t = bool [@@deriving eq, show]
 
   let create t = t
@@ -284,7 +200,6 @@ type t =
 [@@deriving eq, show]
 
 let create
-    ?id
     title
     description
     url
@@ -295,9 +210,8 @@ let create
     logos
     partner_logos
     default_language
-    ()
   =
-  { id = id |> Option.value ~default:(Common.Id.create ())
+  { id = Common.Id.create ()
   ; title
   ; description
   ; url
