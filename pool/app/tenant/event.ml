@@ -78,10 +78,10 @@ let handle_event : event -> unit Lwt.t = function
     |> Repo.update
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | Disabled tenant ->
-    let disabled = true in
+    let disabled = true |> Disabled.create in
     { tenant with disabled } |> Repo.update
   | Enabled tenant ->
-    let disabled = false in
+    let disabled = false |> Disabled.create in
     { tenant with disabled } |> Repo.update
   | ActivateMaintenance tenant ->
     let maintenance = true in

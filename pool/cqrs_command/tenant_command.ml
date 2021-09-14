@@ -255,7 +255,7 @@ end = struct
     ; icon
     ; logos
     ; partner_logos
-    ; disabled = disabled |> Disabled.to_bool
+    ; disabled
     ; default_language
     }
   ;;
@@ -323,10 +323,17 @@ end = struct
             (fun l -> l |> List.hd |> PartnerLogo.create)
             (fun l -> [ PartnerLogo.show l ])
             "partner_logo"
-          (* TODO [timhub]: how to deal with booleans? *)
+          (* TODO [timhub]: correctly handle booleands
+
+             https://oxidizing.github.io/conformist/conformist/Conformist/index.html#val-bool *)
         ; custom
-            (fun l -> l |> List.hd |> Disabled.create)
-            (fun l -> [ l ])
+            (fun l ->
+              l
+              |> List.hd
+              |> CCString.equal "1"
+              |> Disabled.create
+              |> CCResult.return)
+            (fun l -> [ l |> Disabled.stringify ])
             "disabled"
         ; custom
             (fun l -> l |> List.hd |> Settings.Language.of_string)

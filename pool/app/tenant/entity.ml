@@ -76,14 +76,24 @@ module Maintenance = struct
   let create t = Ok t
 end
 
-module Disabled = struct
+module Disabled : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : bool -> t
+  val value : t -> bool
+  val stringify : t -> string
+end = struct
   type t = bool [@@deriving eq, show]
 
-  let create t = Ok t
+  let create t = t
+  let value m = m
 
-  let to_bool = function
-    | "on" -> true
-    | _ -> false
+  let stringify = function
+    | true -> "true"
+    | false -> "false"
   ;;
 end
 
@@ -131,7 +141,7 @@ let create
   ; logos
   ; partner_logos
   ; maintenance = false
-  ; disabled = false
+  ; disabled = Disabled.create false
   ; default_language
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()

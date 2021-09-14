@@ -120,7 +120,7 @@ let t =
                     , ( m.logos
                       , ( m.partner_logos
                         , ( m.maintenance
-                          , ( m.disabled
+                          , ( Disabled.value m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))
                             ) ) ) ) ) ) ) ) ) ) ) )
   in
@@ -152,7 +152,7 @@ let t =
       ; logos
       ; partner_logos
       ; maintenance
-      ; disabled
+      ; disabled = Disabled.create disabled
       ; default_language
       ; created_at
       ; updated_at
