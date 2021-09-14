@@ -1,4 +1,11 @@
-module Server = struct
+module Server : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create server =
@@ -8,7 +15,14 @@ module Server = struct
   ;;
 end
 
-module Port = struct
+module Port : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create port =
@@ -18,7 +32,14 @@ module Port = struct
   ;;
 end
 
-module Username = struct
+module Username : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create username =
@@ -28,7 +49,14 @@ module Username = struct
   ;;
 end
 
-module AuthenticationMethod = struct
+module AuthenticationMethod : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create authentication_method =
@@ -38,7 +66,14 @@ module AuthenticationMethod = struct
   ;;
 end
 
-module Protocol = struct
+module Protocol : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create protocol =
@@ -70,9 +105,22 @@ let create server port username authentication_method protocol () =
 ;;
 
 let encode m =
-  Ok (m.server, (m.port, (m.username, (m.authentication_method, m.protocol))))
+  Ok
+    ( Server.show m.server
+    , ( Port.show m.port
+      , ( Username.show m.username
+        , ( AuthenticationMethod.show m.authentication_method
+          , Protocol.show m.protocol ) ) ) )
 ;;
 
 let decode (server, (port, (username, (authentication_method, protocol)))) =
+  let ( let* ) = Result.bind in
+  let* server = Server.create server in
+  let* port = Port.create port in
+  let* username = Username.create username in
+  let* authentication_method =
+    AuthenticationMethod.create authentication_method
+  in
+  let* protocol = Protocol.create protocol in
   Ok { server; port; username; authentication_method; protocol }
 ;;

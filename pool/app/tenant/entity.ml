@@ -1,6 +1,13 @@
 module SmtpAuth = Entity_smtp_auth
 
-module Title = struct
+module Title : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create title =
@@ -8,7 +15,14 @@ module Title = struct
   ;;
 end
 
-module Description = struct
+module Description : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create description =
@@ -18,7 +32,14 @@ module Description = struct
   ;;
 end
 
-module Url = struct
+module Url : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create url =
@@ -26,7 +47,14 @@ module Url = struct
   ;;
 end
 
-module Database = struct
+module Database : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create database =
@@ -36,7 +64,14 @@ module Database = struct
   ;;
 end
 
-module Styles = struct
+module Styles : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create styles =
@@ -44,7 +79,14 @@ module Styles = struct
   ;;
 end
 
-module Icon = struct
+module Icon : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create icon =
@@ -52,7 +94,14 @@ module Icon = struct
   ;;
 end
 
-module Logos = struct
+module Logos : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create logos =
@@ -60,7 +109,14 @@ module Logos = struct
   ;;
 end
 
-module PartnerLogo = struct
+module PartnerLogo : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create partner_logo =
@@ -70,10 +126,25 @@ module PartnerLogo = struct
   ;;
 end
 
-module Maintenance = struct
+module Maintenance : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : bool -> t
+  val value : t -> bool
+  val stringify : t -> string
+end = struct
   type t = bool [@@deriving eq, show]
 
-  let create t = Ok t
+  let create t = t
+  let value m = m
+
+  let stringify = function
+    | true -> "true"
+    | false -> "false"
+  ;;
 end
 
 module Disabled : sig
@@ -140,7 +211,7 @@ let create
   ; icon
   ; logos
   ; partner_logos
-  ; maintenance = false
+  ; maintenance = Maintenance.create false
   ; disabled = Disabled.create false
   ; default_language
   ; created_at = Ptime_clock.now ()

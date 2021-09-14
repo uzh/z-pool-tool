@@ -84,10 +84,10 @@ let handle_event : event -> unit Lwt.t = function
     let disabled = false |> Disabled.create in
     { tenant with disabled } |> Repo.update
   | ActivateMaintenance tenant ->
-    let maintenance = true in
+    let maintenance = true |> Maintenance.create in
     { tenant with maintenance } |> Repo.update
   | DeactivateMaintenance tenant ->
-    let maintenance = false in
+    let maintenance = false |> Maintenance.create in
     { tenant with maintenance } |> Repo.update
   | OperatorAssigned (tenant, user) ->
     Permission.assign (Admin.user user) (Role.operator tenant.id)

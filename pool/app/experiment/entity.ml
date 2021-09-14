@@ -1,16 +1,28 @@
 module Location = Entity_location
 
-module Title = struct
+module Title : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
   ;;
-
-  let t = Caqti_type.string
 end
 
-module Description = struct
+module Description : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : string -> (t, string) result
+end = struct
   type t = string [@@deriving eq, show]
 
   let create description =
@@ -18,11 +30,17 @@ module Description = struct
     then Error "Invalid description!"
     else Ok description
   ;;
-
-  let t = Caqti_type.string
 end
 
-module ExperimentDate = struct
+module ExperimentDate : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : Ptime.date -> (t, string) result
+  val value : t -> Ptime.t
+end = struct
   type t = Ptime.t [@@deriving eq, show]
 
   let create date =
@@ -39,7 +57,7 @@ module ExperimentDate = struct
     experiment_date >>= compare
   ;;
 
-  let t = Caqti_type.ptime
+  let value m = m
 end
 
 type t =

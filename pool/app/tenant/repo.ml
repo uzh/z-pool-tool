@@ -110,16 +110,16 @@ let t =
   let encode m =
     Ok
       ( Common.Id.show m.id
-      , ( m.title
-        , ( m.description
-          , ( m.url
-            , ( m.database
+      , ( Title.show m.title
+        , ( Description.show m.description
+          , ( Url.show m.url
+            , ( Database.show m.database
               , ( m.smtp_auth
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.logos
-                      , ( m.partner_logos
-                        , ( m.maintenance
+                , ( Styles.show m.styles
+                  , ( Icon.show m.icon
+                    , ( Logos.show m.logos
+                      , ( PartnerLogo.show m.partner_logos
+                        , ( Maintenance.value m.maintenance
                           , ( Disabled.value m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))
                             ) ) ) ) ) ) ) ) ) ) ) )
@@ -140,6 +140,15 @@ let t =
                             , (default_language, (created_at, updated_at)) ) )
                         ) ) ) ) ) ) ) ) ) )
     =
+    let ( let* ) = Result.bind in
+    let* title = Title.create title in
+    let* description = Description.create description in
+    let* url = Url.create url in
+    let* database = Database.create database in
+    let* styles = Styles.create styles in
+    let* icon = Icon.create icon in
+    let* logos = Logos.create logos in
+    let* partner_logos = PartnerLogo.create partner_logos in
     Ok
       { id = Common.Id.of_string id
       ; title
@@ -151,7 +160,7 @@ let t =
       ; icon
       ; logos
       ; partner_logos
-      ; maintenance
+      ; maintenance = Maintenance.create maintenance
       ; disabled = Disabled.create disabled
       ; default_language
       ; created_at

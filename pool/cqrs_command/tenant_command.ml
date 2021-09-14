@@ -149,21 +149,18 @@ end = struct
 
   let handle (command : t) =
     let create =
-      let* smtp_auth =
-        SmtpAuth.create
-          command.smtp_auth_server
-          command.smtp_auth_port
-          command.smtp_auth_username
-          command.smtp_auth_authentication_method
-          command.smtp_auth_protocol
-          ()
-      in
       Ok
         { title = command.title
         ; description = command.description
         ; url = command.url
         ; database = command.database
-        ; smtp_auth
+        ; smtp_auth =
+            { server = command.smtp_auth_server
+            ; port = command.smtp_auth_port
+            ; username = command.smtp_auth_username
+            ; authentication_method = command.smtp_auth_authentication_method
+            ; protocol = command.smtp_auth_protocol
+            }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos
@@ -325,7 +322,8 @@ end = struct
             "partner_logo"
           (* TODO [timhub]: correctly handle booleands
 
-             https://oxidizing.github.io/conformist/conformist/Conformist/index.html#val-bool *)
+             https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
+             => Passes boolean as strin "true" *)
         ; custom
             (fun l ->
               l
@@ -346,21 +344,18 @@ end = struct
 
   let handle (command : t) (tenant : Tenant.t) =
     let update =
-      let* smtp_auth =
-        SmtpAuth.create
-          command.smtp_auth_server
-          command.smtp_auth_port
-          command.smtp_auth_username
-          command.smtp_auth_authentication_method
-          command.smtp_auth_protocol
-          ()
-      in
       Ok
         { title = command.title
         ; description = command.description
         ; url = command.url
         ; database = command.database
-        ; smtp_auth
+        ; smtp_auth =
+            { server = command.smtp_auth_server
+            ; port = command.smtp_auth_port
+            ; username = command.smtp_auth_username
+            ; authentication_method = command.smtp_auth_authentication_method
+            ; protocol = command.smtp_auth_protocol
+            }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos

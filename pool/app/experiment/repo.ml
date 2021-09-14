@@ -1,12 +1,34 @@
 open Entity
 
+module Title = struct
+  include Title
+
+  let t = Caqti_type.string
+end
+
+module Description = struct
+  include Description
+
+  let t = Caqti_type.string
+end
+
+module ExperimentDate = struct
+  include ExperimentDate
+
+  let t = Caqti_type.ptime
+end
+
 let t =
   let encode m =
     Ok
       ( Common.Id.show m.id
-      , (m.title, (m.description, (m.created_at, m.updated_at))) )
+      , ( Title.show m.title
+        , (Description.show m.description, (m.created_at, m.updated_at)) ) )
   in
   let decode (id, (title, (description, (created_at, updated_at)))) =
+    let ( let* ) = Result.bind in
+    let* title = Title.create title in
+    let* description = Description.create description in
     Ok
       { id = Common.Id.of_string id
       ; title
