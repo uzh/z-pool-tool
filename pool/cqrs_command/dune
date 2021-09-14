@@ -11,4 +11,5 @@
   admin
   common_user
   tenant
+  experiment
   conformist))

@@ -1,7 +1,7 @@
 module User = Common_user
 module Id = Common.Id
 
-module Sign_up : sig
+module SignUp : sig
   type t =
     { email : User.Email.Address.t
     ; password : User.Password.t

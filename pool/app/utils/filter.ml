@@ -30,9 +30,19 @@ module Ql = struct
     ;;
   end
 
+  module Limit = struct
+    type t = int
+  end
+
+  module Offset = struct
+    type t = int
+  end
+
   type t =
     { filter : Filter.t option
     ; sort : Sort.t option
+    ; limit : Limit.t option
+    ; offset : Offset.t option
     }
 
   module Sql = struct
@@ -144,7 +154,7 @@ module Ql = struct
 
   let to_sql = Sql.to_string
   let to_sql_fragments = Sql.to_fragments
-  let empty = { filter = None; sort = None }
+  let empty = { filter = None; sort = None; limit = None; offset = None }
   let set_filter filter query = { query with filter = Some filter }
 
   let set_filter_and criterion query =

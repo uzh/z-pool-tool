@@ -1,5 +1,6 @@
 (library
- (name settings)
- (libraries sihl permission utils)
+ (name experiment)
+ (libraries sihl ptime tenant)
+ (inline_tests)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

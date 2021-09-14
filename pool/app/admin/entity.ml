@@ -63,6 +63,14 @@ let equal_any one two =
 
 let pp_any f (Any m) = pp f m
 
+let user : type person_function. person_function t -> Sihl_user.t = function
+  | Assistant { user; _ }
+  | Experimenter { user; _ }
+  | LocationManager { user; _ }
+  | Recruiter { user; _ }
+  | Operator { user; _ } -> user
+;;
+
 module Duplicate = struct
   type t =
     { first : any [@equal equal_any] [@printer pp_any]
