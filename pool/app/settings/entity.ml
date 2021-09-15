@@ -1,13 +1,77 @@
-type language =
-  | En
-  | De
+module Day = struct
+  type t = int
+end
 
-type setting_value =
-  | Languages of language list
-  | Email_suffixes of string list
+module Week = struct
+  type t = int
+end
 
-type setting =
-  { setting : setting
-  ; created_at : Sihl.timestamp
-  ; updated_at : Sihl.timestamp
-  }
+module Language = struct
+  type t =
+    | En
+    | De
+  [@@deriving eq, show]
+
+  let code = function
+    | En -> "EN"
+    | De -> "DE"
+  ;;
+
+  let of_string = function
+    | "EN" -> Ok En
+    | "DE" -> Ok De
+    | _ -> Error "Invalid Language privided"
+  ;;
+
+  let t =
+    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
+    Caqti_type.(
+      custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
+  ;;
+
+  let label country_code = country_code |> code |> Utils.Countries.find
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> of_string)
+      (fun l -> [ show l ])
+      "default_language"
+  ;;
+end
+
+module EmailSuffix = struct
+  type t = string
+end
+
+module ContactEmail : sig
+  type t
+end = struct
+  type t = string
+end
+
+module InactiveUser = struct
+  module DisableAfter = struct
+    type t = Ptime.Span.t
+  end
+
+  module Warning = struct
+    type t = Ptime.Span.t
+  end
+end
+
+module SettingValue = struct
+  type t =
+    | Languages of Language.t list
+    | EmailContact of ContactEmail.t
+    | EmailSuffixes of EmailSuffix.t list
+    | UserSetToInactiveAfter of InactiveUser.DisableAfter.t
+    | UserSendWarningBeforeInactive of InactiveUser.Warning.t
+end
+
+module Setting = struct
+  type t =
+    { setting : SettingValue.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
+end

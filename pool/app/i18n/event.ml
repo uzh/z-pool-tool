@@ -1,7 +1,7 @@
 type event =
-  [ `I18n_changed of Entity.property
-  | `I18n_created of Entity.property
-  | `I18n_destroyed of Entity.property
+  [ `I18n_changed of Entity.Property.t
+  | `I18n_created of Entity.Property.t
+  | `I18n_destroyed of Entity.Property.t
   ]
 
 let handle_event : event -> unit Lwt.t = function

@@ -1,0 +1,16 @@
+(library
+ (name admin)
+ (libraries
+  sihl
+  sihl-user
+  service
+  permission
+  role
+  common_user
+  common
+  utils
+  ptime)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))
+
+(include_subdirs unqualified)

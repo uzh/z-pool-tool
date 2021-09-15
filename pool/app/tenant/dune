@@ -1,4 +1,5 @@
 (library
  (name tenant)
- (libraries sihl permission role)
- (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
+ (libraries sihl conformist admin permission role common settings utils)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

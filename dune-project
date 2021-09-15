@@ -31,13 +31,23 @@
    (>= 4.12.0))
   (conformist
    (>= 0.6.0))
+  (sihl
+   (>= 1.0.0))
+  (sihl-user
+   (>= 1.0.0))
+  (sihl-token
+   (>= 1.0.0))
   (lwt
    (>= 5.4.1))
   (containers
    (>= 3.4))
+  (caqti-driver-mariadb
+   (>= 1.6.0))
   (ocamlformat
    (>= 0.18.0))
   (alcotest-lwt
    (>= 1.4.0))
   (ppx_deriving
-   (>= 5.2.1))))
+   (>= 5.2.1))
+  (ppx_variants_conv
+   (>= 0.14.1))))

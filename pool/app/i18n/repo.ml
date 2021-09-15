@@ -1,4 +1,5 @@
-(* Following list of i18n properties needs to be created by default per tenant *)
+(* Following list of i18n properties needs to be created by default per
+   tenant *)
 
 (* confirmation_subject confirmation_text
    confirmation_without_self_registration_subject
@@ -10,6 +11,6 @@
    reminder_text session_finish_subject session_finish_text terms_and_conditions
    welcome_text password_policy_text *)
 
-let update = Sihl.todo
-let insert = Sihl.todo
-let delete = Sihl.todo
+let update = Utils.todo
+let insert = Utils.todo
+let delete = Utils.todo

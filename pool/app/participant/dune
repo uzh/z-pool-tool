@@ -1,4 +1,14 @@
 (library
  (name participant)
- (libraries sihl permission role)
- (preprocess (pps ppx_deriving.show ppx_deriving.eq)))
+ (libraries
+  sihl
+  sihl-user
+  service
+  permission
+  role
+  common_user
+  common
+  utils
+  ptime)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

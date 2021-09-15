@@ -1,4 +1,4 @@
 include Entity
 include Event
 
-let allowed_email_suffixes = Sihl.todo
+let allowed_email_suffixes = Utils.todo

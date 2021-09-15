@@ -1,3 +1,5 @@
 (library
  (name settings)
- (libraries sihl permission))
+ (libraries sihl conformist permission utils)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))

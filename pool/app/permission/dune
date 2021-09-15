@@ -1,3 +1,5 @@
 (library
  (name permission)
- (libraries sihl containers))
+ (libraries sihl sihl-user common containers utils)
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.eq)))
