@@ -20,8 +20,8 @@ module Port = struct
 
   let create port =
     if CCList.mem port [ "25"; "465"; "587" ]
-    then Error "Invalid SMTP port!"
-    else Ok port
+    then Ok port
+    else Error "Invalid SMTP port!"
   ;;
 
   let schema () =
@@ -71,8 +71,8 @@ module Protocol = struct
 
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
-    then Error "Invalid SMTP protocol!"
-    else Ok protocol
+    then Ok protocol
+    else Error "Invalid SMTP protocol!"
   ;;
 
   let schema () =
