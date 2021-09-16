@@ -93,13 +93,5 @@ type t =
 [@@deriving eq, show]
 
 let create server port username authentication_method protocol =
-  let open CCResult in
-  let* server = Server.create server in
-  let* port = Port.create port in
-  let* username = Username.create username in
-  let* authentication_method =
-    AuthenticationMethod.create authentication_method
-  in
-  let* protocol = Protocol.create protocol in
   Ok { server; port; username; authentication_method; protocol }
 ;;
