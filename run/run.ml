@@ -1,8 +1,4 @@
-let migrations =
-  let open Database.Migration in
-  [ tenant () ]
-;;
-
+let migrations = [ Database.Migration.tenant () ]
 let commands = [ Command.Tenant.create_tenant ]
 
 let services =
