@@ -1,5 +1,5 @@
 (library
  (name handler)
- (libraries sihl service cqrs_command http_utils page)
+ (libraries service sihl)
  (preprocess
   (pps lwt_ppx)))
