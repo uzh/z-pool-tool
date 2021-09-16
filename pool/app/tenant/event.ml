@@ -46,20 +46,25 @@ type event =
   | OperatorDivested of t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
-let handle_event : event -> unit Lwt.t = function
+let handle_event : event -> unit Lwt.t =
+  let open Lwt.Syntax in
+  function
   | Added m ->
-    create
-      m.title
-      m.description
-      m.url
-      m.database
-      m.smtp_auth
-      m.styles
-      m.icon
-      m.logos
-      m.partner_logos
-      m.default_language
-    |> Repo.insert
+    let* _ =
+      create
+        m.title
+        m.description
+        m.url
+        m.database
+        m.smtp_auth
+        m.styles
+        m.icon
+        m.logos
+        m.partner_logos
+        m.default_language
+      |> Repo.insert
+    in
+    Lwt.return_unit
   | Edited (tenant, update_t) ->
     { tenant with
       title = update_t.title
