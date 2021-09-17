@@ -45,7 +45,7 @@ module Location : sig
   end
 
   type t =
-    { id : Common.Id.t
+    { id : Pool_common.Id.t
     ; room : Room.t
     ; building : Building.t
     ; street : Street.t
@@ -87,7 +87,7 @@ module ExperimentDate : sig
 end
 
 type t =
-  { id : Common.Id.t
+  { id : Pool_common.Id.t
   ; title : Title.t
   ; description : Description.t
   ; created_at : Ptime.t
@@ -97,7 +97,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val create : ?id:Common.Id.t -> Title.t -> Description.t -> unit -> t
+val create : ?id:Pool_common.Id.t -> Title.t -> Description.t -> unit -> t
 
 type create =
   { title : Title.t
@@ -124,9 +124,6 @@ val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
-module Filter = Utils.Filter
-
-type handle_list_experiments = Filter.Ql.t -> t list Lwt.t
 type add = t -> t Lwt.t
 type update = t -> t Lwt.t
 type destroy = t -> t Lwt.t

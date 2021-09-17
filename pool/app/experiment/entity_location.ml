@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module Room = struct
   type t = string [@@deriving eq, show]
 
@@ -57,7 +59,7 @@ module City = struct
 end
 
 type t =
-  { id : Common.Id.t
+  { id : Id.t
   ; room : Room.t
   ; building : Building.t
   ; street : Street.t
