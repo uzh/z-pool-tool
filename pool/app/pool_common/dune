@@ -1,4 +1,5 @@
 (library
+ ; Cannot just be named as "common" because there is a module common in caqti-driver-mariadb
  (name pool_common)
  (libraries sihl)
  (preprocess
