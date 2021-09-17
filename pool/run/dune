@@ -1,0 +1,3 @@
+(executable
+ (name run)
+ (libraries sihl service database command routes caqti-driver-mariadb))

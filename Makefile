@@ -31,7 +31,7 @@ install: all ## Install the packages on the system
 
 .PHONY: sihl
 sihl: all ## Run the produced executable
-	SIHL_ENV=development opam exec -- dune exec --root . run/run.exe $(ARGS)
+	SIHL_ENV=development opam exec -- dune exec --root . pool/run/run.exe $(ARGS)
 
 .PHONY: test
 test: ## Run the all tests
@@ -63,7 +63,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	dune build
 	if [ $$? -eq 0 ]
 	then
-		SIHL_ENV=development ./_build/default/run/run.exe server &
+		SIHL_ENV=development ./_build/default/pool/run/run.exe server &
 		PID=$$!
 	fi
 	echo
