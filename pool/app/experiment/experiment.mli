@@ -124,9 +124,6 @@ val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
-module Filter = Utils.Filter
-
-type handle_list_experiments = Filter.Ql.t -> t list Lwt.t
 type add = t -> t Lwt.t
 type update = t -> t Lwt.t
 type destroy = t -> t Lwt.t

@@ -219,10 +219,8 @@ val find_by_id : string -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 
-type list_recruiters
-type list_tenants
-type handle_list_recruiters = list_recruiters -> Sihl_user.t list Lwt.t
-type handle_list_tenants = list_tenants -> t list Lwt.t
+type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
+type handle_list_tenants = unit -> t list Lwt.t
 
 (* MONITORING AND MANAGEMENT *)
 
