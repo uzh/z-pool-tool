@@ -1,0 +1,5 @@
+(library
+ (name command)
+ (libraries sihl service database cqrs_command settings pool_event)
+ (preprocess
+  (pps lwt_ppx)))
