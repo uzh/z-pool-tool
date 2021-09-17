@@ -1,5 +1,6 @@
 open CCResult.Infix
 open Tenant
+module Id = Pool_common.Id
 
 module AddTenant : sig
   type t =
@@ -274,10 +275,7 @@ end = struct
   type t = { tenant_id : string }
 
   let handle t =
-    Ok
-      [ Tenant.Destroyed (t.tenant_id |> Common.Id.of_string)
-        |> Pool_event.tenant
-      ]
+    Ok [ Tenant.Destroyed (t.tenant_id |> Id.of_string) |> Pool_event.tenant ]
   ;;
 
   let can user command =
@@ -285,7 +283,7 @@ end = struct
       user
       ~any_of:
         [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
         ]
   ;;
 end
@@ -305,7 +303,7 @@ end = struct
       user
       ~any_of:
         [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
         ]
   ;;
 end
@@ -325,15 +323,15 @@ end = struct
       user
       ~any_of:
         [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
         ]
   ;;
 end
 
 module AssignOperator : sig
   type t =
-    { user_id : Common.Id.t
-    ; tenant_id : Common.Id.t
+    { user_id : Id.t
+    ; tenant_id : Id.t
     }
 
   val handle
@@ -344,8 +342,8 @@ module AssignOperator : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : Common.Id.t
-    ; tenant_id : Common.Id.t
+    { user_id : Id.t
+    ; tenant_id : Id.t
     }
 
   let handle tenant user =
@@ -390,7 +388,7 @@ end = struct
       ~any_of:
         [ Permission.Manage (Permission.System, None)
         ; Permission.Manage
-            (Permission.Tenant, Some (command.tenant_id |> Common.Id.of_string))
+            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
         ]
   ;;
 end

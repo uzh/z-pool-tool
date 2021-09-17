@@ -1,4 +1,6 @@
 open Entity
+module Id = Pool_common.Id
+module RepoId = Pool_common.Repo.Id
 
 module Title = struct
   include Title
@@ -53,19 +55,17 @@ module Location = struct
 
   let t =
     let encode m =
-      Ok
-        ( Common.Id.show m.id
-        , (m.room, (m.building, (m.street, (m.zip, m.city)))) )
+      Ok (Id.show m.id, (m.room, (m.building, (m.street, (m.zip, m.city)))))
     in
     let decode (id, (room, (building, (street, (zip, city))))) =
-      Ok { id = Common.Id.of_string id; room; building; street; zip; city }
+      Ok { id = Id.of_string id; room; building; street; zip; city }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
         (tup2
-           Common.Repo.Id.t
+           RepoId.t
            (tup2 Room.t (tup2 Building.t (tup2 Street.t (tup2 Zip.t City.t))))))
   ;;
 end
@@ -73,7 +73,7 @@ end
 let t =
   let encode m =
     Ok
-      ( Common.Id.show m.id
+      ( Id.show m.id
       , ( Title.show m.title
         , (Description.show m.description, (m.created_at, m.updated_at)) ) )
   in
@@ -81,21 +81,13 @@ let t =
     let ( let* ) = Result.bind in
     let* title = Title.create title in
     let* description = Description.create description in
-    Ok
-      { id = Common.Id.of_string id
-      ; title
-      ; description
-      ; created_at
-      ; updated_at
-      }
+    Ok { id = Id.of_string id; title; description; created_at; updated_at }
   in
   Caqti_type.(
     custom
       ~encode
       ~decode
-      (tup2
-         Common.Repo.Id.t
-         (tup2 Title.t (tup2 Description.t (tup2 ptime ptime)))))
+      (tup2 RepoId.t (tup2 Title.t (tup2 Description.t (tup2 ptime ptime)))))
 ;;
 
 let find_by_id = Utils.todo

@@ -1,4 +1,6 @@
 open Entity
+module Id = Pool_common.Id
+module RepoId = Pool_common.Repo.Id
 
 module Title = struct
   include Title
@@ -128,7 +130,7 @@ end
 let t =
   let encode m =
     Ok
-      ( Common.Id.show m.id
+      ( Id.show m.id
       , ( Title.show m.title
         , ( Description.show m.description
           , ( Url.show m.url
@@ -169,7 +171,7 @@ let t =
     let* logos = Logos.create logos in
     let* partner_logos = PartnerLogo.create partner_logos in
     Ok
-      { id = Common.Id.of_string id
+      { id = Id.of_string id
       ; title
       ; description
       ; url
@@ -191,7 +193,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         Common.Repo.Id.t
+         RepoId.t
          (tup2
             Title.t
             (tup2

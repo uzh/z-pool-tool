@@ -1,3 +1,4 @@
+module Id = Pool_common.Id
 module Location = Entity_location
 
 module Title = struct
@@ -39,7 +40,7 @@ module ExperimentDate = struct
 end
 
 type t =
-  { id : Common.Id.t
+  { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; created_at : Ptime.t
@@ -48,7 +49,7 @@ type t =
 [@@deriving eq, show]
 
 let create ?id title description () =
-  { id = id |> Option.value ~default:(Common.Id.create ())
+  { id = id |> Option.value ~default:(Id.create ())
   ; title
   ; description
   ; created_at = Ptime_clock.now ()

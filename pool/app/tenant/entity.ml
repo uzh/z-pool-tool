@@ -1,3 +1,4 @@
+module Id = Pool_common.Id
 module SmtpAuth = Entity_smtp_auth
 
 module Title = struct
@@ -181,7 +182,7 @@ module Disabled = struct
 end
 
 type t =
-  { id : Common.Id.t
+  { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
@@ -211,7 +212,7 @@ let create
     partner_logos
     default_language
   =
-  { id = Common.Id.create ()
+  { id = Id.create ()
   ; title
   ; description
   ; url

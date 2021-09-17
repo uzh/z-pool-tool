@@ -1,4 +1,5 @@
 open Experiment
+module Id = Pool_common.Id
 
 module AddExperiment : sig
   type t =
@@ -31,7 +32,7 @@ end
 
 module EditExperiment : sig
   type t =
-    { experiment_id : Common.Id.t
+    { experiment_id : Id.t
     ; room : Experiment.Location.Room.t
     ; building : Experiment.Location.Building.t
     ; street : Experiment.Location.Street.t
@@ -43,7 +44,7 @@ module EditExperiment : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { experiment_id : Common.Id.t
+    { experiment_id : Id.t
     ; room : Experiment.Location.Room.t
     ; building : Experiment.Location.Building.t
     ; street : Experiment.Location.Street.t
@@ -63,12 +64,12 @@ end = struct
 end
 
 module DestroyExperiment : sig
-  type t = { experiment_id : Common.Id.t }
+  type t = { experiment_id : Id.t }
 
   val handle : t -> (Pool_event.t list, string) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { experiment_id : Common.Id.t }
+  type t = { experiment_id : Id.t }
 
   let handle = Utils.todo
 
@@ -82,7 +83,7 @@ end = struct
 end
 
 module AddExperimenter : sig
-  type t = { user_id : Common.Id.t }
+  type t = { user_id : Id.t }
 
   val handle
     :  Experiment.t
@@ -91,7 +92,7 @@ module AddExperimenter : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { user_id : Common.Id.t }
+  type t = { user_id : Id.t }
 
   let handle experiment user =
     Ok
@@ -107,8 +108,8 @@ end
 
 module DivestExperimenter : sig
   type t =
-    { user_id : Common.Id.t
-    ; experiment_id : Common.Id.t
+    { user_id : Id.t
+    ; experiment_id : Id.t
     }
 
   val handle
@@ -119,8 +120,8 @@ module DivestExperimenter : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : Common.Id.t
-    ; experiment_id : Common.Id.t
+    { user_id : Id.t
+    ; experiment_id : Id.t
     }
 
   let handle experiment user =
@@ -141,7 +142,7 @@ end = struct
 end
 
 module AddAssistant : sig
-  type t = { user_id : Common.Id.t }
+  type t = { user_id : Id.t }
 
   val handle
     :  Experiment.t
@@ -150,7 +151,7 @@ module AddAssistant : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { user_id : Common.Id.t }
+  type t = { user_id : Id.t }
 
   let handle experiment user =
     Ok
@@ -165,8 +166,8 @@ end
 
 module DivestAssistant : sig
   type t =
-    { user_id : Common.Id.t
-    ; experiment_id : Common.Id.t
+    { user_id : Id.t
+    ; experiment_id : Id.t
     }
 
   val handle
@@ -177,8 +178,8 @@ module DivestAssistant : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { user_id : Common.Id.t
-    ; experiment_id : Common.Id.t
+    { user_id : Id.t
+    ; experiment_id : Id.t
     }
 
   let handle experiment user =

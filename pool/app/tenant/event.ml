@@ -1,4 +1,5 @@
 open Entity
+module Id = Pool_common.Id
 
 type create =
   { title : Title.t
@@ -36,7 +37,7 @@ let equal_operator_event (t1, o1) (t2, o2) =
 type event =
   | Added of create [@equal equal]
   | Edited of t * update
-  | Destroyed of Common.Id.t
+  | Destroyed of Id.t
   | Disabled of t
   | Enabled of t
   | ActivateMaintenance of t
@@ -101,7 +102,7 @@ let equal_event event1 event2 =
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
     equal tenant_one tenant_two && equal_update update_one update_two
   | Destroyed one, Destroyed two ->
-    String.equal (one |> Common.Id.show) (two |> Common.Id.show)
+    String.equal (one |> Id.show) (two |> Id.show)
   | Enabled one, Enabled two
   | Disabled one, Disabled two
   | ActivateMaintenance one, ActivateMaintenance two
@@ -123,7 +124,7 @@ let pp_event formatter event =
   | Edited (tenant, update) ->
     let () = pp formatter tenant in
     pp_update formatter update
-  | Destroyed m -> Common.Id.pp formatter m
+  | Destroyed m -> Id.pp formatter m
   | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
     pp formatter m
   | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->

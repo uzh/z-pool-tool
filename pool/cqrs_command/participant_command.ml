@@ -1,5 +1,5 @@
 module User = Common_user
-module Id = Common.Id
+module Id = Pool_common.Id
 
 module SignUp : sig
   type t =

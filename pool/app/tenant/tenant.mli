@@ -137,7 +137,7 @@ module Disabled : sig
 end
 
 type t =
-  { id : Common.Id.t
+  { id : Pool_common.Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
@@ -167,7 +167,11 @@ val create
   -> Settings.Language.t
   -> t
 
-module StatusReport = Tenant__Entity.StatusReport
+module StatusReport : sig
+  type t
+
+  val equal : t -> t -> bool
+end
 
 type create =
   { title : Title.t
@@ -199,7 +203,7 @@ type update =
 type event =
   | Added of create
   | Edited of t * update
-  | Destroyed of Common.Id.t
+  | Destroyed of Pool_common.Id.t
   | Disabled of t
   | Enabled of t
   | ActivateMaintenance of t

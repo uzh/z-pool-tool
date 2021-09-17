@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 type thing =
   | System
   | Tenant
@@ -10,10 +12,10 @@ type thing =
 
 type permission =
   | Create of thing
-  | Read of (thing * Common.Id.t option)
-  | Update of (thing * Common.Id.t option)
-  | Destroy of (thing * Common.Id.t option)
-  | Manage of (thing * Common.Id.t option)
+  | Read of (thing * Id.t option)
+  | Update of (thing * Id.t option)
+  | Destroy of (thing * Id.t option)
+  | Manage of (thing * Id.t option)
 [@@deriving eq, show]
 
 let explode_permission = function
