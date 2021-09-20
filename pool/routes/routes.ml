@@ -29,7 +29,7 @@ let global_middlewares =
 ;;
 
 module Public = struct
-  let routes = []
+  let routes = [ get "/" Handler.Public.index ]
 end
 
 let router = choose [ choose ~middlewares:global_middlewares Public.routes ]
