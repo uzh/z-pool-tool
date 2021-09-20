@@ -21,6 +21,7 @@ depends: [
   "sihl-token" {>= "1.0.0"}
   "lwt" {>= "5.4.1"}
   "containers" {>= "3.4"}
+  "tyxml-ppx" {>= "4.4.0"}
   "caqti-driver-mariadb" {>= "1.6.0"}
   "ocamlformat" {>= "0.18.0"}
   "alcotest-lwt" {>= "1.4.0"}

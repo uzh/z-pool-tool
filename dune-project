@@ -41,6 +41,8 @@
    (>= 5.4.1))
   (containers
    (>= 3.4))
+  (tyxml-ppx
+   (>= 4.4.0))
   (caqti-driver-mariadb
    (>= 1.6.0))
   (ocamlformat
