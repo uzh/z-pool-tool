@@ -5,16 +5,14 @@ let note title info ~message =
     let of_string value = [ Html.txt value ] in
     [%html
       {|
-        <div class="columns is-centered">
-          <div class="column is-half-desktop is-full-mobile content">
-            <h1 class="title">|}
+          <div>
+            <h1>|}
         (title |> of_string)
         {|</h1>
             <p>|}
         (info |> of_string)
         {|</p>
           </div>
-        </div>
       |}]
   in
   Page_layout.create ~children:[ html ] ~message ()

@@ -1,11 +1,10 @@
 open Tyxml
 
 module Message = struct
-  let concat_messages txts classname =
-    let classnames = [ "notification"; classname ] in
+  let concat_messages txts styles =
     [%html
-      {|<div class=|}
-        classnames
+      {|<div style=|}
+        styles
         {|>
          |}
         [ Html.txt (CCString.unlines txts) ]
@@ -24,19 +23,18 @@ module Message = struct
     | None -> [%html {|<div></div>|}]
     | Some message ->
       let success =
-        match_message (Http_utils.Message.get_success message) "is-success"
+        match_message (Http_utils.Message.get_success message) "color: green;"
       in
       let info =
-        match_message (Http_utils.Message.get_info message) "is-info"
+        match_message (Http_utils.Message.get_info message) "color: blue;"
       in
       let warning =
-        match_message (Http_utils.Message.get_warning message) "is-warning"
+        match_message (Http_utils.Message.get_warning message) "color: orange;"
       in
       let error =
-        match_message (Http_utils.Message.get_error message) "is-danger"
+        match_message (Http_utils.Message.get_error message) "color: red;"
       in
-      [%html
-        {|<div class="mb-5">|} [ success; info; warning; error ] {|</div>|}]
+      [%html {|<div>|} [ success; info; warning; error ] {|</div>|}]
   ;;
 end
 
