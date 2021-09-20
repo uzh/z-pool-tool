@@ -39,7 +39,9 @@ let handle_event : event -> unit Lwt.t =
       @@ Email.Address.show participant.email
     in
     let* () =
-      Permission.assign user (Role.participant (user.id |> Id.of_string))
+      Permission.assign
+        user
+        (Role.participant (user.Sihl_user.id |> Id.of_string))
     in
     Repo.insert participant
   | DetailsUpdated (params, person) -> Repo.update person params

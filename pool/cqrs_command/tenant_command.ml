@@ -62,12 +62,13 @@ end = struct
     ; url
     ; database
     ; smtp_auth =
-        { server = smtp_auth_server
-        ; port = smtp_auth_port
-        ; username = smtp_auth_username
-        ; authentication_method = smtp_auth_authentication_method
-        ; protocol = smtp_auth_protocol
-        }
+        SmtpAuth.
+          { server = smtp_auth_server
+          ; port = smtp_auth_port
+          ; username = smtp_auth_username
+          ; authentication_method = smtp_auth_authentication_method
+          ; protocol = smtp_auth_protocol
+          }
     ; styles
     ; icon
     ; logos
@@ -79,21 +80,22 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ Tenant.Title.schema ()
-        ; Tenant.Description.schema ()
-        ; Tenant.Url.schema ()
-        ; Tenant.Database.schema ()
-        ; Tenant.SmtpAuth.Server.schema ()
-        ; Tenant.SmtpAuth.Port.schema ()
-        ; Tenant.SmtpAuth.Username.schema ()
-        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
-        ; Tenant.SmtpAuth.Protocol.schema ()
-        ; Tenant.Styles.schema ()
-        ; Tenant.Icon.schema ()
-        ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogo.schema ()
-        ; Settings.Language.schema ()
-        ]
+        Field.
+          [ Tenant.Title.schema ()
+          ; Tenant.Description.schema ()
+          ; Tenant.Url.schema ()
+          ; Tenant.Database.schema ()
+          ; Tenant.SmtpAuth.Server.schema ()
+          ; Tenant.SmtpAuth.Port.schema ()
+          ; Tenant.SmtpAuth.Username.schema ()
+          ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Tenant.SmtpAuth.Protocol.schema ()
+          ; Tenant.Styles.schema ()
+          ; Tenant.Icon.schema ()
+          ; Tenant.Logos.schema ()
+          ; Tenant.PartnerLogo.schema ()
+          ; Settings.Language.schema ()
+          ]
         command)
   ;;
 
@@ -105,12 +107,13 @@ end = struct
         ; url = command.url
         ; database = command.database
         ; smtp_auth =
-            { server = command.smtp_auth_server
-            ; port = command.smtp_auth_port
-            ; username = command.smtp_auth_username
-            ; authentication_method = command.smtp_auth_authentication_method
-            ; protocol = command.smtp_auth_protocol
-            }
+            SmtpAuth.
+              { server = command.smtp_auth_server
+              ; port = command.smtp_auth_port
+              ; username = command.smtp_auth_username
+              ; authentication_method = command.smtp_auth_authentication_method
+              ; protocol = command.smtp_auth_protocol
+              }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos
@@ -192,12 +195,13 @@ end = struct
     ; url
     ; database
     ; smtp_auth =
-        { server = smtp_auth_server
-        ; port = smtp_auth_port
-        ; username = smtp_auth_username
-        ; authentication_method = smtp_auth_authentication_method
-        ; protocol = smtp_auth_protocol
-        }
+        SmtpAuth.
+          { server = smtp_auth_server
+          ; port = smtp_auth_port
+          ; username = smtp_auth_username
+          ; authentication_method = smtp_auth_authentication_method
+          ; protocol = smtp_auth_protocol
+          }
     ; styles
     ; icon
     ; logos
@@ -210,22 +214,23 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ Tenant.Title.schema ()
-        ; Tenant.Description.schema ()
-        ; Tenant.Url.schema ()
-        ; Tenant.Database.schema ()
-        ; Tenant.SmtpAuth.Server.schema ()
-        ; Tenant.SmtpAuth.Port.schema ()
-        ; Tenant.SmtpAuth.Username.schema ()
-        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
-        ; Tenant.SmtpAuth.Protocol.schema ()
-        ; Tenant.Styles.schema ()
-        ; Tenant.Icon.schema ()
-        ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogo.schema ()
-        ; Tenant.Disabled.schema ()
-        ; Settings.Language.schema ()
-        ]
+        Field.
+          [ Tenant.Title.schema ()
+          ; Tenant.Description.schema ()
+          ; Tenant.Url.schema ()
+          ; Tenant.Database.schema ()
+          ; Tenant.SmtpAuth.Server.schema ()
+          ; Tenant.SmtpAuth.Port.schema ()
+          ; Tenant.SmtpAuth.Username.schema ()
+          ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Tenant.SmtpAuth.Protocol.schema ()
+          ; Tenant.Styles.schema ()
+          ; Tenant.Icon.schema ()
+          ; Tenant.Logos.schema ()
+          ; Tenant.PartnerLogo.schema ()
+          ; Tenant.Disabled.schema ()
+          ; Settings.Language.schema ()
+          ]
         command)
   ;;
 
@@ -237,12 +242,13 @@ end = struct
         ; url = command.url
         ; database = command.database
         ; smtp_auth =
-            { server = command.smtp_auth_server
-            ; port = command.smtp_auth_port
-            ; username = command.smtp_auth_username
-            ; authentication_method = command.smtp_auth_authentication_method
-            ; protocol = command.smtp_auth_protocol
-            }
+            SmtpAuth.
+              { server = command.smtp_auth_server
+              ; port = command.smtp_auth_port
+              ; username = command.smtp_auth_username
+              ; authentication_method = command.smtp_auth_authentication_method
+              ; protocol = command.smtp_auth_protocol
+              }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos
