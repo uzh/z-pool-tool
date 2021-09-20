@@ -26,11 +26,3 @@ let error_page_not_found () =
     "An error occurred. The requested page could not be found."
     ~message:None
 ;;
-
-let error_general () =
-  note
-    "Something went wrong"
-    "An error occurred. Please clear the browser's cache and cookies and \
-     refresh the page."
-    ~message:None
-;;
