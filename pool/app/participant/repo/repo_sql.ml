@@ -18,6 +18,7 @@ let find_request =
       user_users.confirmed,
       user_users.created_at,
       user_users.updated_at
+
       pool_participants.recruitment_channel,
       pool_participants.terms_accepted_at,
       pool_participants.paused,
@@ -31,10 +32,6 @@ let find_request =
     WHERE uuid = UNHEX(REPLACE(?, '-', ''));
   |sql}
   |> Caqti_request.find Caqti_type.string Repo_model.t
-;;
-
-let find db_pool =
-  Utils.Database.find (Pool_common.Database.Label.value db_pool) find_request
 ;;
 
 let insert_request =
@@ -65,4 +62,8 @@ let insert_request =
 
 let insert db_pool =
   Utils.Database.exec (Pool_common.Database.Label.value db_pool) insert_request
+;;
+
+let find db_pool =
+  Utils.Database.find (Pool_common.Database.Label.value db_pool) find_request
 ;;
