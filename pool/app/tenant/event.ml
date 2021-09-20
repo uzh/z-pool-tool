@@ -96,7 +96,7 @@ let handle_event : event -> unit Lwt.t = function
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
-let equal_event event1 event2 =
+let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | Added one, Added two -> equal_create one two
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->

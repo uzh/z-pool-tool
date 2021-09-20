@@ -29,7 +29,7 @@ module Email = struct
       Repo.Email.update @@ Email.verify email
   ;;
 
-  let equal_event (one : event) (two : event) : bool =
+  let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     match one, two with
     | Created m, Created p -> Email.Address.equal m p
     | UpdatedUnverified (m1, p1), UpdatedUnverified (m2, p2) ->

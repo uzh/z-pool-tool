@@ -58,7 +58,7 @@ let handle_event : event -> unit Lwt.t =
   | Email event -> User.Event.Email.handle_event event
 ;;
 
-let equal_event (one : event) (two : event) : bool =
+let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   match one, two with
   | Created m, Created p -> equal_create m p
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
