@@ -19,19 +19,3 @@ let extract_happy_path result =
   extract_happy_path_generic result (fun err ->
       Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
-
-let extract_happy_path_with_actions result =
-  result
-  |> Result.map Lwt.return
-  |> CCResult.get_lazy (fun (error_msg, error_path, error_actions) ->
-         redirect_to_with_actions
-           error_path
-           (List.append
-              [ Message.set
-                  ~warning:[]
-                  ~success:[]
-                  ~info:[]
-                  ~error:[ error_msg ]
-              ]
-              error_actions))
-;;
