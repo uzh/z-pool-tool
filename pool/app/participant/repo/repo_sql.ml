@@ -18,7 +18,6 @@ let find_request =
       user_users.confirmed,
       user_users.created_at,
       user_users.updated_at
-
       pool_participants.recruitment_channel,
       pool_participants.terms_accepted_at,
       pool_participants.paused,
