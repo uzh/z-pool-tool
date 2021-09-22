@@ -80,7 +80,7 @@ module Url : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-module Database : sig
+module DatabaseUrl : sig
   type t
 
   val equal : t -> t -> bool
@@ -141,7 +141,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -158,7 +158,7 @@ val create
   :  Title.t
   -> Description.t
   -> Url.t
-  -> Database.t
+  -> DatabaseUrl.t
   -> SmtpAuth.t
   -> Styles.t
   -> Icon.t
@@ -177,7 +177,7 @@ type create =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -190,7 +190,7 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -218,6 +218,7 @@ val pp_event : Format.formatter -> event -> unit
 val find_by_id : string -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
+val find_all : unit -> (t list, string) Result.t Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

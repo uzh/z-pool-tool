@@ -5,7 +5,7 @@ type create =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -19,7 +19,7 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -55,7 +55,7 @@ let handle_event : event -> unit Lwt.t =
         m.title
         m.description
         m.url
-        m.database
+        m.database_url
         m.smtp_auth
         m.styles
         m.icon
@@ -70,7 +70,7 @@ let handle_event : event -> unit Lwt.t =
       title = update_t.title
     ; description = update_t.description
     ; url = update_t.url
-    ; database = update_t.database
+    ; database_url = update_t.database_url
     ; smtp_auth = update_t.smtp_auth
     ; styles = update_t.styles
     ; icon = update_t.icon

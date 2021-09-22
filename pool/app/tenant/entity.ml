@@ -48,20 +48,20 @@ module Url = struct
   ;;
 end
 
-module Database = struct
+module DatabaseUrl = struct
   type t = string [@@deriving eq, show]
 
-  let create database =
-    if String.length database <= 0
+  let create database_url =
+    if String.length database_url <= 0
     then Error "Invalid database!"
-    else Ok database
+    else Ok database_url
   ;;
 
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
       (fun l -> [ show l ])
-      "database"
+      "database_url"
   ;;
 end
 
@@ -186,7 +186,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_url : DatabaseUrl.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -204,7 +204,7 @@ let create
     title
     description
     url
-    database
+    database_url
     smtp_auth
     styles
     icon
@@ -216,7 +216,7 @@ let create
   ; title
   ; description
   ; url
-  ; database
+  ; database_url
   ; smtp_auth
   ; styles
   ; icon
