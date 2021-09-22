@@ -1,26 +1,19 @@
-open Tyxml
+open Tyxml.Html
 
 module Message = struct
   let concat_messages txts styles =
-    [%html
-      {|<div style=|}
-        styles
-        {|>
-         |}
-        [ Html.txt (CCString.unlines txts) ]
-        {|</div>
-      |}]
+    div ~a:[ a_style styles ] [ txt (CCString.unlines txts) ]
   ;;
 
   let match_message message classname =
     match message with
-    | [] -> [%html {|<div></div>|}]
+    | [] -> div []
     | txts -> concat_messages txts classname
   ;;
 
   let create ~message () =
     match message with
-    | None -> [%html {|<div></div>|}]
+    | None -> div []
     | Some message ->
       let success =
         match_message (Http_utils.Message.get_success message) "color: green;"
@@ -34,35 +27,19 @@ module Message = struct
       let error =
         match_message (Http_utils.Message.get_error message) "color: red;"
       in
-      [%html {|<div>|} [ success; info; warning; error ] {|</div>|}]
+      div [ success; info; warning; error ]
   ;;
 end
 
 let create ~children ~message () =
+  let page_title = title (txt "Pool tool") in
+  let charset = meta ~a:[ a_charset "utf8" ] () in
+  let viewport =
+    meta
+      ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
+      ()
+  in
   let message = Message.create ~message () in
-  [%html
-    {|
-  <!doctype html>
-  <html lang="en">
-     <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Pool</title>
-     </head>
-     <body>
-      <main>
-      <section>
-      |}
-      [ message ]
-      {|
-      </section>
-      <section>
-      |}
-      children
-      {|
-      </section>
-      </main>
-     </body>
-     </html>
-     |}]
+  let content = main [ message; children ] in
+  html (head page_title [ charset; viewport ]) (body [ content ])
 ;;

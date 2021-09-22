@@ -1,5 +1,3 @@
 (library
  (name page)
- (libraries tyxml sihl service http_utils)
- (preprocess
-  (pps tyxml-ppx)))
+ (libraries tyxml sihl service http_utils))
