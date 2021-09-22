@@ -11,7 +11,7 @@ module Server = struct
     Conformist.custom
       (fun l -> l |> List.hd |> create)
       (fun l -> [ show l ])
-      "smtp_auth_username"
+      "smtp_auth_server"
   ;;
 end
 

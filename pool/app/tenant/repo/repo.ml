@@ -17,11 +17,11 @@ module Sql = struct
           description,
           url,
           database_url,
-          smtp_server,
-          smtp_port,
-          smtp_username,
-          smtp_authentication_method,
-          smtp_protocol,
+          smtp_auth_server,
+          smtp_auth_port,
+          smtp_auth_username,
+          smtp_auth_authentication_method,
+          smtp_auth_protocol,
           styles,
           icon,
           logos,
@@ -51,11 +51,11 @@ module Sql = struct
         description,
         url,
         database_url,
-        smtp_server,
-        smtp_port,
-        smtp_username,
-        smtp_authentication_method,
-        smtp_protocol,
+        smtp_auth_server,
+        smtp_auth_port,
+        smtp_auth_username,
+        smtp_auth_authentication_method,
+        smtp_auth_protocol,
         styles,
         icon,
         logos,
@@ -91,10 +91,22 @@ module Sql = struct
 
   let insert_request = Caqti_request.exec RepoEntity.t insert_sql
   let insert t = Utils.Database.exec insert_request t
+
+  let insert_with_logs t =
+    Logs.info (fun m -> m "========: %s" (Entity.show t));
+    let insert () = Utils.Database.exec insert_request t in
+    ()
+    |> insert
+    |> Lwt_result.map_err (fun err ->
+           Logs.info (fun m -> m "%s" "=================");
+           Logs.info (fun m -> m "Error: %s" err);
+           Logs.info (fun m -> m "%s" "=================");
+           err)
+  ;;
 end
 
 let find_by_id (id : string) : (t, string) result Lwt.t = Utils.todo id
 let find_all = Sql.find_all
-let insert = Sql.insert
+let insert = Sql.insert_with_logs
 let update t = Utils.todo t
 let destroy = Utils.todo

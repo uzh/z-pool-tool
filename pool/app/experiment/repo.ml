@@ -55,7 +55,9 @@ module Location = struct
 
   let t =
     let encode m =
-      Ok (Id.show m.id, (m.room, (m.building, (m.street, (m.zip, m.city)))))
+      Ok
+        ( Id.show m.Location.id
+        , (m.room, (m.building, (m.street, (m.zip, m.city)))) )
     in
     let decode (id, (room, (building, (street, (zip, city))))) =
       Ok { id = Id.of_string id; room; building; street; zip; city }

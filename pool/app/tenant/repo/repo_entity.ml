@@ -130,7 +130,7 @@ end
 let t =
   let encode m =
     Ok
-      ( Id.show m.id
+      ( Id.value m.id
       , ( Title.show m.title
         , ( Description.show m.description
           , ( Url.show m.url

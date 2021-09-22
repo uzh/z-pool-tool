@@ -39,7 +39,9 @@ let handle_event : event -> unit Lwt.t =
       @@ Email.Address.show participant.email
     in
     let* () =
-      Permission.assign user (Role.participant (user.id |> Id.of_string))
+      Permission.assign
+        user
+        (Role.participant (user.Sihl_user.id |> Id.of_string))
     in
     Repo.insert participant
   | DetailsUpdated (params, person) -> Repo.update person params
@@ -56,7 +58,7 @@ let handle_event : event -> unit Lwt.t =
   | Email event -> User.Event.Email.handle_event event
 ;;
 
-let equal_event (one : event) (two : event) : bool =
+let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   match one, two with
   | Created m, Created p -> equal_create m p
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->

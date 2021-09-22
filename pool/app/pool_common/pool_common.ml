@@ -3,6 +3,7 @@ module Id = struct
 
   let create () = Uuidm.create `V4 |> Uuidm.to_string
   let of_string m = m
+  let value m = m
 end
 
 module Repo = struct

@@ -1,6 +1,12 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let handle_conformist_error (err : Conformist.error list) =
+  String.concat
+    "\n"
+    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
+;;
+
 let tenants req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
@@ -22,57 +28,37 @@ let tenants req =
 
 let create _ =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
-  let lift = Lwt_result.lift in
   let error_path = "/root/tenants" in
-  let create () =
-    Lwt_result.map_err (fun err -> err, error_path)
+  let events () =
+    Lwt_result.lift
     @@
-    let open Tenant in
-    let* title = Title.create "title" |> lift in
-    let* description = Description.create "description" |> lift in
-    let* url = Url.create "url" |> lift in
-    let* database_url = DatabaseUrl.create "database" |> lift in
-    let* smtp_auth_server = SmtpAuth.Server.create "smtp.uzh.ch" |> lift in
-    let* smtp_auth_port = SmtpAuth.Port.create "587" |> lift in
-    let* smtp_auth_username =
-      SmtpAuth.Username.create "engineering@econ.uzh.ch" |> lift
-    in
-    let* smtp_auth_authentication_method =
-      SmtpAuth.AuthenticationMethod.create "LOGIN" |> lift
-    in
-    let* smtp_auth_protocol = SmtpAuth.Protocol.create "SSL/TLS" |> lift in
-    let* smtp_auth =
-      SmtpAuth.create
-        smtp_auth_server
-        smtp_auth_port
-        smtp_auth_username
-        smtp_auth_authentication_method
-        smtp_auth_protocol
-      |> lift
-    in
-    let* styles = Styles.create "custom_stylesheet.css" |> lift in
-    let* icon = Icon.create "some icon" |> lift in
-    let* logos = Logos.create "some logos" |> lift in
-    let* partner_logos = PartnerLogos.create "some partner" |> lift in
-    let* default_language = Settings.Language.of_string "EN" |> lift in
-    lift
-      (Ok
-         { title
-         ; description
-         ; url
-         ; database_url
-         ; smtp_auth
-         ; styles
-         ; icon
-         ; logos
-         ; partner_logos
-         ; default_language
-         })
+    let open CCResult.Infix in
+    (* TODO exchange with "urlencoded" *)
+    [ "title", [ "title" ]
+    ; "description", [ "description" ]
+    ; "url", [ "url" ]
+    ; "database_url", [ "database" ]
+    ; "smtp_auth_server", [ "smtp.uzh.ch" ]
+    ; "smtp_auth_port", [ "587" ]
+    ; "smtp_auth_username", [ "engineering@econ.uzh.ch" ]
+    ; "smtp_auth_authentication_method", [ "LOGIN" ]
+    ; "smtp_auth_protocol", [ "SSL/TLS" ]
+    ; "styles", [ "custom_stylesheet.css" ]
+    ; "icon", [ "some icon" ]
+    ; "logos", [ "some logos" ]
+    ; "partner_logos", [ "some partner" ]
+    ; "default_language", [ "EN" ]
+    ]
+    |> Cqrs_command.Tenant_command.AddTenant.decode
+    |> CCResult.map_err handle_conformist_error
+    >>= Cqrs_command.Tenant_command.AddTenant.handle
+    |> CCResult.map_err (fun err -> err, error_path)
   in
-  let handle tenant =
-    let* events = Cqrs_command.Tenant_command.AddTenant.handle tenant |> lift in
-    let _ = CCList.map (fun event -> Pool_event.handle_event event) events in
+  let handle events =
+    let ( let* ) = Lwt.bind in
+    let* _ =
+      Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
+    in
     Lwt.return_ok ()
   in
   let return_to_overview =
@@ -81,7 +67,7 @@ let create _ =
       [ Message.set ~success:[ "Tenant was successfully created." ] ]
   in
   ()
-  |> create
+  |> events
   >|= handle
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path

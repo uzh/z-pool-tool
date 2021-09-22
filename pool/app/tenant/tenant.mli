@@ -59,6 +59,8 @@ end
 module Title : sig
   type t
 
+  (* TODO [timhub]: can I expose value fnc? *)
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t

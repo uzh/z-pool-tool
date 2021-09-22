@@ -90,3 +90,11 @@ let create_tenant =
         print_endline help_text;
         Lwt.return_some ())
 ;;
+
+let seed_tenants =
+  Sihl.Command.make
+    ~name:"tenant.seed"
+    ~description:"seeds new tenants"
+    (fun _ -> (* TODO [timhub]: add tenant seeds *)
+              Lwt.return_some ())
+;;

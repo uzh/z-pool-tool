@@ -10,7 +10,7 @@ type create =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; default_language : Settings.Language.t
   }
 [@@deriving eq, show]
@@ -24,7 +24,7 @@ type update =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }
@@ -50,8 +50,8 @@ let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Added m ->
-    let* _ =
-      create
+    let new_tenant =
+      Entity.create
         m.title
         m.description
         m.url
@@ -62,7 +62,13 @@ let handle_event : event -> unit Lwt.t =
         m.logos
         m.partner_logos
         m.default_language
+    in
+    Logs.info (fun m -> m "%s" (new_tenant.id |> Id.value));
+    let* _ =
+      new_tenant
       |> Repo.insert
+      |> Lwt_result.map_err (fun err ->
+             Logs.err (fun m -> m "AN ERROR Happened: %s" err))
     in
     Lwt.return_unit
   | Edited (tenant, update_t) ->
@@ -101,7 +107,7 @@ let handle_event : event -> unit Lwt.t =
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
-let equal_event event1 event2 =
+let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | Added one, Added two -> equal_create one two
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->

@@ -1,12 +1,12 @@
 open Entity
 
 let user_caqti =
+  let open Sihl.Contract.User in
   let status =
     let encode m = m |> Sihl_user.status_to_string |> Result.ok in
     let decode = Sihl_user.status_of_string in
     Caqti_type.(custom ~encode ~decode string)
   in
-  let open Sihl.Contract.User in
   let encode m =
     Ok
       ( m.id

@@ -6,6 +6,7 @@ module Id : sig
   val show : t -> string
   val create : unit -> t
   val of_string : string -> t
+  val value : t -> string
 end
 
 module Repo : sig

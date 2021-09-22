@@ -8,6 +8,8 @@ module Title = struct
     if String.length title <= 0 then Error "Invalid title!" else Ok title
   ;;
 
+  let value t = t
+
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)

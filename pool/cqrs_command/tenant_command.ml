@@ -1,61 +1,45 @@
-open CCResult.Infix
-open Tenant
 module Id = Pool_common.Id
 
 module AddTenant : sig
   type t =
-    { title : Title.t
-    ; description : Description.t
-    ; url : Url.t
-    ; database_url : DatabaseUrl.t
-    ; smtp_auth_server : SmtpAuth.Server.t
-    ; smtp_auth_port : SmtpAuth.Port.t
-    ; smtp_auth_username : SmtpAuth.Username.t
-    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : SmtpAuth.Protocol.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    { title : Tenant.Title.t
+    ; description : Tenant.Description.t
+    ; url : Tenant.Url.t
+    ; database_url : Tenant.DatabaseUrl.t
+    ; smtp_auth_server : Tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Tenant.SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
+    ; styles : Tenant.Styles.t
+    ; icon : Tenant.Icon.t
+    ; logos : Tenant.Logos.t
+    ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
     }
 
-  (* TODO [timhub]: expose command? *)
-  val command
-    :  Title.t
-    -> Description.t
-    -> Url.t
-    -> DatabaseUrl.t
-    -> SmtpAuth.Server.t
-    -> SmtpAuth.Port.t
-    -> SmtpAuth.Username.t
-    -> SmtpAuth.AuthenticationMethod.t
-    -> SmtpAuth.Protocol.t
-    -> Styles.t
-    -> Icon.t
-    -> Logos.t
-    -> PartnerLogos.t
-    -> Settings.Language.t
-    -> create
+  val handle : t -> (Pool_event.t list, string) Result.t
 
-  val handle : create -> (Pool_event.t list, string) result
-  val decode : Conformist.input -> (create, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { title : Title.t
-    ; description : Description.t
-    ; url : Url.t
-    ; database_url : DatabaseUrl.t
-    ; smtp_auth_server : SmtpAuth.Server.t
-    ; smtp_auth_port : SmtpAuth.Port.t
-    ; smtp_auth_username : SmtpAuth.Username.t
-    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : SmtpAuth.Protocol.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    { title : Tenant.Title.t
+    ; description : Tenant.Description.t
+    ; url : Tenant.Url.t
+    ; database_url : Tenant.DatabaseUrl.t
+    ; smtp_auth_server : Tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Tenant.SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
+    ; styles : Tenant.Styles.t
+    ; icon : Tenant.Icon.t
+    ; logos : Tenant.Logos.t
+    ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
     }
 
@@ -79,13 +63,11 @@ end = struct
     ; description
     ; url
     ; database_url
-    ; smtp_auth =
-        { server = smtp_auth_server
-        ; port = smtp_auth_port
-        ; username = smtp_auth_username
-        ; authentication_method = smtp_auth_authentication_method
-        ; protocol = smtp_auth_protocol
-        }
+    ; smtp_auth_server
+    ; smtp_auth_port
+    ; smtp_auth_username
+    ; smtp_auth_authentication_method
+    ; smtp_auth_protocol
     ; styles
     ; icon
     ; logos
@@ -97,28 +79,48 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ Tenant.Title.schema ()
-        ; Tenant.Description.schema ()
-        ; Tenant.Url.schema ()
-        ; Tenant.DatabaseUrl.schema ()
-        ; Tenant.SmtpAuth.Server.schema ()
-        ; Tenant.SmtpAuth.Port.schema ()
-        ; Tenant.SmtpAuth.Username.schema ()
-        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
-        ; Tenant.SmtpAuth.Protocol.schema ()
-        ; Tenant.Styles.schema ()
-        ; Tenant.Icon.schema ()
-        ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogos.schema ()
-        ; Settings.Language.schema ()
-        ]
+        Field.
+          [ Tenant.Title.schema ()
+          ; Tenant.Description.schema ()
+          ; Tenant.Url.schema ()
+          ; Tenant.DatabaseUrl.schema ()
+          ; Tenant.SmtpAuth.Server.schema ()
+          ; Tenant.SmtpAuth.Port.schema ()
+          ; Tenant.SmtpAuth.Username.schema ()
+          ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Tenant.SmtpAuth.Protocol.schema ()
+          ; Tenant.Styles.schema ()
+          ; Tenant.Icon.schema ()
+          ; Tenant.Logos.schema ()
+          ; Tenant.PartnerLogos.schema ()
+          ; Settings.Language.schema ()
+          ]
         command)
   ;;
 
-  let handle (command : create) =
-    let create = Ok command in
-    let event (t : Tenant.create) = [ Tenant.Added t |> Pool_event.tenant ] in
-    create >|= event
+  let handle (command : t) =
+    let tenant =
+      Tenant.
+        { title = command.title
+        ; description = command.description
+        ; url = command.url
+        ; database_url = command.database_url
+        ; smtp_auth =
+            SmtpAuth.
+              { server = command.smtp_auth_server
+              ; port = command.smtp_auth_port
+              ; username = command.smtp_auth_username
+              ; authentication_method = command.smtp_auth_authentication_method
+              ; protocol = command.smtp_auth_protocol
+              }
+        ; styles = command.styles
+        ; icon = command.icon
+        ; logos = command.logos
+        ; partner_logos = command.partner_logos
+        ; default_language = command.default_language
+        }
+    in
+    Ok [ Tenant.Added tenant |> Pool_event.tenant ]
   ;;
 
   let can user _ =
@@ -130,42 +132,46 @@ end
 
 module EditTenant : sig
   type t =
-    { title : Title.t
-    ; description : Description.t
-    ; url : Url.t
-    ; database_url : DatabaseUrl.t
-    ; smtp_auth_server : SmtpAuth.Server.t
-    ; smtp_auth_port : SmtpAuth.Port.t
-    ; smtp_auth_username : SmtpAuth.Username.t
-    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : SmtpAuth.Protocol.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
-    ; disabled : Disabled.t
+    { title : Tenant.Title.t
+    ; description : Tenant.Description.t
+    ; url : Tenant.Url.t
+    ; database_url : Tenant.DatabaseUrl.t
+    ; smtp_auth_server : Tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Tenant.SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
+    ; styles : Tenant.Styles.t
+    ; icon : Tenant.Icon.t
+    ; logos : Tenant.Logos.t
+    ; partner_logos : Tenant.PartnerLogos.t
+    ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
     }
 
   val handle : t -> Tenant.t -> (Pool_event.t list, string) result
-  val decode : Conformist.input -> (update, Conformist.error list) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
+
   val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
 end = struct
   type t =
-    { title : Title.t
-    ; description : Description.t
-    ; url : Url.t
-    ; database_url : DatabaseUrl.t
-    ; smtp_auth_server : SmtpAuth.Server.t
-    ; smtp_auth_port : SmtpAuth.Port.t
-    ; smtp_auth_username : SmtpAuth.Username.t
-    ; smtp_auth_authentication_method : SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : SmtpAuth.Protocol.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
-    ; disabled : Disabled.t
+    { title : Tenant.Title.t
+    ; description : Tenant.Description.t
+    ; url : Tenant.Url.t
+    ; database_url : Tenant.DatabaseUrl.t
+    ; smtp_auth_server : Tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Tenant.SmtpAuth.Username.t
+    ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
+    ; styles : Tenant.Styles.t
+    ; icon : Tenant.Icon.t
+    ; logos : Tenant.Logos.t
+    ; partner_logos : Tenant.PartnerLogos.t
+    ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
     }
 
@@ -190,13 +196,11 @@ end = struct
     ; description
     ; url
     ; database_url
-    ; smtp_auth =
-        { server = smtp_auth_server
-        ; port = smtp_auth_port
-        ; username = smtp_auth_username
-        ; authentication_method = smtp_auth_authentication_method
-        ; protocol = smtp_auth_protocol
-        }
+    ; smtp_auth_server
+    ; smtp_auth_port
+    ; smtp_auth_username
+    ; smtp_auth_authentication_method
+    ; smtp_auth_protocol
     ; styles
     ; icon
     ; logos
@@ -209,39 +213,41 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ Tenant.Title.schema ()
-        ; Tenant.Description.schema ()
-        ; Tenant.Url.schema ()
-        ; Tenant.DatabaseUrl.schema ()
-        ; Tenant.SmtpAuth.Server.schema ()
-        ; Tenant.SmtpAuth.Port.schema ()
-        ; Tenant.SmtpAuth.Username.schema ()
-        ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
-        ; Tenant.SmtpAuth.Protocol.schema ()
-        ; Tenant.Styles.schema ()
-        ; Tenant.Icon.schema ()
-        ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogos.schema ()
-        ; Tenant.Disabled.schema ()
-        ; Settings.Language.schema ()
-        ]
+        Field.
+          [ Tenant.Title.schema ()
+          ; Tenant.Description.schema ()
+          ; Tenant.Url.schema ()
+          ; Tenant.DatabaseUrl.schema ()
+          ; Tenant.SmtpAuth.Server.schema ()
+          ; Tenant.SmtpAuth.Port.schema ()
+          ; Tenant.SmtpAuth.Username.schema ()
+          ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Tenant.SmtpAuth.Protocol.schema ()
+          ; Tenant.Styles.schema ()
+          ; Tenant.Icon.schema ()
+          ; Tenant.Logos.schema ()
+          ; Tenant.PartnerLogos.schema ()
+          ; Tenant.Disabled.schema ()
+          ; Settings.Language.schema ()
+          ]
         command)
   ;;
 
   let handle (command : t) (tenant : Tenant.t) =
     let update =
-      Ok
+      Tenant.
         { title = command.title
         ; description = command.description
         ; url = command.url
         ; database_url = command.database_url
         ; smtp_auth =
-            { server = command.smtp_auth_server
-            ; port = command.smtp_auth_port
-            ; username = command.smtp_auth_username
-            ; authentication_method = command.smtp_auth_authentication_method
-            ; protocol = command.smtp_auth_protocol
-            }
+            SmtpAuth.
+              { server = command.smtp_auth_server
+              ; port = command.smtp_auth_port
+              ; username = command.smtp_auth_username
+              ; authentication_method = command.smtp_auth_authentication_method
+              ; protocol = command.smtp_auth_protocol
+              }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos
@@ -250,18 +256,15 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    let event (t : Tenant.update) =
-      [ Tenant.Edited (tenant, t) |> Pool_event.tenant ]
-    in
-    update >|= event
+    Ok [ Tenant.Edited (tenant, update) |> Pool_event.tenant ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data
 
-  let can user command =
+  let can user (tenant : Tenant.t) =
     Permission.can
       user
-      ~any_of:[ Permission.Update (Permission.Tenant, Some command.id) ]
+      ~any_of:[ Permission.Update (Permission.Tenant, Some tenant.Tenant.id) ]
   ;;
 end
 
