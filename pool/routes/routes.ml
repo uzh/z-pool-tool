@@ -32,4 +32,17 @@ module Public = struct
   let routes = [ get "/" Handler.Public.index ]
 end
 
-let router = choose [ choose ~middlewares:global_middlewares Public.routes ]
+module Root = struct
+  let routes =
+    [ get "/tenants" Handler.Root.Tenant.tenants
+    ; post "/tenant/create" Handler.Root.Tenant.create
+    ]
+  ;;
+end
+
+let router =
+  choose
+    [ choose ~middlewares:global_middlewares Public.routes
+    ; choose ~scope:"/root" ~middlewares:global_middlewares Root.routes
+    ]
+;;

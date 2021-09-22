@@ -1,5 +1,5 @@
 (library
  (name page)
- (libraries tyxml sihl service http_utils)
+ (libraries tyxml sihl service http_utils component tenant)
  (preprocess
   (pps tyxml-ppx)))

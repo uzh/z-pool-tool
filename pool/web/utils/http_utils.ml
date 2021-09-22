@@ -19,3 +19,31 @@ let extract_happy_path result =
   extract_happy_path_generic result (fun err ->
       Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
+
+(* Read urlencoded values in any order *)
+let urlencoded_to_params_opt urlencoded keys =
+  keys |> CCList.map @@ fun key -> key, List.assoc_opt key urlencoded
+;;
+
+let urlencoded_to_params urlencoded keys =
+  keys
+  |> (CCList.map
+     @@ fun key ->
+     Option.bind (List.assoc_opt key urlencoded) CCList.head_opt
+     |> Option.map @@ CCPair.make key)
+  |> CCList.all_some
+;;
+
+let request_to_params req keys () =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  urlencoded_to_params urlencoded keys
+  |> CCOpt.to_result "Please provide necessary fields"
+  |> Lwt_result.lift
+;;
+
+let err_with_action ?message error_path action =
+  Lwt_result.map_err (fun msg ->
+      match message with
+      | None -> msg, error_path, action
+      | Some msg -> msg, error_path, action)
+;;

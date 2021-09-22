@@ -1,5 +1,5 @@
+module Root = Root
 module Public = Public
-
 (* This is an example HTTP handler to showcase the usage of CQRS command
    handlers. *)
 
