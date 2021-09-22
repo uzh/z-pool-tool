@@ -4,22 +4,24 @@ module SmtpAuth = Entity_smtp_auth
 module Title = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
   ;;
 
-  let value t = t
-
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "title"
   ;;
 end
 
 module Description = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create description =
     if String.length description <= 0
@@ -30,13 +32,15 @@ module Description = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "description"
   ;;
 end
 
 module Url = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create url =
     if String.length url <= 0 then Error "Invalid url!" else Ok url
@@ -45,13 +49,15 @@ module Url = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "url"
   ;;
 end
 
 module DatabaseUrl = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create database_url =
     if String.length database_url <= 0
@@ -62,13 +68,15 @@ module DatabaseUrl = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "database_url"
   ;;
 end
 
 module Styles = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create styles =
     if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
@@ -77,13 +85,15 @@ module Styles = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "styles"
   ;;
 end
 
 module Icon = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create icon =
     if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
@@ -100,6 +110,8 @@ end
 module Logos = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create logos =
     if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
   ;;
@@ -107,13 +119,15 @@ module Logos = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "logos"
   ;;
 end
 
 module PartnerLogos = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create partner_logo =
     if String.length partner_logo <= 0
@@ -124,7 +138,7 @@ module PartnerLogos = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ value l ])
       "partner_logos"
   ;;
 end

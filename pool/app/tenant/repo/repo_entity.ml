@@ -98,11 +98,11 @@ module SmtpAuth = struct
   let t =
     let encode m =
       Ok
-        ( Server.show m.server
-        , ( Port.show m.port
-          , ( Username.show m.username
-            , ( AuthenticationMethod.show m.authentication_method
-              , Protocol.show m.protocol ) ) ) )
+        ( Server.value m.server
+        , ( Port.value m.port
+          , ( Username.value m.username
+            , ( AuthenticationMethod.value m.authentication_method
+              , Protocol.value m.protocol ) ) ) )
     in
     let decode (server, (port, (username, (authentication_method, protocol)))) =
       let ( let* ) = Result.bind in
@@ -131,15 +131,15 @@ let t =
   let encode m =
     Ok
       ( Id.value m.id
-      , ( Title.show m.title
-        , ( Description.show m.description
-          , ( Url.show m.url
-            , ( DatabaseUrl.show m.database_url
+      , ( Title.value m.title
+        , ( Description.value m.description
+          , ( Url.value m.url
+            , ( DatabaseUrl.value m.database_url
               , ( m.smtp_auth
-                , ( Styles.show m.styles
-                  , ( Icon.show m.icon
-                    , ( Logos.show m.logos
-                      , ( PartnerLogos.show m.partner_logos
+                , ( Styles.value m.styles
+                  , ( Icon.value m.icon
+                    , ( Logos.value m.logos
+                      , ( PartnerLogos.value m.partner_logos
                         , ( Maintenance.value m.maintenance
                           , ( Disabled.value m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))

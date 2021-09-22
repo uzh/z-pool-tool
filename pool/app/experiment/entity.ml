@@ -4,6 +4,8 @@ module Location = Entity_location
 module Title = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
   ;;
@@ -11,6 +13,8 @@ end
 
 module Description = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create description =
     if String.length description <= 0
