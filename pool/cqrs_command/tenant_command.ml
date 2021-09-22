@@ -7,7 +7,7 @@ module AddTenant : sig
     { title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database_url : DatabaseUrl.t
     ; smtp_auth_server : SmtpAuth.Server.t
     ; smtp_auth_port : SmtpAuth.Port.t
     ; smtp_auth_username : SmtpAuth.Username.t
@@ -16,11 +16,29 @@ module AddTenant : sig
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
-    ; partner_logos : PartnerLogo.t
+    ; partner_logos : PartnerLogos.t
     ; default_language : Settings.Language.t
     }
 
-  val handle : t -> (Pool_event.t list, string) result
+  (* TODO [timhub]: expose command? *)
+  val command
+    :  Title.t
+    -> Description.t
+    -> Url.t
+    -> DatabaseUrl.t
+    -> SmtpAuth.Server.t
+    -> SmtpAuth.Port.t
+    -> SmtpAuth.Username.t
+    -> SmtpAuth.AuthenticationMethod.t
+    -> SmtpAuth.Protocol.t
+    -> Styles.t
+    -> Icon.t
+    -> Logos.t
+    -> PartnerLogos.t
+    -> Settings.Language.t
+    -> create
+
+  val handle : create -> (Pool_event.t list, string) result
   val decode : Conformist.input -> (create, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -28,7 +46,7 @@ end = struct
     { title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database_url : DatabaseUrl.t
     ; smtp_auth_server : SmtpAuth.Server.t
     ; smtp_auth_port : SmtpAuth.Port.t
     ; smtp_auth_username : SmtpAuth.Username.t
@@ -37,7 +55,7 @@ end = struct
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
-    ; partner_logos : PartnerLogo.t
+    ; partner_logos : PartnerLogos.t
     ; default_language : Settings.Language.t
     }
 
@@ -45,7 +63,7 @@ end = struct
       title
       description
       url
-      database
+      database_url
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
@@ -60,7 +78,7 @@ end = struct
     { title
     ; description
     ; url
-    ; database
+    ; database_url
     ; smtp_auth =
         { server = smtp_auth_server
         ; port = smtp_auth_port
@@ -82,7 +100,7 @@ end = struct
         [ Tenant.Title.schema ()
         ; Tenant.Description.schema ()
         ; Tenant.Url.schema ()
-        ; Tenant.Database.schema ()
+        ; Tenant.DatabaseUrl.schema ()
         ; Tenant.SmtpAuth.Server.schema ()
         ; Tenant.SmtpAuth.Port.schema ()
         ; Tenant.SmtpAuth.Username.schema ()
@@ -91,33 +109,14 @@ end = struct
         ; Tenant.Styles.schema ()
         ; Tenant.Icon.schema ()
         ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogo.schema ()
+        ; Tenant.PartnerLogos.schema ()
         ; Settings.Language.schema ()
         ]
         command)
   ;;
 
-  let handle (command : t) =
-    let create =
-      Ok
-        { title = command.title
-        ; description = command.description
-        ; url = command.url
-        ; database = command.database
-        ; smtp_auth =
-            { server = command.smtp_auth_server
-            ; port = command.smtp_auth_port
-            ; username = command.smtp_auth_username
-            ; authentication_method = command.smtp_auth_authentication_method
-            ; protocol = command.smtp_auth_protocol
-            }
-        ; styles = command.styles
-        ; icon = command.icon
-        ; logos = command.logos
-        ; partner_logos = command.partner_logos
-        ; default_language = command.default_language
-        }
-    in
+  let handle (command : create) =
+    let create = Ok command in
     let event (t : Tenant.create) = [ Tenant.Added t |> Pool_event.tenant ] in
     create >|= event
   ;;
@@ -134,7 +133,7 @@ module EditTenant : sig
     { title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database_url : DatabaseUrl.t
     ; smtp_auth_server : SmtpAuth.Server.t
     ; smtp_auth_port : SmtpAuth.Port.t
     ; smtp_auth_username : SmtpAuth.Username.t
@@ -143,7 +142,7 @@ module EditTenant : sig
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
-    ; partner_logos : PartnerLogo.t
+    ; partner_logos : PartnerLogos.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
     }
@@ -156,7 +155,7 @@ end = struct
     { title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database_url : DatabaseUrl.t
     ; smtp_auth_server : SmtpAuth.Server.t
     ; smtp_auth_port : SmtpAuth.Port.t
     ; smtp_auth_username : SmtpAuth.Username.t
@@ -165,7 +164,7 @@ end = struct
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
-    ; partner_logos : PartnerLogo.t
+    ; partner_logos : PartnerLogos.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
     }
@@ -174,7 +173,7 @@ end = struct
       title
       description
       url
-      database
+      database_url
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
@@ -190,7 +189,7 @@ end = struct
     { title
     ; description
     ; url
-    ; database
+    ; database_url
     ; smtp_auth =
         { server = smtp_auth_server
         ; port = smtp_auth_port
@@ -213,7 +212,7 @@ end = struct
         [ Tenant.Title.schema ()
         ; Tenant.Description.schema ()
         ; Tenant.Url.schema ()
-        ; Tenant.Database.schema ()
+        ; Tenant.DatabaseUrl.schema ()
         ; Tenant.SmtpAuth.Server.schema ()
         ; Tenant.SmtpAuth.Port.schema ()
         ; Tenant.SmtpAuth.Username.schema ()
@@ -222,7 +221,7 @@ end = struct
         ; Tenant.Styles.schema ()
         ; Tenant.Icon.schema ()
         ; Tenant.Logos.schema ()
-        ; Tenant.PartnerLogo.schema ()
+        ; Tenant.PartnerLogos.schema ()
         ; Tenant.Disabled.schema ()
         ; Settings.Language.schema ()
         ]
@@ -235,7 +234,7 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; database = command.database
+        ; database_url = command.database_url
         ; smtp_auth =
             { server = command.smtp_auth_server
             ; port = command.smtp_auth_port

@@ -1,71 +1,92 @@
+let handle_conformist_error (err : Conformist.error list) =
+  String.concat
+    "\n"
+    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
+;;
+
 let create_tenant =
   Sihl.Command.make
     ~name:"tenant.create"
-    ~help:"<title> <description> <url> <database>"
+    ~help:
+      "<title> <description> <url> <database_url> <smtp_auth_server> \
+       <smtp_auth_port> <smtp_auth_username> <smtp_auth_authentication_method> \
+       <smtp_auth_protocol> <styles> <icon> <logos> <partner_logos> \
+       <default_language>"
     ~description:"Creates a new test tenant"
     (fun args ->
-      let open CCResult.Infix in
-      let ( let* ) = Result.bind in
+      let help_text =
+        {|Provide all fields to create a new tenant:
+        <title>                             : string
+        <description>                       : string
+        <url>                               : string
+        <database_url>                      : string
+        <smtp_auth_server>                  : string
+        <smtp_auth_port>                    : '25' | '465' | '587'
+        <smtp_auth_username>                : string
+        <smtp_auth_authentication_method>   : string
+        <smtp_auth_protocol>                : 'STARTTLS' | 'SSL/TLS'
+        <styles>                            : string
+        <icon>                              : string
+        <logos>                             : string
+        <partner_logos>                     : string
+        <default_language>                  : 'DE' | 'EN'
+      |}
+      in
       match args with
-      | title :: description :: url :: database :: tl when List.length tl == 0
-        ->
-        let create () =
-          let open Tenant in
-          let* title = Title.create title in
-          let* description = Description.create description in
-          let* url = Url.create url in
-          let* database = Database.create database in
-          let* smtp_auth_server = SmtpAuth.Server.create "smtp.uzh.ch" in
-          let* smtp_auth_port = SmtpAuth.Port.create "587" in
-          let* smtp_auth_username =
-            SmtpAuth.Username.create "engineering@econ.uzh.ch"
+      | [ title
+        ; description
+        ; url
+        ; database_url
+        ; smtp_auth_server
+        ; smtp_auth_port
+        ; smtp_auth_username
+        ; smtp_auth_authentication_method
+        ; smtp_auth_protocol
+        ; styles
+        ; icon
+        ; logos
+        ; partner_logos
+        ; default_language
+        ] ->
+        let open Lwt.Syntax in
+        let* result =
+          let open Utils.Lwt_result.Infix in
+          let run_command () =
+            Lwt_result.lift
+            @@
+            let open CCResult.Infix in
+            Cqrs_command.Tenant_command.AddTenant.decode
+              [ "title", [ title ]
+              ; "description", [ description ]
+              ; "url", [ url ]
+              ; "database_url", [ database_url ]
+              ; "smtp_auth_server", [ smtp_auth_server ]
+              ; "smtp_auth_port", [ smtp_auth_port ]
+              ; "smtp_auth_username", [ smtp_auth_username ]
+              ; ( "smtp_auth_authentication_method"
+                , [ smtp_auth_authentication_method ] )
+              ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+              ; "styles", [ styles ]
+              ; "icon", [ icon ]
+              ; "logos", [ logos ]
+              ; "partner_logos", [ partner_logos ]
+              ; "default_language", [ default_language ]
+              ]
+            |> CCResult.map_err handle_conformist_error
+            >>= Cqrs_command.Tenant_command.AddTenant.handle
           in
-          let* smtp_auth_authentication_method =
-            SmtpAuth.AuthenticationMethod.create "LOGIN"
+          let run_events events =
+            let* _ = Lwt_list.map_s Pool_event.handle_event events in
+            Lwt.return_ok ()
           in
-          let* smtp_auth_protocol = SmtpAuth.Protocol.create "SSL/TLS" in
-          let* styles = Styles.create "custom_stylesheet.css" in
-          let* icon = Icon.create "some icon" in
-          let* logos = Logos.create "some logos" in
-          let* partner_logos = PartnerLogo.create "some partner" in
-          let* default_language = Settings.Language.of_string "EN" in
-          let t : Cqrs_command.Tenant_command.AddTenant.t =
-            { title
-            ; description
-            ; url
-            ; database
-            ; smtp_auth_server
-            ; smtp_auth_port
-            ; smtp_auth_username
-            ; smtp_auth_authentication_method
-            ; smtp_auth_protocol
-            ; styles
-            ; icon
-            ; logos
-            ; partner_logos
-            ; default_language
-            }
-          in
-          Ok t
+          () |> run_command >>= run_events
         in
-        let handle (tenant : Cqrs_command.Tenant_command.AddTenant.t) =
-          let* events = Cqrs_command.Tenant_command.AddTenant.handle tenant in
-          let _ =
-            CCList.map (fun event -> Pool_event.handle_event event) events
-          in
-          Result.ok ()
-        in
-        let log res =
-          match res with
-          | Ok _ ->
-            Logs.info (fun m -> m "Tenant successfully created");
-            Lwt.return_some ()
-          | Error msg ->
-            Logs.err (fun m -> m "%s" msg);
-            Lwt.return_none
-        in
-        () |> create >|= handle |> log
+        (match result with
+        | Ok _ -> Lwt.return_some ()
+        | Error err ->
+          print_endline err;
+          Lwt.return_some ())
       | _ ->
-        Logs.err (fun m -> m "Invalid command for generating payout!");
-        Lwt.return_none)
+        print_endline help_text;
+        Lwt.return_some ())
 ;;

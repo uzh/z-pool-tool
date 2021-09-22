@@ -112,7 +112,7 @@ module Logos : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-module PartnerLogo : sig
+module PartnerLogos : sig
   type t
 
   val equal : t -> t -> bool
@@ -146,7 +146,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -163,7 +163,7 @@ val create
   -> Styles.t
   -> Icon.t
   -> Logos.t
-  -> PartnerLogo.t
+  -> PartnerLogos.t
   -> Settings.Language.t
   -> t
 
@@ -182,7 +182,7 @@ type create =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; default_language : Settings.Language.t
   }
 
@@ -195,7 +195,7 @@ type update =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }

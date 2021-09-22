@@ -20,8 +20,8 @@ module Url = struct
   let t = Caqti_type.string
 end
 
-module Database = struct
-  include Database
+module DatabaseUrl = struct
+  include DatabaseUrl
 
   let t = Caqti_type.string
 end
@@ -44,8 +44,8 @@ module Logos = struct
   let t = Caqti_type.string
 end
 
-module PartnerLogo = struct
-  include PartnerLogo
+module PartnerLogos = struct
+  include PartnerLogos
 
   let t = Caqti_type.string
 end
@@ -134,12 +134,12 @@ let t =
       , ( Title.show m.title
         , ( Description.show m.description
           , ( Url.show m.url
-            , ( Database.show m.database
+            , ( DatabaseUrl.show m.database_url
               , ( m.smtp_auth
                 , ( Styles.show m.styles
                   , ( Icon.show m.icon
                     , ( Logos.show m.logos
-                      , ( PartnerLogo.show m.partner_logos
+                      , ( PartnerLogos.show m.partner_logos
                         , ( Maintenance.value m.maintenance
                           , ( Disabled.value m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))
@@ -150,7 +150,7 @@ let t =
       , ( title
         , ( description
           , ( url
-            , ( database
+            , ( database_url
               , ( smtp_auth
                 , ( styles
                   , ( icon
@@ -165,17 +165,17 @@ let t =
     let* title = Title.create title in
     let* description = Description.create description in
     let* url = Url.create url in
-    let* database = Database.create database in
+    let* database_url = DatabaseUrl.create database_url in
     let* styles = Styles.create styles in
     let* icon = Icon.create icon in
     let* logos = Logos.create logos in
-    let* partner_logos = PartnerLogo.create partner_logos in
+    let* partner_logos = PartnerLogos.create partner_logos in
     Ok
       { id = Id.of_string id
       ; title
       ; description
       ; url
-      ; database
+      ; database_url
       ; smtp_auth
       ; styles
       ; icon
@@ -201,7 +201,7 @@ let t =
                (tup2
                   Url.t
                   (tup2
-                     Database.t
+                     DatabaseUrl.t
                      (tup2
                         SmtpAuth.t
                         (tup2
@@ -211,7 +211,7 @@ let t =
                               (tup2
                                  Logos.t
                                  (tup2
-                                    PartnerLogo.t
+                                    PartnerLogos.t
                                     (tup2
                                        Maintenance.t
                                        (tup2

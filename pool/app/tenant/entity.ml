@@ -110,12 +110,12 @@ module Logos = struct
   ;;
 end
 
-module PartnerLogo = struct
+module PartnerLogos = struct
   type t = string [@@deriving eq, show]
 
   let create partner_logo =
     if String.length partner_logo <= 0
-    then Error "Invalid partner logo!"
+    then Error "Invalid partner logos!"
     else Ok partner_logo
   ;;
 
@@ -123,7 +123,7 @@ module PartnerLogo = struct
     Conformist.custom
       (fun l -> l |> List.hd |> create)
       (fun l -> [ show l ])
-      "partner_logo"
+      "partner_logos"
   ;;
 end
 
@@ -191,7 +191,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
