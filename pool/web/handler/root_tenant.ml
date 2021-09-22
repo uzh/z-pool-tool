@@ -72,28 +72,3 @@ let create _ =
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path
 ;;
-
-(* let[@warning "-27"] create_without_event req = let open
-   Utils.Lwt_result.Infix in let open Lwt_result.Syntax in let lift =
-   Lwt_result.lift in let create () = Lwt_result.map_err (fun err -> err,
-   "/root/tenants") @@ let open Tenant in let* title = Title.create "title" |>
-   lift in let* description = Description.create "description" |> lift in let*
-   url = Url.create "url" |> lift in let* database = Database.create "database"
-   |> lift in let* smtp_auth_server = SmtpAuth.Server.create "smtp.uzh.ch" |>
-   lift in let* smtp_auth_port = SmtpAuth.Port.create "587" |> lift in let*
-   smtp_auth_username = SmtpAuth.Username.create "engineering@econ.uzh.ch" |>
-   lift in let* smtp_auth_authentication_method =
-   SmtpAuth.AuthenticationMethod.create "LOGIN" |> lift in let*
-   smtp_auth_protocol = SmtpAuth.Protocol.create "SSL/TLS" |> lift in let*
-   smtp_auth = SmtpAuth.create smtp_auth_server smtp_auth_port
-   smtp_auth_username smtp_auth_authentication_method smtp_auth_protocol |> lift
-   in let* styles = Styles.create "custom_stylesheet.css" |> lift in let* icon =
-   Icon.create "some icon" |> lift in let* logos = Logos.create "some logos" |>
-   lift in let* partner_logos = PartnerLogo.create "some partner" |> lift in
-   let* default_language = Settings.Language.of_string "EN" |> lift in Ok
-   (Tenant.create title description url database smtp_auth styles icon logos
-   partner_logos default_language) |> lift in let handle (tenant : Tenant.t) =
-   let* _ = Tenant.insert tenant in Lwt.return_ok () in let return_to_overview =
-   Http_utils.redirect_to_with_actions "/root/tenants" [ Message.set ~success:[
-   "Tenant was successfully created." ] ] in () |> create >|= handle |>>
-   CCFun.const return_to_overview >|> HttpUtils.extract_happy_path ;; *)

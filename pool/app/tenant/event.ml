@@ -50,7 +50,7 @@ let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Added m ->
-    let new_tenant =
+    let* _ =
       Entity.create
         m.title
         m.description
@@ -62,13 +62,7 @@ let handle_event : event -> unit Lwt.t =
         m.logos
         m.partner_logos
         m.default_language
-    in
-    Logs.info (fun m -> m "%s" (new_tenant.id |> Id.value));
-    let* _ =
-      new_tenant
       |> Repo.insert
-      |> Lwt_result.map_err (fun err ->
-             Logs.err (fun m -> m "AN ERROR Happened: %s" err))
     in
     Lwt.return_unit
   | Edited (tenant, update_t) ->
