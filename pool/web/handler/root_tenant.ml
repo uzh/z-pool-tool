@@ -38,6 +38,10 @@ let create req =
     ; "logos"
     ; "partner_logos"
     ; "default_language"
+    ; "email"
+    ; "password"
+    ; "firstname"
+    ; "lastname"
     ]
   in
   let events () =

@@ -24,6 +24,10 @@ let create_tenant =
         <logos>                             : string
         <partner_logos>                     : string
         <default_language>                  : 'DE' | 'EN'
+        <operator_email>                    : string
+        <operator_password>                 : string
+        <operator_firstname>                : string
+        <operator_lastname>                 : string
       |}
       in
       match args with
@@ -41,6 +45,10 @@ let create_tenant =
         ; logos
         ; partner_logos
         ; default_language
+        ; email
+        ; password
+        ; firstname
+        ; lastname
         ] ->
         let open Lwt.Syntax in
         let* result =
@@ -65,6 +73,10 @@ let create_tenant =
               ; "logos", [ logos ]
               ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
+              ; "email", [ email ]
+              ; "password", [ password ]
+              ; "firstname", [ firstname ]
+              ; "lastname", [ lastname ]
               ]
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.AddTenant.handle

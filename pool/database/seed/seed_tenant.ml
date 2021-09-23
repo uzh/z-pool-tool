@@ -14,7 +14,11 @@ let create () =
       , "some icon"
       , "some logo"
       , "some partner logos"
-      , "EN" )
+      , "EN"
+      , "operator@econ.uzh.ch"
+      , "adminadmin"
+      , "DJ"
+      , "Ötzi" )
     ; ( "ZHAW"
       , "description"
       , "pool.zhaw.ch"
@@ -28,7 +32,11 @@ let create () =
       , "some icon"
       , "some logo"
       , "some partner logos"
-      , "DE" )
+      , "DE"
+      , "operator@zhaw.ch"
+      , "adminadmin"
+      , "Woofy"
+      , "Woofer" )
     ]
   in
   let* _ =
@@ -46,7 +54,11 @@ let create () =
            , icon
            , logos
            , partner_logos
-           , default_language ) ->
+           , default_language
+           , email
+           , password
+           , firstname
+           , lastname ) ->
         let open Lwt.Syntax in
         let* result =
           let open Utils.Lwt_result.Infix in
@@ -70,6 +82,10 @@ let create () =
               ; "logos", [ logos ]
               ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
+              ; "email", [ email ]
+              ; "password", [ password ]
+              ; "firstname", [ firstname ]
+              ; "lastname", [ lastname ]
               ]
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.AddTenant.handle
