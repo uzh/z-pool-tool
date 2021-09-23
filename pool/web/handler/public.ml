@@ -13,3 +13,8 @@ let index req =
   |> Lwt_result.map_err (fun err -> err, error_path)
   >|> Http_utils.extract_happy_path
 ;;
+
+let not_found _ =
+  let html = Page.Utils.error_page_not_found () in
+  Sihl.Web.Response.of_html html |> Lwt.return
+;;

@@ -1,5 +1,0 @@
-(library
- (name middleware)
- (libraries sihl)
- (preprocess
-  (pps lwt_ppx)))

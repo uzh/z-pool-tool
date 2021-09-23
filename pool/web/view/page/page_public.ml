@@ -1,6 +1,6 @@
-open Tyxml
+open Tyxml.Html
 
 let index ~message () =
-  let html = [%html {|<h1>Welcome</h1>|}] in
-  Page_layout.create ~children:[ html ] ~message ()
+  let html = div [ h1 [ txt "Welcome" ] ] in
+  Page_layout.create ~children:html ~message ()
 ;;

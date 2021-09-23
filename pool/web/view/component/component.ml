@@ -1,5 +1,5 @@
-open Tyxml
+open Tyxml.Html
 
 let csrf_element csrf =
-  [%html {|<input type="hidden" name="_csrf" value="|} csrf {|">|}]
+  input ~a:[ a_input_type `Hidden; a_name "_csrf"; a_value csrf ]
 ;;
