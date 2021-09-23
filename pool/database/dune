@@ -1,5 +1,5 @@
 (library
  (name database)
- (libraries sihl service participant common_user utils))
+ (libraries sihl service participant tenant common_user utils cqrs_command))
 
 (include_subdirs unqualified)

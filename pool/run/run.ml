@@ -3,7 +3,7 @@ let migrations =
   [ tenant () ]
 ;;
 
-let commands = [ Command.Tenant.create_tenant; Command.Tenant.seed_tenants ]
+let commands = [ Command.Tenant.create_tenant; Command.Seed.seed_data ]
 
 let services =
   [ Sihl.Database.register ()
