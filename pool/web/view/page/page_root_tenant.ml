@@ -12,14 +12,8 @@ let build_tenant_rows tenant_list =
           <h2>|}
           [ of_string (Title.value tenant.title) ]
           {|</h2>
+          <hr />
           <div>
-          |}
-          [ of_string
-              (Format.asprintf
-                 "Language: %s"
-                 (Settings.Language.code tenant.default_language))
-          ]
-          {|
           </div>
           </div>
           |}])
@@ -42,7 +36,20 @@ let list csrf ~tenant_list ~message () =
         |}
         [ Component.csrf_element csrf ]
         {|
-          <input name="title" type="text" placeholder="title"/>
+          <input name="title" type="text" placeholder="title"  value="Econ uzh" />
+          <input name="description" type="text" placeholder="description" value="asdfasdf"/>
+          <input name="url" type="text" placeholder="url" value="pool.econ.uzh.ch"/>
+          <input name="database_url" type="text" placeholder="database_url" value="database@econ.ch"/>
+          <input name="smtp_auth_server" type="text" placeholder="smtp_auth_server" value="smtp.uzh.ch" />
+          <input name="smtp_auth_port" type="text" placeholder="smtp_auth_port" value="587" />
+          <input name="smtp_auth_username" placeholder="smtp_auth_username" value="engineering@econ.uzh.ch" />
+          <input name="smtp_auth_authentication_method" placeholder="smtp_auth_authentication_method" value="LOGIN" />
+          <input name="smtp_auth_protocol" placeholder="smtp_auth_protocol" value="SSL/TLS" />
+          <input name="styles" placeholder="styles" value="custom.css" />
+          <input name="icon" placeholder="icon" value="icon" />
+          <input name="logos" placeholder="logos" value="logos" />
+          <input name="partner_logos" placeholder="partner_logo" value="partner logo" />
+          <input name="default_language" placeholder="default language" value="EN" />
           <input type="submit" value="Create new" />
           </form>
           |}]

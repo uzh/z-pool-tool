@@ -26,33 +26,39 @@ let tenants req =
   >|> HttpUtils.extract_happy_path
 ;;
 
-let create _ =
+let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/root/tenants" in
-  let events () =
-    Lwt_result.lift
-    @@
-    let open CCResult.Infix in
-    (* TODO exchange with "urlencoded" *)
-    [ "title", [ "title" ]
-    ; "description", [ "description" ]
-    ; "url", [ "url" ]
-    ; "database_url", [ "database" ]
-    ; "smtp_auth_server", [ "smtp.uzh.ch" ]
-    ; "smtp_auth_port", [ "587" ]
-    ; "smtp_auth_username", [ "engineering@econ.uzh.ch" ]
-    ; "smtp_auth_authentication_method", [ "LOGIN" ]
-    ; "smtp_auth_protocol", [ "SSL/TLS" ]
-    ; "styles", [ "custom_stylesheet.css" ]
-    ; "icon", [ "some icon" ]
-    ; "logos", [ "some logos" ]
-    ; "partner_logos", [ "some partner" ]
-    ; "default_language", [ "EN" ]
+  let fields =
+    [ "title"
+    ; "description"
+    ; "url"
+    ; "database_url"
+    ; "smtp_auth_server"
+    ; "smtp_auth_port"
+    ; "smtp_auth_username"
+    ; "smtp_auth_authentication_method"
+    ; "smtp_auth_protocol"
+    ; "styles"
+    ; "icon"
+    ; "logos"
+    ; "partner_logos"
+    ; "default_language"
     ]
+  in
+  let events () =
+    let open Lwt_result.Syntax in
+    let* params =
+      HttpUtils.request_to_params req fields ()
+      |> Lwt_result.map_err (fun msg -> msg, error_path, [])
+    in
+    let go = CCFun.flip List.assoc params in
+    CCList.map (fun field -> field, [ go field ]) fields
     |> Cqrs_command.Tenant_command.AddTenant.decode
     |> CCResult.map_err handle_conformist_error
-    >>= Cqrs_command.Tenant_command.AddTenant.handle
-    |> CCResult.map_err (fun err -> err, error_path)
+    |> CCResult.flat_map Cqrs_command.Tenant_command.AddTenant.handle
+    |> CCResult.map_err (fun err -> err, error_path, [])
+    |> Lwt_result.lift
   in
   let handle events =
     let ( let* ) = Lwt.bind in
@@ -70,5 +76,5 @@ let create _ =
   |> events
   >|= handle
   |>> CCFun.const return_to_overview
-  >|> HttpUtils.extract_happy_path
+  >|> HttpUtils.extract_happy_path_with_actions
 ;;
