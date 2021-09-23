@@ -1,9 +1,3 @@
-let handle_conformist_error (err : Conformist.error list) =
-  String.concat
-    "\n"
-    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
-;;
-
 let create_tenant =
   Sihl.Command.make
     ~name:"tenant.create"
@@ -72,7 +66,7 @@ let create_tenant =
               ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
               ]
-            |> CCResult.map_err handle_conformist_error
+            |> CCResult.map_err Utils.Conformist.handle_error
             >>= Cqrs_command.Tenant_command.AddTenant.handle
           in
           let run_events events =

@@ -1,12 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let handle_conformist_error (err : Conformist.error list) =
-  String.concat
-    "\n"
-    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
-;;
-
 let tenants req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
@@ -55,7 +49,7 @@ let create req =
     let go = CCFun.flip List.assoc params in
     CCList.map (fun field -> field, [ go field ]) fields
     |> Cqrs_command.Tenant_command.AddTenant.decode
-    |> CCResult.map_err handle_conformist_error
+    |> CCResult.map_err Utils.Conformist.handle_error
     |> CCResult.flat_map Cqrs_command.Tenant_command.AddTenant.handle
     |> CCResult.map_err (fun err -> err, error_path, [])
     |> Lwt_result.lift
