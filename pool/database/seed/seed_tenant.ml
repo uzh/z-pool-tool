@@ -71,7 +71,7 @@ let create () =
               ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
               ]
-            |> CCResult.map_err Utils.Conformist.handle_error
+            |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.AddTenant.handle
           in
           let run_events events =

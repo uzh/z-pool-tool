@@ -2,7 +2,6 @@ include One_of_n
 module Countries = Countries
 module Stringify = Stringify
 module Database = Database
-module Conformist = Sihl_conformist
 
 let todo _ = failwith "todo"
 
@@ -17,3 +16,9 @@ module Lwt_result = struct
     let ( >|> ) = Lwt.bind
   end
 end
+
+let handle_conformist_error (err : Conformist.error list) =
+  String.concat
+    "\n"
+    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
+;;

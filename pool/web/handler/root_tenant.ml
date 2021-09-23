@@ -49,7 +49,7 @@ let create req =
     let go = CCFun.flip List.assoc params in
     CCList.map (fun field -> field, [ go field ]) fields
     |> Cqrs_command.Tenant_command.AddTenant.decode
-    |> CCResult.map_err Utils.Conformist.handle_error
+    |> CCResult.map_err Utils.handle_conformist_error
     |> CCResult.flat_map Cqrs_command.Tenant_command.AddTenant.handle
     |> CCResult.map_err (fun err -> err, error_path, [])
     |> Lwt_result.lift
