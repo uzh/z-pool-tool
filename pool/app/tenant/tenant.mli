@@ -169,8 +169,8 @@ type t =
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 
 val create
@@ -200,8 +200,8 @@ module Read : sig
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
 end
 

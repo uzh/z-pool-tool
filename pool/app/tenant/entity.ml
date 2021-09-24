@@ -1,4 +1,6 @@
 module Id = Pool_common.Id
+module CreatedAt = Pool_common.CreatedAt
+module UpdatedAt = Pool_common.UpdatedAt
 module SmtpAuth = Entity_smtp_auth
 module Database = Entity_database
 
@@ -193,8 +195,8 @@ type t =
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : CreatedAt.t
+  ; updated_at : CreatedAt.t
   }
 [@@deriving eq, show]
 
@@ -223,8 +225,8 @@ let create
   ; maintenance = Maintenance.create false
   ; disabled = Disabled.create false
   ; default_language
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
+  ; created_at = CreatedAt.create ()
+  ; updated_at = UpdatedAt.create ()
   }
 ;;
 
@@ -242,8 +244,8 @@ module Read = struct
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
     }
   [@@deriving eq, show]
 end

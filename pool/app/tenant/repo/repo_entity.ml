@@ -1,6 +1,5 @@
 open Entity
-module Id = Pool_common.Id
-module RepoId = Pool_common.Repo.Id
+module Common = Pool_common
 module SmtpAuth = Repo_entity_smtp_auth
 module Database = Repo_entity_database
 
@@ -123,7 +122,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         RepoId.t
+         Common.Repo.Id.t
          (tup2
             Title.t
             (tup2
@@ -148,7 +147,9 @@ let t =
                                           Disabled.t
                                           (tup2
                                              Settings.Language.t
-                                             (tup2 ptime ptime)))))))))))))))
+                                             (tup2
+                                                Common.Repo.CreatedAt.t
+                                                Common.Repo.UpdatedAt.t)))))))))))))))
 ;;
 
 module Read = struct
@@ -216,7 +217,7 @@ module Read = struct
         ~encode
         ~decode
         (tup2
-           RepoId.t
+           Common.Repo.Id.t
            (tup2
               Title.t
               (tup2
@@ -239,6 +240,8 @@ module Read = struct
                                          Disabled.t
                                          (tup2
                                             Settings.Language.t
-                                            (tup2 ptime ptime))))))))))))))
+                                            (tup2
+                                               Common.Repo.CreatedAt.t
+                                               Common.Repo.UpdatedAt.t))))))))))))))
   ;;
 end
