@@ -2,6 +2,7 @@ module SmtpAuth : sig
   module Server : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -10,6 +11,7 @@ module SmtpAuth : sig
   module Port : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -18,6 +20,7 @@ module SmtpAuth : sig
   module Username : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -34,6 +37,7 @@ module SmtpAuth : sig
   module AuthenticationMethod : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -42,6 +46,7 @@ module SmtpAuth : sig
   module Protocol : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -104,7 +109,6 @@ end
 module Title : sig
   type t
 
-  (* TODO [timhub]: can I expose value fnc? *)
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
@@ -114,6 +118,7 @@ end
 module Description : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -122,6 +127,7 @@ end
 module Url : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -130,6 +136,7 @@ end
 module Styles : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -138,6 +145,7 @@ end
 module Icon : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -146,6 +154,7 @@ end
 module Logos : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -154,6 +163,7 @@ end
 module PartnerLogos : sig
   type t
 
+  val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
@@ -273,7 +283,7 @@ type event =
 val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find_by_id : Pool_common.Id.t -> (t, string) result Lwt.t
+val find_by_id : string -> (Read.t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 val find_all : unit -> (Read.t list, string) Result.t Lwt.t

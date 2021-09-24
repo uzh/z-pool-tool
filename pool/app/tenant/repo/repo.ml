@@ -1,8 +1,7 @@
-open Entity
 module RepoEntity = Repo_entity
 
 module Sql = struct
-  let find_all_sql fragment =
+  let select_from_tenants fragment =
     let select_from =
       {sql|
         SELECT
@@ -38,11 +37,20 @@ module Sql = struct
 
   let find_all_request =
     ""
-    |> find_all_sql
+    |> select_from_tenants
     |> Caqti_request.collect Caqti_type.unit RepoEntity.Read.t
   ;;
 
+  let find_by_id_request =
+    {sql|
+      WHERE pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_tenants
+    |> Caqti_request.find Caqti_type.string RepoEntity.Read.t
+  ;;
+
   let find_all = Utils.Database.collect find_all_request
+  let find_by_id = Utils.Database.find find_by_id_request
 
   let insert_sql =
     {sql|
@@ -98,7 +106,7 @@ module Sql = struct
   let insert t = Utils.Database.exec insert_request t
 end
 
-let find_by_id (id : string) : (t, string) result Lwt.t = Utils.todo id
+let find_by_id = Sql.find_by_id
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update t = Utils.todo t

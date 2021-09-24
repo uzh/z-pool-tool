@@ -51,3 +51,24 @@ let create req =
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path_with_actions
 ;;
+
+let tenant_detail req =
+  let open Utils.Lwt_result.Infix in
+  let error_path = "/root/tenants" in
+  let show () =
+    let open Lwt_result.Syntax in
+    let message =
+      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+    in
+    let id = Sihl.Web.Router.param req "id" in
+    (* QUESTION [timhub]: this is a string nod an Commin.Id *)
+    let* tenant = Tenant.find_by_id id in
+    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    Page.Root.Tenant.detail csrf ~tenant ~message ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
+  in
+  show ()
+  |> Lwt_result.map_err (fun err -> err, error_path)
+  >|> HttpUtils.extract_happy_path
+;;

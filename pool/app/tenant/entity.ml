@@ -21,6 +21,8 @@ end
 module Description = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create description =
     if String.length description <= 0
     then Error "Invalid description!"
@@ -38,6 +40,8 @@ end
 module Url = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create url =
     if String.length url <= 0 then Error "Invalid url!" else Ok url
   ;;
@@ -49,6 +53,8 @@ end
 
 module Styles = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create styles =
     if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
@@ -65,6 +71,8 @@ end
 module Icon = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create icon =
     if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
   ;;
@@ -77,6 +85,8 @@ end
 module Logos = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create logos =
     if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
   ;;
@@ -88,6 +98,8 @@ end
 
 module PartnerLogos = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create partner_logo =
     if String.length partner_logo <= 0

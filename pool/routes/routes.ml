@@ -22,6 +22,7 @@ module Root = struct
   let routes =
     [ get "/tenants" Handler.Root.Tenant.tenants
     ; post "/tenant/create" Handler.Root.Tenant.create
+    ; get "/tenant/:id" Handler.Root.Tenant.tenant_detail
     ]
   ;;
 end

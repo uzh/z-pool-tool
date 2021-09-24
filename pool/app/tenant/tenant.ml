@@ -1,7 +1,10 @@
 include Entity
 include Event
 
-let find_by_id (id : Id.t) : (t, string) result Lwt.t = Utils.todo id
+let find_by_id id =
+  Repo.find_by_id id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+;;
+
 let find_by_participant = Utils.todo
 let find_by_user = Utils.todo
 let find_all = Repo.find_all

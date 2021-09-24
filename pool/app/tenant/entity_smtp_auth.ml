@@ -1,6 +1,8 @@
 module Server = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create server =
     if String.length server <= 0
     then Error "Invalid SMTP server !"
@@ -18,6 +20,8 @@ end
 module Port = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create port =
     if CCList.mem port [ "25"; "465"; "587" ]
     then Ok port
@@ -34,6 +38,8 @@ end
 
 module Username = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create username =
     if String.length username <= 0
@@ -70,6 +76,8 @@ end
 module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
 
+  let value t = t
+
   let create authentication_method =
     if String.length authentication_method <= 0
     then Error "Invalid SMTP authentication method!"
@@ -86,6 +94,8 @@ end
 
 module Protocol = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]

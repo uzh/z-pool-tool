@@ -1,13 +1,25 @@
 open Tyxml.Html
 
-let build_tenant_rows tenant_list =
-  CCList.map
-    (fun (tenant : Tenant.Read.t) ->
-      div [ h2 [ txt (tenant.Tenant.Read.title |> Tenant.Title.value) ]; hr () ])
-    tenant_list
-;;
-
 let list csrf ~tenant_list ~message () =
+  let open Tenant.Read in
+  let build_tenant_rows tenant_list =
+    CCList.map
+      (fun tenant ->
+        div
+          [ h2 [ txt (tenant.title |> Tenant.Title.value) ]
+          ; a
+              ~a:
+                [ a_href
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/root/tenant/%s"
+                          (Pool_common.Id.value tenant.id)))
+                ]
+              [ txt "detail" ]
+          ; hr ()
+          ])
+      tenant_list
+  in
   let tenant_list = build_tenant_rows tenant_list in
   let fields =
     [ "title", "Econ Uzh"
@@ -59,6 +71,66 @@ let list csrf ~tenant_list ~message () =
              ; input_fields
              ; [ input ~a:[ a_input_type `Submit; a_value "Create new" ] () ]
              ])
+      ]
+  in
+  Page_layout.create ~children:html ~message ()
+;;
+
+let detail csrf ~tenant ~message () =
+  let open Tenant.Read in
+  let open Tenant.SmtpAuth.Read in
+  let fields =
+    [ "title", Tenant.Title.value tenant.title
+    ; "description", Tenant.Description.value tenant.description
+    ; "url", Tenant.Url.value tenant.url
+    ; "database_url", ""
+    ; "database_label", ""
+    ; "smtp_auth_server", Tenant.SmtpAuth.Server.value tenant.smtp_auth.server
+    ; "smtp_auth_port", Tenant.SmtpAuth.Port.value tenant.smtp_auth.port
+    ; ( "smtp_auth_username"
+      , Tenant.SmtpAuth.Username.value tenant.smtp_auth.username )
+    ; "smtp_auth_password", ""
+    ; ( "smtp_auth_authentication_method"
+      , Tenant.SmtpAuth.AuthenticationMethod.value
+          tenant.smtp_auth.authentication_method )
+    ; ( "smtp_auth_protocol"
+      , Tenant.SmtpAuth.Protocol.value tenant.smtp_auth.protocol )
+    ; "styles", Tenant.Styles.value tenant.styles
+    ; "icon", Tenant.Icon.value tenant.icon
+    ; "logos", Tenant.Logos.value tenant.logos
+    ; "partner_logos", Tenant.PartnerLogos.value tenant.partner_logos
+    ; "default_language", Settings.Language.show tenant.default_language
+    ]
+  in
+  let input_fields =
+    CCList.map
+      (fun (name, value) ->
+        input
+          ~a:
+            [ a_input_type `Text
+            ; a_name name
+            ; a_placeholder name
+            ; a_value value
+            ]
+          ())
+      fields
+  in
+  let html =
+    div
+      [ h1 [ txt (tenant.Tenant.Read.title |> Tenant.Title.value) ]
+      ; form
+          ~a:
+            [ a_action (Sihl.Web.externalize_path "/root/tenant/create")
+            ; a_method `Post
+            ]
+          (CCList.concat
+             [ [ Component.csrf_element csrf () ]
+             ; input_fields
+             ; [ input ~a:[ a_input_type `Submit; a_value "Create new" ] () ]
+             ])
+      ; a
+          ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
+          [ txt "back" ]
       ]
   in
   Page_layout.create ~children:html ~message ()
