@@ -1,8 +1,6 @@
 module Url = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
-
   let create server =
     if String.length server <= 0
     then Error "Invalid database url!"
@@ -12,15 +10,13 @@ module Url = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ value l ])
+      (fun l -> [ l ])
       "database_url"
   ;;
 end
 
 module Label = struct
   type t = string [@@deriving eq, show]
-
-  let value t = t
 
   let create label =
     if String.length label <= 0 || String.contains label ' '
@@ -31,7 +27,7 @@ module Label = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ value l ])
+      (fun l -> [ l ])
       "database_label"
   ;;
 end
