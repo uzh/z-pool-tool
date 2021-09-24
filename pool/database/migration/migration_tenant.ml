@@ -13,6 +13,7 @@ let create_tenant_table =
         `smtp_auth_server` varchar(255) NOT NULL,
         `smtp_auth_port` varchar(128) NOT NULL,
         `smtp_auth_username` varchar(255) NOT NULL,
+        `smtp_auth_password` varchar(255) NOT NULL,
         `smtp_auth_authentication_method` varchar(255) NOT NULL,
         `smtp_auth_protocol` varchar(255) NOT NULL,
         `styles` varchar(255) NOT NULL,

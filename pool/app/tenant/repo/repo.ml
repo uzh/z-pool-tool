@@ -56,6 +56,7 @@ module Sql = struct
         smtp_auth_server,
         smtp_auth_port,
         smtp_auth_username,
+        smtp_auth_password,
         smtp_auth_authentication_method,
         smtp_auth_protocol,
         styles,
@@ -69,6 +70,7 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,

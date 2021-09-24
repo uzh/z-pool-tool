@@ -225,7 +225,7 @@ module Read = struct
                  (tup2
                     Url.t
                     (tup2
-                       SmtpAuth.t
+                       SmtpAuth.Read.t
                        (tup2
                           Styles.t
                           (tup2

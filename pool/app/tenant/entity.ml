@@ -210,7 +210,7 @@ module Read = struct
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; smtp_auth : SmtpAuth.t
+    ; smtp_auth : SmtpAuth.Read.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t

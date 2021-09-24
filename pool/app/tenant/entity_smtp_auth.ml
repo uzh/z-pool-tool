@@ -49,6 +49,24 @@ module Username = struct
   ;;
 end
 
+module Password = struct
+  type t = string [@@deriving eq, show]
+
+  (* TODO [timhub]: do we need validation here? *)
+  let create password =
+    if String.length password <= 0
+    then Error "Invalid SMTP password!"
+    else Ok password
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ l ])
+      "smtp_auth_password"
+  ;;
+end
+
 module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
 
@@ -87,11 +105,23 @@ type t =
   { server : Server.t
   ; port : Port.t
   ; username : Username.t
+  ; password : Password.t
   ; authentication_method : AuthenticationMethod.t
   ; protocol : Protocol.t
   }
 [@@deriving eq, show]
 
-let create server port username authentication_method protocol =
-  Ok { server; port; username; authentication_method; protocol }
+let create server port username password authentication_method protocol =
+  Ok { server; port; username; password; authentication_method; protocol }
 ;;
+
+module Read = struct
+  type t =
+    { server : Server.t
+    ; port : Port.t
+    ; username : Username.t
+    ; authentication_method : AuthenticationMethod.t
+    ; protocol : Protocol.t
+    }
+  [@@deriving eq, show]
+end

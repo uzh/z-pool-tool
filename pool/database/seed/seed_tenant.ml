@@ -9,6 +9,7 @@ let create () =
       , "smtp.uzh.ch"
       , "587"
       , "engineering@econ.uzh.ch"
+      , "emailemail"
       , "LOGIN"
       , "STARTTLS"
       , "custom-styles.econ.css"
@@ -28,6 +29,7 @@ let create () =
       , "smtp.zhaw.ch"
       , "465"
       , "engineering@zhaw.ch"
+      , "emailemail"
       , "LOGIN"
       , "SSL/TLS"
       , "custom-styles.zhaw.css"
@@ -51,6 +53,7 @@ let create () =
            , smtp_auth_server
            , smtp_auth_port
            , smtp_auth_username
+           , smtp_auth_password
            , smtp_auth_authentication_method
            , smtp_auth_protocol
            , styles
@@ -78,6 +81,7 @@ let create () =
               ; "smtp_auth_server", [ smtp_auth_server ]
               ; "smtp_auth_port", [ smtp_auth_port ]
               ; "smtp_auth_username", [ smtp_auth_username ]
+              ; "smtp_auth_password", [ smtp_auth_password ]
               ; ( "smtp_auth_authentication_method"
                 , [ smtp_auth_authentication_method ] )
               ; "smtp_auth_protocol", [ smtp_auth_protocol ]

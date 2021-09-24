@@ -23,6 +23,14 @@ module SmtpAuth : sig
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
+  module Password : sig
+    type t
+
+    val equal : t -> t -> bool
+    val create : string -> (t, string) result
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
+
   module AuthenticationMethod : sig
     type t
 
@@ -43,6 +51,7 @@ module SmtpAuth : sig
     { server : Server.t
     ; port : Port.t
     ; username : Username.t
+    ; password : Password.t
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }
@@ -51,9 +60,20 @@ module SmtpAuth : sig
     :  Server.t
     -> Port.t
     -> Username.t
+    -> Password.t
     -> AuthenticationMethod.t
     -> Protocol.t
     -> (t, string) result
+
+  module Read : sig
+    type t =
+      { server : Server.t
+      ; port : Port.t
+      ; username : Username.t
+      ; authentication_method : AuthenticationMethod.t
+      ; protocol : Protocol.t
+      }
+  end
 end
 
 module Database : sig
@@ -192,7 +212,7 @@ module Read : sig
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; smtp_auth : SmtpAuth.t
+    ; smtp_auth : SmtpAuth.Read.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t

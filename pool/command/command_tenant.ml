@@ -14,10 +14,11 @@ let create_tenant =
         <description>                       : string
         <url>                               : string
         <database_url>                      : string
-        <database_label>                     : string
+        <database_label>                    : string
         <smtp_auth_server>                  : string
         <smtp_auth_port>                    : '25' | '465' | '587'
         <smtp_auth_username>                : string
+        <smtp_auth_password>                : string
         <smtp_auth_authentication_method>   : string
         <smtp_auth_protocol>                : 'STARTTLS' | 'SSL/TLS'
         <styles>                            : string
@@ -40,6 +41,7 @@ let create_tenant =
         ; smtp_auth_server
         ; smtp_auth_port
         ; smtp_auth_username
+        ; smtp_auth_password
         ; smtp_auth_authentication_method
         ; smtp_auth_protocol
         ; styles
@@ -68,6 +70,7 @@ let create_tenant =
               ; "smtp_auth_server", [ smtp_auth_server ]
               ; "smtp_auth_port", [ smtp_auth_port ]
               ; "smtp_auth_username", [ smtp_auth_username ]
+              ; "smtp_auth_password", [ smtp_auth_password ]
               ; ( "smtp_auth_authentication_method"
                 , [ smtp_auth_authentication_method ] )
               ; "smtp_auth_protocol", [ smtp_auth_protocol ]

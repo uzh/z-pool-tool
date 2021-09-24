@@ -18,6 +18,7 @@ let list csrf ~tenant_list ~message () =
     ; "smtp_auth_server", "smtp.econ.uzh.ch"
     ; "smtp_auth_port", "587"
     ; "smtp_auth_username", "engineering@econ.uzh.ch"
+    ; "smtp_auth_password", "emailemail"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
     ; "styles", "custom-styles.css"
