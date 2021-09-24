@@ -23,36 +23,10 @@ let tenants req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/root/tenants" in
-  let fields =
-    [ "title"
-    ; "description"
-    ; "url"
-    ; "database_url"
-    ; "database_label"
-    ; "smtp_auth_server"
-    ; "smtp_auth_port"
-    ; "smtp_auth_username"
-    ; "smtp_auth_authentication_method"
-    ; "smtp_auth_protocol"
-    ; "styles"
-    ; "icon"
-    ; "logos"
-    ; "partner_logos"
-    ; "default_language"
-    ; "email"
-    ; "password"
-    ; "firstname"
-    ; "lastname"
-    ]
-  in
   let events () =
-    let open Lwt_result.Syntax in
-    let* params =
-      HttpUtils.request_to_params req fields ()
-      |> Lwt_result.map_err (fun msg -> msg, error_path, [])
-    in
-    let go = CCFun.flip List.assoc params in
-    CCList.map (fun field -> field, [ go field ]) fields
+    let open Lwt.Syntax in
+    let* urlencoded = Sihl.Web.Request.to_urlencoded req in
+    urlencoded
     |> Cqrs_command.Tenant_command.AddTenant.decode
     |> CCResult.map_err Utils.handle_conformist_error
     |> CCResult.flat_map Cqrs_command.Tenant_command.AddTenant.handle
