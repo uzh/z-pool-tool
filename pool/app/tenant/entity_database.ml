@@ -17,29 +17,29 @@ module Url = struct
   ;;
 end
 
-module User = struct
+module Label = struct
   type t = string [@@deriving eq, show]
 
   let value t = t
 
-  let create server =
-    if String.length server <= 0
-    then Error "Invalid database user!"
-    else Ok server
+  let create label =
+    if String.length label <= 0 || String.contains label ' '
+    then Error "Invalid database label!"
+    else Ok label
   ;;
 
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
       (fun l -> [ value l ])
-      "database_user"
+      "database_label"
   ;;
 end
 
 type t =
   { url : Url.t
-  ; user : User.t
+  ; label : Label.t
   }
 [@@deriving eq, show]
 
-let create url user = Ok { url; user }
+let create url label = Ok { url; label }

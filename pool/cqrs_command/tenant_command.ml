@@ -6,7 +6,7 @@ module AddTenant : sig
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
     ; database_url : Tenant.Database.Url.t
-    ; database_user : Tenant.Database.User.t
+    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -36,7 +36,7 @@ end = struct
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
     ; database_url : Tenant.Database.Url.t
-    ; database_user : Tenant.Database.User.t
+    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -58,7 +58,7 @@ end = struct
       description
       url
       database_url
-      database_user
+      database_label
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
@@ -78,7 +78,7 @@ end = struct
     ; description
     ; url
     ; database_url
-    ; database_user
+    ; database_label
     ; smtp_auth_server
     ; smtp_auth_port
     ; smtp_auth_username
@@ -104,7 +104,7 @@ end = struct
           ; Tenant.Description.schema ()
           ; Tenant.Url.schema ()
           ; Tenant.Database.Url.schema ()
-          ; Tenant.Database.User.schema ()
+          ; Tenant.Database.Label.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()
@@ -131,7 +131,7 @@ end = struct
         ; url = command.url
         ; database =
             Database.
-              { url = command.database_url; user = command.database_user }
+              { url = command.database_url; label = command.database_label }
         ; smtp_auth =
             SmtpAuth.
               { server = command.smtp_auth_server
@@ -176,7 +176,7 @@ module EditTenant : sig
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
     ; database_url : Tenant.Database.Url.t
-    ; database_user : Tenant.Database.User.t
+    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -203,7 +203,7 @@ end = struct
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
     ; database_url : Tenant.Database.Url.t
-    ; database_user : Tenant.Database.User.t
+    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -222,7 +222,7 @@ end = struct
       description
       url
       database_url
-      database_user
+      database_label
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
@@ -239,7 +239,7 @@ end = struct
     ; description
     ; url
     ; database_url
-    ; database_user
+    ; database_label
     ; smtp_auth_server
     ; smtp_auth_port
     ; smtp_auth_username
@@ -262,7 +262,7 @@ end = struct
           ; Tenant.Description.schema ()
           ; Tenant.Url.schema ()
           ; Tenant.Database.Url.schema ()
-          ; Tenant.Database.User.schema ()
+          ; Tenant.Database.Label.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()
@@ -286,7 +286,7 @@ end = struct
         ; url = command.url
         ; database =
             Database.
-              { url = command.database_url; user = command.database_user }
+              { url = command.database_url; label = command.database_label }
         ; smtp_auth =
             SmtpAuth.
               { server = command.smtp_auth_server

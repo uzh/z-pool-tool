@@ -14,7 +14,7 @@ let create_tenant =
         <description>                       : string
         <url>                               : string
         <database_url>                      : string
-        <database_user>                     : string
+        <database_label>                     : string
         <smtp_auth_server>                  : string
         <smtp_auth_port>                    : '25' | '465' | '587'
         <smtp_auth_username>                : string
@@ -36,7 +36,7 @@ let create_tenant =
         ; description
         ; url
         ; database_url
-        ; database_user
+        ; database_label
         ; smtp_auth_server
         ; smtp_auth_port
         ; smtp_auth_username
@@ -64,7 +64,7 @@ let create_tenant =
               ; "description", [ description ]
               ; "url", [ url ]
               ; "database_url", [ database_url ]
-              ; "database_user", [ database_user ]
+              ; "database_label", [ database_label ]
               ; "smtp_auth_server", [ smtp_auth_server ]
               ; "smtp_auth_port", [ smtp_auth_port ]
               ; "smtp_auth_username", [ smtp_auth_username ]

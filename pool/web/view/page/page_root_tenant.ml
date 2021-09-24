@@ -14,7 +14,7 @@ let list csrf ~tenant_list ~message () =
     ; "description", "adfasdf"
     ; "url", "pool.econ.uzh.ch"
     ; "database_url", "database@econ.uzh.ch"
-    ; "database_user", "root"
+    ; "database_label", "econ_uzh"
     ; "smtp_auth_server", "smtp.econ.uzh.ch"
     ; "smtp_auth_port", "587"
     ; "smtp_auth_username", "engineering@econ.uzh.ch"

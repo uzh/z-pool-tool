@@ -65,7 +65,7 @@ module Database : sig
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
-  module User : sig
+  module Label : sig
     type t
 
     val equal : t -> t -> bool
@@ -75,10 +75,10 @@ module Database : sig
 
   type t =
     { url : Url.t
-    ; user : User.t
+    ; label : Label.t
     }
 
-  val create : Url.t -> User.t -> (t, string) result
+  val create : Url.t -> Label.t -> (t, string) result
 end
 
 module Title : sig
@@ -253,7 +253,7 @@ type event =
 val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find_by_id : string -> (t, string) result Lwt.t
+val find_by_id : Pool_common.Id.t -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 val find_all : unit -> (Read.t list, string) Result.t Lwt.t

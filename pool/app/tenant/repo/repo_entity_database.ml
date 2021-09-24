@@ -6,19 +6,19 @@ module Url = struct
   let t = Caqti_type.string
 end
 
-module User = struct
-  include User
+module Label = struct
+  include Label
 
   let t = Caqti_type.string
 end
 
 let t =
-  let encode m = Ok (Url.value m.Entity.Database.url, User.value m.user) in
+  let encode m = Ok (Url.value m.Entity.Database.url, Label.value m.label) in
   let decode (url, user) =
     let ( let* ) = Result.bind in
     let* url = Url.create url in
-    let* user = User.create user in
-    Ok { url; user }
+    let* label = Label.create user in
+    Ok { url; label }
   in
-  Caqti_type.(custom ~encode ~decode (tup2 Url.t User.t))
+  Caqti_type.(custom ~encode ~decode (tup2 Url.t Label.t))
 ;;

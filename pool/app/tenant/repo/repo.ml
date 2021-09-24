@@ -52,7 +52,7 @@ module Sql = struct
         description,
         url,
         database_url,
-        database_user,
+        database_label,
         smtp_auth_server,
         smtp_auth_port,
         smtp_auth_username,
