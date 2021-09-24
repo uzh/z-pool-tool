@@ -13,7 +13,7 @@ module Label = struct
 end
 
 let t =
-  let encode m = Ok (Url.value m.Entity.Database.url, Label.value m.label) in
+  let encode m = Ok (m.Entity.Database.url, m.label) in
   let decode (url, user) =
     let ( let* ) = Result.bind in
     let* url = Url.create url in

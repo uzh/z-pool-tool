@@ -62,17 +62,17 @@ let t =
   let encode m =
     Ok
       ( Id.value m.id
-      , ( Title.value m.title
-        , ( Description.value m.description
-          , ( Url.value m.url
+      , ( m.title
+        , ( m.description
+          , ( m.url
             , ( m.database
               , ( m.smtp_auth
-                , ( Styles.value m.styles
-                  , ( Icon.value m.icon
-                    , ( Logos.value m.logos
-                      , ( PartnerLogos.value m.partner_logos
-                        , ( Maintenance.value m.maintenance
-                          , ( Disabled.value m.disabled
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.logos
+                      , ( m.partner_logos
+                        , ( m.maintenance
+                          , ( m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))
                             ) ) ) ) ) ) ) ) ) ) ) )
   in
@@ -158,16 +158,16 @@ module Read = struct
     let encode m =
       Ok
         ( Id.value m.Read.id
-        , ( Title.value m.title
-          , ( Description.value m.description
-            , ( Url.value m.url
+        , ( m.title
+          , ( m.description
+            , ( m.url
               , ( m.smtp_auth
-                , ( Styles.value m.styles
-                  , ( Icon.value m.icon
-                    , ( Logos.value m.logos
-                      , ( PartnerLogos.value m.partner_logos
-                        , ( Maintenance.value m.maintenance
-                          , ( Disabled.value m.disabled
+                , ( m.styles
+                  , ( m.icon
+                    , ( m.logos
+                      , ( m.partner_logos
+                        , ( m.maintenance
+                          , ( m.disabled
                             , (m.default_language, (m.created_at, m.updated_at))
                             ) ) ) ) ) ) ) ) ) ) )
     in

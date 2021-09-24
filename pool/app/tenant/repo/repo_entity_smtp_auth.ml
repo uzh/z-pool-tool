@@ -32,12 +32,7 @@ end
 
 let t =
   let encode m =
-    Ok
-      ( Server.value m.server
-      , ( Port.value m.port
-        , ( Username.value m.username
-          , ( AuthenticationMethod.value m.authentication_method
-            , Protocol.value m.protocol ) ) ) )
+    Ok (m.server, (m.port, (m.username, (m.authentication_method, m.protocol))))
   in
   let decode (server, (port, (username, (authentication_method, protocol)))) =
     let ( let* ) = Result.bind in
