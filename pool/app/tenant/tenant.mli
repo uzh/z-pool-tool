@@ -56,6 +56,31 @@ module SmtpAuth : sig
     -> (t, string) result
 end
 
+module Database : sig
+  module Url : sig
+    type t
+
+    val equal : t -> t -> bool
+    val create : string -> (t, string) result
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
+
+  module User : sig
+    type t
+
+    val equal : t -> t -> bool
+    val create : string -> (t, string) result
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
+
+  type t =
+    { url : Url.t
+    ; user : User.t
+    }
+
+  val create : Url.t -> User.t -> (t, string) result
+end
+
 module Title : sig
   type t
 
@@ -75,14 +100,6 @@ module Description : sig
 end
 
 module Url : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end
-
-module DatabaseUrl : sig
   type t
 
   val equal : t -> t -> bool
@@ -143,7 +160,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_url : DatabaseUrl.t
+  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -160,7 +177,7 @@ val create
   :  Title.t
   -> Description.t
   -> Url.t
-  -> DatabaseUrl.t
+  -> Database.t
   -> SmtpAuth.t
   -> Styles.t
   -> Icon.t
@@ -168,6 +185,25 @@ val create
   -> PartnerLogos.t
   -> Settings.Language.t
   -> t
+
+module Read : sig
+  type t =
+    { id : Pool_common.Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; smtp_auth : SmtpAuth.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogos.t
+    ; maintenance : Maintenance.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
+end
 
 module StatusReport : sig
   type t
@@ -179,7 +215,7 @@ type create =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_url : DatabaseUrl.t
+  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -192,7 +228,7 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_url : DatabaseUrl.t
+  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -220,7 +256,7 @@ val pp_event : Format.formatter -> event -> unit
 val find_by_id : string -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
-val find_all : unit -> (t list, string) Result.t Lwt.t
+val find_all : unit -> (Read.t list, string) Result.t Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

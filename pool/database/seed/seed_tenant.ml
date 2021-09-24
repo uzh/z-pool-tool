@@ -5,6 +5,7 @@ let create () =
       , "description"
       , "pool.econ.uzh.ch"
       , "database@econ.ch"
+      , "root"
       , "smtp.uzh.ch"
       , "587"
       , "engineering@econ.uzh.ch"
@@ -23,6 +24,7 @@ let create () =
       , "description"
       , "pool.zhaw.ch"
       , "database@zhaw.ch"
+      , "root"
       , "smtp.zhaw.ch"
       , "465"
       , "engineering@zhaw.ch"
@@ -45,6 +47,7 @@ let create () =
            , description
            , url
            , database_url
+           , database_user
            , smtp_auth_server
            , smtp_auth_port
            , smtp_auth_username
@@ -71,6 +74,7 @@ let create () =
               ; "description", [ description ]
               ; "url", [ url ]
               ; "database_url", [ database_url ]
+              ; "database_user", [ database_user ]
               ; "smtp_auth_server", [ smtp_auth_server ]
               ; "smtp_auth_port", [ smtp_auth_port ]
               ; "smtp_auth_username", [ smtp_auth_username ]

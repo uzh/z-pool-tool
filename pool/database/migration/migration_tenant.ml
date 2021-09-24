@@ -9,6 +9,7 @@ let create_tenant_table =
         `description` varchar(255),
         `url` varchar(255) NOT NULL,
         `database_url` varchar(255) NOT NULL,
+        `database_user` varchar(255) NOT NULL,
         `smtp_auth_server` varchar(255) NOT NULL,
         `smtp_auth_port` varchar(128) NOT NULL,
         `smtp_auth_username` varchar(255) NOT NULL,

@@ -1,5 +1,6 @@
 module Id = Pool_common.Id
 module SmtpAuth = Entity_smtp_auth
+module Database = Entity_database
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -51,25 +52,6 @@ module Url = struct
       (fun l -> l |> List.hd |> create)
       (fun l -> [ value l ])
       "url"
-  ;;
-end
-
-module DatabaseUrl = struct
-  type t = string [@@deriving eq, show]
-
-  let value t = t
-
-  let create database_url =
-    if String.length database_url <= 0
-    then Error "Invalid database!"
-    else Ok database_url
-  ;;
-
-  let schema () =
-    Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ value l ])
-      "database_url"
   ;;
 end
 
@@ -202,7 +184,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_url : DatabaseUrl.t
+  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -220,7 +202,7 @@ let create
     title
     description
     url
-    database_url
+    database
     smtp_auth
     styles
     icon
@@ -232,7 +214,7 @@ let create
   ; title
   ; description
   ; url
-  ; database_url
+  ; database
   ; smtp_auth
   ; styles
   ; icon
@@ -245,6 +227,26 @@ let create
   ; updated_at = Ptime_clock.now ()
   }
 ;;
+
+module Read = struct
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; smtp_auth : SmtpAuth.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; logos : Logos.t
+    ; partner_logos : PartnerLogos.t
+    ; maintenance : Maintenance.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
+  [@@deriving eq, show]
+end
 
 (* The system should proactively report degraded health to operators *)
 module StatusReport = struct

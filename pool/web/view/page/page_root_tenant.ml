@@ -1,10 +1,9 @@
 open Tyxml.Html
 
 let build_tenant_rows tenant_list =
-  let open Tenant in
   CCList.map
-    (fun (tenant : Tenant.t) ->
-      div [ h2 [ txt (tenant.title |> Tenant.Title.value) ]; hr () ])
+    (fun (tenant : Tenant.Read.t) ->
+      div [ h2 [ txt (tenant.Tenant.Read.title |> Tenant.Title.value) ]; hr () ])
     tenant_list
 ;;
 
@@ -15,6 +14,7 @@ let list csrf ~tenant_list ~message () =
     ; "description", "adfasdf"
     ; "url", "pool.econ.uzh.ch"
     ; "database_url", "database@econ.uzh.ch"
+    ; "database_user", "root"
     ; "smtp_auth_server", "smtp.econ.uzh.ch"
     ; "smtp_auth_port", "587"
     ; "smtp_auth_username", "engineering@econ.uzh.ch"

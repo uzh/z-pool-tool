@@ -16,7 +16,6 @@ module Sql = struct
           title,
           description,
           url,
-          database_url,
           smtp_auth_server,
           smtp_auth_port,
           smtp_auth_username,
@@ -38,7 +37,9 @@ module Sql = struct
   ;;
 
   let find_all_request =
-    "" |> find_all_sql |> Caqti_request.collect Caqti_type.unit RepoEntity.t
+    ""
+    |> find_all_sql
+    |> Caqti_request.collect Caqti_type.unit RepoEntity.Read.t
   ;;
 
   let find_all = Utils.Database.collect find_all_request
@@ -51,6 +52,7 @@ module Sql = struct
         description,
         url,
         database_url,
+        database_user,
         smtp_auth_server,
         smtp_auth_port,
         smtp_auth_username,
@@ -67,6 +69,7 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
