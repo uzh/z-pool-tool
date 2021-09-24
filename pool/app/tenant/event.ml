@@ -35,7 +35,7 @@ let equal_operator_event (t1, o1) (t2, o2) =
 ;;
 
 type event =
-  | Added of create [@equal equal]
+  | Created of create [@equal equal]
   | Edited of t * update
   | Destroyed of Id.t
   | Disabled of t
@@ -49,7 +49,7 @@ type event =
 let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
-  | Added m ->
+  | Created m ->
     let* _ =
       Entity.create
         m.title
@@ -103,7 +103,7 @@ let handle_event : event -> unit Lwt.t =
 
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
-  | Added one, Added two -> equal_create one two
+  | Created one, Created two -> equal_create one two
   | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
     equal tenant_one tenant_two && equal_update update_one update_two
   | Destroyed one, Destroyed two ->
@@ -125,7 +125,7 @@ let[@warning "-4"] equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | Added m -> pp_create formatter m
+  | Created m -> pp_create formatter m
   | Edited (tenant, update) ->
     let () = pp formatter tenant in
     pp_update formatter update

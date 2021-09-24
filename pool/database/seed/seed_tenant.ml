@@ -72,7 +72,7 @@ let create () =
             Lwt_result.lift
             @@
             let open CCResult.Infix in
-            Cqrs_command.Tenant_command.AddTenant.decode
+            Cqrs_command.Tenant_command.Create.decode
               [ "title", [ title ]
               ; "description", [ description ]
               ; "url", [ url ]
@@ -96,7 +96,7 @@ let create () =
               ; "lastname", [ lastname ]
               ]
             |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Tenant_command.AddTenant.handle
+            >>= Cqrs_command.Tenant_command.Create.handle
           in
           let run_events events =
             let* _ = Lwt_list.map_s Pool_event.handle_event events in

@@ -27,9 +27,9 @@ let create req =
     let open Lwt.Syntax in
     let* urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
-    |> Cqrs_command.Tenant_command.AddTenant.decode
+    |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    |> CCResult.flat_map Cqrs_command.Tenant_command.AddTenant.handle
+    |> CCResult.flat_map Cqrs_command.Tenant_command.Create.handle
     |> CCResult.map_err (fun err -> err, error_path, [])
     |> Lwt_result.lift
   in

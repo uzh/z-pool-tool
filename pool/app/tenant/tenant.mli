@@ -259,7 +259,7 @@ type update =
   }
 
 type event =
-  | Added of create
+  | Created of create
   | Edited of t * update
   | Destroyed of Pool_common.Id.t
   | Disabled of t

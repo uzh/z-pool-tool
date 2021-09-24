@@ -1,6 +1,6 @@
 module Id = Pool_common.Id
 
-module AddTenant : sig
+module Create : sig
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
@@ -161,7 +161,7 @@ end = struct
         ; lastname = command.operator_lastname
         }
     in
-    Ok [ Tenant.Added tenant |> Pool_event.tenant ]
+    Ok [ Tenant.Created tenant |> Pool_event.tenant ]
   ;;
 
   (* TODO [timhub]: Uncomment when Admin Repo is done *)
@@ -176,7 +176,7 @@ end = struct
   let decode data = Conformist.decode_and_validate schema data
 end
 
-module EditTenant : sig
+module Edit : sig
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
@@ -327,7 +327,7 @@ end = struct
   ;;
 end
 
-module DestroyTenant : sig
+module Destroy : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Pool_event.t list, 'a) result
@@ -349,7 +349,7 @@ end = struct
   ;;
 end
 
-module DisableTenant : sig
+module Disable : sig
   type t = { tenant_id : string }
 
   val handle : Tenant.t -> (Pool_event.t list, 'b) result
@@ -369,7 +369,7 @@ end = struct
   ;;
 end
 
-module EnableTenant : sig
+module Enable : sig
   type t = { tenant_id : string }
 
   val handle : Tenant.t -> (Pool_event.t list, 'b) result
