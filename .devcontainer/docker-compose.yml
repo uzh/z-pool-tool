@@ -17,7 +17,10 @@ services:
     environment:
       - DATABASE_URL=mariadb://root@database:3306/development
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true
+<<<<<<< HEAD
       - DATABASE_CHOOSE_POOL=root
+=======
+>>>>>>> 028c76b (initiate multitanancy, create migrations and pools for running app)
       - OPAMSOLVERTIMEOUT=180
       - PUBLIC_URL=http://localhost:3016
       - SMTP_HOST=smtp.uzh.ch
