@@ -176,13 +176,11 @@ end = struct
   let decode data = Conformist.decode_and_validate schema data
 end
 
-module Edit : sig
+module EditDetails : sig
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
-    ; database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -209,8 +207,6 @@ end = struct
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
-    ; database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -229,8 +225,6 @@ end = struct
       title
       description
       url
-      database_url
-      database_label
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
@@ -247,8 +241,6 @@ end = struct
     { title
     ; description
     ; url
-    ; database_url
-    ; database_label
     ; smtp_auth_server
     ; smtp_auth_port
     ; smtp_auth_username
@@ -271,8 +263,6 @@ end = struct
           [ Tenant.Title.schema ()
           ; Tenant.Description.schema ()
           ; Tenant.Url.schema ()
-          ; Tenant.Database.Url.schema ()
-          ; Tenant.Database.Label.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()
@@ -295,9 +285,6 @@ end = struct
         { title = command.title
         ; description = command.description
         ; url = command.url
-        ; database =
-            Database.
-              { url = command.database_url; label = command.database_label }
         ; smtp_auth =
             SmtpAuth.
               { server = command.smtp_auth_server
@@ -315,7 +302,52 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    Ok [ Tenant.Edited (tenant, update) |> Pool_event.tenant ]
+    Ok [ Tenant.DetailsEdited (tenant, update) |> Pool_event.tenant ]
+  ;;
+
+  let decode data = Conformist.decode_and_validate schema data
+
+  let can user (tenant : Tenant.t) =
+    Permission.can
+      user
+      ~any_of:[ Permission.Update (Permission.Tenant, Some tenant.Tenant.id) ]
+  ;;
+end
+
+module EditDatabase : sig
+  type t =
+    { database_url : Tenant.Database.Url.t
+    ; database_label : Tenant.Database.Label.t
+    }
+
+  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
+
+  val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
+end = struct
+  type t =
+    { database_url : Tenant.Database.Url.t
+    ; database_label : Tenant.Database.Label.t
+    }
+
+  let command database_url database_label = { database_url; database_label }
+
+  let schema =
+    Conformist.(
+      make
+        Field.[ Tenant.Database.Url.schema (); Tenant.Database.Label.schema () ]
+        command)
+  ;;
+
+  let handle (command : t) (tenant : Tenant.t) =
+    let database =
+      Tenant.Database.
+        { url = command.database_url; label = command.database_label }
+    in
+    Ok [ Tenant.DatabaseEdited (tenant, database) |> Pool_event.tenant ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data

@@ -79,12 +79,10 @@ let list csrf ~tenant_list ~message () =
 let detail csrf ~tenant ~message () =
   let open Tenant.Read in
   let open Tenant.SmtpAuth.Read in
-  let fields =
+  let detail_fields =
     [ "title", Tenant.Title.value tenant.title
     ; "description", Tenant.Description.value tenant.description
     ; "url", Tenant.Url.value tenant.url
-    ; "database_url", ""
-    ; "database_label", ""
     ; "smtp_auth_server", Tenant.SmtpAuth.Server.value tenant.smtp_auth.server
     ; "smtp_auth_port", Tenant.SmtpAuth.Port.value tenant.smtp_auth.port
     ; ( "smtp_auth_username"
@@ -99,10 +97,15 @@ let detail csrf ~tenant ~message () =
     ; "icon", Tenant.Icon.value tenant.icon
     ; "logos", Tenant.Logos.value tenant.logos
     ; "partner_logos", Tenant.PartnerLogos.value tenant.partner_logos
-    ; "default_language", Settings.Language.show tenant.default_language
+    ; "default_language", Settings.Language.code tenant.default_language
     ]
   in
-  let input_fields =
+  let database_fields =
+    [ "database_url", ""
+    ; "database_label", Tenant.Database.Label.value tenant.database_label
+    ]
+  in
+  let detail_input_fields =
     CCList.map
       (fun (name, value) ->
         input
@@ -113,20 +116,62 @@ let detail csrf ~tenant ~message () =
             ; a_value value
             ]
           ())
-      fields
+      detail_fields
+  in
+  let database_input_fields =
+    CCList.map
+      (fun (name, value) ->
+        input
+          ~a:
+            [ a_input_type `Text
+            ; a_name name
+            ; a_placeholder name
+            ; a_value value
+            ]
+          ())
+      database_fields
+  in
+  let disabled =
+    let attributes =
+      match tenant.disabled |> Tenant.Disabled.value with
+      | true -> [ a_input_type `Checkbox; a_name "disabled"; a_checked () ]
+      | false -> [ a_input_type `Checkbox; a_name "disabled" ]
+    in
+    input ~a:attributes ()
   in
   let html =
     div
       [ h1 [ txt (tenant.Tenant.Read.title |> Tenant.Title.value) ]
       ; form
           ~a:
-            [ a_action (Sihl.Web.externalize_path "/root/tenant/create")
+            [ a_action
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/root/tenant/%s/update-detail"
+                      (Pool_common.Id.value tenant.id)))
             ; a_method `Post
             ]
           (CCList.concat
              [ [ Component.csrf_element csrf () ]
-             ; input_fields
-             ; [ input ~a:[ a_input_type `Submit; a_value "Create new" ] () ]
+             ; detail_input_fields
+             ; [ disabled ]
+             ; [ input ~a:[ a_input_type `Submit; a_value "Update" ] () ]
+             ])
+      ; hr ()
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/root/tenant/%s/update-database"
+                      (Pool_common.Id.value tenant.id)))
+            ; a_method `Post
+            ]
+          (CCList.concat
+             [ [ Component.csrf_element csrf () ]
+             ; database_input_fields
+             ; [ input ~a:[ a_input_type `Submit; a_value "Update database" ] ()
+               ]
              ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

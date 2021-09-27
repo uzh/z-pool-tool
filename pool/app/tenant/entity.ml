@@ -145,6 +145,7 @@ module Disabled = struct
   type t = bool [@@deriving eq, show]
 
   let create t = t
+  let value t = t
 
   let stringify = function
     | true -> "true"
@@ -159,7 +160,7 @@ module Disabled = struct
   let schema () =
     (* TODO [timhub]: correctly handle booleands
        https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
-       => Passes boolean as strin "true" *)
+       => Passes boolean as string "true" *)
     Conformist.custom
       (fun l -> l |> List.hd |> of_string |> CCResult.return)
       (fun l -> [ stringify l ])
@@ -222,6 +223,7 @@ module Read = struct
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
+    ; database_label : Database.Label.t
     ; smtp_auth : SmtpAuth.Read.t
     ; styles : Styles.t
     ; icon : Icon.t

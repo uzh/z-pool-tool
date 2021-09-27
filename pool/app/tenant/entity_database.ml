@@ -1,10 +1,8 @@
 module Url = struct
   type t = string [@@deriving eq, show]
 
-  let create server =
-    if String.length server <= 0
-    then Error "Invalid database url!"
-    else Ok server
+  let create url =
+    if String.length url <= 0 then Error "Invalid database url!" else Ok url
   ;;
 
   let schema () =
@@ -17,6 +15,8 @@ end
 
 module Label = struct
   type t = string [@@deriving eq, show]
+
+  let value t = t
 
   let create label =
     if String.length label <= 0 || String.contains label ' '

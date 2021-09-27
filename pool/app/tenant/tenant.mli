@@ -93,6 +93,7 @@ module Database : sig
   module Label : sig
     type t
 
+    val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
@@ -182,6 +183,7 @@ module Disabled : sig
 
   val equal : t -> t -> bool
   val create : bool -> t
+  val value : t -> bool
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -222,6 +224,7 @@ module Read : sig
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
+    ; database_label : Database.Label.t
     ; smtp_auth : SmtpAuth.Read.t
     ; styles : Styles.t
     ; icon : Icon.t
@@ -258,7 +261,6 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -270,7 +272,8 @@ type update =
 
 type event =
   | Created of create
-  | Edited of t * update
+  | DetailsEdited of t * update
+  | DatabaseEdited of t * Database.t
   | Destroyed of Pool_common.Id.t
   | Disabled of t
   | Enabled of t
@@ -284,6 +287,7 @@ val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val find_by_id : string -> (Read.t, string) result Lwt.t
+val find_full_by_id : string -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 val find_all : unit -> (Read.t list, string) Result.t Lwt.t

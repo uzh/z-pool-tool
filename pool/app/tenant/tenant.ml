@@ -1,8 +1,13 @@
 include Entity
 include Event
 
+(* QUESTION [timhub]: Where to add error message? *)
 let find_by_id id =
   Repo.find_by_id id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+;;
+
+let find_full_by_id id =
+  Repo.find_full_by_id id |> Lwt_result.map_err (fun _ -> "No tenant found!")
 ;;
 
 let find_by_participant = Utils.todo

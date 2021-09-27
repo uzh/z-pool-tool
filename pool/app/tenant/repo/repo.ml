@@ -1,9 +1,44 @@
 module RepoEntity = Repo_entity
 
 module Sql = struct
-  let select_from_tenants fragment =
+  let update_sql =
+    {sql|
+      UPDATE pool_tenant
+      SET
+        title = $2,
+        description = $3,
+        url = $4,
+        database_url = $5,
+        database_label = $6,
+        smtp_auth_server = $7,
+        smtp_auth_port = $8,
+        smtp_auth_username = $9,
+        smtp_auth_password = $10,
+        smtp_auth_authentication_method = $11,
+        smtp_auth_protocol = $12,
+        styles = $13,
+        icon = $14,
+        logos = $15,
+        partner_logos = $16,
+        mainenance = $17,
+        disabled = $18,
+        default_language = $19,
+        created_at = $20,
+        updated_at = $21
+      WHERE
+      pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+  ;;
+
+  let update_request = Caqti_request.exec RepoEntity.t update_sql
+  let update = Utils.Database.exec update_request
+
+  let select_from_tenants_sql fragment full =
+    (* TODO [timhub]: refactor, ev restructure DB *)
     let select_from =
-      {sql|
+      match full with
+      | false ->
+        {sql|
         SELECT
           LOWER(CONCAT(
             SUBSTR(HEX(uuid), 1, 8), '-',
@@ -15,9 +50,42 @@ module Sql = struct
           title,
           description,
           url,
+          database_label,
           smtp_auth_server,
           smtp_auth_port,
           smtp_auth_username,
+          smtp_auth_authentication_method,
+          smtp_auth_protocol,
+          styles,
+          icon,
+          logos,
+          partner_logos,
+          mainenance,
+          disabled,
+          default_language,
+          created_at,
+          updated_at
+        FROM pool_tenant
+      |sql}
+      | true ->
+        {sql|
+        SELECT
+          LOWER(CONCAT(
+            SUBSTR(HEX(uuid), 1, 8), '-',
+            SUBSTR(HEX(uuid), 9, 4), '-',
+            SUBSTR(HEX(uuid), 13, 4), '-',
+            SUBSTR(HEX(uuid), 17, 4), '-',
+            SUBSTR(HEX(uuid), 21)
+          )),
+          title,
+          description,
+          url,
+          database_url,
+          database_label,
+          smtp_auth_server,
+          smtp_auth_port,
+          smtp_auth_username,
+          smtp_auth_password,
           smtp_auth_authentication_method,
           smtp_auth_protocol,
           styles,
@@ -36,21 +104,29 @@ module Sql = struct
   ;;
 
   let find_all_request =
-    ""
-    |> select_from_tenants
+    select_from_tenants_sql "" false
     |> Caqti_request.collect Caqti_type.unit RepoEntity.Read.t
   ;;
 
-  let find_by_id_request =
+  let find_by_id_fragment =
     {sql|
       WHERE pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_from_tenants
+  ;;
+
+  let find_by_id_request =
+    select_from_tenants_sql find_by_id_fragment false
     |> Caqti_request.find Caqti_type.string RepoEntity.Read.t
+  ;;
+
+  let find_full_by_id_request =
+    select_from_tenants_sql find_by_id_fragment true
+    |> Caqti_request.find Caqti_type.string RepoEntity.t
   ;;
 
   let find_all = Utils.Database.collect find_all_request
   let find_by_id = Utils.Database.find find_by_id_request
+  let find_full_by_id = Utils.Database.find find_full_by_id_request
 
   let insert_sql =
     {sql|
@@ -107,7 +183,8 @@ module Sql = struct
 end
 
 let find_by_id = Sql.find_by_id
+let find_full_by_id = Sql.find_full_by_id
 let find_all = Sql.find_all
 let insert = Sql.insert
-let update t = Utils.todo t
+let update = Sql.update
 let destroy = Utils.todo

@@ -162,30 +162,33 @@ module Read = struct
         , ( m.title
           , ( m.description
             , ( m.url
-              , ( m.smtp_auth
-                , ( m.styles
-                  , ( m.icon
-                    , ( m.logos
-                      , ( m.partner_logos
-                        , ( m.maintenance
-                          , ( m.disabled
-                            , (m.default_language, (m.created_at, m.updated_at))
-                            ) ) ) ) ) ) ) ) ) ) )
+              , ( m.database_label
+                , ( m.smtp_auth
+                  , ( m.styles
+                    , ( m.icon
+                      , ( m.logos
+                        , ( m.partner_logos
+                          , ( m.maintenance
+                            , ( m.disabled
+                              , ( m.default_language
+                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
+                ) ) ) ) )
     in
     let decode
         ( id
         , ( title
           , ( description
             , ( url
-              , ( smtp_auth
-                , ( styles
-                  , ( icon
-                    , ( logos
-                      , ( partner_logos
-                        , ( maintenance
-                          , ( disabled
-                            , (default_language, (created_at, updated_at)) ) )
-                        ) ) ) ) ) ) ) ) )
+              , ( database_label
+                , ( smtp_auth
+                  , ( styles
+                    , ( icon
+                      , ( logos
+                        , ( partner_logos
+                          , ( maintenance
+                            , ( disabled
+                              , (default_language, (created_at, updated_at)) )
+                            ) ) ) ) ) ) ) ) ) ) )
       =
       let ( let* ) = Result.bind in
       let* title = Title.create title in
@@ -195,11 +198,13 @@ module Read = struct
       let* icon = Icon.create icon in
       let* logos = Logos.create logos in
       let* partner_logos = PartnerLogos.create partner_logos in
+      let* database_label = Database.Label.create database_label in
       Ok
         { id = Id.of_string id
         ; title
         ; description
         ; url
+        ; database_label
         ; smtp_auth
         ; styles
         ; icon
@@ -225,23 +230,25 @@ module Read = struct
                  (tup2
                     Url.t
                     (tup2
-                       SmtpAuth.Read.t
+                       Database.Label.t
                        (tup2
-                          Styles.t
+                          SmtpAuth.Read.t
                           (tup2
-                             Icon.t
+                             Styles.t
                              (tup2
-                                Logos.t
+                                Icon.t
                                 (tup2
-                                   PartnerLogos.t
+                                   Logos.t
                                    (tup2
-                                      Maintenance.t
+                                      PartnerLogos.t
                                       (tup2
-                                         Disabled.t
+                                         Maintenance.t
                                          (tup2
-                                            Settings.Language.t
+                                            Disabled.t
                                             (tup2
-                                               Common.Repo.CreatedAt.t
-                                               Common.Repo.UpdatedAt.t))))))))))))))
+                                               Settings.Language.t
+                                               (tup2
+                                                  Common.Repo.CreatedAt.t
+                                                  Common.Repo.UpdatedAt.t)))))))))))))))
   ;;
 end

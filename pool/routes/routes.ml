@@ -23,6 +23,8 @@ module Root = struct
     [ get "/tenants" Handler.Root.Tenant.tenants
     ; post "/tenant/create" Handler.Root.Tenant.create
     ; get "/tenant/:id" Handler.Root.Tenant.tenant_detail
+    ; post "/tenant/:id/update-detail" Handler.Root.Tenant.update_detail
+    ; post "/tenant/:id/update-database" Handler.Root.Tenant.update_database
     ]
   ;;
 end

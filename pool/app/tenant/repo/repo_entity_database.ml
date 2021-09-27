@@ -14,10 +14,10 @@ end
 
 let t =
   let encode m = Ok (m.Entity.Database.url, m.label) in
-  let decode (url, user) =
+  let decode (url, label) =
     let ( let* ) = Result.bind in
     let* url = Url.create url in
-    let* label = Label.create user in
+    let* label = Label.create label in
     Ok { url; label }
   in
   Caqti_type.(custom ~encode ~decode (tup2 Url.t Label.t))

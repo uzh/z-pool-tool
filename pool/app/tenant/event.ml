@@ -19,7 +19,6 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -36,7 +35,8 @@ let equal_operator_event (t1, o1) (t2, o2) =
 
 type event =
   | Created of create [@equal equal]
-  | Edited of t * update
+  | DetailsEdited of t * update
+  | DatabaseEdited of t * Database.t
   | Destroyed of Id.t
   | Disabled of t
   | Enabled of t
@@ -65,35 +65,47 @@ let handle_event : event -> unit Lwt.t =
       |> Repo.insert
     in
     Lwt.return_unit
-  | Edited (tenant, update_t) ->
-    { tenant with
-      title = update_t.title
-    ; description = update_t.description
-    ; url = update_t.url
-    ; database = update_t.database
-    ; smtp_auth = update_t.smtp_auth
-    ; styles = update_t.styles
-    ; icon = update_t.icon
-    ; logos = update_t.logos
-    ; partner_logos = update_t.partner_logos
-    ; disabled = update_t.disabled
-    ; default_language = update_t.default_language
-    ; updated_at = Ptime_clock.now ()
-    }
-    |> Repo.update
+  | DetailsEdited (tenant, update_t) ->
+    let* _ =
+      { tenant with
+        title = update_t.title
+      ; description = update_t.description
+      ; url = update_t.url
+      ; smtp_auth = update_t.smtp_auth
+      ; styles = update_t.styles
+      ; icon = update_t.icon
+      ; logos = update_t.logos
+      ; partner_logos = update_t.partner_logos
+      ; disabled = update_t.disabled
+      ; default_language = update_t.default_language
+      ; updated_at = Ptime_clock.now ()
+      }
+      |> Repo.update
+    in
+    Lwt.return_unit
+  | DatabaseEdited (tenant, database) ->
+    let* _ =
+      { tenant with database; updated_at = Ptime_clock.now () } |> Repo.update
+    in
+    Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
+  (* TODO [timhub]: separate events?? *)
   | Disabled tenant ->
     let disabled = true |> Disabled.create in
-    { tenant with disabled } |> Repo.update
+    let* _ = { tenant with disabled } |> Repo.update in
+    Lwt.return_unit
   | Enabled tenant ->
     let disabled = false |> Disabled.create in
-    { tenant with disabled } |> Repo.update
+    let* _ = { tenant with disabled } |> Repo.update in
+    Lwt.return_unit
   | ActivateMaintenance tenant ->
     let maintenance = true |> Maintenance.create in
-    { tenant with maintenance } |> Repo.update
+    let* _ = { tenant with maintenance } |> Repo.update in
+    Lwt.return_unit
   | DeactivateMaintenance tenant ->
     let maintenance = false |> Maintenance.create in
-    { tenant with maintenance } |> Repo.update
+    let* _ = { tenant with maintenance } |> Repo.update in
+    Lwt.return_unit
   | OperatorAssigned (tenant, user) ->
     Permission.assign (Admin.user user) (Role.operator tenant.id)
   | OperatorDivested (tenant, user) ->
@@ -104,8 +116,12 @@ let handle_event : event -> unit Lwt.t =
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | Created one, Created two -> equal_create one two
-  | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
+  | ( DetailsEdited (tenant_one, update_one)
+    , DetailsEdited (tenant_two, update_two) ) ->
     equal tenant_one tenant_two && equal_update update_one update_two
+  | ( DatabaseEdited (tenant_one, database_one)
+    , DatabaseEdited (tenant_two, database_two) ) ->
+    equal tenant_one tenant_two && Database.equal database_one database_two
   | Destroyed one, Destroyed two ->
     String.equal (one |> Id.show) (two |> Id.show)
   | Enabled one, Enabled two
@@ -126,9 +142,12 @@ let[@warning "-4"] equal_event event1 event2 =
 let pp_event formatter event =
   match event with
   | Created m -> pp_create formatter m
-  | Edited (tenant, update) ->
+  | DetailsEdited (tenant, update) ->
     let () = pp formatter tenant in
     pp_update formatter update
+  | DatabaseEdited (tenant, database) ->
+    let () = pp formatter tenant in
+    Database.pp formatter database
   | Destroyed m -> Id.pp formatter m
   | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
     pp formatter m
