@@ -257,11 +257,19 @@ type create =
   ; default_language : Settings.Language.t
   }
 
+type smtp_auth_update =
+  { server : SmtpAuth.Server.t
+  ; port : SmtpAuth.Port.t
+  ; username : SmtpAuth.Username.t
+  ; authentication_method : SmtpAuth.AuthenticationMethod.t
+  ; protocol : SmtpAuth.Protocol.t
+  }
+
 type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; smtp_auth : SmtpAuth.t
+  ; smtp_auth : smtp_auth_update
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t

@@ -15,11 +15,20 @@ type create =
   }
 [@@deriving eq, show]
 
+type smtp_auth_update =
+  { server : SmtpAuth.Server.t
+  ; port : SmtpAuth.Port.t
+  ; username : SmtpAuth.Username.t
+  ; authentication_method : SmtpAuth.AuthenticationMethod.t
+  ; protocol : SmtpAuth.Protocol.t
+  }
+[@@deriving eq, show]
+
 type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; smtp_auth : SmtpAuth.t
+  ; smtp_auth : smtp_auth_update
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -66,12 +75,21 @@ let handle_event : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
+    let smtp_auth =
+      SmtpAuth.
+        { tenant.smtp_auth with
+          server = update_t.smtp_auth.server
+        ; port = update_t.smtp_auth.port
+        ; username = update_t.smtp_auth.username
+        ; protocol = update_t.smtp_auth.protocol
+        }
+    in
     let* _ =
       { tenant with
         title = update_t.title
       ; description = update_t.description
       ; url = update_t.url
-      ; smtp_auth = update_t.smtp_auth
+      ; smtp_auth
       ; styles = update_t.styles
       ; icon = update_t.icon
       ; logos = update_t.logos

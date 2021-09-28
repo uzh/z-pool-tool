@@ -184,7 +184,6 @@ module EditDetails : sig
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
-    ; smtp_auth_password : Tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.t
@@ -210,7 +209,6 @@ end = struct
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
-    ; smtp_auth_password : Tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.t
@@ -228,7 +226,6 @@ end = struct
       smtp_auth_server
       smtp_auth_port
       smtp_auth_username
-      smtp_auth_password
       smtp_auth_authentication_method
       smtp_auth_protocol
       styles
@@ -244,7 +241,6 @@ end = struct
     ; smtp_auth_server
     ; smtp_auth_port
     ; smtp_auth_username
-    ; smtp_auth_password
     ; smtp_auth_authentication_method
     ; smtp_auth_protocol
     ; styles
@@ -266,7 +262,6 @@ end = struct
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()
-          ; Tenant.SmtpAuth.Password.schema ()
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Styles.schema ()
@@ -286,14 +281,12 @@ end = struct
         ; description = command.description
         ; url = command.url
         ; smtp_auth =
-            SmtpAuth.
-              { server = command.smtp_auth_server
-              ; port = command.smtp_auth_port
-              ; username = command.smtp_auth_username
-              ; password = command.smtp_auth_password
-              ; authentication_method = command.smtp_auth_authentication_method
-              ; protocol = command.smtp_auth_protocol
-              }
+            { server = command.smtp_auth_server
+            ; port = command.smtp_auth_port
+            ; username = command.smtp_auth_username
+            ; authentication_method = command.smtp_auth_authentication_method
+            ; protocol = command.smtp_auth_protocol
+            }
         ; styles = command.styles
         ; icon = command.icon
         ; logos = command.logos

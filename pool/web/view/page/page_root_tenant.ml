@@ -87,7 +87,6 @@ let detail csrf ~tenant ~message () =
     ; "smtp_auth_port", Tenant.SmtpAuth.Port.value tenant.smtp_auth.port
     ; ( "smtp_auth_username"
       , Tenant.SmtpAuth.Username.value tenant.smtp_auth.username )
-    ; "smtp_auth_password", ""
     ; ( "smtp_auth_authentication_method"
       , Tenant.SmtpAuth.AuthenticationMethod.value
           tenant.smtp_auth.authentication_method )
