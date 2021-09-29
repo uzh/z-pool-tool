@@ -120,8 +120,14 @@ module Sql = struct
   ;;
 
   let find_all = Utils.Database.collect find_all_request
-  let find_by_id = Utils.Database.find find_by_id_request
-  let find_full_by_id = Utils.Database.find find_full_by_id_request
+
+  let find_by_id id =
+    Utils.Database.find find_by_id_request (id |> Pool_common.Id.value)
+  ;;
+
+  let find_full_by_id id =
+    Utils.Database.find find_full_by_id_request (id |> Pool_common.Id.value)
+  ;;
 
   let insert_sql =
     {sql|

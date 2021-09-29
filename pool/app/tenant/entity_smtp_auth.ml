@@ -58,7 +58,6 @@ end
 module Password = struct
   type t = string [@@deriving eq, show]
 
-  (* TODO [timhub]: do we need validation here? *)
   let create password =
     if String.length password <= 0
     then Error "Invalid SMTP password!"

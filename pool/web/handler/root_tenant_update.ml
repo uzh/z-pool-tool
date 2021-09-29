@@ -7,7 +7,8 @@ let update req command message =
   let redirect_path = Format.asprintf "/root/tenant/%s" id in
   let map_err err = err, redirect_path, [] in
   let tenant () =
-    Tenant.find_full_by_id id |> Lwt_result.map_err (fun err -> map_err err)
+    Tenant.find_full_by_id (id |> Pool_common.Id.of_string)
+    |> Lwt_result.map_err (fun err -> map_err err)
   in
   let events tenant =
     let open Lwt.Syntax in
