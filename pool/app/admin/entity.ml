@@ -14,6 +14,7 @@ type experimenter = private XExperimenterP
 type location_manager = private XLocationManagerP
 type recruiter = private XRecruiterP
 type operator = private XOperatorP
+type root = private XRootP
 
 type _ t =
   | Assistant : person -> assistant t
@@ -21,6 +22,7 @@ type _ t =
   | LocationManager : person -> location_manager t
   | Recruiter : person -> recruiter t
   | Operator : person -> operator t
+  | Root : person -> root t
 
 (* Carries type information, is a type "witness" *)
 type _ carrier =
@@ -29,6 +31,7 @@ type _ carrier =
   | LocationManagerC : location_manager carrier
   | RecruiterC : recruiter carrier
   | OperatorC : operator carrier
+  | RootC : root carrier
 
 let equal : type person. person t -> person t -> bool =
  fun p1 p2 ->
@@ -38,13 +41,18 @@ let equal : type person. person t -> person t -> bool =
   | LocationManager one, LocationManager two
   | Recruiter one, Recruiter two
   | Operator one, Operator two -> equal_person one two
+  | Root one, Root two -> equal_person one two
 ;;
 
 let pp : type person. Format.formatter -> person t -> unit =
  fun formatter person ->
   match person with
-  | Assistant m | Experimenter m | LocationManager m | Recruiter m | Operator m
-    -> pp_person formatter m
+  | Assistant m
+  | Experimenter m
+  | LocationManager m
+  | Recruiter m
+  | Operator m
+  | Root m -> pp_person formatter m
 ;;
 
 type any = Any : 'a t -> any
@@ -56,7 +64,8 @@ let equal_any one two =
     | Any (Experimenter { user; _ })
     | Any (LocationManager { user; _ })
     | Any (Recruiter { user; _ })
-    | Any (Operator { user; _ }) -> user.Sihl_user.id
+    | Any (Operator { user; _ })
+    | Any (Root { user; _ }) -> user.Sihl_user.id
   in
   String.equal (id one) (id two)
 ;;
@@ -68,7 +77,8 @@ let user : type person_function. person_function t -> Sihl_user.t = function
   | Experimenter { user; _ }
   | LocationManager { user; _ }
   | Recruiter { user; _ }
-  | Operator { user; _ } -> user
+  | Operator { user; _ }
+  | Root { user; _ } -> user
 ;;
 
 module Duplicate = struct

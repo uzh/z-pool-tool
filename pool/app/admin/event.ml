@@ -8,6 +8,7 @@ type creatable_admin =
   | Recruiter
   | LocationManager
   | Operator
+  | Root
 [@@deriving eq, show]
 
 type create =
@@ -87,6 +88,7 @@ let handle_event : event -> unit Lwt.t =
         Permission.assign
           user
           (Role.operator (user.Sihl_user.id |> Id.of_string))
+      | Root -> Permission.assign user Role.root
     in
     Repo.insert user
   | AssistantEvents event -> handle_person_event event

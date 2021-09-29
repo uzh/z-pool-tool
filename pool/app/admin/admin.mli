@@ -4,6 +4,7 @@ type creatable_admin = Event.creatable_admin =
   | Recruiter
   | LocationManager
   | Operator
+  | Root
 
 val equal_creatable_admin : creatable_admin -> creatable_admin -> bool
 val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
@@ -66,6 +67,7 @@ type experimenter = Entity.experimenter
 type location_manager = Entity.location_manager
 type recruiter = Entity.recruiter
 type operator = Entity.operator
+type root = Entity.root
 
 type 'a t = 'a Entity.t =
   | Assistant : person -> assistant t
@@ -73,6 +75,7 @@ type 'a t = 'a Entity.t =
   | LocationManager : person -> location_manager t
   | Recruiter : person -> recruiter t
   | Operator : person -> operator t
+  | Root : person -> root t
 
 val equal : 'person t -> 'person t -> bool
 val pp : Format.formatter -> 'person t -> unit

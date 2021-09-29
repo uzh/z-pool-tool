@@ -74,14 +74,19 @@ let encode_person
       | `Recruiter
       | `LocationManager
       | `Operator
+      | `Root
       ]
       -> a Entity.t
       -> (string * (Sihl_user.t * (Ptime.t * Ptime.t)), 'b) result
   =
  fun carrier person ->
   match person with
-  | Assistant m | Experimenter m | LocationManager m | Recruiter m | Operator m
-    ->
+  | Assistant m
+  | Experimenter m
+  | LocationManager m
+  | Recruiter m
+  | Operator m
+  | Root m ->
     let role = carrier |> Utils.Stringify.person in
     Ok (role, (m.user, (m.created_at, m.updated_at)))
 ;;
@@ -110,3 +115,4 @@ let location_manager =
 
 let recruiter = make_caqti_type `Recruiter @@ fun person -> Recruiter person
 let operator = make_caqti_type `Operator @@ fun person -> Operator person
+let root = make_caqti_type `Root @@ fun person -> Root person
