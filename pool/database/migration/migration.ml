@@ -14,11 +14,7 @@ let extend_migrations additional_steps () =
     let open Sihl.Database.Migration in
     !registered_migrations
   in
-  registered_migrations
-  |> Map.to_seq
-  |> Map.add_seq Map.empty
-  |> CCFun.flip Map.add_list additional_steps
-  |> Map.to_list
+  (registered_migrations |> Map.to_list) @ additional_steps
 ;;
 
 let run_pending_migrations db_pools migration_steps =
