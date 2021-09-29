@@ -1,6 +1,6 @@
 open Sihl.Web
 
-let global_middlewares = []
+let global_middlewares = [ Middleware.trailing_slash () ]
 
 module Public = struct
   let routes = []

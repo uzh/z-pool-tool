@@ -1,0 +1,39 @@
+version: "3.7"
+
+services:
+  app:
+    image: "${DOCKER_IMAGE_URL}:${VERSION}"
+    networks: [webgateway]
+    environment:
+      - DATABASE_URL
+      - PREFIX_PATH
+      - PUBLIC_URL
+      - SIHL_SECRET
+      - SMTP_HOST
+      - SMTP_PASSWORD
+      - SMTP_PORT
+      - SMTP_SECURE
+      - SMTP_SENDER
+      - SMTP_START_TLS
+      - SMTP_USERNAME
+      - VERSION
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == worker]
+      restart_policy:
+        condition: any
+        delay: 5s
+        window: 120s
+      labels:
+        - "traefik.enable=true"
+        - "traefik.port=3000"
+        - "traefik.docker.network=webgateway"
+        - "traefik.frontend.rule=Host:pool.econ.uzh.ch;PathPrefix:/staging/"
+        - "traefik.frontend.whiteList.sourceRange=${IP_ALLOWLIST}"
+
+networks:
+  webgateway:
+    driver: overlay
+    external: true
