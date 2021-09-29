@@ -5,13 +5,13 @@ let update req command message =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
   let redirect_path = Format.asprintf "/root/tenant/%s" id in
-  let events () =
-    let open Lwt_result.Syntax in
-    let map_err err = err, redirect_path, [] in
-    let* urlencoded = Sihl.Web.Request.to_urlencoded req |> Lwt_result.ok in
-    let* tenant =
-      Tenant.find_full_by_id id |> Lwt_result.map_err (fun err -> map_err err)
-    in
+  let map_err err = err, redirect_path, [] in
+  let tenant () =
+    Tenant.find_full_by_id id |> Lwt_result.map_err (fun err -> map_err err)
+  in
+  let events tenant =
+    let open Lwt.Syntax in
+    let* urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events_list urlencoded =
       match command with
       | `EditDetail ->
@@ -43,7 +43,8 @@ let update req command message =
       [ Message.set ~success:[ message ] ]
   in
   ()
-  |> events
+  |> tenant
+  >>= events
   >|= handle
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path_with_actions
