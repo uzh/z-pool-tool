@@ -33,74 +33,69 @@ module Sql = struct
   let update_request = Caqti_request.exec RepoEntity.t update_sql
   let update = Utils.Database.exec update_request
 
-  let select_from_tenants_sql fragment full =
-    (* TODO [timhub]: refactor, ev restructure DB *)
-    let select_from =
+  let select_from_tenants_sql where_fragment full =
+    let database_fragment =
       match full with
-      | false ->
-        {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
-          )),
-          title,
-          description,
-          url,
-          database_label,
-          smtp_auth_server,
-          smtp_auth_port,
-          smtp_auth_username,
-          smtp_auth_authentication_method,
-          smtp_auth_protocol,
-          styles,
-          icon,
-          logos,
-          partner_logos,
-          mainenance,
-          disabled,
-          default_language,
-          created_at,
-          updated_at
-        FROM pool_tenant
-      |sql}
       | true ->
         {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
-          )),
-          title,
-          description,
-          url,
           database_url,
           database_label,
+        |sql}
+      | false -> {sql|
+          database_label,
+        |sql}
+    in
+    let smtp_auth_fragment =
+      match full with
+      | true ->
+        {sql|
           smtp_auth_server,
           smtp_auth_port,
           smtp_auth_username,
           smtp_auth_password,
           smtp_auth_authentication_method,
           smtp_auth_protocol,
-          styles,
-          icon,
-          logos,
-          partner_logos,
-          mainenance,
-          disabled,
-          default_language,
-          created_at,
-          updated_at
-        FROM pool_tenant
-      |sql}
+        |sql}
+      | false ->
+        {sql|
+          smtp_auth_server,
+          smtp_auth_port,
+          smtp_auth_username,
+          smtp_auth_authentication_method,
+          smtp_auth_protocol,
+        |sql}
     in
-    Format.asprintf "%s %s" select_from fragment
+    let select_from =
+      Format.asprintf
+        {sql|
+          SELECT
+            LOWER(CONCAT(
+              SUBSTR(HEX(uuid), 1, 8), '-',
+              SUBSTR(HEX(uuid), 9, 4), '-',
+              SUBSTR(HEX(uuid), 13, 4), '-',
+              SUBSTR(HEX(uuid), 17, 4), '-',
+              SUBSTR(HEX(uuid), 21)
+            )),
+            title,
+            description,
+            url,
+            %s
+            %s
+            styles,
+            icon,
+            logos,
+            partner_logos,
+            mainenance,
+            disabled,
+            default_language,
+            created_at,
+            updated_at
+          FROM pool_tenant
+        |sql}
+        database_fragment
+        smtp_auth_fragment
+    in
+    Format.asprintf "%s %s" select_from where_fragment
   ;;
 
   let find_all_request =
