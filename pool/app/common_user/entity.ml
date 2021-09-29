@@ -48,6 +48,8 @@ module Firstname = struct
     if String.length m <= 0 then Error "Invalid firstname" else Ok m
   ;;
 
+  let value t = t
+
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
@@ -60,6 +62,7 @@ module Lastname = struct
   type t = string [@@deriving eq, show]
 
   let create m = if String.length m <= 0 then Error "Invalid lastname" else Ok m
+  let value t = t
 
   let schema () =
     Conformist.custom

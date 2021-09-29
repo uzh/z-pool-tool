@@ -60,10 +60,10 @@ let handle_event : event -> unit Lwt.t =
   | Created (role, admin) ->
     let* user =
       Service.User.create_user
-        ~name:(admin.firstname |> User.Firstname.show)
-        ~given_name:(admin.lastname |> User.Lastname.show)
+        ~name:(admin.lastname |> User.Lastname.value)
+        ~given_name:(admin.firstname |> User.Firstname.value)
         ~password:(admin.password |> User.Password.to_sihl)
-        (User.Email.Address.show admin.email)
+        (User.Email.Address.value admin.email)
     in
     let* () =
       match role with

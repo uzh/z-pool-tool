@@ -47,6 +47,7 @@ module Address = struct
   ;;
 
   let validate = validate_suffix
+  let value t = t
   let create email = email |> remove_whitespaces |> validate_characters
 
   let schema () =
