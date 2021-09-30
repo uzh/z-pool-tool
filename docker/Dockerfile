@@ -31,6 +31,7 @@ RUN apt-get update \
 #   sudo bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
 ENV SIHL_ENV production
+ENV LOG_LEVEL info
 ENV ROOT_PATH /app
 
 COPY ./docker/entrypoint.sh /docker-entrypoint.sh
