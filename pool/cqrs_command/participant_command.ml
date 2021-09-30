@@ -35,12 +35,13 @@ end = struct
   let schema =
     Conformist.(
       make
-        [ User.Email.Address.schema ()
-        ; User.Password.schema ()
-        ; User.Firstname.schema ()
-        ; User.Lastname.schema ()
-        ; Participant.RecruitmentChannel.schema ()
-        ]
+        Field.
+          [ User.Email.Address.schema ()
+          ; User.Password.schema ()
+          ; User.Firstname.schema ()
+          ; User.Lastname.schema ()
+          ; Participant.RecruitmentChannel.schema ()
+          ]
         command)
   ;;
 
