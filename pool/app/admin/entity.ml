@@ -1,8 +1,8 @@
 type person =
   { user : Sihl_user.t
         [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 

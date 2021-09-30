@@ -180,7 +180,7 @@ module Sql = struct
   ;;
 
   let insert_request = Caqti_request.exec RepoEntity.t insert_sql
-  let insert t = Utils.Database.exec insert_request t
+  let insert = Utils.Database.exec insert_request
 end
 
 let find_by_id = Sql.find_by_id

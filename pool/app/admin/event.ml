@@ -1,5 +1,5 @@
 module User = Common_user
-module Id = Pool_common.Id
+module Common = Pool_common
 open Entity
 
 type creatable_admin =
@@ -55,10 +55,11 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   | Verified _ -> Utils.todo ()
 ;;
 
-let handle_event : event -> unit Lwt.t =
+let[@warning "-4"] handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Created (role, admin) ->
+    (* Can fail due to duplicate email *)
     let* user =
       Service.User.create_user
         ~name:(admin.lastname |> User.Lastname.value)
@@ -66,31 +67,38 @@ let handle_event : event -> unit Lwt.t =
         ~password:(admin.password |> User.Password.to_sihl)
         (User.Email.Address.value admin.email)
     in
+    let person =
+      { user
+      ; created_at = Common.CreatedAt.create ()
+      ; updated_at = Common.UpdatedAt.create ()
+      }
+    in
     let* () =
       match role with
       | Assistant ->
         Permission.assign
           user
-          (Role.assistant (user.Sihl_user.id |> Id.of_string))
+          (Role.assistant (user.Sihl_user.id |> Common.Id.of_string))
       | Experimenter ->
         Permission.assign
           user
-          (Role.experimenter (user.Sihl_user.id |> Id.of_string))
+          (Role.experimenter (user.Sihl_user.id |> Common.Id.of_string))
       | Recruiter ->
         Permission.assign
           user
-          (Role.recruiter (user.Sihl_user.id |> Id.of_string))
+          (Role.recruiter (user.Sihl_user.id |> Common.Id.of_string))
       | LocationManager ->
         Permission.assign
           user
-          (Role.location_manager (user.Sihl_user.id |> Id.of_string))
+          (Role.location_manager (user.Sihl_user.id |> Common.Id.of_string))
       | Operator ->
+        let* _ = Repo.insert (Operator person) in
         Permission.assign
           user
-          (Role.operator (user.Sihl_user.id |> Id.of_string))
+          (Role.operator (user.Sihl_user.id |> Common.Id.of_string))
       | Root -> Permission.assign user Role.root
     in
-    Repo.insert user
+    Lwt.return_unit
   | AssistantEvents event -> handle_person_event event
   | ExperimenterEvents event -> handle_person_event event
   | LocationManagerEvents event -> handle_person_event event

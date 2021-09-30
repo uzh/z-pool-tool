@@ -116,3 +116,49 @@ let location_manager =
 let recruiter = make_caqti_type `Recruiter @@ fun person -> Recruiter person
 let operator = make_caqti_type `Operator @@ fun person -> Operator person
 let root = make_caqti_type `Root @@ fun person -> Root person
+
+module Write = struct
+  type t =
+    { role : string
+    ; sihl_user_id : string
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
+    }
+
+  let extract : type person. person Entity.t -> t =
+    let values person role =
+      { role
+      ; sihl_user_id = person.user.Sihl.Contract.User.id
+      ; created_at = person.created_at
+      ; updated_at = person.updated_at
+      }
+    in
+    function
+    | Assistant person -> values person (Utils.Stringify.person `Assistant)
+    | Experimenter person ->
+      values person (Utils.Stringify.person `Experimenter)
+    | LocationManager person ->
+      values person (Utils.Stringify.person `LocationManager)
+    | Recruiter person -> values person (Utils.Stringify.person `Recruiter)
+    | Operator person -> values person (Utils.Stringify.person `Operator)
+    | Root person -> values person (Utils.Stringify.person `Root)
+  ;;
+
+  let caqti =
+    let encode m =
+      Ok (m.role, (m.sihl_user_id, (m.created_at, m.updated_at)))
+    in
+    let decode (role, (sihl_user_id, (created_at, updated_at))) =
+      Ok { role; sihl_user_id; created_at; updated_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2
+              string
+              (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
+  ;;
+end
