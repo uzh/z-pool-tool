@@ -1,4 +1,5 @@
 module Id = Pool_common.Id
+module User = Common_user
 
 module Create : sig
   type t =
@@ -153,7 +154,7 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    let[@warning "-26"] operator =
+    let operator =
       Admin.
         { email = command.operator_email_address
         ; password = command.operator_password
@@ -161,7 +162,10 @@ end = struct
         ; lastname = command.operator_lastname
         }
     in
-    Ok [ Tenant.Created tenant |> Pool_event.tenant ]
+    Ok
+      [ Tenant.Created tenant |> Pool_event.tenant
+      ; Admin.Created (Admin.Operator, operator) |> Pool_event.admin
+      ]
   ;;
 
   (* TODO [timhub]: Uncomment when Admin Repo is done *)

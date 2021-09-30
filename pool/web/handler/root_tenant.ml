@@ -24,6 +24,18 @@ let tenants req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/root/tenants" in
+  let user () =
+    let open Lwt.Syntax in
+    let* email_address = Sihl.Web.Request.urlencoded "email" req in
+    (match email_address with
+    | None -> Lwt_result.fail "Please provide operator email address"
+    | Some email ->
+      let* user = Service.User.find_by_email_opt email in
+      (match user with
+      | None -> Lwt_result.return ()
+      | Some _ -> Lwt_result.fail "Email addess has already been taken"))
+    |> Lwt_result.map_err (fun err -> err, error_path, [])
+  in
   let events () =
     let open Lwt.Syntax in
     let* urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -47,7 +59,8 @@ let create req =
       [ Message.set ~success:[ "Tenant was successfully created." ] ]
   in
   ()
-  |> events
+  |> user
+  >>= events
   >|= handle
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path_with_actions

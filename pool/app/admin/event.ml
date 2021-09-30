@@ -59,7 +59,6 @@ let[@warning "-4"] handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Created (role, admin) ->
-    (* Can fail due to duplicate email *)
     let* user =
       Service.User.create_user
         ~name:(admin.lastname |> User.Lastname.value)
