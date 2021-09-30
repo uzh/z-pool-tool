@@ -1,6 +1,6 @@
 let migrations =
   let open Database.Migration in
-  [ tenant () ]
+  [ tenant (); person () ]
 ;;
 
 let commands = [ Command.Tenant.create_tenant; Command.Seed.seed_data ]
