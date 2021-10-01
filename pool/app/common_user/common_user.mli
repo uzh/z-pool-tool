@@ -120,9 +120,17 @@ module Email : sig
     val show : t -> string
   end
 
-  type email_unverified
+  type email_unverified =
+    { address : Address.t
+    ; token : Token.t
+    }
+
+  type email_verified =
+    { address : Address.t
+    ; verified_at : VerifiedAt.t
+    }
+
   type unverified
-  type email_verified
   type verified
 
   val equal_email_unverified : email_unverified -> email_unverified -> bool

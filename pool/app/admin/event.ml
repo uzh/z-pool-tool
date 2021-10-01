@@ -68,15 +68,25 @@ let handle_event : event -> unit Lwt.t =
     let* () =
       match role with
       | Assistant ->
-        Permission.assign user (Role.assistant (user.id |> Id.of_string))
+        Permission.assign
+          user
+          (Role.assistant (user.Sihl_user.id |> Id.of_string))
       | Experimenter ->
-        Permission.assign user (Role.experimenter (user.id |> Id.of_string))
+        Permission.assign
+          user
+          (Role.experimenter (user.Sihl_user.id |> Id.of_string))
       | Recruiter ->
-        Permission.assign user (Role.recruiter (user.id |> Id.of_string))
+        Permission.assign
+          user
+          (Role.recruiter (user.Sihl_user.id |> Id.of_string))
       | LocationManager ->
-        Permission.assign user (Role.location_manager (user.id |> Id.of_string))
+        Permission.assign
+          user
+          (Role.location_manager (user.Sihl_user.id |> Id.of_string))
       | Operator ->
-        Permission.assign user (Role.operator (user.id |> Id.of_string))
+        Permission.assign
+          user
+          (Role.operator (user.Sihl_user.id |> Id.of_string))
     in
     Repo.insert user
   | AssistantEvents event -> handle_person_event event
@@ -86,7 +96,11 @@ let handle_event : event -> unit Lwt.t =
   | OperatorEvents event -> handle_person_event event
 ;;
 
-let equal_person_event (one : 'a person_event) (two : 'a person_event) : bool =
+let[@warning "-4"] equal_person_event
+    (one : 'a person_event)
+    (two : 'a person_event)
+    : bool
+  =
   match one, two with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
@@ -109,7 +123,7 @@ let pp_person_event formatter (event : 'a person_event) : unit =
   | Disabled m | Verified m -> person_pp m
 ;;
 
-let equal_event event1 event2 : bool =
+let[@warning "-4"] equal_event event1 event2 : bool =
   match event1, event2 with
   | Created (role1, m), Created (role2, p) ->
     equal_creatable_admin role1 role2 && equal_create m p
