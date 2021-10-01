@@ -6,7 +6,6 @@ let global_middlewares =
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
   ; Middleware.migration Service.Migration.pending_migrations
-  ; Middleware.csrf ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Opium.Middleware.method_override
