@@ -14,6 +14,68 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 ;;
 
 module Sql = struct
+  let select_from_persons_sql where_fragment =
+    let select_from =
+      {sql|
+        SELECT
+          pool_person.role,
+          LOWER(CONCAT(
+            SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+            SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+            SUBSTR(HEX(user_users.uuid), 21)
+          )),
+          user_users.email,
+          user_users.username,
+          user_users.name,
+          user_users.given_name,
+          user_users.password,
+          user_users.status,
+          user_users.admin,
+          user_users.confirmed,
+          user_users.created_at,
+          user_users.updated_at,
+          pool_person.created_at,
+          pool_person.updated_at
+        FROM pool_person
+        INNER JOIN user_users ON pool_person.sihl_user_id = user_users.uuid
+      |sql}
+    in
+    Format.asprintf "%s %s" select_from where_fragment
+  ;;
+
+  let find_all_by_role_request caqti_type =
+    {sql|
+      WHERE pool_person.role = ?
+      AND user_users.confirmed = 1
+    |sql}
+    |> select_from_persons_sql
+    |> Caqti_request.collect Caqti_type.string caqti_type
+  ;;
+
+  let find_all_by_role role =
+    let caqti_type, role_val = extract role in
+    Utils.Database.collect (find_all_by_role_request caqti_type) role_val
+  ;;
+
+  let find_by_id_request caqti_type =
+    {sql|
+      WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+      AND pool_person.role = ?
+      AND user_users.confirmed = 1
+    |sql}
+    |> select_from_persons_sql
+    |> Caqti_request.find Caqti_type.(tup2 string string) caqti_type
+  ;;
+
+  let find_by_id role (id : Pool_common.Id.t) =
+    let caqti_type, role_val = extract role in
+    Utils.Database.find
+      (find_by_id_request caqti_type)
+      (id |> Pool_common.Id.value, role_val)
+  ;;
+
   let insert_sql =
     {sql|
       INSERT INTO pool_person (
@@ -37,7 +99,8 @@ module Sql = struct
   ;;
 end
 
-let find = Utils.todo
+let find_by_id = Sql.find_by_id
+let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update _ = Utils.todo
 

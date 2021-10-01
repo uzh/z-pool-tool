@@ -91,3 +91,5 @@ module Duplicate = Admin__Entity.Duplicate
 val login : 'a -> email:'b -> password:'c -> 'd
 val find_by_user : 'a -> 'b
 val find_duplicates : 'a -> 'b
+val find_root_by_id : Pool_common.Id.t -> (root t, string) result Lwt.t
+val find_all_root : unit -> (root t list, string) result Lwt.t
