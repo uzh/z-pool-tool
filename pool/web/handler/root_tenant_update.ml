@@ -1,14 +1,13 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let update req command message =
+let update req command success_message =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
   let redirect_path = Format.asprintf "/root/tenant/%s" id in
-  let map_err err = err, redirect_path, [] in
   let tenant () =
     Tenant.find_full_by_id (id |> Pool_common.Id.of_string)
-    |> Lwt_result.map_err (fun err -> map_err err)
+    |> Lwt_result.map_err (fun err -> err, redirect_path)
   in
   let events tenant =
     let open Lwt.Syntax in
@@ -28,7 +27,7 @@ let update req command message =
     in
     urlencoded
     |> events_list
-    |> CCResult.map_err (fun err -> map_err err)
+    |> CCResult.map_err (fun err -> err, redirect_path)
     |> Lwt_result.lift
   in
   let handle events =
@@ -41,14 +40,14 @@ let update req command message =
   let return_to_overview =
     Http_utils.redirect_to_with_actions
       redirect_path
-      [ Message.set ~success:[ message ] ]
+      [ Message.set ~success:[ success_message ] ]
   in
   ()
   |> tenant
   >>= events
   >|= handle
   |>> CCFun.const return_to_overview
-  >|> HttpUtils.extract_happy_path_with_actions
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let update_detail req =

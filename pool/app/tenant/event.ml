@@ -107,7 +107,7 @@ let handle_event : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
-  (* TODO [timhub]: separate events?? *)
+  (* TODO [timhub]: separate events needed? *)
   | Disabled tenant ->
     let disabled = true |> Disabled.create in
     let* _ = { tenant with disabled } |> Repo.update in

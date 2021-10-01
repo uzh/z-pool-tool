@@ -12,7 +12,8 @@ let tenants req =
     in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     let* tenant_list = Tenant.find_all () in
-    Page.Root.Tenant.list csrf ~tenant_list ~message ()
+    let* root_list = Admin.find_all_root () in
+    Page.Root.Tenant.list csrf ~tenant_list ~root_list ~message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
@@ -24,18 +25,6 @@ let tenants req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/root/tenants" in
-  let user () =
-    let open Lwt.Syntax in
-    let* email_address = Sihl.Web.Request.urlencoded "email" req in
-    (match email_address with
-    | None -> Lwt_result.fail "Please provide operator email address"
-    | Some email ->
-      let* user = Service.User.find_by_email_opt email in
-      (match user with
-      | None -> Lwt_result.return ()
-      | Some _ -> Lwt_result.fail "Email addess has already been taken"))
-    |> Lwt_result.map_err (fun err -> err, error_path, [])
-  in
   let events () =
     let open Lwt.Syntax in
     let* urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -43,7 +32,7 @@ let create req =
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
     |> CCResult.flat_map Cqrs_command.Tenant_command.Create.handle
-    |> CCResult.map_err (fun err -> err, error_path, [])
+    |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
   in
   let handle events =
@@ -59,11 +48,57 @@ let create req =
       [ Message.set ~success:[ "Tenant was successfully created." ] ]
   in
   ()
-  |> user
-  >>= events
+  |> events
   >|= handle
   |>> CCFun.const return_to_overview
-  >|> HttpUtils.extract_happy_path_with_actions
+  >|> HttpUtils.extract_happy_path
+;;
+
+let create_operator req =
+  let open Utils.Lwt_result.Infix in
+  let id = Sihl.Web.Router.param req "id" in
+  let error_path = Format.asprintf "/root/tenant/%s" id in
+  let user () =
+    let open Lwt.Syntax in
+    let* email_address = Sihl.Web.Request.urlencoded "email" req in
+    email_address
+    |> CCOpt.to_result "Please provide operator email address."
+    |> Lwt_result.lift
+    >>= HttpUtils.user_email_exists
+  in
+  let find_tenant () =
+    Tenant.find_full_by_id (id |> Pool_common.Id.of_string)
+  in
+  let events tenant =
+    let open Lwt.Syntax in
+    let* urlencoded = Sihl.Web.Request.to_urlencoded req in
+    urlencoded
+    |> Cqrs_command.Admin_command.CreateOperator.decode
+    |> CCResult.map_err Utils.handle_conformist_error
+    |> CCResult.flat_map
+         (CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant)
+    |> Lwt_result.lift
+  in
+  let handle events =
+    let ( let* ) = Lwt.bind in
+    let* _ =
+      Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
+    in
+    Lwt.return_ok ()
+  in
+  let return_to_overview =
+    Http_utils.redirect_to_with_actions
+      "/root/tenants"
+      [ Message.set ~success:[ "Operator was successfully created." ] ]
+  in
+  ()
+  |> user
+  >>= find_tenant
+  >>= events
+  >|= handle
+  |> Lwt_result.map_err (fun err -> err, error_path)
+  |>> CCFun.const return_to_overview
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let tenant_detail req =

@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let list csrf ~tenant_list ~message () =
+let list csrf ~tenant_list ~(root_list : Admin.root Admin.t list) ~message () =
   let open Tenant.Read in
   let build_tenant_rows tenant_list =
     CCList.map
@@ -20,7 +20,32 @@ let list csrf ~tenant_list ~message () =
           ])
       tenant_list
   in
+  let build_root_rows root_list =
+    let open Sihl.Contract.User in
+    let status_toggle (status : Sihl.Contract.User.status) id =
+      let text =
+        match status with
+        | Active -> "Disable"
+        | Inactive -> "Enable"
+      in
+      form
+        ~a:
+          [ a_action
+              (Sihl.Web.externalize_path
+                 (Format.asprintf "/root/root/%s/toggle-status" id))
+          ; a_method `Post
+          ]
+        [ input ~a:[ a_input_type `Submit; a_value text ] () ]
+    in
+    CCList.map
+      (fun (root : Admin.root Admin.t) ->
+        let user = root |> Admin.user in
+        let status = status_toggle user.status user.id in
+        div [ h2 [ txt user.email ]; status; hr () ])
+      root_list
+  in
   let tenant_list = build_tenant_rows tenant_list in
+  let root_list = build_root_rows root_list in
   let fields =
     [ "title", "Econ Uzh"
     ; "description", "adfasdf"
@@ -38,10 +63,6 @@ let list csrf ~tenant_list ~message () =
     ; "logos", "logos"
     ; "partner_logos", "partner_logos"
     ; "default_language", "DE"
-    ; "email", "operator@econ.uzh.ch"
-    ; "password", "adminadmin"
-    ; "firstname", "Woofy"
-    ; "lastname", "Woofer"
     ]
   in
   let input_fields =
@@ -70,6 +91,18 @@ let list csrf ~tenant_list ~message () =
              [ [ Component.csrf_element csrf () ]
              ; input_fields
              ; [ input ~a:[ a_input_type `Submit; a_value "Create new" ] () ]
+             ])
+      ; hr ()
+      ; h1 [ txt "Root users" ]
+      ; div root_list
+      ; form
+          ~a:[ a_action (Format.asprintf "/root/root/create"); a_method `Post ]
+          (CCList.concat
+             [ CCList.map
+                 (fun field ->
+                   input ~a:[ a_name field; a_placeholder field ] ())
+                 [ "email"; "password"; "firstname"; "lastname" ]
+             ; [ input ~a:[ a_input_type `Submit; a_value "Create root" ] () ]
              ])
       ]
   in
@@ -170,6 +203,23 @@ let detail csrf ~tenant ~message () =
              [ [ Component.csrf_element csrf () ]
              ; database_input_fields
              ; [ input ~a:[ a_input_type `Submit; a_value "Update database" ] ()
+               ]
+             ])
+      ; hr ()
+      ; form
+          ~a:
+            [ a_action
+                (Format.asprintf
+                   "/root/tenant/%s/create-operator"
+                   (Pool_common.Id.value tenant.id))
+            ; a_method `Post
+            ]
+          (CCList.concat
+             [ CCList.map
+                 (fun field ->
+                   input ~a:[ a_name field; a_placeholder field ] ())
+                 [ "email"; "password"; "firstname"; "lastname" ]
+             ; [ input ~a:[ a_input_type `Submit; a_value "Create operator" ] ()
                ]
              ])
       ; a

@@ -39,6 +39,8 @@ type 'a person_event = 'a Event.person_event =
 
 type event = Event.event =
   | Created of creatable_admin * create
+  | RootDisabled of Entity.root Entity.t
+  | RootEnabled of Entity.root Entity.t
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
   | LocationManagerEvents of Entity.location_manager person_event

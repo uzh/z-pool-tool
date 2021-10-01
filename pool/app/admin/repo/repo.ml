@@ -14,6 +14,53 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 ;;
 
 module Sql = struct
+  let update_person_sql =
+    {sql|
+      UPDATE pool_person
+        SET
+          role = $1,
+          created_at = $3,
+          updated_at = $4
+        WHERE sihl_user_id = UNHEX(REPLACE($2, '-', ''));
+    |sql}
+  ;;
+
+  let update_person_user_sql =
+    {sql|
+      UPDATE user_users
+        SET
+          email = $2,
+          username = $3,
+          name = $4,
+          given_name = $5,
+          password = $6,
+          status = $7,
+          admin = $8,
+          confirmed = $9,
+          created_at = $10,
+          updated_at = $11
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+  ;;
+
+  let update_request =
+    Caqti_request.exec RepoPerson.Write.caqti update_person_sql
+  ;;
+
+  let update_person_user_request =
+    Caqti_request.exec RepoPerson.user_caqti update_person_user_sql
+  ;;
+
+  let update (t : 'a t) =
+    let person =
+      Utils.Database.exec update_request (RepoPerson.Write.extract t)
+    in
+    let person_user =
+      Utils.Database.exec update_person_user_request (Entity.user t)
+    in
+    Lwt_result.both person person_user
+  ;;
+
   let select_from_persons_sql where_fragment =
     let select_from =
       {sql|
@@ -102,7 +149,7 @@ end
 let find_by_id = Sql.find_by_id
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
-let update _ = Utils.todo
+let update = Sql.update
 
 let set_password
     : type person. person t -> string -> string -> (unit, string) result Lwt.t
