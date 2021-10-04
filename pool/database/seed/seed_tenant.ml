@@ -1,5 +1,4 @@
 let create () =
-  let open Lwt.Syntax in
   let data =
     [ ( "Econ uzh"
       , "description"
@@ -43,7 +42,7 @@ let create () =
       , "Woofer" )
     ]
   in
-  let* _ =
+  let%lwt _ =
     Lwt_list.map_s
       (fun ( title
            , description
@@ -65,8 +64,7 @@ let create () =
            , password
            , firstname
            , lastname ) ->
-        let open Lwt.Syntax in
-        let* result =
+        let%lwt result =
           let open Utils.Lwt_result.Infix in
           let run_command () =
             Lwt_result.lift
@@ -99,7 +97,7 @@ let create () =
             >>= Cqrs_command.Tenant_command.Create.handle
           in
           let run_events events =
-            let* _ = Lwt_list.map_s Pool_event.handle_event events in
+            let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
             Lwt.return_ok ()
           in
           () |> run_command >>= run_events

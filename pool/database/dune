@@ -1,5 +1,7 @@
 (library
  (name database)
- (libraries sihl service participant tenant common_user utils cqrs_command))
+ (libraries sihl service participant tenant common_user utils cqrs_command)
+ (preprocess
+  (pps lwt_ppx)))
 
 (include_subdirs unqualified)

@@ -31,9 +31,7 @@ let update req command success_message =
     |> Lwt_result.lift
   in
   let handle events =
-    let%lwt _ =
-      Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
-    in
+    let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
     Lwt.return_ok ()
   in
   let return_to_overview =

@@ -65,11 +65,10 @@ let err_with_action ?message error_path action =
 ;;
 
 let user_email_exists email =
-  let open Lwt.Syntax in
-  let* user = Service.User.find_by_email_opt email in
+  let%lwt user = Service.User.find_by_email_opt email in
   match user with
   | None -> Lwt_result.return ()
-  | Some _ -> Lwt_result.fail "Email address is already in use."
+  | Some _ -> Lwt.return_error "Email address is already in use."
 ;;
 
 let format_request_boolean_values values urlencoded =
