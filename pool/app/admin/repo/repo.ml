@@ -21,7 +21,7 @@ module Sql = struct
           role = $1,
           created_at = $3,
           updated_at = $4
-        WHERE sihl_user_id = UNHEX(REPLACE($2, '-', ''));
+        WHERE sihl_user_uuid = UNHEX(REPLACE($2, '-', ''));
     |sql}
     |> Caqti_request.exec RepoPerson.Write.caqti
   ;;
@@ -53,7 +53,7 @@ module Sql = struct
           pool_person.created_at,
           pool_person.updated_at
         FROM pool_person
-        INNER JOIN user_users ON pool_person.sihl_user_id = user_users.uuid
+        INNER JOIN user_users ON pool_person.sihl_user_uuid = user_users.uuid
       |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
@@ -96,7 +96,7 @@ module Sql = struct
     {sql|
       INSERT INTO pool_person (
         role,
-        sihl_user_id,
+        sihl_user_uuid,
         created_at,
         updated_at
       ) VALUES (

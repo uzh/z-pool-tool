@@ -5,11 +5,11 @@ let create_person_table =
       CREATE TABLE IF NOT EXISTS pool_person (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `role` varchar(255) NOT NULL,
-        `sihl_user_id` binary(16) NOT NULL,
+        `sihl_user_uuid` binary(16) NOT NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
-      UNIQUE KEY `unique_sihl_user_id` (`sihl_user_id`)
+      UNIQUE KEY `unique_sihl_user_uuid` (`sihl_user_uuid`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     |sql}
 ;;
