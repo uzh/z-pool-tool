@@ -5,16 +5,14 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = Format.asprintf "/root/tenants/" in
   let user () =
-    let open Lwt.Syntax in
-    let* email_address = Sihl.Web.Request.urlencoded "email" req in
+    let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
     email_address
     |> CCOpt.to_result "Please provide root email address."
     |> Lwt_result.lift
     >>= HttpUtils.user_email_exists
   in
   let events () =
-    let open Lwt.Syntax in
-    let* urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
     |> Cqrs_command.Admin_command.CreateRoot.decode
     |> CCResult.map_err Utils.handle_conformist_error
@@ -22,8 +20,7 @@ let create req =
     |> Lwt_result.lift
   in
   let handle events =
-    let ( let* ) = Lwt.bind in
-    let* _ =
+    let%lwt _ =
       Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
     in
     Lwt.return_ok ()
@@ -51,8 +48,7 @@ let toggle_status req =
     Cqrs_command.Admin_command.ToggleRootStatus.handle user |> Lwt_result.lift
   in
   let handle events =
-    let ( let* ) = Lwt.bind in
-    let* _ =
+    let%lwt _ =
       Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
     in
     Lwt.return_ok ()

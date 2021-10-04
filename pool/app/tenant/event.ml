@@ -53,11 +53,9 @@ type event =
   | OperatorDivested of Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
-let handle_event : event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
+let handle_event : event -> unit Lwt.t = function
   | Created m ->
-    let* _ =
+    let%lwt _ =
       Entity.Write.create
         m.title
         m.description
@@ -83,7 +81,7 @@ let handle_event : event -> unit Lwt.t =
         ; protocol = update_t.smtp_auth.protocol
         }
     in
-    let* _ =
+    let%lwt _ =
       let tenant =
         { tenant with
           title = update_t.title
@@ -104,7 +102,7 @@ let handle_event : event -> unit Lwt.t =
     Lwt.return_unit
   | DatabaseEdited (tenant, database) ->
     let open Entity.Write in
-    let* _ =
+    let%lwt _ =
       { tenant with database; updated_at = Ptime_clock.now () } |> Repo.update
     in
     Lwt.return_unit
@@ -112,12 +110,12 @@ let handle_event : event -> unit Lwt.t =
   | ActivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = true |> Maintenance.create in
-    let* _ = { tenant with maintenance } |> Repo.update in
+    let%lwt _ = { tenant with maintenance } |> Repo.update in
     Lwt.return_unit
   | DeactivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = false |> Maintenance.create in
-    let* _ = { tenant with maintenance } |> Repo.update in
+    let%lwt _ = { tenant with maintenance } |> Repo.update in
     Lwt.return_unit
   | OperatorAssigned (tenant_id, user) ->
     Permission.assign (Admin.user user) (Role.operator tenant_id)

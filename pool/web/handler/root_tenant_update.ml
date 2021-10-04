@@ -10,8 +10,7 @@ let update req command success_message =
     |> Lwt_result.map_err (fun err -> err, redirect_path)
   in
   let events tenant =
-    let open Lwt.Syntax in
-    let* urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events_list urlencoded =
       match command with
       | `EditDetail ->
@@ -32,8 +31,7 @@ let update req command success_message =
     |> Lwt_result.lift
   in
   let handle events =
-    let ( let* ) = Lwt.bind in
-    let* _ =
+    let%lwt _ =
       Lwt_list.map_s (fun event -> Pool_event.handle_event event) events
     in
     Lwt.return_ok ()

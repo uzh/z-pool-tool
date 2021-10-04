@@ -41,12 +41,10 @@ type event =
   | RecruiterEvents of recruiter person_event
   | OperatorEvents of operator person_event
 
-let handle_person_event : 'a person_event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
+let handle_person_event : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ =
+    let%lwt _ =
       Repo.set_password
         person
         (password |> User.Password.to_sihl)
@@ -57,11 +55,9 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   | Verified _ -> Utils.todo ()
 ;;
 
-let handle_event : event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
+let handle_event : event -> unit Lwt.t = function
   | Created (role, admin) ->
-    let* user =
+    let%lwt user =
       Service.User.create_user
         ~name:(admin.lastname |> User.Lastname.value)
         ~given_name:(admin.firstname |> User.Firstname.value)
@@ -74,7 +70,7 @@ let handle_event : event -> unit Lwt.t =
       ; updated_at = Common.UpdatedAt.create ()
       }
     in
-    let* () =
+    let%lwt () =
       match role with
       | Assistant ->
         Permission.assign
@@ -93,18 +89,18 @@ let handle_event : event -> unit Lwt.t =
           user
           (Role.location_manager (user.Sihl_user.id |> Common.Id.of_string))
       | Operator ->
-        let* _ = Repo.insert (Operator person) in
+        let%lwt _ = Repo.insert (Operator person) in
         Permission.assign
           user
           (Role.operator (user.Sihl_user.id |> Common.Id.of_string))
       | Root ->
-        let* _ = Repo.insert (Root person) in
+        let%lwt _ = Repo.insert (Root person) in
         Permission.assign user Role.root
     in
     Lwt.return_unit
   | RootDisabled (Root person) ->
-    let* _ =
-      let* user =
+    let%lwt _ =
+      let%lwt user =
         Sihl_user.
           { person.user with
             status = Inactive
@@ -118,7 +114,7 @@ let handle_event : event -> unit Lwt.t =
     Lwt.return_unit
   | RootEnabled (Root person) ->
     let _ =
-      let* user =
+      let%lwt user =
         Sihl_user.
           { person.user with
             status = Active

@@ -2,6 +2,6 @@
  (name tenant)
  (libraries sihl conformist admin permission role pool_common settings utils)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 
 (include_subdirs unqualified)
