@@ -92,7 +92,7 @@ let t =
       (tup2 RepoId.t (tup2 Title.t (tup2 Description.t (tup2 ptime ptime)))))
 ;;
 
-let find_by_id = Utils.todo
+let find = Utils.todo
 let list_all = Utils.todo
 let insert = Utils.todo
 let update = Utils.todo

@@ -292,8 +292,8 @@ type event =
 val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find_by_id : Pool_common.Id.t -> (Read.t, string) result Lwt.t
-val find_full_by_id : Pool_common.Id.t -> (t, string) result Lwt.t
+val find : Pool_common.Id.t -> (Read.t, string) result Lwt.t
+val find_full : Pool_common.Id.t -> (t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 val find_all : unit -> (Read.t list, string) Result.t Lwt.t

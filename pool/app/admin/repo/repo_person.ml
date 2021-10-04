@@ -148,9 +148,7 @@ module Write = struct
     let encode m =
       Ok (m.role, (m.sihl_user_id, (m.created_at, m.updated_at)))
     in
-    let decode (role, (sihl_user_id, (created_at, updated_at))) =
-      Ok { role; sihl_user_id; created_at; updated_at }
-    in
+    let decode _ = Error "Model only used for DB insert" in
     Caqti_type.(
       custom
         ~encode

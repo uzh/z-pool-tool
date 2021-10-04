@@ -6,7 +6,7 @@ let update req command success_message =
   let id = Sihl.Web.Router.param req "id" in
   let redirect_path = Format.asprintf "/root/tenant/%s" id in
   let tenant () =
-    Tenant.find_full_by_id (id |> Pool_common.Id.of_string)
+    Tenant.find_full (id |> Pool_common.Id.of_string)
     |> Lwt_result.map_err (fun err -> err, redirect_path)
   in
   let events tenant =

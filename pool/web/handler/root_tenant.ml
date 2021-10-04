@@ -66,9 +66,7 @@ let create_operator req =
     |> Lwt_result.lift
     >>= HttpUtils.user_email_exists
   in
-  let find_tenant () =
-    Tenant.find_full_by_id (id |> Pool_common.Id.of_string)
-  in
+  let find_tenant () = Tenant.find_full (id |> Pool_common.Id.of_string) in
   let events tenant =
     let open Lwt.Syntax in
     let* urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -110,7 +108,7 @@ let tenant_detail req =
       Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
     in
     let id = Sihl.Web.Router.param req "id" in
-    let* tenant = Tenant.find_by_id (id |> Pool_common.Id.of_string) in
+    let* tenant = Tenant.find (id |> Pool_common.Id.of_string) in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Sihl.Web.Response.of_html

@@ -1,12 +1,10 @@
 include Entity
 include Event
 
-let find_by_id id =
-  Repo.find_by_id id |> Lwt_result.map_err (fun _ -> "No tenant found!")
-;;
+let find id = Repo.find id |> Lwt_result.map_err (fun _ -> "No tenant found!")
 
-let find_full_by_id id =
-  Repo.find_full_by_id id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+let find_full id =
+  Repo.find_full id |> Lwt_result.map_err (fun _ -> "No tenant found!")
 ;;
 
 let find_by_participant = Utils.todo

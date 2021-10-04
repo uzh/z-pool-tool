@@ -106,7 +106,7 @@ module Sql = struct
     Utils.Database.collect (find_all_by_role_request caqti_type) role_val
   ;;
 
-  let find_by_id_request caqti_type =
+  let find_request caqti_type =
     {sql|
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
       AND pool_person.role = ?
@@ -116,10 +116,10 @@ module Sql = struct
     |> Caqti_request.find Caqti_type.(tup2 string string) caqti_type
   ;;
 
-  let find_by_id role (id : Pool_common.Id.t) =
+  let find role (id : Pool_common.Id.t) =
     let caqti_type, role_val = extract role in
     Utils.Database.find
-      (find_by_id_request caqti_type)
+      (find_request caqti_type)
       (id |> Pool_common.Id.value, role_val)
   ;;
 
@@ -146,7 +146,7 @@ module Sql = struct
   ;;
 end
 
-let find_by_id = Sql.find_by_id
+let find = Sql.find
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update = Sql.update
