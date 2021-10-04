@@ -1,7 +1,7 @@
 module RepoEntity = Repo_entity
 
 module Sql = struct
-  let update_sql =
+  let update_request =
     {sql|
       UPDATE pool_tenant
       SET
@@ -28,9 +28,9 @@ module Sql = struct
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
+    |> Caqti_request.exec RepoEntity.t
   ;;
 
-  let update_request = Caqti_request.exec RepoEntity.t update_sql
   let update = Utils.Database.exec update_request
 
   let select_from_tenants_sql where_fragment full =

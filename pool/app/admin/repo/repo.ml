@@ -14,17 +14,6 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 ;;
 
 module Sql = struct
-  let update_person_sql =
-    {sql|
-      UPDATE pool_person
-        SET
-          role = $1,
-          created_at = $3,
-          updated_at = $4
-        WHERE sihl_user_id = UNHEX(REPLACE($2, '-', ''));
-    |sql}
-  ;;
-
   let update_person_user_sql =
     {sql|
       UPDATE user_users
@@ -44,7 +33,15 @@ module Sql = struct
   ;;
 
   let update_request =
-    Caqti_request.exec RepoPerson.Write.caqti update_person_sql
+    {sql|
+      UPDATE pool_person
+        SET
+          role = $1,
+          created_at = $3,
+          updated_at = $4
+        WHERE sihl_user_id = UNHEX(REPLACE($2, '-', ''));
+    |sql}
+    |> Caqti_request.exec RepoPerson.Write.caqti
   ;;
 
   let update_person_user_request =
