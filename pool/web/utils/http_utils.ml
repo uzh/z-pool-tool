@@ -71,3 +71,30 @@ let user_email_exists email =
   | None -> Lwt_result.return ()
   | Some _ -> Lwt_result.fail "Email address is already in use."
 ;;
+
+let format_request_boolean_values values urlencoded =
+  let urlencoded =
+    CCList.map
+      (fun (key, v) ->
+        match CCList.mem key values with
+        | true -> key, [ "true" ]
+        | false -> key, v)
+      urlencoded
+  in
+  let false_values =
+    let keys =
+      CCList.map
+        (fun m ->
+          let key, _ = m in
+          key)
+        urlencoded
+    in
+    CCList.filter_map
+      (fun key ->
+        match CCList.mem key keys with
+        | true -> None
+        | false -> Some (key, [ "false" ]))
+      values
+  in
+  CCList.concat [ urlencoded; false_values ]
+;;

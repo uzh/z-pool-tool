@@ -131,9 +131,6 @@ module Maintenance = struct
   ;;
 
   let schema () =
-    (* TODO [timhub]: correctly handle booleands
-       https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
-       => Passes boolean as string "true" *)
     Conformist.custom
       (fun l -> l |> List.hd |> of_string |> CCResult.return)
       (fun l -> [ stringify l ])
@@ -158,9 +155,6 @@ module Disabled = struct
   ;;
 
   let schema () =
-    (* TODO [timhub]: correctly handle booleands
-       https://oxidizing.github.io/conformist/conformist/Conformist/index.html#example
-       => Passes boolean as string "true" *)
     Conformist.custom
       (fun l -> l |> List.hd |> of_string |> CCResult.return)
       (fun l -> [ stringify l ])

@@ -26,6 +26,7 @@ let update req command success_message =
              (CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant)
     in
     urlencoded
+    |> HttpUtils.format_request_boolean_values [ "disabled" ]
     |> events_list
     |> CCResult.map_err (fun err -> err, redirect_path)
     |> Lwt_result.lift

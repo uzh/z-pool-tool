@@ -57,7 +57,7 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   | Verified _ -> Utils.todo ()
 ;;
 
-let[@warning "-4"] handle_event : event -> unit Lwt.t =
+let handle_event : event -> unit Lwt.t =
   let open Lwt.Syntax in
   function
   | Created (role, admin) ->
@@ -74,8 +74,6 @@ let[@warning "-4"] handle_event : event -> unit Lwt.t =
       ; updated_at = Common.UpdatedAt.create ()
       }
     in
-    (* TODO [timhub]: Should the object id be passed to permission instad of
-       user id? *)
     let* () =
       match role with
       | Assistant ->
