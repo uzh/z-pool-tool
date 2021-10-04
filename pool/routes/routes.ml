@@ -1,4 +1,3 @@
-module CustomMiddleware = Middleware
 open Sihl.Web
 
 let global_middlewares =
@@ -6,7 +5,6 @@ let global_middlewares =
   ; Middleware.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
-  ; CustomMiddleware.pending_migrations
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Opium.Middleware.method_override
