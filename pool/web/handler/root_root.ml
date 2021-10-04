@@ -43,7 +43,6 @@ let toggle_status req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
   let error_path = Format.asprintf "/root/tenants/" in
-  let user = Admin.find_root in
   let events user =
     Cqrs_command.Admin_command.ToggleRootStatus.handle user |> Lwt_result.lift
   in
@@ -60,7 +59,7 @@ let toggle_status req =
   in
   id
   |> Pool_common.Id.of_string
-  |> user
+  |> Admin.find_root
   >>= events
   >|= handle
   |> Lwt_result.map_err (fun err -> err, error_path)
