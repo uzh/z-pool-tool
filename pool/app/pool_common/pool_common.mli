@@ -16,7 +16,7 @@ module CreatedAt : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : unit -> t
-  val value : 'a -> 'a
+  val value : t -> Ptime.t
 end
 
 module UpdatedAt : sig
@@ -26,7 +26,7 @@ module UpdatedAt : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : unit -> t
-  val value : 'a -> 'a
+  val value : t -> Ptime.t
 end
 
 module Repo : sig
