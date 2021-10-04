@@ -47,8 +47,6 @@ type event =
   | DetailsEdited of t * update
   | DatabaseEdited of t * Database.t
   | Destroyed of Id.t
-  | Disabled of t
-  | Enabled of t
   | ActivateMaintenance of t
   | DeactivateMaintenance of t
   | OperatorAssigned of t * Admin.operator Admin.t
@@ -107,15 +105,6 @@ let handle_event : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
-  (* TODO [timhub]: separate events needed? *)
-  | Disabled tenant ->
-    let disabled = true |> Disabled.create in
-    let* _ = { tenant with disabled } |> Repo.update in
-    Lwt.return_unit
-  | Enabled tenant ->
-    let disabled = false |> Disabled.create in
-    let* _ = { tenant with disabled } |> Repo.update in
-    Lwt.return_unit
   | ActivateMaintenance tenant ->
     let maintenance = true |> Maintenance.create in
     let* _ = { tenant with maintenance } |> Repo.update in
@@ -142,8 +131,6 @@ let[@warning "-4"] equal_event event1 event2 =
     equal tenant_one tenant_two && Database.equal database_one database_two
   | Destroyed one, Destroyed two ->
     String.equal (one |> Id.show) (two |> Id.show)
-  | Enabled one, Enabled two
-  | Disabled one, Disabled two
   | ActivateMaintenance one, ActivateMaintenance two
   | DeactivateMaintenance one, DeactivateMaintenance two -> equal one two
   | ( OperatorAssigned (tenant_one, user_one)
@@ -167,8 +154,7 @@ let pp_event formatter event =
     let () = pp formatter tenant in
     Database.pp formatter database
   | Destroyed m -> Id.pp formatter m
-  | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
-    pp formatter m
+  | ActivateMaintenance m | DeactivateMaintenance m -> pp formatter m
   | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->
     let () = pp formatter tenant in
     Admin.pp formatter user

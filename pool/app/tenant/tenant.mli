@@ -283,8 +283,6 @@ type event =
   | DetailsEdited of t * update
   | DatabaseEdited of t * Database.t
   | Destroyed of Pool_common.Id.t
-  | Disabled of t
-  | Enabled of t
   | ActivateMaintenance of t
   | DeactivateMaintenance of t
   | OperatorAssigned of t * Admin.operator Admin.t

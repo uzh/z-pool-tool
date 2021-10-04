@@ -342,46 +342,6 @@ end = struct
   ;;
 end
 
-module Disable : sig
-  type t = { tenant_id : string }
-
-  val handle : Tenant.t -> (Pool_event.t list, 'b) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
-end = struct
-  type t = { tenant_id : string }
-
-  let handle tenant = Ok [ Tenant.Disabled tenant |> Pool_event.tenant ]
-
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
-  ;;
-end
-
-module Enable : sig
-  type t = { tenant_id : string }
-
-  val handle : Tenant.t -> (Pool_event.t list, 'b) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
-end = struct
-  type t = { tenant_id : string }
-
-  let handle tenant = Ok [ Tenant.Enabled tenant |> Pool_event.tenant ]
-
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
-  ;;
-end
-
 module AssignOperator : sig
   type t =
     { user_id : Id.t
