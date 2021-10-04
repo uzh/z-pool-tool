@@ -14,24 +14,6 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 ;;
 
 module Sql = struct
-  let update_person_user_sql =
-    {sql|
-      UPDATE user_users
-        SET
-          email = $2,
-          username = $3,
-          name = $4,
-          given_name = $5,
-          password = $6,
-          status = $7,
-          admin = $8,
-          confirmed = $9,
-          created_at = $10,
-          updated_at = $11
-      WHERE uuid = UNHEX(REPLACE($1, '-', ''));
-    |sql}
-  ;;
-
   let update_request =
     {sql|
       UPDATE pool_person
@@ -44,19 +26,7 @@ module Sql = struct
     |> Caqti_request.exec RepoPerson.Write.caqti
   ;;
 
-  let update_person_user_request =
-    Caqti_request.exec RepoPerson.user_caqti update_person_user_sql
-  ;;
-
-  let update (t : 'a t) =
-    let person =
-      Utils.Database.exec update_request (RepoPerson.Write.extract t)
-    in
-    let person_user =
-      Utils.Database.exec update_person_user_request (Entity.user t)
-    in
-    Lwt_result.both person person_user
-  ;;
+  let update t = Utils.Database.exec update_request (RepoPerson.Write.extract t)
 
   let select_from_persons_sql where_fragment =
     let select_from =
@@ -110,10 +80,12 @@ module Sql = struct
       AND user_users.confirmed = 1
     |sql}
     |> select_from_persons_sql
-    |> Caqti_request.find Caqti_type.(tup2 string string) caqti_type
+    |> Caqti_request.find
+         Caqti_type.(tup2 Pool_common.Repo.Id.t string)
+         caqti_type
   ;;
 
-  let find role (id : Pool_common.Id.t) =
+  let find role id =
     let caqti_type, role_val = extract role in
     Utils.Database.find
       (find_request caqti_type)

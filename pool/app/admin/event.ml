@@ -104,25 +104,27 @@ let handle_event : event -> unit Lwt.t =
     Lwt.return_unit
   | RootDisabled (Root person) ->
     let* _ =
-      let user =
+      let* user =
         Sihl_user.
           { person.user with
             status = Inactive
           ; updated_at = Common.UpdatedAt.create ()
           }
+        |> Service.User.update
       in
       Entity.Root { person with user; updated_at = Common.UpdatedAt.create () }
       |> Repo.update
     in
     Lwt.return_unit
   | RootEnabled (Root person) ->
-    let* _ =
-      let user =
+    let _ =
+      let* user =
         Sihl_user.
           { person.user with
             status = Active
           ; updated_at = Common.UpdatedAt.create ()
           }
+        |> Service.User.update
       in
       Entity.Root { person with user; updated_at = Common.UpdatedAt.create () }
       |> Repo.update
