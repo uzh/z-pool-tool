@@ -1,4 +1,5 @@
 open Tyxml.Html
+module HttpUtils = Http_utils
 
 let list csrf tenant_list root_list message () =
   let open Tenant in
@@ -68,7 +69,13 @@ let list csrf tenant_list root_list message () =
   let input_fields =
     CCList.map
       (fun name ->
-        input ~a:[ a_input_type `Text; a_name name; a_placeholder name ] ())
+        input
+          ~a:
+            [ a_input_type `Text
+            ; a_name name
+            ; a_placeholder (HttpUtils.placeholder_from_name name)
+            ]
+          ())
       fields
   in
   let html =
@@ -92,8 +99,13 @@ let list csrf tenant_list root_list message () =
           ~a:[ a_action (Format.asprintf "/root/root/create"); a_method `Post ]
           (CCList.concat
              [ CCList.map
-                 (fun field ->
-                   input ~a:[ a_name field; a_placeholder field ] ())
+                 (fun name ->
+                   input
+                     ~a:
+                       [ a_name name
+                       ; a_placeholder (HttpUtils.placeholder_from_name name)
+                       ]
+                     ())
                  [ "email"; "password"; "firstname"; "lastname" ]
              ; [ input ~a:[ a_input_type `Submit; a_value "Create root" ] () ]
              ])
@@ -209,8 +221,13 @@ let detail csrf (tenant : Tenant.t) message () =
             ]
           (CCList.concat
              [ CCList.map
-                 (fun field ->
-                   input ~a:[ a_name field; a_placeholder field ] ())
+                 (fun name ->
+                   input
+                     ~a:
+                       [ a_name name
+                       ; a_placeholder (HttpUtils.placeholder_from_name name)
+                       ]
+                     ())
                  [ "email"; "password"; "firstname"; "lastname" ]
              ; [ input ~a:[ a_input_type `Submit; a_value "Create operator" ] ()
                ]

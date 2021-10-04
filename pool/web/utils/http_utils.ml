@@ -98,3 +98,5 @@ let format_request_boolean_values values urlencoded =
   in
   CCList.concat [ urlencoded; false_values ]
 ;;
+
+let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
