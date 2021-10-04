@@ -58,6 +58,8 @@ end
 module Password = struct
   type t = string [@@deriving eq, show]
 
+  let show m = CCString.repeat "*" @@ CCString.length m
+
   let create password =
     if String.length password <= 0
     then Error "Invalid SMTP password!"
