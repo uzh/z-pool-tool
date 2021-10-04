@@ -31,7 +31,7 @@ module Message = struct
   ;;
 end
 
-let create ~children ~message () =
+let create children message () =
   let page_title = title (txt "Pool tool") in
   let charset = meta ~a:[ a_charset "utf8" ] () in
   let viewport =
