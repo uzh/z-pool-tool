@@ -11,7 +11,7 @@ module Message = struct
     | txts -> concat_messages txts classname
   ;;
 
-  let create ~message () =
+  let create message () =
     match message with
     | None -> div []
     | Some message ->
@@ -39,7 +39,7 @@ let create children message () =
       ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
       ()
   in
-  let message = Message.create ~message () in
+  let message = Message.create message () in
   let content = main [ message; children ] in
   html (head page_title [ charset; viewport ]) (body [ content ])
 ;;
