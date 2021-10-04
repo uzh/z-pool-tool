@@ -114,23 +114,23 @@ type t =
   { server : Server.t
   ; port : Port.t
   ; username : Username.t
-  ; password : Password.t
   ; authentication_method : AuthenticationMethod.t
   ; protocol : Protocol.t
   }
 [@@deriving eq, show]
 
-let create server port username password authentication_method protocol =
-  Ok { server; port; username; password; authentication_method; protocol }
-;;
-
-module Read = struct
+module Write = struct
   type t =
     { server : Server.t
     ; port : Port.t
     ; username : Username.t
+    ; password : Password.t
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }
   [@@deriving eq, show]
+
+  let create server port username password authentication_method protocol =
+    Ok { server; port; username; password; authentication_method; protocol }
+  ;;
 end

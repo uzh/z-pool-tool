@@ -1,10 +1,10 @@
 open Tyxml.Html
 
 let list csrf tenant_list root_list message () =
-  let open Tenant.Read in
+  let open Tenant in
   let build_tenant_rows tenant_list =
     CCList.map
-      (fun tenant ->
+      (fun (tenant : Tenant.t) ->
         div
           [ h2 [ txt (tenant.title |> Tenant.Title.value) ]
           ; a
@@ -109,9 +109,9 @@ let list csrf tenant_list root_list message () =
   Page_layout.create html message ()
 ;;
 
-let detail csrf tenant message () =
-  let open Tenant.Read in
-  let open Tenant.SmtpAuth.Read in
+let detail csrf (tenant : Tenant.t) message () =
+  let open Tenant in
+  let open Tenant.SmtpAuth in
   let detail_fields =
     [ "title", Tenant.Title.value tenant.title
     ; "description", Tenant.Description.value tenant.description
@@ -173,7 +173,7 @@ let detail csrf tenant message () =
   in
   let html =
     div
-      [ h1 [ txt (tenant.Tenant.Read.title |> Tenant.Title.value) ]
+      [ h1 [ txt (tenant.Tenant.title |> Tenant.Title.value) ]
       ; form
           ~a:
             [ a_action

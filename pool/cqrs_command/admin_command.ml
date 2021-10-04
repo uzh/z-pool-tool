@@ -101,7 +101,7 @@ module CreateOperator : sig
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> Tenant.t
+    -> Tenant.Write.t
     -> (Pool_event.t list, string) Result.t
 
   val decode
@@ -133,11 +133,11 @@ end = struct
         command)
   ;;
 
-  let[@warning "-27"] handle
+  let handle
       ?allowed_email_suffixes
       ?password_policy
       command
-      (tenant : Tenant.t)
+      (_ : Tenant.Write.t)
     =
     let ( let* ) = Result.bind in
     let* () = User.Password.validate ?password_policy command.password in

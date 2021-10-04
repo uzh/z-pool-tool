@@ -56,28 +56,28 @@ module SmtpAuth : sig
     { server : Server.t
     ; port : Port.t
     ; username : Username.t
-    ; password : Password.t
     ; authentication_method : AuthenticationMethod.t
     ; protocol : Protocol.t
     }
 
-  val create
-    :  Server.t
-    -> Port.t
-    -> Username.t
-    -> Password.t
-    -> AuthenticationMethod.t
-    -> Protocol.t
-    -> (t, string) result
-
-  module Read : sig
+  module Write : sig
     type t =
       { server : Server.t
       ; port : Port.t
       ; username : Username.t
+      ; password : Password.t
       ; authentication_method : AuthenticationMethod.t
       ; protocol : Protocol.t
       }
+
+    val create
+      :  Server.t
+      -> Port.t
+      -> Username.t
+      -> Password.t
+      -> AuthenticationMethod.t
+      -> Protocol.t
+      -> (t, string) result
   end
 end
 
@@ -192,7 +192,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_label : Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -205,27 +205,14 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
-val create
-  :  Title.t
-  -> Description.t
-  -> Url.t
-  -> Database.t
-  -> SmtpAuth.t
-  -> Styles.t
-  -> Icon.t
-  -> Logos.t
-  -> PartnerLogos.t
-  -> Settings.Language.t
-  -> t
-
-module Read : sig
+module Write : sig
   type t =
     { id : Pool_common.Id.t
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database_label : Database.Label.t
-    ; smtp_auth : SmtpAuth.Read.t
+    ; database : Database.t
+    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -236,6 +223,19 @@ module Read : sig
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
     }
+
+  val create
+    :  Title.t
+    -> Description.t
+    -> Url.t
+    -> Database.t
+    -> SmtpAuth.Write.t
+    -> Styles.t
+    -> Icon.t
+    -> Logos.t
+    -> PartnerLogos.t
+    -> Settings.Language.t
+    -> t
 end
 
 module StatusReport : sig
@@ -249,7 +249,7 @@ type create =
   ; description : Description.t
   ; url : Url.t
   ; database : Database.t
-  ; smtp_auth : SmtpAuth.t
+  ; smtp_auth : SmtpAuth.Write.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
@@ -279,24 +279,24 @@ type update =
   }
 
 type event =
-  | Created of create
-  | DetailsEdited of t * update
-  | DatabaseEdited of t * Database.t
+  | Created of create [@equal equal]
+  | DetailsEdited of Write.t * update
+  | DatabaseEdited of Write.t * Database.t
   | Destroyed of Pool_common.Id.t
-  | ActivateMaintenance of t
-  | DeactivateMaintenance of t
-  | OperatorAssigned of t * Admin.operator Admin.t
-  | OperatorDivested of t * Admin.operator Admin.t
+  | ActivateMaintenance of Write.t
+  | DeactivateMaintenance of Write.t
+  | OperatorAssigned of Pool_common.Id.t * Admin.operator Admin.t
+  | OperatorDivested of Pool_common.Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
 val handle_event : event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find : Pool_common.Id.t -> (Read.t, string) result Lwt.t
-val find_full : Pool_common.Id.t -> (t, string) result Lwt.t
+val find : Pool_common.Id.t -> (t, string) result Lwt.t
+val find_full : Pool_common.Id.t -> (Write.t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
-val find_all : unit -> (Read.t list, string) Result.t Lwt.t
+val find_all : unit -> (t list, string) Result.t Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

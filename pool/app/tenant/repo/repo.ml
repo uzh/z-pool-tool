@@ -28,7 +28,7 @@ module Sql = struct
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
-    |> Caqti_request.exec RepoEntity.t
+    |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
   let update = Utils.Database.exec update_request
@@ -100,7 +100,7 @@ module Sql = struct
 
   let find_all_request =
     select_from_tenants_sql "" false
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.Read.t
+    |> Caqti_request.collect Caqti_type.unit RepoEntity.t
   ;;
 
   let find_fragment =
@@ -111,12 +111,12 @@ module Sql = struct
 
   let find_request =
     select_from_tenants_sql find_fragment false
-    |> Caqti_request.find Caqti_type.string RepoEntity.Read.t
+    |> Caqti_request.find Caqti_type.string RepoEntity.t
   ;;
 
   let find_full_request =
     select_from_tenants_sql find_fragment true
-    |> Caqti_request.find Caqti_type.string RepoEntity.t
+    |> Caqti_request.find Caqti_type.string RepoEntity.Write.t
   ;;
 
   let find_all = Utils.Database.collect find_all_request
@@ -176,7 +176,7 @@ module Sql = struct
     |sql}
   ;;
 
-  let insert_request = Caqti_request.exec RepoEntity.t insert_sql
+  let insert_request = Caqti_request.exec RepoEntity.Write.t insert_sql
   let insert = Utils.Database.exec insert_request
 end
 
@@ -184,5 +184,5 @@ let find = Sql.find
 let find_full = Sql.find_full
 let find_all = Sql.find_all
 let insert = Sql.insert
-let update = Sql.update
+let update : Entity.Write.t -> (unit, string) result Lwt.t = Sql.update
 let destroy = Utils.todo

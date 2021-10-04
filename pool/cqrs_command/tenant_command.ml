@@ -119,7 +119,7 @@ end = struct
             Database.
               { url = command.database_url; label = command.database_label }
         ; smtp_auth =
-            SmtpAuth.
+            SmtpAuth.Write.
               { server = command.smtp_auth_server
               ; port = command.smtp_auth_port
               ; username = command.smtp_auth_username
@@ -162,7 +162,7 @@ module EditDetails : sig
     ; default_language : Settings.Language.t
     }
 
-  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
+  val handle : t -> Tenant.Write.t -> (Pool_event.t list, string) result
 
   val decode
     :  (string * string list) list
@@ -242,7 +242,7 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) (tenant : Tenant.t) =
+  let handle (command : t) (tenant : Tenant.Write.t) =
     let update =
       Tenant.
         { title = command.title
@@ -281,7 +281,7 @@ module EditDatabase : sig
     ; database_label : Tenant.Database.Label.t
     }
 
-  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
+  val handle : t -> Tenant.Write.t -> (Pool_event.t list, string) result
 
   val decode
     :  (string * string list) list
@@ -303,7 +303,7 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) (tenant : Tenant.t) =
+  let handle (command : t) (tenant : Tenant.Write.t) =
     let database =
       Tenant.Database.
         { url = command.database_url; label = command.database_label }
@@ -349,7 +349,7 @@ module AssignOperator : sig
     }
 
   val handle
-    :  Tenant.t
+    :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, string) result
 
@@ -360,8 +360,8 @@ end = struct
     ; tenant_id : Id.t
     }
 
-  let handle tenant user =
-    Ok [ Tenant.OperatorAssigned (tenant, user) |> Pool_event.tenant ]
+  let handle tenant_id user =
+    Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
   let can user command =
@@ -381,7 +381,7 @@ module DivestOperator : sig
     }
 
   val handle
-    :  Tenant.t
+    :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, string) result
 
@@ -392,8 +392,8 @@ end = struct
     ; tenant_id : string
     }
 
-  let handle tenant user =
-    Ok [ Tenant.OperatorDivested (tenant, user) |> Pool_event.tenant ]
+  let handle tenant_id user =
+    Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
   let can user command =

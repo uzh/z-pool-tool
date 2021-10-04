@@ -64,7 +64,7 @@ let t =
       , ( m.title
         , ( m.description
           , ( m.url
-            , ( m.database
+            , ( m.database_label
               , ( m.smtp_auth
                 , ( m.styles
                   , ( m.icon
@@ -80,7 +80,7 @@ let t =
       , ( title
         , ( description
           , ( url
-            , ( database
+            , ( database_label
               , ( smtp_auth
                 , ( styles
                   , ( icon
@@ -99,12 +99,13 @@ let t =
     let* icon = Icon.create icon in
     let* logos = Logos.create logos in
     let* partner_logos = PartnerLogos.create partner_logos in
+    let* database_label = Database.Label.create database_label in
     Ok
       { id = Id.of_string id
       ; title
       ; description
       ; url
-      ; database
+      ; database_label
       ; smtp_auth
       ; styles
       ; icon
@@ -130,7 +131,7 @@ let t =
                (tup2
                   Url.t
                   (tup2
-                     Database.t
+                     Database.Label.t
                      (tup2
                         SmtpAuth.t
                         (tup2
@@ -152,17 +153,17 @@ let t =
                                                 Common.Repo.UpdatedAt.t)))))))))))))))
 ;;
 
-module Read = struct
-  open Entity.Read
+module Write = struct
+  open Entity.Write
 
   let t =
     let encode m =
       Ok
-        ( Id.value m.Read.id
+        ( Id.value m.Write.id
         , ( m.title
           , ( m.description
             , ( m.url
-              , ( m.database_label
+              , ( m.database
                 , ( m.smtp_auth
                   , ( m.styles
                     , ( m.icon
@@ -179,7 +180,7 @@ module Read = struct
         , ( title
           , ( description
             , ( url
-              , ( database_label
+              , ( database
                 , ( smtp_auth
                   , ( styles
                     , ( icon
@@ -198,13 +199,12 @@ module Read = struct
       let* icon = Icon.create icon in
       let* logos = Logos.create logos in
       let* partner_logos = PartnerLogos.create partner_logos in
-      let* database_label = Database.Label.create database_label in
       Ok
         { id = Id.of_string id
         ; title
         ; description
         ; url
-        ; database_label
+        ; database
         ; smtp_auth
         ; styles
         ; icon
@@ -230,9 +230,9 @@ module Read = struct
                  (tup2
                     Url.t
                     (tup2
-                       Database.Label.t
+                       Database.t
                        (tup2
-                          SmtpAuth.Read.t
+                          SmtpAuth.Write.t
                           (tup2
                              Styles.t
                              (tup2

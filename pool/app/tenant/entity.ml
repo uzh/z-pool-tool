@@ -167,7 +167,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database_label : Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -177,48 +177,18 @@ type t =
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   ; created_at : CreatedAt.t
-  ; updated_at : CreatedAt.t
+  ; updated_at : UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create
-    title
-    description
-    url
-    database
-    smtp_auth
-    styles
-    icon
-    logos
-    partner_logos
-    default_language
-  =
-  { id = Id.create ()
-  ; title
-  ; description
-  ; url
-  ; database
-  ; smtp_auth
-  ; styles
-  ; icon
-  ; logos
-  ; partner_logos
-  ; maintenance = Maintenance.create false
-  ; disabled = Disabled.create false
-  ; default_language
-  ; created_at = CreatedAt.create ()
-  ; updated_at = UpdatedAt.create ()
-  }
-;;
-
-module Read = struct
+module Write = struct
   type t =
     { id : Id.t
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database_label : Database.Label.t
-    ; smtp_auth : SmtpAuth.Read.t
+    ; database : Database.t
+    ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; logos : Logos.t
@@ -227,9 +197,39 @@ module Read = struct
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
     ; created_at : CreatedAt.t
-    ; updated_at : UpdatedAt.t
+    ; updated_at : CreatedAt.t
     }
   [@@deriving eq, show]
+
+  let create
+      title
+      description
+      url
+      database
+      smtp_auth
+      styles
+      icon
+      logos
+      partner_logos
+      default_language
+    =
+    { id = Id.create ()
+    ; title
+    ; description
+    ; url
+    ; database
+    ; smtp_auth
+    ; styles
+    ; icon
+    ; logos
+    ; partner_logos
+    ; maintenance = Maintenance.create false
+    ; disabled = Disabled.create false
+    ; default_language
+    ; created_at = CreatedAt.create ()
+    ; updated_at = UpdatedAt.create ()
+    }
+  ;;
 end
 
 (* The system should proactively report degraded health to operators *)
