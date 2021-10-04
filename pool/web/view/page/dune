@@ -1,0 +1,3 @@
+(library
+ (name page)
+ (libraries tyxml sihl service http_utils))
