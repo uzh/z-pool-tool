@@ -13,7 +13,7 @@ let tenants req =
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     let* tenant_list = Tenant.find_all () in
     let* root_list = Admin.find_all_root () in
-    Page.Root.Tenant.list csrf ~tenant_list ~root_list ~message ()
+    Page.Root.Tenant.list csrf tenant_list root_list message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
@@ -112,7 +112,7 @@ let tenant_detail req =
     let id = Sihl.Web.Router.param req "id" in
     let* tenant = Tenant.find_by_id (id |> Pool_common.Id.of_string) in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
-    Page.Root.Tenant.detail csrf ~tenant ~message ()
+    Page.Root.Tenant.detail csrf tenant message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in

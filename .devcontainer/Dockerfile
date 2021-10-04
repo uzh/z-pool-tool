@@ -17,7 +17,6 @@ COPY --from=hadolint /bin/hadolint /bin/hadolint
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND noninteractive
 ENV SIHL_ENV development
-RUN mkdir logs
 
 RUN apt-get update -q \
   && apt-get install -yqq --no-install-recommends \

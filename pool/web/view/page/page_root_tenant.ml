@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let list csrf ~tenant_list ~(root_list : Admin.root Admin.t list) ~message () =
+let list csrf tenant_list root_list message () =
   let open Tenant.Read in
   let build_tenant_rows tenant_list =
     CCList.map
@@ -106,10 +106,10 @@ let list csrf ~tenant_list ~(root_list : Admin.root Admin.t list) ~message () =
              ])
       ]
   in
-  Page_layout.create ~children:html ~message ()
+  Page_layout.create html message ()
 ;;
 
-let detail csrf ~tenant ~message () =
+let detail csrf tenant message () =
   let open Tenant.Read in
   let open Tenant.SmtpAuth.Read in
   let detail_fields =
@@ -227,5 +227,5 @@ let detail csrf ~tenant ~message () =
           [ txt "back" ]
       ]
   in
-  Page_layout.create ~children:html ~message ()
+  Page_layout.create html message ()
 ;;

@@ -2,12 +2,11 @@ open Sihl.Web
 
 let global_middlewares =
   [ Middleware.id ()
-  ; Middleware.flash ()
-  ; Middleware.csrf ()
   ; Middleware.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
-  ; Middleware.migration Service.Migration.pending_migrations
+  ; Middleware.csrf ()
+  ; Middleware.flash ()
   ; Opium.Middleware.content_length
   ; Opium.Middleware.etag
   ; Opium.Middleware.method_override
@@ -36,7 +35,8 @@ end
 
 let router =
   choose
-    [ choose ~middlewares:global_middlewares Public.routes
-    ; choose ~scope:"/root" ~middlewares:global_middlewares Root.routes
+    [ choose Public.routes
+    ; choose ~scope:"/root" Root.routes
+    ; get "/**" Handler.Public.not_found
     ]
 ;;

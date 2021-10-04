@@ -7,7 +7,7 @@ let index req =
     let message =
       Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
     in
-    Page.Public.index ~message () |> Sihl.Web.Response.of_html |> Lwt.return_ok
+    Page.Public.index message () |> Sihl.Web.Response.of_html |> Lwt.return_ok
   in
   show ()
   |> Lwt_result.map_err (fun err -> err, error_path)
