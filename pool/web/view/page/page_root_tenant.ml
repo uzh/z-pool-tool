@@ -47,35 +47,28 @@ let list csrf tenant_list root_list message () =
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
   let fields =
-    [ "title", "Econ Uzh"
-    ; "description", "adfasdf"
-    ; "url", "pool.econ.uzh.ch"
-    ; "database_url", "mariadb://root@database:3306/dev_econ"
-    ; "database_label", "econ_uzh"
-    ; "smtp_auth_server", "smtp.econ.uzh.ch"
-    ; "smtp_auth_port", "587"
-    ; "smtp_auth_username", "engineering@econ.uzh.ch"
-    ; "smtp_auth_password", "emailemail"
-    ; "smtp_auth_authentication_method", "LOGIN"
-    ; "smtp_auth_protocol", "SSL/TLS"
-    ; "styles", "custom-styles.css"
-    ; "icon", "icon"
-    ; "logos", "logos"
-    ; "partner_logos", "partner_logos"
-    ; "default_language", "DE"
+    [ "title"
+    ; "description"
+    ; "url"
+    ; "database_url"
+    ; "database_label"
+    ; "smtp_auth_server"
+    ; "smtp_auth_port"
+    ; "smtp_auth_username"
+    ; "smtp_auth_password"
+    ; "smtp_auth_authentication_method"
+    ; "smtp_auth_protocol"
+    ; "styles"
+    ; "icon"
+    ; "logos"
+    ; "partner_logos"
+    ; "default_language"
     ]
   in
   let input_fields =
     CCList.map
-      (fun (name, value) ->
-        input
-          ~a:
-            [ a_input_type `Text
-            ; a_name name
-            ; a_placeholder name
-            ; a_value value
-            ]
-          ())
+      (fun name ->
+        input ~a:[ a_input_type `Text; a_name name; a_placeholder name ] ())
       fields
   in
   let html =
