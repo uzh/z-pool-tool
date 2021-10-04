@@ -24,7 +24,7 @@ let create () =
     ; ( "ZHAW"
       , "description"
       , "pool.zhaw.ch"
-      , "database@mariadb://root@database:3306/dev_zhaw"
+      , "mariadb://root@database:3306/dev_zhaw"
       , "zhaw"
       , "smtp.zhaw.ch"
       , "465"
