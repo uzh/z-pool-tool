@@ -1,4 +1,5 @@
 module Message = Http_utils_message
+module StringMap = Map.Make (String)
 
 let redirect_to_with_actions path actions =
   path
@@ -72,30 +73,23 @@ let user_email_exists email =
 ;;
 
 let format_request_boolean_values values urlencoded =
-  let urlencoded =
-    CCList.map
-      (fun (key, v) ->
-        match CCList.mem key values with
-        | true -> key, [ "true" ]
-        | false -> key, v)
-      urlencoded
+  let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
+  let values =
+    values
+    |> CCList.map (fun k -> k, [ "false" ])
+    |> CCList.to_seq
+    |> StringMap.of_seq
   in
-  let false_values =
-    let keys =
-      CCList.map
-        (fun m ->
-          let key, _ = m in
-          key)
-        urlencoded
-    in
-    CCList.filter_map
-      (fun key ->
-        match CCList.mem key keys with
-        | true -> None
-        | false -> Some (key, [ "false" ]))
-      values
-  in
-  CCList.concat [ urlencoded; false_values ]
+  StringMap.merge
+    (fun _ x y ->
+      match x, y with
+      | Some _, Some _ -> Some [ "true" ]
+      | Some x, _ -> Some x
+      | _ -> Some [ "false" ])
+    urlencoded
+    values
+  |> StringMap.to_seq
+  |> CCList.of_seq
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
