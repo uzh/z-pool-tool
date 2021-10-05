@@ -12,11 +12,12 @@ let create req =
     >>= HttpUtils.user_email_exists
   in
   let events () =
+    let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
     |> Cqrs_command.Root_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    |> CCResult.flat_map Cqrs_command.Root_command.Create.handle
+    >>= Cqrs_command.Root_command.Create.handle
     |> Lwt_result.lift
   in
   let handle events =

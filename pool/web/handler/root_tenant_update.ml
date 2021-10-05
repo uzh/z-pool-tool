@@ -10,19 +10,18 @@ let update req command success_message =
     |> Lwt_result.map_err (fun err -> err, redirect_path)
   in
   let events tenant =
+    let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events_list urlencoded =
       match command with
       | `EditDetail ->
         Cqrs_command.Tenant_command.EditDetails.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
-        |> CCResult.flat_map
-             (CCFun.flip Cqrs_command.Tenant_command.EditDetails.handle tenant)
+        >>= CCFun.flip Cqrs_command.Tenant_command.EditDetails.handle tenant
       | `EditDatabase ->
         Cqrs_command.Tenant_command.EditDatabase.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
-        |> CCResult.flat_map
-             (CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant)
+        >>= CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant
     in
     urlencoded
     |> HttpUtils.format_request_boolean_values [ "disabled" ]

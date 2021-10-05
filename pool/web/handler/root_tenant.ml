@@ -26,11 +26,12 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/root/tenants" in
   let events () =
+    let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    |> CCResult.flat_map Cqrs_command.Tenant_command.Create.handle
+    >>= Cqrs_command.Tenant_command.Create.handle
     |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
   in
@@ -63,12 +64,12 @@ let create_operator req =
   in
   let find_tenant () = Tenant.find_full (id |> Pool_common.Id.of_string) in
   let events tenant =
+    let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
     |> Cqrs_command.Admin_command.CreateOperator.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    |> CCResult.flat_map
-         (CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant)
+    >>= CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant
     |> Lwt_result.lift
   in
   let handle events =
