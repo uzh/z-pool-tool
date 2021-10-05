@@ -1,7 +1,7 @@
 module Server = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create server =
     if String.length server <= 0
@@ -20,7 +20,7 @@ end
 module Port = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create port =
     if CCList.mem port [ "25"; "465"; "587" ]
@@ -39,7 +39,7 @@ end
 module Username = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create username =
     if String.length username <= 0
@@ -77,7 +77,7 @@ end
 module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create authentication_method =
     if String.length authentication_method <= 0
@@ -96,7 +96,7 @@ end
 module Protocol = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]

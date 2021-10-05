@@ -10,14 +10,14 @@ module CreatedAt = struct
   type t = Ptime.t [@@deriving eq, show]
 
   let create = Ptime_clock.now
-  let value t = t
+  let value m = m
 end
 
 module UpdatedAt = struct
   type t = Ptime.t [@@deriving eq, show]
 
   let create = Ptime_clock.now
-  let value t = t
+  let value m = m
 end
 
 module Repo = struct

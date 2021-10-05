@@ -7,7 +7,7 @@ module Database = Entity_database
 module Title = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create title =
     if String.length title <= 0 then Error "Invalid title!" else Ok title
@@ -21,7 +21,7 @@ end
 module Description = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create description =
     if String.length description <= 0
@@ -40,7 +40,7 @@ end
 module Url = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create url =
     if String.length url <= 0 then Error "Invalid url!" else Ok url
@@ -54,7 +54,7 @@ end
 module Styles = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create styles =
     if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
@@ -71,7 +71,7 @@ end
 module Icon = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create icon =
     if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
@@ -85,7 +85,7 @@ end
 module Logos = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create logos =
     if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
@@ -99,7 +99,7 @@ end
 module PartnerLogos = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create partner_logo =
     if String.length partner_logo <= 0
@@ -142,7 +142,7 @@ module Disabled = struct
   type t = bool [@@deriving eq, show]
 
   let create t = t
-  let value t = t
+  let value m = m
 
   let stringify = function
     | true -> "true"

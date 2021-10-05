@@ -16,7 +16,7 @@ end
 module Label = struct
   type t = string [@@deriving eq, show]
 
-  let value t = t
+  let value m = m
 
   let create label =
     if String.length label <= 0 || String.contains label ' '
