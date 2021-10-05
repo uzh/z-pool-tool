@@ -208,6 +208,8 @@ module Repo : sig
     val insert : 'a -> 'b
     val update : 'a -> 'b
   end
+
+  val user_caqti : Sihl_user.t Caqti_type.t
 end
 
 module Event : sig

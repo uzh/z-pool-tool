@@ -12,7 +12,7 @@ let tenants req =
     in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     let* tenant_list = Tenant.find_all () in
-    let* root_list = Admin.find_all_root () in
+    let* root_list = Root.find_all () in
     Page.Root.Tenant.list csrf tenant_list root_list message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok

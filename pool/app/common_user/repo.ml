@@ -44,3 +44,70 @@ module Email = struct
   let insert = Utils.todo
   let update = Utils.todo
 end
+
+let user_caqti =
+  let open Sihl.Contract.User in
+  let status =
+    let encode m = m |> Sihl_user.status_to_string |> Result.ok in
+    let decode = Sihl_user.status_of_string in
+    Caqti_type.(custom ~encode ~decode string)
+  in
+  let encode m =
+    Ok
+      ( m.id
+      , ( m.email
+        , ( m.username
+          , ( m.name
+            , ( m.given_name
+              , ( m.password
+                , ( m.status
+                  , (m.admin, (m.confirmed, (m.created_at, m.updated_at))) ) )
+              ) ) ) ) )
+  in
+  let decode
+      ( id
+      , ( email
+        , ( username
+          , ( name
+            , ( given_name
+              , ( password
+                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
+            ) ) ) )
+    =
+    (* TODO checks for confirmed users only, a Person should just be valid, if
+       it was confirmed. Check if there is a better place for this. *)
+    if not confirmed
+    then Error "User is not confirmed"
+    else
+      Ok
+        { id
+        ; email
+        ; username
+        ; name
+        ; given_name
+        ; password
+        ; status
+        ; admin
+        ; confirmed
+        ; created_at
+        ; updated_at
+        }
+  in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         string
+         (tup2
+            string
+            (tup2
+               (option string)
+               (tup2
+                  (option string)
+                  (tup2
+                     (option string)
+                     (tup2
+                        string
+                        (tup2 status (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
+;;

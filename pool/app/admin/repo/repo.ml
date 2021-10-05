@@ -10,7 +10,6 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   | LocationManagerC -> location_manager, person `LocationManager
   | RecruiterC -> recruiter, person `Recruiter
   | OperatorC -> operator, person `Operator
-  | RootC -> root, person `Root
 ;;
 
 module Sql = struct
@@ -130,8 +129,7 @@ let set_password
   | Experimenter { user; _ }
   | LocationManager { user; _ }
   | Recruiter { user; _ }
-  | Operator { user; _ }
-  | Root { user; _ } ->
+  | Operator { user; _ } ->
     Service.User.set_password user ~password ~password_confirmation
     >|= CCFun.const ()
 ;;

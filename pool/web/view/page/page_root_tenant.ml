@@ -41,8 +41,8 @@ let list csrf tenant_list root_list message () =
         [ input_element `Submit None text ]
     in
     CCList.map
-      (fun (root : Admin.root Admin.t) ->
-        let user = root |> Admin.user in
+      (fun root ->
+        let user = root |> Root.user in
         let status = status_toggle user.status user.id in
         div [ h2 [ txt user.email ]; status; hr () ])
       root_list

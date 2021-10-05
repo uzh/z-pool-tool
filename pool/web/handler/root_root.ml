@@ -14,9 +14,9 @@ let create req =
   let events () =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
-    |> Cqrs_command.Admin_command.CreateRoot.decode
+    |> Cqrs_command.Root_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    |> CCResult.flat_map Cqrs_command.Admin_command.CreateRoot.handle
+    |> CCResult.flat_map Cqrs_command.Root_command.Create.handle
     |> Lwt_result.lift
   in
   let handle events =
@@ -42,7 +42,7 @@ let toggle_status req =
   let id = Sihl.Web.Router.param req "id" in
   let error_path = Format.asprintf "/root/tenants/" in
   let events user =
-    Cqrs_command.Admin_command.ToggleRootStatus.handle user |> Lwt_result.lift
+    Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift
   in
   let handle events =
     let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
@@ -55,7 +55,7 @@ let toggle_status req =
   in
   id
   |> Pool_common.Id.of_string
-  |> Admin.find_root
+  |> Root.find
   >>= events
   >|= handle
   |> Lwt_result.map_err (fun err -> err, error_path)

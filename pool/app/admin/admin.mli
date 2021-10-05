@@ -4,7 +4,6 @@ type creatable_admin = Event.creatable_admin =
   | Recruiter
   | LocationManager
   | Operator
-  | Root
 
 val equal_creatable_admin : creatable_admin -> creatable_admin -> bool
 val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
@@ -39,8 +38,6 @@ type 'a person_event = 'a Event.person_event =
 
 type event = Event.event =
   | Created of creatable_admin * create
-  | RootDisabled of Entity.root Entity.t
-  | RootEnabled of Entity.root Entity.t
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
   | LocationManagerEvents of Entity.location_manager person_event
@@ -69,7 +66,6 @@ type experimenter = Entity.experimenter
 type location_manager = Entity.location_manager
 type recruiter = Entity.recruiter
 type operator = Entity.operator
-type root = Entity.root
 
 type 'a t = 'a Entity.t =
   | Assistant : person -> assistant t
@@ -77,7 +73,6 @@ type 'a t = 'a Entity.t =
   | LocationManager : person -> location_manager t
   | Recruiter : person -> recruiter t
   | Operator : person -> operator t
-  | Root : person -> root t
 
 val equal : 'person t -> 'person t -> bool
 val pp : Format.formatter -> 'person t -> unit
@@ -93,5 +88,3 @@ module Duplicate = Admin__Entity.Duplicate
 val login : 'a -> email:'b -> password:'c -> 'd
 val find_by_user : 'a -> 'b
 val find_duplicates : 'a -> 'b
-val find_root : Pool_common.Id.t -> (root t, string) result Lwt.t
-val find_all_root : unit -> (root t list, string) result Lwt.t

@@ -8,7 +8,6 @@ type creatable_admin =
   | Recruiter
   | LocationManager
   | Operator
-  | Root
 [@@deriving eq, show]
 
 type create =
@@ -33,8 +32,6 @@ type 'a person_event =
 
 type event =
   | Created of creatable_admin * create
-  | RootDisabled of Entity.root Entity.t
-  | RootEnabled of Entity.root Entity.t
   | AssistantEvents of assistant person_event
   | ExperimenterEvents of experimenter person_event
   | LocationManagerEvents of location_manager person_event
@@ -93,37 +90,6 @@ let handle_event : event -> unit Lwt.t = function
         Permission.assign
           user
           (Role.operator (user.Sihl_user.id |> Common.Id.of_string))
-      | Root ->
-        let%lwt _ = Repo.insert (Root person) in
-        Permission.assign user Role.root
-    in
-    Lwt.return_unit
-  | RootDisabled (Root person) ->
-    let%lwt _ =
-      let%lwt user =
-        Sihl_user.
-          { person.user with
-            status = Inactive
-          ; updated_at = Common.UpdatedAt.create ()
-          }
-        |> Service.User.update
-      in
-      Entity.Root { person with user; updated_at = Common.UpdatedAt.create () }
-      |> Repo.update
-    in
-    Lwt.return_unit
-  | RootEnabled (Root person) ->
-    let _ =
-      let%lwt user =
-        Sihl_user.
-          { person.user with
-            status = Active
-          ; updated_at = Common.UpdatedAt.create ()
-          }
-        |> Service.User.update
-      in
-      Entity.Root { person with user; updated_at = Common.UpdatedAt.create () }
-      |> Repo.update
     in
     Lwt.return_unit
   | AssistantEvents event -> handle_person_event event
@@ -164,8 +130,6 @@ let[@warning "-4"] equal_event event1 event2 : bool =
   match event1, event2 with
   | Created (role1, m), Created (role2, p) ->
     equal_creatable_admin role1 role2 && equal_create m p
-  | RootDisabled (Root m1), RootDisabled (Root m2)
-  | RootEnabled (Root m1), RootEnabled (Root m2) -> equal_person m1 m2
   | AssistantEvents m, AssistantEvents p -> equal_person_event m p
   | ExperimenterEvents m, ExperimenterEvents p -> equal_person_event m p
   | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
@@ -179,7 +143,6 @@ let pp_event formatter event =
   | Created (role, m) ->
     let () = pp_creatable_admin formatter role in
     pp_create formatter m
-  | RootDisabled m | RootEnabled m -> pp formatter m
   | AssistantEvents m -> pp_person_event formatter m
   | ExperimenterEvents m -> pp_person_event formatter m
   | LocationManagerEvents m -> pp_person_event formatter m
