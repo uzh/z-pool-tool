@@ -14,7 +14,12 @@ let global_middlewares =
 ;;
 
 module Public = struct
-  let routes = [ get "/" Handler.Public.index ]
+  let routes =
+    [ get "/" Handler.Public.index
+    ; get "/login" Handler.Public.Login.login_get
+    ; post "/login" Handler.Public.Login.login_post
+    ]
+  ;;
 end
 
 module Participant = struct

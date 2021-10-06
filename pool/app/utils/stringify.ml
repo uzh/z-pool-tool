@@ -7,3 +7,14 @@ let person = function
   | `Operator -> "operator"
   | `Root -> "root"
 ;;
+
+let person_from_string = function
+  | "participant" -> `Participant
+  | "assistant" -> `Assistant
+  | "experimenter" -> `Experimenter
+  | "location_manager" -> `LocationManager
+  | "recruiter" -> `Recruiter
+  | "operator" -> `Operator
+  | "root" -> `Root
+  | _ -> failwith "Cannot decode role."
+;;

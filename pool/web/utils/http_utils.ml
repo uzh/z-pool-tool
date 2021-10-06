@@ -9,6 +9,8 @@ let redirect_to_with_actions path actions =
   |> Lwt.return
 ;;
 
+let redirect_to path = redirect_to_with_actions path []
+
 let extract_happy_path_generic result msgf =
   result
   |> Result.map Lwt.return
