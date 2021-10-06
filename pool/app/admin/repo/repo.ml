@@ -112,7 +112,6 @@ module Sql = struct
   ;;
 
   let find_role_by_user user =
-    Logs.info (fun m -> m "%s" user.Sihl.Contract.User.id);
     let open Lwt_result.Infix in
     Utils.Database.find find_role_by_user_request user.Sihl.Contract.User.id
     >|= Utils.Stringify.person_from_string

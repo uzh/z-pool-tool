@@ -1,5 +1,7 @@
 open Tyxml.Html
 
+let input_element = Component.input_element
+
 let index message () =
   let html = h1 [ txt "Welcome to Pool Tool" ] in
   Page_layout.create html message ()
@@ -12,17 +14,30 @@ let login csrf message () =
       ; form
           ~a:[ a_action (Sihl.Web.externalize_path "/login"); a_method `Post ]
           [ Component.csrf_element csrf ()
-          ; input
-              ~a:[ a_input_type `Text; a_name "email"; a_placeholder "email" ]
-              ()
-          ; input
-              ~a:
-                [ a_input_type `Password
-                ; a_name "password"
-                ; a_placeholder "password"
-                ]
-              ()
-          ; input ~a:[ a_input_type `Submit; a_value "Login" ] ()
+          ; input_element `Text (Some "email") ""
+          ; input_element `Password (Some "password") ""
+          ; input_element `Submit None "Login"
+          ]
+      ; a
+          ~a:[ a_href (Sihl.Web.externalize_path "/request-reset-password") ]
+          [ txt "Reset password" ]
+      ]
+  in
+  Page_layout.create html message ()
+;;
+
+let request_reset_password csrf message () =
+  let html =
+    div
+      [ h1 [ txt "Reset Password" ]
+      ; form
+          ~a:
+            [ a_action (Sihl.Web.externalize_path "/request-reset-password")
+            ; a_method `Post
+            ]
+          [ Component.csrf_element csrf ()
+          ; input_element `Text (Some "email") ""
+          ; input_element `Submit None "Send reset link"
           ]
       ]
   in

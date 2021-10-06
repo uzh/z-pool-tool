@@ -18,6 +18,10 @@ module Public = struct
     [ get "/" Handler.Public.index
     ; get "/login" Handler.Public.Login.login_get
     ; post "/login" Handler.Public.Login.login_post
+    ; get "/logout" Handler.Public.Login.logout
+    ; get
+        "/request-reset-password"
+        Handler.Public.Login.request_reset_password_get
     ]
   ;;
 end
