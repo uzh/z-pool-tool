@@ -68,7 +68,7 @@ let err_with_action ?message error_path action =
 let user_email_exists email =
   let%lwt user = Service.User.find_by_email_opt email in
   match user with
-  | None -> Lwt_result.return ()
+  | None -> Lwt.return_ok ()
   | Some _ -> Lwt.return_error "Email address is already in use."
 ;;
 
