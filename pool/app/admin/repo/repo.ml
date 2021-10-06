@@ -105,7 +105,7 @@ module Sql = struct
       SELECT
         pool_person.role
       FROM pool_person
-      INNER JOIN user_users ON pool_person.sihl_user_id = user_users.uuid
+      INNER JOIN user_users ON pool_person.sihl_user_uuid = user_users.uuid
       AND user_users.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Caqti_request.find Caqti_type.string Caqti_type.string
