@@ -130,3 +130,27 @@ let find = Sql.find
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update = Sql.update
+
+let set_password
+    : type person.
+      Pool_common.Database.Label.t
+      -> person t
+      -> string
+      -> string
+      -> (unit, string) result Lwt.t
+  =
+ fun pool person password password_confirmation ->
+  let open Lwt_result.Infix in
+  match person with
+  | Assistant { user; _ }
+  | Experimenter { user; _ }
+  | LocationManager { user; _ }
+  | Recruiter { user; _ }
+  | Operator { user; _ } ->
+    Service.User.set_password
+      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      user
+      ~password
+      ~password_confirmation
+    >|= CCFun.const ()
+;;
