@@ -56,7 +56,7 @@ module Location = struct
   let t =
     let encode m =
       Ok
-        ( Id.show m.Location.id
+        ( Id.value m.Location.id
         , (m.room, (m.building, (m.street, (m.zip, m.city)))) )
     in
     let decode (id, (room, (building, (street, (zip, city))))) =
@@ -75,9 +75,9 @@ end
 let t =
   let encode m =
     Ok
-      ( Id.show m.id
-      , ( Title.show m.title
-        , (Description.show m.description, (m.created_at, m.updated_at)) ) )
+      ( Id.value m.id
+      , ( Title.value m.title
+        , (Description.value m.description, (m.created_at, m.updated_at)) ) )
   in
   let decode (id, (title, (description, (created_at, updated_at)))) =
     let ( let* ) = Result.bind in
@@ -92,7 +92,7 @@ let t =
       (tup2 RepoId.t (tup2 Title.t (tup2 Description.t (tup2 ptime ptime)))))
 ;;
 
-let find_by_id = Utils.todo
+let find = Utils.todo
 let list_all = Utils.todo
 let insert = Utils.todo
 let update = Utils.todo

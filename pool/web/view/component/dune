@@ -1,0 +1,3 @@
+(library
+ (name component)
+ (libraries tyxml sihl service http_utils))

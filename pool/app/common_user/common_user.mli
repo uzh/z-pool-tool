@@ -32,6 +32,7 @@ module Firstname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -42,6 +43,7 @@ module Lastname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, string) result
+  val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -108,6 +110,7 @@ module Email : sig
       -> t
       -> (unit, string) result
 
+    val value : t -> string
     val create : string -> (t, string) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
@@ -205,6 +208,8 @@ module Repo : sig
     val insert : 'a -> 'b
     val update : 'a -> 'b
   end
+
+  val user_caqti : Sihl_user.t Caqti_type.t
 end
 
 module Event : sig

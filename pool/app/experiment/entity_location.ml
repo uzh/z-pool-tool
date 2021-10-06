@@ -3,6 +3,8 @@ module Id = Pool_common.Id
 module Room = struct
   type t = string [@@deriving eq, show]
 
+  let value m = m
+
   let create room =
     if String.length room <= 0 then Error "Invalid room!" else Ok room
   ;;
@@ -12,6 +14,8 @@ end
 
 module Building = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 
   let create building =
     if String.length building <= 0
@@ -25,6 +29,8 @@ end
 module Street = struct
   type t = string [@@deriving eq, show]
 
+  let value m = m
+
   let create street =
     if String.length street <= 0 then Error "Invalid street!" else Ok street
   ;;
@@ -34,6 +40,8 @@ end
 
 module Zip = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 
   let create zip =
     let regex =
@@ -50,6 +58,8 @@ end
 
 module City = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 
   let create city =
     if String.length city <= 0 then Error "Invalid city!" else Ok city

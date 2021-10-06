@@ -1,6 +1,8 @@
 module Server = struct
   type t = string [@@deriving eq, show]
 
+  let value m = m
+
   let create server =
     if String.length server <= 0
     then Error "Invalid SMTP server !"
@@ -10,30 +12,34 @@ module Server = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
-      "smtp_auth_username"
+      (fun l -> [ l ])
+      "smtp_auth_server"
   ;;
 end
 
 module Port = struct
   type t = string [@@deriving eq, show]
 
+  let value m = m
+
   let create port =
     if CCList.mem port [ "25"; "465"; "587" ]
-    then Error "Invalid SMTP port!"
-    else Ok port
+    then Ok port
+    else Error "Invalid SMTP port!"
   ;;
 
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ l ])
       "smtp_auth_port"
   ;;
 end
 
 module Username = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 
   let create username =
     if String.length username <= 0
@@ -44,13 +50,34 @@ module Username = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ l ])
       "smtp_auth_username"
+  ;;
+end
+
+module Password = struct
+  type t = string [@@deriving eq, show]
+
+  let show m = CCString.repeat "*" @@ CCString.length m
+
+  let create password =
+    if String.length password <= 0
+    then Error "Invalid SMTP password!"
+    else Ok password
+  ;;
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> List.hd |> create)
+      (fun l -> [ l ])
+      "smtp_auth_password"
   ;;
 end
 
 module AuthenticationMethod = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 
   let create authentication_method =
     if String.length authentication_method <= 0
@@ -61,7 +88,7 @@ module AuthenticationMethod = struct
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ l ])
       "smtp_auth_authentication_method"
   ;;
 end
@@ -69,16 +96,18 @@ end
 module Protocol = struct
   type t = string [@@deriving eq, show]
 
+  let value m = m
+
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
-    then Error "Invalid SMTP protocol!"
-    else Ok protocol
+    then Ok protocol
+    else Error "Invalid SMTP protocol!"
   ;;
 
   let schema () =
     Conformist.custom
       (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
+      (fun l -> [ l ])
       "smtp_auth_protocol"
   ;;
 end
@@ -92,14 +121,18 @@ type t =
   }
 [@@deriving eq, show]
 
-let create server port username authentication_method protocol =
-  let open CCResult in
-  let* server = Server.create server in
-  let* port = Port.create port in
-  let* username = Username.create username in
-  let* authentication_method =
-    AuthenticationMethod.create authentication_method
-  in
-  let* protocol = Protocol.create protocol in
-  Ok { server; port; username; authentication_method; protocol }
-;;
+module Write = struct
+  type t =
+    { server : Server.t
+    ; port : Port.t
+    ; username : Username.t
+    ; password : Password.t
+    ; authentication_method : AuthenticationMethod.t
+    ; protocol : Protocol.t
+    }
+  [@@deriving eq, show]
+
+  let create server port username password authentication_method protocol =
+    Ok { server; port; username; password; authentication_method; protocol }
+  ;;
+end

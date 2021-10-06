@@ -1,5 +1,5 @@
 module User = Common_user
-module Id = Pool_common.Id
+module Common = Pool_common
 open Entity
 
 type creatable_admin =
@@ -38,12 +38,10 @@ type event =
   | RecruiterEvents of recruiter person_event
   | OperatorEvents of operator person_event
 
-let handle_person_event : 'a person_event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
-  | DetailsUpdated (params, person) -> Repo.update person params
+let handle_person_event : 'a person_event -> unit Lwt.t = function
+  | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ =
+    let%lwt _ =
       Repo.set_password
         person
         (password |> User.Password.to_sihl)
@@ -54,41 +52,46 @@ let handle_person_event : 'a person_event -> unit Lwt.t =
   | Verified _ -> Utils.todo ()
 ;;
 
-let handle_event : event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
+let handle_event : event -> unit Lwt.t = function
   | Created (role, admin) ->
-    let* user =
+    let%lwt user =
       Service.User.create_user
-        ~name:(admin.firstname |> User.Firstname.show)
-        ~given_name:(admin.lastname |> User.Lastname.show)
+        ~name:(admin.lastname |> User.Lastname.value)
+        ~given_name:(admin.firstname |> User.Firstname.value)
         ~password:(admin.password |> User.Password.to_sihl)
-        (User.Email.Address.show admin.email)
+        (User.Email.Address.value admin.email)
     in
-    let* () =
+    let person =
+      { user
+      ; created_at = Common.CreatedAt.create ()
+      ; updated_at = Common.UpdatedAt.create ()
+      }
+    in
+    let%lwt () =
       match role with
       | Assistant ->
         Permission.assign
           user
-          (Role.assistant (user.Sihl_user.id |> Id.of_string))
+          (Role.assistant (user.Sihl_user.id |> Common.Id.of_string))
       | Experimenter ->
         Permission.assign
           user
-          (Role.experimenter (user.Sihl_user.id |> Id.of_string))
+          (Role.experimenter (user.Sihl_user.id |> Common.Id.of_string))
       | Recruiter ->
         Permission.assign
           user
-          (Role.recruiter (user.Sihl_user.id |> Id.of_string))
+          (Role.recruiter (user.Sihl_user.id |> Common.Id.of_string))
       | LocationManager ->
         Permission.assign
           user
-          (Role.location_manager (user.Sihl_user.id |> Id.of_string))
+          (Role.location_manager (user.Sihl_user.id |> Common.Id.of_string))
       | Operator ->
+        let%lwt _ = Repo.insert (Operator person) in
         Permission.assign
           user
-          (Role.operator (user.Sihl_user.id |> Id.of_string))
+          (Role.operator (user.Sihl_user.id |> Common.Id.of_string))
     in
-    Repo.insert user
+    Lwt.return_unit
   | AssistantEvents event -> handle_person_event event
   | ExperimenterEvents event -> handle_person_event event
   | LocationManagerEvents event -> handle_person_event event

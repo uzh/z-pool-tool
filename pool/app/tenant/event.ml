@@ -6,12 +6,21 @@ type create =
   ; description : Description.t
   ; url : Url.t
   ; database : Database.t
-  ; smtp_auth : SmtpAuth.t
+  ; smtp_auth : SmtpAuth.Write.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; default_language : Settings.Language.t
+  }
+[@@deriving eq, show]
+
+type smtp_auth_update =
+  { server : SmtpAuth.Server.t
+  ; port : SmtpAuth.Port.t
+  ; username : SmtpAuth.Username.t
+  ; authentication_method : SmtpAuth.AuthenticationMethod.t
+  ; protocol : SmtpAuth.Protocol.t
   }
 [@@deriving eq, show]
 
@@ -19,12 +28,11 @@ type update =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
-  ; smtp_auth : SmtpAuth.t
+  ; smtp_auth : smtp_auth_update
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogo.t
+  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }
@@ -35,83 +43,106 @@ let equal_operator_event (t1, o1) (t2, o2) =
 ;;
 
 type event =
-  | Added of create [@equal equal]
-  | Edited of t * update
+  | Created of create [@equal equal]
+  | DetailsEdited of Write.t * update
+  | DatabaseEdited of Write.t * Database.t
   | Destroyed of Id.t
-  | Disabled of t
-  | Enabled of t
-  | ActivateMaintenance of t
-  | DeactivateMaintenance of t
-  | OperatorAssigned of t * Admin.operator Admin.t
-  | OperatorDivested of t * Admin.operator Admin.t
+  | ActivateMaintenance of Write.t
+  | DeactivateMaintenance of Write.t
+  | OperatorAssigned of Id.t * Admin.operator Admin.t
+  | OperatorDivested of Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
 let handle_event : event -> unit Lwt.t = function
-  | Added m ->
-    create
-      m.title
-      m.description
-      m.url
-      m.database
-      m.smtp_auth
-      m.styles
-      m.icon
-      m.logos
-      m.partner_logos
-      m.default_language
-    |> Repo.insert
-  | Edited (tenant, update_t) ->
-    { tenant with
-      title = update_t.title
-    ; description = update_t.description
-    ; url = update_t.url
-    ; database = update_t.database
-    ; smtp_auth = update_t.smtp_auth
-    ; styles = update_t.styles
-    ; icon = update_t.icon
-    ; logos = update_t.logos
-    ; partner_logos = update_t.partner_logos
-    ; disabled = update_t.disabled
-    ; default_language = update_t.default_language
-    ; updated_at = Ptime_clock.now ()
-    }
-    |> Repo.update
+  | Created m ->
+    let%lwt _ =
+      Entity.Write.create
+        m.title
+        m.description
+        m.url
+        m.database
+        m.smtp_auth
+        m.styles
+        m.icon
+        m.logos
+        m.partner_logos
+        m.default_language
+      |> Repo.insert
+    in
+    Lwt.return_unit
+  | DetailsEdited (tenant, update_t) ->
+    let open Entity.Write in
+    let smtp_auth =
+      SmtpAuth.Write.
+        { tenant.smtp_auth with
+          server = update_t.smtp_auth.server
+        ; port = update_t.smtp_auth.port
+        ; username = update_t.smtp_auth.username
+        ; protocol = update_t.smtp_auth.protocol
+        }
+    in
+    let%lwt _ =
+      let tenant =
+        { tenant with
+          title = update_t.title
+        ; description = update_t.description
+        ; url = update_t.url
+        ; smtp_auth
+        ; styles = update_t.styles
+        ; icon = update_t.icon
+        ; logos = update_t.logos
+        ; partner_logos = update_t.partner_logos
+        ; disabled = update_t.disabled
+        ; default_language = update_t.default_language
+        ; updated_at = Ptime_clock.now ()
+        }
+      in
+      Repo.update tenant
+    in
+    Lwt.return_unit
+  | DatabaseEdited (tenant, database) ->
+    let open Entity.Write in
+    let%lwt _ =
+      { tenant with database; updated_at = Ptime_clock.now () } |> Repo.update
+    in
+    Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
-  | Disabled tenant ->
-    let disabled = true |> Disabled.create in
-    { tenant with disabled } |> Repo.update
-  | Enabled tenant ->
-    let disabled = false |> Disabled.create in
-    { tenant with disabled } |> Repo.update
   | ActivateMaintenance tenant ->
+    let open Entity.Write in
     let maintenance = true |> Maintenance.create in
-    { tenant with maintenance } |> Repo.update
+    let%lwt _ = { tenant with maintenance } |> Repo.update in
+    Lwt.return_unit
   | DeactivateMaintenance tenant ->
+    let open Entity.Write in
     let maintenance = false |> Maintenance.create in
-    { tenant with maintenance } |> Repo.update
-  | OperatorAssigned (tenant, user) ->
-    Permission.assign (Admin.user user) (Role.operator tenant.id)
-  | OperatorDivested (tenant, user) ->
-    Permission.divest (Admin.user user) (Role.operator tenant.id)
+    let%lwt _ = { tenant with maintenance } |> Repo.update in
+    Lwt.return_unit
+  | OperatorAssigned (tenant_id, user) ->
+    Permission.assign (Admin.user user) (Role.operator tenant_id)
+  | OperatorDivested (tenant_id, user) ->
+    Permission.divest (Admin.user user) (Role.operator tenant_id)
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
-  | Added one, Added two -> equal_create one two
-  | Edited (tenant_one, update_one), Edited (tenant_two, update_two) ->
-    equal tenant_one tenant_two && equal_update update_one update_two
+  | Created one, Created two -> equal_create one two
+  | ( DetailsEdited (tenant_one, update_one)
+    , DetailsEdited (tenant_two, update_two) ) ->
+    Write.equal tenant_one tenant_two && equal_update update_one update_two
+  | ( DatabaseEdited (tenant_one, database_one)
+    , DatabaseEdited (tenant_two, database_two) ) ->
+    Write.equal tenant_one tenant_two
+    && Database.equal database_one database_two
   | Destroyed one, Destroyed two ->
     String.equal (one |> Id.show) (two |> Id.show)
-  | Enabled one, Enabled two
-  | Disabled one, Disabled two
   | ActivateMaintenance one, ActivateMaintenance two
-  | DeactivateMaintenance one, DeactivateMaintenance two -> equal one two
-  | ( OperatorAssigned (tenant_one, user_one)
-    , OperatorAssigned (tenant_two, user_two) )
-  | ( OperatorDivested (tenant_one, user_one)
-    , OperatorDivested (tenant_two, user_two) ) ->
-    equal tenant_one tenant_two
+  | DeactivateMaintenance one, DeactivateMaintenance two -> Write.equal one two
+  | ( OperatorAssigned (tenant_id_one, user_one)
+    , OperatorAssigned (tenant_id_two, user_two) )
+  | ( OperatorDivested (tenant_id_one, user_one)
+    , OperatorDivested (tenant_id_two, user_two) ) ->
+    CCString.equal (tenant_id_one |> Id.value) (tenant_id_two |> Id.value)
     && String.equal
          (Admin.user user_one).Sihl_user.id
          (Admin.user user_two).Sihl_user.id
@@ -120,15 +151,17 @@ let[@warning "-4"] equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | Added m -> pp_create formatter m
-  | Edited (tenant, update) ->
-    let () = pp formatter tenant in
+  | Created m -> pp_create formatter m
+  | DetailsEdited (tenant, update) ->
+    let () = Write.pp formatter tenant in
     pp_update formatter update
+  | DatabaseEdited (tenant, database) ->
+    let () = Write.pp formatter tenant in
+    Database.pp formatter database
   | Destroyed m -> Id.pp formatter m
-  | Disabled m | Enabled m | ActivateMaintenance m | DeactivateMaintenance m ->
-    pp formatter m
-  | OperatorAssigned (tenant, user) | OperatorDivested (tenant, user) ->
-    let () = pp formatter tenant in
+  | ActivateMaintenance m | DeactivateMaintenance m -> Write.pp formatter m
+  | OperatorAssigned (tenant_id, user) | OperatorDivested (tenant_id, user) ->
+    let () = Id.pp formatter tenant_id in
     Admin.pp formatter user
   | StatusReportGenerated () -> Utils.todo ()
 ;;

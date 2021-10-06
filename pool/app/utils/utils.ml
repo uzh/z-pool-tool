@@ -16,3 +16,9 @@ module Lwt_result = struct
     let ( >|> ) = Lwt.bind
   end
 end
+
+let handle_conformist_error (err : Conformist.error list) =
+  String.concat
+    "\n"
+    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
+;;

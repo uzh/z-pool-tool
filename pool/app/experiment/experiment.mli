@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module Location : sig
   module Room : sig
     type t
@@ -45,7 +47,7 @@ module Location : sig
   end
 
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; room : Room.t
     ; building : Building.t
     ; street : Street.t
@@ -87,7 +89,7 @@ module ExperimentDate : sig
 end
 
 type t =
-  { id : Pool_common.Id.t
+  { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; created_at : Ptime.t
@@ -97,7 +99,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val create : ?id:Pool_common.Id.t -> Title.t -> Description.t -> unit -> t
+val create : ?id:Id.t -> Title.t -> Description.t -> unit -> t
 
 type create =
   { title : Title.t

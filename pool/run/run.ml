@@ -1,5 +1,9 @@
-let migrations = []
-let commands = []
+let migrations =
+  let open Database.Migration in
+  [ tenant (); person () ]
+;;
+
+let commands = [ Command.Tenant.create_tenant; Command.Seed.seed_data ]
 
 let services =
   [ Sihl.Database.register ()
