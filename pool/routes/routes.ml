@@ -35,8 +35,13 @@ module Participant = struct
   let routes =
     [ get "/signup" Handler.Participant.sign_up
     ; post "/signup" Handler.Participant.sign_up_create
+    ; get "/dashboard" Handler.Participant.dashboard
     ]
   ;;
+end
+
+module Admin = struct
+  let routes = [ get "/dashboard" Handler.Admin.dashboard ]
 end
 
 module Root = struct
@@ -58,6 +63,7 @@ end
 let router =
   choose
     [ choose Public.routes
+    ; choose ~scope:"/admin" Admin.routes
     ; choose ~scope:"/participant" Participant.routes
     ; choose ~scope:"/root" Root.routes
     ; get "/**" Handler.Public.not_found

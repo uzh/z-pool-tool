@@ -10,8 +10,8 @@ let dashboard_path tenant_db user =
   let* is_admin = Admin.user_is_admin tenant_db user in
   Lwt_result.ok
   @@ ((match is_admin with
-      | true -> "/root/tenants"
-      | false -> "/")
+      | true -> "/admin/dashboard"
+      | false -> "/participant/dashboard")
      |> Lwt.return)
 ;;
 
@@ -80,6 +80,7 @@ let login_post req =
   result |> HttpUtils.extract_happy_path
 ;;
 
+(* TODO [timhub]: create middleware or combine get functions *)
 let request_reset_password_get req =
   let open Lwt_result.Infix in
   let%lwt user = Service.User.Web.user_from_session req in
