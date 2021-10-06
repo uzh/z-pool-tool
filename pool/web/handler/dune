@@ -3,10 +3,12 @@
  (libraries
   sihl
   service
-  participant
   cqrs_command
   http_utils
   page
-  pool_common)
+  pool_common
+  participant
+  email
+  middleware)
  (preprocess
   (pps lwt_ppx)))

@@ -72,8 +72,10 @@ let create_operator req =
     >>= CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant
     |> Lwt_result.lift
   in
-  let handle =
-    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
+  let handle events =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt.return_ok
   in
   let return_to_overview =
     Http_utils.redirect_to_with_actions

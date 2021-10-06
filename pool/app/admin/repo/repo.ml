@@ -111,9 +111,12 @@ module Sql = struct
     |> Caqti_request.find Caqti_type.string Caqti_type.string
   ;;
 
-  let find_role_by_user user =
+  let find_role_by_user pool user =
     let open Lwt_result.Infix in
-    Utils.Database.find find_role_by_user_request user.Sihl.Contract.User.id
+    Utils.Database.find
+      (pool |> Pool_common.Database.Label.value)
+      find_role_by_user_request
+      user.Sihl.Contract.User.id
     >|= Utils.Stringify.person_from_string
   ;;
 

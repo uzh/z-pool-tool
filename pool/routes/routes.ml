@@ -22,6 +22,11 @@ module Public = struct
     ; get
         "/request-reset-password"
         Handler.Public.Login.request_reset_password_get
+    ; post
+        "/request-reset-password"
+        Handler.Public.Login.request_reset_password_post
+    ; get "/reset-password" Handler.Public.Login.reset_password_get
+    ; post "/reset-password" Handler.Public.Login.reset_password_post
     ]
   ;;
 end

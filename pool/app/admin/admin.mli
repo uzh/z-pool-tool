@@ -91,5 +91,10 @@ module Duplicate = Admin__Entity.Duplicate
 
 val login : 'a -> email:'b -> password:'c -> 'd
 val find_by_user : 'a -> 'b
-val user_is_admin : Sihl_user.t -> (bool, string) result Lwt.t
+
+val user_is_admin
+  :  Pool_common.Database.Label.t
+  -> Sihl_user.t
+  -> (bool, string) result Lwt.t
+
 val find_duplicates : 'a -> 'b

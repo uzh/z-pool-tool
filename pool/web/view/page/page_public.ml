@@ -43,3 +43,23 @@ let request_reset_password csrf message () =
   in
   Page_layout.create html message ()
 ;;
+
+let reset_password csrf message token () =
+  let html =
+    div
+      [ h1 [ txt "Reset Password" ]
+      ; form
+          ~a:
+            [ a_action (Sihl.Web.externalize_path "/reset-password")
+            ; a_method `Post
+            ]
+          [ Component.csrf_element csrf ()
+          ; input_element `Hidden (Some "token") token
+          ; input_element `Password (Some "password") ""
+          ; input_element `Password (Some "password_confirmation") ""
+          ; input_element `Submit None "Set new password"
+          ]
+      ]
+  in
+  Page_layout.create html message ()
+;;
