@@ -81,22 +81,15 @@ let user_email_exists email =
 
 let format_request_boolean_values values urlencoded =
   let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
-  let values =
-    values
-    |> CCList.map (fun k -> k, [ "false" ])
-    |> CCList.to_seq
-    |> StringMap.of_seq
+  let update m k =
+    StringMap.update
+      k
+      (function
+        | None -> Some [ "false" ]
+        | Some _ -> Some [ "true" ])
+      m
   in
-  StringMap.merge
-    (fun _ x y ->
-      match x, y with
-      | Some _, Some _ -> Some [ "true" ]
-      | Some x, _ -> Some x
-      | _ -> Some [ "false" ])
-    urlencoded
-    values
-  |> StringMap.to_seq
-  |> CCList.of_seq
+  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
