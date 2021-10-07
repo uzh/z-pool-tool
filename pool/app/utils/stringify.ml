@@ -5,4 +5,5 @@ let person = function
   | `LocationManager -> "location_manager"
   | `Recruiter -> "recruiter"
   | `Operator -> "operator"
+  | `Root -> "root"
 ;;

@@ -9,6 +9,7 @@
   settings
   participant
   admin
+  root
   common_user
   tenant
   experiment

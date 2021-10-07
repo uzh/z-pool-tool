@@ -38,7 +38,7 @@ let handle_event : event -> unit Lwt.t = function
     -> Permission.divest (Admin.user user) (Role.operator experiment.id)
 ;;
 
-let equal_event event1 event2 =
+let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | ExperimentAdded one, ExperimentAdded two -> equal_create one two
   | ( ExperimentEdited (experiment_one, update_one)

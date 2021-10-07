@@ -1,7 +1,7 @@
 module Token = struct
   type t = string [@@deriving eq, show]
 
-  let t = Caqti_type.string
+  let create m = m
 end
 
 module Address = struct
@@ -47,6 +47,7 @@ module Address = struct
   ;;
 
   let validate = validate_suffix
+  let value m = m
   let create email = email |> remove_whitespaces |> validate_characters
 
   let schema () =

@@ -15,7 +15,7 @@ end = struct
     ; description : Experiment.Description.t
     }
 
-  let handle command =
+  let handle (command : t) =
     let create : Experiment.create =
       { title = command.title; description = command.description }
     in

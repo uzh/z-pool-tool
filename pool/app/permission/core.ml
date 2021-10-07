@@ -18,7 +18,7 @@ type permission =
   | Manage of (thing * Id.t option)
 [@@deriving eq, show]
 
-let explode_permission = function
+let[@warning "-4"] explode_permission = function
   | Manage (thing, id) ->
     [ Create thing
     ; Read (thing, id)
