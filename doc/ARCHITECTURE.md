@@ -192,8 +192,6 @@ This section describes the big picture of the software containers & components a
 
 ### Container diagram
 
-![Overview of software containers](doc/images/container.svg "Container diagram")
-
 ![Overview of software containers](doc/images/overview.drawio.svg "Container diagram")
 
 See the section "User types".
