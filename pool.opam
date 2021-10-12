@@ -19,6 +19,8 @@ depends: [
   "sihl" {>= "2.0.0"}
   "sihl-user" {>= "2.0.0"}
   "sihl-token" {>= "2.0.0"}
+  "sihl-email" {>= "2.0.0"}
+  "sihl-queue" {>= "2.0.0"}
   "lwt" {>= "5.4.1"}
   "containers" {>= "3.4"}
   "caqti-driver-mariadb" {>= "1.6.0"}
