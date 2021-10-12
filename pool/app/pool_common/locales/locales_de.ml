@@ -14,6 +14,7 @@ let field_to_string = function
   | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
   | Host -> "Host"
+  | I18n -> "Übersetzung"
   | Icon -> "Icon"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"

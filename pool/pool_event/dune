@@ -11,6 +11,7 @@
   pool_tenant
   tenant
   experiment
-  settings)
+  settings
+  i18n)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

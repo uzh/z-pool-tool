@@ -1,12 +1,52 @@
-module Update : sig
-  type t = { new_settings : (string * string) list }
+module Create : sig
+  type t =
+    { key : I18n.Key.t
+    ; language : Pool_common.Language.t
+    ; content : I18n.Content.t
+    }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Pool_database.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
 end = struct
-  type t = { new_settings : (string * string) list }
+  type t =
+    { key : I18n.Key.t
+    ; language : Pool_common.Language.t
+    ; content : I18n.Content.t
+    }
 
-  let handle = Utils.todo
+  let command key language content = { key; language; content }
+
+  let schema =
+    Conformist.(
+      make
+        Field.
+          [ I18n.Key.schema ()
+          ; Pool_common.Language.schema ()
+          ; I18n.Content.schema ()
+          ]
+        command)
+  ;;
+
+  let handle (command : t) =
+    let property : I18n.create =
+      I18n.
+        { key = command.key
+        ; language = command.language
+        ; content = command.content
+        }
+    in
+    Ok [ I18n.Created property |> Pool_event.i18n ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 
   let can
       : type admin. Pool_database.Label.t -> admin Admin.t -> t -> bool Lwt.t

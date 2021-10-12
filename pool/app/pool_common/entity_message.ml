@@ -22,6 +22,7 @@ type field =
   | Filesize
   | Firstname
   | Host
+  | I18n
   | Icon
   | InactiveUserDisableAfter
   | InactiveUserWarning
