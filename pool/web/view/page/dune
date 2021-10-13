@@ -10,4 +10,5 @@
   pool_tenant
   tenant
   root
+  i18n
   utils))

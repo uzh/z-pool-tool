@@ -34,7 +34,11 @@ type create =
   ; content : Content.t
   }
 
-type event = Created of create
+type edit = { content : Content.t }
+
+type event =
+  | Created of create
+  | Edited of Property.t * edit
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

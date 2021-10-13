@@ -12,7 +12,7 @@ module Sql = struct
             SUBSTR(HEX(uuid), 17, 4), '-',
             SUBSTR(HEX(uuid), 21)
           )),
-          key,
+          i18n_key,
           language,
           content
         FROM pool_i18n
@@ -73,10 +73,26 @@ module Sql = struct
   let insert db_pool =
     Utils.Database.exec (Pool_database.Label.value db_pool) insert_request
   ;;
+
+  let update_request =
+    {sql|
+      UPDATE pool_i18n
+      SET
+        i18n_key = $2,
+        language = $3,
+        content = $4
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+    |> Caqti_request.exec RepoEntity.t
+  ;;
+
+  let update db_pool =
+    Utils.Database.exec (Pool_database.Label.value db_pool) update_request
+  ;;
 end
 
 let find = Sql.find
 let find_all = Sql.find_all
 let insert = Sql.insert
-let update = Utils.todo
-let delete = Utils.todo
+let update = Sql.update

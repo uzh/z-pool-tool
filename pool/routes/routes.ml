@@ -61,11 +61,12 @@ module Admin = struct
   ;;
 
   let routes =
-    Handler.Admin.
-      [ get "/dashboard" dashboard
-      ; get "/settings" Settings.show
-      ; post "/settings/:action" Settings.update_settings
-      ]
+    [ get "/dashboard" Handler.Admin.dashboard
+    ; get "/settings" Handler.Admin.Settings.show
+    ; post "/settings/:action" Handler.Admin.Settings.update_settings
+    ; get "/i18n" Handler.Admin.I18n.index
+    ; post "/i18n/:id/update" Handler.Admin.I18n.update
+    ]
   ;;
 end
 

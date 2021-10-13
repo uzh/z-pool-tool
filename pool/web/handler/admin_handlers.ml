@@ -1,3 +1,4 @@
+module I18n = Admin_i18n
 module Message = Http_utils.Message
 module Settings = Admin_settings
 
