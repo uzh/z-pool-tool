@@ -60,6 +60,9 @@ module SmtpAuth : sig
     ; protocol : Protocol.t
     }
 
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+
   module Write : sig
     type t =
       { server : Server.t

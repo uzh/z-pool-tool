@@ -25,6 +25,29 @@ module Data = struct
   let lastname = "Ötzi"
 end
 
+let create_smtp_auth () =
+  let open Data in
+  let open Tenant.SmtpAuth in
+  let smtp_auth =
+    let ( let* ) = Result.bind in
+    let* server = smtp_auth_server |> Server.create in
+    let* port = smtp_auth_port |> Port.create in
+    let* username = smtp_auth_username |> Username.create in
+    let* authentication_method =
+      smtp_auth_authentication_method |> AuthenticationMethod.create
+    in
+    let* protocol = "http" |> Protocol.create in
+    Ok { server; port; username; authentication_method; protocol }
+  in
+  let expected = Error "Invalid SMTP protocol!" in
+  Alcotest.(
+    check
+      (result Test_utils.tenant_smtp_auth string)
+      "succeeds"
+      expected
+      smtp_auth)
+;;
+
 let create_tenant () =
   let open Data in
   let events =
