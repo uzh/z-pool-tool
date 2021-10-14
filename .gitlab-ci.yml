@@ -93,6 +93,10 @@ compile-and-test:
       - _build/default/pool/run/run.exe
       - _build/default/pool/test/
   script:
+    # update defalt opam repository (find latest package versions)
+    - opam remote remove --all default
+    - opam remote add default https://opam.ocaml.org
+
     # pin payout and install system dependencies
     - opam pin add -yn pool .
     - OPAMSOLVERTIMEOUT=180 opam depext -y pool

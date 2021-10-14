@@ -21,16 +21,16 @@ type event =
   | AssistantAssigned of t * Admin.assistant Admin.t
   | AssistantDivested of t * Admin.assistant Admin.t
 
-let handle_event : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t = function
   | ExperimentAdded create_t ->
-    create create_t.title create_t.description |> Repo.insert
+    create create_t.title create_t.description |> Repo.insert pool
   | ExperimentEdited (experiment, update_t) ->
     { experiment with
       title = update_t.title
     ; description = update_t.description
     }
-    |> Repo.update
-  | ExperimentDestroyed experiment -> Repo.destroy experiment
+    |> Repo.update pool
+  | ExperimentDestroyed experiment -> Repo.destroy pool experiment
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     Permission.divest (Admin.user user) (Role.operator experiment.id)
@@ -58,15 +58,15 @@ let pp_event formatter event =
   match event with
   | ExperimentAdded m -> pp_create formatter m
   | ExperimentEdited (experiment, update) ->
-    let () = pp formatter experiment in
+    pp formatter experiment;
     pp_update formatter update
   | ExperimentDestroyed m -> pp formatter m
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
-    let () = pp formatter experiment in
+    pp formatter experiment;
     Admin.pp formatter user
   | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
     ->
-    let () = pp formatter experiment in
+    pp formatter experiment;
     Admin.pp formatter user
 ;;

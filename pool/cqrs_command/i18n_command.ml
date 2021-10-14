@@ -9,8 +9,7 @@ end = struct
   let handle = Utils.todo
 
   let can user _ =
-    let open Lwt.Syntax in
-    let* tenant = Tenant.find_by_user user in
+    let%lwt tenant = Tenant.find_by_user user in
     Permission.can
       user
       ~any_of:[ Permission.Update (Permission.Tenant, Some tenant) ]

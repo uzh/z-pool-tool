@@ -45,7 +45,7 @@ end = struct
   ;;
 
   let handle ?allowed_email_suffixes ?password_policy command =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Common_user.Email.Address.validate allowed_email_suffixes command.email

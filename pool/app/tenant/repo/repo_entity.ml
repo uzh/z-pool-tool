@@ -1,7 +1,6 @@
 open Entity
 module Common = Pool_common
 module SmtpAuth = Repo_entity_smtp_auth
-module Database = Repo_entity_database
 
 module Title = struct
   include Title
@@ -91,7 +90,7 @@ let t =
                             , (default_language, (created_at, updated_at)) ) )
                         ) ) ) ) ) ) ) ) ) )
     =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = Title.create title in
     let* description = Description.create description in
     let* url = Url.create url in
@@ -99,7 +98,6 @@ let t =
     let* icon = Icon.create icon in
     let* logos = Logos.create logos in
     let* partner_logos = PartnerLogos.create partner_logos in
-    let* database_label = Database.Label.create database_label in
     Ok
       { id = Id.of_string id
       ; title
@@ -131,7 +129,7 @@ let t =
                (tup2
                   Url.t
                   (tup2
-                     Database.Label.t
+                     Common.Repo.Database.Label.t
                      (tup2
                         SmtpAuth.t
                         (tup2
@@ -191,7 +189,7 @@ module Write = struct
                               , (default_language, (created_at, updated_at)) )
                             ) ) ) ) ) ) ) ) ) ) )
       =
-      let ( let* ) = Result.bind in
+      let open CCResult in
       let* title = Title.create title in
       let* description = Description.create description in
       let* url = Url.create url in
@@ -230,7 +228,7 @@ module Write = struct
                  (tup2
                     Url.t
                     (tup2
-                       Database.t
+                       Common.Repo.Database.t
                        (tup2
                           SmtpAuth.Write.t
                           (tup2

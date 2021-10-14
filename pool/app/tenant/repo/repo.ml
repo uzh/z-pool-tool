@@ -1,4 +1,5 @@
 module RepoEntity = Repo_entity
+module Label = Pool_common.Database.Label
 
 module Sql = struct
   let update_request =
@@ -31,7 +32,7 @@ module Sql = struct
     |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let update = Utils.Database.exec update_request
+  let update pool = Utils.Database.exec pool update_request
 
   let select_from_tenants_sql where_fragment full =
     let database_fragment =
@@ -98,11 +99,6 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_all_request =
-    select_from_tenants_sql "" false
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.t
-  ;;
-
   let find_fragment =
     {sql|
       WHERE pool_tenant.uuid = UNHEX(REPLACE(?, '-', ''))
@@ -114,19 +110,40 @@ module Sql = struct
     |> Caqti_request.find Caqti_type.string RepoEntity.t
   ;;
 
+  let find pool id =
+    Utils.Database.find pool find_request (id |> Pool_common.Id.value)
+  ;;
+
   let find_full_request =
     select_from_tenants_sql find_fragment true
     |> Caqti_request.find Caqti_type.string RepoEntity.Write.t
   ;;
 
-  let find_all = Utils.Database.collect find_all_request
-  let find id = Utils.Database.find find_request (id |> Pool_common.Id.value)
-
-  let find_full id =
-    Utils.Database.find find_full_request (id |> Pool_common.Id.value)
+  let find_full pool id =
+    Utils.Database.find pool find_full_request (id |> Pool_common.Id.value)
   ;;
 
-  let insert_sql =
+  let find_all_request =
+    select_from_tenants_sql "" false
+    |> Caqti_request.collect Caqti_type.unit RepoEntity.t
+  ;;
+
+  let find_all pool = Utils.Database.collect pool find_all_request
+
+  let find_databases_request =
+    {sql|
+        SELECT
+          database_url,
+          database_label
+        FROM pool_tenant
+        WHERE NOT disabled
+      |sql}
+    |> Caqti_request.collect Caqti_type.unit Pool_common.Repo.Database.t
+  ;;
+
+  let find_databases pool = Utils.Database.collect pool find_databases_request
+
+  let insert_request =
     {sql|
       INSERT INTO pool_tenant (
         uuid,
@@ -174,15 +191,20 @@ module Sql = struct
         ?
       );
     |sql}
+    |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let insert_request = Caqti_request.exec RepoEntity.Write.t insert_sql
-  let insert = Utils.Database.exec insert_request
+  let insert pool = Utils.Database.exec pool insert_request
 end
 
-let find = Sql.find
-let find_full = Sql.find_full
-let find_all = Sql.find_all
-let insert = Sql.insert
-let update : Entity.Write.t -> (unit, string) result Lwt.t = Sql.update
+let find pool = Sql.find (Label.value pool)
+let find_full pool = Sql.find_full (Label.value pool)
+let find_all pool = Sql.find_all (Label.value pool)
+let find_databases pool = Sql.find_databases (Label.value pool)
+let insert pool = Sql.insert (Label.value pool)
+
+let update pool : Entity.Write.t -> (unit, string) result Lwt.t =
+  Sql.update (Label.value pool)
+;;
+
 let destroy = Utils.todo

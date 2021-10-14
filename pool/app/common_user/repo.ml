@@ -41,8 +41,8 @@ module Email = struct
     Caqti_type.(custom ~encode ~decode (tup2 string ptime))
   ;;
 
-  let insert = Utils.todo
-  let update = Utils.todo
+  let insert _ = Utils.todo
+  let update _ = Utils.todo
 end
 
 let user_caqti =

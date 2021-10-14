@@ -26,7 +26,7 @@ module RecruitmentChannel = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string)
+      (Utils.schema_decoder of_string "recruitment channel")
       (fun l -> [ to_string l ])
       "recruitment_channel"
   ;;

@@ -1,5 +1,6 @@
 open Entity
 module Id = Pool_common.Id
+module Database = Pool_common.Database
 
 type create =
   { title : Title.t
@@ -53,7 +54,7 @@ type event =
   | OperatorDivested of Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
-let handle_event : event -> unit Lwt.t = function
+let handle_event _ : event -> unit Lwt.t = function
   | Created m ->
     let%lwt _ =
       Entity.Write.create
@@ -67,7 +68,7 @@ let handle_event : event -> unit Lwt.t = function
         m.logos
         m.partner_logos
         m.default_language
-      |> Repo.insert
+      |> Repo.insert Database.root
     in
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
@@ -97,25 +98,26 @@ let handle_event : event -> unit Lwt.t = function
         ; updated_at = Ptime_clock.now ()
         }
       in
-      Repo.update tenant
+      Repo.update Database.root tenant
     in
     Lwt.return_unit
   | DatabaseEdited (tenant, database) ->
     let open Entity.Write in
     let%lwt _ =
-      { tenant with database; updated_at = Ptime_clock.now () } |> Repo.update
+      { tenant with database; updated_at = Ptime_clock.now () }
+      |> Repo.update Database.root
     in
     Lwt.return_unit
   | Destroyed tenant_id -> Repo.destroy tenant_id
   | ActivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = true |> Maintenance.create in
-    let%lwt _ = { tenant with maintenance } |> Repo.update in
+    let%lwt _ = { tenant with maintenance } |> Repo.update Database.root in
     Lwt.return_unit
   | DeactivateMaintenance tenant ->
     let open Entity.Write in
     let maintenance = false |> Maintenance.create in
-    let%lwt _ = { tenant with maintenance } |> Repo.update in
+    let%lwt _ = { tenant with maintenance } |> Repo.update Database.root in
     Lwt.return_unit
   | OperatorAssigned (tenant_id, user) ->
     Permission.assign (Admin.user user) (Role.operator tenant_id)
@@ -153,15 +155,15 @@ let pp_event formatter event =
   match event with
   | Created m -> pp_create formatter m
   | DetailsEdited (tenant, update) ->
-    let () = Write.pp formatter tenant in
+    Write.pp formatter tenant;
     pp_update formatter update
   | DatabaseEdited (tenant, database) ->
-    let () = Write.pp formatter tenant in
+    Write.pp formatter tenant;
     Database.pp formatter database
   | Destroyed m -> Id.pp formatter m
   | ActivateMaintenance m | DeactivateMaintenance m -> Write.pp formatter m
   | OperatorAssigned (tenant_id, user) | OperatorDivested (tenant_id, user) ->
-    let () = Id.pp formatter tenant_id in
+    Id.pp formatter tenant_id;
     Admin.pp formatter user
   | StatusReportGenerated () -> Utils.todo ()
 ;;

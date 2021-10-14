@@ -33,8 +33,8 @@ module Language = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string)
-      (fun l -> [ show l ])
+      (Utils.schema_decoder of_string "default language")
+      (fun l -> [ code l ])
       "default_language"
   ;;
 end

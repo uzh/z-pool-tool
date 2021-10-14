@@ -13,4 +13,6 @@
   common_user
   tenant
   experiment
-  conformist))
+  conformist)
+ (preprocess
+  (pps lwt_ppx)))

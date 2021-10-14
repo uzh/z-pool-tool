@@ -1,6 +1,14 @@
 (library
  (name database)
- (libraries sihl service participant tenant common_user utils cqrs_command)
+ (libraries
+  sihl
+  service
+  participant
+  tenant
+  common_user
+  utils
+  cqrs_command
+  conformist)
  (preprocess
   (pps lwt_ppx)))
 

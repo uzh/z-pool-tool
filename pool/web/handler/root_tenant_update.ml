@@ -29,9 +29,8 @@ let update req command success_message =
     |> CCResult.map_err (fun err -> err, redirect_path)
     |> Lwt_result.lift
   in
-  let handle events =
-    let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-    Lwt.return_ok ()
+  let handle =
+    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
   in
   let return_to_overview =
     Http_utils.redirect_to_with_actions
@@ -41,7 +40,7 @@ let update req command success_message =
   ()
   |> tenant
   >>= events
-  >|= handle
+  |>> handle
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path
 ;;

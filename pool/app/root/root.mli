@@ -16,7 +16,7 @@ type event =
   | Disabled of t
   | Enabled of t
 
-val handle_event : event -> unit Lwt.t
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val user : t -> Sihl_user.t

@@ -7,26 +7,27 @@ module Email = struct
     | UpdatedVerified of Email.verified Email.t * Email.Address.t
     | Verified of Email.unverified Email.t
 
-  let handle_event : event -> unit Lwt.t =
-    let open Lwt.Syntax in
+  let handle_event pool : event -> unit Lwt.t =
     let open Lwt.Infix in
     let create_email address =
-      let* token =
-        Service.Token.create [ "email", Email.Address.show address ]
+      let%lwt token =
+        Service.Token.create
+          ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+          [ "email", Email.Address.show address ]
         >|= Email.Token.create
       in
-      Repo.Email.insert @@ Email.create address token
+      Repo.Email.insert pool @@ Email.create address token
     in
     function
     | Created address -> create_email address
     | UpdatedUnverified (Email.Unverified email, new_address) ->
-      let* () = Service.Token.deactivate email.Email.token in
+      let%lwt () = Service.Token.deactivate email.Email.token in
       create_email new_address
     | UpdatedVerified (Email.Verified _, new_address) ->
       create_email new_address
     | Verified (Email.(Unverified { token; _ }) as email) ->
-      let* () = Service.Token.deactivate token in
-      Repo.Email.update @@ Email.verify email
+      let%lwt () = Service.Token.deactivate token in
+      Repo.Email.update pool @@ Email.verify email
   ;;
 
   let[@warning "-4"] equal_event (one : event) (two : event) : bool =
@@ -45,10 +46,10 @@ module Email = struct
     match event with
     | Created m -> pp_address m
     | UpdatedUnverified (m, p) ->
-      let () = Email.pp formatter m in
+      Email.pp formatter m;
       pp_address p
     | UpdatedVerified (m, p) ->
-      let () = Email.pp formatter m in
+      Email.pp formatter m;
       pp_address p
     | Verified m -> Email.pp formatter m
   ;;

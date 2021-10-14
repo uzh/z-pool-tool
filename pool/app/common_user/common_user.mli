@@ -157,56 +157,26 @@ end
 
 module Repo : sig
   module Paused : sig
-    type t = Paused.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> bool
-    val create : bool -> t
     val t : bool Caqti_type.t
   end
 
   module Disabled : sig
-    type t = Disabled.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> bool
-    val create : bool -> t
     val t : bool Caqti_type.t
   end
 
   module TermsAccepted : sig
-    type t = TermsAccepted.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : t
-    val value : t -> Ptime.t
     val t : Ptime.t Caqti_type.t
   end
 
   module Verified : sig
-    type t = Verified.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : t
-    val value : t -> Ptime.t
     val t : Ptime.t Caqti_type.t
   end
 
   module Email : sig
     val unverified_t : Entity_email.unverified Entity_email.t Caqti_type.t
     val verified_t : Entity_email.verified Entity_email.t Caqti_type.t
-    val insert : 'a -> 'b
-    val update : 'a -> 'b
+    val insert : Pool_common.Database.Label.t -> 'a -> 'b
+    val update : Pool_common.Database.Label.t -> 'a -> 'b
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t
@@ -222,7 +192,7 @@ module Event : sig
           Entity_email.verified Entity_email.t * Email.Address.t
       | Verified of Entity_email.unverified Entity_email.t
 
-    val handle_event : event -> unit Lwt.t
+    val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
     val equal_event : event -> event -> bool
     val pp_event : Format.formatter -> event -> unit
   end

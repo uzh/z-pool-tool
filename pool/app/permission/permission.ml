@@ -16,8 +16,7 @@ type can = Sihl_user.t -> any_of:Core.permission list -> bool Lwt.t
 
 let can : can =
  fun user ~any_of:any_of_these ->
-  let open Lwt.Syntax in
-  let* permissions = Repo.find_all_by_user user.Sihl_user.id in
+  let%lwt permissions = Repo.find_all_by_user user.Sihl_user.id in
   let intersection =
     (* TODO to improve performance, abort if one match was found *)
     CCList.inter ~eq:Core.equal_permission permissions any_of_these

@@ -24,10 +24,9 @@ let handle_events _ = Utils.todo
 
 let sign_up : handler =
  fun req ->
-  let open Lwt.Syntax in
   let tenant_db = Tenant_middleware.tenant_db_of_request req in
-  let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db in
-  let* urlencoded = urlencoded_of_request req in
+  let%lwt allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db in
+  let%lwt urlencoded = urlencoded_of_request req in
   let command = Command.SignUp.decode urlencoded in
   match command with
   | Ok command ->
@@ -36,7 +35,7 @@ let sign_up : handler =
       (fun conn ->
         match events with
         | Ok events ->
-          let* () = handle_events conn events in
+          let%lwt () = handle_events conn events in
           Lwt.return @@ response_of_redirect "/dashboard"
         | Error msg -> Lwt.return @@ response msg)
       tenant_db

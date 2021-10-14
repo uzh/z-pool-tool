@@ -1,15 +1,19 @@
 include Entity
 include Event
 
-let find id = Repo.find id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+let find id =
+  Repo.find Database.root id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+;;
 
 let find_full id =
-  Repo.find_full id |> Lwt_result.map_err (fun _ -> "No tenant found!")
+  Repo.find_full Database.root id
+  |> Lwt_result.map_err (fun _ -> "No tenant found!")
 ;;
 
 let find_by_participant = Utils.todo
 let find_by_user = Utils.todo
-let find_all = Repo.find_all
+let find_all = Repo.find_all Database.root
+let find_databases = Repo.find_databases Database.root
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

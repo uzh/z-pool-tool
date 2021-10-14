@@ -86,11 +86,10 @@ let create_tenant =
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.Create.handle
           in
-          let run_events events =
-            let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-            Lwt.return_ok ()
+          let run_events =
+            Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
           in
-          () |> run_command >>= run_events
+          () |> run_command |>> run_events
         in
         (match result with
         | Ok _ -> Lwt.return_some ()
