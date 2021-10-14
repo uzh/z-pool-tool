@@ -1,10 +1,14 @@
 module Root_command = Cqrs_command.Root_command
 
+module Data = struct
+  let email = "test@econ.uzh.ch"
+  let password = "sihlsihl"
+  let firstname = "Woofy"
+  let lastname = "Woofer"
+end
+
 let create_root () =
-  let email = "test@econ.uzh.ch" in
-  let password = "sihlsihl" in
-  let firstname = "Woofy" in
-  let lastname = "Woofer" in
+  let open Data in
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
@@ -30,10 +34,8 @@ let create_root () =
 ;;
 
 let create_root_with_invalid_password () =
-  let email = "test@econ.uzh.ch" in
+  let open Data in
   let password = "e" in
-  let firstname = "Woofy" in
-  let lastname = "Woofer" in
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
