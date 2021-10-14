@@ -19,6 +19,14 @@ let () =
             "create tenant with invalid smtp port"
             `Quick
             Tenant_test.create_tenant_invalid_smtp_port
+        ; test_case
+            "update tenant details"
+            `Quick
+            Tenant_test.update_tenant_details
+        ; test_case
+            "update tenant database"
+            `Quick
+            Tenant_test.update_tenant_database
         ] )
     ; ( "root"
       , [ test_case "create root" `Quick Root_test.create_root
