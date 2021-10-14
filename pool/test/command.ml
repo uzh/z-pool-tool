@@ -27,6 +27,7 @@ let () =
             "update tenant database"
             `Quick
             Tenant_test.update_tenant_database
+        ; test_case "create operator" `Quick Tenant_test.create_operator
         ] )
     ; ( "root"
       , [ test_case "create root" `Quick Root_test.create_root

@@ -1,4 +1,5 @@
 module Tenant_command = Cqrs_command.Tenant_command
+module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 
 module Data = struct
@@ -336,6 +337,89 @@ let update_tenant_database () =
       let* label = database_label |> Label.create in
       let database = { url; label } in
       Ok [ Tenant.DatabaseEdited (tenant, database) |> Pool_event.tenant ]
+    in
+    Alcotest.(
+      check (result (list Test_utils.event) string) "succeeds" expected events)
+;;
+
+let create_operator () =
+  let open Data in
+  let open Tenant in
+  let tenant =
+    let ( let* ) = Result.bind in
+    let* title = title |> Title.create in
+    let* description = description |> Description.create in
+    let* url = url |> Url.create in
+    let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
+    let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
+    let* smtp_auth_username = smtp_auth_username |> SmtpAuth.Username.create in
+    let* smtp_auth_password = smtp_auth_password |> SmtpAuth.Password.create in
+    let* smtp_auth_authentication_method =
+      smtp_auth_authentication_method |> SmtpAuth.AuthenticationMethod.create
+    in
+    let* smtp_auth_protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
+    let* smtp_auth =
+      SmtpAuth.Write.create
+        smtp_auth_server
+        smtp_auth_port
+        smtp_auth_username
+        smtp_auth_password
+        smtp_auth_authentication_method
+        smtp_auth_protocol
+    in
+    let* database_label = database_label |> Database.Label.create in
+    let* database_url = database_url |> Database.Url.create in
+    let* database = Database.create database_url database_label in
+    let* styles = styles |> Styles.create in
+    let* icon = icon |> Icon.create in
+    let* logos = logos |> Logos.create in
+    let* partner_logos = partner_logos |> PartnerLogos.create in
+    let disabled = false |> Disabled.create in
+    let maintenance = false |> Maintenance.create in
+    let* default_language = "EN" |> Settings.Language.of_string in
+    Ok
+      Write.
+        { id = Pool_common.Id.create ()
+        ; title
+        ; description
+        ; url
+        ; database
+        ; smtp_auth
+        ; styles
+        ; icon
+        ; logos
+        ; partner_logos
+        ; maintenance
+        ; disabled
+        ; default_language
+        ; created_at = Pool_common.CreatedAt.create ()
+        ; updated_at = Pool_common.UpdatedAt.create ()
+        }
+  in
+  match tenant with
+  | Error _ -> failwith "Failed to create tenant"
+  | Ok tenant ->
+    let events =
+      let open CCResult.Infix in
+      [ "email", [ email ]
+      ; "password", [ password ]
+      ; "firstname", [ firstname ]
+      ; "lastname", [ lastname ]
+      ]
+      |> Admin_command.CreateOperator.decode
+      |> CCResult.map_err Utils.handle_conformist_error
+      >>= CCFun.flip Admin_command.CreateOperator.handle tenant
+    in
+    let expected =
+      let ( let* ) = Result.bind in
+      let* email = email |> Common_user.Email.Address.create in
+      let* password = password |> Common_user.Password.create in
+      let* firstname = firstname |> Common_user.Firstname.create in
+      let* lastname = lastname |> Common_user.Lastname.create in
+      let operator : Admin.create =
+        Admin.{ email; password; firstname; lastname }
+      in
+      Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
     in
     Alcotest.(
       check (result (list Test_utils.event) string) "succeeds" expected events)
