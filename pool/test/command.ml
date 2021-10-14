@@ -13,5 +13,19 @@ let () =
             `Quick
             Participant_test.sign_up_not_allowed_suffix
         ] )
+    ; ( "tenant"
+      , [ test_case "create tenant" `Quick Tenant_test.create_tenant
+        ; test_case
+            "create tenant with invalid smtp port"
+            `Quick
+            Tenant_test.create_tenant_invalid_smtp_port
+        ] )
+    ; ( "root"
+      , [ test_case "create root" `Quick Root_test.create_root
+        ; test_case
+            "create root with invalid password"
+            `Quick
+            Root_test.create_root_with_invalid_password
+        ] )
     ]
 ;;

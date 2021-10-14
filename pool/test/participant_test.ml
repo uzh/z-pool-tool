@@ -19,7 +19,8 @@ let sign_up_not_allowed_suffix () =
     Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Error "Invalid email suffix provided" in
-  Alcotest.(check (result (list Utils.event) string) "succeeds" expected events)
+  Alcotest.(
+    check (result (list Test_utils.event) string) "succeeds" expected events)
 ;;
 
 let sign_up () =
@@ -41,5 +42,6 @@ let sign_up () =
     Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Ok [] in
-  Alcotest.(check (result (list Utils.event) string) "succeeds" expected events)
+  Alcotest.(
+    check (result (list Test_utils.event) string) "succeeds" expected events)
 ;;
