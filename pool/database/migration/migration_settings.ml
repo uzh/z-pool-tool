@@ -5,7 +5,7 @@ let create_system_settings_table =
       CREATE TABLE IF NOT EXISTS pool_system_settings (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `uuid` binary(16) NOT NULL,
-        `key` varchar(128) NOT NULL,
+        `settings_key` varchar(128) NOT NULL,
         `value` text NOT NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

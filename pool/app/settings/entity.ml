@@ -8,9 +8,9 @@ end
 
 module Language = struct
   type t =
-    | En
-    | De
-  [@@deriving eq, show]
+    | En [@name "EN"]
+    | De [@name "DE"]
+  [@@deriving eq, show, yojson]
 
   let code = function
     | En -> "EN"
@@ -40,17 +40,20 @@ module Language = struct
 end
 
 module EmailSuffix = struct
-  type t = string
+  type t = string [@@deriving eq, show, yojson]
 
   let value m = m
+  let list_value m = CCList.map value m
+
+  let create suffix =
+    if CCString.length suffix <= 0
+    then Error "Invalid email suffix!"
+    else Ok suffix
+  ;;
 end
 
-module ContactEmail : sig
-  type t
-
-  val value : t -> string
-end = struct
-  type t = string
+module ContactEmail = struct
+  type t = string [@@deriving eq, show, yojson]
 
   let value m = m
 end
@@ -96,6 +99,14 @@ module SettingValue = struct
     | UserSendWarningBeforeInactive m -> InactiveUser.Warning.show m
     | TermsAndConditions terms -> TermsAndConditions.value terms
   ;;
+end
+
+module Setting = struct
+  type t =
+    { value : SettingValue.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
 end
 
 type t =

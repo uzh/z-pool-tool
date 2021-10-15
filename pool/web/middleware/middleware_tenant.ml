@@ -10,8 +10,16 @@ let tenant_db_of_request req
       |> Sihl.Web.Request.header "host"
       |> CCOpt.to_result "No 'host' found!"
       |> Lwt_result.lift
+      |> Lwt_result.map_err (fun err ->
+             Logs.info (fun m -> m "%s" err);
+             err)
     in
-    let* selections = Tenant.Selection.find_all () in
+    let* selections =
+      Tenant.Selection.find_all ()
+      |> Lwt_result.map_err (fun err ->
+             Logs.info (fun m -> m "%s" err);
+             err)
+    in
     CCList.assoc_opt
       ~eq:(fun m k -> CCString.prefix ~pre:m k)
       host
@@ -22,6 +30,9 @@ let tenant_db_of_request req
   in
   ()
   |> db_pool
+  |> Lwt_result.map_err (fun err ->
+         Logs.info (fun m -> m "%s" err);
+         err)
   |> Lwt_result.map_err (fun _ ->
          "Something on our side went wrong, please try again later or on multi \
           occurrences please contact the Administrator.")

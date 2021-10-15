@@ -1,6 +1,9 @@
 include Entity
 include Event
+module RepoEntity = Repo_entity
 
+let find_languages = Repo.find_languages
+let find_email_suffixes = Repo.find_email_suffixes
 let allowed_email_suffixes = Utils.todo
 
 let terms_and_conditions =

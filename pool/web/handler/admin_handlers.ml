@@ -1,4 +1,5 @@
 module Message = Http_utils.Message
+module Settings = Admin_settings
 
 let dashboard req =
   let open Utils.Lwt_result.Infix in
