@@ -1,3 +1,4 @@
+module CustomMiddleware = Middleware
 open Sihl.Web
 
 let global_middlewares =
@@ -41,6 +42,12 @@ module Participant = struct
 end
 
 module Admin = struct
+  let middlewares =
+    [ CustomMiddleware.Tenant_middleware.require_admin ~login_path_f:(fun _ ->
+          Sihl.Web.externalize_path "/login")
+    ]
+  ;;
+
   let routes = [ get "/dashboard" Handler.Admin.dashboard ]
 end
 
@@ -63,7 +70,7 @@ end
 let router =
   choose
     [ choose Public.routes
-    ; choose ~scope:"/admin" Admin.routes
+    ; choose ~scope:"/admin" ~middlewares:Admin.middlewares Admin.routes
     ; choose ~scope:"/participant" Participant.routes
     ; choose ~scope:"/root" Root.routes
     ; get "/**" Handler.Public.not_found
