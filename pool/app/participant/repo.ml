@@ -131,9 +131,13 @@ let find = Utils.todo
 let insert = Utils.todo
 let update _ = Utils.todo
 
-let set_password : t -> string -> string -> (unit, string) result Lwt.t =
+let set_password pool : t -> string -> string -> (unit, string) result Lwt.t =
  fun { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
-  Service.User.set_password user ~password ~password_confirmation
+  Service.User.set_password
+    ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+    user
+    ~password
+    ~password_confirmation
   >|= CCFun.const ()
 ;;

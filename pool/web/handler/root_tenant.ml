@@ -1,3 +1,4 @@
+module Common = Pool_common
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Update = Root_tenant_update
@@ -35,9 +36,8 @@ let create req =
     |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
   in
-  let handle events =
-    let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-    Lwt.return_ok ()
+  let handle =
+    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
   in
   let return_to_overview =
     Http_utils.redirect_to_with_actions
@@ -46,7 +46,7 @@ let create req =
   in
   ()
   |> events
-  >|= handle
+  |>> handle
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path
 ;;
@@ -62,7 +62,7 @@ let create_operator req =
     |> Lwt_result.lift
     >>= HttpUtils.user_email_exists
   in
-  let find_tenant () = Tenant.find_full (id |> Pool_common.Id.of_string) in
+  let find_tenant () = Tenant.find_full (id |> Common.Id.of_string) in
   let events tenant =
     let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -72,9 +72,8 @@ let create_operator req =
     >>= CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant
     |> Lwt_result.lift
   in
-  let handle events =
-    let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-    Lwt.return_ok ()
+  let handle =
+    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
   in
   let return_to_overview =
     Http_utils.redirect_to_with_actions
@@ -85,7 +84,7 @@ let create_operator req =
   |> user
   >>= find_tenant
   >>= events
-  >|= handle
+  |>> handle
   |> Lwt_result.map_err (fun err -> err, error_path)
   |>> CCFun.const return_to_overview
   >|> HttpUtils.extract_happy_path
@@ -100,7 +99,7 @@ let tenant_detail req =
       Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
     in
     let id = Sihl.Web.Router.param req "id" in
-    let* tenant = Tenant.find (id |> Pool_common.Id.of_string) in
+    let* tenant = Tenant.find (id |> Common.Id.of_string) in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Sihl.Web.Response.of_html

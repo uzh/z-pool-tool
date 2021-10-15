@@ -39,7 +39,8 @@ let extract_happy_path_with_actions result =
 
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =
-  keys |> CCList.map @@ fun key -> key, List.assoc_opt key urlencoded
+  keys
+  |> CCList.map @@ fun key -> key, CCList.assoc_opt ~eq:( = ) key urlencoded
 ;;
 
 let urlencoded_to_params urlencoded keys =

@@ -120,7 +120,7 @@ let detail csrf (tenant : Tenant.t) message () =
   in
   let database_fields =
     [ "database_url", ""
-    ; "database_label", Tenant.Database.Label.value tenant.database_label
+    ; "database_label", Pool_common.Database.Label.value tenant.database_label
     ]
   in
   let detail_input_fields =

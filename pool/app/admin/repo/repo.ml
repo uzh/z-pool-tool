@@ -25,7 +25,12 @@ module Sql = struct
     |> Caqti_request.exec RepoPerson.Write.caqti
   ;;
 
-  let update t = Utils.Database.exec update_request (RepoPerson.Write.extract t)
+  let update pool t =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value pool)
+      update_request
+      (RepoPerson.Write.extract t)
+  ;;
 
   let select_from_persons_sql where_fragment =
     let select_from =
@@ -67,9 +72,12 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.string caqti_type
   ;;
 
-  let find_all_by_role role =
+  let find_all_by_role pool role =
     let caqti_type, role_val = extract role in
-    Utils.Database.collect (find_all_by_role_request caqti_type) role_val
+    Utils.Database.collect
+      (Pool_common.Database.Label.value pool)
+      (find_all_by_role_request caqti_type)
+      role_val
   ;;
 
   let find_request caqti_type =
@@ -84,11 +92,12 @@ module Sql = struct
          caqti_type
   ;;
 
-  let find role id =
+  let find pool role id =
     let caqti_type, role_val = extract role in
     Utils.Database.find
+      (Pool_common.Database.Label.value pool)
       (find_request caqti_type)
-      (id |> Pool_common.Id.value, role_val)
+      (id, role_val)
   ;;
 
   let insert_sql =
@@ -109,8 +118,11 @@ module Sql = struct
 
   let insert_request = Caqti_request.exec RepoPerson.Write.caqti insert_sql
 
-  let insert (t : 'a t) =
-    Utils.Database.exec insert_request (RepoPerson.Write.extract t)
+  let insert pool (t : 'a t) =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value pool)
+      insert_request
+      (RepoPerson.Write.extract t)
   ;;
 end
 
@@ -120,9 +132,14 @@ let insert = Sql.insert
 let update = Sql.update
 
 let set_password
-    : type person. person t -> string -> string -> (unit, string) result Lwt.t
+    : type person.
+      Pool_common.Database.Label.t
+      -> person t
+      -> string
+      -> string
+      -> (unit, string) result Lwt.t
   =
- fun person password password_confirmation ->
+ fun pool person password password_confirmation ->
   let open Lwt_result.Infix in
   match person with
   | Assistant { user; _ }
@@ -130,6 +147,10 @@ let set_password
   | LocationManager { user; _ }
   | Recruiter { user; _ }
   | Operator { user; _ } ->
-    Service.User.set_password user ~password ~password_confirmation
+    Service.User.set_password
+      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      user
+      ~password
+      ~password_confirmation
     >|= CCFun.const ()
 ;;

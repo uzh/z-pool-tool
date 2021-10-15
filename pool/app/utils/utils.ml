@@ -22,3 +22,11 @@ let handle_conformist_error (err : Conformist.error list) =
     "\n"
     (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
 ;;
+
+let schema_decoder create_fcn msg l =
+  let open CCResult in
+  l
+  |> CCList.head_opt
+  |> CCOpt.to_result (Format.asprintf "Undefined %s" msg)
+  >>= create_fcn
+;;

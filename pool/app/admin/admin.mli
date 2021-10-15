@@ -29,14 +29,14 @@ val equal_update : update -> update -> bool
 val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
-type 'a person_event = 'a Event.person_event =
+type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
       'a Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 
-type event = Event.event =
+type event =
   | Created of creatable_admin * create
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
@@ -44,8 +44,12 @@ type event = Event.event =
   | RecruiterEvents of Entity.recruiter person_event
   | OperatorEvents of Entity.operator person_event
 
-val handle_person_event : 'a person_event -> unit Lwt.t
-val handle_event : event -> unit Lwt.t
+val handle_person_event
+  :  Pool_common.Database.Label.t
+  -> 'a person_event
+  -> unit Lwt.t
+
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_person_event : 'a person_event -> 'a person_event -> bool
 val pp_person_event : Format.formatter -> 'a person_event -> unit
 val equal_event : event -> event -> bool

@@ -16,6 +16,8 @@ services:
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
     environment:
       - DATABASE_URL=mariadb://root@database:3306/development
+      - DATABASE_SKIP_DEFAULT_POOL_CREATION=true
+      - DATABASE_CHOOSE_POOL=root
       - OPAMSOLVERTIMEOUT=180
       - PUBLIC_URL=http://localhost:3016
       - SMTP_HOST=smtp.uzh.ch

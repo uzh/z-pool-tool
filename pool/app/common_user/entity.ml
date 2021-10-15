@@ -8,7 +8,7 @@ module Password = struct
   ;;
 
   let validate ?(password_policy = default_password_policy) password =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* () = password_policy password in
     Ok ()
   ;;
@@ -23,8 +23,8 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "password")
+      CCList.pure
       "password"
   ;;
 end
@@ -52,8 +52,8 @@ module Firstname = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "firstname")
+      CCList.pure
       "firstname"
   ;;
 end
@@ -66,8 +66,8 @@ module Lastname = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "lastname")
+      CCList.pure
       "lastname"
   ;;
 end

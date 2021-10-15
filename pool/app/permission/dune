@@ -2,4 +2,4 @@
  (name permission)
  (libraries sihl sihl-user pool_common containers utils)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))

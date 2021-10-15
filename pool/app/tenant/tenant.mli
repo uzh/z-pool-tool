@@ -81,32 +81,6 @@ module SmtpAuth : sig
   end
 end
 
-module Database : sig
-  module Url : sig
-    type t
-
-    val equal : t -> t -> bool
-    val create : string -> (t, string) result
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  module Label : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, string) result
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  type t =
-    { url : Url.t
-    ; label : Label.t
-    }
-
-  val create : Url.t -> Label.t -> (t, string) result
-end
-
 module Title : sig
   type t
 
@@ -192,7 +166,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_label : Database.Label.t
+  ; database_label : Pool_common.Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -211,7 +185,7 @@ module Write : sig
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database : Pool_common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.t
     ; icon : Icon.t
@@ -228,7 +202,7 @@ module Write : sig
     :  Title.t
     -> Description.t
     -> Url.t
-    -> Database.t
+    -> Pool_common.Database.t
     -> SmtpAuth.Write.t
     -> Styles.t
     -> Icon.t
@@ -248,7 +222,7 @@ type create =
   { title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database : Database.t
+  ; database : Pool_common.Database.t
   ; smtp_auth : SmtpAuth.Write.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -281,7 +255,7 @@ type update =
 type event =
   | Created of create [@equal equal]
   | DetailsEdited of Write.t * update
-  | DatabaseEdited of Write.t * Database.t
+  | DatabaseEdited of Write.t * Pool_common.Database.t
   | Destroyed of Pool_common.Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
@@ -289,7 +263,7 @@ type event =
   | OperatorDivested of Pool_common.Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
-val handle_event : event -> unit Lwt.t
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val find : Pool_common.Id.t -> (t, string) result Lwt.t
@@ -297,6 +271,10 @@ val find_full : Pool_common.Id.t -> (Write.t, string) result Lwt.t
 val find_by_participant : 'a -> 'b
 val find_by_user : 'a -> 'b
 val find_all : unit -> (t list, string) Result.t Lwt.t
+
+val find_databases
+  :  unit
+  -> (Pool_common.Database.t list, string) Result.result Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

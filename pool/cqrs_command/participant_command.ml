@@ -46,7 +46,7 @@ end = struct
   ;;
 
   let handle ?allowed_email_suffixes ?password_policy command =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Common_user.Email.Address.validate allowed_email_suffixes command.email
@@ -96,9 +96,8 @@ end = struct
   let handle _ ~email:_ ~password:_ = Utils.todo ()
 
   let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
+    let%lwt participant = Participant.find_by_user user in
+    let%lwt tenant = Tenant.find_by_participant participant in
     Permission.can
       user
       ~any_of:
@@ -127,9 +126,8 @@ end = struct
   let handle _ = Utils.todo
 
   let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
+    let%lwt participant = Participant.find_by_user user in
+    let%lwt tenant = Tenant.find_by_participant participant in
     Permission.can
       participant.Participant.user
       ~any_of:
@@ -156,9 +154,8 @@ end = struct
   let handle _ = Utils.todo
 
   let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
+    let%lwt participant = Participant.find_by_user user in
+    let%lwt tenant = Tenant.find_by_participant participant in
     Permission.can
       participant.Participant.user
       ~any_of:

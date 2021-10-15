@@ -1,4 +1,5 @@
 module Id = Pool_common.Id
+module Database = Pool_common.Database
 module User = Common_user
 
 module Create : sig
@@ -6,8 +7,8 @@ module Create : sig
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
-    ; database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
+    ; database_url : Database.Url.t
+    ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -33,8 +34,8 @@ end = struct
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
     ; url : Tenant.Url.t
-    ; database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
+    ; database_url : Database.Url.t
+    ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -92,8 +93,8 @@ end = struct
           [ Tenant.Title.schema ()
           ; Tenant.Description.schema ()
           ; Tenant.Url.schema ()
-          ; Tenant.Database.Url.schema ()
-          ; Tenant.Database.Label.schema ()
+          ; Database.Url.schema ()
+          ; Database.Label.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()
@@ -277,8 +278,8 @@ end
 
 module EditDatabase : sig
   type t =
-    { database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
+    { database_url : Database.Url.t
+    ; database_label : Database.Label.t
     }
 
   val handle : t -> Tenant.Write.t -> (Pool_event.t list, string) result
@@ -290,23 +291,20 @@ module EditDatabase : sig
   val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
 end = struct
   type t =
-    { database_url : Tenant.Database.Url.t
-    ; database_label : Tenant.Database.Label.t
+    { database_url : Database.Url.t
+    ; database_label : Database.Label.t
     }
 
   let command database_url database_label = { database_url; database_label }
 
   let schema =
     Conformist.(
-      make
-        Field.[ Tenant.Database.Url.schema (); Tenant.Database.Label.schema () ]
-        command)
+      make Field.[ Database.Url.schema (); Database.Label.schema () ] command)
   ;;
 
   let handle (command : t) (tenant : Tenant.Write.t) =
     let database =
-      Tenant.Database.
-        { url = command.database_url; label = command.database_label }
+      Database.{ url = command.database_url; label = command.database_label }
     in
     Ok [ Tenant.DatabaseEdited (tenant, database) |> Pool_event.tenant ]
   ;;

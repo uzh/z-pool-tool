@@ -46,8 +46,7 @@ type event =
       Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
   | Disabled of Entity.t
   | Verified of Entity.t
-  | Email of Common_user.Event.Email.event
 
-val handle_event : event -> unit Lwt.t
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

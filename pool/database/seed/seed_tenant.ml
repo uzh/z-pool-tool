@@ -1,3 +1,10 @@
+let print_error = function
+  | Ok _ -> Lwt.return_unit
+  | Error err ->
+    print_endline err;
+    Lwt.return_unit
+;;
+
 let create () =
   let data =
     [ ( "Econ uzh"
@@ -42,72 +49,53 @@ let create () =
       , "Woofer" )
     ]
   in
-  let%lwt _ =
-    Lwt_list.map_s
-      (fun ( title
-           , description
-           , url
-           , database_url
-           , database_label
-           , smtp_auth_server
-           , smtp_auth_port
-           , smtp_auth_username
-           , smtp_auth_password
-           , smtp_auth_authentication_method
-           , smtp_auth_protocol
-           , styles
-           , icon
-           , logos
-           , partner_logos
-           , default_language
-           , email
-           , password
-           , firstname
-           , lastname ) ->
-        let%lwt result =
-          let open Utils.Lwt_result.Infix in
-          let run_command () =
-            Lwt_result.lift
-            @@
-            let open CCResult.Infix in
-            Cqrs_command.Tenant_command.Create.decode
-              [ "title", [ title ]
-              ; "description", [ description ]
-              ; "url", [ url ]
-              ; "database_url", [ database_url ]
-              ; "database_label", [ database_label ]
-              ; "smtp_auth_server", [ smtp_auth_server ]
-              ; "smtp_auth_port", [ smtp_auth_port ]
-              ; "smtp_auth_username", [ smtp_auth_username ]
-              ; "smtp_auth_password", [ smtp_auth_password ]
-              ; ( "smtp_auth_authentication_method"
-                , [ smtp_auth_authentication_method ] )
-              ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-              ; "styles", [ styles ]
-              ; "icon", [ icon ]
-              ; "logos", [ logos ]
-              ; "partner_logos", [ partner_logos ]
-              ; "default_language", [ default_language ]
-              ; "email", [ email ]
-              ; "password", [ password ]
-              ; "firstname", [ firstname ]
-              ; "lastname", [ lastname ]
-              ]
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Tenant_command.Create.handle
-          in
-          let run_events events =
-            let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-            Lwt.return_ok ()
-          in
-          () |> run_command >>= run_events
-        in
-        match result with
-        | Ok _ -> Lwt.return_ok ()
-        | Error err ->
-          print_endline err;
-          Lwt.return_error err)
-      data
-  in
-  Lwt.return_unit
+  Lwt_list.iter_s
+    (fun ( title
+         , description
+         , url
+         , database_url
+         , database_label
+         , smtp_auth_server
+         , smtp_auth_port
+         , smtp_auth_username
+         , smtp_auth_password
+         , smtp_auth_authentication_method
+         , smtp_auth_protocol
+         , styles
+         , icon
+         , logos
+         , partner_logos
+         , default_language
+         , email
+         , password
+         , firstname
+         , lastname ) ->
+      let open CCResult in
+      Cqrs_command.Tenant_command.Create.decode
+        [ "title", [ title ]
+        ; "description", [ description ]
+        ; "url", [ url ]
+        ; "database_url", [ database_url ]
+        ; "database_label", [ database_label ]
+        ; "smtp_auth_server", [ smtp_auth_server ]
+        ; "smtp_auth_port", [ smtp_auth_port ]
+        ; "smtp_auth_username", [ smtp_auth_username ]
+        ; "smtp_auth_password", [ smtp_auth_password ]
+        ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
+        ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+        ; "styles", [ styles ]
+        ; "icon", [ icon ]
+        ; "logos", [ logos ]
+        ; "partner_logos", [ partner_logos ]
+        ; "default_language", [ default_language ]
+        ; "email", [ email ]
+        ; "password", [ password ]
+        ; "firstname", [ firstname ]
+        ; "lastname", [ lastname ]
+        ]
+      |> CCResult.map_err Utils.handle_conformist_error
+      >>= Cqrs_command.Tenant_command.Create.handle
+      |> CCResult.get_or_failwith
+      |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
+    data
 ;;

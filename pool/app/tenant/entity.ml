@@ -1,8 +1,8 @@
 module Id = Pool_common.Id
+module Database = Pool_common.Database
 module CreatedAt = Pool_common.CreatedAt
 module UpdatedAt = Pool_common.UpdatedAt
 module SmtpAuth = Entity_smtp_auth
-module Database = Entity_database
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -14,7 +14,7 @@ module Title = struct
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "title"
+    Conformist.custom (Utils.schema_decoder create "title") CCList.pure "title"
   ;;
 end
 
@@ -31,8 +31,8 @@ module Description = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "description")
+      CCList.pure
       "description"
   ;;
 end
@@ -47,7 +47,7 @@ module Url = struct
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "url"
+    Conformist.custom (Utils.schema_decoder create "url") CCList.pure "url"
   ;;
 end
 
@@ -62,8 +62,8 @@ module Styles = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "styles")
+      CCList.pure
       "styles"
   ;;
 end
@@ -78,7 +78,7 @@ module Icon = struct
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "icon"
+    Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
   ;;
 end
 
@@ -92,7 +92,7 @@ module Logos = struct
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "logos"
+    Conformist.custom (Utils.schema_decoder create "logos") CCList.pure "logos"
   ;;
 end
 
@@ -109,8 +109,8 @@ module PartnerLogos = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "partner logos")
+      CCList.pure
       "partner_logos"
   ;;
 end
@@ -132,7 +132,9 @@ module Maintenance = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string |> CCResult.return)
+      (Utils.schema_decoder
+         (fun l -> Ok (of_string l))
+         "tenant maintenance flag")
       (fun l -> [ stringify l ])
       "maintenance"
   ;;
@@ -156,7 +158,7 @@ module Disabled = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string |> CCResult.return)
+      (Utils.schema_decoder (fun l -> Ok (of_string l)) "tenant disabled flag")
       (fun l -> [ stringify l ])
       "disabled"
   ;;

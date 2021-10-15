@@ -1,6 +1,6 @@
 (library
  ; Cannot just be named as "common" because there is a module common in caqti-driver-mariadb
  (name pool_common)
- (libraries sihl)
+ (libraries sihl utils)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq ppx_variants_conv)))

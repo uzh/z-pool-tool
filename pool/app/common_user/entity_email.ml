@@ -51,10 +51,7 @@ module Address = struct
   let create email = email |> remove_whitespaces |> validate_characters
 
   let schema () =
-    Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ show l ])
-      "email"
+    Conformist.custom (Utils.schema_decoder create "email") CCList.pure "email"
   ;;
 end
 

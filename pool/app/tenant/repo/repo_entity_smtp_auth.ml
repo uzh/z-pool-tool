@@ -43,7 +43,7 @@ let t =
       , (m.port, (m.username, (m.authentication_method, m.protocol))) )
   in
   let decode (server, (port, (username, (authentication_method, protocol)))) =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* server = Server.create server in
     let* port = Port.create port in
     let* username = Username.create username in
@@ -79,7 +79,7 @@ module Write = struct
         ( server
         , (port, (username, (password, (authentication_method, protocol)))) )
       =
-      let ( let* ) = Result.bind in
+      let open CCResult in
       let* server = Server.create server in
       let* port = Port.create port in
       let* username = Username.create username in

@@ -37,7 +37,11 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.unit Common_user.Repo.user_caqti
   ;;
 
-  let find_all = Utils.Database.collect find_all_request
+  let find_all pool =
+    Utils.Database.collect
+      (Pool_common.Database.Label.value pool)
+      find_all_request
+  ;;
 end
 
 let find_all = Sql.find_all

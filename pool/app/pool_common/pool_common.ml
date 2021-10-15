@@ -1,41 +1,8 @@
-module Id = struct
-  type t = string [@@deriving eq, show]
+include Entity
+module Repo = Repo
 
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
-  let of_string m = m
-  let value m = m
-end
+module Database = struct
+  include Database
 
-module CreatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
-
-  let create = Ptime_clock.now
-  let value m = m
-end
-
-module UpdatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
-
-  let create = Ptime_clock.now
-  let value m = m
-end
-
-module Repo = struct
-  module Id = struct
-    include Id
-
-    let t = Caqti_type.string
-  end
-
-  module UpdatedAt = struct
-    include UpdatedAt
-
-    let t = Caqti_type.ptime
-  end
-
-  module CreatedAt = struct
-    include CreatedAt
-
-    let t = Caqti_type.ptime
-  end
+  let root = Label.of_string "root"
 end

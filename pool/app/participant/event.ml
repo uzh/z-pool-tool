@@ -25,20 +25,18 @@ type event =
   | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
   | Disabled of t
   | Verified of t
-  | Email of User.Event.Email.event
 
-let handle_event : event -> unit Lwt.t =
-  let open Lwt.Syntax in
-  function
+let handle_event pool : event -> unit Lwt.t = function
   | Created participant ->
-    let* user =
+    let%lwt user =
       Service.User.create_user
+        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
         ~name:(participant.firstname |> User.Firstname.show)
         ~given_name:(participant.lastname |> User.Lastname.show)
         ~password:(participant.password |> User.Password.to_sihl)
       @@ Email.Address.show participant.email
     in
-    let* () =
+    let%lwt () =
       Permission.assign
         user
         (Role.participant (user.Sihl_user.id |> Id.of_string))
@@ -46,8 +44,9 @@ let handle_event : event -> unit Lwt.t =
     Repo.insert participant
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
-    let* _ =
+    let%lwt _ =
       Repo.set_password
+        pool
         person
         (password |> User.Password.to_sihl)
         (confirmed |> User.PasswordConfirmed.to_sihl)
@@ -55,7 +54,6 @@ let handle_event : event -> unit Lwt.t =
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
-  | Email event -> User.Event.Email.handle_event event
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
@@ -75,11 +73,10 @@ let pp_event formatter (event : event) : unit =
   match event with
   | Created m -> pp_create formatter m
   | DetailsUpdated (p1, updated) ->
-    let () = person_pp p1 in
+    person_pp p1;
     pp_update formatter updated
   | PasswordUpdated (person, password, _) ->
-    let () = person_pp person in
+    person_pp person;
     User.Password.pp formatter password
   | Disabled p1 | Verified p1 -> person_pp p1
-  | Email m -> User.Event.Email.pp_event formatter m
 ;;

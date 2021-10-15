@@ -11,8 +11,8 @@ module Server = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp auth server")
+      CCList.pure
       "smtp_auth_server"
   ;;
 end
@@ -30,8 +30,8 @@ module Port = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp auth port")
+      CCList.pure
       "smtp_auth_port"
   ;;
 end
@@ -49,8 +49,8 @@ module Username = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp auth username")
+      CCList.pure
       "smtp_auth_username"
   ;;
 end
@@ -68,8 +68,8 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp auth password")
+      CCList.pure
       "smtp_auth_password"
   ;;
 end
@@ -87,8 +87,8 @@ module AuthenticationMethod = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp authentication method")
+      CCList.pure
       "smtp_auth_authentication_method"
   ;;
 end
@@ -106,8 +106,8 @@ module Protocol = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Utils.schema_decoder create "smtp auth protocol")
+      CCList.pure
       "smtp_auth_protocol"
   ;;
 end
