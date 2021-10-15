@@ -17,6 +17,7 @@ let dashboard_path tenant_db user =
 
 let login_get req =
   let open Lwt_result.Infix in
+  (* TODO [timhub]: add pool context *)
   let%lwt user = Service.User.Web.user_from_session req in
   let%lwt result =
     let open Lwt_result.Syntax in
@@ -82,6 +83,7 @@ let login_post req =
 
 let request_reset_password_get req =
   let open Lwt_result.Infix in
+  (* TODO [timhub]: add pool context *)
   let%lwt user = Service.User.Web.user_from_session req in
   let%lwt result =
     let open Lwt_result.Syntax in

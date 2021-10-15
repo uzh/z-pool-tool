@@ -73,6 +73,7 @@ let err_with_action ?message error_path action =
 ;;
 
 let user_email_exists email =
+  (* TODO [timhub]: add pool context *)
   let%lwt user = Service.User.find_by_email_opt email in
   match user with
   | None -> Lwt.return_ok ()

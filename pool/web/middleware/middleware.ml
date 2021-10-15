@@ -16,6 +16,7 @@ module Tenant_middleware = struct
       match tenant_db with
       | Error _ -> fail_action []
       | Ok tenant_db ->
+        (* TODO [timhub]: add pool context *)
         let%lwt user = Service.User.Web.user_from_session req in
         (match user with
         | Some user ->
