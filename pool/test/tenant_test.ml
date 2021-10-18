@@ -127,41 +127,6 @@ let create_tenant () =
     check (result (list Test_utils.event) string) "succeeds" expected events)
 ;;
 
-let create_tenant_invalid_smtp_port () =
-  let open Data in
-  let smtp_auth_port = "123" in
-  let events =
-    let open CCResult.Infix in
-    Tenant_command.Create.decode
-      [ "title", [ title ]
-      ; "description", [ description ]
-      ; "url", [ url ]
-      ; "database_url", [ database_url ]
-      ; "database_label", [ database_label ]
-      ; "smtp_auth_server", [ smtp_auth_server ]
-      ; "smtp_auth_port", [ smtp_auth_port ]
-      ; "smtp_auth_username", [ smtp_auth_username ]
-      ; "smtp_auth_password", [ smtp_auth_password ]
-      ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-      ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-      ; "styles", [ styles ]
-      ; "icon", [ icon ]
-      ; "logos", [ logos ]
-      ; "partner_logos", [ partner_logos ]
-      ; "default_language", [ default_language ]
-      ; "email", [ email ]
-      ; "password", [ password ]
-      ; "firstname", [ firstname ]
-      ; "lastname", [ lastname ]
-      ]
-    |> CCResult.map_err Utils.handle_conformist_error
-    >>= Tenant_command.Create.handle
-  in
-  let expected = Error "smtp_auth_port: Invalid SMTP port!" in
-  Alcotest.(
-    check (result (list Test_utils.event) string) "succeeds" expected events)
-;;
-
 let update_tenant_details () =
   let open Tenant in
   let open Data in

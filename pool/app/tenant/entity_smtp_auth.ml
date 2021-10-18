@@ -23,9 +23,7 @@ module Port = struct
   let value m = m
 
   let create port =
-    if CCList.mem port [ "25"; "465"; "587" ]
-    then Ok port
-    else Error "Invalid SMTP port!"
+    if String.length port <= 0 then Error "Invalid SMTP port !" else Ok port
   ;;
 
   let schema () =
