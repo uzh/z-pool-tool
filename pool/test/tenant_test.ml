@@ -23,6 +23,30 @@ module Data = struct
   let password = "adminadmin"
   let firstname = "DJ"
   let lastname = "Ötzi"
+
+  let urlencoded =
+    [ "title", [ title ]
+    ; "description", [ description ]
+    ; "url", [ url ]
+    ; "database_url", [ database_url ]
+    ; "database_label", [ database_label ]
+    ; "smtp_auth_server", [ smtp_auth_server ]
+    ; "smtp_auth_port", [ smtp_auth_port ]
+    ; "smtp_auth_username", [ smtp_auth_username ]
+    ; "smtp_auth_password", [ smtp_auth_password ]
+    ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
+    ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+    ; "styles", [ styles ]
+    ; "icon", [ icon ]
+    ; "logos", [ logos ]
+    ; "partner_logos", [ partner_logos ]
+    ; "default_language", [ default_language ]
+    ; "email", [ email ]
+    ; "password", [ password ]
+    ; "firstname", [ firstname ]
+    ; "lastname", [ lastname ]
+    ]
+  ;;
 end
 
 let create_smtp_auth () =
@@ -52,28 +76,8 @@ let create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Tenant_command.Create.decode
-      [ "title", [ title ]
-      ; "description", [ description ]
-      ; "url", [ url ]
-      ; "database_url", [ database_url ]
-      ; "database_label", [ database_label ]
-      ; "smtp_auth_server", [ smtp_auth_server ]
-      ; "smtp_auth_port", [ smtp_auth_port ]
-      ; "smtp_auth_username", [ smtp_auth_username ]
-      ; "smtp_auth_password", [ smtp_auth_password ]
-      ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-      ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-      ; "styles", [ styles ]
-      ; "icon", [ icon ]
-      ; "logos", [ logos ]
-      ; "partner_logos", [ partner_logos ]
-      ; "default_language", [ default_language ]
-      ; "email", [ email ]
-      ; "password", [ password ]
-      ; "firstname", [ firstname ]
-      ; "lastname", [ lastname ]
-      ]
+    Data.urlencoded
+    |> Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
     >>= Tenant_command.Create.handle
   in
@@ -186,27 +190,7 @@ let update_tenant_details () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
-      [ "title", [ title ]
-      ; "description", [ description ]
-      ; "url", [ url ]
-      ; "database_url", [ database_url ]
-      ; "database_label", [ database_label ]
-      ; "smtp_auth_server", [ smtp_auth_server ]
-      ; "smtp_auth_port", [ smtp_auth_port ]
-      ; "smtp_auth_username", [ smtp_auth_username ]
-      ; "smtp_auth_password", [ smtp_auth_password ]
-      ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-      ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-      ; "styles", [ styles ]
-      ; "icon", [ icon ]
-      ; "logos", [ logos ]
-      ; "partner_logos", [ partner_logos ]
-      ; "default_language", [ default_language ]
-      ; "email", [ email ]
-      ; "password", [ password ]
-      ; "firstname", [ firstname ]
-      ; "lastname", [ lastname ]
-      ]
+      Data.urlencoded
       |> HttpUtils.format_request_boolean_values [ "disabled" ]
       |> Tenant_command.EditDetails.decode
       |> CCResult.map_err Utils.handle_conformist_error
@@ -389,11 +373,7 @@ let create_operator () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
-      [ "email", [ email ]
-      ; "password", [ password ]
-      ; "firstname", [ firstname ]
-      ; "lastname", [ lastname ]
-      ]
+      Data.urlencoded
       |> Admin_command.CreateOperator.decode
       |> CCResult.map_err Utils.handle_conformist_error
       >>= CCFun.flip Admin_command.CreateOperator.handle tenant
