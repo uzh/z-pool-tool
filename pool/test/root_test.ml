@@ -21,7 +21,7 @@ let create_root () =
   let events = Root_command.Create.handle command in
   let expected =
     let open Common_user in
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* email = email |> Email.Address.create in
     let* password = password |> Password.create in
     let* firstname = firstname |> Firstname.create in

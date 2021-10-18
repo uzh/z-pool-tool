@@ -29,7 +29,7 @@ let create_smtp_auth () =
   let open Data in
   let open Tenant.SmtpAuth in
   let smtp_auth =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* server = smtp_auth_server |> Server.create in
     let* port = smtp_auth_port |> Port.create in
     let* username = smtp_auth_username |> Username.create in
@@ -79,7 +79,7 @@ let create_tenant () =
   in
   let expected =
     let open Tenant in
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = title |> Tenant.Title.create in
     let* description = description |> Tenant.Description.create in
     let* url = url |> Tenant.Url.create in
@@ -131,7 +131,7 @@ let update_tenant_details () =
   let open Tenant in
   let open Data in
   let tenant =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
     let* url = url |> Url.create in
@@ -214,7 +214,7 @@ let update_tenant_details () =
     in
     let expected =
       let open Tenant in
-      let ( let* ) = Result.bind in
+      let open CCResult in
       let* title = title |> Title.create in
       let* description = description |> Description.create in
       let* url = url |> Url.create in
@@ -258,7 +258,7 @@ let update_tenant_database () =
   let open Data in
   let open Tenant in
   let tenant =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
     let* url = url |> Url.create in
@@ -320,7 +320,7 @@ let update_tenant_database () =
     in
     let expected =
       let open Tenant.Database in
-      let ( let* ) = Result.bind in
+      let open CCResult in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in
       let database = { url; label } in
@@ -334,7 +334,7 @@ let create_operator () =
   let open Data in
   let open Tenant in
   let tenant =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
     let* url = url |> Url.create in
@@ -399,7 +399,7 @@ let create_operator () =
       >>= CCFun.flip Admin_command.CreateOperator.handle tenant
     in
     let expected =
-      let ( let* ) = Result.bind in
+      let open CCResult in
       let* email = email |> Common_user.Email.Address.create in
       let* password = password |> Common_user.Password.create in
       let* firstname = firstname |> Common_user.Firstname.create in
