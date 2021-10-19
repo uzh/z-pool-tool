@@ -7,47 +7,82 @@ let print_error = function
 
 let create () =
   let data =
-    [ ( "Econ uzh"
-      , "description"
-      , "pool.econ.uzh.ch"
-      , "mariadb://root@database:3306/dev_econ"
-      , "econ-uzh"
-      , "smtp.uzh.ch"
-      , "587"
-      , "engineering@econ.uzh.ch"
-      , "emailemail"
-      , "LOGIN"
-      , "STARTTLS"
-      , "custom-styles.econ.css"
-      , "some icon"
-      , "some logo"
-      , "some partner logos"
-      , "EN"
-      , "operator@econ.uzh.ch"
-      , "adminadmin"
-      , "DJ"
-      , "Ötzi" )
-    ; ( "ZHAW"
-      , "description"
-      , "pool.zhaw.ch"
-      , "mariadb://root@database:3306/dev_zhaw"
-      , "zhaw"
-      , "smtp.zhaw.ch"
-      , "465"
-      , "engineering@zhaw.ch"
-      , "emailemail"
-      , "LOGIN"
-      , "SSL/TLS"
-      , "custom-styles.zhaw.css"
-      , "some icon"
-      , "some logo"
-      , "some partner logos"
-      , "DE"
-      , "operator@zhaw.ch"
-      , "adminadmin"
-      , "Woofy"
-      , "Woofer" )
-    ]
+    if Sihl.Configuration.is_test ()
+    then (
+      let password =
+        Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
+        |> CCOpt.value ~default:"password"
+      in
+      let database =
+        Sihl.Configuration.read_string "MYSQL_DATABASE"
+        |> CCOpt.value ~default:"dev"
+      in
+      [ ( "Econ test"
+        , "description"
+        , "test.pool.econ.uzh.ch"
+        , Format.asprintf
+            "mariadb://root:%s@mariadb-tenant:3306/%s"
+            password
+            database
+        , "econ-test"
+        , "smtp.uzh.ch"
+        , "587"
+        , "test@econ.uzh.ch"
+        , "emailemail"
+        , "LOGIN"
+        , "STARTTLS"
+        , "custom-styles.econ.css"
+        , "some icon"
+        , "some logo"
+        , "some partner logos"
+        , "EN"
+        , "operator@econ.uzh.ch"
+        , "adminadmin"
+        , "Test"
+        , "Operator" )
+      ])
+    else
+      [ ( "Econ uzh"
+        , "description"
+        , "pool.econ.uzh.ch"
+        , "mariadb://root@database:3306/dev_econ"
+        , "econ-uzh"
+        , "smtp.uzh.ch"
+        , "587"
+        , "engineering@econ.uzh.ch"
+        , "emailemail"
+        , "LOGIN"
+        , "STARTTLS"
+        , "custom-styles.econ.css"
+        , "some icon"
+        , "some logo"
+        , "some partner logos"
+        , "EN"
+        , "operator@econ.uzh.ch"
+        , "adminadmin"
+        , "DJ"
+        , "Ötzi" )
+      ; ( "ZHAW"
+        , "description"
+        , "pool.zhaw.ch"
+        , "mariadb://root@database:3306/dev_zhaw"
+        , "zhaw"
+        , "smtp.zhaw.ch"
+        , "465"
+        , "engineering@zhaw.ch"
+        , "emailemail"
+        , "LOGIN"
+        , "SSL/TLS"
+        , "custom-styles.zhaw.css"
+        , "some icon"
+        , "some logo"
+        , "some partner logos"
+        , "DE"
+        , "operator@zhaw.ch"
+        , "adminadmin"
+        , "Woofy"
+        , "Woofer" )
+      ]
   in
   Lwt_list.iter_s
     (fun ( title
