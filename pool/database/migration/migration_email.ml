@@ -66,5 +66,5 @@ Pool Tool
 
 let migration () =
   Sihl.Database.Migration.(
-    empty "emails" |> add_step update_email_template_password_reset)
+    empty "email_templates" |> add_step update_email_template_password_reset)
 ;;
