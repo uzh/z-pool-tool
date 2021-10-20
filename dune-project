@@ -41,6 +41,8 @@
    (>= 2.0.0))
   (sihl-queue
    (>= 2.0.0))
+  (sihl-storage
+   (>= 2.0.0))
   (lwt
    (>= 5.4.1))
   (containers
