@@ -50,28 +50,32 @@ let list csrf tenant_list root_list message () =
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
   let fields =
-    [ "title", ""
-    ; "description", ""
-    ; "url", ""
-    ; "database_url", ""
-    ; "database_label", ""
-    ; "smtp_auth_server", ""
-    ; "smtp_auth_port", ""
-    ; "smtp_auth_username", ""
-    ; "smtp_auth_password", ""
-    ; "smtp_auth_authentication_method", ""
-    ; "smtp_auth_protocol", ""
-    ; "styles", ""
-    ; "icon", ""
-    ; "logos", ""
-    ; "partner_logos", ""
-    ; "default_language", ""
+    [ "title", "title"
+    ; "description", "descr"
+    ; "url", "url"
+    ; "database_url", "db url"
+    ; "database_label", "label"
+    ; "smtp_auth_server", "server"
+    ; "smtp_auth_port", "587"
+    ; "smtp_auth_username", "username"
+    ; "smtp_auth_password", "pw"
+    ; "smtp_auth_authentication_method", "LOGIN"
+    ; "smtp_auth_protocol", "SSL/TLS"
+    ; "icon", "icon"
+    ; "logos", "logos"
+    ; "partner_logos", "partner logos"
+    ; "default_language", "DE"
     ]
   in
   let input_fields =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
       fields
+    @ [ div
+          [ label [ txt "styles" ]
+          ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
+          ]
+      ]
   in
   let html =
     div
@@ -81,6 +85,7 @@ let list csrf tenant_list root_list message () =
           ~a:
             [ a_action (Sihl.Web.externalize_path "/root/tenant/create")
             ; a_method `Post
+            ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: input_fields)
           @ [ input_element `Submit None "Create new" ])

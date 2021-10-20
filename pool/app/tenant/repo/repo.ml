@@ -17,7 +17,7 @@ module Sql = struct
         smtp_auth_password = $10,
         smtp_auth_authentication_method = $11,
         smtp_auth_protocol = $12,
-        styles = $13,
+        styles = UNHEX(REPLACE($13, '-', '')),
         icon = $14,
         logos = $15,
         partner_logos = $16,
@@ -82,7 +82,13 @@ module Sql = struct
             url,
             %s
             %s
-            styles,
+            LOWER(CONCAT(
+              SUBSTR(HEX(styles), 1, 8), '-',
+              SUBSTR(HEX(styles), 9, 4), '-',
+              SUBSTR(HEX(styles), 13, 4), '-',
+              SUBSTR(HEX(styles), 17, 4), '-',
+              SUBSTR(HEX(styles), 21)
+            )),
             icon,
             logos,
             partner_logos,
@@ -180,7 +186,7 @@ module Sql = struct
         ?,
         ?,
         ?,
-        ?,
+        UNHEX(REPLACE(?, '-', '')),
         ?,
         ?,
         ?,

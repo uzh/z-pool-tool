@@ -1,6 +1,7 @@
 module Common = Pool_common
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module File = HttpUtils.File
 module Update = Root_tenant_update
 
 let tenants req =
@@ -28,7 +29,7 @@ let create req =
   let error_path = "/root/tenants" in
   let events () =
     let open CCResult.Infix in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = File.multipart_form_data_to_urlencoded req in
     urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error

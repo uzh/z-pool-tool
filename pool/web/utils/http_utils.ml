@@ -1,4 +1,5 @@
 module Message = Http_utils_message
+module File = Http_utils_file
 module StringMap = Map.Make (String)
 
 let redirect_to_with_actions path actions =

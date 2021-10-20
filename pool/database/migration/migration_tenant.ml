@@ -16,7 +16,7 @@ let create_tenant_table =
         `smtp_auth_password` varchar(255) NOT NULL,
         `smtp_auth_authentication_method` varchar(255) NOT NULL,
         `smtp_auth_protocol` varchar(255) NOT NULL,
-        `styles` varchar(255) NOT NULL,
+        `styles` binary(16) NOT NULL,
         `icon` varchar(255) NOT NULL,
         `logos` varchar(255) NOT NULL,
         `partner_logos` varchar(255) NOT NULL,

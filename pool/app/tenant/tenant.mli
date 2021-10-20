@@ -210,6 +210,8 @@ module Write : sig
     -> PartnerLogos.t
     -> Settings.Language.t
     -> t
+
+  val show : t -> string
 end
 
 module StatusReport : sig
