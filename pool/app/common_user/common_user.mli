@@ -73,9 +73,9 @@ module TermsAccepted : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t -> t
+  val create : Ptime.t option -> t
   val create_now : t
-  val value : t -> Ptime.t
+  val value : t -> Ptime.t option
 end
 
 module Verified : sig
@@ -84,9 +84,9 @@ module Verified : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t -> t
+  val create : Ptime.t option -> t
   val create_now : t
-  val value : t -> Ptime.t
+  val value : t -> Ptime.t option
 end
 
 module Email : sig
@@ -165,11 +165,11 @@ module Repo : sig
   end
 
   module TermsAccepted : sig
-    val t : Ptime.t Caqti_type.t
+    val t : Ptime.t option Caqti_type.t
   end
 
   module Verified : sig
-    val t : Ptime.t Caqti_type.t
+    val t : Ptime.t option Caqti_type.t
   end
 
   module Email : sig

@@ -136,8 +136,7 @@ let[@warning "-4"] equal_event event1 event2 =
     , DatabaseEdited (tenant_two, database_two) ) ->
     Write.equal tenant_one tenant_two
     && Database.equal database_one database_two
-  | Destroyed one, Destroyed two ->
-    String.equal (one |> Id.show) (two |> Id.show)
+  | Destroyed one, Destroyed two -> Id.equal one two
   | ActivateMaintenance one, ActivateMaintenance two
   | DeactivateMaintenance one, DeactivateMaintenance two -> Write.equal one two
   | ( OperatorAssigned (tenant_id_one, user_one)

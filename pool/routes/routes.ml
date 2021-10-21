@@ -17,6 +17,14 @@ module Public = struct
   let routes = [ get "/" Handler.Public.index ]
 end
 
+module Participant = struct
+  let routes =
+    [ get "/signup" Handler.Participant.sign_up
+    ; post "/signup" Handler.Participant.sign_up_create
+    ]
+  ;;
+end
+
 module Root = struct
   let routes =
     [ get "/tenants" Handler.Root.Tenant.tenants
@@ -36,6 +44,7 @@ end
 let router =
   choose
     [ choose Public.routes
+    ; choose ~scope:"/participant" Participant.routes
     ; choose ~scope:"/root" Root.routes
     ; get "/**" Handler.Public.not_found
     ]

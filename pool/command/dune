@@ -1,5 +1,13 @@
 (library
  (name command)
- (libraries sihl service database cqrs_command settings pool_event tenant)
+ (libraries
+  sihl
+  service
+  utils
+  database
+  cqrs_command
+  settings
+  pool_event
+  tenant)
  (preprocess
   (pps lwt_ppx)))

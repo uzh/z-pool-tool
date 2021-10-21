@@ -18,6 +18,12 @@ let find_databases = Repo.find_databases Database.root
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 
+module Selection = struct
+  include Selection
+
+  let find_all = Repo.find_selectable Database.root
+end
+
 (* MONITORING AND MANAGEMENT *)
 
 (* The system should proactively report degraded health to operators *)

@@ -234,6 +234,18 @@ module Write = struct
   ;;
 end
 
+module Selection = struct
+  type t =
+    { url : Url.t
+    ; database_label : Database.Label.t
+    }
+  [@@deriving eq, show]
+
+  let create url database_label = { url; database_label }
+  let url (m : t) = m.url
+  let label (m : t) : Database.Label.t = m.database_label
+end
+
 (* The system should proactively report degraded health to operators *)
 module StatusReport = struct
   module CreatedAt = struct
