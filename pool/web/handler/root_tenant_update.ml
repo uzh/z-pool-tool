@@ -12,7 +12,11 @@ let update req command success_message =
   in
   let events tenant =
     let open CCResult.Infix in
-    let%lwt urlencoded = File.multipart_form_data_to_urlencoded req in
+    let open Lwt_result.Syntax in
+    let* urlencoded =
+      File.multipart_form_data_to_urlencoded req
+      |> Lwt_result.map_err (fun err -> err, redirect_path)
+    in
     let events_list urlencoded =
       match command with
       | `EditDetail ->

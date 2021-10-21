@@ -63,43 +63,64 @@ let remove_imported_file filename =
   |> Lwt.map (raise_if_failed ("while deleting file " ^ filename))
 ;;
 
+let mime_type = function
+  | "css" -> Ok "text/css"
+  | "gif" -> Ok "image/gif"
+  | "ico" -> Ok "image/vnd.microsoft.icon"
+  | "jpeg" | "jpg" -> Ok "image/jpeg"
+  | "png" -> Ok "image/png"
+  | "webp" -> Ok "image/webp"
+  | _ -> Error "Unknown file type"
+;;
+
+let mime file =
+  let ext = CCString.split_on_char '.' file |> CCList.last 1 in
+  match ext with
+  | ext :: _ -> mime_type ext
+  | _ -> Error "Invalid filename"
+;;
+
 let load_file filename =
+  let open CCResult in
   let ic = open_in filename in
   let filesize = in_channel_length ic in
   let data = Bytes.create filesize in
+  let* mime = mime filename in
   let () = really_input ic data 0 filesize in
   let data = Bytes.to_string data in
   let () = close_in ic in
-  filesize, data
+  Ok (filesize, mime, data)
 ;;
 
 let file_to_storage_add filename =
-  let filesize, data = load_file filename in
+  let open Lwt_result.Syntax in
+  let* filesize, mime, data = load_file filename |> Lwt_result.lift in
   let asset_id = Pool_common.Id.create () |> Pool_common.Id.value in
   let file =
     Sihl_storage.
-      { id = asset_id
-      ; filename = Filename.basename filename
-      ; filesize
-      ; mime = "application/pdf" (* TODO [timhub]: select correct filetype *)
-      }
+      { id = asset_id; filename = Filename.basename filename; filesize; mime }
   in
   let base64 = Base64.encode_exn data in
   let%lwt _ = Service.Storage.upload_base64 file ~base64 in
   let%lwt _ = remove_imported_file filename in
-  Lwt.return file.Sihl_storage.id
+  Lwt_result.return file.Sihl_storage.id
 ;;
 
 let multipart_form_data_to_urlencoded req =
   let%lwt multipart_encoded = Sihl.Web.Request.to_multipart_form_data_exn req in
   let%lwt filenames = upload_files req in
   let%lwt filenames =
+    let open Lwt_result.Syntax in
     Lwt_list.map_s
       (fun (k, v) ->
-        let%lwt id = file_to_storage_add v in
-        Lwt.return (k, id))
+        let* id = file_to_storage_add v in
+        Lwt_result.return (k, id))
       filenames
   in
-  CCList.map (fun (k, v) -> k, [ v ]) (filenames @ multipart_encoded)
-  |> Lwt.return
+  let filenames = filenames |> CCResult.flatten_l in
+  match filenames with
+  | Error err -> Lwt.return_error err
+  | Ok filenames ->
+    Ok (CCList.map (fun (k, v) -> k, [ v ]) (filenames @ multipart_encoded))
+    |> Lwt_result.lift
 ;;
