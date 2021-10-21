@@ -60,6 +60,8 @@ module Styles = struct
   module Write = struct
     type t = string [@@deriving eq, show]
 
+    let value m = m
+
     let create styles =
       if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
     ;;
@@ -80,6 +82,8 @@ module Icon = struct
 
   module Write = struct
     type t = string [@@deriving eq, show]
+
+    let value m = m
 
     let create icon =
       if String.length icon <= 0 then Error "Invalid icon!" else Ok icon

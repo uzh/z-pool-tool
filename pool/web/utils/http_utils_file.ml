@@ -106,8 +106,11 @@ let file_to_storage_add filename =
   Lwt_result.return file.Sihl_storage.id
 ;;
 
-let multipart_form_data_to_urlencoded req =
-  let%lwt multipart_encoded = Sihl.Web.Request.to_multipart_form_data_exn req in
+let multipart_form_data_to_urlencoded (list : (string * string) list) =
+  CCList.map (fun (k, v) -> k, [ v ]) list
+;;
+
+let save_files req =
   let%lwt filenames = upload_files req in
   let%lwt filenames =
     let open Lwt_result.Syntax in
@@ -120,7 +123,50 @@ let multipart_form_data_to_urlencoded req =
   let filenames = filenames |> CCResult.flatten_l in
   match filenames with
   | Error err -> Lwt.return_error err
-  | Ok filenames ->
-    Ok (CCList.map (fun (k, v) -> k, [ v ]) (filenames @ multipart_encoded))
-    |> Lwt_result.lift
+  | Ok filenames -> Ok filenames |> Lwt_result.lift
+;;
+
+let update_files tenant req =
+  let assocs = Hashtbl.create ~random:true 5 in
+  let callback ~name ~filename _ =
+    if String.equal filename ""
+    then Lwt.return_unit
+    else (
+      let filename = Filename.basename filename in
+      Hashtbl.add assocs name filename;
+      Lwt.return_unit)
+  in
+  let%lwt _ = Sihl.Web.Request.to_multipart_form_data_exn ~callback req in
+  let files = Hashtbl.fold (fun k v acc -> (k, v) :: acc) assocs [] in
+  let update_asset key id =
+    let filename = CCList.assoc_opt ~eq:CCString.equal key files in
+    match filename with
+    | Some filename ->
+      let%lwt filedata = load_file filename |> Lwt_result.lift in
+      (match filedata with
+      | Ok (filesize, mime, data) ->
+        Logs.info (fun m -> m "data: %s" data);
+        let%lwt file = Service.Storage.find ~ctx:[] ~id in
+        let updated_file =
+          let open Sihl_storage in
+          file
+          |> set_filename_stored (Filename.basename filename)
+          |> set_filesize_stored filesize
+          |> set_mime_stored mime
+        in
+        let base64 = Base64.encode_exn data in
+        let%lwt _ = Service.Storage.update_base64 updated_file ~base64 in
+        let%lwt _ = remove_imported_file filename in
+        Lwt.return_some (Ok id)
+      | Error err -> Lwt.return_some (Error err))
+    | None -> Lwt.return_none
+  in
+  let%lwt result =
+    Lwt_list.filter_map_p
+      (fun (key, assets_id) -> update_asset key assets_id)
+      [ "styles", tenant.Tenant.Write.styles |> Tenant.Styles.Write.value
+      ; "icon", tenant.Tenant.Write.icon |> Tenant.Icon.Write.value
+      ]
+  in
+  CCList.all_ok result |> Lwt.return
 ;;

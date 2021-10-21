@@ -119,6 +119,7 @@ module Styles : sig
   module Write : sig
     type t
 
+    val value : t -> string
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 end
@@ -132,6 +133,7 @@ module Icon : sig
   module Write : sig
     type t
 
+    val value : t -> string
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 end

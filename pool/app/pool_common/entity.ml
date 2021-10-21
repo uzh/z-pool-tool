@@ -88,6 +88,7 @@ module File = struct
     }
   [@@deriving show, eq]
 
+  let id m = m.id |> Id.value
   let filename m = m.filename
 
   let value m =

@@ -30,11 +30,14 @@ let create req =
   let events () =
     let open CCResult.Infix in
     let open Lwt_result.Syntax in
-    let* urlencoded =
-      File.multipart_form_data_to_urlencoded req
-      |> Lwt_result.map_err (fun err -> err, error_path)
+    let%lwt multipart_encoded =
+      Sihl.Web.Request.to_multipart_form_data_exn req
     in
-    urlencoded
+    let* files =
+      File.save_files req |> Lwt_result.map_err (fun err -> err, error_path)
+    in
+    files @ multipart_encoded
+    |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
     >>= Cqrs_command.Tenant_command.Create.handle

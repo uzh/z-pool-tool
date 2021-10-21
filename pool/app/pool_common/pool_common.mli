@@ -68,6 +68,7 @@ module File : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
+  val id : t -> string
   val filename : t -> string
   val create : ?id:string -> string -> string -> unit -> t
 end
