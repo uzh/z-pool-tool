@@ -1,3 +1,5 @@
+module File = Pool_common.File
+
 module SmtpAuth : sig
   module Server : sig
     type t
@@ -111,10 +113,14 @@ end
 module Styles : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  module Write : sig
+    type t
+
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Icon : sig
@@ -187,7 +193,7 @@ module Write : sig
     ; url : Url.t
     ; database : Pool_common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
+    ; styles : Styles.Write.t
     ; icon : Icon.t
     ; logos : Logos.t
     ; partner_logos : PartnerLogos.t
@@ -204,7 +210,7 @@ module Write : sig
     -> Url.t
     -> Pool_common.Database.t
     -> SmtpAuth.Write.t
-    -> Styles.t
+    -> Styles.Write.t
     -> Icon.t
     -> Logos.t
     -> PartnerLogos.t
@@ -226,7 +232,7 @@ type create =
   ; url : Url.t
   ; database : Pool_common.Database.t
   ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.t
+  ; styles : Styles.Write.t
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
@@ -246,7 +252,7 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; styles : Styles.t
+  ; styles : Styles.Write.t
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t

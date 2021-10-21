@@ -116,7 +116,6 @@ let detail csrf (tenant : Tenant.t) message () =
     ; ( "smtp_auth_authentication_method"
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
     ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "styles", Styles.value tenant.styles
     ; "icon", Icon.value tenant.icon
     ; "logos", Logos.value tenant.logos
     ; "partner_logos", PartnerLogos.value tenant.partner_logos
@@ -132,6 +131,7 @@ let detail csrf (tenant : Tenant.t) message () =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
       detail_fields
+    @ [ input ~a:[ a_input_type `File; a_name "styles" ] () ]
   in
   let database_input_fields =
     CCList.map
@@ -157,6 +157,7 @@ let detail csrf (tenant : Tenant.t) message () =
                       "/root/tenant/%s/update-detail"
                       (Pool_common.Id.value tenant.id)))
             ; a_method `Post
+            ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
           @ [ disabled; input_element `Submit None "Update" ])
@@ -169,6 +170,7 @@ let detail csrf (tenant : Tenant.t) message () =
                       "/root/tenant/%s/update-database"
                       (Pool_common.Id.value tenant.id)))
             ; a_method `Post
+            ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: database_input_fields)
           @ [ input_element `Submit None "Update database" ])

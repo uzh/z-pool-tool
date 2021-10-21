@@ -15,7 +15,7 @@ module Create : sig
     ; smtp_auth_password : Tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.t
+    ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
@@ -42,7 +42,7 @@ end = struct
     ; smtp_auth_password : Tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.t
+    ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
@@ -101,7 +101,7 @@ end = struct
           ; Tenant.SmtpAuth.Password.schema ()
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
-          ; Tenant.Styles.schema ()
+          ; Tenant.Styles.Write.schema ()
           ; Tenant.Icon.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
@@ -155,7 +155,7 @@ module EditDetails : sig
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.t
+    ; styles : Tenant.Styles.Write.t option
     ; icon : Tenant.Icon.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
@@ -180,7 +180,7 @@ end = struct
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.t
+    ; styles : Tenant.Styles.Write.t option
     ; icon : Tenant.Icon.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
@@ -233,7 +233,7 @@ end = struct
           ; Tenant.SmtpAuth.Username.schema ()
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
-          ; Tenant.Styles.schema ()
+          ; Conformist.optional @@ Tenant.Styles.Write.schema ()
           ; Tenant.Icon.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
@@ -256,7 +256,8 @@ end = struct
             ; authentication_method = command.smtp_auth_authentication_method
             ; protocol = command.smtp_auth_protocol
             }
-        ; styles = command.styles
+        ; styles =
+            command.styles |> Option.value ~default:tenant.Tenant.Write.styles
         ; icon = command.icon
         ; logos = command.logos
         ; partner_logos = command.partner_logos

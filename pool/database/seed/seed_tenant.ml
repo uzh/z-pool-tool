@@ -1,3 +1,5 @@
+module Assets = Seed_assets
+
 let print_error = function
   | Ok _ -> Lwt.return_unit
   | Error err ->
@@ -6,6 +8,17 @@ let print_error = function
 ;;
 
 let create () =
+  let styles = Assets.dummy_css () in
+  let file =
+    Sihl_storage.
+      { id = styles.Assets.id
+      ; filename = styles.Assets.filename
+      ; filesize = styles.Assets.filesize
+      ; mime = "text/css"
+      }
+  in
+  let base64 = Base64.encode_exn styles.Assets.body in
+  let%lwt _ = Service.Storage.upload_base64 file ~base64 in
   let data =
     if Sihl.Configuration.is_test ()
     then (
@@ -31,7 +44,7 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "STARTTLS"
-        , "d4f03ac1-bf85-49ee-b6d8-eea39988a365"
+        , styles.Assets.id
         , "some icon"
         , "some logo"
         , "some partner logos"
@@ -53,7 +66,7 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "STARTTLS"
-        , "6830f8e5-136e-4e1f-9730-0fd82b1c009e"
+        , styles.Assets.id
         , "some icon"
         , "some logo"
         , "some partner logos"
@@ -73,7 +86,7 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "SSL/TLS"
-        , "32192cb6-e975-483c-881a-3e405d904cc2"
+        , styles.Assets.id
         , "some icon"
         , "some logo"
         , "some partner logos"

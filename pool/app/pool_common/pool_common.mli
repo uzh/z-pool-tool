@@ -62,6 +62,16 @@ module UpdatedAt : sig
   val value : t -> Ptime.t
 end
 
+module File : sig
+  type t
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
+  val filename : t -> string
+  val create : ?id:string -> string -> string -> unit -> t
+end
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -95,6 +105,12 @@ module Repo : sig
 
   module UpdatedAt : sig
     type t = UpdatedAt.t
+
+    val t : t Caqti_type.t
+  end
+
+  module File : sig
+    type t = File.t
 
     val t : t Caqti_type.t
   end

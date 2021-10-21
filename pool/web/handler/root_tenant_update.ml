@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module File = HttpUtils.File
 
 let update req command success_message =
   let open Utils.Lwt_result.Infix in
@@ -11,7 +12,7 @@ let update req command success_message =
   in
   let events tenant =
     let open CCResult.Infix in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt urlencoded = File.multipart_form_data_to_urlencoded req in
     let events_list urlencoded =
       match command with
       | `EditDetail ->

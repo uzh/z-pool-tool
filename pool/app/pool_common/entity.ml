@@ -77,3 +77,34 @@ module UpdatedAt = struct
   let create = Ptime_clock.now
   let value m = m
 end
+
+module File = struct
+  type t =
+    { id : Id.t
+    ; filename : string
+    ; mime_type : string
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
+    }
+  [@@deriving show, eq]
+
+  let filename m = m.filename
+
+  let value m =
+    { id = m.id
+    ; filename = m.filename
+    ; mime_type = m.mime_type
+    ; created_at = m.created_at
+    ; updated_at = m.updated_at
+    }
+  ;;
+
+  let create ?id filename mime_type () =
+    { id = id |> Option.value ~default:(Id.create ())
+    ; filename
+    ; mime_type
+    ; created_at = CreatedAt.create ()
+    ; updated_at = UpdatedAt.create ()
+    }
+  ;;
+end

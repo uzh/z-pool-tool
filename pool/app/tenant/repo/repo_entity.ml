@@ -23,7 +23,13 @@ end
 module Styles = struct
   include Styles
 
-  let t = Caqti_type.string
+  let t = Common.Repo.File.t
+
+  module Write = struct
+    include Write
+
+    let t = Caqti_type.string
+  end
 end
 
 module Icon = struct
@@ -94,7 +100,6 @@ let t =
     let* title = Title.create title in
     let* description = Description.create description in
     let* url = Url.create url in
-    let* styles = Styles.create styles in
     let* icon = Icon.create icon in
     let* logos = Logos.create logos in
     let* partner_logos = PartnerLogos.create partner_logos in
@@ -193,7 +198,6 @@ module Write = struct
       let* title = Title.create title in
       let* description = Description.create description in
       let* url = Url.create url in
-      let* styles = Styles.create styles in
       let* icon = Icon.create icon in
       let* logos = Logos.create logos in
       let* partner_logos = PartnerLogos.create partner_logos in
@@ -232,7 +236,7 @@ module Write = struct
                        (tup2
                           SmtpAuth.Write.t
                           (tup2
-                             Styles.t
+                             Styles.Write.t
                              (tup2
                                 Icon.t
                                 (tup2

@@ -39,31 +39,58 @@ module Sql = struct
       match full with
       | true ->
         {sql|
-          database_url,
-          database_label,
+          pool_tenant.database_url,
+          pool_tenant.database_label,
         |sql}
       | false -> {sql|
-          database_label,
+          pool_tenant.database_label,
         |sql}
     in
     let smtp_auth_fragment =
       match full with
       | true ->
         {sql|
-          smtp_auth_server,
-          smtp_auth_port,
-          smtp_auth_username,
-          smtp_auth_password,
-          smtp_auth_authentication_method,
-          smtp_auth_protocol,
+          pool_tenant.smtp_auth_server,
+          pool_tenant.smtp_auth_port,
+          pool_tenant.smtp_auth_username,
+          pool_tenant.smtp_auth_password,
+          pool_tenant.smtp_auth_authentication_method,
+          pool_tenant.smtp_auth_protocol,
         |sql}
       | false ->
         {sql|
-          smtp_auth_server,
-          smtp_auth_port,
-          smtp_auth_username,
-          smtp_auth_authentication_method,
-          smtp_auth_protocol,
+          pool_tenant.smtp_auth_server,
+          pool_tenant.smtp_auth_port,
+          pool_tenant.smtp_auth_username,
+          pool_tenant.smtp_auth_authentication_method,
+          pool_tenant.smtp_auth_protocol,
+        |sql}
+    in
+    let styles_fragment =
+      match full with
+      | true ->
+        {sql|
+          LOWER(CONCAT(
+            SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
+            SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 13, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 17, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 21)
+          )),
+        |sql}
+      | false ->
+        {sql|
+          LOWER(CONCAT(
+            SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
+            SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 13, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 17, 4), '-',
+            SUBSTR(HEX(storage_handles.uuid), 21)
+          )),
+          storage_handles.filename,
+          storage_handles.mime,
+          storage_handles.created,
+          storage_handles.updated,
         |sql}
     in
     let select_from =
@@ -71,36 +98,33 @@ module Sql = struct
         {sql|
           SELECT
             LOWER(CONCAT(
-              SUBSTR(HEX(uuid), 1, 8), '-',
-              SUBSTR(HEX(uuid), 9, 4), '-',
-              SUBSTR(HEX(uuid), 13, 4), '-',
-              SUBSTR(HEX(uuid), 17, 4), '-',
-              SUBSTR(HEX(uuid), 21)
+              SUBSTR(HEX(pool_tenant.uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_tenant.uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_tenant.uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_tenant.uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_tenant.uuid), 21)
             )),
-            title,
-            description,
-            url,
+            pool_tenant.title,
+            pool_tenant.description,
+            pool_tenant.url,
             %s
             %s
-            LOWER(CONCAT(
-              SUBSTR(HEX(styles), 1, 8), '-',
-              SUBSTR(HEX(styles), 9, 4), '-',
-              SUBSTR(HEX(styles), 13, 4), '-',
-              SUBSTR(HEX(styles), 17, 4), '-',
-              SUBSTR(HEX(styles), 21)
-            )),
-            icon,
-            logos,
-            partner_logos,
-            mainenance,
-            disabled,
-            default_language,
-            created_at,
-            updated_at
+            %s
+            pool_tenant.icon,
+            pool_tenant.logos,
+            pool_tenant.partner_logos,
+            pool_tenant.mainenance,
+            pool_tenant.disabled,
+            pool_tenant.default_language,
+            pool_tenant.created_at,
+            pool_tenant.updated_at
           FROM pool_tenant
+          LEFT JOIN storage_handles
+            ON pool_tenant.styles = storage_handles.uuid
         |sql}
         database_fragment
         smtp_auth_fragment
+        styles_fragment
     in
     Format.asprintf "%s %s" select_from where_fragment
   ;;

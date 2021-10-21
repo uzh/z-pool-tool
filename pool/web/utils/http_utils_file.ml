@@ -81,7 +81,7 @@ let file_to_storage_add filename =
       { id = asset_id
       ; filename = Filename.basename filename
       ; filesize
-      ; mime = "application/pdf"
+      ; mime = "application/pdf" (* TODO [timhub]: select correct filetype *)
       }
   in
   let base64 = Base64.encode_exn data in

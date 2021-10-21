@@ -2,6 +2,7 @@ module Id = Pool_common.Id
 module Database = Pool_common.Database
 module CreatedAt = Pool_common.CreatedAt
 module UpdatedAt = Pool_common.UpdatedAt
+module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
 
 module Title = struct
@@ -52,20 +53,24 @@ module Url = struct
 end
 
 module Styles = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create styles =
-    if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom
-      (Utils.schema_decoder create "styles")
-      CCList.pure
-      "styles"
-  ;;
+    let create styles =
+      if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
+    ;;
+
+    let schema () =
+      Conformist.custom
+        (Utils.schema_decoder create "styles")
+        CCList.pure
+        "styles"
+    ;;
+  end
 end
 
 module Icon = struct
@@ -191,7 +196,7 @@ module Write = struct
     ; url : Url.t
     ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
+    ; styles : Styles.Write.t
     ; icon : Icon.t
     ; logos : Logos.t
     ; partner_logos : PartnerLogos.t

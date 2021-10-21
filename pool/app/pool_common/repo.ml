@@ -45,3 +45,21 @@ module UpdatedAt = struct
 
   let t = Caqti_type.ptime
 end
+
+module File = struct
+  include Entity.File
+
+  let t =
+    let encode m =
+      Ok (m.id, (m.filename, (m.mime_type, (m.created_at, m.updated_at))))
+    in
+    let decode (id, (filename, (mime_type, (created_at, updated_at)))) =
+      Ok { id; filename; mime_type; created_at; updated_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 string (tup2 string (tup2 string (tup2 ptime ptime)))))
+  ;;
+end

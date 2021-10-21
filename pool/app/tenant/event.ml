@@ -8,7 +8,7 @@ type create =
   ; url : Url.t
   ; database : Database.t
   ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.t
+  ; styles : Styles.Write.t
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
@@ -30,7 +30,7 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; styles : Styles.t
+  ; styles : Styles.Write.t
   ; icon : Icon.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
