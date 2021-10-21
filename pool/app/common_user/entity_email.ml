@@ -2,6 +2,7 @@ module Token = struct
   type t = string [@@deriving eq, show]
 
   let create m = m
+  let value m = m
 end
 
 module Address = struct
@@ -100,7 +101,7 @@ let show : type state. state t -> 'a = function
   | Verified m -> Address.show m.address
 ;;
 
-let token (Unverified email) = Token.show email.token
+let token (Unverified email) = Token.value email.token
 let create address token = Ok (Unverified { address; token })
 
 let verify (Unverified email) =

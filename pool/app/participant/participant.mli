@@ -7,11 +7,12 @@ module RecruitmentChannel : sig
 
   val to_string : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
+  val all : unit -> string list
 end
 
-type t = Entity.t =
+type t =
   { user : Sihl_user.t
-  ; recruitment_channel : Entity.RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Common_user.TermsAccepted.t
   ; paused : Common_user.Paused.t
   ; disabled : Common_user.Disabled.t
@@ -21,6 +22,7 @@ type t = Entity.t =
   }
 
 val login : 'a -> email:'b -> password:'c -> 'd
+val insert : Pool_common.Database.Label.t -> t -> (unit, string) Result.t Lwt.t
 val find_by_user : 'a -> 'b
 val find_duplicates : 'a -> 'b
 

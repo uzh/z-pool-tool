@@ -13,7 +13,7 @@ module Email = struct
       let%lwt token =
         Service.Token.create
           ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-          [ "email", Email.Address.show address ]
+          [ "email", Email.Address.value address ]
         >|= Email.Token.create
       in
       Repo.Email.insert pool @@ Email.create address token

@@ -250,3 +250,18 @@ module Write = struct
                                                   Common.Repo.UpdatedAt.t)))))))))))))))
   ;;
 end
+
+module Selection = struct
+  open Entity.Selection
+
+  let t =
+    let encode m = Ok (m.Selection.url, m.database_label) in
+    let decode (url, database_label) =
+      let open CCResult in
+      let* url = Url.create url in
+      Ok { url; database_label }
+    in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 Url.t Common.Repo.Database.Label.t))
+  ;;
+end

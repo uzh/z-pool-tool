@@ -58,7 +58,11 @@ module Root = struct
 end
 
 module Tenant = struct
-  let steps = extend_migrations [ Migration_person.migration () ]
+  let steps =
+    extend_migrations
+      [ Migration_person.migration (); Migration_participant.migration () ]
+  ;;
+
   let run db_pools () = execute db_pools @@ steps ()
 
   let run_pending_migrations db_pools () =

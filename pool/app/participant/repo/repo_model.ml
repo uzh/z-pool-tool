@@ -12,7 +12,7 @@ module RecruitmentChannel = struct
   ;;
 end
 
-let participant_caqti =
+let user_caqti =
   let status =
     let encode m = m |> Sihl_user.status_to_string |> Result.ok in
     let decode = Sihl_user.status_of_string in
@@ -117,7 +117,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         participant_caqti
+         user_caqti
          (tup2
             RecruitmentChannel.t
             (tup2
@@ -127,17 +127,31 @@ let t =
                   (tup2 Disabled.t (tup2 Verified.t (tup2 ptime ptime))))))))
 ;;
 
-let find = Utils.todo
-let insert = Utils.todo
-let update _ = Utils.todo
-
-let set_password pool : t -> string -> string -> (unit, string) result Lwt.t =
- fun { user; _ } password password_confirmation ->
-  let open Lwt_result.Infix in
-  Service.User.set_password
-    ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-    user
-    ~password
-    ~password_confirmation
-  >|= CCFun.const ()
+let participant =
+  let encode m =
+    let open Common_user in
+    Ok
+      ( m.user.Sihl_user.id
+      , ( m.recruitment_channel
+        , ( TermsAccepted.value m.terms_accepted_at
+          , ( Paused.value m.paused
+            , ( Disabled.value m.disabled
+              , (Verified.value m.verified, (m.created_at, m.updated_at)) ) ) )
+        ) )
+  in
+  let decode _ = Error "Model only used for DB insert" in
+  let open Common_user.Repo in
+  Caqti_type.(
+    custom
+      ~encode
+      ~decode
+      (tup2
+         string
+         (tup2
+            RecruitmentChannel.t
+            (tup2
+               TermsAccepted.t
+               (tup2
+                  Paused.t
+                  (tup2 Disabled.t (tup2 Verified.t (tup2 ptime ptime))))))))
 ;;

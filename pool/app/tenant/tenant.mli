@@ -279,6 +279,18 @@ val find_databases
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
 
+module Selection : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : Url.t -> Pool_common.Database.Label.t -> t
+  val find_all : unit -> (t list, string) result Lwt.t
+  val url : t -> string
+  val label : t -> Pool_common.Database.Label.t
+end
+
 (* MONITORING AND MANAGEMENT *)
 
 (* The system should proactively report degraded health to operators *)

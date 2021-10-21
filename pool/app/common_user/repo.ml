@@ -15,13 +15,13 @@ end
 module TermsAccepted = struct
   include TermsAccepted
 
-  let t = Caqti_type.ptime
+  let t = Caqti_type.(option ptime)
 end
 
 module Verified = struct
   include Verified
 
-  let t = Caqti_type.ptime
+  let t = Caqti_type.(option ptime)
 end
 
 module Email = struct

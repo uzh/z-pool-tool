@@ -19,6 +19,20 @@ type update =
   }
 [@@deriving eq, show]
 
+let set_password
+    :  Pool_common.Database.Label.t -> t -> string -> string
+    -> (unit, string) result Lwt.t
+  =
+ fun db_pool { user; _ } password password_confirmation ->
+  let open Lwt_result.Infix in
+  Service.User.set_password
+    ~ctx:[ "pool", Pool_common.Database.Label.value db_pool ]
+    user
+    ~password
+    ~password_confirmation
+  >|= ignore
+;;
+
 type event =
   | Created of create
   | DetailsUpdated of t * update
@@ -31,21 +45,29 @@ let handle_event pool : event -> unit Lwt.t = function
     let%lwt user =
       Service.User.create_user
         ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-        ~name:(participant.firstname |> User.Firstname.show)
-        ~given_name:(participant.lastname |> User.Lastname.show)
+        ~name:(participant.firstname |> User.Firstname.value)
+        ~given_name:(participant.lastname |> User.Lastname.value)
         ~password:(participant.password |> User.Password.to_sihl)
-      @@ Email.Address.show participant.email
+      @@ Email.Address.value participant.email
     in
-    let%lwt () =
-      Permission.assign
-        user
-        (Role.participant (user.Sihl_user.id |> Id.of_string))
-    in
-    Repo.insert participant
+    (* TODO Uncomment when permisson package is ready. *)
+    (* let* () = Permission.assign user (Role.participant (user.Sihl_user.id |>
+       Id.of_string)) in *)
+    { user
+    ; recruitment_channel = participant.recruitment_channel
+    ; terms_accepted_at = participant.terms_accepted_at
+    ; paused = User.Paused.create false
+    ; disabled = User.Disabled.create false
+    ; verified = User.Verified.create None
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
+    |> Repo.insert pool
+    |> CCFun.const Lwt.return_unit
   | DetailsUpdated (params, person) -> Repo.update person params
   | PasswordUpdated (person, password, confirmed) ->
     let%lwt _ =
-      Repo.set_password
+      set_password
         pool
         person
         (password |> User.Password.to_sihl)

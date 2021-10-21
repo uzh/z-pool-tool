@@ -24,6 +24,30 @@ type update =
   }
 [@@deriving eq, show]
 
+let set_password
+    : type person.
+      Pool_common.Database.Label.t
+      -> person t
+      -> string
+      -> string
+      -> (unit, string) result Lwt.t
+  =
+ fun pool person password password_confirmation ->
+  let open Lwt_result.Infix in
+  match person with
+  | Assistant { user; _ }
+  | Experimenter { user; _ }
+  | LocationManager { user; _ }
+  | Recruiter { user; _ }
+  | Operator { user; _ } ->
+    Service.User.set_password
+      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      user
+      ~password
+      ~password_confirmation
+    >|= ignore
+;;
+
 type 'a person_event =
   | DetailsUpdated of 'a t * update
   | PasswordUpdated of 'a t * User.Password.t * User.PasswordConfirmed.t
@@ -42,7 +66,7 @@ let handle_person_event pool : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
     let%lwt _ =
-      Repo.set_password
+      set_password
         pool
         person
         (password |> User.Password.to_sihl)

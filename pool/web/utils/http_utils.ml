@@ -59,6 +59,10 @@ let request_to_params req keys () =
   |> Lwt_result.lift
 ;;
 
+let urlencoded_to_flash urlencoded =
+  Sihl.Web.Flash.set (urlencoded |> List.map (fun (m, k) -> m, CCList.hd k))
+;;
+
 let err_with_action ?message error_path action =
   Lwt_result.map_err (fun msg ->
       match message with

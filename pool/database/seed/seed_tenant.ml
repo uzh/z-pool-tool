@@ -44,7 +44,7 @@ let create () =
     else
       [ ( "Econ uzh"
         , "description"
-        , "pool.econ.uzh.ch"
+        , "localhost:3016"
         , "mariadb://root@database:3306/dev_econ"
         , "econ-uzh"
         , "smtp.uzh.ch"

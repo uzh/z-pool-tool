@@ -195,12 +195,25 @@ module Sql = struct
   ;;
 
   let insert pool = Utils.Database.exec pool insert_request
+
+  let find_selectable_request =
+    {sql|
+      SELECT
+        url,
+        database_label
+      FROM pool_tenant
+    |sql}
+    |> Caqti_request.collect Caqti_type.unit RepoEntity.Selection.t
+  ;;
+
+  let find_selectable pool = Utils.Database.collect pool find_selectable_request
 end
 
 let find pool = Sql.find (Label.value pool)
 let find_full pool = Sql.find_full (Label.value pool)
 let find_all pool = Sql.find_all (Label.value pool)
 let find_databases pool = Sql.find_databases (Label.value pool)
+let find_selectable pool = Sql.find_selectable (Label.value pool)
 let insert pool = Sql.insert (Label.value pool)
 
 let update pool : Entity.Write.t -> (unit, string) result Lwt.t =

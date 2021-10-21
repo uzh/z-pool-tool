@@ -30,6 +30,8 @@ module RecruitmentChannel = struct
       (fun l -> [ to_string l ])
       "recruitment_channel"
   ;;
+
+  let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]
 end
 
 type t =

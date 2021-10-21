@@ -24,3 +24,5 @@ let handle_event pool event =
   | Tenant event -> Tenant.handle_event pool event
   | Experiment event -> Experiment.handle_event pool event
 ;;
+
+let handle_events pool = Lwt_list.iter_s (handle_event pool)
