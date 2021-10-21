@@ -116,7 +116,6 @@ let detail csrf (tenant : Tenant.t) message () =
     ; ( "smtp_auth_authentication_method"
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
     ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "icon", Icon.value tenant.icon
     ; "logos", Logos.value tenant.logos
     ; "partner_logos", PartnerLogos.value tenant.partner_logos
     ; "default_language", Settings.Language.code tenant.default_language
@@ -131,7 +130,9 @@ let detail csrf (tenant : Tenant.t) message () =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
       detail_fields
-    @ [ input ~a:[ a_input_type `File; a_name "styles" ] () ]
+    @ [ input ~a:[ a_input_type `File; a_name "styles" ] ()
+      ; input ~a:[ a_input_type `File; a_name "icon" ] ()
+      ]
   in
   let database_input_fields =
     CCList.map

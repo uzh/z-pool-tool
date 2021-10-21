@@ -74,17 +74,21 @@ module Styles = struct
 end
 
 module Icon = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create icon =
-    if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
-  ;;
+    let create icon =
+      if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
+    ;;
+
+    let schema () =
+      Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
+    ;;
+  end
 end
 
 module Logos = struct
@@ -197,7 +201,7 @@ module Write = struct
     ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
-    ; icon : Icon.t
+    ; icon : Icon.Write.t
     ; logos : Logos.t
     ; partner_logos : PartnerLogos.t
     ; maintenance : Maintenance.t

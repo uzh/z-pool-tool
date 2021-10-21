@@ -18,7 +18,7 @@ module Sql = struct
         smtp_auth_authentication_method = $11,
         smtp_auth_protocol = $12,
         styles = UNHEX(REPLACE($13, '-', '')),
-        icon = $14,
+        icon = UNHEX(REPLACE($14, '-', '')),
         logos = $15,
         partner_logos = $16,
         mainenance = $17,
@@ -71,26 +71,53 @@ module Sql = struct
       | true ->
         {sql|
           LOWER(CONCAT(
-            SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
-            SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 13, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 17, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 21)
+            SUBSTR(HEX(styles.uuid), 1, 8), '-',
+            SUBSTR(HEX(styles.uuid), 9, 4), '-',
+            SUBSTR(HEX(styles.uuid), 13, 4), '-',
+            SUBSTR(HEX(styles.uuid), 17, 4), '-',
+            SUBSTR(HEX(styles.uuid), 21)
           )),
         |sql}
       | false ->
         {sql|
           LOWER(CONCAT(
-            SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
-            SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 13, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 17, 4), '-',
-            SUBSTR(HEX(storage_handles.uuid), 21)
+            SUBSTR(HEX(styles.uuid), 1, 8), '-',
+            SUBSTR(HEX(styles.uuid), 9, 4), '-',
+            SUBSTR(HEX(styles.uuid), 13, 4), '-',
+            SUBSTR(HEX(styles.uuid), 17, 4), '-',
+            SUBSTR(HEX(styles.uuid), 21)
           )),
-          storage_handles.filename,
-          storage_handles.mime,
-          storage_handles.created,
-          storage_handles.updated,
+          styles.filename,
+          styles.mime,
+          styles.created,
+          styles.updated,
+        |sql}
+    in
+    let icon_fragment =
+      match full with
+      | true ->
+        {sql|
+          LOWER(CONCAT(
+            SUBSTR(HEX(icon.uuid), 1, 8), '-',
+            SUBSTR(HEX(icon.uuid), 9, 4), '-',
+            SUBSTR(HEX(icon.uuid), 13, 4), '-',
+            SUBSTR(HEX(icon.uuid), 17, 4), '-',
+            SUBSTR(HEX(icon.uuid), 21)
+          )),
+        |sql}
+      | false ->
+        {sql|
+          LOWER(CONCAT(
+            SUBSTR(HEX(icon.uuid), 1, 8), '-',
+            SUBSTR(HEX(icon.uuid), 9, 4), '-',
+            SUBSTR(HEX(icon.uuid), 13, 4), '-',
+            SUBSTR(HEX(icon.uuid), 17, 4), '-',
+            SUBSTR(HEX(icon.uuid), 21)
+          )),
+          icon.filename,
+          icon.mime,
+          icon.created,
+          icon.updated,
         |sql}
     in
     let select_from =
@@ -110,7 +137,7 @@ module Sql = struct
             %s
             %s
             %s
-            pool_tenant.icon,
+            %s
             pool_tenant.logos,
             pool_tenant.partner_logos,
             pool_tenant.mainenance,
@@ -119,12 +146,15 @@ module Sql = struct
             pool_tenant.created_at,
             pool_tenant.updated_at
           FROM pool_tenant
-          LEFT JOIN storage_handles
-            ON pool_tenant.styles = storage_handles.uuid
+          LEFT JOIN storage_handles styles
+            ON pool_tenant.styles = styles.uuid
+          LEFT JOIN storage_handles icon
+            ON pool_tenant.icon = icon.uuid
         |sql}
         database_fragment
         smtp_auth_fragment
         styles_fragment
+        icon_fragment
     in
     Format.asprintf "%s %s" select_from where_fragment
   ;;
@@ -211,7 +241,7 @@ module Sql = struct
         ?,
         ?,
         UNHEX(REPLACE(?, '-', '')),
-        ?,
+        UNHEX(REPLACE(?, '-', '')),
         ?,
         ?,
         ?,

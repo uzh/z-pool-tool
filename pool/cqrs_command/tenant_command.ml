@@ -16,7 +16,7 @@ module Create : sig
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
-    ; icon : Tenant.Icon.t
+    ; icon : Tenant.Icon.Write.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
@@ -43,7 +43,7 @@ end = struct
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
-    ; icon : Tenant.Icon.t
+    ; icon : Tenant.Icon.Write.t
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
@@ -102,7 +102,7 @@ end = struct
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Styles.Write.schema ()
-          ; Tenant.Icon.schema ()
+          ; Tenant.Icon.Write.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ; Settings.Language.schema ()
@@ -156,7 +156,7 @@ module EditDetails : sig
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t option
-    ; icon : Tenant.Icon.t
+    ; icon : Tenant.Icon.Write.t option
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
@@ -181,7 +181,7 @@ end = struct
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t option
-    ; icon : Tenant.Icon.t
+    ; icon : Tenant.Icon.Write.t option
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
@@ -234,7 +234,7 @@ end = struct
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Conformist.optional @@ Tenant.Styles.Write.schema ()
-          ; Tenant.Icon.schema ()
+          ; Conformist.optional @@ Tenant.Icon.Write.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ; Tenant.Disabled.schema ()
@@ -258,7 +258,7 @@ end = struct
             }
         ; styles =
             command.styles |> Option.value ~default:tenant.Tenant.Write.styles
-        ; icon = command.icon
+        ; icon = command.icon |> Option.value ~default:tenant.Tenant.Write.icon
         ; logos = command.logos
         ; partner_logos = command.partner_logos
         ; disabled = command.disabled

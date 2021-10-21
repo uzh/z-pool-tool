@@ -9,16 +9,24 @@ let print_error = function
 
 let create () =
   let styles = Assets.dummy_css () in
-  let file =
-    Sihl_storage.
-      { id = styles.Assets.id
-      ; filename = styles.Assets.filename
-      ; filesize = styles.Assets.filesize
-      ; mime = "text/css"
-      }
+  let icon = Assets.dummy_icon () in
+  let%lwt _ =
+    Lwt_list.map_s
+      (fun file ->
+        let open Assets in
+        let stored_file =
+          Sihl_storage.
+            { id = file.Assets.id
+            ; filename = file.filename
+            ; filesize = file.filesize
+            ; mime = file.mime
+            }
+        in
+        let base64 = Base64.encode_exn file.body in
+        let%lwt _ = Service.Storage.upload_base64 stored_file ~base64 in
+        Lwt.return_unit)
+      [ styles; icon ]
   in
-  let base64 = Base64.encode_exn styles.Assets.body in
-  let%lwt _ = Service.Storage.upload_base64 file ~base64 in
   let data =
     if Sihl.Configuration.is_test ()
     then (
@@ -45,7 +53,7 @@ let create () =
         , "LOGIN"
         , "STARTTLS"
         , styles.Assets.id
-        , "some icon"
+        , icon.Assets.id
         , "some logo"
         , "some partner logos"
         , "EN"
@@ -67,7 +75,7 @@ let create () =
         , "LOGIN"
         , "STARTTLS"
         , styles.Assets.id
-        , "some icon"
+        , icon.Assets.id
         , "some logo"
         , "some partner logos"
         , "EN"
@@ -87,7 +95,7 @@ let create () =
         , "LOGIN"
         , "SSL/TLS"
         , styles.Assets.id
-        , "some icon"
+        , icon.Assets.id
         , "some logo"
         , "some partner logos"
         , "DE"

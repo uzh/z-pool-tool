@@ -9,7 +9,7 @@ type create =
   ; database : Database.t
   ; smtp_auth : SmtpAuth.Write.t
   ; styles : Styles.Write.t
-  ; icon : Icon.t
+  ; icon : Icon.Write.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
   ; default_language : Settings.Language.t
@@ -31,7 +31,7 @@ type update =
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
   ; styles : Styles.Write.t
-  ; icon : Icon.t
+  ; icon : Icon.Write.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
