@@ -16,8 +16,13 @@ let update req command success_message =
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
-    let* files =
-      File.save_files req |> Lwt_result.map_err (fun err -> err, redirect_path)
+    let* _ =
+      File.update_files
+        [ "styles", tenant.Tenant.Write.styles |> Tenant.Styles.Write.value
+        ; "icon", tenant.Tenant.Write.icon |> Tenant.Icon.Write.value
+        ]
+        req
+      |> Lwt_result.map_err (fun err -> err, redirect_path)
     in
     let events_list urlencoded =
       match command with
@@ -30,11 +35,10 @@ let update req command success_message =
         |> CCResult.map_err Utils.handle_conformist_error
         >>= CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant
     in
-    files @ multipart_encoded
+    multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> HttpUtils.format_request_boolean_values [ "disabled" ]
     |> events_list
-    (* TODO [timhub]: delete files if error *)
     |> CCResult.map_err (fun err -> err, redirect_path)
     |> Lwt_result.lift
   in

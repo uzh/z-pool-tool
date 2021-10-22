@@ -127,26 +127,19 @@ let save_files req =
   | Ok filenames -> Ok filenames |> Lwt_result.lift
 ;;
 
-let update_files tenant req =
-  let assocs = Hashtbl.create ~random:true 5 in
-  let callback ~name ~filename _ =
-    if String.equal filename ""
-    then Lwt.return_unit
-    else (
-      let filename = Filename.basename filename in
-      Hashtbl.add assocs name filename;
-      Lwt.return_unit)
+let update_files file_fields req =
+  let%lwt filenames = upload_files req in
+  let callback ~name:_ ~filename _ =
+    if String.equal filename "" then Lwt.return_unit else Lwt.return_unit
   in
   let%lwt _ = Sihl.Web.Request.to_multipart_form_data_exn ~callback req in
-  let files = Hashtbl.fold (fun k v acc -> (k, v) :: acc) assocs [] in
   let update_asset key id =
-    let filename = CCList.assoc_opt ~eq:CCString.equal key files in
+    let filename = CCList.assoc_opt ~eq:CCString.equal key filenames in
     match filename with
     | Some filename ->
       let%lwt filedata = load_file filename |> Lwt_result.lift in
       (match filedata with
       | Ok (filesize, mime, data) ->
-        Logs.info (fun m -> m "data: %s" data);
         let%lwt file = Service.Storage.find ~ctx:[] ~id in
         let updated_file =
           let open Sihl_storage in
@@ -165,9 +158,7 @@ let update_files tenant req =
   let%lwt result =
     Lwt_list.filter_map_p
       (fun (key, assets_id) -> update_asset key assets_id)
-      [ "styles", tenant.Tenant.Write.styles |> Tenant.Styles.Write.value
-      ; "icon", tenant.Tenant.Write.icon |> Tenant.Icon.Write.value
-      ]
+      file_fields
   in
   CCList.all_ok result |> Lwt.return
 ;;
