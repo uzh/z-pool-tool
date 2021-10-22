@@ -96,17 +96,10 @@ module Icon = struct
 end
 
 module Logos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
+  type create = File.t list -> t
 
   let value m = m
-
-  let create logos =
-    if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
-  ;;
-
-  let schema () =
-    Conformist.custom (Utils.schema_decoder create "logos") CCList.pure "logos"
-  ;;
 end
 
 module PartnerLogos = struct
@@ -196,6 +189,61 @@ type t =
   }
 [@@deriving eq, show]
 
+let create_of_read
+    id
+    title
+    description
+    url
+    database_label
+    smtp_auth
+    styles
+    icon
+    logos
+    partner_logos
+    maintenance
+    disabled
+    default_language
+    created_at
+    updated_at
+  =
+  { id
+  ; title
+  ; description
+  ; url
+  ; database_label
+  ; smtp_auth
+  ; styles
+  ; icon
+  ; logos
+  ; partner_logos
+  ; maintenance
+  ; disabled
+  ; default_language
+  ; created_at
+  ; updated_at
+  }
+;;
+
+module Read = struct
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database_label : Database.Label.t
+    ; smtp_auth : SmtpAuth.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; partner_logos : PartnerLogos.t
+    ; maintenance : Maintenance.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
+    }
+  [@@deriving eq, show]
+end
+
 module Write = struct
   type t =
     { id : Id.t
@@ -206,7 +254,6 @@ module Write = struct
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
-    ; logos : Logos.t
     ; partner_logos : PartnerLogos.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
@@ -224,7 +271,6 @@ module Write = struct
       smtp_auth
       styles
       icon
-      logos
       partner_logos
       default_language
     =
@@ -236,7 +282,6 @@ module Write = struct
     ; smtp_auth
     ; styles
     ; icon
-    ; logos
     ; partner_logos
     ; maintenance = Maintenance.create false
     ; disabled = Disabled.create false

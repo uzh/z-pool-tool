@@ -69,9 +69,10 @@ module Disabled = struct
 end
 
 let t =
+  let open Entity.Read in
   let encode m =
     Ok
-      ( Id.value m.id
+      ( Id.value m.Read.id
       , ( m.title
         , ( m.description
           , ( m.url
@@ -79,12 +80,11 @@ let t =
               , ( m.smtp_auth
                 , ( m.styles
                   , ( m.icon
-                    , ( m.logos
-                      , ( m.partner_logos
-                        , ( m.maintenance
-                          , ( m.disabled
-                            , (m.default_language, (m.created_at, m.updated_at))
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                    , ( m.partner_logos
+                      , ( m.maintenance
+                        , ( m.disabled
+                          , (m.default_language, (m.created_at, m.updated_at))
+                          ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
@@ -95,18 +95,16 @@ let t =
               , ( smtp_auth
                 , ( styles
                   , ( icon
-                    , ( logos
-                      , ( partner_logos
-                        , ( maintenance
-                          , ( disabled
-                            , (default_language, (created_at, updated_at)) ) )
-                        ) ) ) ) ) ) ) ) ) )
+                    , ( partner_logos
+                      , ( maintenance
+                        , ( disabled
+                          , (default_language, (created_at, updated_at)) ) ) )
+                    ) ) ) ) ) ) ) )
     =
     let open CCResult in
     let* title = Title.create title in
     let* description = Description.create description in
     let* url = Url.create url in
-    let* logos = Logos.create logos in
     let* partner_logos = PartnerLogos.create partner_logos in
     Ok
       { id = Id.of_string id
@@ -117,7 +115,6 @@ let t =
       ; smtp_auth
       ; styles
       ; icon
-      ; logos
       ; partner_logos
       ; maintenance = Maintenance.create maintenance
       ; disabled = Disabled.create disabled
@@ -147,18 +144,16 @@ let t =
                            (tup2
                               Icon.t
                               (tup2
-                                 Logos.t
+                                 PartnerLogos.t
                                  (tup2
-                                    PartnerLogos.t
+                                    Maintenance.t
                                     (tup2
-                                       Maintenance.t
+                                       Disabled.t
                                        (tup2
-                                          Disabled.t
+                                          Settings.Language.t
                                           (tup2
-                                             Settings.Language.t
-                                             (tup2
-                                                Common.Repo.CreatedAt.t
-                                                Common.Repo.UpdatedAt.t)))))))))))))))
+                                             Common.Repo.CreatedAt.t
+                                             Common.Repo.UpdatedAt.t))))))))))))))
 ;;
 
 module Write = struct
@@ -175,13 +170,11 @@ module Write = struct
                 , ( m.smtp_auth
                   , ( m.styles
                     , ( m.icon
-                      , ( m.logos
-                        , ( m.partner_logos
-                          , ( m.maintenance
-                            , ( m.disabled
-                              , ( m.default_language
-                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
-                ) ) ) ) )
+                      , ( m.partner_logos
+                        , ( m.maintenance
+                          , ( m.disabled
+                            , (m.default_language, (m.created_at, m.updated_at))
+                            ) ) ) ) ) ) ) ) ) ) )
     in
     let decode
         ( id
@@ -192,18 +185,16 @@ module Write = struct
                 , ( smtp_auth
                   , ( styles
                     , ( icon
-                      , ( logos
-                        , ( partner_logos
-                          , ( maintenance
-                            , ( disabled
-                              , (default_language, (created_at, updated_at)) )
-                            ) ) ) ) ) ) ) ) ) ) )
+                      , ( partner_logos
+                        , ( maintenance
+                          , ( disabled
+                            , (default_language, (created_at, updated_at)) ) )
+                        ) ) ) ) ) ) ) ) )
       =
       let open CCResult in
       let* title = Title.create title in
       let* description = Description.create description in
       let* url = Url.create url in
-      let* logos = Logos.create logos in
       let* partner_logos = PartnerLogos.create partner_logos in
       Ok
         { id = Id.of_string id
@@ -214,7 +205,6 @@ module Write = struct
         ; smtp_auth
         ; styles
         ; icon
-        ; logos
         ; partner_logos
         ; maintenance = Maintenance.create maintenance
         ; disabled = Disabled.create disabled
@@ -244,18 +234,16 @@ module Write = struct
                              (tup2
                                 Icon.Write.t
                                 (tup2
-                                   Logos.t
+                                   PartnerLogos.t
                                    (tup2
-                                      PartnerLogos.t
+                                      Maintenance.t
                                       (tup2
-                                         Maintenance.t
+                                         Disabled.t
                                          (tup2
-                                            Disabled.t
+                                            Settings.Language.t
                                             (tup2
-                                               Settings.Language.t
-                                               (tup2
-                                                  Common.Repo.CreatedAt.t
-                                                  Common.Repo.UpdatedAt.t)))))))))))))))
+                                               Common.Repo.CreatedAt.t
+                                               Common.Repo.UpdatedAt.t))))))))))))))
   ;;
 end
 

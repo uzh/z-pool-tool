@@ -62,7 +62,6 @@ let list csrf tenant_list root_list message () =
     ; "smtp_auth_password", "pw"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
-    ; "logos", "logos"
     ; "partner_logos", "partner logos"
     ; "default_language", "DE"
     ]
@@ -76,7 +75,7 @@ let list csrf tenant_list root_list message () =
           ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
           ]
       ; div
-          [ label [ txt "logo" ]
+          [ label [ txt "icon" ]
           ; input ~a:[ a_input_type `File; a_name "logo"; a_value "" ] ()
           ]
       ]
@@ -120,7 +119,6 @@ let detail csrf (tenant : Tenant.t) message () =
     ; ( "smtp_auth_authentication_method"
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
     ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "logos", Logos.value tenant.logos
     ; "partner_logos", PartnerLogos.value tenant.partner_logos
     ; "default_language", Settings.Language.code tenant.default_language
     ]

@@ -1,5 +1,7 @@
 module RepoEntity = Repo_entity
 module Label = Pool_common.Database.Label
+module Id = Pool_common.Id
+module LogoMappings = Repo_logo_mappings
 
 module Sql = struct
   let update_request =
@@ -19,13 +21,12 @@ module Sql = struct
         smtp_auth_protocol = $12,
         styles = UNHEX(REPLACE($13, '-', '')),
         icon = UNHEX(REPLACE($14, '-', '')),
-        logos = $15,
-        partner_logos = $16,
-        mainenance = $17,
-        disabled = $18,
-        default_language = $19,
-        created_at = $20,
-        updated_at = $21
+        partner_logos = $15,
+        mainenance = $16,
+        disabled = $17,
+        default_language = $18,
+        created_at = $19,
+        updated_at = $20
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
@@ -138,7 +139,6 @@ module Sql = struct
             %s
             %s
             %s
-            pool_tenant.logos,
             pool_tenant.partner_logos,
             pool_tenant.mainenance,
             pool_tenant.disabled,
@@ -170,9 +170,7 @@ module Sql = struct
     |> Caqti_request.find Caqti_type.string RepoEntity.t
   ;;
 
-  let find pool id =
-    Utils.Database.find pool find_request (id |> Pool_common.Id.value)
-  ;;
+  let find pool id = Utils.Database.find pool find_request (id |> Id.value)
 
   let find_full_request =
     select_from_tenants_sql find_fragment true
@@ -180,7 +178,7 @@ module Sql = struct
   ;;
 
   let find_full pool id =
-    Utils.Database.find pool find_full_request (id |> Pool_common.Id.value)
+    Utils.Database.find pool find_full_request (id |> Id.value)
   ;;
 
   let find_all_request =
@@ -220,7 +218,6 @@ module Sql = struct
         smtp_auth_protocol,
         styles,
         icon,
-        logos,
         partner_logos,
         mainenance,
         disabled,
@@ -247,7 +244,6 @@ module Sql = struct
         ?,
         ?,
         ?,
-        ?,
         ?
       );
     |sql}
@@ -269,9 +265,62 @@ module Sql = struct
   let find_selectable pool = Utils.Database.collect pool find_selectable_request
 end
 
-let find pool = Sql.find (Label.value pool)
+let set_logos tenant logos =
+  let tenant_logos =
+    CCList.filter_map
+      (fun l ->
+        match l.LogoMappings.Entity.logo_type with
+        | `Tenant -> Some l.LogoMappings.Entity.file
+        | `Partner -> None)
+      logos
+  in
+  let open Entity.Read in
+  Entity.create_of_read
+    tenant.id
+    tenant.title
+    tenant.description
+    tenant.url
+    tenant.database_label
+    tenant.smtp_auth
+    tenant.styles
+    tenant.icon
+    tenant_logos
+    tenant.partner_logos
+    tenant.maintenance
+    tenant.disabled
+    tenant.default_language
+    tenant.created_at
+    tenant.updated_at
+;;
+
+let find pool id =
+  let open Lwt_result.Syntax in
+  let* tenant = Sql.find (Label.value pool) id in
+  let* logos = LogoMappings.find_by_tenant id in
+  set_logos tenant logos |> Lwt.return_ok
+;;
+
 let find_full pool = Sql.find_full (Label.value pool)
-let find_all pool = Sql.find_all (Label.value pool)
+
+let find_all pool () =
+  let open Lwt_result.Syntax in
+  let* tenants = Sql.find_all (Label.value pool) () in
+  let* logos = LogoMappings.find_all () in
+  let result tenants logos =
+    let logos_of_tenant id =
+      CCList.filter
+        (fun logo -> Id.equal logo.LogoMappings.Entity.tenant_uuid id)
+        logos
+    in
+    Ok
+      (CCList.map
+         (fun t -> set_logos t (logos_of_tenant t.Entity.Read.id))
+         tenants)
+    |> Lwt_result.lift
+  in
+  result tenants logos
+;;
+
 let find_databases pool = Sql.find_databases (Label.value pool)
 let find_selectable pool = Sql.find_selectable (Label.value pool)
 let insert pool = Sql.insert (Label.value pool)

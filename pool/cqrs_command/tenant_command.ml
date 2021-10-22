@@ -17,7 +17,6 @@ module Create : sig
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
-    ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
     }
@@ -44,7 +43,6 @@ end = struct
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
-    ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; default_language : Settings.Language.t
     }
@@ -63,7 +61,6 @@ end = struct
       smtp_auth_protocol
       styles
       icon
-      logos
       partner_logos
       default_language
     =
@@ -80,7 +77,6 @@ end = struct
     ; smtp_auth_protocol
     ; styles
     ; icon
-    ; logos
     ; partner_logos
     ; default_language
     }
@@ -103,7 +99,6 @@ end = struct
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Styles.Write.schema ()
           ; Tenant.Icon.Write.schema ()
-          ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ; Settings.Language.schema ()
           ]
@@ -130,7 +125,6 @@ end = struct
               }
         ; styles = command.styles
         ; icon = command.icon
-        ; logos = command.logos
         ; partner_logos = command.partner_logos
         ; default_language = command.default_language
         }
@@ -155,7 +149,6 @@ module EditDetails : sig
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
@@ -178,7 +171,6 @@ end = struct
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
@@ -193,7 +185,6 @@ end = struct
       smtp_auth_username
       smtp_auth_authentication_method
       smtp_auth_protocol
-      logos
       partner_logos
       disabled
       default_language
@@ -206,7 +197,6 @@ end = struct
     ; smtp_auth_username
     ; smtp_auth_authentication_method
     ; smtp_auth_protocol
-    ; logos
     ; partner_logos
     ; disabled
     ; default_language
@@ -225,7 +215,6 @@ end = struct
           ; Tenant.SmtpAuth.Username.schema ()
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
-          ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ; Tenant.Disabled.schema ()
           ; Settings.Language.schema ()
@@ -246,7 +235,6 @@ end = struct
             ; authentication_method = command.smtp_auth_authentication_method
             ; protocol = command.smtp_auth_protocol
             }
-        ; logos = command.logos
         ; partner_logos = command.partner_logos
         ; disabled = command.disabled
         ; default_language = command.default_language

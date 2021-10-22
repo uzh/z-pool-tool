@@ -10,7 +10,6 @@ type create =
   ; smtp_auth : SmtpAuth.Write.t
   ; styles : Styles.Write.t
   ; icon : Icon.Write.t
-  ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
   ; default_language : Settings.Language.t
   }
@@ -30,7 +29,6 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -63,7 +61,6 @@ let handle_event _ : event -> unit Lwt.t = function
         m.smtp_auth
         m.styles
         m.icon
-        m.logos
         m.partner_logos
         m.default_language
       |> Repo.insert Database.root
@@ -87,7 +84,6 @@ let handle_event _ : event -> unit Lwt.t = function
         ; description = update_t.description
         ; url = update_t.url
         ; smtp_auth
-        ; logos = update_t.logos
         ; partner_logos = update_t.partner_logos
         ; disabled = update_t.disabled
         ; default_language = update_t.default_language

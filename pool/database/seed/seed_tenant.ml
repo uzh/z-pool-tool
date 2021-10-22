@@ -54,7 +54,6 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some logo"
         , "some partner logos"
         , "EN"
         , "operator@econ.uzh.ch"
@@ -76,7 +75,6 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some logo"
         , "some partner logos"
         , "EN"
         , "operator@econ.uzh.ch"
@@ -96,7 +94,6 @@ let create () =
         , "SSL/TLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some logo"
         , "some partner logos"
         , "DE"
         , "operator@zhaw.ch"
@@ -119,7 +116,6 @@ let create () =
          , smtp_auth_protocol
          , styles
          , icon
-         , logos
          , partner_logos
          , default_language
          , email
@@ -141,7 +137,6 @@ let create () =
         ; "smtp_auth_protocol", [ smtp_auth_protocol ]
         ; "styles", [ styles ]
         ; "icon", [ icon ]
-        ; "logos", [ logos ]
         ; "partner_logos", [ partner_logos ]
         ; "default_language", [ default_language ]
         ; "email", [ email ]

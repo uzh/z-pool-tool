@@ -64,7 +64,13 @@ let run_pending_migrations db_pools migration_steps =
 ;;
 
 module Root = struct
-  let steps = extend_migrations [ Migration_tenant.migration () ]
+  let steps =
+    extend_migrations
+      [ Migration_tenant.migration ()
+      ; Migration_tenant_logo_mappings.migration ()
+      ]
+  ;;
+
   let run () = execute [ Pool_common.Database.root ] @@ steps ()
 
   let run_pending_migrations () =
