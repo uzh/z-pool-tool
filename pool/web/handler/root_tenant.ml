@@ -36,6 +36,7 @@ let create req =
     let* files =
       File.save_files req |> Lwt_result.map_err (fun err -> err, error_path)
     in
+    (* TODO [timhub]: delete files on error *)
     files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
