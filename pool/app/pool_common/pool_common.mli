@@ -70,6 +70,8 @@ module File : sig
   val equal : t -> t -> bool
   val id : t -> string
   val filename : t -> string
+  val mime : t -> string
+  val path : t -> string
   val create : ?id:string -> string -> string -> unit -> t
 end
 

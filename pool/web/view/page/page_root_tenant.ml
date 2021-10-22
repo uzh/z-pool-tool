@@ -1,5 +1,6 @@
 open Tyxml.Html
 module HttpUtils = Http_utils
+module File = Pool_common.File
 
 let input_element = Component.input_element
 
@@ -61,7 +62,6 @@ let list csrf tenant_list root_list message () =
     ; "smtp_auth_password", "pw"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
-    ; "icon", "icon"
     ; "logos", "logos"
     ; "partner_logos", "partner logos"
     ; "default_language", "DE"
@@ -74,6 +74,10 @@ let list csrf tenant_list root_list message () =
     @ [ div
           [ label [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
+          ]
+      ; div
+          [ label [ txt "logo" ]
+          ; input ~a:[ a_input_type `File; a_name "logo"; a_value "" ] ()
           ]
       ]
   in
@@ -130,8 +134,18 @@ let detail csrf (tenant : Tenant.t) message () =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
       detail_fields
-    @ [ input ~a:[ a_input_type `File; a_name "styles" ] ()
-      ; input ~a:[ a_input_type `File; a_name "icon" ] ()
+    @ [ div
+          [ a
+              ~a:[ a_href (File.path (tenant.styles |> Tenant.Styles.value)) ]
+              [ txt "styles" ]
+          ; input ~a:[ a_input_type `File; a_name "styles" ] ()
+          ]
+      ; div
+          [ a
+              ~a:[ a_href (File.path (tenant.icon |> Tenant.Icon.value)) ]
+              [ txt "icon" ]
+          ; input ~a:[ a_input_type `File; a_name "icon" ] ()
+          ]
       ]
   in
   let database_input_fields =

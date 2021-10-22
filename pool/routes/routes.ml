@@ -28,6 +28,7 @@ module Public = struct
         Handler.Public.Login.request_reset_password_post
     ; get "/reset-password" Handler.Public.Login.reset_password_get
     ; post "/reset-password" Handler.Public.Login.reset_password_post
+    ; get "/assets/:id/:filename" Handler.Public.asset
     ]
   ;;
 end

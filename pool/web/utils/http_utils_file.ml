@@ -69,6 +69,7 @@ let mime_type = function
   | "ico" -> Ok "image/vnd.microsoft.icon"
   | "jpeg" | "jpg" -> Ok "image/jpeg"
   | "png" -> Ok "image/png"
+  | "svg" -> Ok "image/svg+xml"
   | "webp" -> Ok "image/webp"
   | _ -> Error "Unknown file type"
 ;;
