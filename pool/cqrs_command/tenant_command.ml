@@ -155,8 +155,6 @@ module EditDetails : sig
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.Write.t option
-    ; icon : Tenant.Icon.Write.t option
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
@@ -180,8 +178,6 @@ end = struct
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
-    ; styles : Tenant.Styles.Write.t option
-    ; icon : Tenant.Icon.Write.t option
     ; logos : Tenant.Logos.t
     ; partner_logos : Tenant.PartnerLogos.t
     ; disabled : Tenant.Disabled.t
@@ -197,8 +193,6 @@ end = struct
       smtp_auth_username
       smtp_auth_authentication_method
       smtp_auth_protocol
-      styles
-      icon
       logos
       partner_logos
       disabled
@@ -212,8 +206,6 @@ end = struct
     ; smtp_auth_username
     ; smtp_auth_authentication_method
     ; smtp_auth_protocol
-    ; styles
-    ; icon
     ; logos
     ; partner_logos
     ; disabled
@@ -233,8 +225,6 @@ end = struct
           ; Tenant.SmtpAuth.Username.schema ()
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
-          ; Conformist.optional @@ Tenant.Styles.Write.schema ()
-          ; Conformist.optional @@ Tenant.Icon.Write.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ; Tenant.Disabled.schema ()
@@ -256,9 +246,6 @@ end = struct
             ; authentication_method = command.smtp_auth_authentication_method
             ; protocol = command.smtp_auth_protocol
             }
-        ; styles =
-            command.styles |> Option.value ~default:tenant.Tenant.Write.styles
-        ; icon = command.icon |> Option.value ~default:tenant.Tenant.Write.icon
         ; logos = command.logos
         ; partner_logos = command.partner_logos
         ; disabled = command.disabled

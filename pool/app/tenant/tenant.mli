@@ -258,8 +258,6 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; styles : Styles.Write.t
-  ; icon : Icon.Write.t
   ; logos : Logos.t
   ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
