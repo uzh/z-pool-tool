@@ -16,7 +16,7 @@ let create_tenant =
         <database_url>                      : string
         <database_label>                    : string
         <smtp_auth_server>                  : string
-        <smtp_auth_port>                    : '25' | '465' | '587'
+        <smtp_auth_port>                    : string
         <smtp_auth_username>                : string
         <smtp_auth_password>                : string
         <smtp_auth_authentication_method>   : string
@@ -85,7 +85,7 @@ let create_tenant =
               ]
             |> CCResult.map_err Utils.handle_conformist_error
             (* TODO [timhub]: How to deal with seeds and files? *)
-            >>= Cqrs_command.Tenant_command.Create.handle [] []
+            >>= Cqrs_command.Tenant_command.Create.handle []
           in
           let run_events =
             Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)

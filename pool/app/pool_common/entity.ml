@@ -88,21 +88,12 @@ module File = struct
     }
   [@@deriving show, eq]
 
-  let id m = m.id |> Id.value
+  let id m = m.id
   let filename m = m.filename
   let mime m = m.mime_type
 
   let path m =
     Sihl.Web.externalize_path (Format.asprintf "/assets/%s/%s" m.id m.filename)
-  ;;
-
-  let value m =
-    { id = m.id
-    ; filename = m.filename
-    ; mime_type = m.mime_type
-    ; created_at = m.created_at
-    ; updated_at = m.updated_at
-    }
   ;;
 
   let create ?id filename mime_type () =

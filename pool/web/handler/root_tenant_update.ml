@@ -35,10 +35,7 @@ let update req command success_message =
       | `EditDetail ->
         Cqrs_command.Tenant_command.EditDetails.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
-        >>= Cqrs_command.Tenant_command.EditDetails.handle
-              logo_fields
-              logo_files
-              tenant
+        >>= Cqrs_command.Tenant_command.EditDetails.handle logo_files tenant
       | `EditDatabase ->
         Cqrs_command.Tenant_command.EditDatabase.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
@@ -74,3 +71,5 @@ let update_detail req =
 let update_database req =
   update req `EditDatabase "Database information was successfully updated."
 ;;
+
+let delete_asset _ = failwith "Todo"

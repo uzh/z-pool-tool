@@ -147,7 +147,7 @@ let create () =
         ]
       |> CCResult.map_err Utils.handle_conformist_error
       (* TODO [timhub]: How to deal with seeds and files? *)
-      >>= Cqrs_command.Tenant_command.Create.handle [] []
+      >>= Cqrs_command.Tenant_command.Create.handle []
       |> CCResult.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
     data

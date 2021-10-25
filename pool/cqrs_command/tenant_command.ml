@@ -2,27 +2,21 @@ module Id = Pool_common.Id
 module Database = Pool_common.Database
 module User = Common_user
 
-(* TODO [timhub]: refactor *)
-
-let create_logo_mappings logo_fields files tenant =
+let create_logo_mappings files tenant =
   let open Tenant in
-  CCList.map
-    (fun field ->
-      CCList.filter_map
-        (fun (name, asset_uuid) ->
-          match CCString.equal name (field |> Tenant.stringify_logo_type) with
-          | true ->
-            Some
-              LogoMapping.Write.
-                { id = Id.create ()
-                ; tenant_uuid = tenant.Write.id
-                ; asset_uuid = asset_uuid |> Id.of_string
-                ; logo_type = field
-                }
-          | false -> None)
-        files)
-    logo_fields
-  |> CCList.flatten
+  CCList.filter_map
+    (fun (name, asset_uuid) ->
+      name
+      |> Tenant.logo_type_of_string
+      |> CCOpt.of_result
+      |> CCOpt.map (fun logo_type ->
+             LogoMapping.Write.
+               { id = Id.create ()
+               ; tenant_uuid = tenant.Write.id
+               ; asset_uuid = asset_uuid |> Id.of_string
+               ; logo_type
+               }))
+    files
 ;;
 
 module Create : sig
@@ -45,8 +39,7 @@ module Create : sig
     }
 
   val handle
-    :  [ `PartnerLogo | `TenantLogo ] list
-    -> (string * string) list
+    :  (string * string) list
     -> t
     -> (Pool_event.t list, string) Result.t
 
@@ -132,7 +125,7 @@ end = struct
         command)
   ;;
 
-  let handle logo_fields files (command : t) =
+  let handle files (command : t) =
     let open Tenant in
     let tenant =
       Tenant.Write.create
@@ -153,7 +146,7 @@ end = struct
         command.partner_logos
         command.default_language
     in
-    let logo_mappings = create_logo_mappings logo_fields files tenant in
+    let logo_mappings = create_logo_mappings files tenant in
     Ok
       [ Tenant.Created tenant |> Pool_event.tenant
       ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant
@@ -183,8 +176,7 @@ module EditDetails : sig
     }
 
   val handle
-    :  [ `PartnerLogo | `TenantLogo ] list
-    -> (string * string) list
+    :  (string * string) list
     -> Tenant.Write.t
     -> t
     -> (Pool_event.t list, string) Result.t
@@ -255,7 +247,7 @@ end = struct
         command)
   ;;
 
-  let handle logo_fields files (tenant : Tenant.Write.t) (command : t) =
+  let handle files (tenant : Tenant.Write.t) (command : t) =
     let update =
       Tenant.
         { title = command.title
@@ -273,7 +265,7 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    let logo_mappings = create_logo_mappings logo_fields files tenant in
+    let logo_mappings = create_logo_mappings files tenant in
     Ok
       [ Tenant.DetailsEdited (tenant, update) |> Pool_event.tenant
       ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant
