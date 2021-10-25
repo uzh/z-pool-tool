@@ -182,7 +182,12 @@ module EditDetails : sig
     ; default_language : Settings.Language.t
     }
 
-  val handle : t -> Tenant.Write.t -> (Pool_event.t list, string) result
+  val handle
+    :  [ `PartnerLogo | `TenantLogo ] list
+    -> (string * string) list
+    -> Tenant.Write.t
+    -> t
+    -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -250,7 +255,7 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) (tenant : Tenant.Write.t) =
+  let handle logo_fields files (tenant : Tenant.Write.t) (command : t) =
     let update =
       Tenant.
         { title = command.title
@@ -268,7 +273,11 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    Ok [ Tenant.DetailsEdited (tenant, update) |> Pool_event.tenant ]
+    let logo_mappings = create_logo_mappings logo_fields files tenant in
+    Ok
+      [ Tenant.DetailsEdited (tenant, update) |> Pool_event.tenant
+      ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant
+      ]
   ;;
 
   let decode data = Conformist.decode_and_validate schema data

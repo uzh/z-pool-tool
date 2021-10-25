@@ -21,12 +21,13 @@ let prepare_import_directory () =
   |> Lwt.map (raise_if_failed ("while creating directory " ^ import_dir))
 ;;
 
-let upload_files req =
+let save_files allow_list req =
   let%lwt _ = prepare_import_directory () in
   let files = Hashtbl.create ~random:true 5 in
   let assocs = Hashtbl.create ~random:true 5 in
   let callback ~name ~filename string =
     if String.equal filename ""
+       || not (CCList.mem ~eq:CCString.equal name allow_list)
     then Lwt.return_unit
     else (
       let filename = Filename.basename filename in
@@ -111,8 +112,8 @@ let multipart_form_data_to_urlencoded (list : (string * string) list) =
   CCList.map (fun (k, v) -> k, [ v ]) list
 ;;
 
-let save_files req =
-  let%lwt filenames = upload_files req in
+let upload_files allow_list req =
+  let%lwt filenames = save_files allow_list req in
   let%lwt filenames =
     let open Lwt_result.Syntax in
     Lwt_list.map_s
@@ -127,8 +128,8 @@ let save_files req =
   | Ok filenames -> Ok filenames |> Lwt_result.lift
 ;;
 
-let update_files file_fields req =
-  let%lwt filenames = upload_files req in
+let update_files files req =
+  let%lwt filenames = save_files (CCList.map fst files) req in
   let callback ~name:_ ~filename _ =
     if String.equal filename "" then Lwt.return_unit else Lwt.return_unit
   in
@@ -158,7 +159,7 @@ let update_files file_fields req =
   let%lwt result =
     Lwt_list.filter_map_p
       (fun (key, assets_id) -> update_asset key assets_id)
-      file_fields
+      files
   in
   CCList.all_ok result |> Lwt.return
 ;;

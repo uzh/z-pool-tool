@@ -161,7 +161,7 @@ let detail csrf (tenant : Tenant.t) message () =
           ; div
               [ label [ txt "Add logo" ]
               ; input
-                  ~a:[ a_input_type `File; a_name "tenant_logo"; a_value "" ]
+                  ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
                   ()
               ]
           ]

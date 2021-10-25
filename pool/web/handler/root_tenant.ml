@@ -35,7 +35,8 @@ let create req =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
     let* files =
-      File.save_files req |> Lwt_result.map_err (fun err -> err, error_path)
+      File.upload_files [ "styles"; "icon"; "tenant_logo" ] req
+      |> Lwt_result.map_err (fun err -> err, error_path)
     in
     (* TODO [timhub]: delete files on error *)
     files @ multipart_encoded

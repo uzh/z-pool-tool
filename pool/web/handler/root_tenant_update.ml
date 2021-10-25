@@ -16,6 +16,7 @@ let update req command success_message =
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
+    (* TODO [timhub]: delete files on error *)
     let* _ =
       File.update_files
         [ "styles", tenant.Tenant.Write.styles |> Tenant.Styles.Write.value
@@ -24,12 +25,20 @@ let update req command success_message =
         req
       |> Lwt_result.map_err (fun err -> err, redirect_path)
     in
+    let logo_fields = [ `TenantLogo ] in
+    let* logo_files =
+      File.upload_files (CCList.map Tenant.stringify_logo_type logo_fields) req
+      |> Lwt_result.map_err (fun err -> err, redirect_path)
+    in
     let events_list urlencoded =
       match command with
       | `EditDetail ->
         Cqrs_command.Tenant_command.EditDetails.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
-        >>= CCFun.flip Cqrs_command.Tenant_command.EditDetails.handle tenant
+        >>= Cqrs_command.Tenant_command.EditDetails.handle
+              logo_fields
+              logo_files
+              tenant
       | `EditDatabase ->
         Cqrs_command.Tenant_command.EditDatabase.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
