@@ -2,19 +2,6 @@ open Entity
 module Id = Pool_common.Id
 module Database = Pool_common.Database
 
-type create =
-  { title : Title.t
-  ; description : Description.t
-  ; url : Url.t
-  ; database : Database.t
-  ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.Write.t
-  ; icon : Icon.Write.t
-  ; partner_logos : PartnerLogos.t
-  ; default_language : Settings.Language.t
-  }
-[@@deriving eq, show]
-
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
   ; port : SmtpAuth.Port.t
@@ -35,12 +22,15 @@ type update =
   }
 [@@deriving eq, show]
 
+type logo_mappings = LogoMapping.Write.t list [@@deriving eq, show]
+
 let equal_operator_event (t1, o1) (t2, o2) =
   equal t1 t2 && String.equal o1.Sihl_user.id o2.Sihl_user.id
 ;;
 
 type event =
-  | Created of create [@equal equal]
+  | Created of Write.t
+  | LogosUploaded of logo_mappings
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
   | Destroyed of Id.t
@@ -51,20 +41,11 @@ type event =
   | StatusReportGenerated of unit
 
 let handle_event _ : event -> unit Lwt.t = function
-  | Created m ->
-    let%lwt _ =
-      Entity.Write.create
-        m.title
-        m.description
-        m.url
-        m.database
-        m.smtp_auth
-        m.styles
-        m.icon
-        m.partner_logos
-        m.default_language
-      |> Repo.insert Database.root
-    in
+  | Created tenant ->
+    let%lwt _ = Repo.insert Database.root tenant in
+    Lwt.return_unit
+  | LogosUploaded logo_mappings ->
+    let%lwt _ = Repo.LogoMappingRepo.insert_multiple logo_mappings in
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
@@ -120,7 +101,9 @@ let handle_event _ : event -> unit Lwt.t = function
 
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
-  | Created one, Created two -> equal_create one two
+  | Created tenant_one, Created tenant_two -> Write.equal tenant_one tenant_two
+  | LogosUploaded logo_mappings_one, LogosUploaded logo_mappings_two ->
+    equal_logo_mappings logo_mappings_one logo_mappings_two
   | ( DetailsEdited (tenant_one, update_one)
     , DetailsEdited (tenant_two, update_two) ) ->
     Write.equal tenant_one tenant_two && equal_update update_one update_two
@@ -144,7 +127,8 @@ let[@warning "-4"] equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | Created m -> pp_create formatter m
+  | Created tenant -> Write.pp formatter tenant
+  | LogosUploaded logo_mappings -> pp_logo_mappings formatter logo_mappings
   | DetailsEdited (tenant, update) ->
     Write.pp formatter tenant;
     pp_update formatter update

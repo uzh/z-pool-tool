@@ -171,6 +171,21 @@ module Disabled : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
+module LogoMapping : sig
+  module Write : sig
+    type t =
+      { id : Pool_common.Id.t
+      ; tenant_uuid : Pool_common.Id.t
+      ; asset_uuid : Pool_common.Id.t
+      ; logo_type : [ `PartnerLogo | `TenantLogo ]
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end
+
 type t =
   { id : Pool_common.Id.t
   ; title : Title.t
@@ -228,18 +243,6 @@ module StatusReport : sig
   val equal : t -> t -> bool
 end
 
-type create =
-  { title : Title.t
-  ; description : Description.t
-  ; url : Url.t
-  ; database : Pool_common.Database.t
-  ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.Write.t
-  ; icon : Icon.Write.t
-  ; partner_logos : PartnerLogos.t
-  ; default_language : Settings.Language.t
-  }
-
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
   ; port : SmtpAuth.Port.t
@@ -258,8 +261,11 @@ type update =
   ; default_language : Settings.Language.t
   }
 
+type logo_mappings = LogoMapping.Write.t list
+
 type event =
-  | Created of create [@equal equal]
+  | Created of Write.t [@equal equal]
+  | LogosUploaded of logo_mappings
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Pool_common.Database.t
   | Destroyed of Pool_common.Id.t
@@ -301,3 +307,10 @@ end
 
 (* The system should proactively report degraded health to operators *)
 type generate_status_report = StatusReport.t Lwt.t
+
+(* Logo Mappings *)
+val stringify_logo_type : [ `PartnerLogo | `TenantLogo ] -> string
+
+val logo_type_of_string
+  :  string
+  -> ([> `PartnerLogo | `TenantLogo ], string) result

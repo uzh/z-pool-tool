@@ -30,6 +30,7 @@ let create req =
   let events () =
     let open CCResult.Infix in
     let open Lwt_result.Syntax in
+    let logo_fields = [ `TenantLogo ] in
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
@@ -41,7 +42,7 @@ let create req =
     |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    >>= Cqrs_command.Tenant_command.Create.handle
+    >>= Cqrs_command.Tenant_command.Create.handle logo_fields files
     |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
   in

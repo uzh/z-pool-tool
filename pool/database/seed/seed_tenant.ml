@@ -135,6 +135,7 @@ let create () =
         ; "smtp_auth_password", [ smtp_auth_password ]
         ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
         ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+          (* TODO [timhub] upload files *)
         ; "styles", [ styles ]
         ; "icon", [ icon ]
         ; "partner_logos", [ partner_logos ]
@@ -145,7 +146,8 @@ let create () =
         ; "lastname", [ lastname ]
         ]
       |> CCResult.map_err Utils.handle_conformist_error
-      >>= Cqrs_command.Tenant_command.Create.handle
+      (* TODO [timhub]: How to deal with seeds and files? *)
+      >>= Cqrs_command.Tenant_command.Create.handle [] []
       |> CCResult.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
     data

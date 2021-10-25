@@ -2,6 +2,29 @@ module Id = Pool_common.Id
 module Database = Pool_common.Database
 module User = Common_user
 
+(* TODO [timhub]: refactor *)
+
+let create_logo_mappings logo_fields files tenant =
+  let open Tenant in
+  CCList.map
+    (fun field ->
+      CCList.filter_map
+        (fun (name, asset_uuid) ->
+          match CCString.equal name (field |> Tenant.stringify_logo_type) with
+          | true ->
+            Some
+              LogoMapping.Write.
+                { id = Id.create ()
+                ; tenant_uuid = tenant.Write.id
+                ; asset_uuid = asset_uuid |> Id.of_string
+                ; logo_type = field
+                }
+          | false -> None)
+        files)
+    logo_fields
+  |> CCList.flatten
+;;
+
 module Create : sig
   type t =
     { title : Tenant.Title.t
@@ -21,7 +44,11 @@ module Create : sig
     ; default_language : Settings.Language.t
     }
 
-  val handle : t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  [ `PartnerLogo | `TenantLogo ] list
+    -> (string * string) list
+    -> t
+    -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -105,31 +132,32 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) =
+  let handle logo_fields files (command : t) =
+    let open Tenant in
     let tenant =
-      Tenant.
-        { title = command.title
-        ; description = command.description
-        ; url = command.url
-        ; database =
-            Database.
-              { url = command.database_url; label = command.database_label }
-        ; smtp_auth =
-            SmtpAuth.Write.
-              { server = command.smtp_auth_server
-              ; port = command.smtp_auth_port
-              ; username = command.smtp_auth_username
-              ; password = command.smtp_auth_password
-              ; authentication_method = command.smtp_auth_authentication_method
-              ; protocol = command.smtp_auth_protocol
-              }
-        ; styles = command.styles
-        ; icon = command.icon
-        ; partner_logos = command.partner_logos
-        ; default_language = command.default_language
-        }
+      Tenant.Write.create
+        command.title
+        command.description
+        command.url
+        Database.{ url = command.database_url; label = command.database_label }
+        SmtpAuth.Write.
+          { server = command.smtp_auth_server
+          ; port = command.smtp_auth_port
+          ; username = command.smtp_auth_username
+          ; password = command.smtp_auth_password
+          ; authentication_method = command.smtp_auth_authentication_method
+          ; protocol = command.smtp_auth_protocol
+          }
+        command.styles
+        command.icon
+        command.partner_logos
+        command.default_language
     in
-    Ok [ Tenant.Created tenant |> Pool_event.tenant ]
+    let logo_mappings = create_logo_mappings logo_fields files tenant in
+    Ok
+      [ Tenant.Created tenant |> Pool_event.tenant
+      ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant
+      ]
   ;;
 
   let can user _ =

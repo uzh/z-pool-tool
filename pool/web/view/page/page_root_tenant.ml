@@ -76,7 +76,13 @@ let list csrf tenant_list root_list message () =
           ]
       ; div
           [ label [ txt "icon" ]
-          ; input ~a:[ a_input_type `File; a_name "logo"; a_value "" ] ()
+          ; input ~a:[ a_input_type `File; a_name "icon"; a_value "" ] ()
+          ]
+      ; div
+          [ label [ txt "tenant_logo" ]
+          ; input
+              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
+              ()
           ]
       ]
   in
@@ -128,6 +134,11 @@ let detail csrf (tenant : Tenant.t) message () =
     ; "database_label", Pool_common.Database.Label.value tenant.database_label
     ]
   in
+  let logos =
+    CCList.map
+      (fun logo -> img ~src:(File.path logo) ~alt:"" ~a:[] ())
+      (tenant.logos |> Tenant.Logos.value)
+  in
   let detail_input_fields =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
@@ -143,6 +154,16 @@ let detail csrf (tenant : Tenant.t) message () =
               ~a:[ a_href (File.path (tenant.icon |> Tenant.Icon.value)) ]
               [ txt "icon" ]
           ; input ~a:[ a_input_type `File; a_name "icon" ] ()
+          ]
+      ; div
+          [ h3 [ txt "Tenant Logos" ]
+          ; div logos
+          ; div
+              [ label [ txt "Add logo" ]
+              ; input
+                  ~a:[ a_input_type `File; a_name "tenant_logo"; a_value "" ]
+                  ()
+              ]
           ]
       ]
   in

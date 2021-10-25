@@ -24,6 +24,10 @@ module Selection = struct
   let find_all = Repo.find_selectable Database.root
 end
 
+(* Logo mappings *)
+let stringify_logo_type = LogoMapping.stringify_type
+let logo_type_of_string = LogoMapping.type_of_string
+
 (* MONITORING AND MANAGEMENT *)
 
 (* The system should proactively report degraded health to operators *)

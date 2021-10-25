@@ -4,6 +4,7 @@ module CreatedAt = Pool_common.CreatedAt
 module UpdatedAt = Pool_common.UpdatedAt
 module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
+module LogoMapping = Entity_logo_mapping
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -188,41 +189,6 @@ type t =
   ; updated_at : UpdatedAt.t
   }
 [@@deriving eq, show]
-
-let create_of_read
-    id
-    title
-    description
-    url
-    database_label
-    smtp_auth
-    styles
-    icon
-    logos
-    partner_logos
-    maintenance
-    disabled
-    default_language
-    created_at
-    updated_at
-  =
-  { id
-  ; title
-  ; description
-  ; url
-  ; database_label
-  ; smtp_auth
-  ; styles
-  ; icon
-  ; logos
-  ; partner_logos
-  ; maintenance
-  ; disabled
-  ; default_language
-  ; created_at
-  ; updated_at
-  }
-;;
 
 module Read = struct
   type t =

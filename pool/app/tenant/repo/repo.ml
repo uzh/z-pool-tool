@@ -1,7 +1,8 @@
 module RepoEntity = Repo_entity
 module Label = Pool_common.Database.Label
 module Id = Pool_common.Id
-module LogoMappings = Repo_logo_mappings
+module LogoMapping = Entity_logo_mapping
+module LogoMappingRepo = Repo_logo_mapping
 
 module Sql = struct
   let update_request =
@@ -269,34 +270,35 @@ let set_logos tenant logos =
   let tenant_logos =
     CCList.filter_map
       (fun l ->
-        match l.LogoMappings.Entity.logo_type with
-        | `Tenant -> Some l.LogoMappings.Entity.file
-        | `Partner -> None)
+        match l.LogoMapping.logo_type with
+        | `TenantLogo -> Some l.LogoMapping.file
+        | `PartnerLogo -> None)
       logos
   in
   let open Entity.Read in
-  Entity.create_of_read
-    tenant.id
-    tenant.title
-    tenant.description
-    tenant.url
-    tenant.database_label
-    tenant.smtp_auth
-    tenant.styles
-    tenant.icon
-    tenant_logos
-    tenant.partner_logos
-    tenant.maintenance
-    tenant.disabled
-    tenant.default_language
-    tenant.created_at
-    tenant.updated_at
+  Entity.
+    { id = tenant.Read.id
+    ; title = tenant.title
+    ; description = tenant.description
+    ; url = tenant.url
+    ; database_label = tenant.database_label
+    ; smtp_auth = tenant.smtp_auth
+    ; styles = tenant.styles
+    ; icon = tenant.icon
+    ; logos = tenant_logos
+    ; partner_logos = tenant.partner_logos
+    ; maintenance = tenant.maintenance
+    ; disabled = tenant.disabled
+    ; default_language = tenant.default_language
+    ; created_at = tenant.created_at
+    ; updated_at = tenant.updated_at
+    }
 ;;
 
 let find pool id =
   let open Lwt_result.Syntax in
   let* tenant = Sql.find (Label.value pool) id in
-  let* logos = LogoMappings.find_by_tenant id in
+  let* logos = LogoMappingRepo.find_by_tenant id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
@@ -305,12 +307,10 @@ let find_full pool = Sql.find_full (Label.value pool)
 let find_all pool () =
   let open Lwt_result.Syntax in
   let* tenants = Sql.find_all (Label.value pool) () in
-  let* logos = LogoMappings.find_all () in
+  let* logos = LogoMappingRepo.find_all () in
   let result tenants logos =
     let logos_of_tenant id =
-      CCList.filter
-        (fun logo -> Id.equal logo.LogoMappings.Entity.tenant_uuid id)
-        logos
+      CCList.filter (fun logo -> Id.equal logo.LogoMapping.tenant_uuid id) logos
     in
     Ok
       (CCList.map
