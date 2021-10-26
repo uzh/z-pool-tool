@@ -40,14 +40,23 @@ let create req =
         req
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
-    (* TODO [timhub]: delete files on error *)
+    let destroy_files =
+      Lwt_list.map_s (fun (_, id) ->
+          Service.Storage.delete
+            ~ctx:
+              [ "pool", Common.Database.root |> Pool_common.Database.Label.value
+              ]
+            ~id)
+    in
     files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
     >>= Cqrs_command.Tenant_command.Create.handle files
-    |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
+    |> Lwt_result.map_err (fun err ->
+           let _ = destroy_files files in
+           err, error_path)
   in
   let handle =
     Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)

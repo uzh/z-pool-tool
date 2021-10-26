@@ -17,7 +17,6 @@ let update req command success_message =
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
-    (* TODO [timhub]: delete files on error *)
     let* _ =
       File.update_files
         [ "styles", tenant.Tenant.Write.styles |> Tenant.Styles.Write.value

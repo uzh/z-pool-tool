@@ -22,23 +22,17 @@ let not_found _ =
 ;;
 
 let asset req =
-  let open CCResult.Infix in
+  let open Sihl.Contract.Storage in
   let asset_id = Sihl.Web.Router.param req "id" in
   let%lwt file =
     Service.Storage.find
       ~ctx:[ "pool", Database.root |> Pool_common.Database.Label.value ]
       ~id:asset_id
   in
-  let mime () = Sihl.Web.Router.param req "filename" |> Http_utils.File.mime in
   let%lwt content = Service.Storage.download_data_base64 file in
+  let mime = file.file.mime in
   let content = content |> Base64.decode_exn in
-  let show mime =
-    Sihl.Web.Response.of_plain_text content
-    |> Sihl.Web.Response.set_content_type mime
-  in
-  ()
-  |> mime
-  >|= show
-  |> CCResult.map_err (fun err -> err, "/") (* TODO [timhub]: error handling *)
-  |> Http_utils.extract_happy_path
+  Sihl.Web.Response.of_plain_text content
+  |> Sihl.Web.Response.set_content_type mime
+  |> Lwt.return
 ;;
