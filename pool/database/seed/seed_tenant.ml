@@ -1,4 +1,5 @@
 module Assets = Seed_assets
+module File = Pool_common.File
 
 let print_error = function
   | Ok _ -> Lwt.return_unit
@@ -10,6 +11,8 @@ let print_error = function
 let create () =
   let styles = Assets.dummy_css () in
   let icon = Assets.dummy_icon () in
+  let tenant_logo = Assets.dummy_tenant_logo () in
+  let partner_logo = Assets.dummy_partner_logo () in
   let%lwt _ =
     Lwt_list.map_s
       (fun file ->
@@ -25,7 +28,12 @@ let create () =
         let base64 = Base64.encode_exn file.body in
         let%lwt _ = Service.Storage.upload_base64 stored_file ~base64 in
         Lwt.return_unit)
-      [ styles; icon ]
+      [ styles; icon; tenant_logo; partner_logo ]
+  in
+  let logo_files =
+    [ Tenant.stringify_logo_type `TenantLogo, tenant_logo.Assets.id
+    ; Tenant.stringify_logo_type `PartnerLogo, partner_logo.Assets.id
+    ]
   in
   let data =
     if Sihl.Configuration.is_test ()
@@ -131,7 +139,6 @@ let create () =
         ; "smtp_auth_password", [ smtp_auth_password ]
         ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
         ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-          (* TODO [timhub] upload files *)
         ; "styles", [ styles ]
         ; "icon", [ icon ]
         ; "default_language", [ default_language ]
@@ -141,8 +148,7 @@ let create () =
         ; "lastname", [ lastname ]
         ]
       |> CCResult.map_err Utils.handle_conformist_error
-      (* TODO [timhub]: How to deal with seeds and files? *)
-      >>= Cqrs_command.Tenant_command.Create.handle []
+      >>= Cqrs_command.Tenant_command.Create.handle logo_files
       |> CCResult.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
     data
