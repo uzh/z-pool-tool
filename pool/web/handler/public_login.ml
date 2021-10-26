@@ -6,28 +6,30 @@ let user_error_to_string = function
 ;;
 
 let dashboard_path tenant_db user =
-  let open Lwt_result.Syntax in
-  let* is_admin = Admin.user_is_admin tenant_db user in
-  Lwt_result.ok
-  @@ ((match is_admin with
-      | true -> "/root/tenants"
-      | false -> "/")
-     |> Lwt.return)
+  let%lwt is_admin = Admin.user_is_admin tenant_db user in
+  Lwt.return
+  @@
+  match is_admin with
+  | true -> "/admin/dashboard"
+  | false -> "/participant/dashboard"
 ;;
 
 let login_get req =
-  let open Lwt_result.Infix in
-  (* TODO [timhub]: add pool context *)
-  let%lwt user = Service.User.Web.user_from_session req in
   let%lwt result =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let%lwt user =
+      Service.User.Web.user_from_session
+        ~ctx:[ "pool", tenant_db |> Pool_common.Database.Label.value ]
+        req
+    in
     match user with
     | Some user ->
-      user
-      |> dashboard_path tenant_db
-      >|= Sihl.Web.externalize_path
-      >|= Sihl.Web.Response.redirect_to
+      let%lwt dashboard = dashboard_path tenant_db user in
+      dashboard
+      |> Sihl.Web.externalize_path
+      |> Sihl.Web.Response.redirect_to
+      |> Lwt.return_ok
     | None ->
       let csrf = Sihl.Web.Csrf.find req |> Option.get in
       let message =
@@ -56,8 +58,7 @@ let login_post req =
     in
     let* tenant_db =
       Middleware.Tenant_middleware.tenant_db_of_request req
-      |> Lwt_result.map_err (fun err ->
-             err, "Please provide email and password")
+      |> Lwt_result.map_err (fun err -> err, login_path)
     in
     let email = List.assoc "email" params in
     let password = List.assoc "password" params in
@@ -69,10 +70,7 @@ let login_post req =
       |> Lwt_result.map_err (fun user_result ->
              user_error_to_string user_result, login_path)
     in
-    let* success_path =
-      dashboard_path tenant_db user
-      |> Lwt_result.map_err (fun err -> err, login_path)
-    in
+    let%lwt success_path = dashboard_path tenant_db user in
     Lwt_result.ok
     @@ HttpUtils.redirect_to_with_actions
          success_path
@@ -82,18 +80,21 @@ let login_post req =
 ;;
 
 let request_reset_password_get req =
-  let open Lwt_result.Infix in
-  (* TODO [timhub]: add pool context *)
-  let%lwt user = Service.User.Web.user_from_session req in
   let%lwt result =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let%lwt user =
+      Service.User.Web.user_from_session
+        ~ctx:[ "pool", tenant_db |> Pool_common.Database.Label.value ]
+        req
+    in
     match user with
     | Some user ->
-      user
-      |> dashboard_path tenant_db
-      >|= Sihl.Web.externalize_path
-      >|= Sihl.Web.Response.redirect_to
+      let%lwt dashboard = dashboard_path tenant_db user in
+      dashboard
+      |> Sihl.Web.externalize_path
+      |> Sihl.Web.Response.redirect_to
+      |> Lwt.return_ok
     | None ->
       let csrf = Sihl.Web.Csrf.find req |> Option.get in
       let message =

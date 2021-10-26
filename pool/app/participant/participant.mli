@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module RecruitmentChannel : sig
   type t =
     | Friend
@@ -23,6 +25,7 @@ type t =
 
 val login : 'a -> email:'b -> password:'c -> 'd
 val insert : Pool_common.Database.Label.t -> t -> (unit, string) Result.t Lwt.t
+val find : Repo.Label.t -> Id.t -> (t, string) Result.result Lwt.t
 val find_by_user : 'a -> 'b
 val find_duplicates : 'a -> 'b
 

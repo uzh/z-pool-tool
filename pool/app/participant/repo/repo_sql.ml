@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 let find_request =
   {sql|
     SELECT
@@ -26,9 +28,9 @@ let find_request =
       pool_participants.created_at,
       pool_participants.updated_at
     FROM pool_participants
-      LEFT JOIN storage_handles
+      LEFT JOIN user_users
       ON pool_participants.user_uuid = user_users.uuid
-    WHERE uuid = UNHEX(REPLACE(?, '-', ''));
+    WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''));
   |sql}
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
@@ -63,6 +65,9 @@ let insert db_pool =
   Utils.Database.exec (Pool_common.Database.Label.value db_pool) insert_request
 ;;
 
-let find db_pool =
-  Utils.Database.find (Pool_common.Database.Label.value db_pool) find_request
+let find db_pool id =
+  Utils.Database.find
+    (Pool_common.Database.Label.value db_pool)
+    find_request
+    (Id.value id)
 ;;

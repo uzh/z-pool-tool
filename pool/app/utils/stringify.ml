@@ -1,5 +1,4 @@
 let person = function
-  | `Participant -> "participant"
   | `Assistant -> "assistant"
   | `Experimenter -> "experimenter"
   | `LocationManager -> "location_manager"
@@ -9,7 +8,6 @@ let person = function
 ;;
 
 let person_from_string = function
-  | "participant" -> `Participant
   | "assistant" -> `Assistant
   | "experimenter" -> `Experimenter
   | "location_manager" -> `LocationManager

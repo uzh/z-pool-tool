@@ -56,11 +56,13 @@ let create_operator req =
   let id = Sihl.Web.Router.param req "id" in
   let error_path = Format.asprintf "/root/tenant/%s" id in
   let user () =
+    let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
+    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
     email_address
     |> CCOpt.to_result "Please provide operator email address."
     |> Lwt_result.lift
-    >>= HttpUtils.user_email_exists
+    >>= HttpUtils.user_email_exists tenant_db
   in
   let find_tenant () = Tenant.find_full (id |> Common.Id.of_string) in
   let events tenant =

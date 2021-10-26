@@ -1,5 +1,4 @@
 let prepare_email pool template_label subject email params =
-  (* TODO [timhub]: customise emails according to tenant *)
   let%lwt template =
     Service.EmailTemplate.get_by_label
       ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
