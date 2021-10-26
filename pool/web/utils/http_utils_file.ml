@@ -65,22 +65,16 @@ let remove_imported_file filename =
   |> Lwt.map (raise_if_failed ("while deleting file " ^ filename))
 ;;
 
-let mime_type = function
-  | "css" -> Ok "text/css"
-  | "gif" -> Ok "image/gif"
-  | "ico" -> Ok "image/vnd.microsoft.icon"
-  | "jpeg" | "jpg" -> Ok "image/jpeg"
-  | "png" -> Ok "image/png"
-  | "svg" -> Ok "image/svg+xml"
-  | "webp" -> Ok "image/webp"
-  | _ -> Error "Unknown file type"
-;;
-
 let mime file =
-  let ext = CCString.split_on_char '.' file |> CCList.last 1 in
-  match ext with
-  | ext :: _ -> mime_type ext
-  | _ -> Error "Invalid filename"
+  match Filename.extension file with
+  | ".css" -> Ok "text/css"
+  | ".gif" -> Ok "image/gif"
+  | ".ico" -> Ok "image/vnd.microsoft.icon"
+  | ".jpeg" | "jpg" -> Ok "image/jpeg"
+  | ".png" -> Ok "image/png"
+  | ".svg" -> Ok "image/svg+xml"
+  | ".webp" -> Ok "image/webp"
+  | _ -> Error "Unknown mime type"
 ;;
 
 let load_file filename =
