@@ -1,8 +1,6 @@
 include Event
 include Entity
 
-let login _ ~email:_ ~password:_ = Utils.todo ()
-
 let user_is_admin pool (user : Sihl_user.t) =
   let%lwt participant =
     Participant.find
@@ -18,5 +16,6 @@ let user_is_admin pool (user : Sihl_user.t) =
     | Ok _ -> Lwt.return true)
 ;;
 
+let insert = Repo.insert
 let find_by_user = Utils.todo
 let find_duplicates = Utils.todo
