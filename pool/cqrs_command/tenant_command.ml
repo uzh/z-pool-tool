@@ -323,6 +323,19 @@ end = struct
   ;;
 end
 
+module DestroyLogo : sig
+  val handle : Tenant.t -> Id.t -> (Pool_event.t list, string) Result.t
+  val can : Sihl_user.t -> bool Lwt.t
+end = struct
+  let handle tenant asset_id =
+    Ok [ Tenant.LogoDeleted (tenant, asset_id) |> Pool_event.tenant ]
+  ;;
+
+  let can user =
+    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
+  ;;
+end
+
 module Destroy : sig
   type t = { tenant_id : string }
 

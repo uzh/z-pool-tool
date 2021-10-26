@@ -31,6 +31,7 @@ let equal_operator_event (t1, o1) (t2, o2) =
 type event =
   | Created of Write.t
   | LogosUploaded of logo_mappings
+  | LogoDeleted of t * Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Database.t
   | Destroyed of Id.t
@@ -46,6 +47,9 @@ let handle_event _ : event -> unit Lwt.t = function
     Lwt.return_unit
   | LogosUploaded logo_mappings ->
     let%lwt _ = Repo.LogoMappingRepo.insert_multiple logo_mappings in
+    Lwt.return_unit
+  | LogoDeleted (tenant, asset_id) ->
+    let%lwt _ = Repo.LogoMappingRepo.delete tenant.id asset_id in
     Lwt.return_unit
   | DetailsEdited (tenant, update_t) ->
     let open Entity.Write in
@@ -104,6 +108,9 @@ let[@warning "-4"] equal_event event1 event2 =
   | Created tenant_one, Created tenant_two -> Write.equal tenant_one tenant_two
   | LogosUploaded logo_mappings_one, LogosUploaded logo_mappings_two ->
     equal_logo_mappings logo_mappings_one logo_mappings_two
+  | LogoDeleted (tenant_one, id_one), LogoDeleted (tenant_two, id_two) ->
+    equal tenant_one tenant_two
+    && CCString.equal (Id.value id_one) (Id.value id_two)
   | ( DetailsEdited (tenant_one, update_one)
     , DetailsEdited (tenant_two, update_two) ) ->
     Write.equal tenant_one tenant_two && equal_update update_one update_two
@@ -129,6 +136,9 @@ let pp_event formatter event =
   match event with
   | Created tenant -> Write.pp formatter tenant
   | LogosUploaded logo_mappings -> pp_logo_mappings formatter logo_mappings
+  | LogoDeleted (tenant, id) ->
+    pp formatter tenant;
+    Id.pp formatter id
   | DetailsEdited (tenant, update) ->
     Write.pp formatter tenant;
     pp_update formatter update

@@ -5,8 +5,8 @@ module File = Pool_common.File
 let input_element = Component.input_element
 
 let list csrf tenant_list root_list message () =
-  let open Tenant in
   let build_tenant_rows tenant_list =
+    let open Tenant in
     CCList.map
       (fun (tenant : Tenant.t) ->
         div
@@ -134,11 +134,6 @@ let detail csrf (tenant : Tenant.t) message () =
     ; "database_label", Pool_common.Database.Label.value tenant.database_label
     ]
   in
-  let logos =
-    CCList.map
-      (fun logo -> img ~src:(File.path logo) ~alt:"" ~a:[] ())
-      (tenant.logos |> Tenant.Logos.value)
-  in
   let detail_input_fields =
     CCList.map
       (fun (name, value) -> input_element `Text (Some name) value)
@@ -157,7 +152,6 @@ let detail csrf (tenant : Tenant.t) message () =
           ]
       ; div
           [ h3 [ txt "Tenant Logos" ]
-          ; div logos
           ; div
               [ label [ txt "Add logo" ]
               ; input
@@ -180,6 +174,35 @@ let detail csrf (tenant : Tenant.t) message () =
     in
     input ~a:attributes ()
   in
+  let tenant_logos =
+    div
+      [ h3 [ txt "Tenant Logos" ]
+      ; div
+          ~a:[ a_style "display: flex;" ]
+          (CCList.map
+             (fun (logo : Pool_common.File.t) ->
+               div
+                 [ img
+                     ~src:(File.path logo)
+                     ~alt:""
+                     ~a:[ a_style "width: 200px" ]
+                     ()
+                 ; form
+                     ~a:
+                       [ a_action
+                           (Format.asprintf
+                              "/root/tenant/assets/%s/%s/delete"
+                              (tenant.id |> Pool_common.Id.value)
+                              (Pool_common.File.id logo |> Pool_common.Id.value))
+                       ; a_method `Post
+                       ]
+                     [ Component.csrf_element csrf ()
+                     ; input_element `Submit None "Delete Image"
+                     ]
+                 ])
+             (tenant.logos |> Tenant.Logos.value))
+      ]
+  in
   let html =
     div
       [ h1 [ txt (tenant.Tenant.title |> Tenant.Title.value) ]
@@ -195,6 +218,8 @@ let detail csrf (tenant : Tenant.t) message () =
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
           @ [ disabled; input_element `Submit None "Update" ])
+      ; hr ()
+      ; tenant_logos
       ; hr ()
       ; form
           ~a:

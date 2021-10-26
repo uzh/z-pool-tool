@@ -61,6 +61,9 @@ module Root = struct
     ; post
         "/tenant/:id/update-database"
         Handler.Root.Tenant.Update.update_database
+    ; post
+        "/tenant/assets/:tenant_id/:asset_id/delete"
+        Handler.Root.Tenant.Update.delete_asset
     ; post "/tenant/:id/create-operator" Handler.Root.Tenant.create_operator
     ; post "/root/create" Handler.Root.Root.create
     ; post "/root/:id/toggle-status" Handler.Root.Root.toggle_status

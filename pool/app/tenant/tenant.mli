@@ -266,6 +266,7 @@ type logo_mappings = LogoMapping.Write.t list
 type event =
   | Created of Write.t [@equal equal]
   | LogosUploaded of logo_mappings
+  | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Pool_common.Database.t
   | Destroyed of Pool_common.Id.t

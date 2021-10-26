@@ -1,4 +1,5 @@
-(* TODO [timhub]: make it env variable? *)
+module Database = Pool_common.Database
+
 let import_dir = "/tmp/pool/import"
 
 let raise_if_failed msg process_result =
@@ -141,7 +142,11 @@ let update_files files req =
       let%lwt filedata = load_file filename |> Lwt_result.lift in
       (match filedata with
       | Ok (filesize, mime, data) ->
-        let%lwt file = Service.Storage.find ~ctx:[] ~id in
+        let%lwt file =
+          Service.Storage.find
+            ~ctx:[ "pool", Database.root |> Pool_common.Database.Label.value ]
+            ~id
+        in
         let updated_file =
           let open Sihl_storage in
           file

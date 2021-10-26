@@ -88,21 +88,21 @@ module Sql = struct
             storage_handles.created,
             storage_handles.updated
           FROM pool_tenant_logo_mappings
-          LEFT JOIN storage_handles
+          INNER JOIN storage_handles
             ON pool_tenant_logo_mappings.asset_uuid = storage_handles.uuid
         |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let find_fragment =
+  let where_fragment =
     {sql|
       WHERE pool_tenant_logo_mappings.tenant_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
   ;;
 
   let find_request =
-    select_from_tenant_logo_mappings_sql find_fragment
+    select_from_tenant_logo_mappings_sql where_fragment
     |> Caqti_request.find Caqti_type.string t
   ;;
 
@@ -136,6 +136,22 @@ module Sql = struct
   ;;
 
   let insert pool = Utils.Database.exec pool insert_request
+
+  let delete_request =
+    {sql|
+      DELETE FROM pool_tenant_logo_mappings
+      WHERE tenant_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND asset_uuid = UNHEX(REPLACE(?, '-', ''));
+    |sql}
+    |> Caqti_request.exec Caqti_type.(tup2 string string)
+  ;;
+
+  let delete pool tenant_uuid asset_uuid =
+    Utils.Database.exec
+      pool
+      delete_request
+      (tenant_uuid |> Id.value, asset_uuid |> Id.value)
+  ;;
 end
 
 let insert_multiple m_list =
@@ -144,3 +160,4 @@ let insert_multiple m_list =
 
 let find_by_tenant = Sql.find (Database.Label.value Database.root)
 let find_all = Sql.find_all (Database.Label.value Database.root)
+let delete = Sql.delete (Database.Label.value Database.root)
