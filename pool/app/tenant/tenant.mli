@@ -148,10 +148,8 @@ end
 module PartnerLogos : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t list
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module Maintenance : sig
@@ -196,7 +194,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -214,7 +212,6 @@ module Write : sig
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
-    ; partner_logos : PartnerLogos.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
@@ -230,7 +227,6 @@ module Write : sig
     -> SmtpAuth.Write.t
     -> Styles.Write.t
     -> Icon.Write.t
-    -> PartnerLogos.t
     -> Settings.Language.t
     -> t
 
@@ -256,7 +252,6 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }

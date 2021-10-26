@@ -62,7 +62,7 @@ let list csrf tenant_list root_list message () =
     ; "smtp_auth_password", "pw"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
-    ; "partner_logos", "partner logos"
+    ; "partner_logo", "partner logos"
     ; "default_language", "DE"
     ]
   in
@@ -79,9 +79,23 @@ let list csrf tenant_list root_list message () =
           ; input ~a:[ a_input_type `File; a_name "icon"; a_value "" ] ()
           ]
       ; div
-          [ label [ txt "tenant_logo" ]
+          [ label [ txt "Add tenant logos" ]
           ; input
-              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
+              ~a:
+                [ a_input_type `File
+                ; a_name (Tenant.stringify_logo_type `TenantLogo)
+                ; a_multiple ()
+                ]
+              ()
+          ]
+      ; div
+          [ label [ txt "Add partner logos" ]
+          ; input
+              ~a:
+                [ a_input_type `File
+                ; a_name (Tenant.stringify_logo_type `PartnerLogo)
+                ; a_multiple ()
+                ]
               ()
           ]
       ]
@@ -125,7 +139,6 @@ let detail csrf (tenant : Tenant.t) message () =
     ; ( "smtp_auth_authentication_method"
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
     ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "partner_logos", PartnerLogos.value tenant.partner_logos
     ; "default_language", Settings.Language.code tenant.default_language
     ]
   in
@@ -151,13 +164,16 @@ let detail csrf (tenant : Tenant.t) message () =
           ; input ~a:[ a_input_type `File; a_name "icon" ] ()
           ]
       ; div
-          [ h3 [ txt "Tenant Logos" ]
-          ; div
-              [ label [ txt "Add logo" ]
-              ; input
-                  ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
-                  ()
-              ]
+          [ label [ txt "Add tenant logos" ]
+          ; input
+              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
+              ()
+          ]
+      ; div
+          [ label [ txt "Add partner logos" ]
+          ; input
+              ~a:[ a_input_type `File; a_name "partner_logo"; a_multiple () ]
+              ()
           ]
       ]
   in
@@ -174,33 +190,38 @@ let detail csrf (tenant : Tenant.t) message () =
     in
     input ~a:attributes ()
   in
-  let tenant_logos =
+  let delete_img_form files =
+    div
+      ~a:[ a_style "display: flex;" ]
+      (CCList.map
+         (fun (file : Pool_common.File.t) ->
+           div
+             [ img
+                 ~src:(File.path file)
+                 ~alt:""
+                 ~a:[ a_style "width: 200px" ]
+                 ()
+             ; form
+                 ~a:
+                   [ a_action
+                       (Format.asprintf
+                          "/root/tenant/assets/%s/%s/delete"
+                          (tenant.id |> Pool_common.Id.value)
+                          (Pool_common.File.id file |> Pool_common.Id.value))
+                   ; a_method `Post
+                   ]
+                 [ Component.csrf_element csrf ()
+                 ; input_element `Submit None "Delete Image"
+                 ]
+             ])
+         files)
+  in
+  let delete_file_forms =
     div
       [ h3 [ txt "Tenant Logos" ]
-      ; div
-          ~a:[ a_style "display: flex;" ]
-          (CCList.map
-             (fun (logo : Pool_common.File.t) ->
-               div
-                 [ img
-                     ~src:(File.path logo)
-                     ~alt:""
-                     ~a:[ a_style "width: 200px" ]
-                     ()
-                 ; form
-                     ~a:
-                       [ a_action
-                           (Format.asprintf
-                              "/root/tenant/assets/%s/%s/delete"
-                              (tenant.id |> Pool_common.Id.value)
-                              (Pool_common.File.id logo |> Pool_common.Id.value))
-                       ; a_method `Post
-                       ]
-                     [ Component.csrf_element csrf ()
-                     ; input_element `Submit None "Delete Image"
-                     ]
-                 ])
-             (tenant.logos |> Tenant.Logos.value))
+      ; delete_img_form (tenant.logos |> Tenant.Logos.value)
+      ; h3 [ txt "Partner Logos" ]
+      ; delete_img_form (tenant.partner_logo |> Tenant.PartnerLogos.value)
       ]
   in
   let html =
@@ -219,7 +240,7 @@ let detail csrf (tenant : Tenant.t) message () =
           ((Component.csrf_element csrf () :: detail_input_fields)
           @ [ disabled; input_element `Submit None "Update" ])
       ; hr ()
-      ; tenant_logos
+      ; delete_file_forms
       ; hr ()
       ; form
           ~a:

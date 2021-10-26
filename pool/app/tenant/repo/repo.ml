@@ -22,12 +22,11 @@ module Sql = struct
         smtp_auth_protocol = $12,
         styles = UNHEX(REPLACE($13, '-', '')),
         icon = UNHEX(REPLACE($14, '-', '')),
-        partner_logos = $15,
-        mainenance = $16,
-        disabled = $17,
-        default_language = $18,
-        created_at = $19,
-        updated_at = $20
+        mainenance = $15,
+        disabled = $16,
+        default_language = $17,
+        created_at = $18,
+        updated_at = $19
       WHERE
       pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
@@ -140,7 +139,6 @@ module Sql = struct
             %s
             %s
             %s
-            pool_tenant.partner_logos,
             pool_tenant.mainenance,
             pool_tenant.disabled,
             pool_tenant.default_language,
@@ -219,7 +217,6 @@ module Sql = struct
         smtp_auth_protocol,
         styles,
         icon,
-        partner_logos,
         mainenance,
         disabled,
         default_language,
@@ -240,7 +237,6 @@ module Sql = struct
         ?,
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
-        ?,
         ?,
         ?,
         ?,
@@ -267,12 +263,21 @@ module Sql = struct
 end
 
 let set_logos tenant logos =
+  (* TODO [timhub]: refactor*)
   let tenant_logos =
     CCList.filter_map
       (fun l ->
         match l.LogoMapping.logo_type with
         | `TenantLogo -> Some l.LogoMapping.file
         | `PartnerLogo -> None)
+      logos
+  in
+  let partner_logo =
+    CCList.filter_map
+      (fun l ->
+        match l.LogoMapping.logo_type with
+        | `PartnerLogo -> Some l.LogoMapping.file
+        | `TenantLogo -> None)
       logos
   in
   let open Entity.Read in
@@ -286,7 +291,7 @@ let set_logos tenant logos =
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos
-    ; partner_logos = tenant.partner_logos
+    ; partner_logo
     ; maintenance = tenant.maintenance
     ; disabled = tenant.disabled
     ; default_language = tenant.default_language

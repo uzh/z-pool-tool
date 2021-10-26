@@ -16,7 +16,6 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }
@@ -69,7 +68,6 @@ let handle_event _ : event -> unit Lwt.t = function
         ; description = update_t.description
         ; url = update_t.url
         ; smtp_auth
-        ; partner_logos = update_t.partner_logos
         ; disabled = update_t.disabled
         ; default_language = update_t.default_language
         ; updated_at = Ptime_clock.now ()

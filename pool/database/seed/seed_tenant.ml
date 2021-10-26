@@ -54,7 +54,6 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some partner logos"
         , "EN"
         , "operator@econ.uzh.ch"
         , "adminadmin"
@@ -75,7 +74,6 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some partner logos"
         , "EN"
         , "operator@econ.uzh.ch"
         , "adminadmin"
@@ -94,7 +92,6 @@ let create () =
         , "SSL/TLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "some partner logos"
         , "DE"
         , "operator@zhaw.ch"
         , "adminadmin"
@@ -116,7 +113,6 @@ let create () =
          , smtp_auth_protocol
          , styles
          , icon
-         , partner_logos
          , default_language
          , email
          , password
@@ -138,7 +134,6 @@ let create () =
           (* TODO [timhub] upload files *)
         ; "styles", [ styles ]
         ; "icon", [ icon ]
-        ; "partner_logos", [ partner_logos ]
         ; "default_language", [ default_language ]
         ; "email", [ email ]
         ; "password", [ password ]

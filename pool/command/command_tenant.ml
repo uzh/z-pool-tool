@@ -4,8 +4,7 @@ let create_tenant =
     ~help:
       "<title> <description> <url> <database_url> <smtp_auth_server> \
        <smtp_auth_port> <smtp_auth_username> <smtp_auth_authentication_method> \
-       <smtp_auth_protocol> <styles> <icon> <logos> <partner_logos> \
-       <default_language>"
+       <smtp_auth_protocol> <styles> <icon> <logos> <default_language>"
     ~description:"Creates a new test tenant"
     (fun args ->
       let help_text =
@@ -24,7 +23,6 @@ let create_tenant =
         <styles>                            : string
         <icon>                              : string
         <logos>                             : string
-        <partner_logos>                     : string
         <default_language>                  : 'DE' | 'EN'
         <operator_email>                    : string
         <operator_password>                 : string
@@ -47,7 +45,6 @@ let create_tenant =
         ; styles
         ; icon
         ; logos
-        ; partner_logos
         ; default_language
         ; email
         ; password
@@ -76,7 +73,6 @@ let create_tenant =
               ; "styles", [ styles ]
               ; "icon", [ icon ]
               ; "logos", [ logos ]
-              ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
               ; "email", [ email ]
               ; "password", [ password ]
@@ -84,7 +80,6 @@ let create_tenant =
               ; "lastname", [ lastname ]
               ]
             |> CCResult.map_err Utils.handle_conformist_error
-            (* TODO [timhub]: How to deal with seeds and files? *)
             >>= Cqrs_command.Tenant_command.Create.handle []
           in
           let run_events =

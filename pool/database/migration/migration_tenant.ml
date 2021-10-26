@@ -18,7 +18,6 @@ let create_tenant_table =
         `smtp_auth_protocol` varchar(255) NOT NULL,
         `styles` binary(16) NOT NULL,
         `icon` binary(16) NOT NULL,
-        `partner_logos` varchar(255) NOT NULL,
         `mainenance` boolean NOT NULL,
         `disabled` boolean NOT NULL,
         `default_language` varchar(128) NOT NULL,

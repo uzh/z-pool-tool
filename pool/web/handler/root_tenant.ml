@@ -34,7 +34,10 @@ let create req =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
     let* files =
-      File.upload_files [ "styles"; "icon"; "tenant_logo" ] req
+      File.upload_files
+        ([ "styles"; "icon" ]
+        @ CCList.map Tenant.stringify_logo_type [ `PartnerLogo; `TenantLogo ])
+        req
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
     (* TODO [timhub]: delete files on error *)

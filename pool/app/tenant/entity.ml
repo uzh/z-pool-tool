@@ -104,22 +104,10 @@ module Logos = struct
 end
 
 module PartnerLogos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
+  type create = File.t list -> t
 
   let value m = m
-
-  let create partner_logo =
-    if String.length partner_logo <= 0
-    then Error "Invalid partner logos!"
-    else Ok partner_logo
-  ;;
-
-  let schema () =
-    Conformist.custom
-      (Utils.schema_decoder create "partner logos")
-      CCList.pure
-      "partner_logos"
-  ;;
 end
 
 module Maintenance = struct
@@ -181,7 +169,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -200,7 +188,6 @@ module Read = struct
     ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
     ; icon : Icon.t
-    ; partner_logos : PartnerLogos.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
@@ -220,7 +207,6 @@ module Write = struct
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
-    ; partner_logos : PartnerLogos.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
@@ -237,7 +223,6 @@ module Write = struct
       smtp_auth
       styles
       icon
-      partner_logos
       default_language
     =
     { id = Id.create ()
@@ -248,7 +233,6 @@ module Write = struct
     ; smtp_auth
     ; styles
     ; icon
-    ; partner_logos
     ; maintenance = Maintenance.create false
     ; disabled = Disabled.create false
     ; default_language
