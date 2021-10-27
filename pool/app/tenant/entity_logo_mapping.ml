@@ -15,7 +15,7 @@ let type_of_string = function
 type t =
   { id : Id.t
   ; logo_type : [ `PartnerLogo | `TenantLogo ]
-  ; tenant_uuid : Id.t
+  ; tenant_id : Id.t
   ; file : File.t
   }
 [@@deriving eq, show]
@@ -23,8 +23,8 @@ type t =
 module Write = struct
   type t =
     { id : Id.t
-    ; tenant_uuid : Id.t
-    ; asset_uuid : Id.t
+    ; tenant_id : Id.t
+    ; asset_id : Id.t
     ; logo_type : [ `PartnerLogo | `TenantLogo ]
     }
   [@@deriving eq, show]

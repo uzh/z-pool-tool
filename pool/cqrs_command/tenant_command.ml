@@ -5,15 +5,15 @@ module User = Common_user
 let create_logo_mappings files tenant =
   let open Tenant in
   CCList.filter_map
-    (fun (name, asset_uuid) ->
+    (fun (name, asset_id) ->
       name
       |> Tenant.LogoMapping.type_of_string
       |> CCOpt.of_result
       |> CCOpt.map (fun logo_type ->
              LogoMapping.Write.
                { id = Id.create ()
-               ; tenant_uuid = tenant.Write.id
-               ; asset_uuid = asset_uuid |> Id.of_string
+               ; tenant_id = tenant.Write.id
+               ; asset_id = asset_id |> Id.of_string
                ; logo_type
                }))
     files

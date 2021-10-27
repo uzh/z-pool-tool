@@ -173,8 +173,8 @@ module LogoMapping : sig
   module Write : sig
     type t =
       { id : Pool_common.Id.t
-      ; tenant_uuid : Pool_common.Id.t
-      ; asset_uuid : Pool_common.Id.t
+      ; tenant_id : Pool_common.Id.t
+      ; asset_id : Pool_common.Id.t
       ; logo_type : [ `PartnerLogo | `TenantLogo ]
       }
 

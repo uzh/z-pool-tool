@@ -315,7 +315,7 @@ let find_all pool () =
   let* logos = LogoMappingRepo.find_all () in
   let result tenants logos =
     let logos_of_tenant id =
-      CCList.filter (fun logo -> Id.equal logo.LogoMapping.tenant_uuid id) logos
+      CCList.filter (fun logo -> Id.equal logo.LogoMapping.tenant_id id) logos
     in
     Ok
       (CCList.map

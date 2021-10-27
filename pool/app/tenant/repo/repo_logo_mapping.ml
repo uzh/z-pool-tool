@@ -9,15 +9,15 @@ let t =
   let encode m =
     Ok
       ( Id.value m.id
-      , (stringify_type m.logo_type, (Id.value m.tenant_uuid, m.file)) )
+      , (stringify_type m.logo_type, (Id.value m.tenant_id, m.file)) )
   in
-  let decode (id, (logo_type, (tenant_uuid, file))) =
+  let decode (id, (logo_type, (tenant_id, file))) =
     let open CCResult in
     let* logo_type = logo_type |> type_of_string in
     Ok
       { id = Id.of_string id
       ; logo_type
-      ; tenant_uuid = Id.of_string tenant_uuid
+      ; tenant_id = Id.of_string tenant_id
       ; file
       }
   in
@@ -35,16 +35,16 @@ module Write = struct
     let encode (m : t) =
       Ok
         ( Id.value m.id
-        , ( Id.value m.tenant_uuid
-          , (Id.value m.asset_uuid, stringify_type m.logo_type) ) )
+        , ( Id.value m.tenant_id
+          , (Id.value m.asset_id, stringify_type m.logo_type) ) )
     in
-    let decode (id, (tenant_uuid, (asset_uuid, logo_type))) =
+    let decode (id, (tenant_id, (asset_id, logo_type))) =
       let open CCResult in
       let* logo_type = logo_type |> type_of_string in
       Ok
         { id = Id.of_string id
-        ; tenant_uuid = Id.of_string tenant_uuid
-        ; asset_uuid = Id.of_string asset_uuid
+        ; tenant_id = Id.of_string tenant_id
+        ; asset_id = Id.of_string asset_id
         ; logo_type
         }
     in
@@ -146,11 +146,11 @@ module Sql = struct
     |> Caqti_request.exec Caqti_type.(tup2 string string)
   ;;
 
-  let delete pool tenant_uuid asset_uuid =
+  let delete pool tenant_id asset_id =
     Utils.Database.exec
       pool
       delete_request
-      (tenant_uuid |> Id.value, asset_uuid |> Id.value)
+      (tenant_id |> Id.value, asset_id |> Id.value)
   ;;
 end
 
