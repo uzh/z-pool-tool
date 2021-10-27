@@ -7,10 +7,7 @@ module Tenant_middleware = struct
   ;;
 
   let require_admin ~login_path_f =
-    let fail_action =
-      let login_path = login_path_f () in
-      HttpUtils.redirect_to login_path
-    in
+    let fail_action = () |> login_path_f |> HttpUtils.redirect_to in
     let filter handler req =
       let%lwt tenant_db = tenant_db_of_request req in
       match tenant_db with
