@@ -39,13 +39,16 @@ module PasswordReset = struct
         |> Sihl.Web.externalize_path
         |> Utils.Url.create_public_url
       in
-      let username = user.Sihl_user.username |> Option.value ~default:"User" in
+      let given_name = user.Sihl_user.given_name |> Option.value ~default:"" in
+      let name = user.Sihl_user.name |> Option.value ~default:"" in
       prepare_email
         pool
         "password_reset"
         subject
         email
-        [ "resetUrl", reset_url; "username", username ]
+        [ "resetUrl", reset_url
+        ; "name", Format.asprintf "%s %s" given_name name
+        ]
       |> Lwt_result.ok
   ;;
 end

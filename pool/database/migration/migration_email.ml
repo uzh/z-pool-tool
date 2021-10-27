@@ -6,7 +6,7 @@ INSERT INTO email_templates(uuid, label, content_text, content_html)
 VALUES
   (UNHEX(REPLACE('602baf34-7341-4807-864c-01e9b21e1d1a','-','')),
   'password_reset',
-  'Dear {username},
+  'Dear {name},
 
 You recently requested to reset your password for your account.
 Follow the link below to reset it.
