@@ -16,7 +16,7 @@ let list csrf tenant_list root_list message () =
                 [ a_href
                     (Sihl.Web.externalize_path
                        (Format.asprintf
-                          "/root/tenant/%s"
+                          "/root/tenants/%s"
                           (Pool_common.Id.value tenant.id)))
                 ]
               [ txt "detail" ]
@@ -106,7 +106,7 @@ let list csrf tenant_list root_list message () =
       ; div tenant_list
       ; form
           ~a:
-            [ a_action (Sihl.Web.externalize_path "/root/tenant/create")
+            [ a_action (Sihl.Web.externalize_path "/root/tenants/create")
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
@@ -205,7 +205,7 @@ let detail csrf (tenant : Tenant.t) message () =
                  ~a:
                    [ a_action
                        (Format.asprintf
-                          "/root/tenant/assets/%s/%s/delete"
+                          "/root/tenants/%s/assets/%s/delete"
                           (tenant.id |> Pool_common.Id.value)
                           (Pool_common.File.id file |> Pool_common.Id.value))
                    ; a_method `Post
@@ -232,7 +232,7 @@ let detail csrf (tenant : Tenant.t) message () =
             [ a_action
                 (Sihl.Web.externalize_path
                    (Format.asprintf
-                      "/root/tenant/%s/update-detail"
+                      "/root/tenants/%s/update-detail"
                       (Pool_common.Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
@@ -247,7 +247,7 @@ let detail csrf (tenant : Tenant.t) message () =
             [ a_action
                 (Sihl.Web.externalize_path
                    (Format.asprintf
-                      "/root/tenant/%s/update-database"
+                      "/root/tenants/%s/update-database"
                       (Pool_common.Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
@@ -259,7 +259,7 @@ let detail csrf (tenant : Tenant.t) message () =
           ~a:
             [ a_action
                 (Format.asprintf
-                   "/root/tenant/%s/create-operator"
+                   "/root/tenants/%s/create-operator"
                    (Pool_common.Id.value tenant.id))
             ; a_method `Post
             ]

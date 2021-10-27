@@ -6,7 +6,7 @@ module Common = Pool_common
 let update req command success_message =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
-  let redirect_path = Format.asprintf "/root/tenant/%s" id in
+  let redirect_path = Format.asprintf "/root/tenants/%s" id in
   let tenant () =
     Tenant.find_full (id |> Pool_common.Id.of_string)
     |> Lwt_result.map_err (fun err -> err, redirect_path)
@@ -78,7 +78,7 @@ let delete_asset req =
   let open Utils.Lwt_result.Infix in
   let asset_id = Sihl.Web.Router.param req "asset_id" in
   let tenant_id = Sihl.Web.Router.param req "tenant_id" in
-  let redirect_path = Format.asprintf "root/tenant/%s" tenant_id in
+  let redirect_path = Format.asprintf "root/tenants/%s" tenant_id in
   let result () =
     let open Lwt_result.Syntax in
     let* tenant = Tenant.find (tenant_id |> Common.Id.of_string) in

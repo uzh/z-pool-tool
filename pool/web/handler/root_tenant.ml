@@ -78,7 +78,7 @@ let create req =
 let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
-  let error_path = Format.asprintf "/root/tenant/%s" id in
+  let error_path = Format.asprintf "/root/tenants/%s" id in
   let user () =
     let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
