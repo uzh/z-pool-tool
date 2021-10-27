@@ -83,7 +83,7 @@ let list csrf tenant_list root_list message () =
           ; input
               ~a:
                 [ a_input_type `File
-                ; a_name (Tenant.stringify_logo_type `TenantLogo)
+                ; a_name (Tenant.LogoMapping.stringify_type `TenantLogo)
                 ; a_multiple ()
                 ]
               ()
@@ -93,7 +93,7 @@ let list csrf tenant_list root_list message () =
           ; input
               ~a:
                 [ a_input_type `File
-                ; a_name (Tenant.stringify_logo_type `PartnerLogo)
+                ; a_name (Tenant.LogoMapping.stringify_type `PartnerLogo)
                 ; a_multiple ()
                 ]
               ()

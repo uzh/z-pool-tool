@@ -25,8 +25,9 @@ module Selection = struct
 end
 
 (* Logo mappings *)
-let stringify_logo_type = LogoMapping.stringify_type
-let logo_type_of_string = LogoMapping.type_of_string
+module LogoMapping = struct
+  include LogoMapping
+end
 
 (* MONITORING AND MANAGEMENT *)
 

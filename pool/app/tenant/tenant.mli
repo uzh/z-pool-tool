@@ -182,6 +182,12 @@ module LogoMapping : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  val stringify_type : [ `PartnerLogo | `TenantLogo ] -> string
+
+  val type_of_string
+    :  string
+    -> ([> `PartnerLogo | `TenantLogo ], string) result
 end
 
 type t =
@@ -303,10 +309,3 @@ end
 
 (* The system should proactively report degraded health to operators *)
 type generate_status_report = StatusReport.t Lwt.t
-
-(* Logo Mappings *)
-val stringify_logo_type : [ `PartnerLogo | `TenantLogo ] -> string
-
-val logo_type_of_string
-  :  string
-  -> ([> `PartnerLogo | `TenantLogo ], string) result

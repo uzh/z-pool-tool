@@ -36,7 +36,9 @@ let create req =
     let* files =
       File.upload_files
         ([ "styles"; "icon" ]
-        @ CCList.map Tenant.stringify_logo_type [ `PartnerLogo; `TenantLogo ])
+        @ CCList.map
+            Tenant.LogoMapping.stringify_type
+            [ `PartnerLogo; `TenantLogo ])
         req
       |> Lwt_result.map_err (fun err -> err, error_path)
     in

@@ -7,7 +7,7 @@ let create_logo_mappings files tenant =
   CCList.filter_map
     (fun (name, asset_uuid) ->
       name
-      |> Tenant.logo_type_of_string
+      |> Tenant.LogoMapping.type_of_string
       |> CCOpt.of_result
       |> CCOpt.map (fun logo_type ->
              LogoMapping.Write.
