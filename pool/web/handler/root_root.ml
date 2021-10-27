@@ -32,7 +32,7 @@ let create req =
   in
   ()
   |> user
-  >>= events
+  >>= CCFun.const (events ())
   |>> handle
   |> Lwt_result.map_err (fun err -> err, error_path)
   |>> CCFun.const return_to_overview

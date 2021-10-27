@@ -79,7 +79,7 @@ let user_email_exists pool email =
       email
   in
   match user with
-  | None -> Lwt.return_ok ()
+  | None -> Lwt.return_ok false
   | Some _ -> Lwt.return_error "Email address is already in use."
 ;;
 

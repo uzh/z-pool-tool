@@ -86,7 +86,7 @@ let create_operator req =
   in
   ()
   |> user
-  >>= find_tenant
+  >>= CCFun.const (find_tenant ())
   >>= events
   |>> handle
   |> Lwt_result.map_err (fun err -> err, error_path)
