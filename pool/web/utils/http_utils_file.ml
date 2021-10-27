@@ -1,4 +1,6 @@
 module Database = Pool_common.Database
+module Id = Pool_common.Id
+module File = Pool_common.File
 
 let import_dir = "/tmp/pool/import"
 
@@ -65,24 +67,12 @@ let remove_imported_file filename =
   |> Lwt.map (raise_if_failed ("while deleting file " ^ filename))
 ;;
 
-let mime file =
-  match Filename.extension file with
-  | ".css" -> Ok "text/css"
-  | ".gif" -> Ok "image/gif"
-  | ".ico" -> Ok "image/vnd.microsoft.icon"
-  | ".jpeg" | "jpg" -> Ok "image/jpeg"
-  | ".png" -> Ok "image/png"
-  | ".svg" -> Ok "image/svg+xml"
-  | ".webp" -> Ok "image/webp"
-  | _ -> Error "Unknown mime type"
-;;
-
 let load_file filename =
   let open CCResult in
   let ic = open_in filename in
   let filesize = in_channel_length ic in
   let data = Bytes.create filesize in
-  let* mime = mime filename in
+  let* mime = File.Mime.of_filename filename in
   let () = really_input ic data 0 filesize in
   let data = Bytes.to_string data in
   let () = close_in ic in
@@ -92,10 +82,14 @@ let load_file filename =
 let file_to_storage_add filename =
   let open Lwt_result.Syntax in
   let* filesize, mime, data = load_file filename |> Lwt_result.lift in
-  let asset_id = Pool_common.Id.create () |> Pool_common.Id.value in
+  let asset_id = Id.create () |> Id.value in
   let file =
     Sihl_storage.
-      { id = asset_id; filename = Filename.basename filename; filesize; mime }
+      { id = asset_id
+      ; filename = Filename.basename filename
+      ; filesize
+      ; mime = File.Mime.to_string mime
+      }
   in
   let base64 = Base64.encode_exn data in
   let%lwt _ = Service.Storage.upload_base64 file ~base64 in
@@ -138,7 +132,7 @@ let update_files files req =
       | Ok (filesize, mime, data) ->
         let%lwt file =
           Service.Storage.find
-            ~ctx:[ "pool", Database.root |> Pool_common.Database.Label.value ]
+            ~ctx:[ "pool", Database.root |> Database.Label.value ]
             ~id
         in
         let updated_file =
@@ -146,7 +140,7 @@ let update_files files req =
           file
           |> set_filename_stored (Filename.basename filename)
           |> set_filesize_stored filesize
-          |> set_mime_stored mime
+          |> set_mime_stored (File.Mime.to_string mime)
         in
         let base64 = Base64.encode_exn data in
         let%lwt _ = Service.Storage.update_base64 updated_file ~base64 in

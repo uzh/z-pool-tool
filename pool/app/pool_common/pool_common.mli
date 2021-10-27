@@ -63,16 +63,37 @@ module UpdatedAt : sig
 end
 
 module File : sig
+  module Name : sig
+    type t
+
+    val value : t -> string
+  end
+
+  module Mime : sig
+    type t =
+      | Css
+      | Gif
+      | Ico
+      | Jpeg
+      | Png
+      | Svg
+      | Webp
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val of_string : string -> (t, string) result
+    val to_string : t -> string
+    val of_filename : string -> (t, string) result
+  end
+
   type t
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val equal : t -> t -> bool
   val id : t -> Id.t
-  val filename : t -> string
-  val mime : t -> string
   val path : t -> string
-  val create : ?id:string -> string -> string -> unit -> t
 end
 
 module Repo : sig

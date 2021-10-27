@@ -79,29 +79,69 @@ module UpdatedAt = struct
 end
 
 module File = struct
+  module Name = struct
+    type t = string [@@deriving eq, show]
+
+    let value m = m
+  end
+
+  module Mime = struct
+    type t =
+      | Css
+      | Gif
+      | Ico
+      | Jpeg
+      | Png
+      | Svg
+      | Webp
+    [@@deriving eq, show]
+
+    let of_string = function
+      | "text/css" -> Ok Css
+      | "image/gif" -> Ok Gif
+      | "image/vnd.microsoft.icon" -> Ok Ico
+      | "image/jpeg" -> Ok Jpeg
+      | "image/png" -> Ok Png
+      | "image/svg+xml" -> Ok Svg
+      | "image/webp" -> Ok Webp
+      | _ -> Error "Invalid mime type provided"
+    ;;
+
+    let to_string = function
+      | Css -> "text/css"
+      | Gif -> "image/gif"
+      | Ico -> "image/vnd.microsoft.icon"
+      | Jpeg -> "image/jpeg"
+      | Png -> "image/png"
+      | Svg -> "image/svg+xml"
+      | Webp -> "image/webp"
+    ;;
+
+    let of_filename filename =
+      match filename |> Filename.extension with
+      | ".css" -> Ok Css
+      | ".git" -> Ok Gif
+      | ".ico" -> Ok Ico
+      | ".jpeg" | ".jpg" -> Ok Jpeg
+      | ".png" -> Ok Png
+      | ".svg" -> Ok Svg
+      | ".webp" -> Ok Webp
+      | _ -> Error "Invalid mime type provided"
+    ;;
+  end
+
   type t =
     { id : Id.t
-    ; filename : string
-    ; mime_type : string
+    ; name : Name.t
+    ; mime_type : Mime.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
   [@@deriving show, eq]
 
   let id m = m.id
-  let filename m = m.filename
-  let mime m = m.mime_type
 
   let path m =
-    Sihl.Web.externalize_path (Format.asprintf "/assets/%s/%s" m.id m.filename)
-  ;;
-
-  let create ?id filename mime_type () =
-    { id = id |> Option.value ~default:(Id.create ())
-    ; filename
-    ; mime_type
-    ; created_at = CreatedAt.create ()
-    ; updated_at = UpdatedAt.create ()
-    }
+    Sihl.Web.externalize_path (Format.asprintf "/assets/%s/%s" m.id m.name)
   ;;
 end
