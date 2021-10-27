@@ -80,8 +80,7 @@ let delete_asset req =
   let tenant_id = Sihl.Web.Router.param req "tenant_id" in
   let redirect_path = Format.asprintf "root/tenants/%s" tenant_id in
   let result () =
-    let open Lwt_result.Syntax in
-    let* tenant = Tenant.find (tenant_id |> Common.Id.of_string) in
+    let tenant () = Tenant.find (tenant_id |> Common.Id.of_string) in
     let event tenant =
       Cqrs_command.Tenant_command.DestroyLogo.handle
         tenant
@@ -102,7 +101,12 @@ let delete_asset req =
         redirect_path
         [ Message.set ~success:[ "File was successfully deleted." ] ]
     in
-    tenant |> event |>> handle |>> destroy_file |>> CCFun.const return_to_tenant
+    ()
+    |> tenant
+    >>= event
+    |>> handle
+    |>> destroy_file
+    |>> CCFun.const return_to_tenant
   in
   ()
   |> result
