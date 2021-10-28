@@ -25,7 +25,14 @@ let extend_migrations additional_steps () =
   | true -> migrations
   | false ->
     Logs.info (fun m ->
-        m "There are duplicated migrations. Remove or rename them.");
+        m
+          "There are duplicated migrations: %s\nRemove or rename them."
+          (CCList.fold_left
+             (fun a b -> Format.asprintf "%s\n%s" a (fst b))
+             ""
+             (CCList.stable_sort
+                (fun a b -> CCString.compare (fst a) (fst b))
+                migrations)));
     []
 ;;
 
