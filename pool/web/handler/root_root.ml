@@ -5,11 +5,13 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let error_path = Format.asprintf "/root/tenants/" in
   let user () =
+    let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     email_address
     |> CCOpt.to_result "Please provide root email address."
     |> Lwt_result.lift
-    >>= HttpUtils.user_email_exists
+    >>= HttpUtils.validate_email_existance tenant_db
   in
   let events () =
     let open CCResult.Infix in

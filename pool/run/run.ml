@@ -15,6 +15,10 @@ let services =
   [ Database.register ()
   ; Service.User.register ()
   ; Service.Token.register ()
+  ; Service.BlockingEmail.register ()
+  ; Service.Email.register ()
+  ; Service.EmailTemplate.register ()
+  ; Service.Queue.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]
 ;;

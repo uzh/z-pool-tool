@@ -1,0 +1,5 @@
+(library
+ (name email)
+ (libraries service utils pool_common)
+ (preprocess
+  (pps lwt_ppx)))

@@ -1,3 +1,4 @@
+module CustomMiddleware = Middleware
 open Sihl.Web
 
 let global_middlewares =
@@ -14,15 +15,40 @@ let global_middlewares =
 ;;
 
 module Public = struct
-  let routes = [ get "/" Handler.Public.index ]
+  let routes =
+    [ get "/" Handler.Public.index
+    ; get "/login" Handler.Public.Login.login_get
+    ; post "/login" Handler.Public.Login.login_post
+    ; get "/logout" Handler.Public.Login.logout
+    ; get
+        "/request-reset-password"
+        Handler.Public.Login.request_reset_password_get
+    ; post
+        "/request-reset-password"
+        Handler.Public.Login.request_reset_password_post
+    ; get "/reset-password" Handler.Public.Login.reset_password_get
+    ; post "/reset-password" Handler.Public.Login.reset_password_post
+    ]
+  ;;
 end
 
 module Participant = struct
   let routes =
     [ get "/signup" Handler.Participant.sign_up
     ; post "/signup" Handler.Participant.sign_up_create
+    ; get "/dashboard" Handler.Participant.dashboard
     ]
   ;;
+end
+
+module Admin = struct
+  let middlewares =
+    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun _ ->
+          Sihl.Web.externalize_path "/login")
+    ]
+  ;;
+
+  let routes = [ get "/dashboard" Handler.Admin.dashboard ]
 end
 
 module Root = struct
@@ -44,6 +70,7 @@ end
 let router =
   choose
     [ choose Public.routes
+    ; choose ~scope:"/admin" ~middlewares:Admin.middlewares Admin.routes
     ; choose ~scope:"/participant" Participant.routes
     ; choose ~scope:"/root" Root.routes
     ; get "/**" Handler.Public.not_found

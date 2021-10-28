@@ -4,11 +4,28 @@ module Message = HttpUtils.Message
 
 type handler = Rock.Request.t -> Rock.Response.t Lwt.t
 
+let dashboard req =
+  let open Utils.Lwt_result.Infix in
+  let error_path = "/" in
+  let show () =
+    let message =
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
+    in
+    Page.Participant.dashboard message ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
+  in
+  show ()
+  |> Lwt_result.map_err (fun err -> err, error_path)
+  >|> Http_utils.extract_happy_path
+;;
+
 let sign_up : handler =
  fun req ->
-  let csrf = Sihl.Web.Csrf.find req |> Option.get in
-  let message = Sihl.Web.Flash.find_alert req in
-  let message = Option.bind message Message.of_string in
+  let csrf = HttpUtils.find_csrf req in
+  let message =
+    Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
+  in
   let go = CCFun.flip Sihl.Web.Flash.find req in
   let channels = Participant.RecruitmentChannel.all () in
   let email = go "email" in
@@ -34,7 +51,7 @@ let sign_up_create : handler =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let%lwt result =
     let open Lwt_result.Syntax in
-    let* tenant_db = General.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     (* TODO add Settings when ready *)
     (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db
        in *)

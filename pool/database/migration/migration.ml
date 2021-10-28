@@ -14,11 +14,26 @@ let extend_migrations additional_steps () =
     let open Sihl.Database.Migration in
     !registered_migrations
   in
-  registered_migrations
-  |> Map.to_seq
-  |> Map.add_seq Map.empty
-  |> CCFun.flip Map.add_list additional_steps
-  |> Map.to_list
+  let migrations = (registered_migrations |> Map.to_list) @ additional_steps in
+  match
+    CCList.length migrations
+    == CCList.length
+         (CCList.uniq
+            ~eq:(fun (k1, _) (k2, _) -> CCString.equal k1 k2)
+            migrations)
+  with
+  | true -> migrations
+  | false ->
+    Logs.info (fun m ->
+        m
+          "There are duplicated migrations: %s\nRemove or rename them."
+          (CCList.fold_left
+             (fun a b -> Format.asprintf "%s\n%s" a (fst b))
+             ""
+             (CCList.stable_sort
+                (fun a b -> CCString.compare (fst a) (fst b))
+                migrations)));
+    []
 ;;
 
 let run_pending_migrations db_pools migration_steps =
@@ -60,7 +75,10 @@ end
 module Tenant = struct
   let steps =
     extend_migrations
-      [ Migration_person.migration (); Migration_participant.migration () ]
+      [ Migration_person.migration ()
+      ; Migration_participant.migration ()
+      ; Migration_email.migration ()
+      ]
   ;;
 
   let run db_pools () = execute db_pools @@ steps ()

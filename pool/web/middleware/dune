@@ -1,0 +1,5 @@
+(library
+ (name middleware)
+ (libraries service sihl admin http_utils pool_common tenant)
+ (preprocess
+  (pps lwt_ppx)))

@@ -9,6 +9,8 @@ let redirect_to_with_actions path actions =
   |> Lwt.return
 ;;
 
+let redirect_to path = redirect_to_with_actions path []
+
 let extract_happy_path_generic result msgf =
   result
   |> Result.map Lwt.return
@@ -47,8 +49,8 @@ let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map
      @@ fun key ->
-     Option.bind (List.assoc_opt key urlencoded) CCList.head_opt
-     |> Option.map @@ CCPair.make key)
+     CCOpt.bind (List.assoc_opt key urlencoded) CCList.head_opt
+     |> CCOpt.map @@ CCPair.make key)
   |> CCList.all_some
 ;;
 
@@ -70,8 +72,12 @@ let err_with_action ?message error_path action =
       | Some msg -> msg, error_path, action)
 ;;
 
-let user_email_exists email =
-  let%lwt user = Service.User.find_by_email_opt email in
+let validate_email_existance pool email =
+  let%lwt user =
+    Service.User.find_by_email_opt
+      ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
+      email
+  in
   match user with
   | None -> Lwt.return_ok ()
   | Some _ -> Lwt.return_error "Email address is already in use."
@@ -79,22 +85,16 @@ let user_email_exists email =
 
 let format_request_boolean_values values urlencoded =
   let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
-  let values =
-    values
-    |> CCList.map (fun k -> k, [ "false" ])
-    |> CCList.to_seq
-    |> StringMap.of_seq
+  let update m k =
+    StringMap.update
+      k
+      (function
+        | None -> Some [ "false" ]
+        | Some _ -> Some [ "true" ])
+      m
   in
-  StringMap.merge
-    (fun _ x y ->
-      match x, y with
-      | Some _, Some _ -> Some [ "true" ]
-      | Some x, _ -> Some x
-      | _ -> Some [ "false" ])
-    urlencoded
-    values
-  |> StringMap.to_seq
-  |> CCList.of_seq
+  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
+let find_csrf req = Sihl.Web.Csrf.find req |> CCOpt.get_exn_or "Invalid session"

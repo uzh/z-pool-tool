@@ -1,30 +1,37 @@
 let admins db_pool () =
-  let admins =
-    [ "The", "One", "admin@example.com"
-    ; "engineering", "admin", "engineering@econ.uzh.ch"
+  let data =
+    [ "The", "One", "admin@example.com", `Operator
+    ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
     ]
   in
+  let ctx = [ "pool", Pool_common.Database.Label.value db_pool ] in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> Option.value ~default:"admin"
   in
-  let%lwt _ =
-    Lwt_list.iter_s
-      (fun (given_name, name, email) ->
-        let ctx = [ "pool", Pool_common.Database.Label.value db_pool ] in
-        let%lwt user = Service.User.find_by_email_opt ~ctx email in
-        match user with
-        | None ->
-          let%lwt _ =
-            Service.User.create_admin ~ctx ~given_name ~name ~password email
-          in
-          Lwt.return_unit
-        | Some _ ->
-          Logs.debug (fun m -> m "%s" "Admin user already exists");
-          Lwt.return_unit)
-      admins
-  in
-  Lwt.return_unit
+  Lwt_list.iter_s
+    (fun (given_name, name, email, role) ->
+      let%lwt user = Service.User.find_by_email_opt ~ctx email in
+      match user with
+      | None ->
+        let%lwt user =
+          Service.User.create_admin ~ctx ~name ~given_name ~password email
+        in
+        let person = Admin.create_person user in
+        let%lwt _ =
+          match role with
+          | `Assistant -> Admin.insert db_pool (Admin.Assistant person)
+          | `Experimenter -> Admin.insert db_pool (Admin.Experimenter person)
+          | `Recruiter -> Admin.insert db_pool (Admin.Recruiter person)
+          | `LocationManager ->
+            Admin.insert db_pool (Admin.LocationManager person)
+          | `Operator -> Admin.insert db_pool (Admin.Operator person)
+        in
+        Lwt.return_unit
+      | Some _ ->
+        Logs.debug (fun m -> m "%s" "Admin user already exists");
+        Lwt.return_unit)
+    data
 ;;
 
 let participants db_pool () =

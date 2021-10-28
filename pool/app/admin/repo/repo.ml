@@ -100,6 +100,26 @@ module Sql = struct
       (id, role_val)
   ;;
 
+  let find_role_by_user_request =
+    {sql|
+      SELECT
+        pool_person.role
+      FROM pool_person
+      INNER JOIN user_users ON pool_person.sihl_user_uuid = user_users.uuid
+      AND user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_request.find Caqti_type.string Caqti_type.string
+  ;;
+
+  let find_role_by_user pool user =
+    let open Lwt_result.Infix in
+    Utils.Database.find
+      (pool |> Pool_common.Database.Label.value)
+      find_role_by_user_request
+      user.Sihl.Contract.User.id
+    >|= Utils.Stringify.person_from_string
+  ;;
+
   let insert_sql =
     {sql|
       INSERT INTO pool_person (
@@ -127,6 +147,7 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_role_by_user = Sql.find_role_by_user
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update = Sql.update

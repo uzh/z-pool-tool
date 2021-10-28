@@ -50,9 +50,6 @@ let handle_event pool : event -> unit Lwt.t = function
         ~password:(participant.password |> User.Password.to_sihl)
       @@ Email.Address.value participant.email
     in
-    (* TODO Uncomment when permisson package is ready. *)
-    (* let* () = Permission.assign user (Role.participant (user.Sihl_user.id |>
-       Id.of_string)) in *)
     { user
     ; recruitment_channel = participant.recruitment_channel
     ; terms_accepted_at = participant.terms_accepted_at

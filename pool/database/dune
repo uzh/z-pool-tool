@@ -6,6 +6,7 @@
   participant
   tenant
   common_user
+  admin
   utils
   cqrs_command
   conformist)

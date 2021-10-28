@@ -61,6 +61,7 @@ type person = Entity.person =
   ; updated_at : Ptime.t
   }
 
+val create_person : Sihl_user.t -> person
 val equal_person : person -> person -> bool
 val pp_person : Format.formatter -> person -> unit
 val show_person : person -> string
@@ -89,6 +90,7 @@ val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
 
-val login : 'a -> email:'b -> password:'c -> 'd
+val insert : Pool_common.Database.Label.t -> 'a t -> (unit, string) result Lwt.t
 val find_by_user : 'a -> 'b
+val user_is_admin : Pool_common.Database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

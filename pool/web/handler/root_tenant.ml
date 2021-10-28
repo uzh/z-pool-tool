@@ -9,9 +9,9 @@ let tenants req =
   let show () =
     let open Lwt_result.Syntax in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     let* tenant_list = Tenant.find_all () in
     let* root_list = Root.find_all () in
     Page.Root.Tenant.list csrf tenant_list root_list message ()
@@ -56,11 +56,13 @@ let create_operator req =
   let id = Sihl.Web.Router.param req "id" in
   let error_path = Format.asprintf "/root/tenant/%s" id in
   let user () =
+    let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     email_address
     |> CCOpt.to_result "Please provide operator email address."
     |> Lwt_result.lift
-    >>= HttpUtils.user_email_exists
+    >>= HttpUtils.validate_email_existance tenant_db
   in
   let find_tenant () = Tenant.find_full (id |> Common.Id.of_string) in
   let events tenant =
@@ -72,8 +74,10 @@ let create_operator req =
     >>= CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant
     |> Lwt_result.lift
   in
-  let handle =
-    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
+  let handle events =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt.return_ok
   in
   let return_to_overview =
     Http_utils.redirect_to_with_actions
@@ -96,11 +100,11 @@ let tenant_detail req =
   let show () =
     let open Lwt_result.Syntax in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
     let id = Sihl.Web.Router.param req "id" in
     let* tenant = Tenant.find (id |> Common.Id.of_string) in
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok

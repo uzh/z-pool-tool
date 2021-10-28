@@ -37,6 +37,10 @@
    (>= 2.0.0))
   (sihl-token
    (>= 2.0.0))
+  (sihl-email
+   (>= 2.0.0))
+  (sihl-queue
+   (>= 2.0.0))
   (lwt
    (>= 5.4.1))
   (containers

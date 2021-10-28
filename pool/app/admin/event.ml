@@ -80,7 +80,7 @@ let handle_person_event pool : 'a person_event -> unit Lwt.t = function
 let handle_event pool : event -> unit Lwt.t = function
   | Created (role, admin) ->
     let%lwt user =
-      Service.User.create_user
+      Service.User.create_admin
         ~ctx:[ "pool", Common.Database.Label.value pool ]
         ~name:(admin.lastname |> User.Lastname.value)
         ~given_name:(admin.firstname |> User.Firstname.value)
