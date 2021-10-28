@@ -263,21 +263,12 @@ module Sql = struct
 end
 
 let set_logos tenant logos =
-  (* TODO [timhub]: refactor*)
-  let tenant_logos =
-    CCList.filter_map
+  let tenant_logos, partner_logo =
+    CCList.partition_filter_map
       (fun l ->
         match l.LogoMapping.logo_type with
-        | `TenantLogo -> Some l.LogoMapping.file
-        | `PartnerLogo -> None)
-      logos
-  in
-  let partner_logo =
-    CCList.filter_map
-      (fun l ->
-        match l.LogoMapping.logo_type with
-        | `PartnerLogo -> Some l.LogoMapping.file
-        | `TenantLogo -> None)
+        | `TenantLogo -> `Left l.LogoMapping.file
+        | `PartnerLogo -> `Right l.LogoMapping.file)
       logos
   in
   let open Entity.Read in
