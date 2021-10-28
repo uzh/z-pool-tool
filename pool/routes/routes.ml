@@ -43,7 +43,7 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.require_admin ~login_path_f:(fun _ ->
+    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun _ ->
           Sihl.Web.externalize_path "/login")
     ]
   ;;

@@ -58,7 +58,7 @@ let create_operator req =
   let user () =
     let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
-    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     email_address
     |> CCOpt.to_result "Please provide operator email address."
     |> Lwt_result.lift
@@ -76,7 +76,7 @@ let create_operator req =
   in
   let handle events =
     let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt.return_ok
   in
   let return_to_overview =

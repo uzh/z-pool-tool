@@ -17,7 +17,7 @@ let dashboard_path tenant_db user =
 let login_get req =
   let%lwt result =
     let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let%lwt user =
       Service.User.Web.user_from_session
         ~ctx:[ "pool", tenant_db |> Pool_common.Database.Label.value ]
@@ -55,7 +55,7 @@ let login_post req =
       |> Lwt_result.lift
     in
     let* tenant_db =
-      Middleware.Tenant_middleware.tenant_db_of_request req
+      Middleware.Tenant.tenant_db_of_request req
       |> Lwt_result.map_err (fun err -> err, login_path)
     in
     let email = List.assoc "email" params in
@@ -80,7 +80,7 @@ let login_post req =
 let request_reset_password_get req =
   let%lwt result =
     let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let%lwt user =
       Service.User.Web.user_from_session
         ~ctx:[ "pool", tenant_db |> Pool_common.Database.Label.value ]
@@ -137,7 +137,7 @@ let request_reset_password_post req =
   let%lwt result =
     let open Lwt_result.Syntax in
     let* tenant_db =
-      Middleware.Tenant_middleware.tenant_db_of_request req
+      Middleware.Tenant.tenant_db_of_request req
       |> Lwt_result.map_err (fun err -> err, message)
     in
     email
@@ -187,7 +187,7 @@ let reset_password_post req =
     let* () =
       let open Lwt_result.Infix in
       let tenant_db req =
-        Middleware.Tenant_middleware.tenant_db_of_request req
+        Middleware.Tenant.tenant_db_of_request req
         |> Lwt_result.map_err (fun err ->
                err, Format.asprintf "/reset-password/?token=%s" token)
       in

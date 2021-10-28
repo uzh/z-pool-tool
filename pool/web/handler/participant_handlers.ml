@@ -51,7 +51,7 @@ let sign_up_create : handler =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let%lwt result =
     let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant_middleware.tenant_db_of_request req in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     (* TODO add Settings when ready *)
     (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db
        in *)
