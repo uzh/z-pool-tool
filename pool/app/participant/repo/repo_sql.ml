@@ -35,6 +35,13 @@ let find_request =
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
+let find db_pool id =
+  Utils.Database.find
+    (Pool_common.Database.Label.value db_pool)
+    find_request
+    (Pool_common.Id.value id)
+;;
+
 let insert_request =
   Caqti_request.exec
     Repo_model.participant
@@ -63,11 +70,4 @@ let insert_request =
 
 let insert db_pool =
   Utils.Database.exec (Pool_common.Database.Label.value db_pool) insert_request
-;;
-
-let find db_pool id =
-  Utils.Database.find
-    (Pool_common.Database.Label.value db_pool)
-    find_request
-    (Id.value id)
 ;;

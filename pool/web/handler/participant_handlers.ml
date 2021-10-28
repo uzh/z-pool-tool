@@ -86,3 +86,16 @@ let sign_up_create : handler =
            ] ))
   |> HttpUtils.extract_happy_path_with_actions
 ;;
+
+let terms : handler =
+ fun req ->
+  let _ = Sihl.Web.Csrf.find req |> Option.get in
+  let message = CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string in
+  let html =
+    Page.Utils.note
+      "Terms and Conditions"
+      "Lorem Ipsum... Some text as terms and conditions."
+      message
+  in
+  Sihl.Web.Response.of_html html |> Lwt.return
+;;

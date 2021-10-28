@@ -268,8 +268,7 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val find : Pool_common.Id.t -> (t, string) result Lwt.t
 val find_full : Pool_common.Id.t -> (Write.t, string) result Lwt.t
-val find_by_participant : 'a -> 'b
-val find_by_user : 'a -> 'b
+val find_by_label : Pool_common.Database.Label.t -> (t, string) result Lwt.t
 val find_all : unit -> (t list, string) Result.t Lwt.t
 
 val find_databases

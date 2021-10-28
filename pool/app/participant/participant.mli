@@ -25,9 +25,19 @@ type t =
 
 val login : 'a -> email:'b -> password:'c -> 'd
 val insert : Pool_common.Database.Label.t -> t -> (unit, string) Result.t Lwt.t
-val find : Repo.Label.t -> Id.t -> (t, string) Result.result Lwt.t
-val find_by_user : 'a -> 'b
+
+val find
+  :  Pool_common.Database.Label.t
+  -> Pool_common.Id.t
+  -> (t, string) Result.result Lwt.t
+
+val find_by_user
+  :  Pool_common.Database.Label.t
+  -> Sihl_user.t
+  -> (t, string) Result.result Lwt.t
+
 val find_duplicates : 'a -> 'b
+val has_terms_accepted : t -> bool Lwt.t
 
 type create =
   { email : Common_user.Email.Address.t

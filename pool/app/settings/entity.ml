@@ -59,6 +59,18 @@ module InactiveUser = struct
   end
 end
 
+module TermsAndConditions : sig
+  type t
+
+  val create : string -> t
+  val value : t -> string
+end = struct
+  type t = string
+
+  let create m = m
+  let value m = m
+end
+
 module SettingValue = struct
   type t =
     | Languages of Language.t list
@@ -66,6 +78,7 @@ module SettingValue = struct
     | EmailSuffixes of EmailSuffix.t list
     | UserSetToInactiveAfter of InactiveUser.DisableAfter.t
     | UserSendWarningBeforeInactive of InactiveUser.Warning.t
+    | TermsAndConditions of TermsAndConditions.t
 end
 
 module Setting = struct

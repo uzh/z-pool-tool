@@ -123,6 +123,20 @@ module Sql = struct
     Utils.Database.find pool find_full_request (id |> Pool_common.Id.value)
   ;;
 
+  let find_by_label_request =
+    select_from_tenants_sql
+      {sql| WHERE pool_tenant.database_label = ? |sql}
+      false
+    |> Caqti_request.find Caqti_type.string RepoEntity.t
+  ;;
+
+  let find_by_label pool label =
+    Utils.Database.find
+      pool
+      find_by_label_request
+      (label |> Pool_common.Database.Label.value)
+  ;;
+
   let find_all_request =
     select_from_tenants_sql "" false
     |> Caqti_request.collect Caqti_type.unit RepoEntity.t
@@ -210,6 +224,7 @@ module Sql = struct
 end
 
 let find pool = Sql.find (Label.value pool)
+let find_by_label pool = Sql.find_by_label (Label.value pool)
 let find_full pool = Sql.find_full (Label.value pool)
 let find_all pool = Sql.find_all (Label.value pool)
 let find_databases pool = Sql.find_databases (Label.value pool)

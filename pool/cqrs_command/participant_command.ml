@@ -84,7 +84,7 @@ module UpdateDetails : sig
     -> password:User.Password.t
     -> (Pool_event.t list, string) Result.t
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -95,15 +95,20 @@ end = struct
 
   let handle _ ~email:_ ~password:_ = Utils.todo ()
 
-  let can user command =
-    let%lwt participant = Participant.find_by_user user in
-    let%lwt tenant = Tenant.find_by_participant participant in
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -115,7 +120,7 @@ module UpdatePassword : sig
     }
 
   val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -125,15 +130,20 @@ end = struct
 
   let handle _ = Utils.todo
 
-  let can user command =
-    let%lwt participant = Participant.find_by_user user in
-    let%lwt tenant = Tenant.find_by_participant participant in
-    Permission.can
-      participant.Participant.user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -144,7 +154,7 @@ module UpdateEmail : sig
     }
 
   val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -153,14 +163,19 @@ end = struct
 
   let handle _ = Utils.todo
 
-  let can user command =
-    let%lwt participant = Participant.find_by_user user in
-    let%lwt tenant = Tenant.find_by_participant participant in
-    Permission.can
-      participant.Participant.user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
