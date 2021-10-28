@@ -22,9 +22,10 @@ let dashboard req =
 
 let sign_up : handler =
  fun req ->
-  let csrf = Sihl.Web.Csrf.find req |> Option.get in
-  let message = Sihl.Web.Flash.find_alert req in
-  let message = Option.bind message Message.of_string in
+  let csrf = HttpUtils.find_csrf req in
+  let message =
+    Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+  in
   let go = CCFun.flip Sihl.Web.Flash.find req in
   let channels = Participant.RecruitmentChannel.all () in
   let email = go "email" in

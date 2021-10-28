@@ -9,9 +9,9 @@ let tenants req =
   let show () =
     let open Lwt_result.Syntax in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     let* tenant_list = Tenant.find_all () in
     let* root_list = Root.find_all () in
     Page.Root.Tenant.list csrf tenant_list root_list message ()
@@ -100,11 +100,11 @@ let tenant_detail req =
   let show () =
     let open Lwt_result.Syntax in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
     let id = Sihl.Web.Router.param req "id" in
     let* tenant = Tenant.find (id |> Common.Id.of_string) in
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok

@@ -97,3 +97,4 @@ let format_request_boolean_values values urlencoded =
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
+let find_csrf req = Sihl.Web.Csrf.find req |> CCOpt.get_exn_or "Invalid session"

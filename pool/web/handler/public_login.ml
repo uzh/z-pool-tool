@@ -31,15 +31,13 @@ let login_get req =
       |> Sihl.Web.Response.redirect_to
       |> Lwt.return_ok
     | None ->
-      let csrf = Sihl.Web.Csrf.find req |> Option.get in
+      let csrf = HttpUtils.find_csrf req in
       let message =
-        Sihl.Web.Flash.find_alert req
-        |> CCFun.flip Option.bind Message.of_string
+        Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
       in
       Page.Public.login csrf message ()
       |> Sihl.Web.Response.of_html
-      |> Lwt.return
-      |> Lwt_result.ok
+      |> Lwt.return_ok
   in
   result
   |> CCResult.map_err (fun err -> err, "/")
@@ -96,10 +94,9 @@ let request_reset_password_get req =
       |> Sihl.Web.Response.redirect_to
       |> Lwt.return_ok
     | None ->
-      let csrf = Sihl.Web.Csrf.find req |> Option.get in
+      let csrf = HttpUtils.find_csrf req in
       let message =
-        Sihl.Web.Flash.find_alert req
-        |> CCFun.flip Option.bind Message.of_string
+        Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
       in
       Page.Public.request_reset_password csrf message ()
       |> Sihl.Web.Response.of_html
@@ -162,9 +159,9 @@ let reset_password_get req =
       "/request-reset-password/"
       [ Message.set ~error:[ "No password reset token found" ] ]
   | Some token ->
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
     Page.Public.reset_password csrf message token ()
     |> Sihl.Web.Response.of_html
