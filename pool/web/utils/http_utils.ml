@@ -49,8 +49,8 @@ let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map
      @@ fun key ->
-     Option.bind (List.assoc_opt key urlencoded) CCList.head_opt
-     |> Option.map @@ CCPair.make key)
+     CCOpt.bind (List.assoc_opt key urlencoded) CCList.head_opt
+     |> CCOpt.map @@ CCPair.make key)
   |> CCList.all_some
 ;;
 

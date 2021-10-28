@@ -9,7 +9,7 @@ let dashboard req =
   let error_path = "/" in
   let show () =
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
     Page.Participant.dashboard message ()
     |> Sihl.Web.Response.of_html
@@ -24,7 +24,7 @@ let sign_up : handler =
  fun req ->
   let csrf = HttpUtils.find_csrf req in
   let message =
-    Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+    Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
   in
   let go = CCFun.flip Sihl.Web.Flash.find req in
   let channels = Participant.RecruitmentChannel.all () in

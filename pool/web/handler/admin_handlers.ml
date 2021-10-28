@@ -5,7 +5,7 @@ let dashboard req =
   let error_path = "/" in
   let show () =
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
     in
     Page.Admin.dashboard message ()
     |> Sihl.Web.Response.of_html
