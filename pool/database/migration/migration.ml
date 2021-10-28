@@ -14,7 +14,19 @@ let extend_migrations additional_steps () =
     let open Sihl.Database.Migration in
     !registered_migrations
   in
-  (registered_migrations |> Map.to_list) @ additional_steps
+  let migrations = (registered_migrations |> Map.to_list) @ additional_steps in
+  match
+    CCList.length migrations
+    == CCList.length
+         (CCList.uniq
+            ~eq:(fun (k1, _) (k2, _) -> CCString.equal k1 k2)
+            migrations)
+  with
+  | true -> migrations
+  | false ->
+    Logs.info (fun m ->
+        m "There are duplicated migrations. Remove or rename them.");
+    []
 ;;
 
 let run_pending_migrations db_pools migration_steps =
