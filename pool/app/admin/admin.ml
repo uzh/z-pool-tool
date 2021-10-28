@@ -7,13 +7,11 @@ let user_is_admin pool (user : Sihl_user.t) =
       pool
       (user.Sihl.Contract.User.id |> Pool_common.Id.of_string)
   in
-  match participant with
-  | Ok _ -> Lwt.return false
-  | Error _ ->
+  if CCResult.is_error participant
+  then (
     let%lwt admin = Repo.find_role_by_user pool user in
-    (match admin with
-    | Error _ -> Lwt.return false
-    | Ok _ -> Lwt.return true)
+    Lwt.return @@ CCResult.is_ok admin)
+  else Lwt.return_false
 ;;
 
 let insert = Repo.insert
