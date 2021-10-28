@@ -62,7 +62,7 @@ let create_operator req =
     email_address
     |> CCOpt.to_result "Please provide operator email address."
     |> Lwt_result.lift
-    >>= HttpUtils.user_email_exists tenant_db
+    >>= HttpUtils.validate_email_existance tenant_db
   in
   let find_tenant () = Tenant.find_full (id |> Common.Id.of_string) in
   let events tenant =
@@ -86,7 +86,7 @@ let create_operator req =
   in
   ()
   |> user
-  >>= CCFun.const (find_tenant ())
+  >>= find_tenant
   >>= events
   |>> handle
   |> Lwt_result.map_err (fun err -> err, error_path)

@@ -11,7 +11,7 @@ let create req =
     email_address
     |> CCOpt.to_result "Please provide root email address."
     |> Lwt_result.lift
-    >>= HttpUtils.user_email_exists tenant_db
+    >>= HttpUtils.validate_email_existance tenant_db
   in
   let events () =
     let open CCResult.Infix in
@@ -32,7 +32,7 @@ let create req =
   in
   ()
   |> user
-  >>= CCFun.const (events ())
+  >>= events
   |>> handle
   |> Lwt_result.map_err (fun err -> err, error_path)
   |>> CCFun.const return_to_overview

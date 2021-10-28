@@ -72,14 +72,14 @@ let err_with_action ?message error_path action =
       | Some msg -> msg, error_path, action)
 ;;
 
-let user_email_exists pool email =
+let validate_email_existance pool email =
   let%lwt user =
     Service.User.find_by_email_opt
       ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
       email
   in
   match user with
-  | None -> Lwt.return_ok false
+  | None -> Lwt.return_ok ()
   | Some _ -> Lwt.return_error "Email address is already in use."
 ;;
 
