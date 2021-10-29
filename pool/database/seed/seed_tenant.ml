@@ -31,8 +31,9 @@ let create () =
       [ styles; icon; tenant_logo; partner_logo ]
   in
   let logo_files =
-    [ Tenant.LogoMapping.stringify_type `TenantLogo, tenant_logo.Assets.id
-    ; Tenant.LogoMapping.stringify_type `PartnerLogo, partner_logo.Assets.id
+    let open Tenant.LogoMapping.LogoType in
+    [ to_string TenantLogo, tenant_logo.Assets.id
+    ; to_string PartnerLogo, partner_logo.Assets.id
     ]
   in
   let data =

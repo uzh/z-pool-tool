@@ -170,24 +170,28 @@ module Disabled : sig
 end
 
 module LogoMapping : sig
+  module LogoType : sig
+    type t =
+      | PartnerLogo
+      | TenantLogo
+
+    val of_string : string -> (t, string) result
+    val to_string : t -> string
+    val all : unit -> string list
+  end
+
   module Write : sig
     type t =
       { id : Pool_common.Id.t
       ; tenant_id : Pool_common.Id.t
       ; asset_id : Pool_common.Id.t
-      ; logo_type : [ `PartnerLogo | `TenantLogo ]
+      ; logo_type : LogoType.t
       }
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
-
-  val stringify_type : [ `PartnerLogo | `TenantLogo ] -> string
-
-  val type_of_string
-    :  string
-    -> ([> `PartnerLogo | `TenantLogo ], string) result
 end
 
 type t =

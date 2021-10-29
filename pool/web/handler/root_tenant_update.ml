@@ -25,11 +25,8 @@ let update req command success_message =
         req
       |> Lwt_result.map_err (fun err -> err, redirect_path)
     in
-    let logo_fields = [ `TenantLogo; `PartnerLogo ] in
     let* logo_files =
-      File.upload_files
-        (CCList.map Tenant.LogoMapping.stringify_type logo_fields)
-        req
+      File.upload_files (Tenant.LogoMapping.LogoType.all ()) req
       |> Lwt_result.map_err (fun err -> err, redirect_path)
     in
     let events_list urlencoded =

@@ -81,21 +81,13 @@ let list csrf tenant_list root_list message () =
       ; div
           [ label [ txt "Add tenant logos" ]
           ; input
-              ~a:
-                [ a_input_type `File
-                ; a_name (Tenant.LogoMapping.stringify_type `TenantLogo)
-                ; a_multiple ()
-                ]
+              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
               ()
           ]
       ; div
           [ label [ txt "Add partner logos" ]
           ; input
-              ~a:
-                [ a_input_type `File
-                ; a_name (Tenant.LogoMapping.stringify_type `PartnerLogo)
-                ; a_multiple ()
-                ]
+              ~a:[ a_input_type `File; a_name "partner_logo"; a_multiple () ]
               ()
           ]
       ]

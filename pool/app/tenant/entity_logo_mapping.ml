@@ -1,20 +1,29 @@
 module Id = Pool_common.Id
 module File = Pool_common.File
 
-let stringify_type = function
-  | `PartnerLogo -> "partner_logo"
-  | `TenantLogo -> "tenant_logo"
-;;
+module LogoType = struct
+  type t =
+    | PartnerLogo
+    | TenantLogo
+  [@@deriving eq, show]
 
-let type_of_string = function
-  | "partner_logo" -> Ok `PartnerLogo
-  | "tenant_logo" -> Ok `TenantLogo
-  | _ -> Error "Unknown logo type"
-;;
+  let of_string = function
+    | "partner_logo" -> Ok PartnerLogo
+    | "tenant_logo" -> Ok TenantLogo
+    | _ -> Error "Invalid logo type provided"
+  ;;
 
-type t =
+  let to_string = function
+    | PartnerLogo -> "partner_logo"
+    | TenantLogo -> "tenant_logo"
+  ;;
+
+  let all () = [ PartnerLogo; TenantLogo ] |> CCList.map to_string
+end
+
+type mapping =
   { id : Id.t
-  ; logo_type : [ `PartnerLogo | `TenantLogo ]
+  ; logo_type : LogoType.t
   ; tenant_id : Id.t
   ; file : File.t
   }
@@ -25,7 +34,7 @@ module Write = struct
     { id : Id.t
     ; tenant_id : Id.t
     ; asset_id : Id.t
-    ; logo_type : [ `PartnerLogo | `TenantLogo ]
+    ; logo_type : LogoType.t
     }
   [@@deriving eq, show]
 end

@@ -9,11 +9,11 @@ let t =
   let encode m =
     Ok
       ( Id.value m.id
-      , (stringify_type m.logo_type, (Id.value m.tenant_id, m.file)) )
+      , (LogoType.to_string m.logo_type, (Id.value m.tenant_id, m.file)) )
   in
   let decode (id, (logo_type, (tenant_id, file))) =
     let open CCResult in
-    let* logo_type = logo_type |> type_of_string in
+    let* logo_type = logo_type |> LogoType.of_string in
     Ok
       { id = Id.of_string id
       ; logo_type
@@ -36,11 +36,11 @@ module Write = struct
       Ok
         ( Id.value m.id
         , ( Id.value m.tenant_id
-          , (Id.value m.asset_id, stringify_type m.logo_type) ) )
+          , (Id.value m.asset_id, LogoType.to_string m.logo_type) ) )
     in
     let decode (id, (tenant_id, (asset_id, logo_type))) =
       let open CCResult in
-      let* logo_type = logo_type |> type_of_string in
+      let* logo_type = logo_type |> LogoType.of_string in
       Ok
         { id = Id.of_string id
         ; tenant_id = Id.of_string tenant_id
