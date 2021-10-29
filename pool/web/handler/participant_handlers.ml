@@ -32,6 +32,7 @@ let sign_up : handler =
   let firstname = go "firstname" in
   let lastname = go "lastname" in
   let recruitment_channel = go "recruitment_channel" in
+  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
   let html =
     Page.Participant.sign_up
       csrf
@@ -41,6 +42,7 @@ let sign_up : handler =
       firstname
       lastname
       recruitment_channel
+      terms
       ()
   in
   Sihl.Web.Response.of_html html |> Lwt.return
@@ -51,6 +53,14 @@ let sign_up_create : handler =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let%lwt result =
     let open Lwt_result.Syntax in
+    let* () =
+      Sihl.Web.Request.query "_terms_accepted" req
+      |> CCOpt.map (CCString.equal "true")
+      |> CCOpt.get_or ~default:false
+      |> function
+      | true -> Lwt.return_ok ()
+      | false -> Lwt.return_error "Terms and conditions not accepted"
+    in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     (* TODO add Settings when ready *)
     (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db

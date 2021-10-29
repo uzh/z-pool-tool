@@ -15,6 +15,9 @@ let terms csrf message user_id terms =
           ; input
               ~a:[ a_input_type `Checkbox; a_name "_accepted"; a_required () ]
               ()
+          ; a
+              ~a:[ a_href ("/logout" |> Sihl.Web.externalize_path) ]
+              [ txt "Decline" ]
           ; button ~a:[ a_button_type `Submit ] [ txt "Accept" ]
           ]
       ]

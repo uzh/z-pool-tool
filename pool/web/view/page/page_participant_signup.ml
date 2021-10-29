@@ -1,4 +1,13 @@
-let signup csrf message channels email firstname lastname recruitment_channel =
+let signup
+    csrf
+    message
+    channels
+    email
+    firstname
+    lastname
+    recruitment_channel
+    terms
+  =
   let submit_url = Sihl.Web.externalize_path "/participant/signup" in
   let email = email |> Option.value ~default:"" in
   let firstname = firstname |> Option.value ~default:"" in
@@ -85,6 +94,21 @@ let signup csrf message channels email firstname lastname recruitment_channel =
               ; select
                   ~a:[ a_required (); a_name "recruitment_channel" ]
                   channel_select
+              ]
+          ; div
+              [ p [ txt terms ]
+              ; div
+                  [ input
+                      ~a:
+                        [ a_input_type `Checkbox
+                        ; a_name "_terms_accepted"
+                        ; a_required ()
+                        ]
+                      ()
+                  ; label
+                      ~a:[ a_label_for "_terms_accepted" ]
+                      [ txt "I accept the terms and conditions." ]
+                  ]
               ]
           ; button ~a:[ a_button_type `Submit ] [ txt "Sign Up" ]
           ]
