@@ -8,12 +8,11 @@ let terms_and_conditions =
   let terms_and_conditions =
     TermsAndConditions.create "Please accept all terms and condition."
   in
-  Setting.
-    { setting = SettingValue.TermsAndConditions terms_and_conditions
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
-    }
+  { setting = SettingValue.TermsAndConditions terms_and_conditions
+  ; created_at = Ptime_clock.now ()
+  ; updated_at = Ptime_clock.now ()
+  }
   |> Lwt.return
 ;;
 
-let last_updated (setting : Setting.t) : Ptime.t = setting.Setting.updated_at
+let last_updated (setting : t) : Ptime.t = setting.updated_at

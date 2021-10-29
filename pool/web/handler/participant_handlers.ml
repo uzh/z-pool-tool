@@ -100,12 +100,8 @@ let terms : handler =
       (CCOpt.to_result ("User could not be found", "/login"))
       (General.user_from_session req)
   in
-  Page.Participant.terms
-    csrf
-    message
-    user.Sihl_user.id
-    "Lorem Ipsum... Some text as terms and conditions."
-    ()
+  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
+  Page.Participant.terms csrf message user.Sihl_user.id terms ()
   |> Response.of_html
   |> Lwt.return_ok
 ;;
