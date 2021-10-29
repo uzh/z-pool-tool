@@ -112,6 +112,7 @@ let t =
       }
   in
   let open Common_user.Repo in
+  let open Pool_common.Repo in
   Caqti_type.(
     custom
       ~encode
@@ -124,7 +125,9 @@ let t =
                TermsAccepted.t
                (tup2
                   Paused.t
-                  (tup2 Disabled.t (tup2 Verified.t (tup2 ptime ptime))))))))
+                  (tup2
+                     Disabled.t
+                     (tup2 Verified.t (tup2 CreatedAt.t UpdatedAt.t))))))))
 ;;
 
 let participant =
@@ -141,6 +144,7 @@ let participant =
   in
   let decode _ = Error "Model only used for DB insert" in
   let open Common_user.Repo in
+  let open Pool_common.Repo in
   Caqti_type.(
     custom
       ~encode
@@ -153,5 +157,7 @@ let participant =
                TermsAccepted.t
                (tup2
                   Paused.t
-                  (tup2 Disabled.t (tup2 Verified.t (tup2 ptime ptime))))))))
+                  (tup2
+                     Disabled.t
+                     (tup2 Verified.t (tup2 CreatedAt.t UpdatedAt.t))))))))
 ;;

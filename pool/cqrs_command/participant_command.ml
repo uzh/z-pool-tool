@@ -179,3 +179,11 @@ end = struct
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
+
+module AcceptTermsAndConditions : sig
+  val handle : Participant.t -> (Pool_event.t list, string) Result.t
+end = struct
+  let handle participant =
+    Ok [ Participant.AcceptTerms participant |> Pool_event.participant ]
+  ;;
+end

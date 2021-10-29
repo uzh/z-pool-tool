@@ -9,7 +9,7 @@ let find_request =
         SUBSTR(HEX(user_users.uuid), 13, 4), '-',
         SUBSTR(HEX(user_users.uuid), 17, 4), '-',
         SUBSTR(HEX(user_users.uuid), 21)
-      ))
+      )),
       user_users.email,
       user_users.username,
       user_users.name,
@@ -19,7 +19,7 @@ let find_request =
       user_users.admin,
       user_users.confirmed,
       user_users.created_at,
-      user_users.updated_at
+      user_users.updated_at,
       pool_participants.recruitment_channel,
       pool_participants.terms_accepted_at,
       pool_participants.paused,
@@ -70,4 +70,25 @@ let insert_request =
 
 let insert db_pool =
   Utils.Database.exec (Pool_common.Database.Label.value db_pool) insert_request
+;;
+
+let update_request =
+  Caqti_request.exec
+    Repo_model.participant
+    {sql|
+      UPDATE pool_participants
+      SET
+        recruitment_channel = $2,
+        terms_accepted_at = $3,
+        paused = $4,
+        disabled = $5,
+        verified = $6,
+        created_at = $7,
+        updated_at = $8
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+;;
+
+let update db_pool =
+  Utils.Database.exec (Pool_common.Database.Label.value db_pool) update_request
 ;;

@@ -25,10 +25,8 @@ let terms_accepted () =
     | Ok true -> handler req
     | Ok false ->
       Http_utils.redirect_to_with_actions
-        "/termsandconditions"
-        [ Message.set
-            ~warning:
-              [ "Terms and conditions got updated, please accept first." ]
+        "/participant/termsandconditions"
+        [ Message.set ~error:[ "Please accept the terms and conditions." ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | Error (label, _) ->

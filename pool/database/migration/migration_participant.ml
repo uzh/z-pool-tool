@@ -6,7 +6,7 @@ let create_participant_table =
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `user_uuid` binary(16) NOT NULL,
         `recruitment_channel` varchar(128) NOT NULL,
-        `terms_accepted_at` timestamp NOT NULL,
+        `terms_accepted_at` timestamp NULL,
         `paused` boolean NOT NULL,
         `disabled` boolean NOT NULL,
         `verified` timestamp NULL,

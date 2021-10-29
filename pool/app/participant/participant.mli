@@ -59,6 +59,7 @@ type event =
   | DetailsUpdated of Entity.t * update
   | PasswordUpdated of
       Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+  | AcceptTerms of t
   | Disabled of Entity.t
   | Verified of Entity.t
 

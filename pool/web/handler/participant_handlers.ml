@@ -89,13 +89,41 @@ let sign_up_create : handler =
 
 let terms : handler =
  fun req ->
-  let _ = Sihl.Web.Csrf.find req |> Option.get in
-  let message = CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string in
-  let html =
-    Page.Utils.note
-      "Terms and Conditions"
-      "Lorem Ipsum... Some text as terms and conditions."
-      message
+  CCFun.flip Lwt.bind HttpUtils.extract_happy_path
+  @@
+  let open Lwt_result.Syntax in
+  let open Sihl.Web in
+  let csrf = HttpUtils.find_csrf req in
+  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  let* user =
+    Lwt.map
+      (CCOpt.to_result ("User could not be found", "/login"))
+      (General.user_from_session req)
   in
-  Sihl.Web.Response.of_html html |> Lwt.return
+  Page.Participant.terms
+    csrf
+    message
+    user.Sihl_user.id
+    "Lorem Ipsum... Some text as terms and conditions."
+    ()
+  |> Response.of_html
+  |> Lwt.return_ok
+;;
+
+let terms_accept : handler =
+ fun req ->
+  let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* participant = Participant.find tenant_db id in
+    let* events =
+      Command.AcceptTermsAndConditions.handle participant |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events tenant_db events in
+    HttpUtils.redirect_to "/participant/dashboard" |> Lwt_result.ok
+  in
+  result
+  |> CCResult.map_err (fun msg -> msg, "/login")
+  |> HttpUtils.extract_happy_path
 ;;

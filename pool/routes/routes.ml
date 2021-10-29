@@ -33,12 +33,22 @@ module Public = struct
 end
 
 module Participant = struct
+  let middlewares =
+    [ CustomMiddleware.Participant.confirmed ()
+    ; CustomMiddleware.TermsAndConditions.terms_accepted ()
+    ]
+  ;;
+
   let routes =
     [ get "/signup" Handler.Participant.sign_up
     ; post "/signup" Handler.Participant.sign_up_create
-    ; get "/dashboard" Handler.Participant.dashboard
+    ; get "/email-confirmation" Handler.Public.email_confirmation_note
+    ; get "/termsandconditions" Handler.Participant.terms
+    ; post ":id/terms-accepted" Handler.Participant.terms_accept
     ]
   ;;
+
+  let locked_routes = [ get "/dashboard" Handler.Participant.dashboard ]
 end
 
 module Admin = struct
@@ -70,8 +80,9 @@ end
 let router =
   choose
     [ choose Public.routes
-    ; choose ~scope:"/admin" ~middlewares:Admin.middlewares Admin.routes
-    ; choose ~scope:"/participant" Participant.routes
+    ; Admin.(choose ~scope:"/admin" ~middlewares routes)
+    ; Participant.(choose ~scope:"/participant" routes)
+    ; Participant.(choose ~scope:"/participant" ~middlewares locked_routes)
     ; choose ~scope:"/root" Root.routes
     ; get "/**" Handler.Public.not_found
     ]
