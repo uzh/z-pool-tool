@@ -74,13 +74,15 @@ module TenantLanguages = struct
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
+
+  let values m = m.values
+  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
 end
 
 module EmailSuffix = struct
   type t = string [@@deriving eq, show, yojson]
 
   let value m = m
-  let list_value m = CCList.map value m
 
   let create suffix =
     if CCString.length suffix <= 0
@@ -110,9 +112,9 @@ module TenantEmailSuffixes = struct
     ; updated_at : Ptime.t
     }
 
-  type values = t -> EmailSuffix.t list
-
   let values m = m.values
+  let add_suffix m suffix = CCList.cons' m.values suffix
+  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
 
   let create suffixes =
     if CCList.length suffixes <= 0
@@ -127,6 +129,9 @@ module TenantContactEmail = struct
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
+
+  let value m = m.value |> ContactEmail.value
+  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
 end
 
 module InactiveUser = struct
@@ -187,3 +192,4 @@ type t =
   }
 
 let value { setting; _ } = SettingValue.value setting
+let terms m = m.setting

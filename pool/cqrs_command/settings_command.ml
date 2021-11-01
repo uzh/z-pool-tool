@@ -47,9 +47,7 @@ end = struct
 
   let handle suffixes command =
     let suffixes =
-      CCList.cons'
-        (Settings.TenantEmailSuffixes.values suffixes)
-        command.email_suffix
+      Settings.TenantEmailSuffixes.add_suffix suffixes command.email_suffix
     in
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;

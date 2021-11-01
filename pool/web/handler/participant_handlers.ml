@@ -30,7 +30,8 @@ let sign_up req =
   let firstname = go "firstname" in
   let lastname = go "lastname" in
   let recruitment_channel = go "recruitment_channel" in
-  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
+  (* TODO [timhub]: Implement Terms as setting *)
+  let%lwt terms = Settings.terms_and_conditions in
   let html =
     Page.Participant.sign_up
       csrf
@@ -149,7 +150,8 @@ let terms req =
       (CCOpt.to_result ("User could not be found", "/login"))
       (General.user_from_session req)
   in
-  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
+  (* TODO [timhub]: Implement Terms as setting *)
+  let%lwt terms = Settings.terms_and_conditions in
   Page.Participant.terms csrf message user.Sihl_user.id terms ()
   |> Response.of_html
   |> Lwt.return_ok

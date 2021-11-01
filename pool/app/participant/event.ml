@@ -34,9 +34,8 @@ let set_password
 ;;
 
 let has_terms_accepted (participant : t) : bool Lwt.t =
-  let%lwt last_updated =
-    Lwt.map Settings.last_updated Settings.terms_and_conditions
-  in
+  (* TODO [timhub]: Implement Terms as setting *)
+  let last_updated = Ptime_clock.now () in
   let terms_accepted_at =
     participant.terms_accepted_at |> User.TermsAccepted.value
   in

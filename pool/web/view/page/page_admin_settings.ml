@@ -1,21 +1,14 @@
 open Tyxml.Html
 
-let updated_at value =
+let format_updated_at value =
   Format.asprintf
     "updated at: %s"
-    (value |> Pool_common.UpdatedAt.value |> Utils.Time.ptime_to_date_human)
-;;
-
-let created_at value =
-  Format.asprintf
-    "created at: %s"
     (value |> Pool_common.UpdatedAt.value |> Utils.Time.ptime_to_date_human)
 ;;
 
 let show csrf languages email_suffixes contact_email message () =
   let languages_html =
     let available_languages = Settings.Language.all () in
-    let open Settings.TenantLanguages in
     let field_elements =
       CCList.cons
         (Component.csrf_element csrf ())
@@ -31,7 +24,7 @@ let show csrf languages email_suffixes contact_email message () =
                  CCList.mem
                    ~eq:Settings.Language.equal
                    language
-                   languages.values
+                   (Settings.TenantLanguages.values languages)
                with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
@@ -47,12 +40,14 @@ let show csrf languages email_suffixes contact_email message () =
             ; a_method `Post
             ]
           (field_elements @ [ Component.input_element `Submit None "Save" ])
-      ; p [ txt (updated_at languages.updated_at) ]
-      ; p [ txt (created_at languages.created_at) ]
+      ; p
+          [ txt
+              (format_updated_at
+                 (Settings.TenantLanguages.updated_at languages))
+          ]
       ]
   in
   let email_suffixes_html =
-    let open Settings.TenantEmailSuffixes in
     div
       [ h2 [ txt "Email Suffixes" ]
       ; form
@@ -67,7 +62,7 @@ let show csrf languages email_suffixes contact_email message () =
                  `Text
                  (Some "email_suffix")
                  (suffix |> Settings.EmailSuffix.value))
-             email_suffixes.values
+             (Settings.TenantEmailSuffixes.values email_suffixes)
           @ [ Component.input_element `Submit None "Save" ])
       ; form
           ~a:
@@ -79,17 +74,22 @@ let show csrf languages email_suffixes contact_email message () =
           [ Component.input_element `Text (Some "email_suffix") ""
           ; Component.input_element `Submit None "Add new"
           ]
-      ; p [ txt (updated_at email_suffixes.updated_at) ]
-      ; p [ txt (created_at email_suffixes.created_at) ]
+      ; p
+          [ txt
+              (format_updated_at
+                 (Settings.TenantEmailSuffixes.updated_at email_suffixes))
+          ]
       ]
   in
   let contact_email_html =
-    let open Settings.TenantContactEmail in
     div
       [ h2 [ txt "Contact Email" ]
-      ; p [ txt (Settings.ContactEmail.value contact_email.value) ]
-      ; p [ txt (updated_at contact_email.updated_at) ]
-      ; p [ txt (created_at contact_email.created_at) ]
+      ; p [ txt (Settings.TenantContactEmail.value contact_email) ]
+      ; p
+          [ txt
+              (format_updated_at
+                 (Settings.TenantContactEmail.updated_at contact_email))
+          ]
       ]
   in
   let html =
