@@ -1,6 +1,7 @@
 module Id = Pool_common.Id
 module Database = Pool_common.Database
 module User = Common_user
+module File = Pool_common.File
 
 let create_logo_mappings files tenant =
   let open Tenant in
@@ -13,7 +14,7 @@ let create_logo_mappings files tenant =
              LogoMapping.Write.
                { id = Id.create ()
                ; tenant_id = tenant.Write.id
-               ; asset_id = asset_id |> Id.of_string
+               ; asset_id
                ; logo_type
                }))
     files
@@ -37,10 +38,7 @@ module Create : sig
     ; default_language : Settings.Language.t
     }
 
-  val handle
-    :  (string * string) list
-    -> t
-    -> (Pool_event.t list, string) Result.t
+  val handle : (string * Id.t) list -> t -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -169,7 +167,7 @@ module EditDetails : sig
     }
 
   val handle
-    :  (string * string) list
+    :  (string * Id.t) list
     -> Tenant.Write.t
     -> t
     -> (Pool_event.t list, string) Result.t

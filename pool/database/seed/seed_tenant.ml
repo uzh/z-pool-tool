@@ -32,8 +32,8 @@ let create () =
   in
   let logo_files =
     let open Tenant.LogoMapping.LogoType in
-    [ to_string TenantLogo, tenant_logo.Assets.id
-    ; to_string PartnerLogo, partner_logo.Assets.id
+    [ to_string TenantLogo, tenant_logo.Assets.id |> Pool_common.Id.of_string
+    ; to_string PartnerLogo, partner_logo.Assets.id |> Pool_common.Id.of_string
     ]
   in
   let data =

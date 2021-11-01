@@ -45,9 +45,10 @@ let create req =
             ~ctx:
               [ "pool", Common.Database.root |> Pool_common.Database.Label.value
               ]
-            ~id)
+            ~id:(Pool_common.Id.value id))
     in
-    files @ multipart_encoded
+    CCList.map (fun (k, v) -> k, Pool_common.Id.value v) files
+    @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error

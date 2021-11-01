@@ -108,7 +108,7 @@ let upload_files allow_list req =
     Lwt_list.map_s
       (fun (k, v) ->
         let* id = file_to_storage_add v in
-        Lwt_result.return (k, id))
+        Lwt_result.return (k, Pool_common.Id.of_string id))
       filenames
   in
   let filenames = filenames |> CCResult.flatten_l in
