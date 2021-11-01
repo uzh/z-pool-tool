@@ -29,12 +29,17 @@ val insert : Pool_common.Database.Label.t -> t -> (unit, string) Result.t Lwt.t
 val find
   :  Pool_common.Database.Label.t
   -> Pool_common.Id.t
-  -> (t, string) Result.result Lwt.t
+  -> (t, string) Result.t Lwt.t
+
+val find_by_email
+  :  Pool_common.Database.Label.t
+  -> Common_user.Email.Address.t
+  -> (t, string) Result.t Lwt.t
 
 val find_by_user
   :  Pool_common.Database.Label.t
   -> Sihl_user.t
-  -> (t, string) Result.result Lwt.t
+  -> (t, string) Result.t Lwt.t
 
 val find_duplicates : 'a -> 'b
 val has_terms_accepted : t -> bool Lwt.t
@@ -56,12 +61,13 @@ type update = Event.update =
 
 type event =
   | Created of create
-  | DetailsUpdated of Entity.t * update
+  | DetailsUpdated of t * update
   | PasswordUpdated of
-      Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+      t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+  | EmailConfirmed of t
   | AcceptTerms of t
-  | Disabled of Entity.t
-  | Verified of Entity.t
+  | Disabled of t
+  | Verified of t
 
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

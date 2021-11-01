@@ -97,6 +97,36 @@ let sign_up_create : handler =
   |> HttpUtils.extract_happy_path_with_actions
 ;;
 
+let email_verification req =
+  let open Utils.Lwt_result.Infix in
+  (let open Lwt_result.Syntax in
+  let* token =
+    Sihl.Web.Request.query "token" req
+    |> CCOpt.map Common_user.Email.Token.create
+    |> CCOpt.to_result "No activation token found!"
+    |> Lwt_result.lift
+  in
+  let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+  let ctx = [ "pool", Pool_common.Database.Label.value tenant_db ] in
+  let* email =
+    Service.Token.read ~ctx (Common_user.Email.Token.value token) ~k:"email"
+    |> Lwt.map (CCOpt.to_result "Invalid token format!")
+    |> CCFun.flip Lwt_result.bind_result Common_user.Email.Address.create
+  in
+  let* participant = Participant.find_by_email tenant_db email in
+  let* events =
+    Command.ConfirmEmail.(handle { token; email } participant)
+    |> Lwt_result.lift
+  in
+  let%lwt () = Pool_event.handle_events tenant_db events in
+  HttpUtils.redirect_to_with_actions
+    "/login"
+    [ Message.set ~success:[ "Email successfully verified." ] ]
+  |> Lwt_result.ok)
+  |> Lwt_result.map_err (fun msg -> msg, "/login")
+  >|> HttpUtils.extract_happy_path
+;;
+
 let terms : handler =
  fun req ->
   CCFun.flip Lwt.bind HttpUtils.extract_happy_path

@@ -44,6 +44,7 @@ module Participant = struct
     ; post "/signup" Handler.Participant.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
     ; get "/termsandconditions" Handler.Participant.terms
+    ; post "/email-verified" Handler.Participant.email_verification
     ; post ":id/terms-accepted" Handler.Participant.terms_accept
     ]
   ;;

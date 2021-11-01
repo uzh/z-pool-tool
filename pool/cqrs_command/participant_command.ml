@@ -63,7 +63,9 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; User.Event.Email.Created command.email |> Pool_event.email_address
+      ; User.Event.Email.Created
+          (command.email, command.firstname, command.lastname)
+        |> Pool_event.email_address
       ]
   ;;
 
@@ -185,5 +187,29 @@ module AcceptTermsAndConditions : sig
 end = struct
   let handle participant =
     Ok [ Participant.AcceptTerms participant |> Pool_event.participant ]
+  ;;
+end
+
+module ConfirmEmail : sig
+  type t =
+    { token : Common_user.Email.Token.t
+    ; email : Common_user.Email.Address.t
+    }
+
+  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
+end = struct
+  module Email = Common_user.Email
+
+  type t =
+    { token : Email.Token.t
+    ; email : Email.Address.t
+    }
+
+  let handle command participant =
+    let email = Email.create command.email command.token in
+    Ok
+      [ Participant.EmailConfirmed participant |> Pool_event.participant
+      ; Common_user.Event.Email.Verified email |> Pool_event.email_address
+      ]
   ;;
 end

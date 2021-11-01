@@ -96,6 +96,8 @@ module Email : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
+    val create : string -> t
+    val value : t -> string
   end
 
   module Address : sig
@@ -151,8 +153,9 @@ module Email : sig
   val pp : Format.formatter -> 'email t -> unit
   val show : 'state t -> string
   val token : unverified t -> string
-  val create : Address.t -> Token.t -> (unverified t, string) result
+  val create : Address.t -> Token.t -> unverified t
   val verify : unverified t -> verified t
+  val address : 'email t -> string
 end
 
 module Repo : sig
@@ -185,15 +188,24 @@ end
 module Event : sig
   module Email : sig
     type event =
-      | Created of Email.Address.t
+      | Created of Email.Address.t * Firstname.t * Lastname.t
       | UpdatedUnverified of
-          Entity_email.unverified Entity_email.t * Email.Address.t
+          Email.unverified Email.t
+          * (Email.Address.t * Firstname.t * Lastname.t)
       | UpdatedVerified of
-          Entity_email.verified Entity_email.t * Email.Address.t
-      | Verified of Entity_email.unverified Entity_email.t
+          Email.verified Email.t * (Email.Address.t * Firstname.t * Lastname.t)
+      | Verified of Email.unverified Email.t
 
     val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
     val equal_event : event -> event -> bool
     val pp_event : Format.formatter -> event -> unit
+
+    module PasswordReset : sig
+      val create
+        :  Pool_common.Database.Label.t
+        -> string
+        -> user:Sihl_user.t
+        -> (Sihl_email.t, string) result Lwt.t
+    end
   end
 end

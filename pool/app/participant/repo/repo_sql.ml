@@ -1,7 +1,9 @@
 module Id = Pool_common.Id
 
-let find_request =
-  {sql|
+let find_request_sql where_fragment =
+  Format.asprintf
+    "%s\n%s;"
+    {sql|
     SELECT
       LOWER(CONCAT(
         SUBSTR(HEX(user_users.uuid), 1, 8), '-',
@@ -30,8 +32,15 @@ let find_request =
     FROM pool_participants
       LEFT JOIN user_users
       ON pool_participants.user_uuid = user_users.uuid
-    WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''));
-  |sql}
+    |sql}
+    where_fragment
+;;
+
+let find_request =
+  find_request_sql
+    {sql|
+      WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
@@ -40,6 +49,20 @@ let find db_pool id =
     (Pool_common.Database.Label.value db_pool)
     find_request
     (Pool_common.Id.value id)
+;;
+
+let find_by_email_request =
+  find_request_sql {sql|
+    WHERE user_users.email = ?
+  |sql}
+  |> Caqti_request.find Caqti_type.string Repo_model.t
+;;
+
+let find_by_email db_pool email =
+  Utils.Database.find
+    (Pool_common.Database.Label.value db_pool)
+    find_by_email_request
+    (Common_user.Email.Address.value email)
 ;;
 
 let insert_request =
