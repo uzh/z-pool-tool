@@ -61,16 +61,11 @@ module TenantLanguages = struct
     let to_string m = m |> to_yojson |> Yojson.Safe.to_string
     let of_string m = m |> Yojson.Safe.from_string |> of_yojson
     let value m = m
-
-    let t =
-      Caqti_type.(
-        custom ~encode:(fun m -> Ok (to_string m)) ~decode:of_string string)
-    ;;
   end
 
   let create languages =
     if CCList.length languages <= 0
-    then Error "Select at least one langauge"
+    then Error "Select at least one language"
     else CCList.map Language.of_string languages |> CCResult.flatten_l
   ;;
 
@@ -107,6 +102,14 @@ module TenantEmailSuffixes = struct
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
+
+  let values m = m
+
+  let create suffixes =
+    if CCList.length suffixes <= 0
+    then Error "Provide at least one email suffix."
+    else CCList.map EmailSuffix.create suffixes |> CCResult.flatten_l
+  ;;
 end
 
 module TenantContactEmail = struct

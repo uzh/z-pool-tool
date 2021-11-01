@@ -43,7 +43,7 @@ let show csrf languages email_suffixes contact_email message () =
       [ h2 [ txt "Languages" ]
       ; form
           ~a:
-            [ a_action (Sihl.Web.externalize_path "/admin/settings")
+            [ a_action (Sihl.Web.externalize_path "/admin/settings/languages")
             ; a_method `Post
             ]
           (field_elements @ [ Component.input_element `Submit None "Save" ])
@@ -55,10 +55,20 @@ let show csrf languages email_suffixes contact_email message () =
     let open Settings.TenantEmailSuffixes in
     div
       [ h2 [ txt "Email Suffixes" ]
-      ; div
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path "/admin/settings/email-suffixes")
+            ; a_method `Post
+            ]
           (CCList.map
-             (fun suffix -> p [ txt (suffix |> Settings.EmailSuffix.value) ])
-             email_suffixes.values)
+             (fun suffix ->
+               Component.input_element
+                 `Text
+                 (Some "email suffix")
+                 (suffix |> Settings.EmailSuffix.value))
+             email_suffixes.values
+          @ [ Component.input_element `Submit None "Save" ])
       ; p [ txt (updated_at email_suffixes.updated_at) ]
       ; p [ txt (created_at email_suffixes.created_at) ]
       ]

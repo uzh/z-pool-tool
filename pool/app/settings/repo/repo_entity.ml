@@ -20,6 +20,15 @@ module TenantLanguages = struct
            string
            (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))
   ;;
+
+  module Values = struct
+    include Values
+
+    let t =
+      Caqti_type.(
+        custom ~encode:(fun m -> Ok (to_string m)) ~decode:of_string string)
+    ;;
+  end
 end
 
 module TenantEmailSuffixes = struct
@@ -42,6 +51,15 @@ module TenantEmailSuffixes = struct
            string
            (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))
   ;;
+
+  module Values = struct
+    include Values
+
+    let t =
+      Caqti_type.(
+        custom ~encode:(fun m -> Ok (to_string m)) ~decode:of_string string)
+    ;;
+  end
 end
 
 module TenantContactEmail = struct

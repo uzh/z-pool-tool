@@ -75,6 +75,13 @@ let find_email_suffixes pool () =
   Sql.find pool RepoEntity.TenantEmailSuffixes.t `EmailSuffixes
 ;;
 
+let update_email_suffixes pool values =
+  Sql.update
+    pool
+    Caqti_type.(tup2 RepoEntity.TenantEmailSuffixes.Values.t string)
+    (values, `EmailSuffixes |> stringify_key)
+;;
+
 let find_contact_email pool () =
   Sql.find pool RepoEntity.TenantContactEmail.t `ContactEmail
 ;;
