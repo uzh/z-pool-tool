@@ -87,6 +87,13 @@ module EmailSuffix = struct
     then Error "Invalid email suffix!"
     else Ok suffix
   ;;
+
+  let schema () =
+    Conformist.custom
+      (Utils.schema_decoder create "email_suffix")
+      CCList.pure
+      "email_suffix"
+  ;;
 end
 
 module TenantEmailSuffixes = struct
@@ -103,7 +110,9 @@ module TenantEmailSuffixes = struct
     ; updated_at : Ptime.t
     }
 
-  let values m = m
+  type values = t -> EmailSuffix.t list
+
+  let values m = m.values
 
   let create suffixes =
     if CCList.length suffixes <= 0

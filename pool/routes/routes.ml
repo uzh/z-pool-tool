@@ -67,6 +67,9 @@ module Admin = struct
     ; post
         "/settings/email-suffixes"
         Handler.Admin.Settings.update_tenant_email_suffixes
+    ; post
+        "/settings/create-email-suffix"
+        Handler.Admin.Settings.create_tenant_email_suffix
     ]
   ;;
 end

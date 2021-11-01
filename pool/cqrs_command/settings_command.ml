@@ -23,6 +23,41 @@ end = struct
   let can = Utils.todo
 end
 
+module CreateEmailSuffixes : sig
+  type t = { email_suffix : Settings.EmailSuffix.t }
+
+  val handle
+    :  Settings.TenantEmailSuffixes.t
+    -> t
+    -> (Pool_event.t list, string) Result.t
+
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = { email_suffix : Settings.EmailSuffix.t }
+
+  let command email_suffix = { email_suffix }
+
+  let schema =
+    Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
+  ;;
+
+  let handle suffixes command =
+    let suffixes =
+      CCList.cons'
+        (Settings.TenantEmailSuffixes.values suffixes)
+        command.email_suffix
+    in
+    Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
+  ;;
+
+  let can = Utils.todo
+  let decode data = Conformist.decode_and_validate schema data
+end
+
 module UpdateEmailSuffixes : sig
   type t = (string * string list) list
 

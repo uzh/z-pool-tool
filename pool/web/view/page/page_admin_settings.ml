@@ -65,10 +65,20 @@ let show csrf languages email_suffixes contact_email message () =
              (fun suffix ->
                Component.input_element
                  `Text
-                 (Some "email suffix")
+                 (Some "email_suffix")
                  (suffix |> Settings.EmailSuffix.value))
              email_suffixes.values
           @ [ Component.input_element `Submit None "Save" ])
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   "/admin/settings/create-email-suffix")
+            ; a_method `Post
+            ]
+          [ Component.input_element `Text (Some "email_suffix") ""
+          ; Component.input_element `Submit None "Add new"
+          ]
       ; p [ txt (updated_at email_suffixes.updated_at) ]
       ; p [ txt (created_at email_suffixes.created_at) ]
       ]

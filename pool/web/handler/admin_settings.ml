@@ -40,15 +40,30 @@ let update_settings urlencoded handler req =
     in
     let events () =
       let command_handler = function
-        | `TenantLanguages ->
-          Cqrs_command.Settings_command.UpdateLanguages.handle
-        | `TenantEmailSuffixes ->
-          Cqrs_command.Settings_command.UpdateEmailSuffixes.handle
+        | `UpdateTenantLanguages ->
+          fun urlencoded ->
+            urlencoded
+            |> Cqrs_command.Settings_command.UpdateLanguages.handle
+            |> Lwt_result.lift
+        | `UpdateTenantEmailSuffixes ->
+          fun urlencoded ->
+            urlencoded
+            |> Cqrs_command.Settings_command.UpdateEmailSuffixes.handle
+            |> Lwt_result.lift
+        | `CreateTenantEmailSuffix ->
+          fun urlencoded ->
+            let* email_suffixes = Settings.find_email_suffixes tenant_db () in
+            let open CCResult.Infix in
+            urlencoded
+            |> Cqrs_command.Settings_command.CreateEmailSuffixes.decode
+            |> CCResult.map_err Utils.handle_conformist_error
+            >>= Cqrs_command.Settings_command.CreateEmailSuffixes.handle
+                  email_suffixes
+            |> Lwt_result.lift
       in
       urlencoded
       |> command_handler handler
-      |> CCResult.map_err (fun err -> err, redirect_path)
-      |> Lwt_result.lift
+      |> Lwt_result.map_err (fun err -> err, redirect_path)
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event tenant_db) in
     let%lwt return_to_settings =
@@ -67,10 +82,15 @@ let update_tenant_languages req =
     urlencoded
     |> HttpUtils.format_request_boolean_values (Settings.Language.all_codes ())
   in
-  update_settings urlencoded `TenantLanguages req
+  update_settings urlencoded `UpdateTenantLanguages req
 ;;
 
 let update_tenant_email_suffixes req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `TenantEmailSuffixes req
+  update_settings urlencoded `UpdateTenantEmailSuffixes req
+;;
+
+let create_tenant_email_suffix req =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  update_settings urlencoded `CreateTenantEmailSuffix req
 ;;
