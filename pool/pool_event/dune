@@ -1,6 +1,14 @@
 (library
  ; Cannot just be named as "event" because there is an existing stdlib module
  (name pool_event)
- (libraries sihl admin root common_user participant tenant experiment)
+ (libraries
+  sihl
+  admin
+  root
+  common_user
+  participant
+  tenant
+  experiment
+  settings)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

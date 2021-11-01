@@ -3,7 +3,7 @@ module Database = Pool_common.Database
 
 let stringify_key = function
   | `Languages -> "languages"
-  | `ContactEmail -> "email_contact"
+  | `ContactEmail -> "contact_email"
   | `EmailSuffixes -> "email_suffixes"
   | `UserSetToInactiveAfter -> "user_set_to_inactive_after"
   | `UserSendWarningBeforeInactive -> "user_send_warning_before_inactive"
@@ -36,10 +36,45 @@ module Sql = struct
       (find_request caqti)
       (key |> stringify_key)
   ;;
+
+  let update_sql where_fragment =
+    let update_fragment =
+      {sql|
+      UPDATE
+        pool_system_settings
+      SET
+        value = ?
+    |sql}
+    in
+    Format.asprintf "%s %s" update_fragment where_fragment
+  ;;
+
+  let update_request caqti =
+    where_fragment |> update_sql |> Caqti_request.exec caqti
+  ;;
+
+  let update pool caqti =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value pool)
+      (update_request caqti)
+  ;;
 end
 
-let find_languages pool () = Sql.find pool RepoEntity.Language.t `Languages
+let find_languages pool () =
+  Sql.find pool RepoEntity.TenantLanguages.t `Languages
+;;
+
+let update_languages pool values =
+  Sql.update
+    pool
+    Caqti_type.(tup2 RepoEntity.TenantLanguages.Values.t string)
+    (values, `Languages |> stringify_key)
+;;
 
 let find_email_suffixes pool () =
-  Sql.find pool RepoEntity.EmailSuffix.t `EmailSuffixes
+  Sql.find pool RepoEntity.TenantEmailSuffixes.t `EmailSuffixes
+;;
+
+let find_contact_email pool () =
+  Sql.find pool RepoEntity.TenantContactEmail.t `ContactEmail
 ;;

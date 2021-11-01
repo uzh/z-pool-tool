@@ -63,6 +63,7 @@ module Admin = struct
   let routes =
     [ get "/dashboard" Handler.Admin.dashboard
     ; get "/settings" Handler.Admin.Settings.show
+    ; post "/settings" Handler.Admin.Settings.update
     ]
   ;;
 end

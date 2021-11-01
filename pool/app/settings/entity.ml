@@ -24,7 +24,6 @@ module Language = struct
   ;;
 
   let t =
-    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
     Caqti_type.(
       custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
   ;;
@@ -37,6 +36,49 @@ module Language = struct
       (fun l -> [ code l ])
       "default_language"
   ;;
+
+  let all () = [ En; De ]
+  let all_codes () = [ En; De ] |> CCList.map code
+end
+
+module ContactEmail = struct
+  (* TODO [timhub] : Use Common User Email -> Dependency cycle *)
+  type t = string [@@deriving eq, show]
+
+  let value m = m
+
+  let create email =
+    if CCString.length email <= 0
+    then Error "invalid email address!"
+    else Ok email
+  ;;
+end
+
+module TenantLanguages = struct
+  module Values = struct
+    type t = Language.t list [@@deriving eq, show, yojson]
+
+    let to_string m = m |> to_yojson |> Yojson.Safe.to_string
+    let of_string m = m |> Yojson.Safe.from_string |> of_yojson
+    let value m = m
+
+    let t =
+      Caqti_type.(
+        custom ~encode:(fun m -> Ok (to_string m)) ~decode:of_string string)
+    ;;
+  end
+
+  let create languages =
+    if CCList.length languages <= 0
+    then Error "Select at least one langauge"
+    else CCList.map Language.of_string languages |> CCResult.flatten_l
+  ;;
+
+  type t =
+    { values : Values.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
 end
 
 module EmailSuffix = struct
@@ -52,10 +94,27 @@ module EmailSuffix = struct
   ;;
 end
 
-module ContactEmail = struct
-  type t = string [@@deriving eq, show, yojson]
+module TenantEmailSuffixes = struct
+  module Values = struct
+    type t = EmailSuffix.t list [@@deriving eq, show, yojson]
 
-  let value m = m
+    let to_string m = m |> to_yojson |> Yojson.Safe.to_string
+    let of_string m = m |> Yojson.Safe.from_string |> of_yojson
+  end
+
+  type t =
+    { values : Values.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
+end
+
+module TenantContactEmail = struct
+  type t =
+    { value : ContactEmail.t
+    ; created_at : Ptime.t
+    ; updated_at : Ptime.t
+    }
 end
 
 module InactiveUser = struct
@@ -103,7 +162,7 @@ end
 
 module Setting = struct
   type t =
-    { value : SettingValue.t
+    { setting : SettingValue.t
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }

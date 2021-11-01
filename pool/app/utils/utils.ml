@@ -2,6 +2,7 @@ include One_of_n
 module Countries = Countries
 module Stringify = Stringify
 module Database = Database
+module Time = Time
 
 let todo _ = failwith "todo"
 

@@ -1,46 +1,65 @@
 open Entity
 
-module Language = struct
-  include Language
-
-  type t = Language.t list [@@deriving eq, show, yojson]
-
-  let to_string m = m |> to_yojson |> Yojson.Safe.to_string
-  let of_string m = m |> Yojson.Safe.from_string |> of_yojson
+module TenantLanguages = struct
+  include TenantLanguages
 
   let t =
-    let encode m = Ok (m |> to_string) in
-    let decode = of_string in
-    Caqti_type.(custom ~encode ~decode string)
+    let encode m =
+      Ok (m.values |> Values.to_string, (m.created_at, m.updated_at))
+    in
+    let decode (values, (created_at, updated_at)) =
+      let open CCResult in
+      let* values = values |> Values.of_string in
+      Ok { values; created_at; updated_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))
   ;;
 end
 
-module EmailSuffix = struct
-  include EmailSuffix
-
-  type t = EmailSuffix.t list [@@deriving eq, show, yojson]
-
-  let to_string m = m |> to_yojson |> Yojson.Safe.to_string
-  let of_string m = m |> Yojson.Safe.from_string |> of_yojson
+module TenantEmailSuffixes = struct
+  include TenantEmailSuffixes
 
   let t =
-    let encode m = Ok (m |> to_string) in
-    let decode = of_string in
-    Caqti_type.(custom ~encode ~decode string)
+    let encode m =
+      Ok (m.values |> Values.to_string, (m.created_at, m.updated_at))
+    in
+    let decode (values, (created_at, updated_at)) =
+      let open CCResult in
+      let* values = values |> Values.of_string in
+      Ok { values; created_at; updated_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))
   ;;
 end
 
-module Setting = struct
-  include Setting
-
-  type t = EmailSuffix.t list [@@deriving eq, show, yojson]
-
-  let to_string m = m |> to_yojson |> Yojson.Safe.to_string
-  let of_string m = m |> Yojson.Safe.from_string |> of_yojson
+module TenantContactEmail = struct
+  include TenantContactEmail
 
   let t =
-    let encode m = Ok (m |> to_string) in
-    let decode = of_string in
-    Caqti_type.(custom ~encode ~decode string)
+    let encode m = Ok (m.value, (m.created_at, m.updated_at)) in
+    let decode (value, (created_at, updated_at)) =
+      let open CCResult in
+      let* value = value |> ContactEmail.create in
+      Ok { value; created_at; updated_at }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t)))
   ;;
 end

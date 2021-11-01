@@ -4,6 +4,7 @@ module RepoEntity = Repo_entity
 
 let find_languages = Repo.find_languages
 let find_email_suffixes = Repo.find_email_suffixes
+let find_contact_email = Repo.find_contact_email
 let allowed_email_suffixes = Utils.todo
 
 let terms_and_conditions =
