@@ -85,6 +85,12 @@ module File = struct
     let value m = m
   end
 
+  module Size = struct
+    type t = int [@@deriving eq, show]
+
+    let value m = m
+  end
+
   module Mime = struct
     type t =
       | Css
@@ -120,7 +126,7 @@ module File = struct
     let of_filename filename =
       match filename |> Filename.extension with
       | ".css" -> Ok Css
-      | ".git" -> Ok Gif
+      | ".gif" -> Ok Gif
       | ".ico" -> Ok Ico
       | ".jpeg" | ".jpg" -> Ok Jpeg
       | ".png" -> Ok Png
@@ -133,6 +139,7 @@ module File = struct
   type t =
     { id : Id.t
     ; name : Name.t
+    ; size : Size.t
     ; mime_type : Mime.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
@@ -140,6 +147,7 @@ module File = struct
   [@@deriving show, eq]
 
   let id m = m.id
+  let size m = m.size
 
   let path m =
     Sihl.Web.externalize_path (Format.asprintf "/assets/%s/%s" m.id m.name)

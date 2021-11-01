@@ -69,6 +69,12 @@ module File : sig
     val value : t -> string
   end
 
+  module Size : sig
+    type t
+
+    val value : t -> int
+  end
+
   module Mime : sig
     type t =
       | Css
@@ -93,6 +99,7 @@ module File : sig
   val show : t -> string
   val equal : t -> t -> bool
   val id : t -> Id.t
+  val size : t -> Size.t
   val path : t -> string
 end
 

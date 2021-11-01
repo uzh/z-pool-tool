@@ -55,6 +55,12 @@ module File = struct
     let t = Caqti_type.string
   end
 
+  module Size = struct
+    include Size
+
+    let t = Caqti_type.int
+  end
+
   module Mime = struct
     include Mime
 
@@ -69,15 +75,15 @@ module File = struct
 
   let t =
     let encode m =
-      Ok (m.id, (m.name, (m.mime_type, (m.created_at, m.updated_at))))
+      Ok (m.id, (m.name, (m.size, (m.mime_type, (m.created_at, m.updated_at)))))
     in
-    let decode (id, (name, (mime_type, (created_at, updated_at)))) =
-      Ok { id; name; mime_type; created_at; updated_at }
+    let decode (id, (name, (size, (mime_type, (created_at, updated_at))))) =
+      Ok { id; name; size; mime_type; created_at; updated_at }
     in
     Caqti_type.(
       custom
         ~encode
         ~decode
-        (tup2 Id.t (tup2 Name.t (tup2 Mime.t (tup2 ptime ptime)))))
+        (tup2 Id.t (tup2 Name.t (tup2 Size.t (tup2 Mime.t (tup2 ptime ptime))))))
   ;;
 end

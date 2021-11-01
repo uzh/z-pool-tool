@@ -84,6 +84,7 @@ module Sql = struct
               SUBSTR(HEX(storage_handles.uuid), 21)
             )),
             storage_handles.filename,
+            storage_handles.filesize,
             storage_handles.mime,
             storage_handles.created,
             storage_handles.updated

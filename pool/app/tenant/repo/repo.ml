@@ -89,6 +89,7 @@ module Sql = struct
             SUBSTR(HEX(styles.uuid), 21)
           )),
           styles.filename,
+          styles.filesize,
           styles.mime,
           styles.created,
           styles.updated,
@@ -116,6 +117,7 @@ module Sql = struct
             SUBSTR(HEX(icon.uuid), 21)
           )),
           icon.filename,
+          icon.filesize,
           icon.mime,
           icon.created,
           icon.updated,
