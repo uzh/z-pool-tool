@@ -38,7 +38,7 @@ Pool Tool',
         <p>Logo</p>
     </section>
     <section style="padding-top: 1em; color: #383838;">
-<h4>Dear {username},</h4>
+<h4>Dear {name},</h4>
 <p>
 You recently requested to reset your password for your account.
 Follow this <a href="{resetUrl}"> link </a> to reset it.
