@@ -23,25 +23,25 @@ end
 module Styles = struct
   include Styles
 
-  let t = Caqti_type.string
+  let t = Common.Repo.File.t
+
+  module Write = struct
+    include Write
+
+    let t = Caqti_type.string
+  end
 end
 
 module Icon = struct
   include Icon
 
-  let t = Caqti_type.string
-end
+  let t = Common.Repo.File.t
 
-module Logos = struct
-  include Logos
+  module Write = struct
+    include Write
 
-  let t = Caqti_type.string
-end
-
-module PartnerLogos = struct
-  include PartnerLogos
-
-  let t = Caqti_type.string
+    let t = Caqti_type.string
+  end
 end
 
 module Maintenance = struct
@@ -57,9 +57,10 @@ module Disabled = struct
 end
 
 let t =
+  let open Entity.Read in
   let encode m =
     Ok
-      ( Id.value m.id
+      ( Id.value m.Read.id
       , ( m.title
         , ( m.description
           , ( m.url
@@ -67,12 +68,10 @@ let t =
               , ( m.smtp_auth
                 , ( m.styles
                   , ( m.icon
-                    , ( m.logos
-                      , ( m.partner_logos
-                        , ( m.maintenance
-                          , ( m.disabled
-                            , (m.default_language, (m.created_at, m.updated_at))
-                            ) ) ) ) ) ) ) ) ) ) ) )
+                    , ( m.maintenance
+                      , ( m.disabled
+                        , (m.default_language, (m.created_at, m.updated_at)) )
+                      ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
@@ -83,21 +82,14 @@ let t =
               , ( smtp_auth
                 , ( styles
                   , ( icon
-                    , ( logos
-                      , ( partner_logos
-                        , ( maintenance
-                          , ( disabled
-                            , (default_language, (created_at, updated_at)) ) )
-                        ) ) ) ) ) ) ) ) ) )
+                    , ( maintenance
+                      , (disabled, (default_language, (created_at, updated_at)))
+                      ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     let* title = Title.create title in
     let* description = Description.create description in
     let* url = Url.create url in
-    let* styles = Styles.create styles in
-    let* icon = Icon.create icon in
-    let* logos = Logos.create logos in
-    let* partner_logos = PartnerLogos.create partner_logos in
     Ok
       { id = Id.of_string id
       ; title
@@ -107,8 +99,6 @@ let t =
       ; smtp_auth
       ; styles
       ; icon
-      ; logos
-      ; partner_logos
       ; maintenance = Maintenance.create maintenance
       ; disabled = Disabled.create disabled
       ; default_language
@@ -137,18 +127,14 @@ let t =
                            (tup2
                               Icon.t
                               (tup2
-                                 Logos.t
+                                 Maintenance.t
                                  (tup2
-                                    PartnerLogos.t
+                                    Disabled.t
                                     (tup2
-                                       Maintenance.t
+                                       Settings.Language.t
                                        (tup2
-                                          Disabled.t
-                                          (tup2
-                                             Settings.Language.t
-                                             (tup2
-                                                Common.Repo.CreatedAt.t
-                                                Common.Repo.UpdatedAt.t)))))))))))))))
+                                          Common.Repo.CreatedAt.t
+                                          Common.Repo.UpdatedAt.t)))))))))))))
 ;;
 
 module Write = struct
@@ -165,13 +151,10 @@ module Write = struct
                 , ( m.smtp_auth
                   , ( m.styles
                     , ( m.icon
-                      , ( m.logos
-                        , ( m.partner_logos
-                          , ( m.maintenance
-                            , ( m.disabled
-                              , ( m.default_language
-                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
-                ) ) ) ) )
+                      , ( m.maintenance
+                        , ( m.disabled
+                          , (m.default_language, (m.created_at, m.updated_at))
+                          ) ) ) ) ) ) ) ) ) )
     in
     let decode
         ( id
@@ -182,21 +165,15 @@ module Write = struct
                 , ( smtp_auth
                   , ( styles
                     , ( icon
-                      , ( logos
-                        , ( partner_logos
-                          , ( maintenance
-                            , ( disabled
-                              , (default_language, (created_at, updated_at)) )
-                            ) ) ) ) ) ) ) ) ) ) )
+                      , ( maintenance
+                        , ( disabled
+                          , (default_language, (created_at, updated_at)) ) ) )
+                    ) ) ) ) ) ) )
       =
       let open CCResult in
       let* title = Title.create title in
       let* description = Description.create description in
       let* url = Url.create url in
-      let* styles = Styles.create styles in
-      let* icon = Icon.create icon in
-      let* logos = Logos.create logos in
-      let* partner_logos = PartnerLogos.create partner_logos in
       Ok
         { id = Id.of_string id
         ; title
@@ -206,8 +183,6 @@ module Write = struct
         ; smtp_auth
         ; styles
         ; icon
-        ; logos
-        ; partner_logos
         ; maintenance = Maintenance.create maintenance
         ; disabled = Disabled.create disabled
         ; default_language
@@ -232,22 +207,18 @@ module Write = struct
                        (tup2
                           SmtpAuth.Write.t
                           (tup2
-                             Styles.t
+                             Styles.Write.t
                              (tup2
-                                Icon.t
+                                Icon.Write.t
                                 (tup2
-                                   Logos.t
+                                   Maintenance.t
                                    (tup2
-                                      PartnerLogos.t
+                                      Disabled.t
                                       (tup2
-                                         Maintenance.t
+                                         Settings.Language.t
                                          (tup2
-                                            Disabled.t
-                                            (tup2
-                                               Settings.Language.t
-                                               (tup2
-                                                  Common.Repo.CreatedAt.t
-                                                  Common.Repo.UpdatedAt.t)))))))))))))))
+                                            Common.Repo.CreatedAt.t
+                                            Common.Repo.UpdatedAt.t)))))))))))))
   ;;
 end
 

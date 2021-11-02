@@ -28,6 +28,7 @@ module Public = struct
         Handler.Public.Login.request_reset_password_post
     ; get "/reset-password" Handler.Public.Login.reset_password_get
     ; post "/reset-password" Handler.Public.Login.reset_password_post
+    ; get "/assets/:id/:filename" Handler.Public.asset
     ]
   ;;
 end
@@ -54,13 +55,16 @@ end
 module Root = struct
   let routes =
     [ get "/tenants" Handler.Root.Tenant.tenants
-    ; post "/tenant/create" Handler.Root.Tenant.create
-    ; get "/tenant/:id" Handler.Root.Tenant.tenant_detail
-    ; post "/tenant/:id/update-detail" Handler.Root.Tenant.Update.update_detail
+    ; post "/tenants/create" Handler.Root.Tenant.create
+    ; get "/tenants/:id" Handler.Root.Tenant.tenant_detail
+    ; post "/tenants/:id/update-detail" Handler.Root.Tenant.Update.update_detail
     ; post
-        "/tenant/:id/update-database"
+        "/tenants/:id/update-database"
         Handler.Root.Tenant.Update.update_database
-    ; post "/tenant/:id/create-operator" Handler.Root.Tenant.create_operator
+    ; post
+        "/tenants/:tenant_id/assets/:asset_id/delete"
+        Handler.Root.Tenant.Update.delete_asset
+    ; post "/tenants/:id/create-operator" Handler.Root.Tenant.create_operator
     ; post "/root/create" Handler.Root.Root.create
     ; post "/root/:id/toggle-status" Handler.Root.Root.toggle_status
     ]

@@ -1,6 +1,6 @@
 (library
  (name http_utils)
- (libraries service sexplib pool_common)
+ (libraries service sexplib pool_common tenant)
  (preprocess
   (pps
    lwt_ppx

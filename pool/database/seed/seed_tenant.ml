@@ -1,3 +1,6 @@
+module Assets = Seed_assets
+module File = Pool_common.File
+
 let print_error = function
   | Ok _ -> Lwt.return_unit
   | Error err ->
@@ -6,6 +9,33 @@ let print_error = function
 ;;
 
 let create () =
+  let styles = Assets.dummy_css () in
+  let icon = Assets.dummy_icon () in
+  let tenant_logo = Assets.dummy_tenant_logo () in
+  let partner_logo = Assets.dummy_partner_logo () in
+  let%lwt _ =
+    Lwt_list.map_s
+      (fun file ->
+        let open Assets in
+        let stored_file =
+          Sihl_storage.
+            { id = file.Assets.id
+            ; filename = file.filename
+            ; filesize = file.filesize
+            ; mime = file.mime
+            }
+        in
+        let base64 = Base64.encode_exn file.body in
+        let%lwt _ = Service.Storage.upload_base64 stored_file ~base64 in
+        Lwt.return_unit)
+      [ styles; icon; tenant_logo; partner_logo ]
+  in
+  let logos =
+    let open Tenant.LogoMapping.LogoType in
+    [ to_string TenantLogo, [ tenant_logo.Assets.id ]
+    ; to_string PartnerLogo, [ partner_logo.Assets.id ]
+    ]
+  in
   let data =
     if Sihl.Configuration.is_test ()
     then (
@@ -31,10 +61,8 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "STARTTLS"
-        , "custom-styles.econ.css"
-        , "some icon"
-        , "some logo"
-        , "some partner logos"
+        , styles.Assets.id
+        , icon.Assets.id
         , "EN"
         , "operator@econ.uzh.ch"
         , "adminadmin"
@@ -53,10 +81,8 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "STARTTLS"
-        , "custom-styles.econ.css"
-        , "some icon"
-        , "some logo"
-        , "some partner logos"
+        , styles.Assets.id
+        , icon.Assets.id
         , "EN"
         , "operator@econ.uzh.ch"
         , "adminadmin"
@@ -73,10 +99,8 @@ let create () =
         , "emailemail"
         , "LOGIN"
         , "SSL/TLS"
-        , "custom-styles.zhaw.css"
-        , "some icon"
-        , "some logo"
-        , "some partner logos"
+        , styles.Assets.id
+        , icon.Assets.id
         , "DE"
         , "operator@zhaw.ch"
         , "adminadmin"
@@ -98,8 +122,6 @@ let create () =
          , smtp_auth_protocol
          , styles
          , icon
-         , logos
-         , partner_logos
          , default_language
          , email
          , password
@@ -107,27 +129,27 @@ let create () =
          , lastname ) ->
       let open CCResult in
       Cqrs_command.Tenant_command.Create.decode
-        [ "title", [ title ]
-        ; "description", [ description ]
-        ; "url", [ url ]
-        ; "database_url", [ database_url ]
-        ; "database_label", [ database_label ]
-        ; "smtp_auth_server", [ smtp_auth_server ]
-        ; "smtp_auth_port", [ smtp_auth_port ]
-        ; "smtp_auth_username", [ smtp_auth_username ]
-        ; "smtp_auth_password", [ smtp_auth_password ]
-        ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-        ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-        ; "styles", [ styles ]
-        ; "icon", [ icon ]
-        ; "logos", [ logos ]
-        ; "partner_logos", [ partner_logos ]
-        ; "default_language", [ default_language ]
-        ; "email", [ email ]
-        ; "password", [ password ]
-        ; "firstname", [ firstname ]
-        ; "lastname", [ lastname ]
-        ]
+        (logos
+        @ [ "title", [ title ]
+          ; "description", [ description ]
+          ; "url", [ url ]
+          ; "database_url", [ database_url ]
+          ; "database_label", [ database_label ]
+          ; "smtp_auth_server", [ smtp_auth_server ]
+          ; "smtp_auth_port", [ smtp_auth_port ]
+          ; "smtp_auth_username", [ smtp_auth_username ]
+          ; "smtp_auth_password", [ smtp_auth_password ]
+          ; ( "smtp_auth_authentication_method"
+            , [ smtp_auth_authentication_method ] )
+          ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+          ; "styles", [ styles ]
+          ; "icon", [ icon ]
+          ; "default_language", [ default_language ]
+          ; "email", [ email ]
+          ; "password", [ password ]
+          ; "firstname", [ firstname ]
+          ; "lastname", [ lastname ]
+          ])
       |> CCResult.map_err Utils.handle_conformist_error
       >>= Cqrs_command.Tenant_command.Create.handle
       |> CCResult.get_or_failwith

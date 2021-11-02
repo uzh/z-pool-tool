@@ -19,6 +19,7 @@ let services =
   ; Service.Email.register ()
   ; Service.EmailTemplate.register ()
   ; Service.Queue.register ()
+  ; Service.Storage.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]
 ;;

@@ -8,3 +8,4 @@ module EmailTemplate = Sihl_email.Template.MariaDb
 module Queue = Sihl_queue.MariaDb
 module BlockingEmail = Sihl_email.Smtp
 module Email = Sihl_email.Queued (Queue) (BlockingEmail)
+module Storage = Sihl_storage.MariaDb
