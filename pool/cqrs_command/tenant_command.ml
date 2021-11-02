@@ -142,7 +142,8 @@ end = struct
     in
     let logo_mappings =
       CCList.map
-        (fun (list, logo_type) -> create_logo_mappings list tenant logo_type)
+        (fun (id_list, logo_type) ->
+          create_logo_mappings id_list tenant logo_type)
         [ command.partner_logos, Tenant.LogoMapping.LogoType.PartnerLogo
         ; command.tenant_logos, Tenant.LogoMapping.LogoType.TenantLogo
         ]
@@ -268,10 +269,10 @@ end = struct
     in
     let logo_mappings =
       CCList.map
-        (fun (list, logo_type) ->
-          list
+        (fun (id_list, logo_type) ->
+          id_list
           |> CCOpt.map (fun ids -> create_logo_mappings ids tenant logo_type)
-          |> Option.value ~default:[])
+          |> CCOpt.value ~default:[])
         [ command.partner_logos, Tenant.LogoMapping.LogoType.PartnerLogo
         ; command.tenant_logos, Tenant.LogoMapping.LogoType.TenantLogo
         ]
