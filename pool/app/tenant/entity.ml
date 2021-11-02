@@ -98,16 +98,30 @@ end
 
 module Logos = struct
   type t = File.t list [@@deriving eq, show]
-  type create = File.t list -> t
 
   let value m = m
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "tenant_logo"
+  ;;
 end
 
 module PartnerLogos = struct
   type t = File.t list [@@deriving eq, show]
-  type create = File.t list -> t
 
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
   let value m = m
+
+  let schema () =
+    Conformist.custom
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "partner_logo"
+  ;;
 end
 
 module Maintenance = struct

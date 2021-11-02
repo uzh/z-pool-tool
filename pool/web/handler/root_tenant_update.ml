@@ -34,13 +34,13 @@ let update req command success_message =
       | `EditDetail ->
         Cqrs_command.Tenant_command.EditDetails.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
-        >>= Cqrs_command.Tenant_command.EditDetails.handle logo_files tenant
+        >>= Cqrs_command.Tenant_command.EditDetails.handle tenant
       | `EditDatabase ->
         Cqrs_command.Tenant_command.EditDatabase.decode urlencoded
         |> CCResult.map_err Utils.handle_conformist_error
         >>= CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant
     in
-    multipart_encoded
+    logo_files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> HttpUtils.format_request_boolean_values [ "disabled" ]
     |> events_list

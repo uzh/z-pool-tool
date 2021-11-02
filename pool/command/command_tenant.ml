@@ -80,7 +80,7 @@ let create_tenant =
               ; "lastname", [ lastname ]
               ]
             |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Tenant_command.Create.handle []
+            >>= Cqrs_command.Tenant_command.Create.handle
           in
           let run_events =
             Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)

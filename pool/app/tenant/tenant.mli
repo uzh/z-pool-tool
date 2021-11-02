@@ -143,6 +143,7 @@ module Logos : sig
 
   val value : t -> File.t list
   val equal : t -> t -> bool
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module PartnerLogos : sig
@@ -150,6 +151,7 @@ module PartnerLogos : sig
 
   val value : t -> File.t list
   val equal : t -> t -> bool
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module Maintenance : sig

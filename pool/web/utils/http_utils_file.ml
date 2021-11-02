@@ -97,8 +97,17 @@ let file_to_storage_add filename =
   Lwt_result.return file.Sihl_storage.id
 ;;
 
-let multipart_form_data_to_urlencoded (list : (string * string) list) =
-  CCList.map (fun (k, v) -> k, [ v ]) list
+let multipart_form_data_to_urlencoded list =
+  let fields = Hashtbl.create ~random:true (CCList.length list) in
+  let _ =
+    CCList.map
+      (fun (k, v) ->
+        match Hashtbl.find_opt fields k with
+        | None -> Hashtbl.add fields k [ v ]
+        | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
+      list
+  in
+  fields |> Hashtbl.to_seq |> CCList.of_seq
 ;;
 
 let upload_files allow_list req =
@@ -108,7 +117,7 @@ let upload_files allow_list req =
     Lwt_list.map_s
       (fun (k, v) ->
         let* id = file_to_storage_add v in
-        Lwt_result.return (k, Pool_common.Id.of_string id))
+        Lwt_result.return (k, id))
       filenames
   in
   let filenames = filenames |> CCResult.flatten_l in

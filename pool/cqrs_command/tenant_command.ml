@@ -3,20 +3,12 @@ module Database = Pool_common.Database
 module User = Common_user
 module File = Pool_common.File
 
-let create_logo_mappings files tenant =
+let create_logo_mappings files tenant logo_type =
   let open Tenant in
-  CCList.filter_map
-    (fun (name, asset_id) ->
-      name
-      |> Tenant.LogoMapping.LogoType.of_string
-      |> CCOpt.of_result
-      |> CCOpt.map (fun logo_type ->
-             LogoMapping.Write.
-               { id = Id.create ()
-               ; tenant_id = tenant.Write.id
-               ; asset_id
-               ; logo_type
-               }))
+  CCList.map
+    (fun asset_id ->
+      LogoMapping.Write.
+        { id = Id.create (); tenant_id = tenant.Write.id; asset_id; logo_type })
     files
 ;;
 
@@ -36,9 +28,11 @@ module Create : sig
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
     ; default_language : Settings.Language.t
+    ; tenant_logos : Id.t list
+    ; partner_logos : Id.t list
     }
 
-  val handle : (string * Id.t) list -> t -> (Pool_event.t list, string) Result.t
+  val handle : t -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -61,6 +55,8 @@ end = struct
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
     ; default_language : Settings.Language.t
+    ; tenant_logos : Id.t list
+    ; partner_logos : Id.t list
     }
 
   let command
@@ -78,6 +74,8 @@ end = struct
       styles
       icon
       default_language
+      tenant_logos
+      partner_logos
     =
     { title
     ; description
@@ -93,6 +91,8 @@ end = struct
     ; styles
     ; icon
     ; default_language
+    ; tenant_logos
+    ; partner_logos
     }
   ;;
 
@@ -114,11 +114,13 @@ end = struct
           ; Tenant.Styles.Write.schema ()
           ; Tenant.Icon.Write.schema ()
           ; Settings.Language.schema ()
+          ; Tenant.Logos.schema ()
+          ; Tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
 
-  let handle files (command : t) =
+  let handle (command : t) =
     let open Tenant in
     let tenant =
       Tenant.Write.create
@@ -138,7 +140,14 @@ end = struct
         command.icon
         command.default_language
     in
-    let logo_mappings = create_logo_mappings files tenant in
+    let logo_mappings =
+      CCList.map
+        (fun (list, logo_type) -> create_logo_mappings list tenant logo_type)
+        [ command.partner_logos, Tenant.LogoMapping.LogoType.PartnerLogo
+        ; command.tenant_logos, Tenant.LogoMapping.LogoType.TenantLogo
+        ]
+      |> CCList.flatten
+    in
     Ok
       [ Tenant.Created tenant |> Pool_event.tenant
       ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant
@@ -164,13 +173,11 @@ module EditDetails : sig
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
+    ; tenant_logos : Id.t list option
+    ; partner_logos : Id.t list option
     }
 
-  val handle
-    :  (string * Id.t) list
-    -> Tenant.Write.t
-    -> t
-    -> (Pool_event.t list, string) Result.t
+  val handle : Tenant.Write.t -> t -> (Pool_event.t list, string) Result.t
 
   val decode
     :  (string * string list) list
@@ -189,6 +196,8 @@ end = struct
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; disabled : Tenant.Disabled.t
     ; default_language : Settings.Language.t
+    ; tenant_logos : Id.t list option
+    ; partner_logos : Id.t list option
     }
 
   let command
@@ -202,6 +211,8 @@ end = struct
       smtp_auth_protocol
       disabled
       default_language
+      tenant_logos
+      partner_logos
     =
     { title
     ; description
@@ -213,6 +224,8 @@ end = struct
     ; smtp_auth_protocol
     ; disabled
     ; default_language
+    ; tenant_logos
+    ; partner_logos
     }
   ;;
 
@@ -230,11 +243,13 @@ end = struct
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Disabled.schema ()
           ; Settings.Language.schema ()
+          ; Conformist.optional @@ Tenant.Logos.schema ()
+          ; Conformist.optional @@ Tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
 
-  let handle files (tenant : Tenant.Write.t) (command : t) =
+  let handle (tenant : Tenant.Write.t) (command : t) =
     let update =
       Tenant.
         { title = command.title
@@ -251,7 +266,17 @@ end = struct
         ; default_language = command.default_language
         }
     in
-    let logo_mappings = create_logo_mappings files tenant in
+    let logo_mappings =
+      CCList.map
+        (fun (list, logo_type) ->
+          list
+          |> CCOpt.map (fun ids -> create_logo_mappings ids tenant logo_type)
+          |> Option.value ~default:[])
+        [ command.partner_logos, Tenant.LogoMapping.LogoType.PartnerLogo
+        ; command.tenant_logos, Tenant.LogoMapping.LogoType.TenantLogo
+        ]
+      |> CCList.flatten
+    in
     Ok
       [ Tenant.DetailsEdited (tenant, update) |> Pool_event.tenant
       ; Tenant.LogosUploaded logo_mappings |> Pool_event.tenant

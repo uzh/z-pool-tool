@@ -30,10 +30,10 @@ let create () =
         Lwt.return_unit)
       [ styles; icon; tenant_logo; partner_logo ]
   in
-  let logo_files =
+  let logos =
     let open Tenant.LogoMapping.LogoType in
-    [ to_string TenantLogo, tenant_logo.Assets.id |> Pool_common.Id.of_string
-    ; to_string PartnerLogo, partner_logo.Assets.id |> Pool_common.Id.of_string
+    [ to_string TenantLogo, [ tenant_logo.Assets.id ]
+    ; to_string PartnerLogo, [ partner_logo.Assets.id ]
     ]
   in
   let data =
@@ -129,27 +129,29 @@ let create () =
          , lastname ) ->
       let open CCResult in
       Cqrs_command.Tenant_command.Create.decode
-        [ "title", [ title ]
-        ; "description", [ description ]
-        ; "url", [ url ]
-        ; "database_url", [ database_url ]
-        ; "database_label", [ database_label ]
-        ; "smtp_auth_server", [ smtp_auth_server ]
-        ; "smtp_auth_port", [ smtp_auth_port ]
-        ; "smtp_auth_username", [ smtp_auth_username ]
-        ; "smtp_auth_password", [ smtp_auth_password ]
-        ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-        ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-        ; "styles", [ styles ]
-        ; "icon", [ icon ]
-        ; "default_language", [ default_language ]
-        ; "email", [ email ]
-        ; "password", [ password ]
-        ; "firstname", [ firstname ]
-        ; "lastname", [ lastname ]
-        ]
+        (logos
+        @ [ "title", [ title ]
+          ; "description", [ description ]
+          ; "url", [ url ]
+          ; "database_url", [ database_url ]
+          ; "database_label", [ database_label ]
+          ; "smtp_auth_server", [ smtp_auth_server ]
+          ; "smtp_auth_port", [ smtp_auth_port ]
+          ; "smtp_auth_username", [ smtp_auth_username ]
+          ; "smtp_auth_password", [ smtp_auth_password ]
+          ; ( "smtp_auth_authentication_method"
+            , [ smtp_auth_authentication_method ] )
+          ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+          ; "styles", [ styles ]
+          ; "icon", [ icon ]
+          ; "default_language", [ default_language ]
+          ; "email", [ email ]
+          ; "password", [ password ]
+          ; "firstname", [ firstname ]
+          ; "lastname", [ lastname ]
+          ])
       |> CCResult.map_err Utils.handle_conformist_error
-      >>= Cqrs_command.Tenant_command.Create.handle logo_files
+      >>= Cqrs_command.Tenant_command.Create.handle
       |> CCResult.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
     data

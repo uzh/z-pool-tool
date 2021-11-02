@@ -33,10 +33,11 @@ let create req =
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
+    let file_fields =
+      [ "styles"; "icon" ] @ Tenant.LogoMapping.LogoType.all ()
+    in
     let* files =
-      File.upload_files
-        ([ "styles"; "icon" ] @ Tenant.LogoMapping.LogoType.all ())
-        req
+      File.upload_files file_fields req
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
     let destroy_files =
@@ -45,14 +46,13 @@ let create req =
             ~ctx:
               [ "pool", Common.Database.root |> Pool_common.Database.Label.value
               ]
-            ~id:(Pool_common.Id.value id))
+            ~id)
     in
-    CCList.map (fun (k, v) -> k, Pool_common.Id.value v) files
-    @ multipart_encoded
+    files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
-    >>= Cqrs_command.Tenant_command.Create.handle files
+    >>= Cqrs_command.Tenant_command.Create.handle
     |> Lwt_result.lift
     |> Lwt_result.map_err (fun err ->
            let _ = destroy_files files in
