@@ -1,3 +1,5 @@
+module File = Pool_common.File
+
 module SmtpAuth : sig
   module Server : sig
     type t
@@ -111,37 +113,45 @@ end
 module Styles : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  module Write : sig
+    type t
+
+    val value : t -> string
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Icon : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  module Write : sig
+    type t
+
+    val value : t -> string
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Logos : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t list
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module PartnerLogos : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t list
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module Maintenance : sig
@@ -161,6 +171,31 @@ module Disabled : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
+module LogoMapping : sig
+  module LogoType : sig
+    type t =
+      | PartnerLogo
+      | TenantLogo
+
+    val of_string : string -> (t, string) result
+    val to_string : t -> string
+    val all : unit -> string list
+  end
+
+  module Write : sig
+    type t =
+      { id : Pool_common.Id.t
+      ; tenant_id : Pool_common.Id.t
+      ; asset_id : Pool_common.Id.t
+      ; logo_type : LogoType.t
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end
+
 type t =
   { id : Pool_common.Id.t
   ; title : Title.t
@@ -171,7 +206,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -187,10 +222,8 @@ module Write : sig
     ; url : Url.t
     ; database : Pool_common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    ; styles : Styles.Write.t
+    ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
@@ -204,12 +237,12 @@ module Write : sig
     -> Url.t
     -> Pool_common.Database.t
     -> SmtpAuth.Write.t
-    -> Styles.t
-    -> Icon.t
-    -> Logos.t
-    -> PartnerLogos.t
+    -> Styles.Write.t
+    -> Icon.Write.t
     -> Settings.Language.t
     -> t
+
+  val show : t -> string
 end
 
 module StatusReport : sig
@@ -217,19 +250,6 @@ module StatusReport : sig
 
   val equal : t -> t -> bool
 end
-
-type create =
-  { title : Title.t
-  ; description : Description.t
-  ; url : Url.t
-  ; database : Pool_common.Database.t
-  ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.t
-  ; icon : Icon.t
-  ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
-  ; default_language : Settings.Language.t
-  }
 
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
@@ -244,16 +264,16 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; styles : Styles.t
-  ; icon : Icon.t
-  ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
   }
 
+type logo_mappings = LogoMapping.Write.t list
+
 type event =
-  | Created of create [@equal equal]
+  | Created of Write.t [@equal equal]
+  | LogosUploaded of logo_mappings
+  | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
   | DatabaseEdited of Write.t * Pool_common.Database.t
   | Destroyed of Pool_common.Id.t

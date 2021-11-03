@@ -2,7 +2,9 @@ module Id = Pool_common.Id
 module Database = Pool_common.Database
 module CreatedAt = Pool_common.CreatedAt
 module UpdatedAt = Pool_common.UpdatedAt
+module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
+module LogoMapping = Entity_logo_mapping
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -52,66 +54,73 @@ module Url = struct
 end
 
 module Styles = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create styles =
-    if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom
-      (Utils.schema_decoder create "styles")
-      CCList.pure
-      "styles"
-  ;;
+    let value m = m
+
+    let create styles =
+      if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
+    ;;
+
+    let schema () =
+      Conformist.custom
+        (Utils.schema_decoder create "styles")
+        CCList.pure
+        "styles"
+    ;;
+  end
 end
 
 module Icon = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create icon =
-    if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
-  ;;
+    let value m = m
+
+    let create icon =
+      if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
+    ;;
+
+    let schema () =
+      Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
+    ;;
+  end
 end
 
 module Logos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
 
   let value m = m
-
-  let create logos =
-    if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
-  ;;
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
 
   let schema () =
-    Conformist.custom (Utils.schema_decoder create "logos") CCList.pure "logos"
+    Conformist.custom
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "tenant_logo"
   ;;
 end
 
 module PartnerLogos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
 
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
   let value m = m
-
-  let create partner_logo =
-    if String.length partner_logo <= 0
-    then Error "Invalid partner logos!"
-    else Ok partner_logo
-  ;;
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "partner logos")
-      CCList.pure
-      "partner_logos"
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "partner_logo"
   ;;
 end
 
@@ -174,7 +183,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Settings.Language.t
@@ -182,6 +191,25 @@ type t =
   ; updated_at : UpdatedAt.t
   }
 [@@deriving eq, show]
+
+module Read = struct
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database_label : Database.Label.t
+    ; smtp_auth : SmtpAuth.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; maintenance : Maintenance.t
+    ; disabled : Disabled.t
+    ; default_language : Settings.Language.t
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
+    }
+  [@@deriving eq, show]
+end
 
 module Write = struct
   type t =
@@ -191,10 +219,8 @@ module Write = struct
     ; url : Url.t
     ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    ; styles : Styles.Write.t
+    ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
     ; default_language : Settings.Language.t
@@ -211,8 +237,6 @@ module Write = struct
       smtp_auth
       styles
       icon
-      logos
-      partner_logos
       default_language
     =
     { id = Id.create ()
@@ -223,8 +247,6 @@ module Write = struct
     ; smtp_auth
     ; styles
     ; icon
-    ; logos
-    ; partner_logos
     ; maintenance = Maintenance.create false
     ; disabled = Disabled.create false
     ; default_language

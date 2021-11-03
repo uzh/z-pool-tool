@@ -1,6 +1,7 @@
 module Common = Pool_common
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module File = HttpUtils.File
 module Update = Root_tenant_update
 
 let tenants req =
@@ -28,13 +29,34 @@ let create req =
   let error_path = "/root/tenants" in
   let events () =
     let open CCResult.Infix in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    urlencoded
+    let open Lwt_result.Syntax in
+    let%lwt multipart_encoded =
+      Sihl.Web.Request.to_multipart_form_data_exn req
+    in
+    let file_fields =
+      [ "styles"; "icon" ] @ Tenant.LogoMapping.LogoType.all ()
+    in
+    let* files =
+      File.upload_files file_fields req
+      |> Lwt_result.map_err (fun err -> err, error_path)
+    in
+    let destroy_files =
+      Lwt_list.map_s (fun (_, id) ->
+          Service.Storage.delete
+            ~ctx:
+              [ "pool", Common.Database.root |> Pool_common.Database.Label.value
+              ]
+            ~id)
+    in
+    files @ multipart_encoded
+    |> File.multipart_form_data_to_urlencoded
     |> Cqrs_command.Tenant_command.Create.decode
     |> CCResult.map_err Utils.handle_conformist_error
     >>= Cqrs_command.Tenant_command.Create.handle
-    |> CCResult.map_err (fun err -> err, error_path)
     |> Lwt_result.lift
+    |> Lwt_result.map_err (fun err ->
+           let _ = destroy_files files in
+           err, error_path)
   in
   let handle =
     Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
@@ -54,7 +76,7 @@ let create req =
 let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" in
-  let error_path = Format.asprintf "/root/tenant/%s" id in
+  let error_path = Format.asprintf "/root/tenants/%s" id in
   let user () =
     let open Lwt_result.Syntax in
     let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in

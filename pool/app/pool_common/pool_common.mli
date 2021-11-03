@@ -62,6 +62,47 @@ module UpdatedAt : sig
   val value : t -> Ptime.t
 end
 
+module File : sig
+  module Name : sig
+    type t
+
+    val value : t -> string
+  end
+
+  module Size : sig
+    type t
+
+    val value : t -> int
+  end
+
+  module Mime : sig
+    type t =
+      | Css
+      | Gif
+      | Ico
+      | Jpeg
+      | Png
+      | Svg
+      | Webp
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val of_string : string -> (t, string) result
+    val to_string : t -> string
+    val of_filename : string -> (t, string) result
+  end
+
+  type t
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
+  val id : t -> Id.t
+  val size : t -> Size.t
+  val path : t -> string
+end
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -95,6 +136,12 @@ module Repo : sig
 
   module UpdatedAt : sig
     type t = UpdatedAt.t
+
+    val t : t Caqti_type.t
+  end
+
+  module File : sig
+    type t = File.t
 
     val t : t Caqti_type.t
   end

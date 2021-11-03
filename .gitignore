@@ -1,5 +1,6 @@
 # ocamlbuild working directory
 _build/
+public/
 
 # ocamlbuild targets
 *.byte
