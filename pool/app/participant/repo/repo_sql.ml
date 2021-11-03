@@ -40,6 +40,7 @@ let find_request =
   find_request_sql
     {sql|
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND user_users.admin = 0
     |sql}
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
@@ -52,9 +53,11 @@ let find db_pool id =
 ;;
 
 let find_by_email_request =
-  find_request_sql {sql|
-    WHERE user_users.email = ?
-  |sql}
+  find_request_sql
+    {sql|
+      WHERE user_users.email = ?
+        AND user_users.admin = 0
+    |sql}
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
@@ -62,6 +65,23 @@ let find_by_email db_pool email =
   Utils.Database.find
     (Pool_common.Database.Label.value db_pool)
     find_by_email_request
+    (Common_user.Email.Address.value email)
+;;
+
+let find_confirmed_request =
+  find_request_sql
+    {sql|
+      WHERE user_users.email = ?
+        AND user_users.admin = 0
+        AND user_users.confirmed = 1
+    |sql}
+  |> Caqti_request.find Caqti_type.string Repo_model.t
+;;
+
+let find_confirmed db_pool email =
+  Utils.Database.find
+    (Pool_common.Database.Label.value db_pool)
+    find_confirmed_request
     (Common_user.Email.Address.value email)
 ;;
 

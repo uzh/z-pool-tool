@@ -23,4 +23,4 @@ module Email = struct
   let update_email = Repo_sql.Email.update_email
 end
 
-let user_caqti = Repo_model.user_caqti
+let user_caqti = Repo_model.User.user_caqti

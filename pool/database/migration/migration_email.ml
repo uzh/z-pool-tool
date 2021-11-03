@@ -2,7 +2,7 @@ let create_email_address_table =
   Sihl.Database.Migration.create_step
     ~label:"create email address table"
     {sql|
-      CREATE TABLE IF NOT EXISTS pool_emails (
+      CREATE TABLE IF NOT EXISTS pool_email_verifications (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `address` varchar(128) NOT NULL,
         `token` varchar(128) NOT NULL,

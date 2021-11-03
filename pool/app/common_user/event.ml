@@ -52,15 +52,15 @@ module Email = struct
     | Created (address, firstname, lastname) ->
       create_email address firstname lastname
     | UpdatedUnverified
-        ((Email.Unverified _ as old_email), (new_address, firstname, lastname))
-      ->
-      let%lwt () = deactivate_token pool (Email.token old_email) in
+        ( (Email.(Unverified { token; _ }) as old_email)
+        , (new_address, firstname, lastname) ) ->
+      let%lwt () = deactivate_token pool token in
       update_email old_email new_address firstname lastname
     | UpdatedVerified
         ((Email.Verified _ as old_email), (new_address, firstname, lastname)) ->
       update_email old_email new_address firstname lastname
     | Verified (Email.(Unverified { token; _ }) as email) ->
-      let%lwt () = Service.Token.deactivate token in
+      let%lwt () = deactivate_token pool token in
       let%lwt _ = Repo.Email.update pool @@ Email.verify email in
       Lwt.return_unit
   ;;

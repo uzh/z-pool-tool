@@ -66,15 +66,11 @@ module Email = struct
           (Firstname.value firstname)
           (Lastname.value lastname)
       in
-      let address = Email.address email in
       let subject = "Email verification" in
-      let%lwt validation_token =
-        Service.Token.create
-          ~ctx:[ "pool", db_pool |> Pool_common.Database.Label.value ]
-          [ "email", address ]
-      in
       let validation_url =
-        Format.asprintf "/participant/email-verified?token=%s" validation_token
+        Format.asprintf
+          "/participant/email-verified?token=%s"
+          (Email.token email)
         |> Sihl.Web.externalize_path
         |> Utils.Url.create_public_url
       in
@@ -82,7 +78,7 @@ module Email = struct
         db_pool
         "email_verification"
         subject
-        address
+        (Email.address email)
         [ "verificationUrl", validation_url; "name", name ]
     ;;
   end

@@ -49,6 +49,7 @@ type event =
   | Created of create
   | DetailsUpdated of t * update
   | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
+  | EmailUnconfirmed of t
   | EmailConfirmed of t
   | AcceptTerms of t
   | Disabled of t
@@ -94,6 +95,13 @@ let handle_event pool : event -> unit Lwt.t = function
         (confirmed |> User.PasswordConfirmed.to_sihl)
     in
     Lwt.return_unit
+  | EmailUnconfirmed participant ->
+    let%lwt _ =
+      Service.User.update
+        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        Sihl_user.{ participant.user with confirmed = false }
+    in
+    Lwt.return_unit
   | EmailConfirmed participant ->
     let%lwt _ =
       Service.User.update
@@ -135,5 +143,9 @@ let pp_event formatter (event : event) : unit =
   | PasswordUpdated (person, password, _) ->
     person_pp person;
     User.Password.pp formatter password
-  | EmailConfirmed p | AcceptTerms p | Disabled p | Verified p -> person_pp p
+  | EmailUnconfirmed p
+  | EmailConfirmed p
+  | AcceptTerms p
+  | Disabled p
+  | Verified p -> person_pp p
 ;;

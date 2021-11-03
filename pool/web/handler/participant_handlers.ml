@@ -1,6 +1,7 @@
 module Command = Cqrs_command.Participant_command
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Email = Common_user.Email
 
 type handler = Rock.Request.t -> Rock.Response.t Lwt.t
 
@@ -106,21 +107,23 @@ let email_verification req =
   (let open Lwt_result.Syntax in
   let* token =
     Sihl.Web.Request.query "token" req
-    |> CCOpt.map Common_user.Email.Token.create
+    |> CCOpt.map Email.Token.create
     |> CCOpt.to_result "No activation token found!"
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let ctx = [ "pool", Pool_common.Database.Label.value tenant_db ] in
   let* email =
-    Service.Token.read ~ctx (Common_user.Email.Token.value token) ~k:"email"
+    Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
     |> Lwt.map (CCOpt.to_result "Invalid token format!")
-    |> CCFun.flip Lwt_result.bind_result Common_user.Email.Address.create
+    |> CCFun.flip Lwt_result.bind_result Email.Address.create
+    >>= Email.find_unverified tenant_db
   in
-  let* participant = Participant.find_by_email tenant_db email in
+  let* participant =
+    Participant.find_by_email tenant_db (Email.address email)
+  in
   let* events =
-    Command.ConfirmEmail.(handle { token; email } participant)
-    |> Lwt_result.lift
+    Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
   in
   let%lwt () = Pool_event.handle_events tenant_db events in
   HttpUtils.redirect_to_with_actions

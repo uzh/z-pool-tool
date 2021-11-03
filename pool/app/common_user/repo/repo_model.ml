@@ -82,14 +82,37 @@ module Email = struct
   ;;
 end
 
-let user_caqti =
-  let open Sihl.Contract.User in
+module User = struct
   let status =
     let encode m = m |> Sihl_user.status_to_string |> Result.ok in
     let decode = Sihl_user.status_of_string in
     Caqti_type.(custom ~encode ~decode string)
-  in
+  ;;
+
+  let user_type ~encode ~decode =
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           string
+           (tup2
+              string
+              (tup2
+                 (option string)
+                 (tup2
+                    (option string)
+                    (tup2
+                       (option string)
+                       (tup2
+                          string
+                          (tup2
+                             status
+                             (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
+  ;;
+
   let encode m =
+    let open Sihl.Contract.User in
     Ok
       ( m.id
       , ( m.email
@@ -100,22 +123,20 @@ let user_caqti =
                 , ( m.status
                   , (m.admin, (m.confirmed, (m.created_at, m.updated_at))) ) )
               ) ) ) ) )
-  in
-  let decode
-      ( id
-      , ( email
-        , ( username
-          , ( name
-            , ( given_name
-              , ( password
-                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
-            ) ) ) )
-    =
-    (* TODO checks for confirmed users only, a Person should just be valid, if
-       it was confirmed. Check if there is a better place for this. *)
-    if not confirmed
-    then Error "User is not confirmed"
-    else
+  ;;
+
+  let user_caqti =
+    let open Sihl.Contract.User in
+    let decode
+        ( id
+        , ( email
+          , ( username
+            , ( name
+              , ( given_name
+                , ( password
+                  , (status, (admin, (confirmed, (created_at, updated_at)))) )
+                ) ) ) ) )
+      =
       Ok
         { id
         ; email
@@ -129,22 +150,7 @@ let user_caqti =
         ; created_at
         ; updated_at
         }
-  in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2
-         string
-         (tup2
-            string
-            (tup2
-               (option string)
-               (tup2
-                  (option string)
-                  (tup2
-                     (option string)
-                     (tup2
-                        string
-                        (tup2 status (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
-;;
+    in
+    user_type ~encode ~decode
+  ;;
+end

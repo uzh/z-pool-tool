@@ -64,6 +64,7 @@ type event =
   | DetailsUpdated of t * update
   | PasswordUpdated of
       t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+  | EmailUnconfirmed of t
   | EmailConfirmed of t
   | AcceptTerms of t
   | Disabled of t

@@ -12,75 +12,6 @@ module RecruitmentChannel = struct
   ;;
 end
 
-let user_caqti =
-  let status =
-    let encode m = m |> Sihl_user.status_to_string |> Result.ok in
-    let decode = Sihl_user.status_of_string in
-    Caqti_type.(custom ~encode ~decode string)
-  in
-  let open Sihl.Contract.User in
-  let encode m =
-    Ok
-      ( m.id
-      , ( m.email
-        , ( m.username
-          , ( m.name
-            , ( m.given_name
-              , ( m.password
-                , ( m.status
-                  , (m.admin, (m.confirmed, (m.created_at, m.updated_at))) ) )
-              ) ) ) ) )
-  in
-  let decode
-      ( id
-      , ( email
-        , ( username
-          , ( name
-            , ( given_name
-              , ( password
-                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
-            ) ) ) )
-    =
-    (* TODO checks for confirmed and not admin users only, a Person should just
-       be valid, if it was confirmed. Check if there is a better place for
-       this. *)
-    match confirmed, admin with
-    | false, _ -> Error "User is not confirmed"
-    | _, true -> Error "An admin cannot be a participant"
-    | _ ->
-      Ok
-        { id
-        ; email
-        ; username
-        ; name
-        ; given_name
-        ; password
-        ; status
-        ; admin
-        ; confirmed
-        ; created_at
-        ; updated_at
-        }
-  in
-  Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2
-         string
-         (tup2
-            string
-            (tup2
-               (option string)
-               (tup2
-                  (option string)
-                  (tup2
-                     (option string)
-                     (tup2
-                        string
-                        (tup2 status (tup2 bool (tup2 bool (tup2 ptime ptime)))))))))))
-;;
-
 let t =
   let encode m =
     let open Common_user in
@@ -118,7 +49,7 @@ let t =
       ~encode
       ~decode
       (tup2
-         user_caqti
+         Common_user.Repo.user_caqti
          (tup2
             RecruitmentChannel.t
             (tup2

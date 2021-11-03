@@ -8,11 +8,13 @@ module Email = struct
     let email_unverified = [ "address"; "token" ] in
     let email_verified = [ "address"; "verified" ] in
     let created_updated_at = [ "created_at"; "updated_at" ] in
+    let from_fragment = {sql| FROM pool_email_verifications |sql} in
     let select fields =
       Format.asprintf
-        "%s %s\n%s;"
+        "%s %s\n%s\n%s;"
         basic_select
-        (fields @ created_updated_at |> String.concat ",\n")
+        (fields @ created_updated_at |> String.concat ", ")
+        from_fragment
         where_fragment
     in
     match carrier with
@@ -24,16 +26,16 @@ module Email = struct
       : type a.
         a carrier
         -> (string, a t, [< `Many | `One | `Zero > `One ]) Caqti_request.t
-    =
-    let where_fragment =
-      {sql| WHERE user_users.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
-    in
-    function
+    = function
     | UnverifiedC ->
-      find_request_sql UnverifiedC where_fragment
+      find_request_sql
+        UnverifiedC
+        {sql| WHERE address = ? AND verified IS NULL |sql}
       |> Caqti_request.find Caqti_type.string Repo_model.Email.unverified_t
     | VerifiedC ->
-      find_request_sql VerifiedC where_fragment
+      find_request_sql
+        VerifiedC
+        {sql| WHERE address = ? AND verified IS NOT NULL |sql}
       |> Caqti_request.find Caqti_type.string Repo_model.Email.verified_t
   ;;
 
@@ -45,7 +47,7 @@ module Email = struct
 
   let insert_request =
     {sql|
-      INSERT INTO pool_emails (
+      INSERT INTO pool_email_verifications (
         address,
         token,
         created_at,
@@ -66,7 +68,7 @@ module Email = struct
 
   let update_unverified_request =
     {sql|
-      UPDATE pool_emails
+      UPDATE pool_email_verifications
       SET
         token = $2,
         verified = NULL,
@@ -79,7 +81,7 @@ module Email = struct
 
   let update_verified_request =
     {sql|
-      UPDATE pool_emails
+      UPDATE pool_email_verifications
       SET
         verified = $2,
         created_at = $3,
@@ -106,7 +108,7 @@ module Email = struct
 
   let update_email_request =
     {sql|
-      UPDATE pool_emails
+      UPDATE pool_email_verifications
       SET
         address = $2,
         token = $3,
@@ -129,5 +131,20 @@ module Email = struct
       ( address old_email
       , (address new_email, token new_email)
       , Ptime_clock.now () )
+  ;;
+
+  let delete_request =
+    {sql|
+      DELETE FROM pool_email_verifications
+      WHERE address = ?;
+    |sql}
+    |> Caqti_request.exec Caqti_type.string
+  ;;
+
+  let delete db_pool email =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value db_pool)
+      delete_request
+    @@ Entity_email.address email
   ;;
 end

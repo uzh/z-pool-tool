@@ -159,7 +159,17 @@ module Email : sig
   val token : unverified t -> string
   val create : Address.t -> Token.t -> unverified t
   val verify : unverified t -> verified t
-  val address : 'email t -> string
+  val address : 'email t -> Address.t
+
+  val find_unverified
+    :  Pool_common.Database.Label.t
+    -> Address.t
+    -> (unverified t, string) Result.t Lwt.t
+
+  val find_verified
+    :  Pool_common.Database.Label.t
+    -> Address.t
+    -> (verified t, string) Result.t Lwt.t
 end
 
 module Repo : sig
