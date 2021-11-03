@@ -15,8 +15,10 @@ let confirmed () =
         Middleware_tenant.tenant_db_of_request req
         |> Lwt_result.map_err (fun msg -> `TenantNotFound, msg)
       in
-      Participant.find pool user_id
-      |> Lwt_result.map_err (fun msg -> `ParticipantError, msg)
+      Lwt_result.map
+        (fun participant -> participant.Participant.user.Sihl_user.confirmed)
+        (Participant.find pool user_id
+        |> Lwt_result.map_err (fun msg -> `ParticipantError, msg))
     in
     match is_confirmed with
     | Ok _ -> handler req
@@ -30,5 +32,5 @@ let confirmed () =
           ]
       | _ -> Http_utils.redirect_to "/participant/email-confirmation")
   in
-  Rock.Middleware.create ~name:"auth_payout" ~filter
+  Rock.Middleware.create ~name:"participant.confirmed" ~filter
 ;;

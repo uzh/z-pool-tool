@@ -39,5 +39,5 @@ let terms_accepted () =
           ]
         | _ -> [ Message.set ~error:[ "Invalid session!" ] ])
   in
-  Rock.Middleware.create ~name:"auth_payout" ~filter
+  Rock.Middleware.create ~name:"participant.terms" ~filter
 ;;

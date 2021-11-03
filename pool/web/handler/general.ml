@@ -1,12 +1,3 @@
-type request = Rock.Request.t
-type response = Rock.Response.t
-type handler = request -> response Lwt.t
-
-let urlencoded_of_request = Utils.todo
-let response_of_redirect = Utils.todo
-let response = Utils.todo
-let handle_events _ = Utils.todo
-
 let user_from_session req : Sihl.Contract.User.t option Lwt.t =
   let%lwt tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let user tenant_db =

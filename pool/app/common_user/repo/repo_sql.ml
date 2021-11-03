@@ -71,24 +71,22 @@ module Email = struct
       UPDATE pool_email_verifications
       SET
         token = $2,
-        verified = NULL,
-        created_at = $3,
-        updated_at = $4
+        verified = NULL
       WHERE address = $1;
     |sql}
-    |> Caqti_request.exec Repo_model.Email.unverified_t
+    |> Caqti_request.exec
+         Caqti_type.(tup2 RepoModel.Address.t RepoModel.Token.t)
   ;;
 
   let update_verified_request =
     {sql|
       UPDATE pool_email_verifications
       SET
-        verified = $2,
-        created_at = $3,
-        updated_at = $4
+        verified = $2
       WHERE address = $1;
     |sql}
-    |> Caqti_request.exec Repo_model.Email.verified_t
+    |> Caqti_request.exec
+         Caqti_type.(tup2 RepoModel.Address.t RepoModel.VerifiedAt.t)
   ;;
 
   let update
@@ -100,10 +98,10 @@ module Email = struct
    fun db_pool model ->
     let pool = Pool_common.Database.Label.value db_pool in
     match model with
-    | Unverified _ as model ->
-      Utils.Database.exec pool update_unverified_request model
-    | Verified _ as model ->
-      Utils.Database.exec pool update_verified_request model
+    | Unverified { address; token; _ } ->
+      Utils.Database.exec pool update_unverified_request (address, token)
+    | Verified { address; verified_at; _ } ->
+      Utils.Database.exec pool update_verified_request (address, verified_at)
  ;;
 
   let update_email_request =
@@ -112,25 +110,19 @@ module Email = struct
       SET
         address = $2,
         token = $3,
-        verified = NULL,
-        updated_at = $4
+        verified = NULL
       WHERE address = $1;
     |sql}
     |> Caqti_request.exec
          Caqti_type.(
-           tup3
-             RepoModel.Address.t
-             (tup2 RepoModel.Address.t RepoModel.Token.t)
-             Pool_common.Repo.UpdatedAt.t)
+           tup2 RepoModel.Address.t (tup2 RepoModel.Address.t RepoModel.Token.t))
   ;;
 
   let update_email db_pool old_email new_email =
     Utils.Database.exec
       (Pool_common.Database.Label.value db_pool)
       update_email_request
-      ( address old_email
-      , (address new_email, token new_email)
-      , Ptime_clock.now () )
+      (address old_email, (address new_email, token new_email))
   ;;
 
   let delete_request =
