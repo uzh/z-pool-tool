@@ -79,7 +79,7 @@ Follow the link below to activate it.
 
 {verificationUrl}
 
-If this action wasn't performed by you, please ignore this email or reply to let us know.
+If this action wasn`t performed by you, please ignore this email or reply to let us know.
 
 Yours sincerely,
 Pool Tool',
@@ -106,7 +106,7 @@ You recently added a (new) email address to your account.
 Follow this <a href="{verificationUrl}"> link </a> to activate it.
 </p>
 <p>
-If this action wasn't performed by you, please ignore this email or reply to let us know.
+If this action wasn`t performed by you, please ignore this email or reply to let us know.
 </p>
 <p>
 If the above link does not work, please copy the following link into your browser manually: {verificationUrl}

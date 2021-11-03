@@ -63,12 +63,16 @@ end
 type email_unverified =
   { address : Address.t
   ; token : Token.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
 type email_verified =
   { address : Address.t
   ; verified_at : VerifiedAt.t
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
@@ -81,6 +85,11 @@ type verified = private XVerifiedP
 type _ t =
   | Unverified : email_unverified -> unverified t
   | Verified : email_verified -> verified t
+
+(* Carries type information, is a type "witness" *)
+type _ carrier =
+  | UnverifiedC : unverified carrier
+  | VerifiedC : verified carrier
 
 let equal : type state. state t -> state t -> bool =
  fun m k ->
@@ -105,8 +114,21 @@ let address : type state. state t -> string = function
 ;;
 
 let token (Unverified email) = Token.value email.token
-let create address token = Unverified { address; token }
+
+let create address token =
+  Unverified
+    { address
+    ; token
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
+;;
 
 let verify (Unverified email) =
-  Verified { address = email.address; verified_at = Ptime_clock.now () }
+  Verified
+    { address = email.address
+    ; verified_at = Ptime_clock.now ()
+    ; created_at = email.created_at
+    ; updated_at = Ptime_clock.now ()
+    }
 ;;

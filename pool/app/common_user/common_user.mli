@@ -128,11 +128,15 @@ module Email : sig
   type email_unverified =
     { address : Address.t
     ; token : Token.t
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
 
   type email_verified =
     { address : Address.t
     ; verified_at : VerifiedAt.t
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
 
   type unverified
@@ -178,8 +182,6 @@ module Repo : sig
   module Email : sig
     val unverified_t : Entity_email.unverified Entity_email.t Caqti_type.t
     val verified_t : Entity_email.verified Entity_email.t Caqti_type.t
-    val insert : Pool_common.Database.Label.t -> 'a -> 'b
-    val update : Pool_common.Database.Label.t -> 'a -> 'b
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t

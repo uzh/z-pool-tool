@@ -3,6 +3,27 @@ open Entity
 module Email = struct
   module PasswordReset = Helper.Email.PasswordReset
 
+  let create_token pool address =
+    let open Lwt.Infix in
+    Service.Token.create
+      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      [ "email", Email.Address.value address ]
+    >|= Email.Token.create
+  ;;
+
+  let deactivate_token pool token =
+    Service.Token.deactivate
+      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      token
+  ;;
+
+  let send_confirmation_email pool email firstname lastname =
+    let open Lwt.Infix in
+    Helper.Email.ConfirmationEmail.create pool email firstname lastname
+    >>= Service.Email.send
+          ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+  ;;
+
   type event =
     | Created of Email.Address.t * Firstname.t * Lastname.t
     | UpdatedUnverified of
@@ -14,36 +35,34 @@ module Email = struct
   let handle_event pool : event -> unit Lwt.t =
     let open Lwt.Infix in
     let create_email address firstname lastname : unit Lwt.t =
-      let%lwt token =
-        Service.Token.create
-          ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-          [ "email", Email.Address.value address ]
-        >|= Email.Token.create
-      in
-      let email_address = Email.create address token in
-      let%lwt () =
-        Helper.Email.ConfirmationEmail.create
-          pool
-          email_address
-          firstname
-          lastname
-        >>= Service.Email.send
-              ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-      in
-      Repo.Email.insert pool email_address
+      create_token pool address
+      >|= Email.create address
+      >>= fun email ->
+      let%lwt _ = Repo.Email.insert pool email in
+      send_confirmation_email pool email firstname lastname
+    in
+    let update_email old_email new_address firstname lastname =
+      create_token pool new_address
+      >|= Email.create new_address
+      >>= fun new_email ->
+      let%lwt _ = Repo.Email.update_email pool old_email new_email in
+      send_confirmation_email pool new_email firstname lastname
     in
     function
     | Created (address, firstname, lastname) ->
       create_email address firstname lastname
     | UpdatedUnverified
-        (Email.Unverified email, (new_address, firstname, lastname)) ->
-      let%lwt () = Service.Token.deactivate email.Email.token in
-      create_email new_address firstname lastname
-    | UpdatedVerified (Email.Verified _, (new_address, firstname, lastname)) ->
-      create_email new_address firstname lastname
+        ((Email.Unverified _ as old_email), (new_address, firstname, lastname))
+      ->
+      let%lwt () = deactivate_token pool (Email.token old_email) in
+      update_email old_email new_address firstname lastname
+    | UpdatedVerified
+        ((Email.Verified _ as old_email), (new_address, firstname, lastname)) ->
+      update_email old_email new_address firstname lastname
     | Verified (Email.(Unverified { token; _ }) as email) ->
       let%lwt () = Service.Token.deactivate token in
-      Repo.Email.update pool @@ Email.verify email
+      let%lwt _ = Repo.Email.update pool @@ Email.verify email in
+      Lwt.return_unit
   ;;
 
   let[@warning "-4"] equal_event (one : event) (two : event) : bool =

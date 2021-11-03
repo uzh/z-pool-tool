@@ -50,13 +50,17 @@ let sign_up : handler =
 
 let sign_up_create : handler =
  fun req ->
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let terms_key = "_terms_accepted" in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    |> Lwt.map @@ HttpUtils.format_request_boolean_values [ terms_key ]
+  in
   let%lwt result =
     let open Lwt_result.Syntax in
     let* () =
-      Sihl.Web.Request.query "_terms_accepted" req
-      |> CCOpt.map (CCString.equal "true")
-      |> CCOpt.get_or ~default:false
+      List.assoc terms_key urlencoded
+      |> CCList.hd
+      |> CCString.equal "true"
       |> function
       | true -> Lwt.return_ok ()
       | false -> Lwt.return_error "Terms and conditions not accepted"
@@ -77,7 +81,7 @@ let sign_up_create : handler =
       Utils.Database.with_transaction tenant_db (fun () ->
           let%lwt () = Pool_event.handle_events tenant_db events in
           HttpUtils.redirect_to_with_actions
-            "/dashboard"
+            "/participant/dashboard"
             [ Message.set
                 ~success:
                   [ "Successfully created. An email has been sent to your \

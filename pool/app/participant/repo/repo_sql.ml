@@ -4,34 +4,34 @@ let find_request_sql where_fragment =
   Format.asprintf
     "%s\n%s;"
     {sql|
-    SELECT
-      LOWER(CONCAT(
-        SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-        SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-        SUBSTR(HEX(user_users.uuid), 21)
-      )),
-      user_users.email,
-      user_users.username,
-      user_users.name,
-      user_users.given_name,
-      user_users.password,
-      user_users.status,
-      user_users.admin,
-      user_users.confirmed,
-      user_users.created_at,
-      user_users.updated_at,
-      pool_participants.recruitment_channel,
-      pool_participants.terms_accepted_at,
-      pool_participants.paused,
-      pool_participants.disabled,
-      pool_participants.verified,
-      pool_participants.created_at,
-      pool_participants.updated_at
-    FROM pool_participants
-      LEFT JOIN user_users
-      ON pool_participants.user_uuid = user_users.uuid
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+          SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 21)
+        )),
+        user_users.email,
+        user_users.username,
+        user_users.name,
+        user_users.given_name,
+        user_users.password,
+        user_users.status,
+        user_users.admin,
+        user_users.confirmed,
+        user_users.created_at,
+        user_users.updated_at,
+        pool_participants.recruitment_channel,
+        pool_participants.terms_accepted_at,
+        pool_participants.paused,
+        pool_participants.disabled,
+        pool_participants.verified,
+        pool_participants.created_at,
+        pool_participants.updated_at
+      FROM pool_participants
+        LEFT JOIN user_users
+        ON pool_participants.user_uuid = user_users.uuid
     |sql}
     where_fragment
 ;;
