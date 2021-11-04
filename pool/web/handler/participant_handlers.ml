@@ -3,8 +3,6 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Email = Common_user.Email
 
-type handler = Rock.Request.t -> Rock.Response.t Lwt.t
-
 let dashboard req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
@@ -21,8 +19,7 @@ let dashboard req =
   >|> Http_utils.extract_happy_path
 ;;
 
-let sign_up : handler =
- fun req ->
+let sign_up req =
   let csrf = HttpUtils.find_csrf req in
   let message =
     Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
@@ -49,8 +46,7 @@ let sign_up : handler =
   Sihl.Web.Response.of_html html |> Lwt.return
 ;;
 
-let sign_up_create : handler =
- fun req ->
+let sign_up_create req =
   let terms_key = "_terms_accepted" in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
@@ -134,8 +130,7 @@ let email_verification req =
   >|> HttpUtils.extract_happy_path
 ;;
 
-let terms : handler =
- fun req ->
+let terms req =
   CCFun.flip Lwt.bind HttpUtils.extract_happy_path
   @@
   let open Lwt_result.Syntax in
@@ -153,8 +148,7 @@ let terms : handler =
   |> Lwt.return_ok
 ;;
 
-let terms_accept : handler =
- fun req ->
+let terms_accept req =
   let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
   let%lwt result =
     let open Lwt_result.Syntax in

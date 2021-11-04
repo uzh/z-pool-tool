@@ -3,13 +3,18 @@ module Message = Http_utils.Message
 let confirmed () =
   let filter handler req =
     let%lwt confirmed_participant =
+      let open Utils.Lwt_result.Infix in
       let open Lwt_result.Syntax in
+      let* pool =
+        Middleware_tenant.tenant_db_of_request req
+        |> Lwt_result.map_err (fun msg -> `TenantNotFound, msg)
+      in
       let* user_id =
-        req
-        |> Sihl.Web.Session.find "user_id"
-        |> CCOpt.map Pool_common.Id.of_string
-        |> CCOpt.to_result (`UserNotFound, "User not found!")
-        |> Lwt_result.lift
+        Service.User.Web.user_from_session
+          ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
+          req
+        |> Lwt.map (CCOpt.to_result (`UserNotFound, "User not found!"))
+        >|= fun user -> Pool_common.Id.of_string user.Sihl_user.id
       in
       let* pool =
         Middleware_tenant.tenant_db_of_request req
