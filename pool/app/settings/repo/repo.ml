@@ -1,12 +1,8 @@
 module RepoEntity = Repo_entity
 module Database = Pool_common.Database
 
-let stringify_key = function
-  | `Languages -> "languages"
-  | `ContactEmail -> "contact_email"
-  | `EmailSuffixes -> "email_suffixes"
-  | `UserSetToInactiveAfter -> "user_set_to_inactive_after"
-  | `UserSendWarningBeforeInactive -> "user_send_warning_before_inactive"
+let stringify_key key =
+  key |> Entity.setting_key_to_yojson |> Yojson.Safe.to_string
 ;;
 
 module Sql = struct
@@ -14,6 +10,7 @@ module Sql = struct
     let select_from =
       {sql|
       SELECT
+         settings_key,
          value,
          created_at,
          updated_at
@@ -49,39 +46,20 @@ module Sql = struct
     Format.asprintf "%s %s" update_fragment where_fragment
   ;;
 
-  let update_request caqti =
-    where_fragment |> update_sql |> Caqti_request.exec caqti
+  let update_request =
+    Caqti_request.exec RepoEntity.Write.t (where_fragment |> update_sql)
   ;;
 
-  let update pool caqti =
-    Utils.Database.exec
-      (Pool_common.Database.Label.value pool)
-      (update_request caqti)
+  let update pool =
+    Utils.Database.exec (Pool_common.Database.Label.value pool) update_request
   ;;
 end
 
-let find_languages pool () =
-  Sql.find pool RepoEntity.TenantLanguages.t `Languages
-;;
-
-let update_languages pool values =
-  Sql.update
-    pool
-    Caqti_type.(tup2 RepoEntity.TenantLanguages.Values.t string)
-    (values, `Languages |> stringify_key)
-;;
+let find_languages pool () = Sql.find pool RepoEntity.t Entity.Languages
 
 let find_email_suffixes pool () =
-  Sql.find pool RepoEntity.TenantEmailSuffixes.t `EmailSuffixes
+  Sql.find pool RepoEntity.t Entity.EmailSuffixes
 ;;
 
-let update_email_suffixes pool values =
-  Sql.update
-    pool
-    Caqti_type.(tup2 RepoEntity.TenantEmailSuffixes.Values.t string)
-    (values, `EmailSuffixes |> stringify_key)
-;;
-
-let find_contact_email pool () =
-  Sql.find pool RepoEntity.TenantContactEmail.t `ContactEmail
-;;
+let find_contact_email pool () = Sql.find pool RepoEntity.t Entity.ContactEmail
+let update pool value = Sql.update pool Entity.Write.{ value }

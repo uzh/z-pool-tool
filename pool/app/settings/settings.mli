@@ -24,6 +24,7 @@ module ContactEmail : sig
 end
 
 module EmailSuffix : sig
+  (* TODO [timhub]: Hide type? *)
   type t = string
 
   val equal : t -> t -> bool
@@ -34,37 +35,16 @@ module EmailSuffix : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-module TenantLanguages : sig
+module Value : sig
   type t
-
-  module Values : sig
-    type t
-  end
-
-  val create : string list -> (Values.t, string) result
-  val values : t -> Language.t list
-  val updated_at : t -> Ptime.t
 end
 
-module TenantEmailSuffixes : sig
-  type t
+type t
 
-  module Values : sig
-    type t
-  end
-
-  val add_suffix : t -> EmailSuffix.t -> Values.t
-  val values : t -> EmailSuffix.t list
-  val updated_at : t -> Ptime.t
-  val create : string list -> (Values.t, string) result
-end
-
-module TenantContactEmail : sig
-  type t
-
-  val value : t -> string
-  val updated_at : t -> Ptime.t
-end
+val updated_at : t -> Ptime.t
+val languages : t -> Language.t list
+val email_suffixes : t -> EmailSuffix.t list
+val contact_email : t -> ContactEmail.t
 
 module TermsAndConditions : sig
   type t
@@ -74,8 +54,8 @@ module TermsAndConditions : sig
 end
 
 type event =
-  | LanguagesUpdated of TenantLanguages.Values.t
-  | EmailSuffixesUpdated of TenantEmailSuffixes.Values.t
+  | LanguagesUpdated of Language.t list
+  | EmailSuffixesUpdated of EmailSuffix.t list
 
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -84,17 +64,17 @@ val pp_event : Format.formatter -> event -> unit
 val find_languages
   :  Pool_common.Database.Label.t
   -> unit
-  -> (TenantLanguages.t, string) Result.result Lwt.t
+  -> (t, string) Result.result Lwt.t
 
 val find_email_suffixes
   :  Pool_common.Database.Label.t
   -> unit
-  -> (TenantEmailSuffixes.t, string) Result.result Lwt.t
+  -> (t, string) Result.result Lwt.t
 
 val find_contact_email
   :  Pool_common.Database.Label.t
   -> unit
-  -> (TenantContactEmail.t, string) Result.result Lwt.t
+  -> (t, string) Result.result Lwt.t
 
 val terms_and_conditions : string Lwt.t
 val last_updated : Entity.t -> Ptime.t

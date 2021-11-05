@@ -24,7 +24,7 @@ let show csrf languages email_suffixes contact_email message () =
                  CCList.mem
                    ~eq:Settings.Language.equal
                    language
-                   (Settings.TenantLanguages.values languages)
+                   (Settings.languages languages)
                with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
@@ -40,11 +40,7 @@ let show csrf languages email_suffixes contact_email message () =
             ; a_method `Post
             ]
           (field_elements @ [ Component.input_element `Submit None "Save" ])
-      ; p
-          [ txt
-              (format_updated_at
-                 (Settings.TenantLanguages.updated_at languages))
-          ]
+      ; p [ txt (format_updated_at (Settings.updated_at languages)) ]
       ]
   in
   let email_suffixes_html =
@@ -62,7 +58,7 @@ let show csrf languages email_suffixes contact_email message () =
                  `Text
                  (Some "email_suffix")
                  (suffix |> Settings.EmailSuffix.value))
-             (Settings.TenantEmailSuffixes.values email_suffixes)
+             (Settings.email_suffixes email_suffixes)
           @ [ Component.input_element `Submit None "Save" ])
       ; form
           ~a:
@@ -74,22 +70,14 @@ let show csrf languages email_suffixes contact_email message () =
           [ Component.input_element `Text (Some "email_suffix") ""
           ; Component.input_element `Submit None "Add new"
           ]
-      ; p
-          [ txt
-              (format_updated_at
-                 (Settings.TenantEmailSuffixes.updated_at email_suffixes))
-          ]
+      ; p [ txt (format_updated_at (Settings.updated_at email_suffixes)) ]
       ]
   in
   let contact_email_html =
     div
       [ h2 [ txt "Contact Email" ]
-      ; p [ txt (Settings.TenantContactEmail.value contact_email) ]
-      ; p
-          [ txt
-              (format_updated_at
-                 (Settings.TenantContactEmail.updated_at contact_email))
-          ]
+      ; p [ txt (Settings.contact_email contact_email) ]
+      ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
       ]
   in
   let html =

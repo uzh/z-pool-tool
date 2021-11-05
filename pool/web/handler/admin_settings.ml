@@ -11,9 +11,9 @@ let show req =
     in
     let csrf = HttpUtils.find_csrf req in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* languages = Settings.find_languages tenant_db () in
-    let* email_suffixes = Settings.find_email_suffixes tenant_db () in
     let* contact_email = Settings.find_contact_email tenant_db () in
+    let* email_suffixes = Settings.find_email_suffixes tenant_db () in
+    let* languages = Settings.find_languages tenant_db () in
     Page.Admin.Settings.show
       csrf
       languages
@@ -58,7 +58,7 @@ let update_settings urlencoded handler req =
             |> Cqrs_command.Settings_command.CreateEmailSuffixes.decode
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Settings_command.CreateEmailSuffixes.handle
-                  email_suffixes
+                  (email_suffixes |> Settings.email_suffixes)
             |> Lwt_result.lift
       in
       urlencoded

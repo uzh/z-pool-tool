@@ -6,16 +6,16 @@ module UpdateLanguages : sig
 end = struct
   type t = (string * string list) list
 
-  let handle languages =
+  let handle command =
     let open CCResult in
     let* languages =
       CCList.filter_map
         (fun (k, v) ->
           match CCList.hd v with
-          | "true" -> Some k
+          | "true" -> Some (Settings.Language.of_string k)
           | _ -> None)
-        languages
-      |> Settings.TenantLanguages.create
+        command
+      |> CCResult.flatten_l
     in
     Ok [ Settings.LanguagesUpdated languages |> Pool_event.settings ]
   ;;
@@ -27,7 +27,7 @@ module CreateEmailSuffixes : sig
   type t = { email_suffix : Settings.EmailSuffix.t }
 
   val handle
-    :  Settings.TenantEmailSuffixes.t
+    :  Settings.EmailSuffix.t list
     -> t
     -> (Pool_event.t list, string) Result.t
 
@@ -46,9 +46,7 @@ end = struct
   ;;
 
   let handle suffixes command =
-    let suffixes =
-      Settings.TenantEmailSuffixes.add_suffix suffixes command.email_suffix
-    in
+    let suffixes = suffixes @ [ command.email_suffix ] in
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
@@ -67,8 +65,10 @@ end = struct
   let handle suffixes =
     let open CCResult in
     let* suffixes =
-      CCList.map (fun (_, v) -> CCList.hd v) suffixes
-      |> Settings.TenantEmailSuffixes.create
+      CCList.map
+        (fun (_, v) -> Settings.EmailSuffix.create (CCList.hd v))
+        suffixes
+      |> CCResult.flatten_l
     in
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;

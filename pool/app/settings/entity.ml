@@ -43,7 +43,7 @@ end
 
 module ContactEmail = struct
   (* TODO [timhub] : Use Common User Email -> Dependency cycle *)
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, yojson]
 
   let value m = m
 
@@ -52,31 +52,6 @@ module ContactEmail = struct
     then Error "invalid email address!"
     else Ok email
   ;;
-end
-
-module TenantLanguages = struct
-  module Values = struct
-    type t = Language.t list [@@deriving eq, show, yojson]
-
-    let to_string m = m |> to_yojson |> Yojson.Safe.to_string
-    let of_string m = m |> Yojson.Safe.from_string |> of_yojson
-    let value m = m
-  end
-
-  let create languages =
-    if CCList.length languages <= 0
-    then Error "Select at least one language"
-    else CCList.map Language.of_string languages |> CCResult.flatten_l
-  ;;
-
-  type t =
-    { values : Values.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
-    }
-
-  let values m = m.values
-  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
 end
 
 module EmailSuffix = struct
@@ -98,42 +73,6 @@ module EmailSuffix = struct
   ;;
 end
 
-module TenantEmailSuffixes = struct
-  module Values = struct
-    type t = EmailSuffix.t list [@@deriving eq, show, yojson]
-
-    let to_string m = m |> to_yojson |> Yojson.Safe.to_string
-    let of_string m = m |> Yojson.Safe.from_string |> of_yojson
-  end
-
-  type t =
-    { values : Values.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
-    }
-
-  let values m = m.values
-  let add_suffix m suffix = CCList.cons' m.values suffix
-  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
-
-  let create suffixes =
-    if CCList.length suffixes <= 0
-    then Error "Provide at least one email suffix."
-    else CCList.map EmailSuffix.create suffixes |> CCResult.flatten_l
-  ;;
-end
-
-module TenantContactEmail = struct
-  type t =
-    { value : ContactEmail.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
-    }
-
-  let value m = m.value |> ContactEmail.value
-  let updated_at m = m.updated_at |> Pool_common.UpdatedAt.value
-end
-
 module InactiveUser = struct
   module DisableAfter = struct
     type t = Ptime.Span.t [@@deriving show]
@@ -144,52 +83,60 @@ module InactiveUser = struct
   end
 end
 
-module TermsAndConditions : sig
-  type t
-
-  val create : string -> t
-  val value : t -> string
-end = struct
+module TermsAndConditions = struct
   type t = string
 
   let create m = m
   let value m = m
 end
 
-module SettingValue = struct
-  type t =
-    | Languages of Language.t list
-    | EmailContact of ContactEmail.t
-    | EmailSuffixes of EmailSuffix.t list
-    | UserSetToInactiveAfter of InactiveUser.DisableAfter.t
-    | UserSendWarningBeforeInactive of InactiveUser.Warning.t
-    | TermsAndConditions of TermsAndConditions.t
+module Value = struct
+  type tenant_languages = Language.t list [@@deriving eq, show, yojson]
+  type tenant_email_suffixes = EmailSuffix.t list [@@deriving eq, show, yojson]
+  type tenant_contact_email = ContactEmail.t [@@deriving eq, show, yojson]
 
-  let value = function
-    | Languages languages ->
-      String.concat ", " (CCList.map Language.code languages)
-    | EmailContact email -> ContactEmail.value email
-    | EmailSuffixes suffixes ->
-      String.concat ", " (CCList.map EmailSuffix.value suffixes)
-    | UserSetToInactiveAfter m -> InactiveUser.DisableAfter.show m
-    | UserSendWarningBeforeInactive m -> InactiveUser.Warning.show m
-    | TermsAndConditions terms -> TermsAndConditions.value terms
-  ;;
+  type t =
+    | TenantLanguages of tenant_languages
+    | TenantEmailSuffixes of tenant_email_suffixes
+    | TenantContactEmail of tenant_contact_email
+  [@@deriving eq, show, yojson]
 end
 
-module Setting = struct
-  type t =
-    { setting : SettingValue.t
-    ; created_at : Ptime.t
-    ; updated_at : Ptime.t
-    }
-end
+type setting_key =
+  | Languages [@name "languages"]
+  | EmailSuffixes [@name "email_suffixes"]
+  | ContactEmail [@name "contact_email"]
+[@@deriving eq, show, yojson]
 
 type t =
-  { setting : SettingValue.t
+  { value : Value.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 
-let value { setting; _ } = SettingValue.value setting
-let terms m = m.setting
+let updated_at s = s.updated_at
+
+let[@warning "-4"] languages setting =
+  let open Value in
+  match setting.value with
+  | TenantLanguages value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+let[@warning "-4"] email_suffixes setting =
+  let open Value in
+  match setting.value with
+  | TenantEmailSuffixes value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+let[@warning "-4"] contact_email setting =
+  let open Value in
+  match setting.value with
+  | TenantContactEmail value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+module Write = struct
+  type t = { value : Value.t }
+end
