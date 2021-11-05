@@ -1,5 +1,6 @@
 # ocamlbuild working directory
 _build/
+public/
 
 # ocamlbuild targets
 *.byte
@@ -28,3 +29,5 @@ _opam/
 .cache
 .bsb.lock
 *.log
+node_modules
+.parcel-cache

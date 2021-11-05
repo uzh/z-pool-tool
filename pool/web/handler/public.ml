@@ -16,6 +16,17 @@ let index req =
   >|> Http_utils.extract_happy_path
 ;;
 
+let email_confirmation_note req =
+  let open Sihl.Web in
+  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  let html =
+    Page.Utils.note
+      "Email confirmation"
+      "Please check your emails and confirm your address first."
+  in
+  message |> html |> Response.of_html |> Lwt.return
+;;
+
 let not_found _ =
   let html = Page.Utils.error_page_not_found () in
   Sihl.Web.Response.of_html html |> Lwt.return

@@ -10,8 +10,7 @@ let find_full id =
   |> Lwt_result.map_err (fun _ -> "No tenant found!")
 ;;
 
-let find_by_participant = Utils.todo
-let find_by_user = Utils.todo
+let find_by_label = Repo.find_by_label Database.root
 let find_all = Repo.find_all Database.root
 let find_databases = Repo.find_databases Database.root
 

@@ -125,7 +125,7 @@ let request_reset_password_post req =
     |> Lwt.map (Option.to_result ~none:message)
   in
   let create_reset_email tenant_db user =
-    Email.PasswordReset.create tenant_db message ~user
+    Common_user.Event.Email.PasswordReset.create tenant_db message ~user
   in
   let send_mail email = email |> Service.Email.send |> Lwt_result.ok in
   let show_info =

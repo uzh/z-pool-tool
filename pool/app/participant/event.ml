@@ -33,10 +33,25 @@ let set_password
   >|= ignore
 ;;
 
+let has_terms_accepted (participant : t) : bool Lwt.t =
+  let%lwt last_updated =
+    Lwt.map Settings.last_updated Settings.terms_and_conditions
+  in
+  let terms_accepted_at =
+    participant.terms_accepted_at |> User.TermsAccepted.value
+  in
+  CCOpt.map (Ptime.is_earlier ~than:last_updated) terms_accepted_at
+  |> CCOpt.get_or ~default:false
+  |> Lwt.return
+;;
+
 type event =
   | Created of create
   | DetailsUpdated of t * update
   | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
+  | EmailUnconfirmed of t
+  | EmailConfirmed of t
+  | AcceptTerms of t
   | Disabled of t
   | Verified of t
 
@@ -61,7 +76,16 @@ let handle_event pool : event -> unit Lwt.t = function
     }
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
-  | DetailsUpdated (params, person) -> Repo.update person params
+  | DetailsUpdated (participant, update) ->
+    let%lwt _ =
+      Service.User.update
+        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~given_name:(update.firstname |> User.Firstname.value)
+        ~name:(update.lastname |> User.Lastname.value)
+        participant.user
+    in
+    let%lwt _ = Repo.update pool { participant with paused = update.paused } in
+    Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
     let%lwt _ =
       set_password
@@ -69,6 +93,27 @@ let handle_event pool : event -> unit Lwt.t = function
         person
         (password |> User.Password.to_sihl)
         (confirmed |> User.PasswordConfirmed.to_sihl)
+    in
+    Lwt.return_unit
+  | EmailUnconfirmed participant ->
+    let%lwt _ =
+      Service.User.update
+        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        Sihl_user.{ participant.user with confirmed = false }
+    in
+    Lwt.return_unit
+  | EmailConfirmed participant ->
+    let%lwt _ =
+      Service.User.update
+        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        Sihl_user.{ participant.user with confirmed = true }
+    in
+    Lwt.return_unit
+  | AcceptTerms participant ->
+    let%lwt _ =
+      Repo.update
+        pool
+        { participant with terms_accepted_at = User.TermsAccepted.create_now }
     in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
@@ -82,6 +127,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
     equal p1 p2 && User.Password.equal one two
+  | AcceptTerms p1, AcceptTerms p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -91,11 +137,15 @@ let pp_event formatter (event : event) : unit =
   let person_pp = pp formatter in
   match event with
   | Created m -> pp_create formatter m
-  | DetailsUpdated (p1, updated) ->
-    person_pp p1;
+  | DetailsUpdated (p, updated) ->
+    person_pp p;
     pp_update formatter updated
   | PasswordUpdated (person, password, _) ->
     person_pp person;
     User.Password.pp formatter password
-  | Disabled p1 | Verified p1 -> person_pp p1
+  | EmailUnconfirmed p
+  | EmailConfirmed p
+  | AcceptTerms p
+  | Disabled p
+  | Verified p -> person_pp p
 ;;

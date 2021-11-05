@@ -182,6 +182,20 @@ module Sql = struct
     Utils.Database.find pool find_full_request (id |> Id.value)
   ;;
 
+  let find_by_label_request =
+    select_from_tenants_sql
+      {sql| WHERE pool_tenant.database_label = ? |sql}
+      false
+    |> Caqti_request.find Caqti_type.string RepoEntity.t
+  ;;
+
+  let find_by_label pool label =
+    Utils.Database.find
+      pool
+      find_by_label_request
+      (label |> Pool_common.Database.Label.value)
+  ;;
+
   let find_all_request =
     select_from_tenants_sql "" false
     |> Caqti_request.collect Caqti_type.unit RepoEntity.t
@@ -298,6 +312,13 @@ let find pool id =
   let open Lwt_result.Syntax in
   let* tenant = Sql.find (Label.value pool) id in
   let* logos = LogoMappingRepo.find_by_tenant id in
+  set_logos tenant logos |> Lwt.return_ok
+;;
+
+let find_by_label pool label =
+  let open Lwt_result.Syntax in
+  let* tenant = Sql.find_by_label (Label.value pool) label in
+  let* logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
 

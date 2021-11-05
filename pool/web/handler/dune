@@ -4,11 +4,11 @@
   sihl
   service
   cqrs_command
+  middleware
   http_utils
   page
   pool_common
   participant
-  email
-  middleware)
+  email)
  (preprocess
   (pps lwt_ppx)))

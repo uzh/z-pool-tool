@@ -6,6 +6,7 @@
   service
   permission
   role
+  settings
   common_user
   pool_common
   utils

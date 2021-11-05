@@ -10,7 +10,9 @@
   participant
   admin
   root
+  email
   common_user
+  pool_common
   tenant
   experiment
   conformist)

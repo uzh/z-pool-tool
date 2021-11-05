@@ -1,6 +1,4 @@
-module Label = Pool_common.Database.Label
-module Sql = Repo_sql
-
-let find = Sql.find
+let find = Repo_sql.find
+let find_by_email = Repo_sql.find_by_email
 let insert = Repo_sql.insert
-let update _ = Utils.todo
+let update = Repo_sql.update
