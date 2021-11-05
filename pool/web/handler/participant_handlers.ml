@@ -71,10 +71,13 @@ let sign_up_create req =
          @@ CCOpt.to_result "Please provide a valid and unused email address."
       >>= HttpUtils.validate_email_existance tenant_db
     in
-    (* TODO add Settings when ready *)
-    (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db
-       in *)
-    let allowed_email_suffixes = None in
+    let* allowed_email_suffixes =
+      let open Lwt_result.Infix in
+      Settings.find_email_suffixes tenant_db ()
+      >|= Settings.email_suffixes
+      |> Lwt_result.map (fun suffixes ->
+             if CCList.length suffixes > 0 then Some suffixes else None)
+    in
     let* events =
       let open CCResult.Infix in
       Command.SignUp.decode urlencoded

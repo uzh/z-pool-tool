@@ -4,7 +4,7 @@ let sign_up_not_allowed_suffix () =
   let events =
     let open CCResult in
     let* allowed_email_suffixes =
-      [ "@gmail.com" ]
+      [ "gmail.com" ]
       |> CCList.map (fun suffix -> Settings.EmailSuffix.create suffix)
       |> CCResult.flatten_l
     in
@@ -31,7 +31,7 @@ let sign_up () =
   let events =
     let open CCResult in
     let* allowed_email_suffixes =
-      [ "@gmail.com" ]
+      [ "gmail.com" ]
       |> CCList.map (fun suffix -> Settings.EmailSuffix.create suffix)
       |> CCResult.flatten_l
     in
