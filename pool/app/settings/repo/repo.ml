@@ -62,4 +62,13 @@ let find_email_suffixes pool () =
 ;;
 
 let find_contact_email pool () = Sql.find pool RepoEntity.t Entity.ContactEmail
+
+let find_inactive_user_disable_after pool () =
+  Sql.find pool RepoEntity.t Entity.InactiveUserDisableAfter
+;;
+
+let find_inactive_user_warning pool () =
+  Sql.find pool RepoEntity.t Entity.InactiveUserWarning
+;;
+
 let update pool value = Sql.update pool Entity.Write.{ value }

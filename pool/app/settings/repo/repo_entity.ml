@@ -1,23 +1,30 @@
 open Entity
 
+let encode_key_value =
+  let open Value in
+  function
+  | TenantLanguages value ->
+    ( setting_key_to_yojson Languages |> Yojson.Safe.to_string
+    , value |> Value.tenant_languages_to_yojson |> Yojson.Safe.to_string )
+  | TenantEmailSuffixes value ->
+    ( setting_key_to_yojson EmailSuffixes |> Yojson.Safe.to_string
+    , value |> Value.tenant_email_suffixes_to_yojson |> Yojson.Safe.to_string )
+  | TenantContactEmail value ->
+    ( setting_key_to_yojson ContactEmail |> Yojson.Safe.to_string
+    , value |> Value.tenant_contact_email_to_yojson |> Yojson.Safe.to_string )
+  | InactiveUserDisableAfter value ->
+    ( setting_key_to_yojson InactiveUserDisableAfter |> Yojson.Safe.to_string
+    , value
+      |> Value.inactive_user_disable_after_to_yojson
+      |> Yojson.Safe.to_string )
+  | InactiveUserWarning value ->
+    ( setting_key_to_yojson InactiveUserWarning |> Yojson.Safe.to_string
+    , value |> Value.inactive_user_warning_to_yojson |> Yojson.Safe.to_string )
+;;
+
 let t =
   let encode m =
-    let key, value =
-      let open Value in
-      match m.value with
-      | TenantLanguages value ->
-        ( setting_key_to_yojson Languages |> Yojson.Safe.to_string
-        , value |> Value.tenant_languages_to_yojson |> Yojson.Safe.to_string )
-      | TenantEmailSuffixes value ->
-        ( setting_key_to_yojson EmailSuffixes |> Yojson.Safe.to_string
-        , value
-          |> Value.tenant_email_suffixes_to_yojson
-          |> Yojson.Safe.to_string )
-      | TenantContactEmail value ->
-        ( setting_key_to_yojson ContactEmail |> Yojson.Safe.to_string
-        , value |> Value.tenant_contact_email_to_yojson |> Yojson.Safe.to_string
-        )
-    in
+    let key, value = encode_key_value m.value in
     Ok (key, value, m.created_at, m.updated_at)
   in
   let decode (key, value, created_at, updated_at) =
@@ -38,6 +45,14 @@ let t =
         value
         |> Value.tenant_contact_email_of_yojson
         |> CCResult.map (fun v -> Value.TenantContactEmail v)
+      | InactiveUserDisableAfter ->
+        value
+        |> Value.inactive_user_disable_after_of_yojson
+        |> CCResult.map (fun v -> Value.InactiveUserDisableAfter v)
+      | InactiveUserWarning ->
+        value
+        |> Value.inactive_user_warning_of_yojson
+        |> CCResult.map (fun v -> Value.InactiveUserWarning v)
     in
     Ok { value; created_at; updated_at }
   in
@@ -57,23 +72,7 @@ module Write = struct
 
   let t =
     let encode m =
-      let key, value =
-        let open Value in
-        match m.Write.value with
-        | TenantLanguages value ->
-          ( setting_key_to_yojson Languages |> Yojson.Safe.to_string
-          , value |> Value.tenant_languages_to_yojson |> Yojson.Safe.to_string )
-        | TenantEmailSuffixes value ->
-          ( setting_key_to_yojson EmailSuffixes |> Yojson.Safe.to_string
-          , value
-            |> Value.tenant_email_suffixes_to_yojson
-            |> Yojson.Safe.to_string )
-        | TenantContactEmail value ->
-          ( setting_key_to_yojson ContactEmail |> Yojson.Safe.to_string
-          , value
-            |> Value.tenant_contact_email_to_yojson
-            |> Yojson.Safe.to_string )
-      in
+      let key, value = encode_key_value m.Write.value in
       Ok (value, key)
     in
     let decode _ = failwith "Write only model" in

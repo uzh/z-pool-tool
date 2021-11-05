@@ -73,6 +73,12 @@ module Admin = struct
     ; post
         "/settings/contact-email"
         Handler.Admin.Settings.update_tenant_contact_email
+    ; post
+        "/settings/inactive_user_disable_after"
+        Handler.Admin.Settings.update_inactive_user_disable_after
+    ; post
+        "/settings/inactive_user_warning"
+        Handler.Admin.Settings.update_inactive_user_warning
     ]
   ;;
 end

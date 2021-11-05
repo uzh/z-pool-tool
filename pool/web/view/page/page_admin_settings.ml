@@ -6,7 +6,16 @@ let format_updated_at value =
     (value |> Pool_common.UpdatedAt.value |> Utils.Time.ptime_to_date_human)
 ;;
 
-let show csrf languages email_suffixes contact_email message () =
+let show
+    csrf
+    languages
+    email_suffixes
+    contact_email
+    inactive_user_disable_after
+    inactive_user_warning
+    message
+    ()
+  =
   let languages_html =
     let available_languages = Settings.Language.all () in
     let field_elements =
@@ -91,12 +100,59 @@ let show csrf languages email_suffixes contact_email message () =
       ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
       ]
   in
+  let inactive_user_html =
+    let open Settings.InactiveUser in
+    div
+      [ h2 [ txt "Inactive Users" ]
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   "/admin/settings/inactive_user_disable_after")
+            ; a_method `Post
+            ]
+          [ p [ txt "Disable user after (weeks)" ]
+          ; Component.input_element
+              `Number
+              (Some "inactive_user_disable_after")
+              (Settings.inactive_user_disable_after inactive_user_disable_after
+              |> DisableAfter.value
+              |> CCInt.to_string)
+          ; Component.input_element `Submit None "Update"
+          ]
+      ; p
+          [ txt
+              (format_updated_at
+                 (Settings.updated_at inactive_user_disable_after))
+          ]
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   "/admin/settings/inactive_user_warning")
+            ; a_method `Post
+            ]
+          [ p [ txt "Send warning before disabling (days)" ]
+          ; Component.input_element
+              `Number
+              (Some "inactive_user_warning")
+              (Settings.inactive_user_warning inactive_user_warning
+              |> Warning.value
+              |> CCInt.to_string)
+          ; Component.input_element `Submit None "Update"
+          ]
+      ; p
+          [ txt (format_updated_at (Settings.updated_at inactive_user_warning))
+          ]
+      ]
+  in
   let html =
     div
       [ h1 [ txt "Settings" ]
       ; languages_html
       ; email_suffixes_html
       ; contact_email_html
+      ; inactive_user_html
       ]
   in
   Page_layout.create html message ()

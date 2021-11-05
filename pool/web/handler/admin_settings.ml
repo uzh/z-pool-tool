@@ -11,14 +11,22 @@ let show req =
     in
     let csrf = HttpUtils.find_csrf req in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* contact_email = Settings.find_contact_email tenant_db () in
-    let* email_suffixes = Settings.find_email_suffixes tenant_db () in
     let* languages = Settings.find_languages tenant_db () in
+    let* email_suffixes = Settings.find_email_suffixes tenant_db () in
+    let* contact_email = Settings.find_contact_email tenant_db () in
+    let* inactive_user_disable_after =
+      Settings.find_inactive_user_disable_after tenant_db ()
+    in
+    let* inactive_user_warning =
+      Settings.find_inactive_user_warning tenant_db ()
+    in
     Page.Admin.Settings.show
       csrf
       languages
       email_suffixes
       contact_email
+      inactive_user_disable_after
+      inactive_user_warning
       message
       ()
     |> Sihl.Web.Response.of_html
@@ -68,6 +76,22 @@ let update_settings urlencoded handler req =
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Settings_command.UpdateContactEmail.handle
             |> Lwt_result.lift
+        | `UpdateInactiveUserDisableAfter ->
+          fun urlencoded ->
+            let open CCResult.Infix in
+            urlencoded
+            |> Cqrs_command.Settings_command.InactiveUser.DisableAfter.decode
+            |> CCResult.map_err Utils.handle_conformist_error
+            >>= Cqrs_command.Settings_command.InactiveUser.DisableAfter.handle
+            |> Lwt_result.lift
+        | `UpdateInactiveUserWarning ->
+          fun urlencoded ->
+            let open CCResult.Infix in
+            urlencoded
+            |> Cqrs_command.Settings_command.InactiveUser.Warning.decode
+            |> CCResult.map_err Utils.handle_conformist_error
+            >>= Cqrs_command.Settings_command.InactiveUser.Warning.handle
+            |> Lwt_result.lift
       in
       urlencoded
       |> command_handler handler
@@ -106,4 +130,14 @@ let create_tenant_email_suffix req =
 let update_tenant_contact_email req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   update_settings urlencoded `UpdateTenantContactEmail req
+;;
+
+let update_inactive_user_disable_after req =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  update_settings urlencoded `UpdateInactiveUserDisableAfter req
+;;
+
+let update_inactive_user_warning req =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  update_settings urlencoded `UpdateInactiveUserWarning req
 ;;

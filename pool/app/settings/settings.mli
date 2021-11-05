@@ -25,7 +25,6 @@ module ContactEmail : sig
 end
 
 module EmailSuffix : sig
-  (* TODO [timhub]: Hide type? *)
   type t = string
 
   val equal : t -> t -> bool
@@ -34,6 +33,30 @@ module EmailSuffix : sig
   val value : t -> string
   val create : t -> (t, t) result
   val schema : unit -> ('a, t) Conformist.Field.t
+end
+
+module InactiveUser : sig
+  module DisableAfter : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val value : t -> int
+    val to_timespan : t -> Ptime.span
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
+
+  module Warning : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val value : t -> int
+    val to_timespan : t -> Ptime.span
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Value : sig
@@ -46,6 +69,8 @@ val updated_at : t -> Ptime.t
 val languages : t -> Language.t list
 val email_suffixes : t -> EmailSuffix.t list
 val contact_email : t -> ContactEmail.t
+val inactive_user_disable_after : t -> InactiveUser.DisableAfter.t
+val inactive_user_warning : t -> InactiveUser.Warning.t
 
 module TermsAndConditions : sig
   type t
@@ -58,6 +83,8 @@ type event =
   | LanguagesUpdated of Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
   | ContactEmailUpdated of ContactEmail.t
+  | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
+  | InactiveUserWarningUpdated of InactiveUser.Warning.t
 
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -74,6 +101,16 @@ val find_email_suffixes
   -> (t, string) Result.result Lwt.t
 
 val find_contact_email
+  :  Pool_common.Database.Label.t
+  -> unit
+  -> (t, string) Result.result Lwt.t
+
+val find_inactive_user_disable_after
+  :  Pool_common.Database.Label.t
+  -> unit
+  -> (t, string) Result.result Lwt.t
+
+val find_inactive_user_warning
   :  Pool_common.Database.Label.t
   -> unit
   -> (t, string) Result.result Lwt.t

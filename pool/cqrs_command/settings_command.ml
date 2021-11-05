@@ -105,3 +105,70 @@ end = struct
   let can = Utils.todo
   let decode data = Conformist.decode_and_validate schema data
 end
+
+module InactiveUser = struct
+  module DisableAfter : sig
+    type t =
+      { inactive_user_disable_after : Settings.InactiveUser.DisableAfter.t }
+
+    val handle : t -> (Pool_event.t list, string) Result.t
+
+    val decode
+      :  (string * string list) list
+      -> (t, Conformist.error list) Result.t
+
+    val can : Sihl_user.t -> t -> bool Lwt.t
+  end = struct
+    type t =
+      { inactive_user_disable_after : Settings.InactiveUser.DisableAfter.t }
+
+    let command inactive_user_disable_after = { inactive_user_disable_after }
+
+    let schema =
+      Conformist.(
+        make Field.[ Settings.InactiveUser.DisableAfter.schema () ] command)
+    ;;
+
+    let handle command =
+      Ok
+        [ Settings.InactiveUserDisableAfterUpdated
+            command.inactive_user_disable_after
+          |> Pool_event.settings
+        ]
+    ;;
+
+    let can = Utils.todo
+    let decode data = Conformist.decode_and_validate schema data
+  end
+
+  module Warning : sig
+    type t = { inactive_user_warning : Settings.InactiveUser.Warning.t }
+
+    val handle : t -> (Pool_event.t list, string) Result.t
+
+    val decode
+      :  (string * string list) list
+      -> (t, Conformist.error list) Result.t
+
+    val can : Sihl_user.t -> t -> bool Lwt.t
+  end = struct
+    type t = { inactive_user_warning : Settings.InactiveUser.Warning.t }
+
+    let command inactive_user_warning = { inactive_user_warning }
+
+    let schema =
+      Conformist.(
+        make Field.[ Settings.InactiveUser.Warning.schema () ] command)
+    ;;
+
+    let handle command =
+      Ok
+        [ Settings.InactiveUserWarningUpdated command.inactive_user_warning
+          |> Pool_event.settings
+        ]
+    ;;
+
+    let can = Utils.todo
+    let decode data = Conformist.decode_and_validate schema data
+  end
+end

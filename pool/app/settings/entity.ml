@@ -1,9 +1,13 @@
 module Day = struct
-  type t = int
+  type t = int [@@deriving eq, show, yojson]
+
+  let to_timespan t = t * 24 * 60 * 60 |> Ptime.Span.of_int_s
 end
 
 module Week = struct
-  type t = int
+  type t = int [@@deriving eq, show, yojson]
+
+  let to_timespan t = t * 7 * 24 * 60 * 60 |> Ptime.Span.of_int_s
 end
 
 module Language = struct
@@ -56,7 +60,7 @@ module ContactEmail = struct
   let schema () =
     Conformist.custom
       (Utils.schema_decoder create "contact email")
-      (fun l -> [ value l ])
+      CCList.pure
       "contact_email"
   ;;
 end
@@ -74,7 +78,7 @@ module EmailSuffix = struct
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "email_suffix")
+      (Utils.schema_decoder create "email suffix")
       CCList.pure
       "email_suffix"
   ;;
@@ -82,11 +86,49 @@ end
 
 module InactiveUser = struct
   module DisableAfter = struct
-    type t = Ptime.Span.t [@@deriving show]
+    type t = Week.t [@@deriving eq, show, yojson]
+
+    let create week =
+      let open CCResult.Infix in
+      week
+      |> CCInt.of_string
+      |> CCOpt.to_result "Invalid time span provided"
+      >>= fun week ->
+      if week < 0 then Error "Time span must be positive" else Ok week
+    ;;
+
+    let value m = m
+    let to_timespan = Week.to_timespan
+
+    let schema () =
+      Conformist.custom
+        (Utils.schema_decoder create "disable inactive user after")
+        (fun l -> l |> CCInt.to_string |> CCList.pure)
+        "inactive_user_disable_after"
+    ;;
   end
 
   module Warning = struct
-    type t = Ptime.Span.t [@@deriving show]
+    type t = Day.t [@@deriving eq, show, yojson]
+
+    let create day =
+      let open CCResult.Infix in
+      day
+      |> CCInt.of_string
+      |> CCOpt.to_result "Invalid time span provided"
+      >>= fun day ->
+      if day < 0 then Error "Time span must be positive" else Ok day
+    ;;
+
+    let value m = m
+    let to_timespan = Day.to_timespan
+
+    let schema () =
+      Conformist.custom
+        (Utils.schema_decoder create "disable inactive user warning")
+        (fun l -> l |> CCInt.to_string |> CCList.pure)
+        "inactive_user_warning"
+    ;;
   end
 end
 
@@ -102,10 +144,18 @@ module Value = struct
   type tenant_email_suffixes = EmailSuffix.t list [@@deriving eq, show, yojson]
   type tenant_contact_email = ContactEmail.t [@@deriving eq, show, yojson]
 
+  type inactive_user_disable_after = InactiveUser.DisableAfter.t
+  [@@deriving eq, show, yojson]
+
+  type inactive_user_warning = InactiveUser.DisableAfter.t
+  [@@deriving eq, show, yojson]
+
   type t =
     | TenantLanguages of tenant_languages
     | TenantEmailSuffixes of tenant_email_suffixes
     | TenantContactEmail of tenant_contact_email
+    | InactiveUserDisableAfter of inactive_user_disable_after
+    | InactiveUserWarning of inactive_user_warning
   [@@deriving eq, show, yojson]
 end
 
@@ -113,6 +163,8 @@ type setting_key =
   | Languages [@name "languages"]
   | EmailSuffixes [@name "email_suffixes"]
   | ContactEmail [@name "contact_email"]
+  | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
+  | InactiveUserWarning [@name "inactive_user_warning"]
 [@@deriving eq, show, yojson]
 
 type t =
@@ -141,6 +193,20 @@ let[@warning "-4"] contact_email setting =
   let open Value in
   match setting.value with
   | TenantContactEmail value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+let[@warning "-4"] inactive_user_disable_after setting =
+  let open Value in
+  match setting.value with
+  | InactiveUserDisableAfter value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+let[@warning "-4"] inactive_user_warning setting =
+  let open Value in
+  match setting.value with
+  | InactiveUserWarning value -> value
   | _ -> failwith "Invalid setting provided!"
 ;;
 
