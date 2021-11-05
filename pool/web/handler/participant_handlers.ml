@@ -63,6 +63,13 @@ let sign_up_create req =
       | false -> Lwt.return_error "Terms and conditions not accepted"
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* () =
+      let open Utils.Lwt_result.Infix in
+      Sihl.Web.Request.urlencoded "email" req
+      |> Lwt.map
+         @@ CCOpt.to_result "Please provide a valid and unused email address."
+      >>= HttpUtils.validate_email_existance tenant_db
+    in
     (* TODO add Settings when ready *)
     (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db
        in *)
@@ -78,7 +85,7 @@ let sign_up_create req =
       Utils.Database.with_transaction tenant_db (fun () ->
           let%lwt () = Pool_event.handle_events tenant_db events in
           HttpUtils.redirect_to_with_actions
-            "/participant/dashboard"
+            "/participant/email-confirmation"
             [ Message.set
                 ~success:
                   [ "Successfully created. An email has been sent to your \
