@@ -14,7 +14,7 @@ module Language : sig
 end
 
 module ContactEmail : sig
-  type t = string
+  type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -31,7 +31,7 @@ module EmailSuffix : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> t
   val value : t -> string
-  val create : t -> (t, t) result
+  val create : string -> (t, string) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 

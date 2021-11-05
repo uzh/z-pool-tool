@@ -94,7 +94,8 @@ let show
           [ Component.input_element
               `Text
               (Some "contact_email")
-              (Settings.contact_email contact_email)
+              (Settings.contact_email contact_email
+              |> Settings.ContactEmail.value)
           ; Component.input_element `Submit None "Add new"
           ]
       ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
