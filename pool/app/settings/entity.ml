@@ -52,6 +52,13 @@ module ContactEmail = struct
     then Error "invalid email address!"
     else Ok email
   ;;
+
+  let schema () =
+    Conformist.custom
+      (Utils.schema_decoder create "contact email")
+      (fun l -> [ value l ])
+      "contact_email"
+  ;;
 end
 
 module EmailSuffix = struct

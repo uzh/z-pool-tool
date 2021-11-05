@@ -60,6 +60,14 @@ let update_settings urlencoded handler req =
             >>= Cqrs_command.Settings_command.CreateEmailSuffixes.handle
                   (email_suffixes |> Settings.email_suffixes)
             |> Lwt_result.lift
+        | `UpdateTenantContactEmail ->
+          fun urlencoded ->
+            let open CCResult.Infix in
+            urlencoded
+            |> Cqrs_command.Settings_command.UpdateContactEmail.decode
+            |> CCResult.map_err Utils.handle_conformist_error
+            >>= Cqrs_command.Settings_command.UpdateContactEmail.handle
+            |> Lwt_result.lift
       in
       urlencoded
       |> command_handler handler
@@ -93,4 +101,9 @@ let update_tenant_email_suffixes req =
 let create_tenant_email_suffix req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   update_settings urlencoded `CreateTenantEmailSuffix req
+;;
+
+let update_tenant_contact_email req =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  update_settings urlencoded `UpdateTenantContactEmail req
 ;;

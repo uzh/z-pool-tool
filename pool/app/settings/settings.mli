@@ -21,6 +21,7 @@ module ContactEmail : sig
   val show : t -> t
   val value : t -> string
   val create : t -> (t, t) result
+  val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module EmailSuffix : sig
@@ -56,6 +57,7 @@ end
 type event =
   | LanguagesUpdated of Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
+  | ContactEmailUpdated of ContactEmail.t
 
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

@@ -76,7 +76,18 @@ let show csrf languages email_suffixes contact_email message () =
   let contact_email_html =
     div
       [ h2 [ txt "Contact Email" ]
-      ; p [ txt (Settings.contact_email contact_email) ]
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path "/admin/settings/contact-email")
+            ; a_method `Post
+            ]
+          [ Component.input_element
+              `Text
+              (Some "contact_email")
+              (Settings.contact_email contact_email)
+          ; Component.input_element `Submit None "Add new"
+          ]
       ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
       ]
   in
