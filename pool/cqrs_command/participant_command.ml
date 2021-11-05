@@ -14,11 +14,9 @@ module SignUp : sig
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> t
-    -> (Pool_event.t list, string) Result.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
 
-  val decode
-    :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+  val decode : (string * string list) list -> (t, Pool_common.Error.t) Result.t
 end = struct
   type t =
     { email : User.Email.Address.t
@@ -69,7 +67,10 @@ end = struct
       ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Error.conformist
+  ;;
 end
 
 module UpdateDetails : sig
@@ -84,7 +85,7 @@ module UpdateDetails : sig
     :  Participant.t
     -> email:User.Email.Address.t
     -> password:User.Password.t
-    -> (Pool_event.t list, string) Result.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
 
   val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
@@ -121,7 +122,11 @@ module UpdatePassword : sig
     ; new_password : User.Password.t
     }
 
-  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
+
   val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -155,7 +160,11 @@ module UpdateEmail : sig
     ; email : User.Email.Address.t
     }
 
-  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
+
   val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -183,7 +192,9 @@ end = struct
 end
 
 module AcceptTermsAndConditions : sig
-  val handle : Participant.t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  Participant.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
 end = struct
   let handle participant =
     Ok [ Participant.AcceptTerms participant |> Pool_event.participant ]
@@ -193,7 +204,10 @@ end
 module ConfirmEmail : sig
   type t = { email : Common_user.Email.unverified Common_user.Email.t }
 
-  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Error.t) Result.t
 end = struct
   module Email = Common_user.Email
 

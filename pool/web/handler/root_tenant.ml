@@ -5,27 +5,20 @@ module File = HttpUtils.File
 module Update = Root_tenant_update
 
 let tenants req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = "/" in
-  let show () =
-    let open Lwt_result.Syntax in
-    let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
-    in
-    let csrf = HttpUtils.find_csrf req in
-    let* tenant_list = Tenant.find_all () in
-    let* root_list = Root.find_all () in
-    Page.Root.Tenant.list csrf tenant_list root_list message ()
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+  let message =
+    Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
   in
-  show ()
-  |> Lwt_result.map_err (fun err -> err, error_path)
-  >|> HttpUtils.extract_happy_path
+  let csrf = HttpUtils.find_csrf req in
+  let%lwt tenant_list = Tenant.find_all () in
+  let%lwt root_list = Root.find_all () in
+  Page.Root.Tenant.list csrf tenant_list root_list message ()
+  |> Sihl.Web.Response.of_html
+  |> Lwt.return
 ;;
 
 let create req =
   let open Utils.Lwt_result.Infix in
+  let open Cqrs_command.Tenant_command.Create in
   let error_path = "/root/tenants" in
   let events () =
     let open CCResult.Infix in
@@ -50,9 +43,8 @@ let create req =
     in
     files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded
-    |> Cqrs_command.Tenant_command.Create.decode
-    |> CCResult.map_err Utils.handle_conformist_error
-    >>= Cqrs_command.Tenant_command.Create.handle
+    |> decode
+    >>= handle
     |> Lwt_result.lift
     |> Lwt_result.map_err (fun err ->
            let _ = destroy_files files in
@@ -75,26 +67,21 @@ let create req =
 
 let create_operator req =
   let open Utils.Lwt_result.Infix in
+  let open Cqrs_command.Admin_command.CreateOperator in
   let id = Sihl.Web.Router.param req "id" in
   let error_path = Format.asprintf "/root/tenants/%s" id in
   let user () =
     let open Lwt_result.Syntax in
-    let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    email_address
-    |> CCOpt.to_result "Please provide operator email address."
-    |> Lwt_result.lift
+    Sihl.Web.Request.urlencoded "email" req
+    |> Lwt.map (CCOpt.to_result Pool_common.Error.EmailAddressMissingOperator)
     >>= HttpUtils.validate_email_existance tenant_db
   in
   let find_tenant () = Tenant.find_full (id |> Common.Id.of_string) in
   let events tenant =
     let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    urlencoded
-    |> Cqrs_command.Admin_command.CreateOperator.decode
-    |> CCResult.map_err Utils.handle_conformist_error
-    >>= CCFun.flip Cqrs_command.Admin_command.CreateOperator.handle tenant
-    |> Lwt_result.lift
+    urlencoded |> decode >>= handle tenant |> Lwt_result.lift
   in
   let handle events =
     let open Lwt_result.Syntax in

@@ -6,7 +6,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -15,7 +15,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -24,7 +24,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -32,7 +32,7 @@ module SmtpAuth : sig
     type t
 
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -41,7 +41,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -50,7 +50,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Error.t) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -79,7 +79,7 @@ module SmtpAuth : sig
       -> Password.t
       -> AuthenticationMethod.t
       -> Protocol.t
-      -> (t, string) result
+      -> (t, Pool_common.Error.t) result
   end
 end
 
@@ -88,7 +88,7 @@ module Title : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Error.t) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -97,7 +97,7 @@ module Description : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Error.t) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -106,7 +106,7 @@ module Url : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Error.t) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -177,7 +177,7 @@ module LogoMapping : sig
       | PartnerLogo
       | TenantLogo
 
-    val of_string : string -> (t, string) result
+    val of_string : string -> (t, Pool_common.Error.t) result
     val to_string : t -> string
     val all : unit -> string list
   end
@@ -286,14 +286,15 @@ type event =
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find : Pool_common.Id.t -> (t, string) result Lwt.t
-val find_full : Pool_common.Id.t -> (Write.t, string) result Lwt.t
-val find_by_label : Pool_common.Database.Label.t -> (t, string) result Lwt.t
-val find_all : unit -> (t list, string) Result.t Lwt.t
+val find : Pool_common.Id.t -> (t, Pool_common.Error.t) result Lwt.t
+val find_full : Pool_common.Id.t -> (Write.t, Pool_common.Error.t) result Lwt.t
 
-val find_databases
-  :  unit
-  -> (Pool_common.Database.t list, string) Result.result Lwt.t
+val find_by_label
+  :  Pool_common.Database.Label.t
+  -> (t, Pool_common.Error.t) result Lwt.t
+
+val find_all : unit -> t list Lwt.t
+val find_databases : unit -> Pool_common.Database.t list Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
@@ -305,7 +306,7 @@ module Selection : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : Url.t -> Pool_common.Database.Label.t -> t
-  val find_all : unit -> (t list, string) result Lwt.t
+  val find_all : unit -> t list Lwt.t
   val url : t -> string
   val label : t -> Pool_common.Database.Label.t
 end

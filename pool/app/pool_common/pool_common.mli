@@ -1,3 +1,5 @@
+module Error = Pool_common_error
+
 module Id : sig
   type t
 
@@ -14,7 +16,7 @@ module Database : sig
     type t
 
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Error.t) Result.t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -24,7 +26,7 @@ module Database : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val value : t -> string
-    val create : string -> (t, string) result
+    val create : string -> (t, Error.t) Result.t
     val of_string : string -> t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
@@ -37,7 +39,7 @@ module Database : sig
   val root : Label.t
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val create : string -> string -> (t, string) result
+  val create : string -> string -> (t, Error.t) Result.t
   val add_pool : t -> unit
   val read_pool : t -> Label.t
 end
@@ -88,9 +90,9 @@ module File : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_string : string -> (t, string) result
+    val of_string : string -> (t, Error.t) Result.t
     val to_string : t -> string
-    val of_filename : string -> (t, string) result
+    val of_filename : string -> (t, Error.t) Result.t
   end
 
   type t
@@ -145,4 +147,12 @@ module Repo : sig
 
     val t : t Caqti_type.t
   end
+end
+
+module Utils : sig
+  val schema_decoder
+    :  ('a -> ('weak776, Error.t) result)
+    -> Error.field
+    -> 'a list
+    -> ('weak776, string) result
 end

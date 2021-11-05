@@ -6,11 +6,9 @@ let create req =
   let error_path = Format.asprintf "/root/tenants/" in
   let user () =
     let open Lwt_result.Syntax in
-    let%lwt email_address = Sihl.Web.Request.urlencoded "email" req in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    email_address
-    |> CCOpt.to_result "Please provide root email address."
-    |> Lwt_result.lift
+    Sihl.Web.Request.urlencoded "email" req
+    |> Lwt.map (CCOpt.to_result Pool_common.Error.EmailAddressMissingRoot)
     >>= HttpUtils.validate_email_existance tenant_db
   in
   let events () =
@@ -18,7 +16,6 @@ let create req =
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     urlencoded
     |> Cqrs_command.Root_command.Create.decode
-    |> CCResult.map_err Utils.handle_conformist_error
     >>= Cqrs_command.Root_command.Create.handle
     |> Lwt_result.lift
   in

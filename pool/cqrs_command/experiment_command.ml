@@ -66,7 +66,7 @@ end
 module DestroyExperiment : sig
   type t = { experiment_id : Id.t }
 
-  val handle : t -> (Pool_event.t list, string) result
+  val handle : t -> (Pool_event.t list, Pool_common.Error.t) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { experiment_id : Id.t }

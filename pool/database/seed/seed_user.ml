@@ -113,21 +113,18 @@ let participants db_pool () =
         let%lwt user =
           Service.User.create_user ~ctx ~name ~given_name ~password email
         in
-        let%lwt result =
-          Participant.
-            { user
-            ; recruitment_channel
-            ; terms_accepted_at =
-                Common_user.TermsAccepted.create terms_accepted_at
-            ; paused = Common_user.Paused.create paused
-            ; disabled = Common_user.Disabled.create disabled
-            ; verified = Common_user.Verified.create verified
-            ; created_at = Ptime_clock.now ()
-            ; updated_at = Ptime_clock.now ()
-            }
-          |> Participant.insert db_pool
-        in
-        result |> CCResult.get_or_failwith |> Lwt.return
+        Participant.
+          { user
+          ; recruitment_channel
+          ; terms_accepted_at =
+              Common_user.TermsAccepted.create terms_accepted_at
+          ; paused = Common_user.Paused.create paused
+          ; disabled = Common_user.Disabled.create disabled
+          ; verified = Common_user.Verified.create verified
+          ; created_at = Ptime_clock.now ()
+          ; updated_at = Ptime_clock.now ()
+          }
+        |> Participant.insert db_pool
       | Some _ ->
         Logs.debug (fun m -> m "%s" "Participant already exists");
         Lwt.return_unit)

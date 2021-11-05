@@ -13,39 +13,39 @@ end
 let raise_caqti_error =
   let open Caqti_error in
   function
-  | Error `Unsupported -> failwith "Caqti error unsupported"
+  | Error `Unsupported ->
+    Logs.err (fun m -> m "Caqti error unsupported");
+    failwith "Caqti error unsupported"
   | (Error #t | Ok _) as x ->
     (match x with
     | Ok res -> res
-    | Error err -> failwith (show err))
+    | Error err ->
+      Logs.err (fun m -> m "%s" @@ show err);
+      failwith (show err))
 ;;
 
 let find db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find request input
-      |> Lwt_result.map_err (fun err -> Caqti_error.show err))
+      Connection.find request input |> Lwt.map raise_caqti_error)
 ;;
 
 let find_opt db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find_opt request input
-      |> Lwt_result.map_err (fun err -> Caqti_error.show err))
+      Connection.find_opt request input |> Lwt.map raise_caqti_error)
 ;;
 
 let collect db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.collect_list request input
-      |> Lwt_result.map_err (fun err -> Caqti_error.show err))
+      Connection.collect_list request input |> Lwt.map raise_caqti_error)
 ;;
 
 let exec db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.exec request input
-      |> Lwt_result.map_err (fun err -> Caqti_error.show err))
+      Connection.exec request input |> Lwt.map raise_caqti_error)
 ;;
 
 let set_fk_check_request =
@@ -78,20 +78,20 @@ let table_names_request =
 ;;
 
 let clean_requests db_pool () =
-  let open Lwt_result.Infix in
-  ()
-  |> collect db_pool table_names_request
-  >|= List.map (fun table ->
-          Logs.debug (fun m ->
-              m "Truncate table '%s' from pool '%s'" table db_pool);
-          Caqti_request.exec
-            Caqti_type.unit
-            (Format.asprintf "TRUNCATE TABLE %s" table))
+  let open Lwt.Infix in
+  let truncate_table table =
+    Logs.debug (fun m -> m "Truncate table '%s' from pool '%s'" table db_pool);
+    Caqti_request.exec
+      Caqti_type.unit
+      (Format.asprintf "TRUNCATE TABLE %s" table)
+  in
+  () |> collect db_pool table_names_request >|= List.map truncate_table
 ;;
 
 let clean_all db_pool () =
-  Lwt_result.bind_lwt (clean_requests db_pool ())
-  @@ fun clean_requests ->
+  let open Lwt.Infix in
+  clean_requests db_pool ()
+  >>= fun clean_requests ->
   with_disabled_fk_check db_pool (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.iter_s

@@ -60,14 +60,15 @@ let sign_up_create req =
       |> CCString.equal "true"
       |> function
       | true -> Lwt.return_ok ()
-      | false -> Lwt.return_error "Terms and conditions not accepted"
+      | false ->
+        Lwt.return_error Pool_common.Error.TermsAndConditionsNotAccepted
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let* () =
       let open Utils.Lwt_result.Infix in
       Sihl.Web.Request.urlencoded "email" req
       |> Lwt.map
-         @@ CCOpt.to_result "Please provide a valid and unused email address."
+         @@ CCOpt.to_result Pool_common.Error.ParticipantSignupInvalidEmail
       >>= HttpUtils.validate_email_existance tenant_db
     in
     (* TODO add Settings when ready *)
@@ -77,7 +78,6 @@ let sign_up_create req =
     let* events =
       let open CCResult.Infix in
       Command.SignUp.decode urlencoded
-      |> CCResult.map_err Utils.handle_conformist_error
       >>= Command.SignUp.handle ?allowed_email_suffixes
       |> Lwt_result.lift
     in
@@ -100,7 +100,7 @@ let sign_up_create req =
          ( msg
          , "/participant/signup"
          , [ HttpUtils.urlencoded_to_flash urlencoded
-           ; Message.set ~error:[ msg ]
+           ; Message.set ~error:[ Pool_common.Error.message msg ]
            ] ))
   |> HttpUtils.extract_happy_path_with_actions
 ;;
@@ -111,14 +111,14 @@ let email_verification req =
   let* token =
     Sihl.Web.Request.query "token" req
     |> CCOpt.map Email.Token.create
-    |> CCOpt.to_result "No activation token found!"
+    |> CCOpt.to_result Pool_common.Error.(NotFound Token)
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let ctx = [ "pool", Pool_common.Database.Label.value tenant_db ] in
   let* email =
     Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
-    |> Lwt.map (CCOpt.to_result "Invalid token format!")
+    |> Lwt.map (CCOpt.to_result Pool_common.Error.TokenInvalidFormat)
     |> CCFun.flip Lwt_result.bind_result Email.Address.create
     >>= Email.find_unverified tenant_db
   in
@@ -145,9 +145,8 @@ let terms req =
   let csrf = HttpUtils.find_csrf req in
   let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
   let* user =
-    Lwt.map
-      (CCOpt.to_result ("User could not be found", "/login"))
-      (General.user_from_session req)
+    General.user_from_session req
+    |> Lwt.map (CCOpt.to_result Pool_common.Error.(NotFound User, "/login"))
   in
   let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
   Page.Participant.terms csrf message user.Sihl_user.id terms ()

@@ -11,25 +11,12 @@ module Lwt_result = struct
   module Infix = struct
     include Infix
 
+    let ( >== ) = Lwt_result.bind_result
     let ( >> ) m k = m >>= fun _ -> k
     let ( |>> ) = Lwt_result.bind_lwt
     let ( >|> ) = Lwt.bind
   end
 end
-
-let handle_conformist_error (err : Conformist.error list) =
-  String.concat
-    "\n"
-    (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
-;;
-
-let schema_decoder create_fcn msg l =
-  let open CCResult in
-  l
-  |> CCList.head_opt
-  |> CCOpt.to_result (Format.asprintf "Undefined %s" msg)
-  >>= create_fcn
-;;
 
 module Url = struct
   let create_public_url path =

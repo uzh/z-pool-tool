@@ -9,7 +9,9 @@ module Password = struct
 
   let validate ?(password_policy = default_password_policy) password =
     let open CCResult in
-    let* () = password_policy password in
+    let* () =
+      password_policy password |> map_err Pool_common.Error.passwordpolicy
+    in
     Ok ()
   ;;
 
@@ -23,7 +25,7 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "password")
+      Pool_common.(Utils.schema_decoder create Error.Password)
       CCList.pure
       "password"
   ;;
@@ -45,14 +47,16 @@ module Firstname = struct
   type t = string [@@deriving eq, show]
 
   let create m =
-    if String.length m <= 0 then Error "Invalid firstname" else Ok m
+    if String.length m <= 0
+    then Error Pool_common.Error.(Invalid Firstname)
+    else Ok m
   ;;
 
   let value m = m
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "firstname")
+      Pool_common.(Utils.schema_decoder create Error.Firstname)
       CCList.pure
       "firstname"
   ;;
@@ -61,12 +65,17 @@ end
 module Lastname = struct
   type t = string [@@deriving eq, show]
 
-  let create m = if String.length m <= 0 then Error "Invalid lastname" else Ok m
+  let create m =
+    if String.length m <= 0
+    then Error Pool_common.Error.(Invalid Lastname)
+    else Ok m
+  ;;
+
   let value m = m
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "lastname")
+      Pool_common.(Utils.schema_decoder create Error.Lastname)
       CCList.pure
       "lastname"
   ;;

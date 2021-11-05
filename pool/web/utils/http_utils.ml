@@ -21,13 +21,15 @@ let extract_happy_path_generic result msgf =
 
 let extract_happy_path result =
   extract_happy_path_generic result (fun err ->
-      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
+      let error_msg = Pool_common.Error.message err in
+      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_msg ])
 ;;
 
 let extract_happy_path_with_actions result =
   result
   |> Result.map Lwt.return
-  |> CCResult.get_lazy (fun (error_msg, error_path, error_actions) ->
+  |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
+         let error_msg = Pool_common.Error.message error_key in
          redirect_to_with_actions
            error_path
            (List.append
@@ -58,7 +60,7 @@ let urlencoded_to_params urlencoded keys =
 let request_to_params req keys () =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   urlencoded_to_params urlencoded keys
-  |> CCOpt.to_result "Please provide necessary fields"
+  |> CCOpt.to_result Pool_common.Error.RequestRequiredFields
   |> Lwt_result.lift
 ;;
 
@@ -81,7 +83,7 @@ let validate_email_existance pool email =
   in
   match user with
   | None -> Lwt.return_ok ()
-  | Some _ -> Lwt.return_error "Email address is already in use."
+  | Some _ -> Lwt.return_error Pool_common.Error.EmailAlreadyInUse
 ;;
 
 let format_request_boolean_values values urlencoded =

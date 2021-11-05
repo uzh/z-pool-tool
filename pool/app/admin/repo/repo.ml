@@ -93,11 +93,13 @@ module Sql = struct
   ;;
 
   let find pool role id =
+    let open Lwt.Infix in
     let caqti_type, role_val = extract role in
-    Utils.Database.find
+    Utils.Database.find_opt
       (Pool_common.Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
+    >|= CCOpt.to_result Pool_common.Error.(NotFound Admin)
   ;;
 
   let find_role_by_user_request =
@@ -112,12 +114,13 @@ module Sql = struct
   ;;
 
   let find_role_by_user pool user =
-    let open Lwt_result.Infix in
-    Utils.Database.find
+    let open Lwt.Infix in
+    Utils.Database.find_opt
       (pool |> Pool_common.Database.Label.value)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    >|= Utils.Stringify.person_from_string
+    >|= CCOpt.map Utils.Stringify.person_from_string
+    >|= CCOpt.to_result Pool_common.Error.(NotFound Admin)
   ;;
 
   let insert_sql =

@@ -1,6 +1,14 @@
 (library
  (name common_user)
- (libraries sihl service utils settings conformist containers ptime)
+ (libraries
+  sihl
+  service
+  pool_common
+  utils
+  settings
+  conformist
+  containers
+  ptime)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq ppx_variants_conv)))
 

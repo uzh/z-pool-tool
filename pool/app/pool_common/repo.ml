@@ -17,18 +17,23 @@ module Database = struct
     include Label
 
     let t =
-      let encode m = Ok m in
-      Caqti_type.(custom ~encode ~decode:create string)
+      let open CCResult in
+      Caqti_type.(
+        custom
+          ~encode:pure
+          ~decode:(fun m -> map_err (fun _ -> "decode label") @@ create m)
+          string)
     ;;
   end
 
   let t =
+    let open CCResult in
     let encode m = Ok (m.url, m.label) in
     let decode (url, label) =
-      let open CCResult in
-      let* url = Url.create url in
-      let* label = Label.create label in
-      Ok { url; label }
+      map_err (fun _ -> "decode database")
+      @@ let* url = Url.create url in
+         let* label = Label.create label in
+         Ok { url; label }
     in
     Caqti_type.(custom ~encode ~decode (tup2 Url.t Label.t))
   ;;
@@ -65,10 +70,12 @@ module File = struct
     include Mime
 
     let t =
+      let open CCResult in
       Caqti_type.(
         custom
-          ~encode:(fun m -> m |> to_string |> Result.ok)
-          ~decode:of_string
+          ~encode:(fun m -> m |> to_string |> pure)
+          ~decode:(fun m ->
+            map_err (fun _ -> "decode mime type") @@ of_string m)
           string)
     ;;
   end

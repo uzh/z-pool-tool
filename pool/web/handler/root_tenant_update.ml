@@ -32,13 +32,11 @@ let update req command success_message =
     let events_list urlencoded =
       match command with
       | `EditDetail ->
-        Cqrs_command.Tenant_command.EditDetails.decode urlencoded
-        |> CCResult.map_err Utils.handle_conformist_error
-        >>= Cqrs_command.Tenant_command.EditDetails.handle tenant
+        Cqrs_command.Tenant_command.EditDetails.(
+          decode urlencoded >>= handle tenant)
       | `EditDatabase ->
-        Cqrs_command.Tenant_command.EditDatabase.decode urlencoded
-        |> CCResult.map_err Utils.handle_conformist_error
-        >>= CCFun.flip Cqrs_command.Tenant_command.EditDatabase.handle tenant
+        Cqrs_command.Tenant_command.EditDatabase.(
+          decode urlencoded >>= handle tenant)
     in
     logo_files @ multipart_encoded
     |> File.multipart_form_data_to_urlencoded

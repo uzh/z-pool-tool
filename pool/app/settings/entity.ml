@@ -20,20 +20,24 @@ module Language = struct
   let of_string = function
     | "EN" -> Ok En
     | "DE" -> Ok De
-    | _ -> Error "Invalid Language privided"
+    | _ -> Error Pool_common.Error.(Invalid Language)
   ;;
 
   let t =
+    let open CCResult in
     (* TODO: Belongs to Repo (search for all caqti types in entities) *)
     Caqti_type.(
-      custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
+      custom
+        ~encode:(fun m -> m |> code |> pure)
+        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
+        string)
   ;;
 
   let label country_code = country_code |> code |> Utils.Countries.find
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder of_string "default language")
+      Pool_common.(Utils.schema_decoder of_string Error.Language)
       (fun l -> [ code l ])
       "default_language"
   ;;

@@ -90,7 +90,7 @@ val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
 
-val insert : Pool_common.Database.Label.t -> 'a t -> (unit, string) result Lwt.t
+val insert : Pool_common.Database.Label.t -> 'a t -> unit Lwt.t
 val find_by_user : 'a -> 'b
 val user_is_admin : Pool_common.Database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

@@ -1,3 +1,7 @@
+module PoolError = Pool_common_error
+
+let schema_decoder = Pool_common_utils.schema_decoder
+
 module Id = struct
   type t = string [@@deriving eq, show]
 
@@ -11,12 +15,14 @@ module Database = struct
     type t = string [@@deriving eq]
 
     let create url =
-      if String.length url <= 0 then Error "Invalid database url!" else Ok url
+      if String.length url <= 0
+      then Error PoolError.(Invalid DatabaseUrl)
+      else Ok url
     ;;
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "database url")
+        (schema_decoder create PoolError.DatabaseUrl)
         CCList.pure
         "database_url"
     ;;
@@ -30,13 +36,13 @@ module Database = struct
 
     let create label =
       if String.length label <= 0 || String.contains label ' '
-      then Error "Invalid database label!"
+      then Error PoolError.(Invalid DatabaseLabel)
       else Ok label
     ;;
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "database label")
+        (schema_decoder create PoolError.DatabaseLabel)
         CCList.pure
         "database_label"
     ;;
@@ -110,7 +116,7 @@ module File = struct
       | "image/png" -> Ok Png
       | "image/svg+xml" -> Ok Svg
       | "image/webp" -> Ok Webp
-      | _ -> Error "Invalid mime type provided"
+      | _ -> Error PoolError.(Invalid FileMimeType)
     ;;
 
     let to_string = function
@@ -132,7 +138,7 @@ module File = struct
       | ".png" -> Ok Png
       | ".svg" -> Ok Svg
       | ".webp" -> Ok Webp
-      | _ -> Error "Invalid mime type provided"
+      | _ -> Error PoolError.(Invalid FileMimeType)
     ;;
   end
 

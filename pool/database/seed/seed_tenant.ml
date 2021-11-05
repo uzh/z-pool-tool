@@ -150,8 +150,8 @@ let create () =
           ; "firstname", [ firstname ]
           ; "lastname", [ lastname ]
           ])
-      |> CCResult.map_err Utils.handle_conformist_error
       >>= Cqrs_command.Tenant_command.Create.handle
+      |> CCResult.map_err Pool_common.Error.message
       |> CCResult.get_or_failwith
       |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
     data

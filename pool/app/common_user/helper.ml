@@ -26,7 +26,7 @@ module Email = struct
   ;;
 
   module PasswordReset = struct
-    let create pool msg ~user =
+    let create pool ~user =
       let email = user.Sihl_user.email in
       let%lwt reset_token =
         Service.PasswordReset.create_reset_token
@@ -34,7 +34,7 @@ module Email = struct
           ~email
       in
       match reset_token with
-      | None -> Lwt.return_error msg
+      | None -> Lwt.return_error Pool_common.Error.PasswordResetMessage
       | Some token ->
         let subject = "Password reset" in
         let reset_url =
