@@ -25,7 +25,7 @@ module ContactEmail : sig
 end
 
 module EmailSuffix : sig
-  type t = string
+  type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
