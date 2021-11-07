@@ -144,10 +144,9 @@ let show
                    "/admin/settings/terms_and_conditions")
             ; a_method `Post
             ]
-          [ Component.input_element
-              `Text
-              (Some "terms_and_conditions")
-              (terms_and_conditions |> Settings.TermsAndConditions.value)
+          [ textarea
+              ~a:[ a_name "terms_and_conditions" ]
+              (txt (terms_and_conditions |> Settings.TermsAndConditions.value))
           ; Component.input_element `Submit None "Update"
           ]
       ]
