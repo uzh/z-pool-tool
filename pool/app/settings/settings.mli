@@ -59,6 +59,17 @@ module InactiveUser : sig
   end
 end
 
+module TermsAndConditions : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> t
+  val create : string -> (t, string) result
+  val value : t -> string
+  val schema : unit -> ('a, t) Conformist.Field.t
+end
+
 module Value : sig
   type t
 end
@@ -71,13 +82,7 @@ val email_suffixes : t -> EmailSuffix.t list
 val contact_email : t -> ContactEmail.t
 val inactive_user_disable_after : t -> InactiveUser.DisableAfter.t
 val inactive_user_warning : t -> InactiveUser.Warning.t
-
-module TermsAndConditions : sig
-  type t
-
-  val create : string -> t
-  val value : t -> string
-end
+val terms_and_conditions : t -> TermsAndConditions.t
 
 type event =
   | LanguagesUpdated of Language.t list
@@ -85,6 +90,7 @@ type event =
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
+  | TermsAndConditionsUpdated of TermsAndConditions.t
 
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -115,5 +121,11 @@ val find_inactive_user_warning
   -> unit
   -> (t, string) Result.result Lwt.t
 
-val terms_and_conditions : string Lwt.t
-val last_updated : Entity.t -> Ptime.t
+val find_terms_and_conditions
+  :  Pool_common.Database.Label.t
+  -> unit
+  -> (t, string) Result.result Lwt.t
+
+val terms_and_conditions_last_updated
+  :  Pool_common.Database.Label.t
+  -> (Ptime.t, string) Lwt_result.t

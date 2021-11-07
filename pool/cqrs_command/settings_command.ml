@@ -172,3 +172,33 @@ module InactiveUser = struct
     let decode data = Conformist.decode_and_validate schema data
   end
 end
+
+module UpdateTermsAndConditions : sig
+  type t = { terms_and_conditions : Settings.TermsAndConditions.t }
+
+  val handle : t -> (Pool_event.t list, string) Result.t
+
+  val decode
+    :  (string * string list) list
+    -> (t, Conformist.error list) Result.t
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = { terms_and_conditions : Settings.TermsAndConditions.t }
+
+  let command terms_and_conditions = { terms_and_conditions }
+
+  let schema =
+    Conformist.(make Field.[ Settings.TermsAndConditions.schema () ] command)
+  ;;
+
+  let handle command =
+    Ok
+      [ Settings.TermsAndConditionsUpdated command.terms_and_conditions
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let can = Utils.todo
+  let decode data = Conformist.decode_and_validate schema data
+end

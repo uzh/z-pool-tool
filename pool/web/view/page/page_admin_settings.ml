@@ -13,6 +13,7 @@ let show
     contact_email
     inactive_user_disable_after
     inactive_user_warning
+    terms_and_conditions
     message
     ()
   =
@@ -147,6 +148,26 @@ let show
           ]
       ]
   in
+  let terms_and_conditions_html =
+    div
+      [ h2 [ txt "Terms and conditions" ]
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   "/admin/settings/terms_and_conditions")
+            ; a_method `Post
+            ]
+          [ Component.input_element
+              `Text
+              (Some "terms_and_conditions")
+              (Settings.terms_and_conditions terms_and_conditions
+              |> Settings.TermsAndConditions.value)
+          ; Component.input_element `Submit None "Update"
+          ]
+      ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
+      ]
+  in
   let html =
     div
       [ h1 [ txt "Settings" ]
@@ -154,6 +175,7 @@ let show
       ; email_suffixes_html
       ; contact_email_html
       ; inactive_user_html
+      ; terms_and_conditions_html
       ]
   in
   Page_layout.create html message ()

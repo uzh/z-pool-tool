@@ -19,7 +19,8 @@ let terms_accepted () =
         Participant.find pool user_id
         |> Lwt_result.map_err (fun msg -> `ParticipantNotFound, msg)
       in
-      Participant.has_terms_accepted participant |> Lwt_result.ok
+      Participant.has_terms_accepted participant pool
+      |> Lwt_result.map_err (fun msg -> `TermsNotFound, msg)
     in
     match has_accepted with
     | Ok true -> handler req

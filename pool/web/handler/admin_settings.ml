@@ -20,6 +20,9 @@ let show req =
     let* inactive_user_warning =
       Settings.find_inactive_user_warning tenant_db ()
     in
+    let* terms_and_conditions =
+      Settings.find_terms_and_conditions tenant_db ()
+    in
     Page.Admin.Settings.show
       csrf
       languages
@@ -27,6 +30,7 @@ let show req =
       contact_email
       inactive_user_disable_after
       inactive_user_warning
+      terms_and_conditions
       message
       ()
     |> Sihl.Web.Response.of_html
@@ -92,6 +96,14 @@ let update_settings urlencoded handler req =
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Settings_command.InactiveUser.Warning.handle
             |> Lwt_result.lift
+        | `UpdateTermsAndConditions ->
+          fun urlencoded ->
+            let open CCResult.Infix in
+            urlencoded
+            |> Cqrs_command.Settings_command.UpdateTermsAndConditions.decode
+            |> CCResult.map_err Utils.handle_conformist_error
+            >>= Cqrs_command.Settings_command.UpdateTermsAndConditions.handle
+            |> Lwt_result.lift
       in
       urlencoded
       |> command_handler handler
@@ -140,4 +152,9 @@ let update_inactive_user_disable_after req =
 let update_inactive_user_warning req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   update_settings urlencoded `UpdateInactiveUserWarning req
+;;
+
+let update_terms_and_conditions req =
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  update_settings urlencoded `UpdateTermsAndConditions req
 ;;

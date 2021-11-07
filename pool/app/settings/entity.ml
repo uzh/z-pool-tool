@@ -133,10 +133,22 @@ module InactiveUser = struct
 end
 
 module TermsAndConditions = struct
-  type t = string
+  type t = string [@@deriving eq, show, yojson]
 
-  let create m = m
+  let create terms =
+    if CCString.length terms > 0
+    then Ok terms
+    else Error "Invalid terms provided"
+  ;;
+
   let value m = m
+
+  let schema () =
+    Conformist.custom
+      (Utils.schema_decoder create "terms and conditions")
+      CCList.pure
+      "terms_and_conditions"
+  ;;
 end
 
 module Value = struct
@@ -150,12 +162,15 @@ module Value = struct
   type inactive_user_warning = InactiveUser.DisableAfter.t
   [@@deriving eq, show, yojson]
 
+  type terms_and_conditions = TermsAndConditions.t [@@deriving eq, show, yojson]
+
   type t =
     | TenantLanguages of tenant_languages
     | TenantEmailSuffixes of tenant_email_suffixes
     | TenantContactEmail of tenant_contact_email
     | InactiveUserDisableAfter of inactive_user_disable_after
     | InactiveUserWarning of inactive_user_warning
+    | TermsAndConditions of terms_and_conditions
   [@@deriving eq, show, yojson]
 end
 
@@ -165,6 +180,7 @@ type setting_key =
   | ContactEmail [@name "contact_email"]
   | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
+  | TermsAndConditions [@name "terms_and_conditions"]
 [@@deriving eq, show, yojson]
 
 type t =
@@ -207,6 +223,13 @@ let[@warning "-4"] inactive_user_warning setting =
   let open Value in
   match setting.value with
   | InactiveUserWarning value -> value
+  | _ -> failwith "Invalid setting provided!"
+;;
+
+let[@warning "-4"] terms_and_conditions setting =
+  let open Value in
+  match setting.value with
+  | TermsAndConditions value -> value
   | _ -> failwith "Invalid setting provided!"
 ;;
 

@@ -20,6 +20,9 @@ let encode_key_value =
   | InactiveUserWarning value ->
     ( setting_key_to_yojson InactiveUserWarning |> Yojson.Safe.to_string
     , value |> Value.inactive_user_warning_to_yojson |> Yojson.Safe.to_string )
+  | TermsAndConditions value ->
+    ( setting_key_to_yojson TermsAndConditions |> Yojson.Safe.to_string
+    , value |> Value.terms_and_conditions_to_yojson |> Yojson.Safe.to_string )
 ;;
 
 let t =
@@ -53,6 +56,10 @@ let t =
         value
         |> Value.inactive_user_warning_of_yojson
         |> CCResult.map (fun v -> Value.InactiveUserWarning v)
+      | TermsAndConditions ->
+        value
+        |> Value.terms_and_conditions_of_yojson
+        |> CCResult.map (fun v -> Value.TermsAndConditions v)
     in
     Ok { value; created_at; updated_at }
   in

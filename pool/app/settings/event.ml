@@ -6,6 +6,7 @@ type event =
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
+  | TermsAndConditionsUpdated of TermsAndConditions.t
 
 let handle_event pool : event -> unit Lwt.t = function
   | LanguagesUpdated languages ->
@@ -29,6 +30,11 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.update pool (Value.InactiveUserWarning inactive_user_warning)
     in
     Lwt.return_unit
+  | TermsAndConditionsUpdated terms_and_conditions ->
+    let%lwt _ =
+      Repo.update pool (Value.TermsAndConditions terms_and_conditions)
+    in
+    Lwt.return_unit
 ;;
 
 let[@warning "-4"] equal_event event1 event2 =
@@ -43,6 +49,8 @@ let[@warning "-4"] equal_event event1 event2 =
     Value.equal_inactive_user_disable_after one two
   | InactiveUserWarningUpdated one, InactiveUserWarningUpdated two ->
     Value.equal_inactive_user_warning one two
+  | TermsAndConditionsUpdated one, TermsAndConditionsUpdated two ->
+    Value.equal_terms_and_conditions one two
   | _ -> false
 ;;
 
@@ -54,4 +62,5 @@ let pp_event formatter event =
   | InactiveUserDisableAfterUpdated m ->
     Value.pp_inactive_user_disable_after formatter m
   | InactiveUserWarningUpdated m -> Value.pp_inactive_user_warning formatter m
+  | TermsAndConditionsUpdated m -> Value.pp_terms_and_conditions formatter m
 ;;

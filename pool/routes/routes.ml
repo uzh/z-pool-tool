@@ -79,6 +79,9 @@ module Admin = struct
     ; post
         "/settings/inactive_user_warning"
         Handler.Admin.Settings.update_inactive_user_warning
+    ; post
+        "/settings/terms_and_conditions"
+        Handler.Admin.Settings.update_terms_and_conditions
     ]
   ;;
 end
