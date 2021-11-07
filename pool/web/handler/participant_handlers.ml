@@ -84,9 +84,8 @@ let sign_up_create req =
     let* allowed_email_suffixes =
       let open Lwt_result.Infix in
       Settings.find_email_suffixes tenant_db ()
-      >|= Settings.email_suffixes
-      |> Lwt_result.map (fun suffixes ->
-             if CCList.length suffixes > 0 then Some suffixes else None)
+      >|= fun suffixes ->
+      if CCList.length suffixes > 0 then Some suffixes else None
     in
     let* events =
       let open CCResult.Infix in

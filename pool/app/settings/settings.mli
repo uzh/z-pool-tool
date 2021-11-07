@@ -76,14 +76,6 @@ end
 
 type t
 
-val updated_at : t -> Ptime.t
-val languages : t -> Language.t list
-val email_suffixes : t -> EmailSuffix.t list
-val contact_email : t -> ContactEmail.t
-val inactive_user_disable_after : t -> InactiveUser.DisableAfter.t
-val inactive_user_warning : t -> InactiveUser.Warning.t
-val terms_and_conditions : t -> TermsAndConditions.t
-
 type event =
   | LanguagesUpdated of Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
@@ -99,32 +91,32 @@ val pp_event : Format.formatter -> event -> unit
 val find_languages
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (Language.t list, string) Result.result Lwt.t
 
 val find_email_suffixes
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (EmailSuffix.t list, string) Result.result Lwt.t
 
 val find_contact_email
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (ContactEmail.t, string) Result.result Lwt.t
 
 val find_inactive_user_disable_after
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (InactiveUser.DisableAfter.t, string) Result.result Lwt.t
 
 val find_inactive_user_warning
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (InactiveUser.Warning.t, string) Result.result Lwt.t
 
 val find_terms_and_conditions
   :  Pool_common.Database.Label.t
   -> unit
-  -> (t, string) Result.result Lwt.t
+  -> (TermsAndConditions.t, string) Result.result Lwt.t
 
 val terms_and_conditions_last_updated
   :  Pool_common.Database.Label.t

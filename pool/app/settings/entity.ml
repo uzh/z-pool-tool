@@ -189,50 +189,6 @@ type t =
   ; updated_at : Ptime.t
   }
 
-let updated_at s = s.updated_at
-
-let[@warning "-4"] languages setting =
-  let open Value in
-  match setting.value with
-  | TenantLanguages value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
-let[@warning "-4"] email_suffixes setting =
-  let open Value in
-  match setting.value with
-  | TenantEmailSuffixes value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
-let[@warning "-4"] contact_email setting =
-  let open Value in
-  match setting.value with
-  | TenantContactEmail value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
-let[@warning "-4"] inactive_user_disable_after setting =
-  let open Value in
-  match setting.value with
-  | InactiveUserDisableAfter value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
-let[@warning "-4"] inactive_user_warning setting =
-  let open Value in
-  match setting.value with
-  | InactiveUserWarning value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
-let[@warning "-4"] terms_and_conditions setting =
-  let open Value in
-  match setting.value with
-  | TermsAndConditions value -> value
-  | _ -> failwith "Invalid setting provided!"
-;;
-
 module Write = struct
   type t = { value : Value.t }
 end

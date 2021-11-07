@@ -70,7 +70,7 @@ let update_settings urlencoded handler req =
             |> Cqrs_command.Settings_command.CreateEmailSuffixes.decode
             |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Settings_command.CreateEmailSuffixes.handle
-                  (email_suffixes |> Settings.email_suffixes)
+                  email_suffixes
             |> Lwt_result.lift
         | `UpdateTenantContactEmail ->
           fun urlencoded ->

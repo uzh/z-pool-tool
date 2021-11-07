@@ -8,7 +8,7 @@ let format_updated_at value =
 
 let show
     csrf
-    languages
+    tenant_languages
     email_suffixes
     contact_email
     inactive_user_disable_after
@@ -34,7 +34,7 @@ let show
                  CCList.mem
                    ~eq:Settings.Language.equal
                    language
-                   (Settings.languages languages)
+                   tenant_languages
                with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
@@ -50,7 +50,6 @@ let show
             ; a_method `Post
             ]
           (field_elements @ [ Component.input_element `Submit None "Save" ])
-      ; p [ txt (format_updated_at (Settings.updated_at languages)) ]
       ]
   in
   let email_suffixes_html =
@@ -68,7 +67,7 @@ let show
                  `Text
                  (Some "email_suffix")
                  (suffix |> Settings.EmailSuffix.value))
-             (Settings.email_suffixes email_suffixes)
+             email_suffixes
           @ [ Component.input_element `Submit None "Save" ])
       ; form
           ~a:
@@ -80,7 +79,6 @@ let show
           [ Component.input_element `Text (Some "email_suffix") ""
           ; Component.input_element `Submit None "Add new"
           ]
-      ; p [ txt (format_updated_at (Settings.updated_at email_suffixes)) ]
       ]
   in
   let contact_email_html =
@@ -95,11 +93,9 @@ let show
           [ Component.input_element
               `Text
               (Some "contact_email")
-              (Settings.contact_email contact_email
-              |> Settings.ContactEmail.value)
+              (contact_email |> Settings.ContactEmail.value)
           ; Component.input_element `Submit None "Add new"
           ]
-      ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
       ]
   in
   let inactive_user_html =
@@ -117,15 +113,10 @@ let show
           ; Component.input_element
               `Number
               (Some "inactive_user_disable_after")
-              (Settings.inactive_user_disable_after inactive_user_disable_after
+              (inactive_user_disable_after
               |> DisableAfter.value
               |> CCInt.to_string)
           ; Component.input_element `Submit None "Update"
-          ]
-      ; p
-          [ txt
-              (format_updated_at
-                 (Settings.updated_at inactive_user_disable_after))
           ]
       ; form
           ~a:
@@ -138,13 +129,8 @@ let show
           ; Component.input_element
               `Number
               (Some "inactive_user_warning")
-              (Settings.inactive_user_warning inactive_user_warning
-              |> Warning.value
-              |> CCInt.to_string)
+              (inactive_user_warning |> Warning.value |> CCInt.to_string)
           ; Component.input_element `Submit None "Update"
-          ]
-      ; p
-          [ txt (format_updated_at (Settings.updated_at inactive_user_warning))
           ]
       ]
   in
@@ -161,11 +147,9 @@ let show
           [ Component.input_element
               `Text
               (Some "terms_and_conditions")
-              (Settings.terms_and_conditions terms_and_conditions
-              |> Settings.TermsAndConditions.value)
+              (terms_and_conditions |> Settings.TermsAndConditions.value)
           ; Component.input_element `Submit None "Update"
           ]
-      ; p [ txt (format_updated_at (Settings.updated_at contact_email)) ]
       ]
   in
   let html =
