@@ -1,29 +1,17 @@
 module Message = Http_utils.Message
 module Login = Public_login
-module Database = Pool_common.Database
+module Common = Pool_common
 
 let index req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = "/" in
-  let show () =
-    let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
-    in
-    Page.Public.index message () |> Sihl.Web.Response.of_html |> Lwt.return_ok
-  in
-  show ()
-  |> Lwt_result.map_err (fun err -> err, error_path)
-  >|> Http_utils.extract_happy_path
+  let open Sihl.Web in
+  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  Page.Public.index message () |> Response.of_html |> Lwt.return
 ;;
 
 let email_confirmation_note req =
   let open Sihl.Web in
   let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
-  let html =
-    Page.Utils.note
-      "Email confirmation"
-      "Please check your emails and confirm your address first."
-  in
+  let html = Common.Error.I18n.EmailConfirmation.(Page.Utils.note title note) in
   message |> html |> Response.of_html |> Lwt.return
 ;;
 
@@ -37,7 +25,7 @@ let asset req =
   let asset_id = Sihl.Web.Router.param req "id" in
   let%lwt file =
     Service.Storage.find
-      ~ctx:[ "pool", Database.root |> Pool_common.Database.Label.value ]
+      ~ctx:Common.(Utils.pool_to_ctx Database.root)
       ~id:asset_id
   in
   let%lwt content = Service.Storage.download_data_base64 file in

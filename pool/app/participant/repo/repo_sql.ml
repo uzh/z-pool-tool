@@ -45,10 +45,10 @@ let find_request =
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
-let find db_pool id : (Entity.t, Pool_common.Error.t) Result.t Lwt.t =
+let find pool id : (Entity.t, Pool_common.Error.t) Result.t Lwt.t =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value db_pool)
+    (Pool_common.Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
   >|= CCOpt.to_result Pool_common.Error.(NotFound Participant)
@@ -63,10 +63,10 @@ let find_by_email_request =
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
-let find_by_email db_pool email =
+let find_by_email pool email =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value db_pool)
+    (Pool_common.Database.Label.value pool)
     find_by_email_request
     (Common_user.Email.Address.value email)
   >|= CCOpt.to_result Pool_common.Error.(NotFound Participant)
@@ -82,10 +82,10 @@ let find_confirmed_request =
   |> Caqti_request.find Caqti_type.string Repo_model.t
 ;;
 
-let find_confirmed db_pool email =
+let find_confirmed pool email =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value db_pool)
+    (Pool_common.Database.Label.value pool)
     find_confirmed_request
     (Common_user.Email.Address.value email)
   >|= CCOpt.to_result Pool_common.Error.(NotFound Participant)
@@ -117,8 +117,8 @@ let insert_request =
     |sql}
 ;;
 
-let insert db_pool =
-  Utils.Database.exec (Pool_common.Database.Label.value db_pool) insert_request
+let insert pool =
+  Utils.Database.exec (Pool_common.Database.Label.value pool) insert_request
 ;;
 
 let update_request =
@@ -138,6 +138,6 @@ let update_request =
     |sql}
 ;;
 
-let update db_pool =
-  Utils.Database.exec (Pool_common.Database.Label.value db_pool) update_request
+let update pool =
+  Utils.Database.exec (Pool_common.Database.Label.value pool) update_request
 ;;

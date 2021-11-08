@@ -4,10 +4,9 @@ let admins db_pool () =
     ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
     ]
   in
-  let ctx = [ "pool", Pool_common.Database.Label.value db_pool ] in
+  let ctx = Pool_common.Utils.pool_to_ctx db_pool in
   let password =
-    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
-    |> Option.value ~default:"admin"
+    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD" |> CCOpt.value ~default:"admin"
   in
   Lwt_list.iter_s
     (fun (given_name, name, email, role) ->
@@ -95,7 +94,7 @@ let participants db_pool () =
     ]
   in
   let password =
-    Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD" |> Option.value ~default:"user"
+    Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD" |> CCOpt.value ~default:"user"
   in
   Lwt_list.iter_s
     (fun ( given_name
@@ -106,7 +105,7 @@ let participants db_pool () =
          , paused
          , disabled
          , verified ) ->
-      let ctx = [ "pool", Pool_common.Database.Label.value db_pool ] in
+      let ctx = Pool_common.Utils.pool_to_ctx db_pool in
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->

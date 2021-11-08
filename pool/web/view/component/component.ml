@@ -6,13 +6,13 @@ let csrf_element csrf =
 ;;
 
 let input_element input_type name value =
-  let attributes = [ a_input_type input_type; a_value value ] in
+  let base_attributes = [ a_input_type input_type; a_value value ] in
   let attributes =
     match name with
     | Some name ->
-      attributes
+      base_attributes
       @ [ a_name name; a_placeholder (HttpUtils.placeholder_from_name name) ]
-    | None -> attributes
+    | None -> base_attributes
   in
   input ~a:attributes ()
 ;;

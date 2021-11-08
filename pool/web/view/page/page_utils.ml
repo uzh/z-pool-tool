@@ -6,8 +6,6 @@ let note page_title info message =
 ;;
 
 let error_page_not_found () =
-  note
-    "Page not found"
-    "An error occurred. The requested page could not be found."
-    None
+  Pool_common.Error.(
+    note (NotFound Page |> message) (PageNotFoundMessage |> message) None)
 ;;

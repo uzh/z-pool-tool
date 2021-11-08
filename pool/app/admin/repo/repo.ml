@@ -3,7 +3,7 @@ module RepoPerson = Repo_person
 
 let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
-  let open Utils.Stringify in
+  let open Stringify in
   function
   | AssistantC -> assistant, person `Assistant
   | ExperimenterC -> experimenter, person `Experimenter
@@ -116,10 +116,10 @@ module Sql = struct
   let find_role_by_user pool user =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      (pool |> Pool_common.Database.Label.value)
+      (Pool_common.Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    >|= CCOpt.map Utils.Stringify.person_from_string
+    >|= CCOpt.map Stringify.person_from_string
     >|= CCOpt.to_result Pool_common.Error.(NotFound Admin)
   ;;
 

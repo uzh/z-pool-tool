@@ -4,7 +4,7 @@ module Email = struct
   let prepare_email pool template_label subject email params =
     let%lwt template =
       Service.EmailTemplate.get_by_label
-        ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
+        ~ctx:(Pool_common.Utils.pool_to_ctx pool)
         template_label
     in
     match template, Sihl.Configuration.read_string "SMTP_SENDER" with
@@ -30,7 +30,7 @@ module Email = struct
       let email = user.Sihl_user.email in
       let%lwt reset_token =
         Service.PasswordReset.create_reset_token
-          ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
+          ~ctx:(Pool_common.Utils.pool_to_ctx pool)
           ~email
       in
       match reset_token with

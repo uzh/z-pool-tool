@@ -1,7 +1,8 @@
 open Tyxml.Html
-module HttpUtils = Http_utils
 module File = Pool_common.File
+module Id = Pool_common.Id
 
+let csrf_element = Component.csrf_element
 let input_element = Component.input_element
 
 let list csrf tenant_list root_list message () =
@@ -15,9 +16,7 @@ let list csrf tenant_list root_list message () =
               ~a:
                 [ a_href
                     (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/root/tenants/%s"
-                          (Pool_common.Id.value tenant.id)))
+                       (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
                 ]
               [ txt "detail" ]
           ; hr ()
@@ -102,7 +101,7 @@ let list csrf tenant_list root_list message () =
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((Component.csrf_element csrf () :: input_fields)
+          ((csrf_element csrf () :: input_fields)
           @ [ input_element `Submit None "Create new" ])
       ; hr ()
       ; h1 [ txt "Root users" ]
@@ -186,7 +185,7 @@ let detail csrf (tenant : Tenant.t) message () =
     div
       ~a:[ a_style "display: flex;" ]
       (CCList.map
-         (fun (file : Pool_common.File.t) ->
+         (fun (file : File.t) ->
            div
              [ img
                  ~src:(File.path file)
@@ -198,11 +197,11 @@ let detail csrf (tenant : Tenant.t) message () =
                    [ a_action
                        (Format.asprintf
                           "/root/tenants/%s/assets/%s/delete"
-                          (tenant.id |> Pool_common.Id.value)
-                          (Pool_common.File.id file |> Pool_common.Id.value))
+                          (tenant.id |> Id.value)
+                          (File.id file |> Id.value))
                    ; a_method `Post
                    ]
-                 [ Component.csrf_element csrf ()
+                 [ csrf_element csrf ()
                  ; input_element `Submit None "Delete Image"
                  ]
              ])
@@ -225,11 +224,11 @@ let detail csrf (tenant : Tenant.t) message () =
                 (Sihl.Web.externalize_path
                    (Format.asprintf
                       "/root/tenants/%s/update-detail"
-                      (Pool_common.Id.value tenant.id)))
+                      (Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((Component.csrf_element csrf () :: detail_input_fields)
+          ((csrf_element csrf () :: detail_input_fields)
           @ [ disabled; input_element `Submit None "Update" ])
       ; hr ()
       ; delete_file_forms
@@ -240,11 +239,11 @@ let detail csrf (tenant : Tenant.t) message () =
                 (Sihl.Web.externalize_path
                    (Format.asprintf
                       "/root/tenants/%s/update-database"
-                      (Pool_common.Id.value tenant.id)))
+                      (Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((Component.csrf_element csrf () :: database_input_fields)
+          ((csrf_element csrf () :: database_input_fields)
           @ [ input_element `Submit None "Update database" ])
       ; hr ()
       ; form
@@ -252,10 +251,10 @@ let detail csrf (tenant : Tenant.t) message () =
             [ a_action
                 (Format.asprintf
                    "/root/tenants/%s/create-operator"
-                   (Pool_common.Id.value tenant.id))
+                   (Id.value tenant.id))
             ; a_method `Post
             ]
-          ((Component.csrf_element csrf ()
+          ((csrf_element csrf ()
            :: CCList.map
                 (fun name -> input_element `Text (Some name) "")
                 [ "email"; "password"; "firstname"; "lastname" ])

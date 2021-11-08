@@ -1,6 +1,4 @@
-include One_of_n
 module Countries = Countries
-module Stringify = Stringify
 module Database = Database
 
 let todo _ = failwith "todo"
@@ -15,6 +13,7 @@ module Lwt_result = struct
     let ( >> ) m k = m >>= fun _ -> k
     let ( |>> ) = Lwt_result.bind_lwt
     let ( >|> ) = Lwt.bind
+    let ( ||> ) m k = Lwt.map k m
   end
 end
 
@@ -26,3 +25,9 @@ module Url = struct
     | Some public_url -> Format.asprintf "%s%s" public_url path
   ;;
 end
+
+let bool_to_result err value =
+  match value with
+  | true -> Ok ()
+  | false -> Error err
+;;

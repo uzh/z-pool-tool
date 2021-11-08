@@ -15,11 +15,13 @@ type event =
   | Disabled of t
   | Enabled of t
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let ctx = Pool_common.Utils.pool_to_ctx pool in
+  function
   | Created root ->
     let%lwt user =
       Service.User.create_admin
-        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~ctx
         ~name:(root.lastname |> User.Lastname.value)
         ~given_name:(root.firstname |> User.Firstname.value)
         ~password:(root.password |> User.Password.to_sihl)
@@ -30,16 +32,14 @@ let handle_event pool : event -> unit Lwt.t = function
     let%lwt _ =
       Sihl_user.
         { root with status = Inactive; updated_at = Common.UpdatedAt.create () }
-      |> Service.User.update
-           ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      |> Service.User.update ~ctx
     in
     Lwt.return_unit
   | Enabled root ->
     let%lwt _ =
       Sihl_user.
         { root with status = Active; updated_at = Common.UpdatedAt.create () }
-      |> Service.User.update
-           ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      |> Service.User.update ~ctx
     in
     Lwt.return_unit
 ;;

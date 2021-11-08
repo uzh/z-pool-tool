@@ -1,6 +1,6 @@
 module Message = Http_utils_message
 module File = Http_utils_file
-module StringMap = Map.Make (String)
+module StringMap = CCMap.Make (String)
 
 let redirect_to_with_actions path actions =
   path
@@ -14,7 +14,7 @@ let redirect_to path = redirect_to_with_actions path []
 
 let extract_happy_path_generic result msgf =
   result
-  |> Result.map Lwt.return
+  |> CCResult.map Lwt.return
   |> CCResult.get_lazy (fun (error_msg, error_path) ->
          redirect_to_with_actions error_path [ msgf error_msg ])
 ;;
@@ -27,12 +27,12 @@ let extract_happy_path result =
 
 let extract_happy_path_with_actions result =
   result
-  |> Result.map Lwt.return
+  |> CCResult.map Lwt.return
   |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
          let error_msg = Pool_common.Error.message error_key in
          redirect_to_with_actions
            error_path
-           (List.append
+           (CCList.append
               [ Message.set
                   ~warning:[]
                   ~success:[]
@@ -65,25 +65,15 @@ let request_to_params req keys () =
 ;;
 
 let urlencoded_to_flash urlencoded =
-  Sihl.Web.Flash.set (urlencoded |> List.map (fun (m, k) -> m, CCList.hd k))
-;;
-
-let err_with_action ?message error_path action =
-  Lwt_result.map_err (fun msg ->
-      match message with
-      | None -> msg, error_path, action
-      | Some msg -> msg, error_path, action)
+  Sihl.Web.Flash.set (urlencoded |> CCList.map (fun (m, k) -> m, CCList.hd k))
 ;;
 
 let validate_email_existance pool email =
-  let%lwt user =
-    Service.User.find_by_email_opt
-      ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
-      email
-  in
-  match user with
-  | None -> Lwt.return_ok ()
-  | Some _ -> Lwt.return_error Pool_common.Error.EmailAlreadyInUse
+  let open Lwt.Infix in
+  Service.User.find_by_email_opt ~ctx:(Pool_common.Utils.pool_to_ctx pool) email
+  >|= function
+  | None -> Ok ()
+  | Some _ -> Error Pool_common.Error.EmailAlreadyInUse
 ;;
 
 let format_request_boolean_values values urlencoded =
@@ -100,4 +90,8 @@ let format_request_boolean_values values urlencoded =
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
-let find_csrf req = Sihl.Web.Csrf.find req |> CCOpt.get_exn_or "Invalid session"
+
+let find_csrf req =
+  Sihl.Web.Csrf.find req
+  |> CCOpt.get_exn_or Pool_common.Error.(Invalid Csrf |> message)
+;;

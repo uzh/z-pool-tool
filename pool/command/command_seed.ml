@@ -14,7 +14,7 @@ let root_data_clean =
     ~description:"Clean database and seed development data to root database"
     (fun _ ->
       Database.Root.setup ();
-      let%lwt _ = Utils.Database.clean_all Database.Root.label () in
+      let%lwt () = Utils.Database.clean_all Database.Root.label in
       let%lwt () = Database.Root.Seed.create () in
       Lwt.return_some ())
 ;;
@@ -42,11 +42,9 @@ let tenant_data_clean =
       let%lwt db_pools = setup_tenants () in
       let%lwt () =
         Lwt_list.iter_s
-          (fun db_pool ->
-            let%lwt _ =
-              Utils.Database.clean_all
-                (Pool_common.Database.Label.value db_pool)
-                ()
+          (fun pool ->
+            let%lwt () =
+              Utils.Database.clean_all (Pool_common.Database.Label.value pool)
             in
             Lwt.return_unit)
           db_pools

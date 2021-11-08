@@ -1,4 +1,5 @@
 module Message = Http_utils.Message
+module Common = Pool_common
 
 let[@warning "-4"] terms_accepted () =
   let filter handler req =
@@ -7,8 +8,8 @@ let[@warning "-4"] terms_accepted () =
       let* user_id =
         req
         |> Sihl.Web.Session.find "user_id"
-        |> CCOpt.map Pool_common.Id.of_string
-        |> CCOpt.to_result Pool_common.Error.(NotFound User)
+        |> CCOpt.map Common.Id.of_string
+        |> CCOpt.to_result Common.Error.(NotFound User)
         |> Lwt_result.lift
       in
       let* pool = Middleware_tenant.tenant_db_of_request req in
@@ -20,20 +21,21 @@ let[@warning "-4"] terms_accepted () =
     | Ok false ->
       Http_utils.redirect_to_with_actions
         "/participant/termsandconditions"
-        [ Message.set ~error:[ "Please accept the terms and conditions." ]
+        [ Message.set
+            ~error:[ Common.Error.(TermsAndConditionsNotAccepted |> message) ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
-    | Error (Pool_common.Error.NotFound Pool_common.Error.User)
-    | Error (Pool_common.Error.NotFound Pool_common.Error.Participant) ->
+    | Error Common.Error.(NotFound User)
+    | Error Common.Error.(NotFound Participant) ->
       Http_utils.redirect_to_with_actions
         "/login"
-        [ Message.set ~error:[ "Invalid session, please login." ]
+        [ Message.set ~error:[ Common.Error.(InvalidSession |> message) ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | Error _ ->
       Http_utils.redirect_to_with_actions
         "/login"
-        [ Message.set ~error:[ "Invalid session!" ] ]
+        [ Message.set ~error:[ Common.Error.(InvalidSession |> message) ] ]
   in
   Rock.Middleware.create ~name:"participant.terms" ~filter
 ;;

@@ -158,9 +158,9 @@ module Sql = struct
 end
 
 let insert_multiple m_list =
-  Lwt_list.map_s (Sql.insert (Database.Label.value Database.root)) m_list
+  Lwt_list.map_s (Sql.insert Database.(Label.value root)) m_list
 ;;
 
-let find_by_tenant = Sql.find (Database.Label.value Database.root)
-let find_all = Sql.find_all (Database.Label.value Database.root)
-let delete = Sql.delete (Database.Label.value Database.root)
+let find_by_tenant = Sql.find Database.(Label.value root)
+let find_all = Sql.find_all Database.(Label.value root)
+let delete = Sql.delete Database.(Label.value root)

@@ -33,7 +33,7 @@ module Sql = struct
     |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let update pool = Utils.Database.exec pool update_request
+  let update pool = Utils.Database.exec (Label.value pool) update_request
 
   let select_from_tenants_sql where_fragment full =
     let database_fragment =
@@ -173,7 +173,7 @@ module Sql = struct
 
   let find pool id =
     let open Lwt.Infix in
-    Utils.Database.find_opt pool find_request (id |> Id.value)
+    Utils.Database.find_opt (Label.value pool) find_request (Id.value id)
     >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
   ;;
 
@@ -184,7 +184,7 @@ module Sql = struct
 
   let find_full pool id =
     let open Lwt.Infix in
-    Utils.Database.find_opt pool find_full_request (id |> Id.value)
+    Utils.Database.find_opt (Label.value pool) find_full_request (Id.value id)
     >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
   ;;
 
@@ -198,9 +198,9 @@ module Sql = struct
   let find_by_label pool label =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      pool
+      (Label.value pool)
       find_by_label_request
-      (label |> Pool_common.Database.Label.value)
+      (Label.value label)
     >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
   ;;
 
@@ -209,7 +209,7 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.unit RepoEntity.t
   ;;
 
-  let find_all pool = Utils.Database.collect pool find_all_request
+  let find_all pool = Utils.Database.collect (Label.value pool) find_all_request
 
   let find_databases_request =
     {sql|
@@ -222,7 +222,9 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.unit Pool_common.Repo.Database.t
   ;;
 
-  let find_databases pool = Utils.Database.collect pool find_databases_request
+  let find_databases pool =
+    Utils.Database.collect (Label.value pool) find_databases_request
+  ;;
 
   let insert_request =
     {sql|
@@ -271,7 +273,7 @@ module Sql = struct
     |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let insert pool = Utils.Database.exec pool insert_request
+  let insert pool = Utils.Database.exec (Label.value pool) insert_request
 
   let find_selectable_request =
     {sql|
@@ -283,7 +285,9 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.unit RepoEntity.Selection.t
   ;;
 
-  let find_selectable pool = Utils.Database.collect pool find_selectable_request
+  let find_selectable pool =
+    Utils.Database.collect (Label.value pool) find_selectable_request
+  ;;
 end
 
 let set_logos tenant logos =
@@ -318,22 +322,22 @@ let set_logos tenant logos =
 
 let find pool id =
   let open Lwt_result.Syntax in
-  let* tenant = Sql.find (Label.value pool) id in
+  let* tenant = Sql.find pool id in
   let%lwt logos = LogoMappingRepo.find_by_tenant id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
 let find_by_label pool label =
   let open Lwt_result.Syntax in
-  let* tenant = Sql.find_by_label (Label.value pool) label in
+  let* tenant = Sql.find_by_label pool label in
   let%lwt logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
-let find_full pool = Sql.find_full (Label.value pool)
+let find_full = Sql.find_full
 
 let find_all pool () =
-  let%lwt tenants = Sql.find_all (Label.value pool) () in
+  let%lwt tenants = Sql.find_all pool () in
   let%lwt logos = LogoMappingRepo.find_all () in
   let logos_of_tenant id =
     CCList.filter (fun logo -> Id.equal logo.LogoMapping.tenant_id id) logos
@@ -342,8 +346,8 @@ let find_all pool () =
   |> Lwt.return
 ;;
 
-let find_databases pool = Sql.find_databases (Label.value pool)
-let find_selectable pool = Sql.find_selectable (Label.value pool)
-let insert pool = Sql.insert (Label.value pool)
-let update pool : Entity.Write.t -> unit Lwt.t = Sql.update (Label.value pool)
+let find_databases = Sql.find_databases
+let find_selectable = Sql.find_selectable
+let insert = Sql.insert
+let update = Sql.update
 let destroy = Utils.todo

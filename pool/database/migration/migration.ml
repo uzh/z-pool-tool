@@ -2,10 +2,8 @@ module Map = CCMap.Make (String)
 
 let execute db_pools steps =
   Lwt_list.iter_s
-    (fun db_pool ->
-      Service.Migration.execute
-        ~ctx:[ "pool", Pool_common.Database.Label.value db_pool ]
-        steps)
+    (fun pool ->
+      Service.Migration.execute ~ctx:(Pool_common.Utils.pool_to_ctx pool) steps)
     db_pools
 ;;
 

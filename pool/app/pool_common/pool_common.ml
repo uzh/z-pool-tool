@@ -1,7 +1,12 @@
 include Entity
 module Repo = Repo
-module Utils = Pool_common_utils
 module Error = Pool_common_error
+
+module Utils = struct
+  include Pool_common_utils
+
+  let pool_to_ctx pool = [ "pool", Entity.Database.Label.value pool ]
+end
 
 module Database = struct
   include Database

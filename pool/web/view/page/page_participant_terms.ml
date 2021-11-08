@@ -10,8 +10,7 @@ let terms csrf message user_id terms =
       ; p [ txt terms ]
       ; form
           ~a:[ a_action submit_url; a_method `Post ]
-          [ input ~a:[ a_name "_csrf"; a_input_type `Hidden; a_value csrf ] ()
-          ; div []
+          [ Component.csrf_element csrf ()
           ; input
               ~a:[ a_input_type `Checkbox; a_name "_accepted"; a_required () ]
               ()

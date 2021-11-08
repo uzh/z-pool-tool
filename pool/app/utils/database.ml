@@ -24,12 +24,6 @@ let raise_caqti_error =
       failwith (show err))
 ;;
 
-let find db_pool request input =
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Connection.find request input |> Lwt.map raise_caqti_error)
-;;
-
 let find_opt db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
@@ -46,6 +40,41 @@ let exec db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.exec request input |> Lwt.map raise_caqti_error)
+;;
+
+let transaction pool commands =
+  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Lwt_list.map_s
+        (fun (request, input) -> Connection.exec request input)
+        commands
+      |> Lwt.map CCResult.flatten_l
+      |> Lwt_result.map ignore
+      |> Lwt.map raise_caqti_error)
+;;
+
+let transaction_find_opt pool commands query =
+  let ( >> ) = CCFun.const in
+  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Lwt_list.map_s
+        (fun (request, input) -> Connection.exec request input)
+        commands
+      |> Lwt.map CCResult.flatten_l
+      >> Connection.find_opt query input
+      |> Lwt.map raise_caqti_error)
+;;
+
+let transaction_collect pool commands query =
+  let ( >> ) = CCFun.const in
+  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Lwt_list.map_s
+        (fun (request, input) -> Connection.exec request input)
+        commands
+      |> Lwt.map CCResult.flatten_l
+      >> Connection.collect_list query input
+      |> Lwt.map raise_caqti_error)
 ;;
 
 let set_fk_check_request =
@@ -77,7 +106,7 @@ let table_names_request =
     |sql}
 ;;
 
-let clean_requests db_pool () =
+let clean_requests db_pool =
   let open Lwt.Infix in
   let truncate_table table =
     Logs.debug (fun m -> m "Truncate table '%s' from pool '%s'" table db_pool);
@@ -88,9 +117,9 @@ let clean_requests db_pool () =
   () |> collect db_pool table_names_request >|= List.map truncate_table
 ;;
 
-let clean_all db_pool () =
+let clean_all db_pool =
   let open Lwt.Infix in
-  clean_requests db_pool ()
+  clean_requests db_pool
   >>= fun clean_requests ->
   with_disabled_fk_check db_pool (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in

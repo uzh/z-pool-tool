@@ -1,5 +1,6 @@
 open Tyxml.Html
 
+let csrf_element = Component.csrf_element
 let input_element = Component.input_element
 
 let index message () =
@@ -13,7 +14,7 @@ let login csrf message () =
       [ h1 [ txt "Login" ]
       ; form
           ~a:[ a_action (Sihl.Web.externalize_path "/login"); a_method `Post ]
-          [ Component.csrf_element csrf ()
+          [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
           ; input_element `Password (Some "password") ""
           ; input_element `Submit None "Login"
@@ -35,7 +36,7 @@ let request_reset_password csrf message () =
             [ a_action (Sihl.Web.externalize_path "/request-reset-password")
             ; a_method `Post
             ]
-          [ Component.csrf_element csrf ()
+          [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
           ; input_element `Submit None "Send reset link"
           ]
@@ -53,7 +54,7 @@ let reset_password csrf message token () =
             [ a_action (Sihl.Web.externalize_path "/reset-password")
             ; a_method `Post
             ]
-          [ Component.csrf_element csrf ()
+          [ csrf_element csrf ()
           ; input_element `Hidden (Some "token") token
           ; input_element `Password (Some "password") ""
           ; input_element `Password (Some "password_confirmation") ""

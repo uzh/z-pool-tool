@@ -8,9 +8,9 @@ let[@warning "-4"] confirmed () =
       let* pool = Middleware_tenant.tenant_db_of_request req in
       let* user_id =
         Service.User.Web.user_from_session
-          ~ctx:[ "pool", pool |> Pool_common.Database.Label.value ]
+          ~ctx:(Pool_common.Utils.pool_to_ctx pool)
           req
-        |> Lwt.map (CCOpt.to_result Pool_common.Error.(NotFound User))
+        ||> CCOpt.to_result Pool_common.Error.(NotFound User)
         >|= fun user -> Pool_common.Id.of_string user.Sihl_user.id
       in
       Participant.find pool user_id

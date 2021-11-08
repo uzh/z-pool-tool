@@ -155,4 +155,6 @@ module Utils : sig
     -> Error.field
     -> 'a list
     -> ('weak776, string) result
+
+  val pool_to_ctx : Database.Label.t -> (string * string) list
 end

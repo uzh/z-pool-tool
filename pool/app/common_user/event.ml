@@ -6,22 +6,19 @@ module Email = struct
   let create_token pool address =
     let open Lwt.Infix in
     Service.Token.create
-      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+      ~ctx:(Pool_common.Utils.pool_to_ctx pool)
       [ "email", Email.Address.value address ]
     >|= Email.Token.create
   ;;
 
   let deactivate_token pool token =
-    Service.Token.deactivate
-      ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
-      token
+    Service.Token.deactivate ~ctx:(Pool_common.Utils.pool_to_ctx pool) token
   ;;
 
   let send_confirmation_email pool email firstname lastname =
     let open Lwt.Infix in
     Helper.Email.ConfirmationEmail.create pool email firstname lastname
-    >>= Service.Email.send
-          ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+    >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
   ;;
 
   type event =
