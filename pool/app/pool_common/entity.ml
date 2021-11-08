@@ -100,8 +100,8 @@ module Database = struct
     Sihl.Database.add_pool
       ~pool_size:
         (Sihl.Configuration.read_string "DATABASE_POOL_SIZE"
-        |> CCFun.flip CCOpt.bind CCInt.of_string
-        |> CCOpt.value ~default:10)
+        |> CCFun.flip CCOption.bind CCInt.of_string
+        |> CCOption.value ~default:10)
       model.label
       model.url
   ;;

@@ -7,7 +7,7 @@ let create req =
   let user () =
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
-    ||> CCOpt.to_result Pool_common.Message.EmailAddressMissingRoot
+    ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
     >>= HttpUtils.validate_email_existance tenant_db
   in
   let events () =

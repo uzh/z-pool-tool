@@ -7,7 +7,7 @@ let show req =
     @@
     let open Lwt_result.Syntax in
     let message =
-      CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let csrf = HttpUtils.find_csrf req in
     let* db = Middleware.Tenant.tenant_db_of_request req in

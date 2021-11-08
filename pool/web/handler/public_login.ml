@@ -32,7 +32,7 @@ let login_get req =
     | None ->
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
-      let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
       Page.Public.login csrf message () |> Response.of_html |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path
@@ -47,7 +47,7 @@ let login_post req =
     let open Utils.Lwt_result.Infix in
     let* params =
       HttpUtils.urlencoded_to_params urlencoded [ "email"; "password" ]
-      |> CCOpt.to_result Pool_common.Message.LoginProvideDetails
+      |> CCOption.to_result Pool_common.Message.LoginProvideDetails
       |> Lwt_result.lift
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
@@ -83,7 +83,7 @@ let request_reset_password_get req =
       >|> Lwt.return_ok
     | None ->
       let csrf = HttpUtils.find_csrf req in
-      let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
       Page.Public.request_reset_password csrf message ()
       |> Response.of_html
       |> Lwt.return_ok
@@ -97,13 +97,13 @@ let request_reset_password_post req =
     let open Utils.Lwt_result.Infix in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
-      ||> CCOpt.to_result Pool_common.Message.(NotFound Email)
+      ||> CCOption.to_result Pool_common.Message.(NotFound Email)
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let ctx = pool_to_ctx tenant_db in
     let* user =
       Service.User.find_by_email_opt ~ctx email
-      ||> CCOpt.to_result Pool_common.Message.PasswordResetFailMessage
+      ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
     Common_user.Event.Email.PasswordReset.create tenant_db ~user
     >|= Service.Email.send ~ctx
@@ -126,7 +126,7 @@ let reset_password_get req =
       [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
   | Some token ->
     let csrf = HttpUtils.find_csrf req in
-    let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
     Page.Public.reset_password csrf message token ()
     |> Response.of_html
     |> Lwt.return
@@ -140,7 +140,7 @@ let reset_password_post req =
       HttpUtils.urlencoded_to_params
         urlencoded
         [ "token"; "password"; "password_confirmation" ]
-      |> CCOpt.to_result
+      |> CCOption.to_result
            (Pool_common.Message.PasswordResetInvalidData, "/reset-password/")
       |> Lwt_result.lift
     in

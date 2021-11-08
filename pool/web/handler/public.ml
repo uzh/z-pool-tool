@@ -4,13 +4,13 @@ module Common = Pool_common
 
 let index req =
   let open Sihl.Web in
-  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  let message = CCOption.bind (Flash.find_alert req) Message.of_string in
   Page.Public.index message () |> Response.of_html |> Lwt.return
 ;;
 
 let email_confirmation_note req =
   let open Sihl.Web in
-  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  let message = CCOption.bind (Flash.find_alert req) Message.of_string in
   let html =
     Common.Message.I18n.EmailConfirmation.(Page.Utils.note title note)
   in

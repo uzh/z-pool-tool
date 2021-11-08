@@ -50,15 +50,15 @@ let urlencoded_to_params urlencoded keys =
   keys
   |> (CCList.map
      @@ fun key ->
-     CCOpt.bind (List.assoc_opt key urlencoded) CCList.head_opt
-     |> CCOpt.map @@ CCPair.make key)
+     CCOption.bind (List.assoc_opt key urlencoded) CCList.head_opt
+     |> CCOption.map @@ CCPair.make key)
   |> CCList.all_some
 ;;
 
 let request_to_params req keys () =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   urlencoded_to_params urlencoded keys
-  |> CCOpt.to_result Pool_common.Message.RequestRequiredFields
+  |> CCOption.to_result Pool_common.Message.RequestRequiredFields
   |> Lwt_result.lift
 ;;
 

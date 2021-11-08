@@ -45,7 +45,7 @@ module Email = struct
       (Pool_common.Database.Label.value pool)
       (find_request carrier)
       address
-    >|= CCOpt.to_result Pool_common.Message.(NotFound Email)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Email)
   ;;
 
   let insert_request =

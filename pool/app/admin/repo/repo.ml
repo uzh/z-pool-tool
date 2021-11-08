@@ -99,7 +99,7 @@ module Sql = struct
       (Pool_common.Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
-    >|= CCOpt.to_result Pool_common.Message.(NotFound Admin)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
   let find_role_by_user_request =
@@ -119,8 +119,8 @@ module Sql = struct
       (Pool_common.Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    >|= CCOpt.map Stringify.person_from_string
-    >|= CCOpt.to_result Pool_common.Message.(NotFound Admin)
+    >|= CCOption.map Stringify.person_from_string
+    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
   let insert_sql =

@@ -8,8 +8,8 @@ let[@warning "-4"] terms_accepted () =
       let* user_id =
         req
         |> Sihl.Web.Session.find "user_id"
-        |> CCOpt.map Common.Id.of_string
-        |> CCOpt.to_result Common.Message.(NotFound User)
+        |> CCOption.map Common.Id.of_string
+        |> CCOption.to_result Common.Message.(NotFound User)
         |> Lwt_result.lift
       in
       let* pool = Middleware_tenant.tenant_db_of_request req in
