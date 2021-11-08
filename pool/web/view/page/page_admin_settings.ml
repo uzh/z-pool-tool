@@ -1,11 +1,5 @@
 open Tyxml.Html
 
-let format_updated_at value =
-  Format.asprintf
-    "updated at: %s"
-    (value |> Pool_common.UpdatedAt.value |> Utils.Time.ptime_to_date_human)
-;;
-
 let show
     csrf
     tenant_languages
