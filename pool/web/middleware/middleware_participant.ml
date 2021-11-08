@@ -16,10 +16,6 @@ let confirmed () =
         |> Lwt.map (CCOpt.to_result (`UserNotFound, "User not found!"))
         >|= fun user -> Pool_common.Id.of_string user.Sihl_user.id
       in
-      let* pool =
-        Middleware_tenant.tenant_db_of_request req
-        |> Lwt_result.map_err (fun msg -> `TenantNotFound, msg)
-      in
       Lwt_result.bind_result
         (Participant.find pool user_id
         |> Lwt_result.map_err (fun msg -> `ParticipantError, msg))
