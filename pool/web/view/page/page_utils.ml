@@ -7,5 +7,5 @@ let note page_title info message =
 
 let error_page_not_found () =
   Pool_common.Error.(
-    note (NotFound Page |> message) (PageNotFoundMessage |> message) None)
+    note (NotFound Page |> to_string) (PageNotFoundMessage |> to_string) None)
 ;;

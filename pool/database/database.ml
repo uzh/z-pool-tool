@@ -73,7 +73,7 @@ module Tenant = struct
   let setup () =
     let%lwt tenants = Tenant.find_databases () in
     match tenants with
-    | [] -> failwith Pool_common.Error.(NoTenantsRegistered |> message)
+    | [] -> failwith Pool_common.Error.(NoTenantsRegistered |> to_string)
     | tenants ->
       CCList.map
         (fun pool ->

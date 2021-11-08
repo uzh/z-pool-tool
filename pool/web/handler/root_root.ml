@@ -24,7 +24,7 @@ let create req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ "Root was successfully created." ] ]
+      [ Message.set ~success:[ Pool_common.Error.(Created Root) ] ]
   in
   ()
   |> user
@@ -47,7 +47,7 @@ let toggle_status req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ "Root was successfully updated." ] ]
+      [ Message.set ~success:[ Pool_common.Error.(Updated Root) ] ]
   in
   id
   |> Root.find

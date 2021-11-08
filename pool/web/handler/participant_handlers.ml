@@ -72,8 +72,7 @@ let sign_up_create req =
         let%lwt () = Pool_event.handle_events tenant_db events in
         HttpUtils.redirect_to_with_actions
           "/participant/email-confirmation"
-          [ Message.set
-              ~success:[ Pool_common.Error.I18n.EmailConfirmation.message ]
+          [ Message.set ~success:[ Pool_common.Error.EmailConfirmationMessage ]
           ])
     |> Lwt_result.ok
   in
@@ -111,7 +110,7 @@ let email_verification req =
   let%lwt () = Pool_event.handle_events tenant_db events in
   HttpUtils.redirect_to_with_actions
     "/login"
-    [ Message.set ~success:[ "Email successfully verified." ] ]
+    [ Message.set ~success:[ Pool_common.Error.EmailVerifySuccess ] ]
   |> Lwt_result.ok)
   |> Lwt_result.map_err (fun msg -> msg, "/login")
   >|> HttpUtils.extract_happy_path

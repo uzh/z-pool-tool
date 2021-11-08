@@ -21,21 +21,20 @@ let[@warning "-4"] terms_accepted () =
     | Ok false ->
       Http_utils.redirect_to_with_actions
         "/participant/termsandconditions"
-        [ Message.set
-            ~error:[ Common.Error.(TermsAndConditionsNotAccepted |> message) ]
+        [ Message.set ~error:[ Common.Error.TermsAndConditionsNotAccepted ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | Error Common.Error.(NotFound User)
     | Error Common.Error.(NotFound Participant) ->
       Http_utils.redirect_to_with_actions
         "/login"
-        [ Message.set ~error:[ Common.Error.(InvalidSession |> message) ]
+        [ Message.set ~error:[ Common.Error.InvalidSession ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | Error _ ->
       Http_utils.redirect_to_with_actions
         "/login"
-        [ Message.set ~error:[ Common.Error.(InvalidSession |> message) ] ]
+        [ Message.set ~error:[ Common.Error.InvalidSession ] ]
   in
   Rock.Middleware.create ~name:"participant.terms" ~filter
 ;;

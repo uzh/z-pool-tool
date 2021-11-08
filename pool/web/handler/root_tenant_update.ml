@@ -54,13 +54,11 @@ let update req command success_message =
 ;;
 
 let update_detail req =
-  let message = Common.Error.I18n.RootTenant.message_update_detail in
-  update req `EditDetail message
+  update req `EditDetail Common.Error.TenantUpdateDetailsMessage
 ;;
 
 let update_database req =
-  let message = Common.Error.I18n.RootTenant.message_update_database in
-  update req `EditDatabase message
+  update req `EditDatabase Common.Error.TenantUpdateDatabaseMessage
 ;;
 
 let delete_asset req =
@@ -88,7 +86,7 @@ let delete_asset req =
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ "File was successfully deleted." ] ]
+        [ Message.set ~success:[ Pool_common.Error.FileDeleteSucess ] ]
     in
     tenant_id
     |> Tenant.find

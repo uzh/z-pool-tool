@@ -51,7 +51,7 @@ let create req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ Common.Error.(Created Tenant |> message) ] ]
+      [ Message.set ~success:[ Common.Error.(Created Tenant) ] ]
   in
   ()
   |> events
@@ -85,7 +85,7 @@ let create_operator req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ "Operator was successfully created." ] ]
+      [ Message.set ~success:[ Pool_common.Error.(Created Operator) ] ]
   in
   ()
   |> user

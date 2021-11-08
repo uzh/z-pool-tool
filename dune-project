@@ -46,7 +46,7 @@
   (lwt
    (>= 5.4.1))
   (containers
-   (>= 3.4))
+   (= 3.5))
   (caqti-driver-mariadb
    (>= 1.6.0))
   (ocamlformat

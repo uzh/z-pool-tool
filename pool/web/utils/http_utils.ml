@@ -21,15 +21,13 @@ let extract_happy_path_generic result msgf =
 
 let extract_happy_path result =
   extract_happy_path_generic result (fun err ->
-      let error_msg = Pool_common.Error.message err in
-      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ error_msg ])
+      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
 let extract_happy_path_with_actions result =
   result
   |> CCResult.map Lwt.return
   |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-         let error_msg = Pool_common.Error.message error_key in
          redirect_to_with_actions
            error_path
            (CCList.append
@@ -37,7 +35,7 @@ let extract_happy_path_with_actions result =
                   ~warning:[]
                   ~success:[]
                   ~info:[]
-                  ~error:[ error_msg ]
+                  ~error:[ error_key ]
               ]
               error_actions))
 ;;
@@ -93,5 +91,6 @@ let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let find_csrf req =
   Sihl.Web.Csrf.find req
-  |> CCOpt.get_exn_or Pool_common.Error.(Invalid Csrf |> message)
+  (* TODO how to handle without Lwt.t *)
+  |> CCOpt.get_exn_or Pool_common.Error.(Invalid Csrf |> to_string)
 ;;

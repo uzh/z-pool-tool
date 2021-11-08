@@ -127,32 +127,33 @@ let create () =
          , password
          , firstname
          , lastname ) ->
-      let open CCResult in
-      Cqrs_command.Tenant_command.Create.decode
-        (logos
-        @ [ "title", [ title ]
-          ; "description", [ description ]
-          ; "url", [ url ]
-          ; "database_url", [ database_url ]
-          ; "database_label", [ database_label ]
-          ; "smtp_auth_server", [ smtp_auth_server ]
-          ; "smtp_auth_port", [ smtp_auth_port ]
-          ; "smtp_auth_username", [ smtp_auth_username ]
-          ; "smtp_auth_password", [ smtp_auth_password ]
-          ; ( "smtp_auth_authentication_method"
-            , [ smtp_auth_authentication_method ] )
-          ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-          ; "styles", [ styles ]
-          ; "icon", [ icon ]
-          ; "default_language", [ default_language ]
-          ; "email", [ email ]
-          ; "password", [ password ]
-          ; "firstname", [ firstname ]
-          ; "lastname", [ lastname ]
-          ])
-      >>= Cqrs_command.Tenant_command.Create.handle
-      |> CCResult.map_err Pool_common.Error.message
-      |> CCResult.get_or_failwith
-      |> Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root))
+      let open CCResult.Infix in
+      let open Cqrs_command.Tenant_command.Create in
+      logos
+      @ [ "title", [ title ]
+        ; "description", [ description ]
+        ; "url", [ url ]
+        ; "database_url", [ database_url ]
+        ; "database_label", [ database_label ]
+        ; "smtp_auth_server", [ smtp_auth_server ]
+        ; "smtp_auth_port", [ smtp_auth_port ]
+        ; "smtp_auth_username", [ smtp_auth_username ]
+        ; "smtp_auth_password", [ smtp_auth_password ]
+        ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
+        ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+        ; "styles", [ styles ]
+        ; "icon", [ icon ]
+        ; "default_language", [ default_language ]
+        ; "email", [ email ]
+        ; "password", [ password ]
+        ; "firstname", [ firstname ]
+        ; "lastname", [ lastname ]
+        ]
+      |> decode
+      >>= handle
+      >|= Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
+      |> function
+      | Ok _ -> Lwt.return_unit
+      | Error err -> Lwt.map failwith (Pool_common.Error.message err))
     data
 ;;

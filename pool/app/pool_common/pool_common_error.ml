@@ -4,18 +4,9 @@ let handle_conformist_error (err : Conformist.error list) =
     (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
 ;;
 
-type conformist_error = Conformist.error
-
-let equal_conformist_error
-    ((f1, _, _) : conformist_error)
-    ((f2, _, _) : conformist_error)
-  =
-  String.equal f1 f2
-;;
-
-let pp_conformist_error f ((m, _, _) : conformist_error) =
-  Format.pp_print_string f m
-;;
+module ConformistError = struct
+  type t = string * string list * string [@@deriving eq, show, yojson]
+end
 
 type field =
   | Csrf
@@ -30,9 +21,11 @@ type field =
   | Language
   | Lastname
   | LogoType
+  | Operator
   | Password
   | RecruitmentChannel
   | Role
+  | Root
   | SmtpAuthMethod
   | SmtpAuthServer
   | SmtpPassword
@@ -40,11 +33,12 @@ type field =
   | SmtpProtocol
   | SmtpUsername
   | Styles
+  | Tenant
   | TenantDisabledFlag
   | TenantMaintenanceFlag
   | Title
   | Url
-[@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 type not_found =
   | Admin
@@ -55,17 +49,18 @@ type not_found =
   | Tenant
   | Token
   | User
-[@@deriving eq, show]
-
-type created = Tenant [@@deriving eq, show]
+[@@deriving eq, show, yojson]
 
 type t =
-  | Conformist of conformist_error list
-  | Created of created
+  | Conformist of ConformistError.t list
+  | Created of field
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
+  | EmailConfirmationMessage
   | EmailMalformed
+  | EmailVerifySuccess
+  | FileDeleteSucess
   | Invalid of field
   | InvalidSession
   | LoginProvideDetails
@@ -80,10 +75,13 @@ type t =
   | PasswordResetMessage
   | RequestRequiredFields
   | TenantSessionNotFound
+  | TenantUpdateDatabaseMessage
+  | TenantUpdateDetailsMessage
   | TermsAndConditionsNotAccepted
   | TokenInvalidFormat
   | Undefined of field
-[@@deriving eq, show, variants]
+  | Updated of field
+[@@deriving eq, show, yojson, variants]
 
 let field_message prefix field suffix =
   let field_name =
@@ -114,6 +112,9 @@ let field_message prefix field suffix =
     | TenantMaintenanceFlag -> "maintenance flag"
     | Title -> "title"
     | Url -> "url"
+    | Operator -> "operator"
+    | Root -> "root"
+    | Tenant -> "tenant"
   in
   Format.asprintf "%s %s %s" prefix field_name suffix |> String.trim
 ;;
@@ -132,20 +133,18 @@ let not_found_message field =
   | User -> "User"
 ;;
 
-let created_message (field : created) =
-  Format.asprintf "%s was successfully created."
-  @@
-  match field with
-  | Tenant -> "Tenant"
-;;
-
-let message = function
+let to_string = function
   | Conformist err -> handle_conformist_error err
-  | Created field -> created_message field
+  | Created field -> field_message "" field "was successfully created."
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
+  | EmailConfirmationMessage ->
+    "Successfully created. An email has been sent to your email address for \
+     verification."
   | EmailMalformed -> "Malformed email"
+  | EmailVerifySuccess -> "Email successfully verified."
+  | FileDeleteSucess -> "File was successfully deleted."
   | Invalid field -> field_message "Invalid" field "provided!"
   | InvalidSession -> "Invalid session, please login."
   | LoginProvideDetails -> "Please provide email and password"
@@ -166,12 +165,16 @@ let message = function
   | TenantSessionNotFound ->
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
+  | TenantUpdateDatabaseMessage ->
+    "Database information was successfully updated."
+  | TenantUpdateDetailsMessage -> "Tenant was successfully updated."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" field ""
+  | Updated field -> field_message "" field "was successfully updated."
 ;;
 
-let to_string = Lwt.return message
+let message err = err |> to_string |> Lwt.return
 
 let handle_sihl_login_error = function
   | `Incorrect_password | `Does_not_exist -> Invalid Password
@@ -181,18 +184,5 @@ module I18n = struct
   module EmailConfirmation = struct
     let title = "Email confirmation"
     let note = "Please check your emails and confirm your address first."
-
-    let message =
-      "Successfully created. An email has been sent to your email address for \
-       verification."
-    ;;
-  end
-
-  module RootTenant = struct
-    let message_update_detail = "Tenant was successfully updated."
-
-    let message_update_database =
-      "Database information was successfully updated."
-    ;;
   end
 end

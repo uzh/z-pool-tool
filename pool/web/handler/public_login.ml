@@ -112,9 +112,7 @@ let request_reset_password_post req =
   | Ok _ | Error _ ->
     HttpUtils.redirect_to_with_actions
       "/request-reset-password"
-      [ Message.set
-          ~success:[ Pool_common.Error.(PasswordResetMessage |> message) ]
-      ]
+      [ Message.set ~success:[ Pool_common.Error.PasswordResetMessage ] ]
 ;;
 
 let reset_password_get req =
@@ -124,7 +122,7 @@ let reset_password_get req =
   | None ->
     HttpUtils.redirect_to_with_actions
       "/request-reset-password/"
-      [ Message.set ~error:[ Pool_common.Error.(NotFound Token |> message) ] ]
+      [ Message.set ~error:[ Pool_common.Error.(NotFound Token) ] ]
   | Some token ->
     let csrf = HttpUtils.find_csrf req in
     let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
@@ -163,9 +161,7 @@ let reset_password_post req =
     in
     HttpUtils.redirect_to_with_actions
       "/login"
-      [ Message.set
-          ~success:[ Pool_common.Error.(PasswordResetFinish |> message) ]
-      ]
+      [ Message.set ~success:[ Pool_common.Error.PasswordResetFinish ] ]
     |> Lwt_result.ok
   in
   HttpUtils.extract_happy_path result

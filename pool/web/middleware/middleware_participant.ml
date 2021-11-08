@@ -25,7 +25,7 @@ let[@warning "-4"] confirmed () =
     | Error (Pool_common.Error.NotFound Pool_common.Error.Participant) ->
       Http_utils.redirect_to_with_actions
         "/login"
-        [ Message.set ~error:[ "Invalid session, please login." ]
+        [ Message.set ~error:[ Pool_common.Error.InvalidSession ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | _ -> Http_utils.redirect_to "/participant/email-confirmation"

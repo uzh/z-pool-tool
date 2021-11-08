@@ -89,7 +89,7 @@ let create_tenant =
         (match result with
         | Ok _ -> Lwt.return_some ()
         | Error err ->
-          err |> Pool_common.Error.message |> print_endline;
+          err |> Pool_common.Error.to_string |> print_endline;
           Lwt.return_some ())
       | _ ->
         print_endline help_text;

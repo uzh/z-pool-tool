@@ -1,4 +1,4 @@
-let message = Pool_common_error.message
+let message = Pool_common_error.to_string
 
 let schema_decoder create_fcn err l =
   let create_fcn m = create_fcn m |> CCResult.map_err message in

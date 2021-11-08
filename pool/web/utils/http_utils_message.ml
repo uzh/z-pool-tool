@@ -1,22 +1,29 @@
-open Sexplib.Std
+module Sexp = Sexplib.Std
 
 type t =
-  { error : string list
-  ; warning : string list
-  ; success : string list
-  ; info : string list
+  { error : Pool_common.Error.t list
+  ; warning : Pool_common.Error.t list
+  ; success : Pool_common.Error.t list
+  ; info : Pool_common.Error.t list
   }
-[@@deriving eq, show, yojson, sexp]
+[@@deriving eq, show, yojson]
 
 let empty = { error = []; warning = []; success = []; info = [] }
 let set_success txts message = { message with success = txts }
 let set_warning txts message = { message with warning = txts }
 let set_error txts message = { message with error = txts }
 let set_info txts message = { message with info = txts }
-let get_error message = message.error
-let get_warning message = message.warning
-let get_success message = message.success
-let get_info message = message.info
+let get_error message = message.error |> CCList.map Pool_common.Error.to_string
+
+let get_warning message =
+  message.warning |> CCList.map Pool_common.Error.to_string
+;;
+
+let get_success message =
+  message.success |> CCList.map Pool_common.Error.to_string
+;;
+
+let get_info message = message.info |> CCList.map Pool_common.Error.to_string
 
 let of_string str =
   let json =
