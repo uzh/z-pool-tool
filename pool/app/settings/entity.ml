@@ -171,7 +171,7 @@ module Value = struct
     | InactiveUserDisableAfter of inactive_user_disable_after
     | InactiveUserWarning of inactive_user_warning
     | TermsAndConditions of terms_and_conditions
-  [@@deriving eq, show, yojson]
+  [@@deriving eq, show, yojson, variants]
 end
 
 type setting_key =

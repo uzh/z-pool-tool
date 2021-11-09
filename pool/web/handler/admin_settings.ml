@@ -2,12 +2,12 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let show req =
-  let open Utils.Lwt_result.Infix in
-  let error_path = "/" in
-  let show () =
+  let%lwt result =
+    Lwt_result.map_err (fun err -> err, "/")
+    @@
     let open Lwt_result.Syntax in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
+      CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let csrf = HttpUtils.find_csrf req in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
@@ -36,9 +36,7 @@ let show req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  show ()
-  |> Lwt_result.map_err (fun err -> err, error_path)
-  >|> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path
 ;;
 
 let update_settings urlencoded handler req =

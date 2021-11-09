@@ -11,6 +11,9 @@ let sql =
   |> Caqti_request.exec Caqti_type.unit
 ;;
 
-let create pool =
-  Utils.Database.exec (Pool_common.Database.Label.value pool) sql
+let create pool () =
+  let%lwt result =
+    Utils.Database.exec (Pool_common.Database.Label.value pool) sql ()
+  in
+  result |> CCResult.get_or_failwith |> Lwt.return
 ;;

@@ -1,28 +1,22 @@
 open Entity
 
-let encode_key_value =
-  let open Value in
-  function
-  | TenantLanguages value ->
-    ( setting_key_to_yojson Languages |> Yojson.Safe.to_string
-    , value |> Value.tenant_languages_to_yojson |> Yojson.Safe.to_string )
-  | TenantEmailSuffixes value ->
-    ( setting_key_to_yojson EmailSuffixes |> Yojson.Safe.to_string
-    , value |> Value.tenant_email_suffixes_to_yojson |> Yojson.Safe.to_string )
-  | TenantContactEmail value ->
-    ( setting_key_to_yojson ContactEmail |> Yojson.Safe.to_string
-    , value |> Value.tenant_contact_email_to_yojson |> Yojson.Safe.to_string )
-  | InactiveUserDisableAfter value ->
-    ( setting_key_to_yojson InactiveUserDisableAfter |> Yojson.Safe.to_string
-    , value
-      |> Value.inactive_user_disable_after_to_yojson
-      |> Yojson.Safe.to_string )
-  | InactiveUserWarning value ->
-    ( setting_key_to_yojson InactiveUserWarning |> Yojson.Safe.to_string
-    , value |> Value.inactive_user_warning_to_yojson |> Yojson.Safe.to_string )
-  | TermsAndConditions value ->
-    ( setting_key_to_yojson TermsAndConditions |> Yojson.Safe.to_string
-    , value |> Value.terms_and_conditions_to_yojson |> Yojson.Safe.to_string )
+let encode_key_value value =
+  (let open Value in
+  match value with
+  | TenantLanguages v ->
+    setting_key_to_yojson Languages, tenant_languages_to_yojson v
+  | TenantEmailSuffixes v ->
+    setting_key_to_yojson EmailSuffixes, tenant_email_suffixes_to_yojson v
+  | TenantContactEmail v ->
+    setting_key_to_yojson ContactEmail, tenant_contact_email_to_yojson v
+  | InactiveUserDisableAfter v ->
+    ( setting_key_to_yojson InactiveUserDisableAfter
+    , inactive_user_disable_after_to_yojson v )
+  | InactiveUserWarning v ->
+    setting_key_to_yojson InactiveUserWarning, inactive_user_warning_to_yojson v
+  | TermsAndConditions v ->
+    setting_key_to_yojson TermsAndConditions, terms_and_conditions_to_yojson v)
+  |> fun (m, k) -> m |> Yojson.Safe.to_string, k |> Yojson.Safe.to_string
 ;;
 
 let t =
@@ -34,32 +28,24 @@ let t =
     let open CCResult in
     let* key = key |> Yojson.Safe.from_string |> setting_key_of_yojson in
     let* value =
+      let open CCResult.Infix in
+      let open Value in
       let value = value |> Yojson.Safe.from_string in
       match key with
       | Languages ->
-        value
-        |> Value.tenant_languages_of_yojson
-        |> CCResult.map (fun v -> Value.TenantLanguages v)
+        value |> Value.tenant_languages_of_yojson >|= tenantlanguages
       | EmailSuffixes ->
-        value
-        |> Value.tenant_email_suffixes_of_yojson
-        |> CCResult.map (fun v -> Value.TenantEmailSuffixes v)
+        value |> Value.tenant_email_suffixes_of_yojson >|= tenantemailsuffixes
       | ContactEmail ->
-        value
-        |> Value.tenant_contact_email_of_yojson
-        |> CCResult.map (fun v -> Value.TenantContactEmail v)
+        value |> Value.tenant_contact_email_of_yojson >|= tenantcontactemail
       | InactiveUserDisableAfter ->
         value
         |> Value.inactive_user_disable_after_of_yojson
-        |> CCResult.map (fun v -> Value.InactiveUserDisableAfter v)
+        >|= inactiveuserdisableafter
       | InactiveUserWarning ->
-        value
-        |> Value.inactive_user_warning_of_yojson
-        |> CCResult.map (fun v -> Value.InactiveUserWarning v)
+        value |> Value.inactive_user_warning_of_yojson >|= inactiveuserwarning
       | TermsAndConditions ->
-        value
-        |> Value.terms_and_conditions_of_yojson
-        |> CCResult.map (fun v -> Value.TermsAndConditions v)
+        value |> Value.terms_and_conditions_of_yojson >|= termsandconditions
     in
     Ok { value; created_at; updated_at }
   in

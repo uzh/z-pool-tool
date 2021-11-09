@@ -24,7 +24,7 @@ end = struct
 end
 
 module CreateEmailSuffixes : sig
-  type t = { email_suffix : Settings.EmailSuffix.t }
+  type t = Settings.EmailSuffix.t
 
   val handle
     :  Settings.EmailSuffix.t list
@@ -37,16 +37,16 @@ module CreateEmailSuffixes : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { email_suffix : Settings.EmailSuffix.t }
+  type t = Settings.EmailSuffix.t
 
-  let command email_suffix = { email_suffix }
+  let command email_suffix = email_suffix
 
   let schema =
     Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
   ;;
 
-  let handle suffixes command =
-    let suffixes = suffixes @ [ command.email_suffix ] in
+  let handle suffixes email_suffix =
+    let suffixes = suffixes @ [ email_suffix ] in
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
@@ -77,7 +77,7 @@ end = struct
 end
 
 module UpdateContactEmail : sig
-  type t = { contact_email : Settings.ContactEmail.t }
+  type t = Settings.ContactEmail.t
 
   val handle : t -> (Pool_event.t list, string) Result.t
 
@@ -87,19 +87,16 @@ module UpdateContactEmail : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { contact_email : Settings.ContactEmail.t }
+  type t = Settings.ContactEmail.t
 
-  let command contact_email = { contact_email }
+  let command contact_email = contact_email
 
   let schema =
     Conformist.(make Field.[ Settings.ContactEmail.schema () ] command)
   ;;
 
-  let handle command =
-    Ok
-      [ Settings.ContactEmailUpdated command.contact_email
-        |> Pool_event.settings
-      ]
+  let handle contact_email =
+    Ok [ Settings.ContactEmailUpdated contact_email |> Pool_event.settings ]
   ;;
 
   let can = Utils.todo
@@ -108,8 +105,7 @@ end
 
 module InactiveUser = struct
   module DisableAfter : sig
-    type t =
-      { inactive_user_disable_after : Settings.InactiveUser.DisableAfter.t }
+    type t = Settings.InactiveUser.DisableAfter.t
 
     val handle : t -> (Pool_event.t list, string) Result.t
 
@@ -119,20 +115,18 @@ module InactiveUser = struct
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
-    type t =
-      { inactive_user_disable_after : Settings.InactiveUser.DisableAfter.t }
+    type t = Settings.InactiveUser.DisableAfter.t
 
-    let command inactive_user_disable_after = { inactive_user_disable_after }
+    let command inactive_user_disable_after = inactive_user_disable_after
 
     let schema =
       Conformist.(
         make Field.[ Settings.InactiveUser.DisableAfter.schema () ] command)
     ;;
 
-    let handle command =
+    let handle inactive_user_disable_after =
       Ok
-        [ Settings.InactiveUserDisableAfterUpdated
-            command.inactive_user_disable_after
+        [ Settings.InactiveUserDisableAfterUpdated inactive_user_disable_after
           |> Pool_event.settings
         ]
     ;;
@@ -142,7 +136,7 @@ module InactiveUser = struct
   end
 
   module Warning : sig
-    type t = { inactive_user_warning : Settings.InactiveUser.Warning.t }
+    type t = Settings.InactiveUser.Warning.t
 
     val handle : t -> (Pool_event.t list, string) Result.t
 
@@ -152,18 +146,18 @@ module InactiveUser = struct
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
-    type t = { inactive_user_warning : Settings.InactiveUser.Warning.t }
+    type t = Settings.InactiveUser.Warning.t
 
-    let command inactive_user_warning = { inactive_user_warning }
+    let command inactive_user_warning = inactive_user_warning
 
     let schema =
       Conformist.(
         make Field.[ Settings.InactiveUser.Warning.schema () ] command)
     ;;
 
-    let handle command =
+    let handle inactive_user_warning =
       Ok
-        [ Settings.InactiveUserWarningUpdated command.inactive_user_warning
+        [ Settings.InactiveUserWarningUpdated inactive_user_warning
           |> Pool_event.settings
         ]
     ;;
@@ -174,7 +168,7 @@ module InactiveUser = struct
 end
 
 module UpdateTermsAndConditions : sig
-  type t = { terms_and_conditions : Settings.TermsAndConditions.t }
+  type t = Settings.TermsAndConditions.t
 
   val handle : t -> (Pool_event.t list, string) Result.t
 
@@ -184,17 +178,17 @@ module UpdateTermsAndConditions : sig
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { terms_and_conditions : Settings.TermsAndConditions.t }
+  type t = Settings.TermsAndConditions.t
 
-  let command terms_and_conditions = { terms_and_conditions }
+  let command terms_and_conditions = terms_and_conditions
 
   let schema =
     Conformist.(make Field.[ Settings.TermsAndConditions.schema () ] command)
   ;;
 
-  let handle command =
+  let handle terms_and_conditions =
     Ok
-      [ Settings.TermsAndConditionsUpdated command.terms_and_conditions
+      [ Settings.TermsAndConditionsUpdated terms_and_conditions
         |> Pool_event.settings
       ]
   ;;
