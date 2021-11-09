@@ -39,7 +39,7 @@ let show req =
   result |> HttpUtils.extract_happy_path
 ;;
 
-let update_settings urlencoded handler req =
+let update_settings req =
   let open Utils.Lwt_result.Infix in
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
@@ -49,11 +49,18 @@ let update_settings urlencoded handler req =
     @@
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events () =
       let command_handler =
         let open CCResult.Infix in
         function
-        | `UpdateTenantLanguages -> fun m -> m |> UpdateLanguages.handle |> lift
+        | `UpdateTenantLanguages ->
+          fun m ->
+            m
+            |> HttpUtils.format_request_boolean_values
+                 (Settings.Language.all_codes ())
+            |> UpdateLanguages.handle
+            |> lift
         | `UpdateTenantEmailSuffixes ->
           fun m -> m |> UpdateEmailSuffixes.handle |> lift
         | `CreateTenantEmailSuffix ->
@@ -70,7 +77,10 @@ let update_settings urlencoded handler req =
         | `UpdateTermsAndConditions ->
           fun m -> UpdateTermsAndConditions.(m |> decode >>= handle) |> lift
       in
-      urlencoded |> command_handler handler
+      Sihl.Web.Router.param req "action"
+      |> Settings.action_of_param
+      |> lift
+      >>= CCFun.flip command_handler urlencoded
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event tenant_db) in
     let return_to_settings () =
@@ -81,43 +91,4 @@ let update_settings urlencoded handler req =
     () |> events |>> handle |>> return_to_settings
   in
   result |> HttpUtils.extract_happy_path
-;;
-
-let update_tenant_languages req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let urlencoded =
-    urlencoded
-    |> HttpUtils.format_request_boolean_values (Settings.Language.all_codes ())
-  in
-  update_settings urlencoded `UpdateTenantLanguages req
-;;
-
-let update_tenant_email_suffixes req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `UpdateTenantEmailSuffixes req
-;;
-
-let create_tenant_email_suffix req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `CreateTenantEmailSuffix req
-;;
-
-let update_tenant_contact_email req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `UpdateTenantContactEmail req
-;;
-
-let update_inactive_user_disable_after req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `UpdateInactiveUserDisableAfter req
-;;
-
-let update_inactive_user_warning req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `UpdateInactiveUserWarning req
-;;
-
-let update_terms_and_conditions req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  update_settings urlencoded `UpdateTermsAndConditions req
 ;;

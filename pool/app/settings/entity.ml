@@ -192,3 +192,24 @@ type t =
 module Write = struct
   type t = { value : Value.t }
 end
+
+let action_of_param = function
+  | "update_tenant_languages" -> Ok `UpdateTenantLanguages
+  | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
+  | "create_tenant_emailsuffix" -> Ok `CreateTenantEmailSuffix
+  | "update_tenant_contact_email" -> Ok `UpdateTenantContactEmail
+  | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
+  | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
+  | "update_terms_and_conditions" -> Ok `UpdateTermsAndConditions
+  | _ -> Error "Cannot decode action"
+;;
+
+let stringify_action = function
+  | `UpdateTenantLanguages -> "update_tenant_languages"
+  | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
+  | `CreateTenantEmailSuffix -> "create_tenant_emailsuffix"
+  | `UpdateTenantContactEmail -> "update_tenant_contact_email"
+  | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
+  | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
+  | `UpdateTermsAndConditions -> "update_terms_and_conditions"
+;;

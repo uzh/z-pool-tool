@@ -76,6 +76,30 @@ end
 
 type t
 
+val action_of_param
+  :  string
+  -> ( [> `CreateTenantEmailSuffix
+       | `UpdateInactiveUserDisableAfter
+       | `UpdateInactiveUserWarning
+       | `UpdateTenantContactEmail
+       | `UpdateTenantEmailSuffixes
+       | `UpdateTenantLanguages
+       | `UpdateTermsAndConditions
+       ]
+     , string )
+     result
+
+val stringify_action
+  :  [< `CreateTenantEmailSuffix
+     | `UpdateInactiveUserDisableAfter
+     | `UpdateInactiveUserWarning
+     | `UpdateTenantContactEmail
+     | `UpdateTenantEmailSuffixes
+     | `UpdateTenantLanguages
+     | `UpdateTermsAndConditions
+     ]
+  -> string
+
 type event =
   | LanguagesUpdated of Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list

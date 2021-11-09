@@ -11,6 +11,10 @@ let show
     message
     ()
   =
+  let action_path action =
+    Sihl.Web.externalize_path
+      (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
+  in
   let languages_html =
     let available_languages = Settings.Language.all () in
     let field_elements =
@@ -39,10 +43,7 @@ let show
     div
       [ h2 [ txt "Languages" ]
       ; form
-          ~a:
-            [ a_action (Sihl.Web.externalize_path "/admin/settings/languages")
-            ; a_method `Post
-            ]
+          ~a:[ a_action (action_path `UpdateTenantLanguages); a_method `Post ]
           (field_elements @ [ Component.input_element `Submit None "Save" ])
       ]
   in
@@ -51,8 +52,7 @@ let show
       [ h2 [ txt "Email Suffixes" ]
       ; form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path "/admin/settings/email-suffixes")
+            [ a_action (action_path `UpdateTenantEmailSuffixes)
             ; a_method `Post
             ]
           (CCList.map
@@ -64,12 +64,7 @@ let show
              email_suffixes
           @ [ Component.input_element `Submit None "Save" ])
       ; form
-          ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   "/admin/settings/create-email-suffix")
-            ; a_method `Post
-            ]
+          ~a:[ a_action (action_path `CreateTenantEmailSuffix); a_method `Post ]
           [ Component.input_element `Text (Some "email_suffix") ""
           ; Component.input_element `Submit None "Add new"
           ]
@@ -80,10 +75,7 @@ let show
       [ h2 [ txt "Contact Email" ]
       ; form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path "/admin/settings/contact-email")
-            ; a_method `Post
-            ]
+            [ a_action (action_path `UpdateTenantContactEmail); a_method `Post ]
           [ Component.input_element
               `Text
               (Some "contact_email")
@@ -98,9 +90,7 @@ let show
       [ h2 [ txt "Inactive Users" ]
       ; form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   "/admin/settings/inactive_user_disable_after")
+            [ a_action (action_path `UpdateInactiveUserDisableAfter)
             ; a_method `Post
             ]
           [ p [ txt "Disable user after (weeks)" ]
@@ -114,9 +104,7 @@ let show
           ]
       ; form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   "/admin/settings/inactive_user_warning")
+            [ a_action (action_path `UpdateInactiveUserWarning)
             ; a_method `Post
             ]
           [ p [ txt "Send warning before disabling (days)" ]
@@ -133,11 +121,7 @@ let show
       [ h2 [ txt "Terms and conditions" ]
       ; form
           ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   "/admin/settings/terms_and_conditions")
-            ; a_method `Post
-            ]
+            [ a_action (action_path `UpdateTermsAndConditions); a_method `Post ]
           [ textarea
               ~a:[ a_name "terms_and_conditions" ]
               (txt (terms_and_conditions |> Settings.TermsAndConditions.value))
