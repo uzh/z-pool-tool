@@ -41,79 +41,44 @@ let show req =
 
 let update_settings urlencoded handler req =
   let open Utils.Lwt_result.Infix in
+  let open Cqrs_command.Settings_command in
+  let lift = Lwt_result.lift in
   let redirect_path = "/admin/settings" in
   let%lwt result =
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@
     let open Lwt_result.Syntax in
-    let* tenant_db =
-      Middleware.Tenant.tenant_db_of_request req
-      |> Lwt_result.map_err (fun err -> err, redirect_path)
-    in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let events () =
-      let command_handler = function
-        | `UpdateTenantLanguages ->
-          fun urlencoded ->
-            urlencoded
-            |> Cqrs_command.Settings_command.UpdateLanguages.handle
-            |> Lwt_result.lift
+      let command_handler =
+        let open CCResult.Infix in
+        function
+        | `UpdateTenantLanguages -> fun m -> m |> UpdateLanguages.handle |> lift
         | `UpdateTenantEmailSuffixes ->
-          fun urlencoded ->
-            urlencoded
-            |> Cqrs_command.Settings_command.UpdateEmailSuffixes.handle
-            |> Lwt_result.lift
+          fun m -> m |> UpdateEmailSuffixes.handle |> lift
         | `CreateTenantEmailSuffix ->
-          fun urlencoded ->
+          fun m ->
+            let open Lwt_result.Syntax in
             let* email_suffixes = Settings.find_email_suffixes tenant_db () in
-            let open CCResult.Infix in
-            urlencoded
-            |> Cqrs_command.Settings_command.CreateEmailSuffixes.decode
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Settings_command.CreateEmailSuffixes.handle
-                  email_suffixes
-            |> Lwt_result.lift
+            CreateEmailSuffixes.(m |> decode >>= handle email_suffixes) |> lift
         | `UpdateTenantContactEmail ->
-          fun urlencoded ->
-            let open CCResult.Infix in
-            urlencoded
-            |> Cqrs_command.Settings_command.UpdateContactEmail.decode
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Settings_command.UpdateContactEmail.handle
-            |> Lwt_result.lift
+          fun m -> UpdateContactEmail.(m |> decode >>= handle) |> lift
         | `UpdateInactiveUserDisableAfter ->
-          fun urlencoded ->
-            let open CCResult.Infix in
-            urlencoded
-            |> Cqrs_command.Settings_command.InactiveUser.DisableAfter.decode
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Settings_command.InactiveUser.DisableAfter.handle
-            |> Lwt_result.lift
+          fun m -> InactiveUser.DisableAfter.(m |> decode >>= handle) |> lift
         | `UpdateInactiveUserWarning ->
-          fun urlencoded ->
-            let open CCResult.Infix in
-            urlencoded
-            |> Cqrs_command.Settings_command.InactiveUser.Warning.decode
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Settings_command.InactiveUser.Warning.handle
-            |> Lwt_result.lift
+          fun m -> InactiveUser.Warning.(m |> decode >>= handle) |> lift
         | `UpdateTermsAndConditions ->
-          fun urlencoded ->
-            let open CCResult.Infix in
-            urlencoded
-            |> Cqrs_command.Settings_command.UpdateTermsAndConditions.decode
-            |> CCResult.map_err Utils.handle_conformist_error
-            >>= Cqrs_command.Settings_command.UpdateTermsAndConditions.handle
-            |> Lwt_result.lift
+          fun m -> UpdateTermsAndConditions.(m |> decode >>= handle) |> lift
       in
-      urlencoded
-      |> command_handler handler
-      |> Lwt_result.map_err (fun err -> err, redirect_path)
+      urlencoded |> command_handler handler
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event tenant_db) in
-    let%lwt return_to_settings =
+    let return_to_settings () =
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ "Settings were updated successfully." ] ]
     in
-    () |> events |>> handle >|= CCFun.const return_to_settings
+    () |> events |>> handle |>> return_to_settings
   in
   result |> HttpUtils.extract_happy_path
 ;;

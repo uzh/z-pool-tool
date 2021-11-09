@@ -31,10 +31,7 @@ module CreateEmailSuffixes : sig
     -> t
     -> (Pool_event.t list, string) Result.t
 
-  val decode
-    :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
-
+  val decode : (string * string list) list -> (t, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.EmailSuffix.t
@@ -51,7 +48,11 @@ end = struct
   ;;
 
   let can = Utils.todo
-  let decode data = Conformist.decode_and_validate schema data
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Utils.handle_conformist_error
+  ;;
 end
 
 module UpdateEmailSuffixes : sig
@@ -80,11 +81,7 @@ module UpdateContactEmail : sig
   type t = Settings.ContactEmail.t
 
   val handle : t -> (Pool_event.t list, string) Result.t
-
-  val decode
-    :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
-
+  val decode : (string * string list) list -> (t, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.ContactEmail.t
@@ -100,7 +97,11 @@ end = struct
   ;;
 
   let can = Utils.todo
-  let decode data = Conformist.decode_and_validate schema data
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Utils.handle_conformist_error
+  ;;
 end
 
 module InactiveUser = struct
@@ -108,11 +109,7 @@ module InactiveUser = struct
     type t = Settings.InactiveUser.DisableAfter.t
 
     val handle : t -> (Pool_event.t list, string) Result.t
-
-    val decode
-      :  (string * string list) list
-      -> (t, Conformist.error list) Result.t
-
+    val decode : (string * string list) list -> (t, string) Result.t
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
     type t = Settings.InactiveUser.DisableAfter.t
@@ -132,18 +129,18 @@ module InactiveUser = struct
     ;;
 
     let can = Utils.todo
-    let decode data = Conformist.decode_and_validate schema data
+
+    let decode data =
+      Conformist.decode_and_validate schema data
+      |> CCResult.map_err Utils.handle_conformist_error
+    ;;
   end
 
   module Warning : sig
     type t = Settings.InactiveUser.Warning.t
 
     val handle : t -> (Pool_event.t list, string) Result.t
-
-    val decode
-      :  (string * string list) list
-      -> (t, Conformist.error list) Result.t
-
+    val decode : (string * string list) list -> (t, string) Result.t
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
     type t = Settings.InactiveUser.Warning.t
@@ -163,7 +160,11 @@ module InactiveUser = struct
     ;;
 
     let can = Utils.todo
-    let decode data = Conformist.decode_and_validate schema data
+
+    let decode data =
+      Conformist.decode_and_validate schema data
+      |> CCResult.map_err Utils.handle_conformist_error
+    ;;
   end
 end
 
@@ -171,11 +172,7 @@ module UpdateTermsAndConditions : sig
   type t = Settings.TermsAndConditions.t
 
   val handle : t -> (Pool_event.t list, string) Result.t
-
-  val decode
-    :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
-
+  val decode : (string * string list) list -> (t, string) Result.t
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.TermsAndConditions.t
@@ -194,5 +191,9 @@ end = struct
   ;;
 
   let can = Utils.todo
-  let decode data = Conformist.decode_and_validate schema data
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Utils.handle_conformist_error
+  ;;
 end
