@@ -64,20 +64,6 @@ module Admin = struct
     [ get "/dashboard" Handler.Admin.dashboard
     ; get "/settings" Handler.Admin.Settings.show
     ; post "/settings/:action" Handler.Admin.Settings.update_settings
-      (* ; post "/settings/languages"
-         Handler.Admin.Settings.update_tenant_languages ; post
-         "/settings/email-suffixes"
-         Handler.Admin.Settings.update_tenant_email_suffixes ; post
-         "/settings/create-email-suffix"
-         Handler.Admin.Settings.create_tenant_email_suffix ; post
-         "/settings/contact-email"
-         Handler.Admin.Settings.update_tenant_contact_email ; post
-         "/settings/inactive_user_disable_after"
-         Handler.Admin.Settings.update_inactive_user_disable_after ; post
-         "/settings/inactive_user_warning"
-         Handler.Admin.Settings.update_inactive_user_warning ; post
-         "/settings/terms_and_conditions"
-         Handler.Admin.Settings.update_terms_and_conditions *)
     ]
   ;;
 end
