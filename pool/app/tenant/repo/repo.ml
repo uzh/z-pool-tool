@@ -174,7 +174,7 @@ module Sql = struct
   let find pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt (Label.value pool) find_request (Id.value id)
-    >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
   let find_full_request =
@@ -185,7 +185,7 @@ module Sql = struct
   let find_full pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt (Label.value pool) find_full_request (Id.value id)
-    >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
   let find_by_label_request =
@@ -201,7 +201,7 @@ module Sql = struct
       (Label.value pool)
       find_by_label_request
       (Label.value label)
-    >|= CCOpt.to_result Pool_common.Error.(NotFound Tenant)
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
   let find_all_request =

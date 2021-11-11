@@ -7,7 +7,7 @@ let create req =
   let user () =
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
-    ||> CCOpt.to_result Pool_common.Error.EmailAddressMissingRoot
+    ||> CCOpt.to_result Pool_common.Message.EmailAddressMissingRoot
     >>= HttpUtils.validate_email_existance tenant_db
   in
   let events () =
@@ -24,7 +24,7 @@ let create req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ Pool_common.Error.(Created Root) ] ]
+      [ Message.set ~success:[ Pool_common.Message.(Created Root) ] ]
   in
   ()
   |> user
@@ -47,7 +47,7 @@ let toggle_status req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ Pool_common.Error.(Updated Root) ] ]
+      [ Message.set ~success:[ Pool_common.Message.(Updated Root) ] ]
   in
   id
   |> Root.find

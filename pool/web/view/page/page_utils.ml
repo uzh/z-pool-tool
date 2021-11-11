@@ -6,6 +6,10 @@ let note page_title info message =
 ;;
 
 let error_page_not_found () =
-  Pool_common.Error.(
-    note (NotFound Page |> to_string) (PageNotFoundMessage |> to_string) None)
+  Pool_common.(
+    Message.(
+      note
+        (NotFound Page |> Utils.error_to_string Language.En)
+        (PageNotFoundMessage |> Utils.to_string Language.En)
+        None))
 ;;

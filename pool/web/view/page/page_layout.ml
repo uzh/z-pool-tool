@@ -11,27 +11,20 @@ module Message = struct
     | txts -> concat_messages txts classname
   ;;
 
-  let create message () =
+  let create message lang () =
+    let open Http_utils.Message in
     match message with
     | None -> div []
     | Some message ->
-      let success =
-        match_message (Http_utils.Message.get_success message) "color: green;"
-      in
-      let info =
-        match_message (Http_utils.Message.get_info message) "color: blue;"
-      in
-      let warning =
-        match_message (Http_utils.Message.get_warning message) "color: orange;"
-      in
-      let error =
-        match_message (Http_utils.Message.get_error message) "color: red;"
-      in
+      let success = match_message (get_success message lang) "color: green;" in
+      let info = match_message (get_info message lang) "color: blue;" in
+      let warning = match_message (get_warning message lang) "color: orange;" in
+      let error = match_message (get_error message lang) "color: red;" in
       div [ success; info; warning; error ]
   ;;
 end
 
-let create children message () =
+let create children message ?(lang = Pool_common.Language.En) () =
   let page_title = title (txt "Pool tool") in
   let charset = meta ~a:[ a_charset "utf8" ] () in
   let viewport =
@@ -39,7 +32,7 @@ let create children message () =
       ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
       ()
   in
-  let message = Message.create message () in
+  let message = Message.create message lang () in
   let content = main [ message; children ] in
   html (head page_title [ charset; viewport ]) (body [ content ])
 ;;

@@ -58,7 +58,7 @@ let urlencoded_to_params urlencoded keys =
 let request_to_params req keys () =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   urlencoded_to_params urlencoded keys
-  |> CCOpt.to_result Pool_common.Error.RequestRequiredFields
+  |> CCOpt.to_result Pool_common.Message.RequestRequiredFields
   |> Lwt_result.lift
 ;;
 
@@ -71,7 +71,7 @@ let validate_email_existance pool email =
   Service.User.find_by_email_opt ~ctx:(Pool_common.Utils.pool_to_ctx pool) email
   >|= function
   | None -> Ok ()
-  | Some _ -> Error Pool_common.Error.EmailAlreadyInUse
+  | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
 ;;
 
 let format_request_boolean_values values urlencoded =
@@ -92,5 +92,6 @@ let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 let find_csrf req =
   Sihl.Web.Csrf.find req
   (* TODO how to handle without Lwt.t *)
-  |> CCOpt.get_exn_or Pool_common.Error.(Invalid Csrf |> to_string)
+  |> CCOpt.get_exn_or
+       Pool_common.(Message.(Invalid Csrf) |> Utils.error_to_string Language.En)
 ;;

@@ -1,4 +1,4 @@
-module PoolError = Pool_common.Error
+module PoolError = Pool_common.Message
 
 module Token = struct
   type t = string [@@deriving eq, show]
@@ -57,7 +57,7 @@ module Address = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.EmailAddress)
+      Pool_common.(Utils.schema_decoder create PoolError.EmailAddress)
       CCList.pure
       "email"
   ;;

@@ -11,7 +11,9 @@ let index req =
 let email_confirmation_note req =
   let open Sihl.Web in
   let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
-  let html = Common.Error.I18n.EmailConfirmation.(Page.Utils.note title note) in
+  let html =
+    Common.Message.I18n.EmailConfirmation.(Page.Utils.note title note)
+  in
   message |> html |> Response.of_html |> Lwt.return
 ;;
 

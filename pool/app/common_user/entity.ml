@@ -10,7 +10,7 @@ module Password = struct
   let validate ?(password_policy = default_password_policy) password =
     let open CCResult in
     let* () =
-      password_policy password |> map_err Pool_common.Error.passwordpolicy
+      password_policy password |> map_err Pool_common.Message.passwordpolicy
     in
     Ok ()
   ;;
@@ -25,7 +25,7 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Password)
+      Pool_common.(Utils.schema_decoder create Message.Password)
       CCList.pure
       "password"
   ;;
@@ -48,7 +48,7 @@ module Firstname = struct
 
   let create m =
     if String.length m <= 0
-    then Error Pool_common.Error.(Invalid Firstname)
+    then Error Pool_common.Message.(Invalid Firstname)
     else Ok m
   ;;
 
@@ -56,7 +56,7 @@ module Firstname = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Firstname)
+      Pool_common.(Utils.schema_decoder create Message.Firstname)
       CCList.pure
       "firstname"
   ;;
@@ -67,7 +67,7 @@ module Lastname = struct
 
   let create m =
     if String.length m <= 0
-    then Error Pool_common.Error.(Invalid Lastname)
+    then Error Pool_common.Message.(Invalid Lastname)
     else Ok m
   ;;
 
@@ -75,7 +75,7 @@ module Lastname = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Lastname)
+      Pool_common.(Utils.schema_decoder create Message.Lastname)
       CCList.pure
       "lastname"
   ;;

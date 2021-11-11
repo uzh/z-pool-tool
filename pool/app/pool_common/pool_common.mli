@@ -1,4 +1,4 @@
-module Error = Pool_common_error
+module Message = Entity_message
 
 module Id : sig
   type t
@@ -11,12 +11,27 @@ module Id : sig
   val value : t -> string
 end
 
+module Language : sig
+  type t =
+    | En
+    | De
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val code : t -> string
+  val of_string : string -> (t, Message.error) result
+  val t : t Caqti_type.t
+  val label : t -> string
+  val schema : unit -> ('a, t) Conformist.Field.t
+end
+
 module Database : sig
   module Url : sig
     type t
 
     val equal : t -> t -> bool
-    val create : string -> (t, Error.t) Result.t
+    val create : string -> (t, Message.error) Result.t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -26,7 +41,7 @@ module Database : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val value : t -> string
-    val create : string -> (t, Error.t) Result.t
+    val create : string -> (t, Message.error) Result.t
     val of_string : string -> t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
@@ -39,7 +54,7 @@ module Database : sig
   val root : Label.t
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val create : string -> string -> (t, Error.t) Result.t
+  val create : string -> string -> (t, Message.error) Result.t
   val add_pool : t -> unit
   val read_pool : t -> Label.t
 end
@@ -90,9 +105,9 @@ module File : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_string : string -> (t, Error.t) Result.t
+    val of_string : string -> (t, Message.error) Result.t
     val to_string : t -> string
-    val of_filename : string -> (t, Error.t) Result.t
+    val of_filename : string -> (t, Message.error) Result.t
   end
 
   type t
@@ -151,10 +166,15 @@ end
 
 module Utils : sig
   val schema_decoder
-    :  ('a -> ('weak776, Error.t) result)
-    -> Error.field
+    :  ('a -> ('b, Message.error) result)
+    -> Message.field
     -> 'a list
-    -> ('weak776, string) result
+    -> ('b, string) result
 
   val pool_to_ctx : Database.Label.t -> (string * string) list
+  val to_string : Language.t -> Message.t -> string
+  val info_to_string : Language.t -> Message.info -> string
+  val success_to_string : Language.t -> Message.success -> string
+  val warning_to_string : Language.t -> Message.warning -> string
+  val error_to_string : Language.t -> Message.error -> string
 end

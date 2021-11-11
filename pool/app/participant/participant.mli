@@ -29,17 +29,17 @@ val insert : Pool_common.Database.Label.t -> t -> unit Lwt.t
 val find
   :  Pool_common.Database.Label.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Error.t) Result.t Lwt.t
+  -> (t, Pool_common.Message.error) Result.t Lwt.t
 
 val find_by_email
   :  Pool_common.Database.Label.t
   -> Common_user.Email.Address.t
-  -> (t, Pool_common.Error.t) Result.t Lwt.t
+  -> (t, Pool_common.Message.error) Result.t Lwt.t
 
 val find_by_user
   :  Pool_common.Database.Label.t
   -> Sihl_user.t
-  -> (t, Pool_common.Error.t) Result.t Lwt.t
+  -> (t, Pool_common.Message.error) Result.t Lwt.t
 
 val find_duplicates : 'a -> 'b
 val has_terms_accepted : t -> bool Lwt.t

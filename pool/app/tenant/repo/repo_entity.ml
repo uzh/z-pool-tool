@@ -132,7 +132,7 @@ let t =
                                  (tup2
                                     Disabled.t
                                     (tup2
-                                       Settings.Language.t
+                                       Pool_common.Language.t
                                        (tup2
                                           Common.Repo.CreatedAt.t
                                           Common.Repo.UpdatedAt.t)))))))))))))
@@ -217,7 +217,7 @@ module Write = struct
                                    (tup2
                                       Disabled.t
                                       (tup2
-                                         Settings.Language.t
+                                         Pool_common.Language.t
                                          (tup2
                                             Common.Repo.CreatedAt.t
                                             Common.Repo.UpdatedAt.t)))))))))))))

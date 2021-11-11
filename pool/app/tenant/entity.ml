@@ -5,7 +5,7 @@ module UpdatedAt = Pool_common.UpdatedAt
 module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
 module LogoMapping = Entity_logo_mapping
-module PoolError = Pool_common.Error
+module PoolError = Pool_common.Message
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -20,7 +20,7 @@ module Title = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Title)
+      Pool_common.(Utils.schema_decoder create Message.Title)
       CCList.pure
       "title"
   ;;
@@ -39,7 +39,7 @@ module Description = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Description)
+      Pool_common.(Utils.schema_decoder create Message.Description)
       CCList.pure
       "description"
   ;;
@@ -56,7 +56,7 @@ module Url = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.Url)
+      Pool_common.(Utils.schema_decoder create Message.Url)
       CCList.pure
       "url"
   ;;
@@ -80,7 +80,7 @@ module Styles = struct
 
     let schema () =
       Conformist.custom
-        Pool_common.(Utils.schema_decoder create Error.Styles)
+        Pool_common.(Utils.schema_decoder create Message.Styles)
         CCList.pure
         "styles"
     ;;
@@ -105,7 +105,7 @@ module Icon = struct
 
     let schema () =
       Conformist.custom
-        Pool_common.(Utils.schema_decoder create Error.Icon)
+        Pool_common.(Utils.schema_decoder create Message.Icon)
         CCList.pure
         "icon"
     ;;
@@ -160,7 +160,7 @@ module Maintenance = struct
       Pool_common.(
         Utils.schema_decoder
           (fun m -> m |> of_string |> CCResult.pure)
-          Error.TenantMaintenanceFlag)
+          Message.TenantMaintenanceFlag)
       (fun l -> l |> stringify |> CCList.pure)
       "maintenance"
   ;;
@@ -187,7 +187,7 @@ module Disabled = struct
       Pool_common.(
         Utils.schema_decoder
           (fun m -> m |> of_string |> CCResult.pure)
-          Error.TenantDisabledFlag)
+          Message.TenantDisabledFlag)
       (fun l -> l |> stringify |> CCList.pure)
       "disabled"
   ;;
@@ -206,7 +206,7 @@ type t =
   ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
@@ -224,7 +224,7 @@ module Read = struct
     ; icon : Icon.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
@@ -243,7 +243,7 @@ module Write = struct
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : CreatedAt.t
     }

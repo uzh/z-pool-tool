@@ -1,4 +1,4 @@
-module PoolError = Pool_common.Error
+module PoolError = Pool_common.Message
 
 module Server = struct
   type t = string [@@deriving eq, show]
@@ -13,7 +13,7 @@ module Server = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpAuthServer)
+      Pool_common.(Utils.schema_decoder create Message.SmtpAuthServer)
       CCList.pure
       "smtp_auth_server"
   ;;
@@ -32,7 +32,7 @@ module Port = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpPort)
+      Pool_common.(Utils.schema_decoder create Message.SmtpPort)
       CCList.pure
       "smtp_auth_port"
   ;;
@@ -51,7 +51,7 @@ module Username = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpUsername)
+      Pool_common.(Utils.schema_decoder create Message.SmtpUsername)
       CCList.pure
       "smtp_auth_username"
   ;;
@@ -70,7 +70,7 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpPassword)
+      Pool_common.(Utils.schema_decoder create Message.SmtpPassword)
       CCList.pure
       "smtp_auth_password"
   ;;
@@ -89,7 +89,7 @@ module AuthenticationMethod = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpAuthMethod)
+      Pool_common.(Utils.schema_decoder create Message.SmtpAuthMethod)
       CCList.pure
       "smtp_auth_authentication_method"
   ;;
@@ -108,7 +108,7 @@ module Protocol = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Error.SmtpProtocol)
+      Pool_common.(Utils.schema_decoder create Message.SmtpProtocol)
       CCList.pure
       "smtp_auth_protocol"
   ;;

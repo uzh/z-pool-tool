@@ -17,7 +17,7 @@ type update =
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   }
 [@@deriving eq, show]
 

@@ -130,7 +130,7 @@ let detail csrf (tenant : Tenant.t) message () =
     ; ( "smtp_auth_authentication_method"
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
     ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "default_language", Settings.Language.code tenant.default_language
+    ; "default_language", Pool_common.Language.code tenant.default_language
     ]
   in
   let database_fields =

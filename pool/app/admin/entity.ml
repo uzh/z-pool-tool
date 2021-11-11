@@ -17,7 +17,7 @@ module Stringify = struct
     | "recruiter" -> Ok `Recruiter
     | "operator" -> Ok `Operator
     | "root" -> Ok `Root
-    | _ -> Error Pool_common.Error.(Invalid Role)
+    | _ -> Error Pool_common.Message.(Invalid Role)
   ;;
 end
 

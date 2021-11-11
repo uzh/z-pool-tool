@@ -1,7 +1,7 @@
 module Update : sig
   type t = { new_settings : (string * string) list }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Error.t) Result.t
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
   val can : Pool_common.Database.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
 end = struct
   type t = { new_settings : (string * string) list }

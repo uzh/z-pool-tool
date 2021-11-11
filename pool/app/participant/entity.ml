@@ -14,7 +14,7 @@ module RecruitmentChannel = struct
     | "online" -> Ok Online
     | "lecture" -> Ok Lecture
     | "mailing" -> Ok Mailing
-    | _ -> Error Pool_common.Error.(Invalid RecruitmentChannel)
+    | _ -> Error Pool_common.Message.(Invalid RecruitmentChannel)
   ;;
 
   let to_string = function
@@ -26,7 +26,7 @@ module RecruitmentChannel = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder of_string Error.RecruitmentChannel)
+      Pool_common.(Utils.schema_decoder of_string Message.RecruitmentChannel)
       (fun l -> [ to_string l ])
       "recruitment_channel"
   ;;

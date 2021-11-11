@@ -154,6 +154,7 @@ let create () =
       >|= Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
       |> function
       | Ok _ -> Lwt.return_unit
-      | Error err -> Lwt.map failwith (Pool_common.Error.message err))
+      | Error err ->
+        failwith Pool_common.(Utils.error_to_string Language.En err))
     data
 ;;

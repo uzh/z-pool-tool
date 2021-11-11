@@ -47,7 +47,7 @@ let login_post req =
     let open Utils.Lwt_result.Infix in
     let* params =
       HttpUtils.urlencoded_to_params urlencoded [ "email"; "password" ]
-      |> CCOpt.to_result Pool_common.Error.LoginProvideDetails
+      |> CCOpt.to_result Pool_common.Message.LoginProvideDetails
       |> Lwt_result.lift
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
@@ -55,7 +55,7 @@ let login_post req =
     let password = List.assoc "password" params in
     let* user =
       Service.User.login ~ctx:(pool_to_ctx tenant_db) email ~password
-      |> Lwt_result.map_err Pool_common.Error.handle_sihl_login_error
+      |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
     in
     dashboard_path tenant_db user
     >|> CCFun.flip
@@ -97,13 +97,13 @@ let request_reset_password_post req =
     let open Utils.Lwt_result.Infix in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
-      ||> CCOpt.to_result Pool_common.Error.(NotFound Email)
+      ||> CCOpt.to_result Pool_common.Message.(NotFound Email)
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let ctx = pool_to_ctx tenant_db in
     let* user =
       Service.User.find_by_email_opt ~ctx email
-      ||> CCOpt.to_result Pool_common.Error.PasswordResetMessage
+      ||> CCOpt.to_result Pool_common.Message.PasswordResetFailMessage
     in
     Common_user.Event.Email.PasswordReset.create tenant_db ~user
     >|= Service.Email.send ~ctx
@@ -112,7 +112,8 @@ let request_reset_password_post req =
   | Ok _ | Error _ ->
     HttpUtils.redirect_to_with_actions
       "/request-reset-password"
-      [ Message.set ~success:[ Pool_common.Error.PasswordResetMessage ] ]
+      [ Message.set ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
+      ]
 ;;
 
 let reset_password_get req =
@@ -122,7 +123,7 @@ let reset_password_get req =
   | None ->
     HttpUtils.redirect_to_with_actions
       "/request-reset-password/"
-      [ Message.set ~error:[ Pool_common.Error.(NotFound Token) ] ]
+      [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
   | Some token ->
     let csrf = HttpUtils.find_csrf req in
     let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
@@ -140,7 +141,7 @@ let reset_password_post req =
         urlencoded
         [ "token"; "password"; "password_confirmation" ]
       |> CCOpt.to_result
-           (Pool_common.Error.PasswordResetInvalidData, "/reset-password/")
+           (Pool_common.Message.PasswordResetInvalidData, "/reset-password/")
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
@@ -157,11 +158,11 @@ let reset_password_post req =
            ~password
            ~password_confirmation
          |> Lwt_result.map_err
-              (CCFun.const Pool_common.Error.passwordresetinvaliddata)
+              (CCFun.const Pool_common.Message.passwordresetinvaliddata)
     in
     HttpUtils.redirect_to_with_actions
       "/login"
-      [ Message.set ~success:[ Pool_common.Error.PasswordResetFinish ] ]
+      [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
     |> Lwt_result.ok
   in
   HttpUtils.extract_happy_path result

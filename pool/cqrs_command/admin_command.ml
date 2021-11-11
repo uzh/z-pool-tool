@@ -14,9 +14,12 @@ module CreateOperator : sig
     -> ?password_policy:(string -> (unit, string) Result.t)
     -> Tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Error.t) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) Result.t
 
-  val decode : (string * string list) list -> (t, Pool_common.Error.t) Result.t
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) Result.t
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -72,6 +75,6 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Error.conformist
+    |> CCResult.map_err Pool_common.Message.conformist
   ;;
 end

@@ -50,13 +50,13 @@ let sign_up_create req =
       CCList.assoc ~eq:( = ) terms_key urlencoded
       |> CCList.hd
       |> CCString.equal "true"
-      |> Utils.bool_to_result Pool_common.Error.TermsAndConditionsNotAccepted
+      |> Utils.bool_to_result Pool_common.Message.TermsAndConditionsNotAccepted
       |> Lwt_result.lift
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let* () =
       Sihl.Web.Request.urlencoded "email" req
-      ||> CCOpt.to_result Pool_common.Error.ParticipantSignupInvalidEmail
+      ||> CCOpt.to_result Pool_common.Message.ParticipantSignupInvalidEmail
       >>= HttpUtils.validate_email_existance tenant_db
     in
     (* TODO add Settings when ready *)
@@ -72,7 +72,8 @@ let sign_up_create req =
         let%lwt () = Pool_event.handle_events tenant_db events in
         HttpUtils.redirect_to_with_actions
           "/participant/email-confirmation"
-          [ Message.set ~success:[ Pool_common.Error.EmailConfirmationMessage ]
+          [ Message.set
+              ~success:[ Pool_common.Message.EmailConfirmationMessage ]
           ])
     |> Lwt_result.ok
   in
@@ -90,14 +91,14 @@ let email_verification req =
   let* token =
     Sihl.Web.Request.query "token" req
     |> CCOpt.map Email.Token.create
-    |> CCOpt.to_result Pool_common.Error.(NotFound Token)
+    |> CCOpt.to_result Pool_common.Message.(NotFound Token)
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let ctx = Pool_common.Utils.pool_to_ctx tenant_db in
   let* email =
     Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
-    ||> CCOpt.to_result Pool_common.Error.TokenInvalidFormat
+    ||> CCOpt.to_result Pool_common.Message.TokenInvalidFormat
     >== Email.Address.create
     >>= Email.find_unverified tenant_db
   in
@@ -110,7 +111,7 @@ let email_verification req =
   let%lwt () = Pool_event.handle_events tenant_db events in
   HttpUtils.redirect_to_with_actions
     "/login"
-    [ Message.set ~success:[ Pool_common.Error.EmailVerifySuccess ] ]
+    [ Message.set ~success:[ Pool_common.Message.EmailVerified ] ]
   |> Lwt_result.ok)
   |> Lwt_result.map_err (fun msg -> msg, "/login")
   >|> HttpUtils.extract_happy_path
@@ -126,7 +127,7 @@ let terms req =
   let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
   let* user =
     General.user_from_session req
-    ||> CCOpt.to_result Pool_common.Error.(NotFound User, "/login")
+    ||> CCOpt.to_result Pool_common.Message.(NotFound User, "/login")
   in
   let%lwt terms = Settings.(terms_and_conditions ||> value) in
   Page.Participant.terms csrf message user.Sihl_user.id terms ()

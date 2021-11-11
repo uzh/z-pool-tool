@@ -34,7 +34,7 @@ module Email = struct
           ~email
       in
       match reset_token with
-      | None -> Lwt.return_error Pool_common.Error.PasswordResetMessage
+      | None -> Lwt.return_error Pool_common.Message.PasswordResetFailMessage
       | Some token ->
         let subject = "Password reset" in
         let reset_url =

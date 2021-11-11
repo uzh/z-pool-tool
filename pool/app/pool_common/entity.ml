@@ -1,4 +1,4 @@
-module PoolError = Pool_common_error
+module PoolError = Entity_message
 
 let schema_decoder = Pool_common_utils.schema_decoder
 
@@ -8,6 +8,43 @@ module Id = struct
   let create () = Uuidm.create `V4 |> Uuidm.to_string
   let of_string m = m
   let value m = m
+end
+
+module Language = struct
+  type t =
+    | En
+    | De
+  [@@deriving eq, show]
+
+  let code = function
+    | En -> "EN"
+    | De -> "DE"
+  ;;
+
+  let of_string = function
+    | "EN" -> Ok En
+    | "DE" -> Ok De
+    | _ -> Error PoolError.(Invalid Language)
+  ;;
+
+  let t =
+    let open CCResult in
+    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
+    Caqti_type.(
+      custom
+        ~encode:(fun m -> m |> code |> pure)
+        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
+        string)
+  ;;
+
+  let label country_code = country_code |> code |> Utils.Countries.find
+
+  let schema () =
+    Conformist.custom
+      (Pool_common_utils.schema_decoder of_string PoolError.Language)
+      (fun l -> [ code l ])
+      "default_language"
+  ;;
 end
 
 module Database = struct

@@ -6,43 +6,6 @@ module Week = struct
   type t = int
 end
 
-module Language = struct
-  type t =
-    | En
-    | De
-  [@@deriving eq, show]
-
-  let code = function
-    | En -> "EN"
-    | De -> "DE"
-  ;;
-
-  let of_string = function
-    | "EN" -> Ok En
-    | "DE" -> Ok De
-    | _ -> Error Pool_common.Error.(Invalid Language)
-  ;;
-
-  let t =
-    let open CCResult in
-    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> code |> pure)
-        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
-        string)
-  ;;
-
-  let label country_code = country_code |> code |> Utils.Countries.find
-
-  let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder of_string Error.Language)
-      (fun l -> [ code l ])
-      "default_language"
-  ;;
-end
-
 module EmailSuffix = struct
   type t = string
 
@@ -83,7 +46,7 @@ end
 
 module SettingValue = struct
   type t =
-    | Languages of Language.t list
+    | Languages of Pool_common.Language.t list
     | EmailContact of ContactEmail.t
     | EmailSuffixes of EmailSuffix.t list
     | UserSetToInactiveAfter of InactiveUser.DisableAfter.t
@@ -92,7 +55,7 @@ module SettingValue = struct
 
   let value = function
     | Languages languages ->
-      String.concat ", " (CCList.map Language.code languages)
+      String.concat ", " (CCList.map Pool_common.Language.code languages)
     | EmailContact email -> ContactEmail.value email
     | EmailSuffixes suffixes ->
       String.concat ", " (CCList.map EmailSuffix.value suffixes)

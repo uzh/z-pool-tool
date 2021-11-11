@@ -51,7 +51,7 @@ let create req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ Common.Error.(Created Tenant) ] ]
+      [ Message.set ~success:[ Common.Message.(Created Tenant) ] ]
   in
   ()
   |> events
@@ -68,7 +68,7 @@ let create_operator req =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
-    ||> CCOpt.to_result Common.Error.EmailAddressMissingOperator
+    ||> CCOpt.to_result Common.Message.EmailAddressMissingOperator
     >>= HttpUtils.validate_email_existance tenant_db
   in
   let find_tenant () = Tenant.find_full id in
@@ -85,7 +85,7 @@ let create_operator req =
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
-      [ Message.set ~success:[ Pool_common.Error.(Created Operator) ] ]
+      [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
   in
   ()
   |> user

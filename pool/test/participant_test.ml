@@ -18,7 +18,7 @@ let sign_up_not_allowed_suffix () =
   let events =
     Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
-  let expected = Error Pool_common.Error.(Invalid EmailSuffix) in
+  let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
   Alcotest.(
     check (result (list Utils.event) Utils.error) "succeeds" expected events)
 ;;
