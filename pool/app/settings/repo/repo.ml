@@ -6,25 +6,22 @@ let stringify_key key =
 ;;
 
 module Sql = struct
-  let select_from_settings_sql where_fragment =
-    let select_from =
-      {sql|
+  let select_from_settings_sql =
+    {sql|
       SELECT
          settings_key,
          value,
          created_at,
          updated_at
-      FROM pool_system_settings |sql}
-    in
-    Format.asprintf "%s %s" select_from where_fragment
+      FROM
+        pool_system_settings
+      WHERE
+        settings_key = ?
+    |sql}
   ;;
 
-  let where_fragment = {sql| WHERE settings_key = ? |sql}
-
   let find_request caqti =
-    where_fragment
-    |> select_from_settings_sql
-    |> Caqti_request.find Caqti_type.string caqti
+    select_from_settings_sql |> Caqti_request.find Caqti_type.string caqti
   ;;
 
   let find pool caqti key =
@@ -34,21 +31,18 @@ module Sql = struct
       (key |> stringify_key)
   ;;
 
-  let update_sql where_fragment =
-    let update_fragment =
-      {sql|
+  let update_sql =
+    {sql|
       UPDATE
         pool_system_settings
       SET
         value = ?
+      WHERE
+        settings_key = ?
     |sql}
-    in
-    Format.asprintf "%s %s" update_fragment where_fragment
   ;;
 
-  let update_request =
-    Caqti_request.exec RepoEntity.Write.t (where_fragment |> update_sql)
-  ;;
+  let update_request = Caqti_request.exec RepoEntity.Write.t update_sql
 
   let update pool =
     Utils.Database.exec (Pool_common.Database.Label.value pool) update_request
