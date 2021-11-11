@@ -1,4 +1,3 @@
-(* module Sexp = Sexplib.Std *)
 module Message = Pool_common.Message
 module Utils = Pool_common.Utils
 
@@ -16,7 +15,7 @@ let set_warning txts message = { message with warning = txts }
 let set_error txts message = { message with error = txts }
 let set_info txts message = { message with info = txts }
 
-let get_error message (lang : Pool_common.Language.t) =
+let get_error message lang =
   message.error |> CCList.map (Utils.error_to_string lang)
 ;;
 
@@ -51,8 +50,8 @@ let set ?(error = []) ?(warning = []) ?(success = []) ?(info = []) res =
     |> set_warning warning
     |> set_success success
     |> set_info info
+    |> to_string
   in
-  let message = to_string message in
   (* We use alerts for all messages *)
   Sihl.Web.Flash.set_alert message res
 ;;

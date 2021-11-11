@@ -10,7 +10,6 @@ end
 
 type field =
   | Admin
-  | Csrf
   | DatabaseLabel
   | DatabaseUrl
   | Description

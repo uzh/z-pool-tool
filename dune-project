@@ -55,5 +55,7 @@
    (>= 1.4.0))
   (ppx_deriving
    (>= 5.2.1))
+  (ppx_yojson_conv
+   (>= 0.14.0))
   (ppx_variants_conv
    (>= 0.14.1))))

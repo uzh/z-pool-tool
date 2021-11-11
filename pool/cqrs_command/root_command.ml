@@ -11,13 +11,13 @@ module Create : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) Result.t)
+    -> ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -74,7 +74,7 @@ end
 module ToggleStatus : sig
   type t = Root.t
 
-  val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+  val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Root.t

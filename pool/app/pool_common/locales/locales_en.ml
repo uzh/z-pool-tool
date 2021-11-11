@@ -2,7 +2,6 @@ open Entity_message
 
 let field_to_string = function
   | Admin -> "admin"
-  | Csrf -> "csrf"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
   | Description -> "description"

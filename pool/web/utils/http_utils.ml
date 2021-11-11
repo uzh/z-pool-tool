@@ -88,10 +88,4 @@ let format_request_boolean_values values urlencoded =
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
-
-let find_csrf req =
-  Sihl.Web.Csrf.find req
-  (* TODO how to handle without Lwt.t *)
-  |> CCOpt.get_exn_or
-       Pool_common.(Message.(Invalid Csrf) |> Utils.error_to_string Language.En)
-;;
+let find_csrf req = Sihl.Web.Csrf.find_exn req

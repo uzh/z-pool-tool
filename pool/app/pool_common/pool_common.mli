@@ -31,7 +31,7 @@ module Database : sig
     type t
 
     val equal : t -> t -> bool
-    val create : string -> (t, Message.error) Result.t
+    val create : string -> (t, Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -41,7 +41,7 @@ module Database : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val value : t -> string
-    val create : string -> (t, Message.error) Result.t
+    val create : string -> (t, Message.error) result
     val of_string : string -> t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
@@ -54,7 +54,7 @@ module Database : sig
   val root : Label.t
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val create : string -> string -> (t, Message.error) Result.t
+  val create : string -> string -> (t, Message.error) result
   val add_pool : t -> unit
   val read_pool : t -> Label.t
 end
@@ -105,9 +105,9 @@ module File : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val of_string : string -> (t, Message.error) Result.t
+    val of_string : string -> (t, Message.error) result
     val to_string : t -> string
-    val of_filename : string -> (t, Message.error) Result.t
+    val of_filename : string -> (t, Message.error) result
   end
 
   type t
