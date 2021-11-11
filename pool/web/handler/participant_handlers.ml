@@ -20,18 +20,27 @@ let dashboard req =
 ;;
 
 let sign_up req =
-  let csrf = HttpUtils.find_csrf req in
-  let message =
-    Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
-  in
-  let go = CCFun.flip Sihl.Web.Flash.find req in
-  let channels = Participant.RecruitmentChannel.all () in
-  let email = go "email" in
-  let firstname = go "firstname" in
-  let lastname = go "lastname" in
-  let recruitment_channel = go "recruitment_channel" in
-  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
-  let html =
+  let error_path = "/" in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let csrf = HttpUtils.find_csrf req in
+    let message =
+      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
+    in
+    let go = CCFun.flip Sihl.Web.Flash.find req in
+    let channels = Participant.RecruitmentChannel.all () in
+    let email = go "email" in
+    let firstname = go "firstname" in
+    let lastname = go "lastname" in
+    let recruitment_channel = go "recruitment_channel" in
+    let* tenant_db =
+      Middleware.Tenant.tenant_db_of_request req
+      |> Lwt_result.map_err (fun err -> err, error_path)
+    in
+    let* terms =
+      Settings.find_terms_and_conditions tenant_db ()
+      |> Lwt_result.map_err (fun err -> err, error_path)
+    in
     Page.Participant.sign_up
       csrf
       message
@@ -42,8 +51,10 @@ let sign_up req =
       recruitment_channel
       terms
       ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
   in
-  Sihl.Web.Response.of_html html |> Lwt.return
+  result |> HttpUtils.extract_happy_path
 ;;
 
 let sign_up_create req =
@@ -70,10 +81,12 @@ let sign_up_create req =
          @@ CCOpt.to_result "Please provide a valid and unused email address."
       >>= HttpUtils.validate_email_existance tenant_db
     in
-    (* TODO add Settings when ready *)
-    (* let* allowed_email_suffixes = Settings.allowed_email_suffixes tenant_db
-       in *)
-    let allowed_email_suffixes = None in
+    let* allowed_email_suffixes =
+      let open Lwt_result.Infix in
+      Settings.find_email_suffixes tenant_db ()
+      >|= fun suffixes ->
+      if CCList.length suffixes > 0 then Some suffixes else None
+    in
     let* events =
       let open CCResult.Infix in
       Command.SignUp.decode urlencoded
@@ -141,17 +154,23 @@ let terms req =
   CCFun.flip Lwt.bind HttpUtils.extract_happy_path
   @@
   let open Lwt_result.Syntax in
-  let open Sihl.Web in
   let csrf = HttpUtils.find_csrf req in
-  let message = CCOpt.bind (Flash.find_alert req) Message.of_string in
+  let message = CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string in
   let* user =
     Lwt.map
       (CCOpt.to_result ("User could not be found", "/login"))
       (General.user_from_session req)
   in
-  let%lwt terms = Settings.(Lwt.map value terms_and_conditions) in
+  let* tenant_db =
+    Middleware.Tenant.tenant_db_of_request req
+    |> Lwt_result.map_err (fun err -> err, "/")
+  in
+  let* terms =
+    Settings.find_terms_and_conditions tenant_db ()
+    |> Lwt_result.map_err (fun err -> err, "/")
+  in
   Page.Participant.terms csrf message user.Sihl_user.id terms ()
-  |> Response.of_html
+  |> Sihl.Web.Response.of_html
   |> Lwt.return_ok
 ;;
 

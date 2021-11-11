@@ -33,16 +33,15 @@ let set_password
   >|= ignore
 ;;
 
-let has_terms_accepted (participant : t) : bool Lwt.t =
-  let%lwt last_updated =
-    Lwt.map Settings.last_updated Settings.terms_and_conditions
-  in
+let has_terms_accepted (participant : t) pool =
+  let open Lwt_result.Syntax in
+  let* last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
     participant.terms_accepted_at |> User.TermsAccepted.value
   in
-  CCOpt.map (Ptime.is_earlier ~than:last_updated) terms_accepted_at
+  CCOpt.map (Ptime.is_later ~than:last_updated) terms_accepted_at
   |> CCOpt.get_or ~default:false
-  |> Lwt.return
+  |> Lwt.return_ok
 ;;
 
 type event =

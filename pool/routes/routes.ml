@@ -60,7 +60,12 @@ module Admin = struct
     ]
   ;;
 
-  let routes = [ get "/dashboard" Handler.Admin.dashboard ]
+  let routes =
+    [ get "/dashboard" Handler.Admin.dashboard
+    ; get "/settings" Handler.Admin.Settings.show
+    ; post "/settings/:action" Handler.Admin.Settings.update_settings
+    ]
+  ;;
 end
 
 module Root = struct
@@ -89,6 +94,7 @@ let router =
     ; Participant.(choose ~scope:"/participant" routes)
     ; Participant.(choose ~scope:"/participant" ~middlewares locked_routes)
     ; choose ~scope:"/root" Root.routes
+    ; choose ~scope:"/admin" Admin.routes
     ; get "/**" Handler.Public.not_found
     ]
 ;;

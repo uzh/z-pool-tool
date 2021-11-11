@@ -96,7 +96,7 @@ let signup
                   channel_select
               ]
           ; div
-              [ p [ txt terms ]
+              [ p [ txt (terms |> Settings.TermsAndConditions.value) ]
               ; div
                   [ input
                       ~a:
