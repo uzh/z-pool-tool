@@ -32,7 +32,7 @@ module Address = struct
   let strip_email_suffix email =
     (* TODO check whether this is stable *)
     let tail = CCString.split_on_char '@' email |> CCList.tail_opt in
-    CCOpt.bind tail CCList.head_opt
+    CCOption.bind tail CCList.head_opt
   ;;
 
   let validate_suffix

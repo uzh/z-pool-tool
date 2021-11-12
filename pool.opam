@@ -23,7 +23,7 @@ depends: [
   "sihl-queue" {>= "2.0.1"}
   "sihl-storage" {>= "2.0.1"}
   "lwt" {>= "5.4.1"}
-  "containers" {= "3.5"}
+  "containers" {>= "3.6"}
   "caqti-driver-mariadb" {>= "1.6.0"}
   "ocamlformat" {>= "0.18.0"}
   "alcotest-lwt" {>= "1.4.0"}

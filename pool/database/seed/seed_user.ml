@@ -6,7 +6,8 @@ let admins db_pool () =
   in
   let ctx = Pool_common.Utils.pool_to_ctx db_pool in
   let password =
-    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD" |> CCOpt.value ~default:"admin"
+    Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
+    |> CCOption.value ~default:"admin"
   in
   Lwt_list.iter_s
     (fun (given_name, name, email, role) ->
@@ -94,7 +95,8 @@ let participants db_pool () =
     ]
   in
   let password =
-    Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD" |> CCOpt.value ~default:"user"
+    Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
+    |> CCOption.value ~default:"user"
   in
   Lwt_list.iter_s
     (fun ( given_name

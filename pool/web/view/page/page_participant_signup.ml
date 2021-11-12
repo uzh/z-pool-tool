@@ -27,7 +27,7 @@ let signup
       |> CCList.map (fun channel ->
              let is_selected =
                recruitment_channel
-               |> CCOpt.map_or ~default:false (String.equal channel)
+               |> CCOption.map_or ~default:false (String.equal channel)
              in
              option
                ~a:

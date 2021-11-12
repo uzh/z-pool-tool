@@ -7,7 +7,7 @@ let tenant_db_of_request req
   let* host =
     req
     |> Sihl.Web.Request.header "host"
-    |> CCOpt.to_result Pool_common.Message.(NotFound Host)
+    |> CCOption.to_result Pool_common.Message.(NotFound Host)
     |> Lwt_result.lift
   in
   let%lwt selections = Tenant.Selection.find_all () in
@@ -15,7 +15,7 @@ let tenant_db_of_request req
     ~eq:(fun m k -> CCString.prefix ~pre:m k)
     host
     (selections |> CCList.map (fun sel -> Tenant.Selection.(url sel, label sel)))
-  |> CCOpt.to_result Pool_common.Message.(NotFound Tenant)
+  |> CCOption.to_result Pool_common.Message.(NotFound Tenant)
   |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
   |> Lwt_result.lift
 ;;

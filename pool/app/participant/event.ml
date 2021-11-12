@@ -38,8 +38,8 @@ let has_terms_accepted pool (participant : t) =
   let terms_accepted_at =
     participant.terms_accepted_at |> User.TermsAccepted.value
   in
-  CCOpt.map (Ptime.is_later ~than:last_updated) terms_accepted_at
-  |> CCOpt.get_or ~default:false
+  CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
+  |> CCOption.get_or ~default:false
   |> Lwt.return
 ;;
 

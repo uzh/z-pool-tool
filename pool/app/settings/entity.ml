@@ -57,7 +57,7 @@ module InactiveUser = struct
       let open CCResult.Infix in
       week
       |> CCInt.of_string
-      |> CCOpt.to_result Pool_common.Message.(Invalid TimeSpan)
+      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
       >>= fun week ->
       if week < 0 then Error Pool_common.Message.TimeSpanPositive else Ok week
     ;;
@@ -81,7 +81,7 @@ module InactiveUser = struct
       let open CCResult.Infix in
       day
       |> CCInt.of_string
-      |> CCOpt.to_result Pool_common.Message.(Invalid TimeSpan)
+      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
       >>= fun day ->
       if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
     ;;

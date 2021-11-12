@@ -10,7 +10,7 @@ let[@warning "-4"] confirmed () =
         Service.User.Web.user_from_session
           ~ctx:(Pool_common.Utils.pool_to_ctx pool)
           req
-        ||> CCOpt.to_result Pool_common.Message.(NotFound User)
+        ||> CCOption.to_result Pool_common.Message.(NotFound User)
         >|= fun user -> Pool_common.Id.of_string user.Sihl_user.id
       in
       Participant.find pool user_id

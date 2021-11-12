@@ -41,11 +41,11 @@ let create () =
     then (
       let password =
         Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
-        |> CCOpt.value ~default:"password"
+        |> CCOption.value ~default:"password"
       in
       let database =
         Sihl.Configuration.read_string "MYSQL_DATABASE"
-        |> CCOpt.value ~default:"dev"
+        |> CCOption.value ~default:"dev"
       in
       [ ( "Econ test"
         , "description"

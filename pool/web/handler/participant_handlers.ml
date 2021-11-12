@@ -4,7 +4,9 @@ module Message = HttpUtils.Message
 module Email = Common_user.Email
 
 let dashboard req =
-  let message = CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string in
+  let message =
+    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+  in
   Page.Participant.dashboard message ()
   |> Sihl.Web.Response.of_html
   |> Lwt.return
@@ -18,7 +20,8 @@ let sign_up req =
     let open Lwt_result.Syntax in
     let csrf = HttpUtils.find_csrf req in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip CCOpt.bind Message.of_string
+      Sihl.Web.Flash.find_alert req
+      |> CCFun.flip CCOption.bind Message.of_string
     in
     let go = CCFun.flip Sihl.Web.Flash.find req in
     let channels = Participant.RecruitmentChannel.all () in
@@ -63,7 +66,7 @@ let sign_up_create req =
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let* () =
       Sihl.Web.Request.urlencoded "email" req
-      ||> CCOpt.to_result Pool_common.Message.ParticipantSignupInvalidEmail
+      ||> CCOption.to_result Pool_common.Message.ParticipantSignupInvalidEmail
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let%lwt allowed_email_suffixes =
@@ -99,15 +102,15 @@ let email_verification req =
   (let open Lwt_result.Syntax in
   let* token =
     Sihl.Web.Request.query "token" req
-    |> CCOpt.map Email.Token.create
-    |> CCOpt.to_result Pool_common.Message.(NotFound Token)
+    |> CCOption.map Email.Token.create
+    |> CCOption.to_result Pool_common.Message.(NotFound Token)
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let ctx = Pool_common.Utils.pool_to_ctx tenant_db in
   let* email =
     Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
-    ||> CCOpt.to_result Pool_common.Message.TokenInvalidFormat
+    ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat
     >== Email.Address.create
     >>= Email.find_unverified tenant_db
   in
@@ -132,14 +135,16 @@ let terms req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let csrf = HttpUtils.find_csrf req in
-  let message = CCOpt.bind (Sihl.Web.Flash.find_alert req) Message.of_string in
+  let message =
+    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+  in
   let* tenant_db =
     Middleware.Tenant.tenant_db_of_request req
     |> Lwt_result.map_err (fun err -> err, "/")
   in
   let* user =
     General.user_from_session tenant_db req
-    ||> CCOpt.to_result Pool_common.Message.(NotFound User, "/login")
+    ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
   in
   let%lwt terms = Settings.find_terms_and_conditions tenant_db in
   Page.Participant.terms csrf message user.Sihl_user.id terms ()

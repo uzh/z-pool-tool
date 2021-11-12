@@ -277,8 +277,8 @@ end = struct
       CCList.map
         (fun (id_list, logo_type) ->
           id_list
-          |> CCOpt.map (fun ids -> create_logo_mappings ids tenant logo_type)
-          |> CCOpt.value ~default:[])
+          |> CCOption.map (fun ids -> create_logo_mappings ids tenant logo_type)
+          |> CCOption.value ~default:[])
         [ command.partner_logos, Tenant.LogoMapping.LogoType.PartnerLogo
         ; command.tenant_logos, Tenant.LogoMapping.LogoType.TenantLogo
         ]
