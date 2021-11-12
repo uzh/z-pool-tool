@@ -29,11 +29,11 @@ module CreateEmailSuffixes : sig
   val handle
     :  Settings.EmailSuffix.t list
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -61,7 +61,7 @@ end
 module UpdateEmailSuffixes : sig
   type t = (string * string list) list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = (string * string list) list
@@ -83,11 +83,11 @@ end
 module UpdateContactEmail : sig
   type t = Settings.ContactEmail.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -115,11 +115,11 @@ module InactiveUser = struct
   module DisableAfter : sig
     type t = Settings.InactiveUser.DisableAfter.t
 
-    val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+    val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
     val decode
       :  (string * string list) list
-      -> (t, Pool_common.Message.error) Result.t
+      -> (t, Pool_common.Message.error) result
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
@@ -150,11 +150,11 @@ module InactiveUser = struct
   module Warning : sig
     type t = Settings.InactiveUser.Warning.t
 
-    val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+    val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
     val decode
       :  (string * string list) list
-      -> (t, Pool_common.Message.error) Result.t
+      -> (t, Pool_common.Message.error) result
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
@@ -186,11 +186,11 @@ end
 module UpdateTermsAndConditions : sig
   type t = Settings.TermsAndConditions.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) Result.t
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Pool_common.Message.error) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
