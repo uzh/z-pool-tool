@@ -64,6 +64,7 @@ type t
 val action_of_param
   :  string
   -> ( [> `CreateTenantEmailSuffix
+       | `DeleteTenantEmailSuffix
        | `UpdateInactiveUserDisableAfter
        | `UpdateInactiveUserWarning
        | `UpdateTenantContactEmail
@@ -76,6 +77,7 @@ val action_of_param
 
 val stringify_action
   :  [< `CreateTenantEmailSuffix
+     | `DeleteTenantEmailSuffix
      | `UpdateInactiveUserDisableAfter
      | `UpdateInactiveUserWarning
      | `UpdateTenantContactEmail

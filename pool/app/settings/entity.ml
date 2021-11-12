@@ -11,7 +11,6 @@ module Week = struct
 end
 
 module ContactEmail = struct
-  (* TODO [timhub] : Use Common User Email -> Dependency cycle *)
   type t = string [@@deriving eq, show, yojson]
 
   let value m = m
@@ -165,6 +164,7 @@ let action_of_param = function
   | "update_tenant_languages" -> Ok `UpdateTenantLanguages
   | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
   | "create_tenant_emailsuffix" -> Ok `CreateTenantEmailSuffix
+  | "delete_tenant_emailsuffix" -> Ok `DeleteTenantEmailSuffix
   | "update_tenant_contact_email" -> Ok `UpdateTenantContactEmail
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
@@ -177,6 +177,7 @@ let stringify_action = function
   | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
   | `CreateTenantEmailSuffix -> "create_tenant_emailsuffix"
   | `UpdateTenantContactEmail -> "update_tenant_contact_email"
+  | `DeleteTenantEmailSuffix -> "delete_tenant_emailsuffix"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
   | `UpdateTermsAndConditions -> "update_terms_and_conditions"

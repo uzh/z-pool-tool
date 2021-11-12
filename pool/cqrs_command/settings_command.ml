@@ -23,7 +23,7 @@ end = struct
   let can = Utils.todo
 end
 
-module CreateEmailSuffixes : sig
+module CreateEmailSuffix : sig
   type t = Settings.EmailSuffix.t
 
   val handle
@@ -78,6 +78,45 @@ end = struct
   ;;
 
   let can = Utils.todo
+end
+
+module DeleteEmailSuffix : sig
+  type t = Settings.EmailSuffix.t
+
+  val handle
+    :  Settings.EmailSuffix.t list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Settings.EmailSuffix.t
+
+  let command email_suffix = email_suffix
+
+  let schema =
+    Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
+  ;;
+
+  let handle suffixes email_suffix =
+    let suffixes =
+      CCList.filter
+        (fun s -> not (Settings.EmailSuffix.equal s email_suffix))
+        suffixes
+    in
+    Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
+  ;;
+
+  let can = Utils.todo
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 end
 
 module UpdateContactEmail : sig

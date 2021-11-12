@@ -62,7 +62,11 @@ let update_settings req =
         | `CreateTenantEmailSuffix ->
           fun m ->
             let%lwt suffixes = Settings.find_email_suffixes tenant_db in
-            CreateEmailSuffixes.(m |> decode >>= handle suffixes) |> lift
+            CreateEmailSuffix.(m |> decode >>= handle suffixes) |> lift
+        | `DeleteTenantEmailSuffix ->
+          fun m ->
+            let%lwt suffixes = Settings.find_email_suffixes tenant_db in
+            DeleteEmailSuffix.(m |> decode >>= handle suffixes) |> lift
         | `UpdateTenantContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle) |> lift
         | `UpdateInactiveUserDisableAfter ->
