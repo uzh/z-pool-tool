@@ -42,7 +42,7 @@ val find_by_user
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_duplicates : 'a -> 'b
-val has_terms_accepted : t -> bool Lwt.t
+val has_terms_accepted : Pool_common.Database.Label.t -> t -> bool Lwt.t
 
 type create =
   { email : Common_user.Email.Address.t

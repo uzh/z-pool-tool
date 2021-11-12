@@ -46,7 +46,12 @@ module Address = struct
       (* TODO check whether this is really the case *)
       | None -> Error PoolError.EmailMalformed
       | Some suffix ->
-        if CCList.mem ~eq:String.equal suffix allowed_email_suffixes
+        let open CCResult in
+        let* suffix = suffix |> Settings.EmailSuffix.create in
+        if CCList.mem
+             ~eq:Settings.EmailSuffix.equal
+             suffix
+             allowed_email_suffixes
         then Ok ()
         else Error PoolError.(Invalid EmailSuffix))
   ;;

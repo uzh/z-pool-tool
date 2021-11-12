@@ -19,11 +19,15 @@ module Language : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
   val code : t -> string
   val of_string : string -> (t, Message.error) result
   val t : t Caqti_type.t
   val label : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
+  val all : unit -> t list
+  val all_codes : unit -> string list
 end
 
 module Database : sig

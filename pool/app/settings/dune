@@ -1,5 +1,18 @@
 (library
  (name settings)
- (libraries sihl conformist permission utils pool_common)
+ (libraries
+  sihl
+  conformist
+  permission
+  utils
+  pool_common
+  ppx_deriving_yojson.runtime)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps
+   lwt_ppx
+   ppx_deriving.show
+   ppx_deriving.eq
+   ppx_yojson_conv
+   ppx_variants_conv)))
+
+(include_subdirs unqualified)

@@ -24,6 +24,12 @@ let raise_caqti_error =
       failwith (show err))
 ;;
 
+let find db_pool request input =
+  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+      Connection.find request input |> Lwt.map raise_caqti_error)
+;;
+
 let find_opt db_pool request input =
   Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in

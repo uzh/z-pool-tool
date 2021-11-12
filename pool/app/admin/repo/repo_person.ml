@@ -74,7 +74,11 @@ module Write = struct
     let encode m =
       Ok (m.role, (m.sihl_user_id, (m.created_at, m.updated_at)))
     in
-    let decode _ = Error "Model only used for DB insert" in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
     Caqti_type.(
       custom
         ~encode

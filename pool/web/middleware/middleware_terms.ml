@@ -14,7 +14,7 @@ let[@warning "-4"] terms_accepted () =
       in
       let* pool = Middleware_tenant.tenant_db_of_request req in
       let* participant = Participant.find pool user_id in
-      Participant.has_terms_accepted participant |> Lwt_result.ok
+      Participant.has_terms_accepted pool participant |> Lwt_result.ok
     in
     match has_accepted with
     | Ok true -> handler req

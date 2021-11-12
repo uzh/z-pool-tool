@@ -12,6 +12,7 @@ module Tenant = struct
         Logs.info (fun m -> m "%s" (Pool_common.Database.Label.value pool));
         let%lwt () = Seed_user.admins pool () in
         let%lwt () = Seed_user.participants pool () in
+        let%lwt () = Seed_settings.create pool () in
         Lwt.return_unit)
       db_pools
   ;;

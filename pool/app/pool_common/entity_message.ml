@@ -10,6 +10,7 @@ end
 
 type field =
   | Admin
+  | ContactEmail
   | DatabaseLabel
   | DatabaseUrl
   | Description
@@ -20,6 +21,8 @@ type field =
   | Firstname
   | Host
   | Icon
+  | InactiveUserDisableAfter
+  | InactiveUserWarning
   | Language
   | Lastname
   | LogoType
@@ -30,6 +33,7 @@ type field =
   | RecruitmentChannel
   | Role
   | Root
+  | Setting
   | SmtpAuthMethod
   | SmtpAuthServer
   | SmtpPassword
@@ -40,6 +44,8 @@ type field =
   | Tenant
   | TenantDisabledFlag
   | TenantMaintenanceFlag
+  | TermsAndConditions
+  | TimeSpan
   | Title
   | Token
   | Url
@@ -48,6 +54,7 @@ type field =
 
 type error =
   | Conformist of ConformistError.t list
+  | DecodeAction
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
@@ -62,12 +69,15 @@ type error =
   | PasswordResetInvalidData
   | PasswordResetFailMessage
   | RequestRequiredFields
+  | Retrieve of field
   | SessionInvalid
   | SessionTenantNotFound
   | TermsAndConditionsNotAccepted
+  | TimeSpanPositive
   | TokenInvalidFormat
   | TokenAlreadyUsed
   | Undefined of field
+  | WriteOnlyModel
 [@@deriving eq, show, yojson, variants]
 
 type warning = Warning of string [@@deriving eq, show, yojson, variants]
@@ -79,6 +89,7 @@ type success =
   | FileDeleted
   | PasswordReset
   | PasswordResetSuccessMessage
+  | SettingsUpdated
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of field

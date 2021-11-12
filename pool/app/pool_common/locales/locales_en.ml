@@ -2,6 +2,7 @@ open Entity_message
 
 let field_to_string = function
   | Admin -> "admin"
+  | ContactEmail -> "contact email address"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
   | Description -> "description"
@@ -12,6 +13,8 @@ let field_to_string = function
   | Firstname -> "firstname"
   | Host -> "host"
   | Icon -> "icon"
+  | InactiveUserDisableAfter -> "disable inactive user after"
+  | InactiveUserWarning -> "warn inactive user"
   | Language -> "language"
   | Lastname -> "lastname"
   | LogoType -> "logo type"
@@ -22,6 +25,7 @@ let field_to_string = function
   | RecruitmentChannel -> "recruitment channel"
   | Role -> "role"
   | Root -> "root"
+  | Setting -> "setting"
   | SmtpAuthMethod -> "smtp authentication method"
   | SmtpAuthServer -> "smtp authentication server"
   | SmtpPassword -> "smtp password"
@@ -32,6 +36,8 @@ let field_to_string = function
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
   | TenantMaintenanceFlag -> "maintenance flag"
+  | TermsAndConditions -> "terms and conditions"
+  | TimeSpan -> "time span"
   | Title -> "title"
   | Token -> "token"
   | Url -> "url"
@@ -54,6 +60,7 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an \
      account with the provided email is existing."
+  | SettingsUpdated -> "Settings were updated successfully."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -66,6 +73,7 @@ let warning_to_string : warning -> string = function
 
 let error_to_string = function
   | Conformist err -> ConformistError.to_string err
+  | DecodeAction -> "Cannot decode action."
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
@@ -84,14 +92,17 @@ let error_to_string = function
     "You will receive an email with a link to reset your password if an \
      account with the provided email is existing."
   | RequestRequiredFields -> "Please provide necessary fields"
+  | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionInvalid -> "Invalid session, please login."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
+  | TimeSpanPositive -> "Time span must be positive!"
   | TokenInvalidFormat -> "Invalid Token Format!"
   | TokenAlreadyUsed -> "The token was already used."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | WriteOnlyModel -> "Write only model!"
 ;;
 
 let to_string = function

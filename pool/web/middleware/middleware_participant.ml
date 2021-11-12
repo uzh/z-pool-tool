@@ -2,7 +2,7 @@ module Message = Http_utils.Message
 
 let[@warning "-4"] confirmed () =
   let filter handler req =
-    let%lwt confirmed_participant =
+    let%lwt confirmed_and_terms_agreed =
       let open Utils.Lwt_result.Infix in
       let open Lwt_result.Syntax in
       let* pool = Middleware_tenant.tenant_db_of_request req in
@@ -19,7 +19,7 @@ let[@warning "-4"] confirmed () =
       then Lwt.return_ok participant
       else Lwt.return_error Pool_common.Message.ParticipantUnconfirmed
     in
-    match confirmed_participant with
+    match confirmed_and_terms_agreed with
     | Ok _ -> handler req
     | Error Pool_common.Message.(NotFound User)
     | Error Pool_common.Message.(NotFound Participant) ->

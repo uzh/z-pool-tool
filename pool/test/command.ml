@@ -12,6 +12,7 @@ let () =
             "sign up not allowed suffix"
             `Quick
             Participant_test.sign_up_not_allowed_suffix
+        ; test_case "sign up" `Quick Participant_test.sign_up_not_allowed_suffix
         ] )
     ]
 ;;

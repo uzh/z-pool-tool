@@ -2,6 +2,7 @@ open Entity_message
 
 let field_to_string = function
   | Admin -> "Administrator"
+  | ContactEmail -> "Kontakt Email Adresse"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
   | Description -> "Beschreibung"
@@ -12,6 +13,8 @@ let field_to_string = function
   | Firstname -> "Vorname"
   | Host -> "Host"
   | Icon -> "Icon"
+  | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
+  | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Language -> "Sprache"
   | Lastname -> "Nachname"
   | LogoType -> "Logo Typ"
@@ -22,6 +25,7 @@ let field_to_string = function
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | Role -> "Rolle"
   | Root -> "Root"
+  | Setting -> "Einstellung"
   | SmtpAuthMethod -> "Smtp Authentifizierungsmethode"
   | SmtpAuthServer -> "Smtp Authentifizierungsserver"
   | SmtpPassword -> "Smtp Passwort"
@@ -32,6 +36,8 @@ let field_to_string = function
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert Flag"
   | TenantMaintenanceFlag -> "Wartungsflag"
+  | TermsAndConditions -> "Teilnahmebedingungen"
+  | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
   | Token -> "Token"
   | Url -> "Url"
@@ -53,6 +59,7 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+  | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
@@ -66,6 +73,7 @@ let warning_to_string : warning -> string = function
 
 let error_to_string = function
   | Conformist err -> ConformistError.to_string err
+  | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
@@ -89,6 +97,8 @@ let error_to_string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
+  | Retrieve field ->
+    field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
@@ -96,10 +106,12 @@ let error_to_string = function
      kontaktieren."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
+  | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
+  | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
 let to_string = function

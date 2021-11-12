@@ -12,9 +12,9 @@ end
 
 module Language = struct
   type t =
-    | En
-    | De
-  [@@deriving eq, show]
+    | En [@name "EN"]
+    | De [@name "DE"]
+  [@@deriving eq, show, yojson]
 
   let code = function
     | En -> "EN"
@@ -45,6 +45,9 @@ module Language = struct
       (fun l -> [ code l ])
       "default_language"
   ;;
+
+  let all () = [ En; De ]
+  let all_codes () = [ En; De ] |> CCList.map code
 end
 
 module Database = struct

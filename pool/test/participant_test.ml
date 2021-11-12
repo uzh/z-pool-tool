@@ -1,21 +1,26 @@
 module Participant_command = Cqrs_command.Participant_command
 
 let sign_up_not_allowed_suffix () =
-  let allowed_email_suffixes = [ "@gmail.com" ] in
-  let command =
-    CCResult.get_exn
-    @@ Participant_command.SignUp.decode
-         [ "email", [ "john@bluewin.com" ]
-         ; "password", [ "password" ]
-         ; "firstname", [ "Jane" ]
-         ; "lastname", [ "Doe" ]
-         ; ( "recruitment_channel"
-           , [ Participant.RecruitmentChannel.Friend
-               |> Participant.RecruitmentChannel.to_string
-             ] )
-         ]
-  in
   let events =
+    let open CCResult in
+    let* allowed_email_suffixes =
+      [ "gmail.com" ]
+      |> CCList.map (fun suffix -> Settings.EmailSuffix.create suffix)
+      |> CCResult.flatten_l
+    in
+    let command =
+      CCResult.get_exn
+      @@ Participant_command.SignUp.decode
+           [ "email", [ "john@bluewin.com" ]
+           ; "password", [ "password" ]
+           ; "firstname", [ "Jane" ]
+           ; "lastname", [ "Doe" ]
+           ; ( "recruitment_channel"
+             , [ Participant.RecruitmentChannel.Friend
+                 |> Participant.RecruitmentChannel.to_string
+               ] )
+           ]
+    in
     Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
@@ -24,21 +29,26 @@ let sign_up_not_allowed_suffix () =
 ;;
 
 let sign_up () =
-  let allowed_email_suffixes = [ "@gmail.com" ] in
-  let command =
-    CCResult.get_exn
-    @@ Participant_command.SignUp.decode
-         [ "email", [ "john@gmail.com" ]
-         ; "password", [ "password" ]
-         ; "firstname", [ "Jane" ]
-         ; "lastname", [ "Doe" ]
-         ; ( "recruitment_channel"
-           , [ Participant.RecruitmentChannel.Friend
-               |> Participant.RecruitmentChannel.to_string
-             ] )
-         ]
-  in
   let events =
+    let open CCResult in
+    let* allowed_email_suffixes =
+      [ "gmail.com" ]
+      |> CCList.map (fun suffix -> Settings.EmailSuffix.create suffix)
+      |> CCResult.flatten_l
+    in
+    let command =
+      CCResult.get_exn
+      @@ Participant_command.SignUp.decode
+           [ "email", [ "john@gmail.com" ]
+           ; "password", [ "password" ]
+           ; "firstname", [ "Jane" ]
+           ; "lastname", [ "Doe" ]
+           ; ( "recruitment_channel"
+             , [ Participant.RecruitmentChannel.Friend
+                 |> Participant.RecruitmentChannel.to_string
+               ] )
+           ]
+    in
     Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Ok [] in
