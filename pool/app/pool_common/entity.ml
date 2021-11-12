@@ -1,3 +1,7 @@
+module PoolError = Entity_message
+
+let schema_decoder = Pool_common_utils.schema_decoder
+
 module Id = struct
   type t = string [@@deriving eq, show]
 
@@ -6,17 +10,59 @@ module Id = struct
   let value m = m
 end
 
+module Language = struct
+  type t =
+    | En [@name "EN"]
+    | De [@name "DE"]
+  [@@deriving eq, show, yojson]
+
+  let code = function
+    | En -> "EN"
+    | De -> "DE"
+  ;;
+
+  let of_string = function
+    | "EN" -> Ok En
+    | "DE" -> Ok De
+    | _ -> Error PoolError.(Invalid Language)
+  ;;
+
+  let t =
+    let open CCResult in
+    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
+    Caqti_type.(
+      custom
+        ~encode:(fun m -> m |> code |> pure)
+        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
+        string)
+  ;;
+
+  let label country_code = country_code |> code |> Utils.Countries.find
+
+  let schema () =
+    Conformist.custom
+      (Pool_common_utils.schema_decoder of_string PoolError.Language)
+      (fun l -> [ code l ])
+      "default_language"
+  ;;
+
+  let all () = [ En; De ]
+  let all_codes () = [ En; De ] |> CCList.map code
+end
+
 module Database = struct
   module Url = struct
     type t = string [@@deriving eq]
 
     let create url =
-      if String.length url <= 0 then Error "Invalid database url!" else Ok url
+      if String.length url <= 0
+      then Error PoolError.(Invalid DatabaseUrl)
+      else Ok url
     ;;
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "database url")
+        (schema_decoder create PoolError.DatabaseUrl)
         CCList.pure
         "database_url"
     ;;
@@ -30,13 +76,13 @@ module Database = struct
 
     let create label =
       if String.length label <= 0 || String.contains label ' '
-      then Error "Invalid database label!"
+      then Error PoolError.(Invalid DatabaseLabel)
       else Ok label
     ;;
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "database label")
+        (schema_decoder create PoolError.DatabaseLabel)
         CCList.pure
         "database_label"
     ;;
@@ -110,7 +156,7 @@ module File = struct
       | "image/png" -> Ok Png
       | "image/svg+xml" -> Ok Svg
       | "image/webp" -> Ok Webp
-      | _ -> Error "Invalid mime type provided"
+      | _ -> Error PoolError.(Invalid FileMimeType)
     ;;
 
     let to_string = function
@@ -132,7 +178,7 @@ module File = struct
       | ".png" -> Ok Png
       | ".svg" -> Ok Svg
       | ".webp" -> Ok Webp
-      | _ -> Error "Invalid mime type provided"
+      | _ -> Error PoolError.(Invalid FileMimeType)
     ;;
   end
 

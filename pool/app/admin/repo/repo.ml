@@ -3,7 +3,7 @@ module RepoPerson = Repo_person
 
 let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
-  let open Utils.Stringify in
+  let open Stringify in
   function
   | AssistantC -> assistant, person `Assistant
   | ExperimenterC -> experimenter, person `Experimenter
@@ -93,11 +93,13 @@ module Sql = struct
   ;;
 
   let find pool role id =
+    let open Lwt.Infix in
     let caqti_type, role_val = extract role in
-    Utils.Database.find
+    Utils.Database.find_opt
       (Pool_common.Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
   let find_role_by_user_request =
@@ -112,12 +114,13 @@ module Sql = struct
   ;;
 
   let find_role_by_user pool user =
-    let open Lwt_result.Infix in
-    Utils.Database.find
-      (pool |> Pool_common.Database.Label.value)
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_common.Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    >|= Utils.Stringify.person_from_string
+    >|= CCOpt.map Stringify.person_from_string
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
   let insert_sql =

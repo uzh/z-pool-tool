@@ -1,15 +1,8 @@
 include Entity
 include Event
 
-let find id =
-  Repo.find Database.root id |> Lwt_result.map_err (fun _ -> "No tenant found!")
-;;
-
-let find_full id =
-  Repo.find_full Database.root id
-  |> Lwt_result.map_err (fun _ -> "No tenant found!")
-;;
-
+let find = Repo.find Database.root
+let find_full = Repo.find_full Database.root
 let find_by_label = Repo.find_by_label Database.root
 let find_all = Repo.find_all Database.root
 let find_databases = Repo.find_databases Database.root

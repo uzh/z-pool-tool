@@ -1,3 +1,5 @@
+module PoolError = Pool_common.Message
+
 module Token = struct
   type t = string [@@deriving eq, show]
 
@@ -22,7 +24,9 @@ module Address = struct
       |> whole_string
       |> compile
     in
-    if Re.execp regex email then Ok email else Error "Invalid email provided"
+    if Re.execp regex email
+    then Ok email
+    else Error PoolError.(Invalid EmailAddress)
   ;;
 
   let strip_email_suffix email =
@@ -40,7 +44,7 @@ module Address = struct
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
       (* TODO check whether this is really the case *)
-      | None -> Error "Email malformed"
+      | None -> Error PoolError.EmailMalformed
       | Some suffix ->
         let open CCResult in
         let* suffix = suffix |> Settings.EmailSuffix.create in
@@ -49,7 +53,7 @@ module Address = struct
              suffix
              allowed_email_suffixes
         then Ok ()
-        else Error "Invalid email suffix provided")
+        else Error PoolError.(Invalid EmailSuffix))
   ;;
 
   let validate = validate_suffix
@@ -57,7 +61,10 @@ module Address = struct
   let create email = email |> remove_whitespaces |> validate_characters
 
   let schema () =
-    Conformist.custom (Utils.schema_decoder create "email") CCList.pure "email"
+    Conformist.custom
+      Pool_common.(Utils.schema_decoder create PoolError.EmailAddress)
+      CCList.pure
+      "email"
   ;;
 end
 

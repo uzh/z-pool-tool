@@ -4,10 +4,12 @@ module RecruitmentChannel = struct
   include RecruitmentChannel
 
   let t =
+    let open CCResult in
     Caqti_type.(
       custom
-        ~encode:(fun m -> m |> to_string |> Result.ok)
-        ~decode:of_string
+        ~encode:(fun m -> m |> to_string |> pure)
+        ~decode:(fun m ->
+          map_err (fun _ -> "decode recruitment channel") @@ of_string m)
         string)
   ;;
 end
@@ -73,7 +75,10 @@ let participant =
               , (Verified.value m.verified, (m.created_at, m.updated_at)) ) ) )
         ) )
   in
-  let decode _ = Error "Model only used for DB insert" in
+  let decode _ =
+    failwith
+      Pool_common.(Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+  in
   let open Common_user.Repo in
   let open Pool_common.Repo in
   Caqti_type.(

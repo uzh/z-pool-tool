@@ -12,8 +12,5 @@ let sql =
 ;;
 
 let create pool () =
-  let%lwt result =
-    Utils.Database.exec (Pool_common.Database.Label.value pool) sql ()
-  in
-  result |> CCResult.get_or_failwith |> Lwt.return
+  Utils.Database.exec (Pool_common.Database.Label.value pool) sql ()
 ;;

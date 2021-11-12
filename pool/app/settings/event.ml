@@ -1,7 +1,7 @@
 open Entity
 
 type event =
-  | LanguagesUpdated of Language.t list
+  | LanguagesUpdated of Pool_common.Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t

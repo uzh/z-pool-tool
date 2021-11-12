@@ -73,9 +73,11 @@ module Tenant = struct
   let setup () =
     let%lwt tenants = Tenant.find_databases () in
     match tenants with
-    | Error err -> failwith err
-    | Ok [] -> failwith "There are no tenants registered in root database!"
-    | Ok tenants ->
+    | [] ->
+      failwith
+        Pool_common.(
+          Message.NoTenantsRegistered |> Utils.error_to_string Language.En)
+    | tenants ->
       CCList.map
         (fun pool ->
           let open Pool_common.Database in
@@ -97,11 +99,11 @@ let start () =
   in
   let%lwt db_pools = Tenant.setup () in
   Lwt_list.iter_s
-    (fun db_pool ->
-      let db_pool = Pool_common.Database.Label.value db_pool in
-      Logs.info (fun m -> m "Start database %s" db_pool);
+    (fun pool ->
+      Logs.info (fun m ->
+          m "Start database %s" (Pool_common.Database.Label.value pool));
       Service.Migration.check_migrations_status
-        ~ctx:[ "pool", db_pool ]
+        ~ctx:(Pool_common.Utils.pool_to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())
         ())
     db_pools

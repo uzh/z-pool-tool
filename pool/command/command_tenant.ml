@@ -79,7 +79,6 @@ let create_tenant =
               ; "firstname", [ firstname ]
               ; "lastname", [ lastname ]
               ]
-            |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.Create.handle
           in
           let run_events =
@@ -90,7 +89,9 @@ let create_tenant =
         (match result with
         | Ok _ -> Lwt.return_some ()
         | Error err ->
-          print_endline err;
+          err
+          |> Pool_common.(Utils.error_to_string Language.En)
+          |> print_endline;
           Lwt.return_some ())
       | _ ->
         print_endline help_text;

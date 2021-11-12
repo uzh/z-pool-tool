@@ -1,10 +1,6 @@
 module RepoEntity = Repo_entity
 module Database = Pool_common.Database
 
-let stringify_key key =
-  key |> Entity.setting_key_to_yojson |> Yojson.Safe.to_string
-;;
-
 module Sql = struct
   let select_from_settings_sql =
     {sql|
@@ -20,15 +16,15 @@ module Sql = struct
     |sql}
   ;;
 
-  let find_request caqti =
-    select_from_settings_sql |> Caqti_request.find Caqti_type.string caqti
+  let find_request out_type =
+    select_from_settings_sql |> Caqti_request.find Caqti_type.string out_type
   ;;
 
-  let find pool caqti key =
+  let find pool out_type key =
     Utils.Database.find
       (Database.Label.value pool)
-      (find_request caqti)
-      (key |> stringify_key)
+      (find_request out_type)
+      (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
   ;;
 
   let update_sql =
@@ -49,23 +45,19 @@ module Sql = struct
   ;;
 end
 
-let find_languages pool () = Sql.find pool RepoEntity.t Entity.Languages
+let find_languages pool = Sql.find pool RepoEntity.t Entity.Languages
+let find_email_suffixes pool = Sql.find pool RepoEntity.t Entity.EmailSuffixes
+let find_contact_email pool = Sql.find pool RepoEntity.t Entity.ContactEmail
 
-let find_email_suffixes pool () =
-  Sql.find pool RepoEntity.t Entity.EmailSuffixes
-;;
-
-let find_contact_email pool () = Sql.find pool RepoEntity.t Entity.ContactEmail
-
-let find_inactive_user_disable_after pool () =
+let find_inactive_user_disable_after pool =
   Sql.find pool RepoEntity.t Entity.InactiveUserDisableAfter
 ;;
 
-let find_inactive_user_warning pool () =
+let find_inactive_user_warning pool =
   Sql.find pool RepoEntity.t Entity.InactiveUserWarning
 ;;
 
-let find_terms_and_conditions pool () =
+let find_terms_and_conditions pool =
   Sql.find pool RepoEntity.t Entity.TermsAndConditions
 ;;
 

@@ -11,13 +11,13 @@ module Create : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) Result.t)
+    -> ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (Pool_event.t list, string) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -61,7 +61,10 @@ end = struct
     Ok [ Root.Created admin |> Pool_event.root ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
@@ -71,7 +74,7 @@ end
 module ToggleStatus : sig
   type t = Root.t
 
-  val handle : Root.t -> (Pool_event.t list, string) Result.t
+  val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Root.t

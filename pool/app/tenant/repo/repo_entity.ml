@@ -87,24 +87,25 @@ let t =
                       ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
-    let* title = Title.create title in
-    let* description = Description.create description in
-    let* url = Url.create url in
-    Ok
-      { id = Id.of_string id
-      ; title
-      ; description
-      ; url
-      ; database_label
-      ; smtp_auth
-      ; styles
-      ; icon
-      ; maintenance = Maintenance.create maintenance
-      ; disabled = Disabled.create disabled
-      ; default_language
-      ; created_at
-      ; updated_at
-      }
+    map_err (fun _ -> "decode tenant read")
+    @@ let* title = Title.create title in
+       let* description = Description.create description in
+       let* url = Url.create url in
+       Ok
+         { id = Id.of_string id
+         ; title
+         ; description
+         ; url
+         ; database_label
+         ; smtp_auth
+         ; styles
+         ; icon
+         ; maintenance = Maintenance.create maintenance
+         ; disabled = Disabled.create disabled
+         ; default_language
+         ; created_at
+         ; updated_at
+         }
   in
   Caqti_type.(
     custom
@@ -131,7 +132,7 @@ let t =
                                  (tup2
                                     Disabled.t
                                     (tup2
-                                       Settings.Language.t
+                                       Pool_common.Language.t
                                        (tup2
                                           Common.Repo.CreatedAt.t
                                           Common.Repo.UpdatedAt.t)))))))))))))
@@ -171,24 +172,25 @@ module Write = struct
                     ) ) ) ) ) ) )
       =
       let open CCResult in
-      let* title = Title.create title in
-      let* description = Description.create description in
-      let* url = Url.create url in
-      Ok
-        { id = Id.of_string id
-        ; title
-        ; description
-        ; url
-        ; database
-        ; smtp_auth
-        ; styles
-        ; icon
-        ; maintenance = Maintenance.create maintenance
-        ; disabled = Disabled.create disabled
-        ; default_language
-        ; created_at
-        ; updated_at
-        }
+      map_err (fun _ -> "decode tenant write")
+      @@ let* title = Title.create title in
+         let* description = Description.create description in
+         let* url = Url.create url in
+         Ok
+           { id = Id.of_string id
+           ; title
+           ; description
+           ; url
+           ; database
+           ; smtp_auth
+           ; styles
+           ; icon
+           ; maintenance = Maintenance.create maintenance
+           ; disabled = Disabled.create disabled
+           ; default_language
+           ; created_at
+           ; updated_at
+           }
     in
     Caqti_type.(
       custom
@@ -215,7 +217,7 @@ module Write = struct
                                    (tup2
                                       Disabled.t
                                       (tup2
-                                         Settings.Language.t
+                                         Pool_common.Language.t
                                          (tup2
                                             Common.Repo.CreatedAt.t
                                             Common.Repo.UpdatedAt.t)))))))))))))
@@ -229,8 +231,9 @@ module Selection = struct
     let encode m = Ok (m.Selection.url, m.database_label) in
     let decode (url, database_label) =
       let open CCResult in
-      let* url = Url.create url in
-      Ok { url; database_label }
+      map_err (fun _ -> "decode tenant selection")
+      @@ let* url = Url.create url in
+         Ok { url; database_label }
     in
     Caqti_type.(
       custom ~encode ~decode (tup2 Url.t Common.Repo.Database.Label.t))

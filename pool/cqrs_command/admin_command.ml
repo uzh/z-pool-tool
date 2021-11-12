@@ -11,14 +11,14 @@ module CreateOperator : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) Result.t)
-    -> t
+    -> ?password_policy:(string -> (unit, string) result)
     -> Tenant.Write.t
-    -> (Pool_event.t list, string) Result.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -48,8 +48,8 @@ end = struct
   let handle
       ?allowed_email_suffixes
       ?password_policy
-      command
       (_ : Tenant.Write.t)
+      command
     =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
@@ -73,5 +73,8 @@ end = struct
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 end

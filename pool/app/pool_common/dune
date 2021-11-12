@@ -3,4 +3,6 @@
  (name pool_common)
  (libraries sihl utils)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq ppx_variants_conv)))
+  (pps ppx_deriving.show ppx_deriving.eq ppx_yojson_conv ppx_variants_conv)))
+
+(include_subdirs unqualified)

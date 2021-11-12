@@ -5,6 +5,7 @@ module UpdatedAt = Pool_common.UpdatedAt
 module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
 module LogoMapping = Entity_logo_mapping
+module PoolError = Pool_common.Message
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -12,11 +13,16 @@ module Title = struct
   let value m = m
 
   let create title =
-    if String.length title <= 0 then Error "Invalid title!" else Ok title
+    if String.length title <= 0
+    then Error PoolError.(Invalid Title)
+    else Ok title
   ;;
 
   let schema () =
-    Conformist.custom (Utils.schema_decoder create "title") CCList.pure "title"
+    Conformist.custom
+      Pool_common.(Utils.schema_decoder create Message.Title)
+      CCList.pure
+      "title"
   ;;
 end
 
@@ -27,13 +33,13 @@ module Description = struct
 
   let create description =
     if String.length description <= 0
-    then Error "Invalid description!"
+    then Error PoolError.(Invalid Description)
     else Ok description
   ;;
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "description")
+      Pool_common.(Utils.schema_decoder create Message.Description)
       CCList.pure
       "description"
   ;;
@@ -45,11 +51,14 @@ module Url = struct
   let value m = m
 
   let create url =
-    if String.length url <= 0 then Error "Invalid url!" else Ok url
+    if String.length url <= 0 then Error PoolError.(Invalid Url) else Ok url
   ;;
 
   let schema () =
-    Conformist.custom (Utils.schema_decoder create "url") CCList.pure "url"
+    Conformist.custom
+      Pool_common.(Utils.schema_decoder create Message.Url)
+      CCList.pure
+      "url"
   ;;
 end
 
@@ -64,12 +73,14 @@ module Styles = struct
     let value m = m
 
     let create styles =
-      if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
+      if String.length styles <= 0
+      then Error PoolError.(Invalid Styles)
+      else Ok styles
     ;;
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "styles")
+        Pool_common.(Utils.schema_decoder create Message.Styles)
         CCList.pure
         "styles"
     ;;
@@ -87,11 +98,16 @@ module Icon = struct
     let value m = m
 
     let create icon =
-      if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
+      if String.length icon <= 0
+      then Error PoolError.(Invalid Icon)
+      else Ok icon
     ;;
 
     let schema () =
-      Conformist.custom (Utils.schema_decoder create "icon") CCList.pure "icon"
+      Conformist.custom
+        Pool_common.(Utils.schema_decoder create Message.Icon)
+        CCList.pure
+        "icon"
     ;;
   end
 end
@@ -141,10 +157,11 @@ module Maintenance = struct
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder
-         (fun l -> Ok (of_string l))
-         "tenant maintenance flag")
-      (fun l -> [ stringify l ])
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> of_string |> CCResult.pure)
+          Message.TenantMaintenanceFlag)
+      (fun l -> l |> stringify |> CCList.pure)
       "maintenance"
   ;;
 end
@@ -167,8 +184,11 @@ module Disabled = struct
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder (fun l -> Ok (of_string l)) "tenant disabled flag")
-      (fun l -> [ stringify l ])
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> of_string |> CCResult.pure)
+          Message.TenantDisabledFlag)
+      (fun l -> l |> stringify |> CCList.pure)
       "disabled"
   ;;
 end
@@ -186,7 +206,7 @@ type t =
   ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
@@ -204,7 +224,7 @@ module Read = struct
     ; icon : Icon.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
@@ -223,7 +243,7 @@ module Write = struct
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : CreatedAt.t
     }

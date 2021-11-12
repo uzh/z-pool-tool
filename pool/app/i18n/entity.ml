@@ -8,7 +8,7 @@ end
 
 module Property = struct
   type t =
-    { language : Settings.Language.t
+    { language : Pool_common.Language.t
     ; key : Key.t
     ; content : Content.t
     }

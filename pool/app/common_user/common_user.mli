@@ -8,9 +8,9 @@ module Password : sig
   val validate
     :  ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (unit, string) result
+    -> (unit, Pool_common.Message.error) result
 
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -31,7 +31,7 @@ module Firstname : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -42,7 +42,7 @@ module Lastname : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -110,10 +110,10 @@ module Email : sig
     val validate
       :  Settings.EmailSuffix.t list option
       -> t
-      -> (unit, string) result
+      -> (unit, Pool_common.Message.error) result
 
     val value : t -> string
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -164,12 +164,12 @@ module Email : sig
   val find_unverified
     :  Pool_common.Database.Label.t
     -> Address.t
-    -> (unverified t, string) Result.t Lwt.t
+    -> (unverified t, Pool_common.Message.error) result Lwt.t
 
   val find_verified
     :  Pool_common.Database.Label.t
     -> Address.t
-    -> (verified t, string) Result.t Lwt.t
+    -> (verified t, Pool_common.Message.error) result Lwt.t
 end
 
 module Repo : sig
@@ -215,9 +215,8 @@ module Event : sig
     module PasswordReset : sig
       val create
         :  Pool_common.Database.Label.t
-        -> string
         -> user:Sihl_user.t
-        -> (Sihl_email.t, string) result Lwt.t
+        -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
     end
   end
 end

@@ -1,67 +1,87 @@
 include Entity
 include Event
 
-let[@warning "-4"] find_languages pool () =
+let[@warning "-4"] find_languages pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_languages pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | TenantLanguages value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve pool languages"
+  Repo.find_languages pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.TenantLanguages value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve Language) |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
-let[@warning "-4"] find_email_suffixes pool () =
+let[@warning "-4"] find_email_suffixes pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_email_suffixes pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | TenantEmailSuffixes value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve pool email suffixes"
+  Repo.find_email_suffixes pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.TenantEmailSuffixes value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve EmailSuffix) |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
-let[@warning "-4"] find_contact_email pool () =
+let[@warning "-4"] find_contact_email pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_contact_email pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | TenantContactEmail value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve pool contact email"
+  Repo.find_contact_email pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.TenantContactEmail value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve ContactEmail) |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
-let[@warning "-4"] find_inactive_user_disable_after pool () =
+let[@warning "-4"] find_inactive_user_disable_after pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_inactive_user_disable_after pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | InactiveUserDisableAfter value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve inactive user disable after"
+  Repo.find_inactive_user_disable_after pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.InactiveUserDisableAfter value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve InactiveUserDisableAfter)
+      |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
-let[@warning "-4"] find_inactive_user_warning pool () =
+let[@warning "-4"] find_inactive_user_warning pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_inactive_user_warning pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | InactiveUserWarning value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve inactive user warning"
+  Repo.find_inactive_user_warning pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.InactiveUserWarning value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve InactiveUserWarning)
+      |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
-let[@warning "-4"] find_terms_and_conditions pool () =
+let[@warning "-4"] find_terms_and_conditions pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_terms_and_conditions pool ()
-  >>= fun setting ->
-  let open Value in
-  match setting.value with
-  | TermsAndConditions value -> Lwt.return_ok value
-  | _ -> Lwt.return_error "Cannot retrieve terms and conditions"
+  Repo.find_terms_and_conditions pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.TermsAndConditions value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve TermsAndConditions) |> Utils.error_to_string Language.En)
+    |> failwith
 ;;
 
 let terms_and_conditions_last_updated pool =
   let open Utils.Lwt_result.Infix in
-  Repo.find_terms_and_conditions pool () >|= fun setting -> setting.updated_at
+  Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
 ;;

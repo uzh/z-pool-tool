@@ -39,10 +39,13 @@ module Email = struct
       |> Caqti_request.find Caqti_type.string Repo_model.Email.verified_t
   ;;
 
-  let find db_pool carrier =
-    Utils.Database.find
-      (Pool_common.Database.Label.value db_pool)
+  let find pool carrier address =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_common.Database.Label.value pool)
       (find_request carrier)
+      address
+    >|= CCOpt.to_result Pool_common.Message.(NotFound Email)
   ;;
 
   let insert_request =
@@ -62,8 +65,8 @@ module Email = struct
     |> Caqti_request.exec Repo_model.Email.unverified_t
   ;;
 
-  let insert dbpool =
-    Utils.Database.exec (Pool_common.Database.Label.value dbpool) insert_request
+  let insert pool =
+    Utils.Database.exec (Pool_common.Database.Label.value pool) insert_request
   ;;
 
   let update_unverified_request =
@@ -89,14 +92,9 @@ module Email = struct
          Caqti_type.(tup2 RepoModel.Address.t RepoModel.VerifiedAt.t)
   ;;
 
-  let update
-      : type a.
-        Pool_common.Database.Label.t
-        -> a t
-        -> (unit, string) Result.result Lwt.t
-    =
-   fun db_pool model ->
-    let pool = Pool_common.Database.Label.value db_pool in
+  let update : type a. Pool_common.Database.Label.t -> a t -> unit Lwt.t =
+   fun pool model ->
+    let pool = Pool_common.Database.Label.value pool in
     match model with
     | Unverified { address; token; _ } ->
       Utils.Database.exec pool update_unverified_request (address, token)
@@ -118,9 +116,9 @@ module Email = struct
            tup2 RepoModel.Address.t (tup2 RepoModel.Address.t RepoModel.Token.t))
   ;;
 
-  let update_email db_pool old_email new_email =
+  let update_email pool old_email new_email =
     Utils.Database.exec
-      (Pool_common.Database.Label.value db_pool)
+      (Pool_common.Database.Label.value pool)
       update_email_request
       (address old_email, (address new_email, token new_email))
   ;;
@@ -133,10 +131,8 @@ module Email = struct
     |> Caqti_request.exec Caqti_type.string
   ;;
 
-  let delete db_pool email =
-    Utils.Database.exec
-      (Pool_common.Database.Label.value db_pool)
-      delete_request
+  let delete pool email =
+    Utils.Database.exec (Pool_common.Database.Label.value pool) delete_request
     @@ Entity_email.address email
   ;;
 end

@@ -6,8 +6,10 @@ let note page_title info message =
 ;;
 
 let error_page_not_found () =
-  note
-    "Page not found"
-    "An error occurred. The requested page could not be found."
-    None
+  Pool_common.(
+    Message.(
+      note
+        (NotFound Page |> Utils.error_to_string Language.En)
+        (PageNotFoundMessage |> Utils.to_string Language.En)
+        None))
 ;;

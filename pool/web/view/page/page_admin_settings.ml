@@ -16,7 +16,7 @@ let show
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
   let languages_html =
-    let available_languages = Settings.Language.all () in
+    let available_languages = Pool_common.Language.all () in
     let field_elements =
       CCList.cons
         (Component.csrf_element csrf ())
@@ -24,20 +24,21 @@ let show
            (fun language ->
              let attrs =
                [ a_input_type `Checkbox
-               ; a_name (Settings.Language.code language)
+               ; a_name (Pool_common.Language.code language)
                ]
              in
              let checkbox =
                match
                  CCList.mem
-                   ~eq:Settings.Language.equal
+                   ~eq:Pool_common.Language.equal
                    language
                    tenant_languages
                with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
              in
-             div [ label [ txt (Settings.Language.code language) ]; checkbox ])
+             div
+               [ label [ txt (Pool_common.Language.code language) ]; checkbox ])
            available_languages)
     in
     div

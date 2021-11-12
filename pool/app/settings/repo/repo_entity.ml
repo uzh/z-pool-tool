@@ -4,18 +4,18 @@ let encode_key_value value =
   (let open Value in
   match value with
   | TenantLanguages v ->
-    setting_key_to_yojson Languages, tenant_languages_to_yojson v
+    yojson_of_setting_key Languages, yojson_of_tenant_languages v
   | TenantEmailSuffixes v ->
-    setting_key_to_yojson EmailSuffixes, tenant_email_suffixes_to_yojson v
+    yojson_of_setting_key EmailSuffixes, yojson_of_tenant_email_suffixes v
   | TenantContactEmail v ->
-    setting_key_to_yojson ContactEmail, tenant_contact_email_to_yojson v
+    yojson_of_setting_key ContactEmail, yojson_of_tenant_contact_email v
   | InactiveUserDisableAfter v ->
-    ( setting_key_to_yojson InactiveUserDisableAfter
-    , inactive_user_disable_after_to_yojson v )
+    ( yojson_of_setting_key InactiveUserDisableAfter
+    , yojson_of_inactive_user_disable_after v )
   | InactiveUserWarning v ->
-    setting_key_to_yojson InactiveUserWarning, inactive_user_warning_to_yojson v
+    yojson_of_setting_key InactiveUserWarning, yojson_of_inactive_user_warning v
   | TermsAndConditions v ->
-    setting_key_to_yojson TermsAndConditions, terms_and_conditions_to_yojson v)
+    yojson_of_setting_key TermsAndConditions, yojson_of_terms_and_conditions v)
   |> fun (m, k) -> m |> Yojson.Safe.to_string, k |> Yojson.Safe.to_string
 ;;
 
@@ -25,27 +25,24 @@ let t =
     Ok (key, value, m.created_at, m.updated_at)
   in
   let decode (key, value, created_at, updated_at) =
-    let open CCResult in
-    let* key = key |> Yojson.Safe.from_string |> setting_key_of_yojson in
-    let* value =
-      let open CCResult.Infix in
+    let key = key |> Yojson.Safe.from_string |> setting_key_of_yojson in
+    let value =
       let open Value in
       let value = value |> Yojson.Safe.from_string in
       match key with
-      | Languages ->
-        value |> Value.tenant_languages_of_yojson >|= tenantlanguages
+      | Languages -> value |> tenant_languages_of_yojson |> tenantlanguages
       | EmailSuffixes ->
-        value |> Value.tenant_email_suffixes_of_yojson >|= tenantemailsuffixes
+        value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes
       | ContactEmail ->
-        value |> Value.tenant_contact_email_of_yojson >|= tenantcontactemail
+        value |> tenant_contact_email_of_yojson |> tenantcontactemail
       | InactiveUserDisableAfter ->
         value
-        |> Value.inactive_user_disable_after_of_yojson
-        >|= inactiveuserdisableafter
+        |> inactive_user_disable_after_of_yojson
+        |> inactiveuserdisableafter
       | InactiveUserWarning ->
-        value |> Value.inactive_user_warning_of_yojson >|= inactiveuserwarning
+        value |> inactive_user_warning_of_yojson |> inactiveuserwarning
       | TermsAndConditions ->
-        value |> Value.terms_and_conditions_of_yojson >|= termsandconditions
+        value |> terms_and_conditions_of_yojson |> termsandconditions
     in
     Ok { value; created_at; updated_at }
   in
@@ -68,7 +65,11 @@ module Write = struct
       let key, value = encode_key_value m.Write.value in
       Ok (value, key)
     in
-    let decode _ = failwith "Write only model" in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
     Caqti_type.(custom ~encode ~decode (tup2 string string))
   ;;
 end

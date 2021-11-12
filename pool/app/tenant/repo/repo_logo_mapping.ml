@@ -13,13 +13,14 @@ let t =
   in
   let decode (id, (logo_type, (tenant_id, file))) =
     let open CCResult in
-    let* logo_type = logo_type |> LogoType.of_string in
-    Ok
-      { id = Id.of_string id
-      ; logo_type
-      ; tenant_id = Id.of_string tenant_id
-      ; file
-      }
+    map_err (CCFun.const "decode logo mapping read")
+    @@ let* logo_type = logo_type |> LogoType.of_string in
+       Ok
+         { id = Id.of_string id
+         ; logo_type
+         ; tenant_id = Id.of_string tenant_id
+         ; file
+         }
   in
   Caqti_type.(
     custom
@@ -40,13 +41,14 @@ module Write = struct
     in
     let decode (id, (tenant_id, (asset_id, logo_type))) =
       let open CCResult in
-      let* logo_type = logo_type |> LogoType.of_string in
-      Ok
-        { id = Id.of_string id
-        ; tenant_id = Id.of_string tenant_id
-        ; asset_id = Id.of_string asset_id
-        ; logo_type
-        }
+      map_err (CCFun.const "decode logo mapping write")
+      @@ let* logo_type = logo_type |> LogoType.of_string in
+         Ok
+           { id = Id.of_string id
+           ; tenant_id = Id.of_string tenant_id
+           ; asset_id = Id.of_string asset_id
+           ; logo_type
+           }
     in
     Caqti_type.(
       custom
@@ -156,9 +158,9 @@ module Sql = struct
 end
 
 let insert_multiple m_list =
-  Lwt_list.map_s (Sql.insert (Database.Label.value Database.root)) m_list
+  Lwt_list.map_s (Sql.insert Database.(Label.value root)) m_list
 ;;
 
-let find_by_tenant = Sql.find (Database.Label.value Database.root)
-let find_all = Sql.find_all (Database.Label.value Database.root)
-let delete = Sql.delete (Database.Label.value Database.root)
+let find_by_tenant = Sql.find Database.(Label.value root)
+let find_all = Sql.find_all Database.(Label.value root)
+let delete = Sql.delete Database.(Label.value root)

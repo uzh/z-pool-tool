@@ -10,41 +10,6 @@ module Week = struct
   let to_timespan t = t * 7 * 24 * 60 * 60 |> Ptime.Span.of_int_s
 end
 
-module Language = struct
-  type t =
-    | En [@name "EN"]
-    | De [@name "DE"]
-  [@@deriving eq, show, yojson]
-
-  let code = function
-    | En -> "EN"
-    | De -> "DE"
-  ;;
-
-  let of_string = function
-    | "EN" -> Ok En
-    | "DE" -> Ok De
-    | _ -> Error "Invalid Language privided"
-  ;;
-
-  let t =
-    Caqti_type.(
-      custom ~encode:(fun m -> m |> code |> Result.ok) ~decode:of_string string)
-  ;;
-
-  let label country_code = country_code |> code |> Utils.Countries.find
-
-  let schema () =
-    Conformist.custom
-      (Utils.schema_decoder of_string "default language")
-      (fun l -> [ code l ])
-      "default_language"
-  ;;
-
-  let all () = [ En; De ]
-  let all_codes () = [ En; De ] |> CCList.map code
-end
-
 module ContactEmail = struct
   (* TODO [timhub] : Use Common User Email -> Dependency cycle *)
   type t = string [@@deriving eq, show, yojson]
@@ -53,13 +18,13 @@ module ContactEmail = struct
 
   let create email =
     if CCString.length email <= 0
-    then Error "invalid email address!"
+    then Error Pool_common.Message.(Invalid EmailAddress)
     else Ok email
   ;;
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "contact email")
+      Pool_common.(Utils.schema_decoder create Message.EmailAddress)
       CCList.pure
       "contact_email"
   ;;
@@ -72,13 +37,13 @@ module EmailSuffix = struct
 
   let create suffix =
     if CCString.length suffix <= 0
-    then Error "Invalid email suffix!"
+    then Error Pool_common.Message.(Invalid EmailSuffix)
     else Ok suffix
   ;;
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "email suffix")
+      Pool_common.(Utils.schema_decoder create Message.EmailSuffix)
       CCList.pure
       "email_suffix"
   ;;
@@ -92,9 +57,9 @@ module InactiveUser = struct
       let open CCResult.Infix in
       week
       |> CCInt.of_string
-      |> CCOpt.to_result "Invalid time span provided"
+      |> CCOpt.to_result Pool_common.Message.(Invalid TimeSpan)
       >>= fun week ->
-      if week < 0 then Error "Time span must be positive" else Ok week
+      if week < 0 then Error Pool_common.Message.TimeSpanPositive else Ok week
     ;;
 
     let value m = m
@@ -102,7 +67,8 @@ module InactiveUser = struct
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "disable inactive user after")
+        Pool_common.(
+          Utils.schema_decoder create Message.InactiveUserDisableAfter)
         (fun l -> l |> CCInt.to_string |> CCList.pure)
         "inactive_user_disable_after"
     ;;
@@ -115,9 +81,9 @@ module InactiveUser = struct
       let open CCResult.Infix in
       day
       |> CCInt.of_string
-      |> CCOpt.to_result "Invalid time span provided"
+      |> CCOpt.to_result Pool_common.Message.(Invalid TimeSpan)
       >>= fun day ->
-      if day < 0 then Error "Time span must be positive" else Ok day
+      if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
     ;;
 
     let value m = m
@@ -125,7 +91,7 @@ module InactiveUser = struct
 
     let schema () =
       Conformist.custom
-        (Utils.schema_decoder create "disable inactive user warning")
+        Pool_common.(Utils.schema_decoder create Message.InactiveUserWarning)
         (fun l -> l |> CCInt.to_string |> CCList.pure)
         "inactive_user_warning"
     ;;
@@ -138,21 +104,23 @@ module TermsAndConditions = struct
   let create terms =
     if CCString.length terms > 0
     then Ok terms
-    else Error "Invalid terms provided"
+    else Error Pool_common.Message.(Invalid TermsAndConditions)
   ;;
 
   let value m = m
 
   let schema () =
     Conformist.custom
-      (Utils.schema_decoder create "terms and conditions")
+      Pool_common.(Utils.schema_decoder create Message.TermsAndConditions)
       CCList.pure
       "terms_and_conditions"
   ;;
 end
 
 module Value = struct
-  type tenant_languages = Language.t list [@@deriving eq, show, yojson]
+  type tenant_languages = Pool_common.Language.t list
+  [@@deriving eq, show, yojson]
+
   type tenant_email_suffixes = EmailSuffix.t list [@@deriving eq, show, yojson]
   type tenant_contact_email = ContactEmail.t [@@deriving eq, show, yojson]
 
@@ -201,7 +169,7 @@ let action_of_param = function
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
   | "update_terms_and_conditions" -> Ok `UpdateTermsAndConditions
-  | _ -> Error "Cannot decode action"
+  | _ -> Error Pool_common.Message.DecodeAction
 ;;
 
 let stringify_action = function

@@ -20,5 +20,5 @@ val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val user : t -> Sihl_user.t
-val find_all : unit -> (t list, string) Result.t Lwt.t
-val find : Pool_common.Id.t -> (t, string) result Lwt.t
+val find_all : unit -> t list Lwt.t
+val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t

@@ -41,7 +41,7 @@ let signup
       [ h1 [ txt "Participant SignUp" ]
       ; form
           ~a:[ a_action submit_url; a_method `Post ]
-          [ input ~a:[ a_name "_csrf"; a_input_type `Hidden; a_value csrf ] ()
+          [ Component.csrf_element csrf ()
           ; div
               [ label [ txt "Email" ]
               ; input

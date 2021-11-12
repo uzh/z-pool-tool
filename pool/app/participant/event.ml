@@ -23,25 +23,24 @@ let set_password
     :  Pool_common.Database.Label.t -> t -> string -> string
     -> (unit, string) result Lwt.t
   =
- fun db_pool { user; _ } password password_confirmation ->
+ fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
-    ~ctx:[ "pool", Pool_common.Database.Label.value db_pool ]
+    ~ctx:(Pool_common.Utils.pool_to_ctx pool)
     user
     ~password
     ~password_confirmation
   >|= ignore
 ;;
 
-let has_terms_accepted (participant : t) pool =
-  let open Lwt_result.Syntax in
-  let* last_updated = Settings.terms_and_conditions_last_updated pool in
+let has_terms_accepted pool (participant : t) =
+  let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
     participant.terms_accepted_at |> User.TermsAccepted.value
   in
   CCOpt.map (Ptime.is_later ~than:last_updated) terms_accepted_at
   |> CCOpt.get_or ~default:false
-  |> Lwt.return_ok
+  |> Lwt.return
 ;;
 
 type event =
@@ -54,11 +53,13 @@ type event =
   | Disabled of t
   | Verified of t
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let ctx = Pool_common.Utils.pool_to_ctx pool in
+  function
   | Created participant ->
     let%lwt user =
       Service.User.create_user
-        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~ctx
         ~name:(participant.firstname |> User.Firstname.value)
         ~given_name:(participant.lastname |> User.Lastname.value)
         ~password:(participant.password |> User.Password.to_sihl)
@@ -78,7 +79,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | DetailsUpdated (participant, update) ->
     let%lwt _ =
       Service.User.update
-        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~ctx
         ~given_name:(update.firstname |> User.Firstname.value)
         ~name:(update.lastname |> User.Lastname.value)
         participant.user
@@ -97,14 +98,14 @@ let handle_event pool : event -> unit Lwt.t = function
   | EmailUnconfirmed participant ->
     let%lwt _ =
       Service.User.update
-        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~ctx
         Sihl_user.{ participant.user with confirmed = false }
     in
     Lwt.return_unit
   | EmailConfirmed participant ->
     let%lwt _ =
       Service.User.update
-        ~ctx:[ "pool", Pool_common.Database.Label.value pool ]
+        ~ctx
         Sihl_user.{ participant.user with confirmed = true }
     in
     Lwt.return_unit

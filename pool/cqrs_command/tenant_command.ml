@@ -27,16 +27,16 @@ module Create : sig
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list
     ; partner_logos : Id.t list
     }
 
-  val handle : t -> (Pool_event.t list, string) Result.t
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -54,7 +54,7 @@ end = struct
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; styles : Tenant.Styles.Write.t
     ; icon : Tenant.Icon.Write.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list
     ; partner_logos : Id.t list
     }
@@ -113,7 +113,7 @@ end = struct
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Styles.Write.schema ()
           ; Tenant.Icon.Write.schema ()
-          ; Settings.Language.schema ()
+          ; Pool_common.Language.schema ()
           ; Tenant.Logos.schema ()
           ; Tenant.PartnerLogos.schema ()
           ]
@@ -159,7 +159,10 @@ end = struct
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 end
 
 module EditDetails : sig
@@ -173,16 +176,19 @@ module EditDetails : sig
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; disabled : Tenant.Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list option
     ; partner_logos : Id.t list option
     }
 
-  val handle : Tenant.Write.t -> t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  Tenant.Write.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
 end = struct
@@ -196,7 +202,7 @@ end = struct
     ; smtp_auth_authentication_method : Tenant.SmtpAuth.AuthenticationMethod.t
     ; smtp_auth_protocol : Tenant.SmtpAuth.Protocol.t
     ; disabled : Tenant.Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list option
     ; partner_logos : Id.t list option
     }
@@ -243,7 +249,7 @@ end = struct
           ; Tenant.SmtpAuth.AuthenticationMethod.schema ()
           ; Tenant.SmtpAuth.Protocol.schema ()
           ; Tenant.Disabled.schema ()
-          ; Settings.Language.schema ()
+          ; Pool_common.Language.schema ()
           ; Conformist.optional @@ Tenant.Logos.schema ()
           ; Conformist.optional @@ Tenant.PartnerLogos.schema ()
           ]
@@ -284,7 +290,10 @@ end = struct
       ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 
   let can user (tenant : Tenant.t) =
     Permission.can
@@ -299,11 +308,14 @@ module EditDatabase : sig
     ; database_label : Database.Label.t
     }
 
-  val handle : t -> Tenant.Write.t -> (Pool_event.t list, string) result
+  val handle
+    :  Tenant.Write.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> Tenant.t -> bool Lwt.t
 end = struct
@@ -319,14 +331,17 @@ end = struct
       make Field.[ Database.Url.schema (); Database.Label.schema () ] command)
   ;;
 
-  let handle (command : t) (tenant : Tenant.Write.t) =
+  let handle (tenant : Tenant.Write.t) (command : t) =
     let database =
       Database.{ url = command.database_url; label = command.database_label }
     in
     Ok [ Tenant.DatabaseEdited (tenant, database) |> Pool_event.tenant ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 
   let can user (tenant : Tenant.t) =
     Permission.can
@@ -336,7 +351,11 @@ end = struct
 end
 
 module DestroyLogo : sig
-  val handle : Tenant.t -> Id.t -> (Pool_event.t list, string) Result.t
+  val handle
+    :  Tenant.t
+    -> Id.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> bool Lwt.t
 end = struct
   let handle tenant asset_id =
@@ -351,7 +370,7 @@ end
 module Destroy : sig
   type t = { tenant_id : string }
 
-  val handle : t -> (Pool_event.t list, 'a) result
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { tenant_id : string }
@@ -379,7 +398,7 @@ module AssignOperator : sig
   val handle
     :  Id.t
     -> Admin.operator Admin.t
-    -> (Pool_event.t list, string) result
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -411,7 +430,7 @@ module DivestOperator : sig
   val handle
     :  Id.t
     -> Admin.operator Admin.t
-    -> (Pool_event.t list, string) result
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
@@ -438,7 +457,10 @@ end
 module GenerateStatusReport : sig
   type t = { tenant_id : string }
 
-  val handle : t -> Tenant.t -> (Pool_event.t list, string) result
+  val handle
+    :  t
+    -> Tenant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = { tenant_id : string }
 
@@ -448,7 +470,11 @@ end
 module AddRoot : sig
   type t = { user_id : string }
 
-  val handle : t -> Sihl_user.t -> (Pool_event.t list, string) result
+  val handle
+    :  t
+    -> Sihl_user.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
