@@ -65,7 +65,7 @@ module Admin = struct
     ; get "/settings" Handler.Admin.Settings.show
     ; post "/settings/:action" Handler.Admin.Settings.update_settings
     ; get "/i18n" Handler.Admin.I18n.index
-    ; post "/i18n/:id/update" Handler.Admin.I18n.update
+    ; post "/i18n/:id" Handler.Admin.I18n.update
     ]
   ;;
 end

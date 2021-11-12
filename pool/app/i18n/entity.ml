@@ -31,17 +31,14 @@ module Content = struct
   ;;
 end
 
-(* TODO [timhub]: do we need timestamps? *)
-module Property = struct
-  type t =
-    { id : Common.Id.t
-    ; key : Key.t
-    ; language : Pool_common.Language.t
-    ; content : Content.t
-    }
-  [@@deriving eq, show]
+type t =
+  { id : Common.Id.t
+  ; key : Key.t
+  ; language : Pool_common.Language.t
+  ; content : Content.t
+  }
+[@@deriving eq, show]
 
-  let create key language content =
-    { id = Common.Id.create (); key; language; content }
-  ;;
-end
+let create key language content =
+  { id = Common.Id.create (); key; language; content }
+;;

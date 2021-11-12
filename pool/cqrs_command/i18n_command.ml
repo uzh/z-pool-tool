@@ -70,7 +70,7 @@ module Edit : sig
   type t = { content : I18n.Content.t }
 
   val handle
-    :  I18n.Property.t
+    :  I18n.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 

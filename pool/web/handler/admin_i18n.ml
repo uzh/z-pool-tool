@@ -4,7 +4,7 @@ module Message = HttpUtils.Message
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
-  let show () =
+  let result =
     let open Lwt_result.Syntax in
     let message =
       Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
@@ -16,7 +16,7 @@ let index req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  show ()
+  result
   |> Lwt_result.map_err (fun err -> err, error_path)
   >|> HttpUtils.extract_happy_path
 ;;

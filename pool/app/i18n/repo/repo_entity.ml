@@ -15,7 +15,6 @@ end
 
 (* TODO [timhub]: Shoud we use serialized data instead of language column? *)
 let t =
-  let open Property in
   let encode m = Ok (Common.Id.value m.id, (m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =
     let ( let* ) = Result.bind in

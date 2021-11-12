@@ -4,14 +4,14 @@ open Tyxml.Html
 let input_element = Component.input_element
 
 let list csrf translation_list message () =
-  let open I18n.Property in
+  let open I18n in
   let build_translations_row translation_list =
     CCList.map
-      (fun (translation : I18n.Property.t) ->
+      (fun (translation : I18n.t) ->
         let action =
           Sihl.Web.externalize_path
             (Format.asprintf
-               "/admin/i18n/%s/update"
+               "/admin/i18n/%s"
                (translation.id |> Pool_common.Id.value))
         in
         div
