@@ -190,4 +190,29 @@ module Utils : sig
   val success_to_string : Language.t -> Message.success -> string
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
+
+  val with_log_info
+    :  ?level:[< `Debug | `Error | `Info | `Warning > `Info ]
+    -> Message.info
+    -> Message.info
+
+  val with_log_success
+    :  ?level:[< `Debug | `Error | `Info | `Warning > `Info ]
+    -> Message.success
+    -> Message.success
+
+  val with_log_warning
+    :  ?level:[< `Debug | `Error | `Info | `Warning > `Warning ]
+    -> Message.warning
+    -> Message.warning
+
+  val with_log_error
+    :  ?level:[< `Debug | `Error | `Info | `Warning > `Error ]
+    -> Message.error
+    -> Message.error
+
+  val with_log_result_error
+    :  ('a -> Message.error)
+    -> ('b, 'a) result
+    -> ('b, 'a) result
 end

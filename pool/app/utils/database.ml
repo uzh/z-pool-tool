@@ -108,7 +108,7 @@ let table_names_request =
     {sql|
       SELECT TABLE_NAME
       FROM INFORMATION_SCHEMA.`TABLES`
-      WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state');
+      WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state','email_templates');
     |sql}
 ;;
 
