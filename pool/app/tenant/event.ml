@@ -24,7 +24,7 @@ type update =
 type logo_mappings = LogoMapping.Write.t list [@@deriving eq, show]
 
 let equal_operator_event (t1, o1) (t2, o2) =
-  equal t1 t2 && String.equal o1.Sihl_user.id o2.Sihl_user.id
+  equal t1 t2 && CCString.equal o1.Sihl_user.id o2.Sihl_user.id
 ;;
 
 type event =
@@ -124,7 +124,7 @@ let[@warning "-4"] equal_event event1 event2 =
   | ( OperatorDivested (tenant_id_one, user_one)
     , OperatorDivested (tenant_id_two, user_two) ) ->
     CCString.equal (tenant_id_one |> Id.value) (tenant_id_two |> Id.value)
-    && String.equal
+    && CCString.equal
          (Admin.user user_one).Sihl_user.id
          (Admin.user user_two).Sihl_user.id
   | _ -> false

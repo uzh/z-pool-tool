@@ -13,7 +13,7 @@ module Email = struct
       Format.asprintf
         "%s %s\n%s\n%s;"
         basic_select
-        (fields @ created_updated_at |> String.concat ", ")
+        (fields @ created_updated_at |> CCString.concat ", ")
         from_fragment
         where_fragment
     in

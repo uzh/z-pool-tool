@@ -48,7 +48,7 @@ let[@warning "-4"] equal_event event1 event2 =
   | ( ExperimenterAssigned (experiment_one, user_one)
     , ExperimenterDivested (experiment_two, user_two) ) ->
     equal experiment_one experiment_two
-    && String.equal
+    && CCString.equal
          (Admin.user user_one).Sihl_user.id
          (Admin.user user_two).Sihl_user.id
   | _ -> false

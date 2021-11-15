@@ -6,7 +6,7 @@ module Room = struct
   let value m = m
 
   let create room =
-    if String.length room <= 0 then Error "Invalid room!" else Ok room
+    if CCString.is_empty room then Error "Invalid room!" else Ok room
   ;;
 
   let to_human room = room
@@ -18,7 +18,7 @@ module Building = struct
   let value m = m
 
   let create building =
-    if String.length building <= 0
+    if CCString.is_empty building
     then Error "Invalid building!"
     else Ok building
   ;;
@@ -32,7 +32,7 @@ module Street = struct
   let value m = m
 
   let create street =
-    if String.length street <= 0 then Error "Invalid street!" else Ok street
+    if CCString.is_empty street then Error "Invalid street!" else Ok street
   ;;
 
   let to_human street = street
@@ -62,7 +62,7 @@ module City = struct
   let value m = m
 
   let create city =
-    if String.length city <= 0 then Error "Invalid city!" else Ok city
+    if CCString.is_empty city then Error "Invalid city!" else Ok city
   ;;
 
   let to_human city = city

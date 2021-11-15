@@ -6,7 +6,7 @@ module Server = struct
   let value m = m
 
   let create server =
-    if String.length server <= 0
+    if CCString.is_empty server
     then Error PoolError.(Invalid SmtpAuthServer)
     else Ok server
   ;;
@@ -44,7 +44,7 @@ module Username = struct
   let value m = m
 
   let create username =
-    if String.length username <= 0
+    if CCString.is_empty username
     then Error PoolError.(Invalid SmtpUsername)
     else Ok username
   ;;
@@ -63,7 +63,7 @@ module Password = struct
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let create password =
-    if String.length password <= 0
+    if CCString.is_empty password
     then Error PoolError.(Invalid SmtpPassword)
     else Ok password
   ;;
@@ -82,7 +82,7 @@ module AuthenticationMethod = struct
   let value m = m
 
   let create authentication_method =
-    if String.length authentication_method <= 0
+    if CCString.is_empty authentication_method
     then Error PoolError.(Invalid SmtpAuthMethod)
     else Ok authentication_method
   ;;

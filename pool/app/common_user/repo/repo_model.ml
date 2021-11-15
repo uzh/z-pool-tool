@@ -84,7 +84,7 @@ end
 
 module User = struct
   let status =
-    let encode m = m |> Sihl_user.status_to_string |> Result.ok in
+    let encode m = m |> Sihl_user.status_to_string |> CCResult.pure in
     let decode = Sihl_user.status_of_string in
     Caqti_type.(custom ~encode ~decode string)
   ;;
