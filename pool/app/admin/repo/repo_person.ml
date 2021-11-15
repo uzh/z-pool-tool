@@ -16,7 +16,7 @@ let encode_person
   match person with
   | Assistant m | Experimenter m | LocationManager m | Recruiter m | Operator m
     ->
-    let role = carrier |> Utils.Stringify.person in
+    let role = carrier |> Stringify.person in
     Ok (role, (m.user, (m.created_at, m.updated_at)))
 ;;
 
@@ -62,20 +62,23 @@ module Write = struct
       }
     in
     function
-    | Assistant person -> values person (Utils.Stringify.person `Assistant)
-    | Experimenter person ->
-      values person (Utils.Stringify.person `Experimenter)
+    | Assistant person -> values person (Stringify.person `Assistant)
+    | Experimenter person -> values person (Stringify.person `Experimenter)
     | LocationManager person ->
-      values person (Utils.Stringify.person `LocationManager)
-    | Recruiter person -> values person (Utils.Stringify.person `Recruiter)
-    | Operator person -> values person (Utils.Stringify.person `Operator)
+      values person (Stringify.person `LocationManager)
+    | Recruiter person -> values person (Stringify.person `Recruiter)
+    | Operator person -> values person (Stringify.person `Operator)
   ;;
 
   let caqti =
     let encode m =
       Ok (m.role, (m.sihl_user_id, (m.created_at, m.updated_at)))
     in
-    let decode _ = Error "Model only used for DB insert" in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
     Caqti_type.(
       custom
         ~encode

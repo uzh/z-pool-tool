@@ -6,9 +6,12 @@
   service
   permission
   role
+  settings
   common_user
   pool_common
   utils
   ptime)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
+
+(include_subdirs unqualified)

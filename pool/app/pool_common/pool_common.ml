@@ -1,41 +1,65 @@
-module Id = struct
-  type t = string [@@deriving eq, show]
+include Entity
+module Message = Entity_message
+module Repo = Repo
 
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
-  let of_string m = m
-  let value m = m
+module Utils = struct
+  include Pool_common_utils
+
+  let pool_to_ctx pool = [ "pool", Entity.Database.Label.value pool ]
+
+  let to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      to_string
+    | Language.En ->
+      let open Locales_en in
+      to_string
+  ;;
+
+  let info_to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      info_to_string
+    | Language.En ->
+      let open Locales_en in
+      info_to_string
+  ;;
+
+  let success_to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      success_to_string
+    | Language.En ->
+      let open Locales_en in
+      success_to_string
+  ;;
+
+  let warning_to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      warning_to_string
+    | Language.En ->
+      let open Locales_en in
+      warning_to_string
+  ;;
+
+  let error_to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      error_to_string
+    | Language.En ->
+      let open Locales_en in
+      error_to_string
+  ;;
 end
 
-module CreatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+module Database = struct
+  include Database
 
-  let create = Ptime_clock.now
-  let value m = m
-end
-
-module UpdatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
-
-  let create = Ptime_clock.now
-  let value m = m
-end
-
-module Repo = struct
-  module Id = struct
-    include Id
-
-    let t = Caqti_type.string
-  end
-
-  module UpdatedAt = struct
-    include UpdatedAt
-
-    let t = Caqti_type.ptime
-  end
-
-  module CreatedAt = struct
-    include CreatedAt
-
-    let t = Caqti_type.ptime
-  end
+  let root = Label.of_string "root"
 end

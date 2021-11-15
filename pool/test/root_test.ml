@@ -30,7 +30,11 @@ let create_root () =
     Ok [ Root.Created create |> Pool_event.root ]
   in
   Alcotest.(
-    check (result (list Test_utils.event) string) "succeeds" expected events)
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;
 
 let create_root_with_invalid_password () =
@@ -46,7 +50,13 @@ let create_root_with_invalid_password () =
          ]
   in
   let events = Root_command.Create.handle command in
-  let expected = Error "password_policy_text" in
+  let expected =
+    Error (Pool_common.Message.PasswordPolicy "password_policy_text")
+  in
   Alcotest.(
-    check (result (list Test_utils.event) string) "succeeds" expected events)
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;

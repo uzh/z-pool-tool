@@ -1,13 +1,15 @@
 open Tyxml.Html
 
-let note title info message =
-  let html = div [ h1 [ txt title ]; p [ txt info ] ] in
+let note page_title info message =
+  let html = div [ h1 [ txt page_title ]; p [ txt info ] ] in
   Page_layout.create html message ()
 ;;
 
 let error_page_not_found () =
-  note
-    "Page not found"
-    "An error occurred. The requested page could not be found."
-    None
+  Pool_common.(
+    Message.(
+      note
+        (NotFound Page |> Utils.error_to_string Language.En)
+        (PageNotFoundMessage |> Utils.to_string Language.En)
+        None))
 ;;

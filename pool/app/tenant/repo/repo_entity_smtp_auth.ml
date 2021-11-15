@@ -43,15 +43,16 @@ let t =
       , (m.port, (m.username, (m.authentication_method, m.protocol))) )
   in
   let decode (server, (port, (username, (authentication_method, protocol)))) =
-    let ( let* ) = Result.bind in
-    let* server = Server.create server in
-    let* port = Port.create port in
-    let* username = Username.create username in
-    let* authentication_method =
-      AuthenticationMethod.create authentication_method
-    in
-    let* protocol = Protocol.create protocol in
-    Ok { server; port; username; authentication_method; protocol }
+    let open CCResult in
+    map_err (fun _ -> "decode smtp read")
+    @@ let* server = Server.create server in
+       let* port = Port.create port in
+       let* username = Username.create username in
+       let* authentication_method =
+         AuthenticationMethod.create authentication_method
+       in
+       let* protocol = Protocol.create protocol in
+       Ok { server; port; username; authentication_method; protocol }
   in
   Caqti_type.(
     custom
@@ -79,16 +80,18 @@ module Write = struct
         ( server
         , (port, (username, (password, (authentication_method, protocol)))) )
       =
-      let ( let* ) = Result.bind in
-      let* server = Server.create server in
-      let* port = Port.create port in
-      let* username = Username.create username in
-      let* password = Password.create password in
-      let* authentication_method =
-        AuthenticationMethod.create authentication_method
-      in
-      let* protocol = Protocol.create protocol in
-      Ok { server; port; username; password; authentication_method; protocol }
+      let open CCResult in
+      map_err (fun _ -> "decode smtp write")
+      @@ let* server = Server.create server in
+         let* port = Port.create port in
+         let* username = Username.create username in
+         let* password = Password.create password in
+         let* authentication_method =
+           AuthenticationMethod.create authentication_method
+         in
+         let* protocol = Protocol.create protocol in
+         Ok
+           { server; port; username; password; authentication_method; protocol }
     in
     Caqti_type.(
       custom

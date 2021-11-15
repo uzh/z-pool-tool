@@ -82,17 +82,25 @@ before_script:
 compile-and-test:
   stage: test
   image: ocaml/opam:debian-ocaml-4.12
-  services: ["mariadb:10.4"]
+  services:
+    - name: "mariadb:10.4"
+      alias: mariadb-root
+    - name: "mariadb:10.4"
+      alias: mariadb-tenant
   variables:
     SIHL_ENV: test
     MYSQL_DATABASE: dev
     MYSQL_ROOT_PASSWORD: password
-    DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@mariadb:3306/${MYSQL_DATABASE}
+    DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@mariadb-root:3306/${MYSQL_DATABASE}
   artifacts:
     paths:
       - _build/default/pool/run/run.exe
       - _build/default/pool/test/
   script:
+    # update defalt opam repository (find latest package versions)
+    - opam remote remove --all default
+    - opam remote add default https://opam.ocaml.org
+
     # pin payout and install system dependencies
     - opam pin add -yn pool .
     - OPAMSOLVERTIMEOUT=180 opam depext -y pool
@@ -103,7 +111,9 @@ compile-and-test:
     # compile project - same as `make build` but without JS
     - opam exec -- dune build --root .
     # migrate test database
-    - opam config exec -- make sihl migrate
+    - opam config exec -- dune exec --root . pool/run/run.exe migrate.root
+    - opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
+    - opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
 
     # run tests
     # TODO: enable tests

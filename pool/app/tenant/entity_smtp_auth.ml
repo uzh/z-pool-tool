@@ -1,3 +1,5 @@
+module PoolError = Pool_common.Message
+
 module Server = struct
   type t = string [@@deriving eq, show]
 
@@ -5,14 +7,14 @@ module Server = struct
 
   let create server =
     if String.length server <= 0
-    then Error "Invalid SMTP server !"
+    then Error PoolError.(Invalid SmtpAuthServer)
     else Ok server
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpAuthServer)
+      CCList.pure
       "smtp_auth_server"
   ;;
 end
@@ -23,13 +25,15 @@ module Port = struct
   let value m = m
 
   let create port =
-    if String.length port <= 0 then Error "Invalid SMTP port !" else Ok port
+    if CCString.is_empty port && CCInt.of_string port |> CCOption.is_none
+    then Error PoolError.(Invalid SmtpPort)
+    else Ok port
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpPort)
+      CCList.pure
       "smtp_auth_port"
   ;;
 end
@@ -41,14 +45,14 @@ module Username = struct
 
   let create username =
     if String.length username <= 0
-    then Error "Invalid SMTP username!"
+    then Error PoolError.(Invalid SmtpUsername)
     else Ok username
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpUsername)
+      CCList.pure
       "smtp_auth_username"
   ;;
 end
@@ -60,14 +64,14 @@ module Password = struct
 
   let create password =
     if String.length password <= 0
-    then Error "Invalid SMTP password!"
+    then Error PoolError.(Invalid SmtpPassword)
     else Ok password
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpPassword)
+      CCList.pure
       "smtp_auth_password"
   ;;
 end
@@ -79,14 +83,14 @@ module AuthenticationMethod = struct
 
   let create authentication_method =
     if String.length authentication_method <= 0
-    then Error "Invalid SMTP authentication method!"
+    then Error PoolError.(Invalid SmtpAuthMethod)
     else Ok authentication_method
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpAuthMethod)
+      CCList.pure
       "smtp_auth_authentication_method"
   ;;
 end
@@ -99,13 +103,13 @@ module Protocol = struct
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
     then Ok protocol
-    else Error "Invalid SMTP protocol!"
+    else Error PoolError.(Invalid SmtpProtocol)
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.SmtpProtocol)
+      CCList.pure
       "smtp_auth_protocol"
   ;;
 end

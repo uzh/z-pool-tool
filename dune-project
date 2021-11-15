@@ -32,15 +32,21 @@
   (conformist
    (>= 0.6.0))
   (sihl
-   (>= 1.0.0))
+   (>= 2.0.1))
   (sihl-user
-   (>= 1.0.0))
+   (>= 2.0.1))
   (sihl-token
-   (>= 1.0.0))
+   (>= 2.0.1))
+  (sihl-email
+   (>= 2.0.1))
+  (sihl-queue
+   (>= 2.0.1))
+  (sihl-storage
+   (>= 2.0.1))
   (lwt
    (>= 5.4.1))
   (containers
-   (>= 3.4))
+   (>= 3.6))
   (caqti-driver-mariadb
    (>= 1.6.0))
   (ocamlformat
@@ -49,6 +55,8 @@
    (>= 1.4.0))
   (ppx_deriving
    (>= 5.2.1))
+  (ppx_yojson_conv
+   (>= 0.14.0))
   (ppx_variants_conv
    (>= 0.14.1))
   ;; Test/Dev dependencies

@@ -1,10 +1,12 @@
+module File = Pool_common.File
+
 module SmtpAuth : sig
   module Server : sig
     type t
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -13,7 +15,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -22,7 +24,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -30,7 +32,7 @@ module SmtpAuth : sig
     type t
 
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -39,7 +41,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -48,7 +50,7 @@ module SmtpAuth : sig
 
     val value : t -> string
     val equal : t -> t -> bool
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -80,34 +82,8 @@ module SmtpAuth : sig
       -> Password.t
       -> AuthenticationMethod.t
       -> Protocol.t
-      -> (t, string) result
+      -> (t, Pool_common.Message.error) result
   end
-end
-
-module Database : sig
-  module Url : sig
-    type t
-
-    val equal : t -> t -> bool
-    val create : string -> (t, string) result
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  module Label : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, string) result
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  type t =
-    { url : Url.t
-    ; label : Label.t
-    }
-
-  val create : Url.t -> Label.t -> (t, string) result
 end
 
 module Title : sig
@@ -115,7 +91,7 @@ module Title : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -124,7 +100,7 @@ module Description : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -133,44 +109,54 @@ module Url : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module Styles : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  module Write : sig
+    type t
+
+    val create : string -> (t, Pool_common.Message.error) result
+    val value : t -> string
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Icon : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  module Write : sig
+    type t
+
+    val create : string -> (t, Pool_common.Message.error) result
+    val value : t -> string
+    val schema : unit -> ('a, t) Conformist.Field.t
+  end
 end
 
 module Logos : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t list
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module PartnerLogos : sig
   type t
 
-  val value : t -> string
+  val value : t -> File.t list
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
 
 module Maintenance : sig
@@ -190,20 +176,45 @@ module Disabled : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
+module LogoMapping : sig
+  module LogoType : sig
+    type t =
+      | PartnerLogo
+      | TenantLogo
+
+    val of_string : string -> (t, Pool_common.Message.error) result
+    val to_string : t -> string
+    val all : unit -> string list
+  end
+
+  module Write : sig
+    type t =
+      { id : Pool_common.Id.t
+      ; tenant_id : Pool_common.Id.t
+      ; asset_id : Pool_common.Id.t
+      ; logo_type : LogoType.t
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end
+
 type t =
   { id : Pool_common.Id.t
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_label : Database.Label.t
+  ; database_label : Pool_common.Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -214,15 +225,13 @@ module Write : sig
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database : Pool_common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    ; styles : Styles.Write.t
+    ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
     }
@@ -231,14 +240,14 @@ module Write : sig
     :  Title.t
     -> Description.t
     -> Url.t
-    -> Database.t
+    -> Pool_common.Database.t
     -> SmtpAuth.Write.t
-    -> Styles.t
-    -> Icon.t
-    -> Logos.t
-    -> PartnerLogos.t
-    -> Settings.Language.t
+    -> Styles.Write.t
+    -> Icon.Write.t
+    -> Pool_common.Language.t
     -> t
+
+  val show : t -> string
 end
 
 module StatusReport : sig
@@ -246,19 +255,6 @@ module StatusReport : sig
 
   val equal : t -> t -> bool
 end
-
-type create =
-  { title : Title.t
-  ; description : Description.t
-  ; url : Url.t
-  ; database : Database.t
-  ; smtp_auth : SmtpAuth.Write.t
-  ; styles : Styles.t
-  ; icon : Icon.t
-  ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
-  ; default_language : Settings.Language.t
-  }
 
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
@@ -273,18 +269,18 @@ type update =
   ; description : Description.t
   ; url : Url.t
   ; smtp_auth : smtp_auth_update
-  ; styles : Styles.t
-  ; icon : Icon.t
-  ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   }
 
+type logo_mappings = LogoMapping.Write.t list
+
 type event =
-  | Created of create [@equal equal]
+  | Created of Write.t [@equal equal]
+  | LogosUploaded of logo_mappings
+  | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
-  | DatabaseEdited of Write.t * Database.t
+  | DatabaseEdited of Write.t * Pool_common.Database.t
   | Destroyed of Pool_common.Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
@@ -292,17 +288,36 @@ type event =
   | OperatorDivested of Pool_common.Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
 
-val handle_event : event -> unit Lwt.t
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val find : Pool_common.Id.t -> (t, string) result Lwt.t
-val find_full : Pool_common.Id.t -> (Write.t, string) result Lwt.t
-val find_by_participant : 'a -> 'b
-val find_by_user : 'a -> 'b
-val find_all : unit -> (t list, string) Result.t Lwt.t
+val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_full
+  :  Pool_common.Id.t
+  -> (Write.t, Pool_common.Message.error) result Lwt.t
+
+val find_by_label
+  :  Pool_common.Database.Label.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_all : unit -> t list Lwt.t
+val find_databases : unit -> Pool_common.Database.t list Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
+
+module Selection : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : Url.t -> Pool_common.Database.Label.t -> t
+  val find_all : unit -> t list Lwt.t
+  val url : t -> string
+  val label : t -> Pool_common.Database.Label.t
+end
 
 (* MONITORING AND MANAGEMENT *)
 

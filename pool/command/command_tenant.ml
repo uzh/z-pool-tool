@@ -4,8 +4,7 @@ let create_tenant =
     ~help:
       "<title> <description> <url> <database_url> <smtp_auth_server> \
        <smtp_auth_port> <smtp_auth_username> <smtp_auth_authentication_method> \
-       <smtp_auth_protocol> <styles> <icon> <logos> <partner_logos> \
-       <default_language>"
+       <smtp_auth_protocol> <styles> <icon> <logos> <default_language>"
     ~description:"Creates a new test tenant"
     (fun args ->
       let help_text =
@@ -16,7 +15,7 @@ let create_tenant =
         <database_url>                      : string
         <database_label>                    : string
         <smtp_auth_server>                  : string
-        <smtp_auth_port>                    : '25' | '465' | '587'
+        <smtp_auth_port>                    : string
         <smtp_auth_username>                : string
         <smtp_auth_password>                : string
         <smtp_auth_authentication_method>   : string
@@ -24,7 +23,6 @@ let create_tenant =
         <styles>                            : string
         <icon>                              : string
         <logos>                             : string
-        <partner_logos>                     : string
         <default_language>                  : 'DE' | 'EN'
         <operator_email>                    : string
         <operator_password>                 : string
@@ -47,7 +45,6 @@ let create_tenant =
         ; styles
         ; icon
         ; logos
-        ; partner_logos
         ; default_language
         ; email
         ; password
@@ -76,26 +73,25 @@ let create_tenant =
               ; "styles", [ styles ]
               ; "icon", [ icon ]
               ; "logos", [ logos ]
-              ; "partner_logos", [ partner_logos ]
               ; "default_language", [ default_language ]
               ; "email", [ email ]
               ; "password", [ password ]
               ; "firstname", [ firstname ]
               ; "lastname", [ lastname ]
               ]
-            |> CCResult.map_err Utils.handle_conformist_error
             >>= Cqrs_command.Tenant_command.Create.handle
           in
-          let run_events events =
-            let%lwt _ = Lwt_list.map_s Pool_event.handle_event events in
-            Lwt.return_ok ()
+          let run_events =
+            Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
           in
-          () |> run_command >>= run_events
+          () |> run_command |>> run_events
         in
         (match result with
         | Ok _ -> Lwt.return_some ()
         | Error err ->
-          print_endline err;
+          err
+          |> Pool_common.(Utils.error_to_string Language.En)
+          |> print_endline;
           Lwt.return_some ())
       | _ ->
         print_endline help_text;

@@ -3,7 +3,7 @@ module RepoPerson = Repo_person
 
 let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
-  let open Utils.Stringify in
+  let open Stringify in
   function
   | AssistantC -> assistant, person `Assistant
   | ExperimenterC -> experimenter, person `Experimenter
@@ -25,7 +25,12 @@ module Sql = struct
     |> Caqti_request.exec RepoPerson.Write.caqti
   ;;
 
-  let update t = Utils.Database.exec update_request (RepoPerson.Write.extract t)
+  let update pool t =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value pool)
+      update_request
+      (RepoPerson.Write.extract t)
+  ;;
 
   let select_from_persons_sql where_fragment =
     let select_from =
@@ -67,9 +72,12 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.string caqti_type
   ;;
 
-  let find_all_by_role role =
+  let find_all_by_role pool role =
     let caqti_type, role_val = extract role in
-    Utils.Database.collect (find_all_by_role_request caqti_type) role_val
+    Utils.Database.collect
+      (Pool_common.Database.Label.value pool)
+      (find_all_by_role_request caqti_type)
+      role_val
   ;;
 
   let find_request caqti_type =
@@ -84,11 +92,35 @@ module Sql = struct
          caqti_type
   ;;
 
-  let find role id =
+  let find pool role id =
+    let open Lwt.Infix in
     let caqti_type, role_val = extract role in
-    Utils.Database.find
+    Utils.Database.find_opt
+      (Pool_common.Database.Label.value pool)
       (find_request caqti_type)
-      (id |> Pool_common.Id.value, role_val)
+      (id, role_val)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
+  ;;
+
+  let find_role_by_user_request =
+    {sql|
+      SELECT
+        pool_person.role
+      FROM pool_person
+      INNER JOIN user_users ON pool_person.sihl_user_uuid = user_users.uuid
+      AND user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_request.find Caqti_type.string Caqti_type.string
+  ;;
+
+  let find_role_by_user pool user =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_common.Database.Label.value pool)
+      find_role_by_user_request
+      user.Sihl.Contract.User.id
+    >|= CCOption.map Stringify.person_from_string
+    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
   let insert_sql =
@@ -109,27 +141,16 @@ module Sql = struct
 
   let insert_request = Caqti_request.exec RepoPerson.Write.caqti insert_sql
 
-  let insert (t : 'a t) =
-    Utils.Database.exec insert_request (RepoPerson.Write.extract t)
+  let insert pool (t : 'a t) =
+    Utils.Database.exec
+      (Pool_common.Database.Label.value pool)
+      insert_request
+      (RepoPerson.Write.extract t)
   ;;
 end
 
 let find = Sql.find
+let find_role_by_user = Sql.find_role_by_user
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update = Sql.update
-
-let set_password
-    : type person. person t -> string -> string -> (unit, string) result Lwt.t
-  =
- fun person password password_confirmation ->
-  let open Lwt_result.Infix in
-  match person with
-  | Assistant { user; _ }
-  | Experimenter { user; _ }
-  | LocationManager { user; _ }
-  | Recruiter { user; _ }
-  | Operator { user; _ } ->
-    Service.User.set_password user ~password ~password_confirmation
-    >|= CCFun.const ()
-;;

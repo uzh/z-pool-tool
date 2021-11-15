@@ -255,4 +255,4 @@ let countries =
   ]
 ;;
 
-let find = CCFun.flip List.assoc countries
+let find = CCFun.flip (CCList.assoc ~eq:( = )) countries

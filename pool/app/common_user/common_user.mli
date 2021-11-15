@@ -8,9 +8,9 @@ module Password : sig
   val validate
     :  ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (unit, string) result
+    -> (unit, Pool_common.Message.error) result
 
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -31,7 +31,7 @@ module Firstname : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -42,7 +42,7 @@ module Lastname : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -73,9 +73,9 @@ module TermsAccepted : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t -> t
+  val create : Ptime.t option -> t
   val create_now : t
-  val value : t -> Ptime.t
+  val value : t -> Ptime.t option
 end
 
 module Verified : sig
@@ -84,9 +84,9 @@ module Verified : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t -> t
+  val create : Ptime.t option -> t
   val create_now : t
-  val value : t -> Ptime.t
+  val value : t -> Ptime.t option
 end
 
 module Email : sig
@@ -96,6 +96,8 @@ module Email : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
+    val create : string -> t
+    val value : t -> string
   end
 
   module Address : sig
@@ -108,10 +110,10 @@ module Email : sig
     val validate
       :  Settings.EmailSuffix.t list option
       -> t
-      -> (unit, string) result
+      -> (unit, Pool_common.Message.error) result
 
     val value : t -> string
-    val create : string -> (t, string) result
+    val create : string -> (t, Pool_common.Message.error) result
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -126,11 +128,15 @@ module Email : sig
   type email_unverified =
     { address : Address.t
     ; token : Token.t
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
 
   type email_verified =
     { address : Address.t
     ; verified_at : VerifiedAt.t
+    ; created_at : Pool_common.CreatedAt.t
+    ; updated_at : Pool_common.UpdatedAt.t
     }
 
   type unverified
@@ -151,62 +157,41 @@ module Email : sig
   val pp : Format.formatter -> 'email t -> unit
   val show : 'state t -> string
   val token : unverified t -> string
-  val create : Address.t -> Token.t -> (unverified t, string) result
+  val create : Address.t -> Token.t -> unverified t
   val verify : unverified t -> verified t
+  val address : 'email t -> Address.t
+
+  val find_unverified
+    :  Pool_common.Database.Label.t
+    -> Address.t
+    -> (unverified t, Pool_common.Message.error) result Lwt.t
+
+  val find_verified
+    :  Pool_common.Database.Label.t
+    -> Address.t
+    -> (verified t, Pool_common.Message.error) result Lwt.t
 end
 
 module Repo : sig
   module Paused : sig
-    type t = Paused.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> bool
-    val create : bool -> t
     val t : bool Caqti_type.t
   end
 
   module Disabled : sig
-    type t = Disabled.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> bool
-    val create : bool -> t
     val t : bool Caqti_type.t
   end
 
   module TermsAccepted : sig
-    type t = TermsAccepted.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : t
-    val value : t -> Ptime.t
-    val t : Ptime.t Caqti_type.t
+    val t : Ptime.t option Caqti_type.t
   end
 
   module Verified : sig
-    type t = Verified.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : Ptime.t -> t
-    val create_now : t
-    val value : t -> Ptime.t
-    val t : Ptime.t Caqti_type.t
+    val t : Ptime.t option Caqti_type.t
   end
 
   module Email : sig
     val unverified_t : Entity_email.unverified Entity_email.t Caqti_type.t
     val verified_t : Entity_email.verified Entity_email.t Caqti_type.t
-    val insert : 'a -> 'b
-    val update : 'a -> 'b
   end
 
   val user_caqti : Sihl_user.t Caqti_type.t
@@ -215,15 +200,23 @@ end
 module Event : sig
   module Email : sig
     type event =
-      | Created of Email.Address.t
+      | Created of Email.Address.t * Firstname.t * Lastname.t
       | UpdatedUnverified of
-          Entity_email.unverified Entity_email.t * Email.Address.t
+          Email.unverified Email.t
+          * (Email.Address.t * Firstname.t * Lastname.t)
       | UpdatedVerified of
-          Entity_email.verified Entity_email.t * Email.Address.t
-      | Verified of Entity_email.unverified Entity_email.t
+          Email.verified Email.t * (Email.Address.t * Firstname.t * Lastname.t)
+      | Verified of Email.unverified Email.t
 
-    val handle_event : event -> unit Lwt.t
+    val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
     val equal_event : event -> event -> bool
     val pp_event : Format.formatter -> event -> unit
+
+    module PasswordReset : sig
+      val create
+        :  Pool_common.Database.Label.t
+        -> user:Sihl_user.t
+        -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+    end
   end
 end

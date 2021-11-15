@@ -14,7 +14,7 @@ module RecruitmentChannel = struct
     | "online" -> Ok Online
     | "lecture" -> Ok Lecture
     | "mailing" -> Ok Mailing
-    | _ -> Error "Invalid recruitment channel provided"
+    | _ -> Error Pool_common.Message.(Invalid RecruitmentChannel)
   ;;
 
   let to_string = function
@@ -26,10 +26,12 @@ module RecruitmentChannel = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string)
+      Pool_common.(Utils.schema_decoder of_string Message.RecruitmentChannel)
       (fun l -> [ to_string l ])
       "recruitment_channel"
   ;;
+
+  let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]
 end
 
 type t =

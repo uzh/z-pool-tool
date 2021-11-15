@@ -29,14 +29,14 @@ val equal_update : update -> update -> bool
 val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
-type 'a person_event = 'a Event.person_event =
+type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
       'a Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 
-type event = Event.event =
+type event =
   | Created of creatable_admin * create
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
@@ -44,8 +44,12 @@ type event = Event.event =
   | RecruiterEvents of Entity.recruiter person_event
   | OperatorEvents of Entity.operator person_event
 
-val handle_person_event : 'a person_event -> unit Lwt.t
-val handle_event : event -> unit Lwt.t
+val handle_person_event
+  :  Pool_common.Database.Label.t
+  -> 'a person_event
+  -> unit Lwt.t
+
+val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_person_event : 'a person_event -> 'a person_event -> bool
 val pp_person_event : Format.formatter -> 'a person_event -> unit
 val equal_event : event -> event -> bool
@@ -57,6 +61,7 @@ type person = Entity.person =
   ; updated_at : Ptime.t
   }
 
+val create_person : Sihl_user.t -> person
 val equal_person : person -> person -> bool
 val pp_person : Format.formatter -> person -> unit
 val show_person : person -> string
@@ -85,6 +90,7 @@ val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
 
-val login : 'a -> email:'b -> password:'c -> 'd
+val insert : Pool_common.Database.Label.t -> 'a t -> unit Lwt.t
 val find_by_user : 'a -> 'b
+val user_is_admin : Pool_common.Database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

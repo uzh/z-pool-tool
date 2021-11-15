@@ -1,10 +1,40 @@
+module Common = Pool_common
+
+module Stringify = struct
+  let person = function
+    | `Assistant -> "assistant"
+    | `Experimenter -> "experimenter"
+    | `LocationManager -> "location_manager"
+    | `Recruiter -> "recruiter"
+    | `Operator -> "operator"
+    | `Root -> "root"
+  ;;
+
+  let person_from_string = function
+    | "assistant" -> Ok `Assistant
+    | "experimenter" -> Ok `Experimenter
+    | "location_manager" -> Ok `LocationManager
+    | "recruiter" -> Ok `Recruiter
+    | "operator" -> Ok `Operator
+    | "root" -> Ok `Root
+    | _ -> Error Pool_common.Message.(Invalid Role)
+  ;;
+end
+
 type person =
   { user : Sihl_user.t
         [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
+  ; created_at : Common.CreatedAt.t
+  ; updated_at : Common.UpdatedAt.t
   }
 [@@deriving eq, show]
+
+let create_person user =
+  { user
+  ; created_at = Common.CreatedAt.create ()
+  ; updated_at = Common.UpdatedAt.create ()
+  }
+;;
 
 (* TODO hide private constructors if possible *)
 (* Don't use these private constructors *)

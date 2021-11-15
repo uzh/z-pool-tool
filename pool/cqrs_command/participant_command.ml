@@ -12,13 +12,13 @@ module SignUp : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) Result.t)
+    -> ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (Pool_event.t list, string) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
-    -> (t, Conformist.error list) Result.t
+    -> (t, Pool_common.Message.error) result
 end = struct
   type t =
     { email : User.Email.Address.t
@@ -46,7 +46,7 @@ end = struct
   ;;
 
   let handle ?allowed_email_suffixes ?password_policy command =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Common_user.Email.Address.validate allowed_email_suffixes command.email
@@ -63,11 +63,16 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; User.Event.Email.Created command.email |> Pool_event.email_address
+      ; User.Event.Email.Created
+          (command.email, command.firstname, command.lastname)
+        |> Pool_event.email_address
       ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
 end
 
 module UpdateDetails : sig
@@ -82,9 +87,9 @@ module UpdateDetails : sig
     :  Participant.t
     -> email:User.Email.Address.t
     -> password:User.Password.t
-    -> (Pool_event.t list, string) Result.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -95,16 +100,20 @@ end = struct
 
   let handle _ ~email:_ ~password:_ = Utils.todo ()
 
-  let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -115,8 +124,12 @@ module UpdatePassword : sig
     ; new_password : User.Password.t
     }
 
-  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -126,16 +139,20 @@ end = struct
 
   let handle _ = Utils.todo
 
-  let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
-    Permission.can
-      participant.Participant.user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -145,8 +162,12 @@ module UpdateEmail : sig
     ; email : User.Email.Address.t
     }
 
-  val handle : t -> Participant.t -> (Pool_event.t list, string) Result.t
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
     { id : Id.t
@@ -155,15 +176,50 @@ end = struct
 
   let handle _ = Utils.todo
 
-  let can user command =
-    let open Lwt.Syntax in
-    let* participant = Participant.find_by_user user in
-    let* tenant = Tenant.find_by_participant participant in
-    Permission.can
-      participant.Participant.user
-      ~any_of:
-        [ Permission.Update (Permission.Participant, Some command.id)
-        ; Permission.Update (Permission.Tenant, Some tenant.id)
-        ]
+  let can pool participant command =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        participant.Participant.user
+        ~any_of:
+          [ Permission.Update (Permission.Participant, Some command.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ]
+    in
+    pool
+    |> Tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
+  ;;
+end
+
+module AcceptTermsAndConditions : sig
+  val handle
+    :  Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  let handle participant =
+    Ok [ Participant.AcceptTerms participant |> Pool_event.participant ]
+  ;;
+end
+
+module ConfirmEmail : sig
+  type t = { email : Common_user.Email.unverified Common_user.Email.t }
+
+  val handle
+    :  t
+    -> Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  module Email = Common_user.Email
+
+  type t = { email : Email.unverified Email.t }
+
+  let handle command participant =
+    Ok
+      [ Participant.EmailConfirmed participant |> Pool_event.participant
+      ; Common_user.Event.Email.Verified command.email
+        |> Pool_event.email_address
+      ]
   ;;
 end

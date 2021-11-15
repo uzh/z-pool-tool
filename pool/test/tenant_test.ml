@@ -1,8 +1,24 @@
 module Tenant_command = Cqrs_command.Tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
+module Common = Pool_common
+
+let get_or_failwith res =
+  res
+  |> CCResult.map_err Common.(Utils.error_to_string Language.En)
+  |> CCResult.get_or_failwith
+;;
 
 module Data = struct
+  module Asset = struct
+    open Database.SeedAssets
+
+    let styles = dummy_css () |> fun { id; _ } -> id
+    let icon = dummy_icon () |> fun { id; _ } -> id
+    let tenant_logo = dummy_tenant_logo () |> fun { id; _ } -> id
+    let partner_logo = dummy_partner_logo () |> fun { id; _ } -> id
+  end
+
   let title = "Econ uzh"
   let description = "description"
   let url = "pool.econ.uzh.ch"
@@ -14,10 +30,10 @@ module Data = struct
   let smtp_auth_password = "emailemail"
   let smtp_auth_authentication_method = "LOGIN"
   let smtp_auth_protocol = "STARTTLS"
-  let styles = "custom-styles.econ.css"
-  let icon = "some icon"
-  let logos = "some logo"
-  let partner_logos = "some partner logos"
+  let styles = Asset.styles |> Tenant.Styles.Write.create |> get_or_failwith
+  let icon = Asset.icon |> Tenant.Icon.Write.create |> get_or_failwith
+  let tenant_logo = Asset.tenant_logo
+  let partner_logo = Asset.partner_logo
   let default_language = "EN"
   let email = "operator@econ.uzh.ch"
   let password = "adminadmin"
@@ -25,6 +41,7 @@ module Data = struct
   let lastname = "Ötzi"
 
   let urlencoded =
+    let open Tenant.LogoMapping.LogoType in
     [ "title", [ title ]
     ; "description", [ description ]
     ; "url", [ url ]
@@ -36,10 +53,10 @@ module Data = struct
     ; "smtp_auth_password", [ smtp_auth_password ]
     ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
     ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-    ; "styles", [ styles ]
-    ; "icon", [ icon ]
-    ; "logos", [ logos ]
-    ; "partner_logos", [ partner_logos ]
+    ; "styles", [ Asset.styles ]
+    ; "icon", [ Asset.icon ]
+    ; to_string TenantLogo, [ tenant_logo ]
+    ; to_string PartnerLogo, [ partner_logo ]
     ; "default_language", [ default_language ]
     ; "email", [ email ]
     ; "password", [ password ]
@@ -71,19 +88,10 @@ module Data = struct
         smtp_auth_authentication_method
         smtp_auth_protocol
     in
-    let* database_label = database_label |> Database.Label.create in
-    let* database_url = database_url |> Database.Url.create in
-    let* database = Database.create database_url database_label in
-    let* styles = styles |> Styles.create in
-    let* icon = icon |> Icon.create in
-    let* logos = logos |> Logos.create in
-    let* partner_logos = partner_logos |> PartnerLogos.create in
-    let disabled = false |> Disabled.create in
-    let maintenance = false |> Maintenance.create in
-    let* default_language = "EN" |> Settings.Language.of_string in
+    let* database = Common.Database.create database_url database_label in
     Ok
       Write.
-        { id = Pool_common.Id.create ()
+        { id = Common.Id.create ()
         ; title
         ; description
         ; url
@@ -91,13 +99,11 @@ module Data = struct
         ; smtp_auth
         ; styles
         ; icon
-        ; logos
-        ; partner_logos
-        ; maintenance
-        ; disabled
-        ; default_language
-        ; created_at = Pool_common.CreatedAt.create ()
-        ; updated_at = Pool_common.UpdatedAt.create ()
+        ; maintenance = Maintenance.create false
+        ; disabled = Disabled.create false
+        ; default_language = Common.Language.En
+        ; created_at = Common.CreatedAt.create ()
+        ; updated_at = Common.UpdatedAt.create ()
         }
   ;;
 end
@@ -116,10 +122,10 @@ let create_smtp_auth () =
     let* protocol = "http" |> Protocol.create in
     Ok { server; port; username; authentication_method; protocol }
   in
-  let expected = Error "Invalid SMTP protocol!" in
+  let expected = Error Common.Message.(Invalid SmtpProtocol) in
   Alcotest.(
     check
-      (result Test_utils.tenant_smtp_auth string)
+      (result Test_utils.tenant_smtp_auth Test_utils.error)
       "succeeds"
       expected
       smtp_auth)
@@ -129,10 +135,7 @@ let create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Data.urlencoded
-    |> Tenant_command.Create.decode
-    |> CCResult.map_err Utils.handle_conformist_error
-    >>= Tenant_command.Create.handle
+    Tenant_command.Create.(Data.urlencoded |> decode >>= handle)
   in
   let expected =
     let open Tenant in
@@ -141,7 +144,7 @@ let create_tenant () =
     let* description = description |> Tenant.Description.create in
     let* url = url |> Tenant.Url.create in
     let* database =
-      let open Tenant.Database in
+      let open Common.Database in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in
       Ok { url; label }
@@ -160,28 +163,32 @@ let create_tenant () =
         Write.
           { server; port; username; password; authentication_method; protocol }
     in
-    let* styles = styles |> Styles.create in
-    let* icon = icon |> Icon.create in
-    let* logos = logos |> Logos.create in
-    let* partner_logos = partner_logos |> PartnerLogos.create in
-    let* default_language = default_language |> Settings.Language.of_string in
-    let create : Tenant.create =
-      { title
-      ; description
-      ; url
-      ; database
-      ; smtp_auth
-      ; styles
-      ; icon
-      ; logos
-      ; partner_logos
-      ; default_language
-      }
+    let* default_language = default_language |> Common.Language.of_string in
+    let create : Tenant.Write.t =
+      Tenant.Write.
+        { id = Common.Id.create ()
+        ; title
+        ; description
+        ; url
+        ; database
+        ; smtp_auth
+        ; styles
+        ; icon
+        ; maintenance = Maintenance.create false
+        ; disabled = Disabled.create false
+        ; default_language
+        ; created_at = Ptime_clock.now ()
+        ; updated_at = Ptime_clock.now ()
+        }
     in
     Ok [ Tenant.Created create |> Pool_event.tenant ]
   in
   Alcotest.(
-    check (result (list Test_utils.event) string) "succeeds" expected events)
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;
 
 let update_tenant_details () =
@@ -191,11 +198,11 @@ let update_tenant_details () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
+      let open Tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values [ "disabled" ]
-      |> Tenant_command.EditDetails.decode
-      |> CCResult.map_err Utils.handle_conformist_error
-      >>= CCFun.flip Tenant_command.EditDetails.handle tenant
+      |> decode
+      >>= handle tenant
     in
     let expected =
       let open Tenant in
@@ -214,29 +221,19 @@ let update_tenant_details () =
         let* protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
         Ok { server; port; username; authentication_method; protocol }
       in
-      let* styles = styles |> Styles.create in
-      let* icon = icon |> Icon.create in
-      let* logos = logos |> Logos.create in
-      let* partner_logos = partner_logos |> PartnerLogos.create in
-      let* default_language = default_language |> Settings.Language.of_string in
+      let* default_language = default_language |> Common.Language.of_string in
       let disabled = false |> Disabled.create in
       let update : update =
-        { title
-        ; description
-        ; url
-        ; smtp_auth
-        ; styles
-        ; icon
-        ; logos
-        ; partner_logos
-        ; default_language
-        ; disabled
-        }
+        { title; description; url; smtp_auth; default_language; disabled }
       in
       Ok [ DetailsEdited (tenant, update) |> Pool_event.tenant ]
     in
     Alcotest.(
-      check (result (list Test_utils.event) string) "succeeds" expected events)
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
 ;;
 
 let update_tenant_database () =
@@ -246,13 +243,13 @@ let update_tenant_database () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
+      let open Tenant_command.EditDatabase in
       [ "database_url", [ database_url ]; "database_label", [ database_label ] ]
-      |> Tenant_command.EditDatabase.decode
-      |> CCResult.map_err Utils.handle_conformist_error
-      >>= CCFun.flip Tenant_command.EditDatabase.handle tenant
+      |> decode
+      >>= handle tenant
     in
     let expected =
-      let open Tenant.Database in
+      let open Common.Database in
       let open CCResult in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in
@@ -260,7 +257,11 @@ let update_tenant_database () =
       Ok [ Tenant.DatabaseEdited (tenant, database) |> Pool_event.tenant ]
     in
     Alcotest.(
-      check (result (list Test_utils.event) string) "succeeds" expected events)
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
 ;;
 
 let create_operator () =
@@ -270,10 +271,8 @@ let create_operator () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
-      Data.urlencoded
-      |> Admin_command.CreateOperator.decode
-      |> CCResult.map_err Utils.handle_conformist_error
-      >>= CCFun.flip Admin_command.CreateOperator.handle tenant
+      let open Admin_command.CreateOperator in
+      Data.urlencoded |> decode >>= handle tenant
     in
     let expected =
       let open CCResult in
@@ -287,5 +286,9 @@ let create_operator () =
       Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
     in
     Alcotest.(
-      check (result (list Test_utils.event) string) "succeeds" expected events)
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
 ;;

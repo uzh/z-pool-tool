@@ -80,7 +80,7 @@ let t =
         , (Description.value m.description, (m.created_at, m.updated_at)) ) )
   in
   let decode (id, (title, (description, (created_at, updated_at)))) =
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* title = Title.create title in
     let* description = Description.create description in
     Ok { id = Id.of_string id; title; description; created_at; updated_at }
@@ -92,8 +92,8 @@ let t =
       (tup2 RepoId.t (tup2 Title.t (tup2 Description.t (tup2 ptime ptime)))))
 ;;
 
-let find = Utils.todo
-let list_all = Utils.todo
-let insert = Utils.todo
-let update = Utils.todo
-let destroy = Utils.todo
+let find _ = Utils.todo
+let list_all _ = Utils.todo
+let insert _ = Utils.todo
+let update _ = Utils.todo
+let destroy _ = Utils.todo

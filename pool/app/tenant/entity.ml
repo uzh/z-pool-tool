@@ -1,8 +1,11 @@
 module Id = Pool_common.Id
+module Database = Pool_common.Database
 module CreatedAt = Pool_common.CreatedAt
 module UpdatedAt = Pool_common.UpdatedAt
+module File = Pool_common.File
 module SmtpAuth = Entity_smtp_auth
-module Database = Entity_database
+module LogoMapping = Entity_logo_mapping
+module PoolError = Pool_common.Message
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -10,11 +13,16 @@ module Title = struct
   let value m = m
 
   let create title =
-    if String.length title <= 0 then Error "Invalid title!" else Ok title
+    if CCString.is_empty title
+    then Error PoolError.(Invalid Title)
+    else Ok title
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "title"
+    Conformist.custom
+      Pool_common.(Utils.schema_decoder create Message.Title)
+      CCList.pure
+      "title"
   ;;
 end
 
@@ -24,15 +32,15 @@ module Description = struct
   let value m = m
 
   let create description =
-    if String.length description <= 0
-    then Error "Invalid description!"
+    if CCString.is_empty description
+    then Error PoolError.(Invalid Description)
     else Ok description
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.Description)
+      CCList.pure
       "description"
   ;;
 end
@@ -43,75 +51,90 @@ module Url = struct
   let value m = m
 
   let create url =
-    if String.length url <= 0 then Error "Invalid url!" else Ok url
+    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "url"
+    Conformist.custom
+      Pool_common.(Utils.schema_decoder create Message.Url)
+      CCList.pure
+      "url"
   ;;
 end
 
 module Styles = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create styles =
-    if String.length styles <= 0 then Error "Invalid styles!" else Ok styles
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
-      "styles"
-  ;;
+    let value m = m
+
+    let create styles =
+      if CCString.is_empty styles
+      then Error PoolError.(Invalid Styles)
+      else Ok styles
+    ;;
+
+    let schema () =
+      Conformist.custom
+        Pool_common.(Utils.schema_decoder create Message.Styles)
+        CCList.pure
+        "styles"
+    ;;
+  end
 end
 
 module Icon = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show]
 
   let value m = m
 
-  let create icon =
-    if String.length icon <= 0 then Error "Invalid icon!" else Ok icon
-  ;;
+  module Write = struct
+    type t = string [@@deriving eq, show]
 
-  let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "icon"
-  ;;
+    let value m = m
+
+    let create icon =
+      if CCString.is_empty icon then Error PoolError.(Invalid Icon) else Ok icon
+    ;;
+
+    let schema () =
+      Conformist.custom
+        Pool_common.(Utils.schema_decoder create Message.Icon)
+        CCList.pure
+        "icon"
+    ;;
+  end
 end
 
 module Logos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
 
   let value m = m
-
-  let create logos =
-    if String.length logos <= 0 then Error "Invalid logos!" else Ok logos
-  ;;
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "logos"
+    Conformist.custom
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "tenant_logo"
   ;;
 end
 
 module PartnerLogos = struct
-  type t = string [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show]
 
+  let create m = Ok (CCList.map Pool_common.Id.of_string m)
   let value m = m
-
-  let create partner_logo =
-    if String.length partner_logo <= 0
-    then Error "Invalid partner logos!"
-    else Ok partner_logo
-  ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
-      "partner_logos"
+      (fun l -> l |> create)
+      (fun l -> l |> CCList.map Pool_common.Id.value)
+      "partner_logo"
   ;;
 end
 
@@ -132,8 +155,11 @@ module Maintenance = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string |> CCResult.return)
-      (fun l -> [ stringify l ])
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> of_string |> CCResult.pure)
+          Message.TenantMaintenanceFlag)
+      (fun l -> l |> stringify |> CCList.pure)
       "maintenance"
   ;;
 end
@@ -156,8 +182,11 @@ module Disabled = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> of_string |> CCResult.return)
-      (fun l -> [ stringify l ])
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> of_string |> CCResult.pure)
+          Message.TenantDisabledFlag)
+      (fun l -> l |> stringify |> CCList.pure)
       "disabled"
   ;;
 end
@@ -172,14 +201,33 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logos : PartnerLogos.t
+  ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
-  ; default_language : Settings.Language.t
+  ; default_language : Pool_common.Language.t
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
 [@@deriving eq, show]
+
+module Read = struct
+  type t =
+    { id : Id.t
+    ; title : Title.t
+    ; description : Description.t
+    ; url : Url.t
+    ; database_label : Database.Label.t
+    ; smtp_auth : SmtpAuth.t
+    ; styles : Styles.t
+    ; icon : Icon.t
+    ; maintenance : Maintenance.t
+    ; disabled : Disabled.t
+    ; default_language : Pool_common.Language.t
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
+    }
+  [@@deriving eq, show]
+end
 
 module Write = struct
   type t =
@@ -189,13 +237,11 @@ module Write = struct
     ; url : Url.t
     ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
-    ; styles : Styles.t
-    ; icon : Icon.t
-    ; logos : Logos.t
-    ; partner_logos : PartnerLogos.t
+    ; styles : Styles.Write.t
+    ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Settings.Language.t
+    ; default_language : Pool_common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : CreatedAt.t
     }
@@ -209,8 +255,6 @@ module Write = struct
       smtp_auth
       styles
       icon
-      logos
-      partner_logos
       default_language
     =
     { id = Id.create ()
@@ -221,8 +265,6 @@ module Write = struct
     ; smtp_auth
     ; styles
     ; icon
-    ; logos
-    ; partner_logos
     ; maintenance = Maintenance.create false
     ; disabled = Disabled.create false
     ; default_language
@@ -230,6 +272,18 @@ module Write = struct
     ; updated_at = UpdatedAt.create ()
     }
   ;;
+end
+
+module Selection = struct
+  type t =
+    { url : Url.t
+    ; database_label : Database.Label.t
+    }
+  [@@deriving eq, show]
+
+  let create url database_label = { url; database_label }
+  let url (m : t) = m.url
+  let label (m : t) : Database.Label.t = m.database_label
 end
 
 (* The system should proactively report degraded health to operators *)

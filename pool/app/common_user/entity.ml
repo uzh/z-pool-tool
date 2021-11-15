@@ -8,8 +8,10 @@ module Password = struct
   ;;
 
   let validate ?(password_policy = default_password_policy) password =
-    let ( let* ) = Result.bind in
-    let* () = password_policy password in
+    let open CCResult in
+    let* () =
+      password_policy password |> map_err Pool_common.Message.passwordpolicy
+    in
     Ok ()
   ;;
 
@@ -23,8 +25,8 @@ module Password = struct
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.Password)
+      CCList.pure
       "password"
   ;;
 end
@@ -45,15 +47,17 @@ module Firstname = struct
   type t = string [@@deriving eq, show]
 
   let create m =
-    if String.length m <= 0 then Error "Invalid firstname" else Ok m
+    if String.length m <= 0
+    then Error Pool_common.Message.(Invalid Firstname)
+    else Ok m
   ;;
 
   let value m = m
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.Firstname)
+      CCList.pure
       "firstname"
   ;;
 end
@@ -61,13 +65,18 @@ end
 module Lastname = struct
   type t = string [@@deriving eq, show]
 
-  let create m = if String.length m <= 0 then Error "Invalid lastname" else Ok m
+  let create m =
+    if String.length m <= 0
+    then Error Pool_common.Message.(Invalid Lastname)
+    else Ok m
+  ;;
+
   let value m = m
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      Pool_common.(Utils.schema_decoder create Message.Lastname)
+      CCList.pure
       "lastname"
   ;;
 end
@@ -87,17 +96,17 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  type t = Ptime.t [@@deriving eq, show]
+  type t = Ptime.t option [@@deriving eq, show]
 
   let create m = m
-  let create_now = Ptime_clock.now ()
+  let create_now = Some (Ptime_clock.now ())
   let value m = m
 end
 
 module Verified = struct
-  type t = Ptime.t [@@deriving eq, show]
+  type t = Ptime.t option [@@deriving eq, show]
 
   let create m = m
-  let create_now = Ptime_clock.now ()
+  let create_now = Some (Ptime_clock.now ())
   let value m = m
 end

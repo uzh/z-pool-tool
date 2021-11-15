@@ -29,7 +29,7 @@ module ExperimentDate = struct
   let create date =
     let open CCResult.Infix in
     let experiment_date =
-      date |> Ptime.of_date |> CCOpt.to_result "Invalid experiment date"
+      date |> Ptime.of_date |> CCOption.to_result "Invalid experiment date"
     in
     let now = () |> Ptime_clock.now in
     let compare experiment_date =

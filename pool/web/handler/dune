@@ -1,5 +1,14 @@
 (library
  (name handler)
- (libraries sihl service cqrs_command http_utils page pool_common)
+ (libraries
+  sihl
+  service
+  cqrs_command
+  middleware
+  http_utils
+  page
+  pool_common
+  participant
+  email)
  (preprocess
   (pps lwt_ppx)))
