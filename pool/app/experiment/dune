@@ -1,6 +1,5 @@
 (library
  (name experiment)
  (libraries sihl tenant pool_common)
- (inline_tests)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

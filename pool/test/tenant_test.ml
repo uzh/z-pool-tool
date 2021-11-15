@@ -3,7 +3,7 @@ module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
 
-let get_or_failwith res =
+let get_or_failwith_pool_error res =
   res
   |> CCResult.map_err Common.(Utils.error_to_string Language.En)
   |> CCResult.get_or_failwith
@@ -30,8 +30,15 @@ module Data = struct
   let smtp_auth_password = "emailemail"
   let smtp_auth_authentication_method = "LOGIN"
   let smtp_auth_protocol = "STARTTLS"
-  let styles = Asset.styles |> Tenant.Styles.Write.create |> get_or_failwith
-  let icon = Asset.icon |> Tenant.Icon.Write.create |> get_or_failwith
+
+  let styles =
+    Asset.styles |> Tenant.Styles.Write.create |> get_or_failwith_pool_error
+  ;;
+
+  let icon =
+    Asset.icon |> Tenant.Icon.Write.create |> get_or_failwith_pool_error
+  ;;
+
   let tenant_logo = Asset.tenant_logo
   let partner_logo = Asset.partner_logo
   let default_language = "EN"
@@ -131,11 +138,35 @@ let create_smtp_auth () =
       smtp_auth)
 ;;
 
-let create_tenant () =
+let[@warning "-4"] create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
     Tenant_command.Create.(Data.urlencoded |> decode >>= handle)
+  in
+  let ( tenant_id
+      , created_at
+      , updated_at
+      , (logo_id, logo_asset_id)
+      , (partner_logo_id, partner_logo_asset_id) )
+    =
+    (* Read Ids and timestamps to create an equal event list *)
+    events
+    |> get_or_failwith_pool_error
+    |> function
+    | [ Pool_event.Tenant
+          Tenant.(Created Write.{ id; created_at; updated_at; _ })
+      ; Pool_event.Tenant (Tenant.LogosUploaded [ partner_logo; tenant_logo ])
+      ] ->
+      let read_ids Tenant.LogoMapping.Write.{ id; asset_id; _ } =
+        id, asset_id
+      in
+      ( id
+      , created_at
+      , updated_at
+      , tenant_logo |> read_ids
+      , partner_logo |> read_ids )
+    | _ -> failwith "Tenant create events don't match in test."
   in
   let expected =
     let open Tenant in
@@ -166,7 +197,7 @@ let create_tenant () =
     let* default_language = default_language |> Common.Language.of_string in
     let create : Tenant.Write.t =
       Tenant.Write.
-        { id = Common.Id.create ()
+        { id = tenant_id
         ; title
         ; description
         ; url
@@ -177,11 +208,28 @@ let create_tenant () =
         ; maintenance = Maintenance.create false
         ; disabled = Disabled.create false
         ; default_language
-        ; created_at = Ptime_clock.now ()
-        ; updated_at = Ptime_clock.now ()
+        ; created_at
+        ; updated_at
         }
     in
-    Ok [ Tenant.Created create |> Pool_event.tenant ]
+    let logos : Tenant.LogoMapping.Write.t list =
+      Tenant.LogoMapping.Write.
+        [ { id = partner_logo_id
+          ; tenant_id
+          ; asset_id = partner_logo_asset_id
+          ; logo_type = Tenant.LogoMapping.LogoType.PartnerLogo
+          }
+        ; { id = logo_id
+          ; tenant_id
+          ; asset_id = logo_asset_id
+          ; logo_type = Tenant.LogoMapping.LogoType.TenantLogo
+          }
+        ]
+    in
+    Ok
+      [ Tenant.Created create |> Pool_event.tenant
+      ; Tenant.LogosUploaded logos |> Pool_event.tenant
+      ]
   in
   Alcotest.(
     check
@@ -191,7 +239,7 @@ let create_tenant () =
       events)
 ;;
 
-let update_tenant_details () =
+let[@warning "-4"] update_tenant_details () =
   let open Data in
   match Data.tenant with
   | Error _ -> failwith "Failed to create tenant"
@@ -226,7 +274,16 @@ let update_tenant_details () =
       let update : update =
         { title; description; url; smtp_auth; default_language; disabled }
       in
-      Ok [ DetailsEdited (tenant, update) |> Pool_event.tenant ]
+      let logo_event =
+        (* read logo event, as it's not value of update in this test *)
+        events
+        |> get_or_failwith_pool_error
+        |> function
+        | [ _; (Pool_event.Tenant (Tenant.LogosUploaded [ _; _ ]) as logos) ] ->
+          logos
+        | _ -> failwith "Tenant create events don't match in test."
+      in
+      Ok [ DetailsEdited (tenant, update) |> Pool_event.tenant; logo_event ]
     in
     Alcotest.(
       check
