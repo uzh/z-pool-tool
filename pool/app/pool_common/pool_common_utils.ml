@@ -1,37 +1,27 @@
+let select_logger = function
+  | `Debug -> Logs.debug
+  | `Info -> Logs.info
+  | `Warning -> Logs.warn
+  | `Error -> Logs.err
+;;
+
 let with_log_info ?(level = `Info) info =
-  (match level with
-  | `Debug -> Logs.debug (fun m -> m "%s" (Locales_en.info_to_string info))
-  | `Info -> Logs.info (fun m -> m "%s" (Locales_en.info_to_string info))
-  | `Warning -> Logs.warn (fun m -> m "%s" (Locales_en.info_to_string info))
-  | `Error -> Logs.err (fun m -> m "%s" (Locales_en.info_to_string info)));
+  select_logger level (fun m -> m "%s" (Locales_en.info_to_string info));
   info
 ;;
 
 let with_log_success ?(level = `Info) info =
-  (match level with
-  | `Debug -> Logs.debug (fun m -> m "%s" (Locales_en.success_to_string info))
-  | `Info -> Logs.info (fun m -> m "%s" (Locales_en.success_to_string info))
-  | `Warning -> Logs.warn (fun m -> m "%s" (Locales_en.success_to_string info))
-  | `Error -> Logs.err (fun m -> m "%s" (Locales_en.success_to_string info)));
-  Logs.info (fun m -> m "%s" (Locales_en.success_to_string info));
+  select_logger level (fun m -> m "%s" (Locales_en.success_to_string info));
   info
 ;;
 
 let with_log_warning ?(level = `Warning) warn =
-  (match level with
-  | `Debug -> Logs.debug (fun m -> m "%s" (Locales_en.warning_to_string warn))
-  | `Info -> Logs.info (fun m -> m "%s" (Locales_en.warning_to_string warn))
-  | `Warning -> Logs.warn (fun m -> m "%s" (Locales_en.warning_to_string warn))
-  | `Error -> Logs.err (fun m -> m "%s" (Locales_en.warning_to_string warn)));
+  select_logger level (fun m -> m "%s" (Locales_en.warning_to_string warn));
   warn
 ;;
 
 let with_log_error ?(level = `Error) err =
-  (match level with
-  | `Debug -> Logs.debug (fun m -> m "%s" (Locales_en.error_to_string err))
-  | `Info -> Logs.info (fun m -> m "%s" (Locales_en.error_to_string err))
-  | `Warning -> Logs.warn (fun m -> m "%s" (Locales_en.error_to_string err))
-  | `Error -> Logs.err (fun m -> m "%s" (Locales_en.error_to_string err)));
+  select_logger level (fun m -> m "%s" (Locales_en.error_to_string err));
   err
 ;;
 
