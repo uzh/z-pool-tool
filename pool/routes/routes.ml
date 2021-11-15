@@ -35,9 +35,7 @@ end
 
 module Participant = struct
   let middlewares =
-    [ CustomMiddleware.Participant.confirmed ()
-    ; CustomMiddleware.TermsAndConditions.terms_accepted ()
-    ]
+    [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
   ;;
 
   let routes =

@@ -69,6 +69,27 @@ let show
           [ Component.input_element `Text (Some "email_suffix") ""
           ; Component.input_element `Submit None "Add new"
           ]
+      ; hr ()
+      ; div
+          (CCList.map
+             (fun suffix ->
+               form
+                 ~a:
+                   [ a_action (action_path `DeleteTenantEmailSuffix)
+                   ; a_method `Post
+                   ]
+                 [ span [ txt (Settings.EmailSuffix.value suffix) ]
+                 ; input
+                     ~a:
+                       [ a_input_type `Hidden
+                       ; a_name "email_suffix"
+                       ; a_value (Settings.EmailSuffix.value suffix)
+                       ; a_readonly ()
+                       ]
+                     ()
+                 ; Component.input_element `Submit None "Delete"
+                 ])
+             email_suffixes)
       ]
   in
   let contact_email_html =
