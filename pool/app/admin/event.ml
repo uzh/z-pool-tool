@@ -93,7 +93,7 @@ let handle_event pool : event -> unit Lwt.t = function
       ; updated_at = Common.UpdatedAt.create ()
       }
     in
-    let%lwt _ =
+    let%lwt () =
       match role with
       | Assistant -> Repo.insert pool (Assistant person)
       | Experimenter -> Repo.insert pool (Experimenter person)

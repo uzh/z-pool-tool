@@ -14,6 +14,7 @@ let redirect_to path = redirect_to_with_actions path []
 
 let extract_happy_path_generic result msgf =
   result
+  |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
   |> CCResult.map Lwt.return
   |> CCResult.get_lazy (fun (error_msg, error_path) ->
          redirect_to_with_actions error_path [ msgf error_msg ])
@@ -26,6 +27,7 @@ let extract_happy_path result =
 
 let extract_happy_path_with_actions result =
   result
+  |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
   |> CCResult.map Lwt.return
   |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
          redirect_to_with_actions

@@ -84,7 +84,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(update.lastname |> User.Lastname.value)
         participant.user
     in
-    let%lwt _ = Repo.update pool { participant with paused = update.paused } in
+    let%lwt () = Repo.update pool { participant with paused = update.paused } in
     Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
     let%lwt _ =
@@ -110,7 +110,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | AcceptTerms participant ->
-    let%lwt _ =
+    let%lwt () =
       Repo.update
         pool
         { participant with terms_accepted_at = User.TermsAccepted.create_now }

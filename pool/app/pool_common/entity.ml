@@ -1,6 +1,5 @@
+open Pool_common_utils
 module PoolError = Entity_message
-
-let schema_decoder = Pool_common_utils.schema_decoder
 
 module Id = struct
   type t = string [@@deriving eq, show]
@@ -75,7 +74,7 @@ module Database = struct
     let of_string m = m
 
     let create label =
-      if CCString.is_empty label || CCString.contains label ' '
+      if CCString.is_empty label || String.contains label ' '
       then Error PoolError.(Invalid DatabaseLabel)
       else Ok label
     ;;

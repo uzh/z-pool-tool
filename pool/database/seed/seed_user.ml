@@ -18,7 +18,7 @@ let admins db_pool () =
           Service.User.create_admin ~ctx ~name ~given_name ~password email
         in
         let person = Admin.create_person user in
-        let%lwt _ =
+        let%lwt () =
           match role with
           | `Assistant -> Admin.insert db_pool (Admin.Assistant person)
           | `Experimenter -> Admin.insert db_pool (Admin.Experimenter person)

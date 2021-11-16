@@ -10,28 +10,28 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | LanguagesUpdated languages ->
-    let%lwt _ = Repo.update pool (Value.TenantLanguages languages) in
+    let%lwt () = Repo.update pool (Value.TenantLanguages languages) in
     Lwt.return_unit
   | EmailSuffixesUpdated email_suffixes ->
-    let%lwt _ = Repo.update pool (Value.TenantEmailSuffixes email_suffixes) in
+    let%lwt () = Repo.update pool (Value.TenantEmailSuffixes email_suffixes) in
     Lwt.return_unit
   | ContactEmailUpdated contact_email ->
-    let%lwt _ = Repo.update pool (Value.TenantContactEmail contact_email) in
+    let%lwt () = Repo.update pool (Value.TenantContactEmail contact_email) in
     Lwt.return_unit
   | InactiveUserDisableAfterUpdated inactive_user_disable_after ->
-    let%lwt _ =
+    let%lwt () =
       Repo.update
         pool
         (Value.InactiveUserDisableAfter inactive_user_disable_after)
     in
     Lwt.return_unit
   | InactiveUserWarningUpdated inactive_user_warning ->
-    let%lwt _ =
+    let%lwt () =
       Repo.update pool (Value.InactiveUserWarning inactive_user_warning)
     in
     Lwt.return_unit
   | TermsAndConditionsUpdated terms_and_conditions ->
-    let%lwt _ =
+    let%lwt () =
       Repo.update pool (Value.TermsAndConditions terms_and_conditions)
     in
     Lwt.return_unit
