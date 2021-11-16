@@ -43,9 +43,9 @@ module Email = struct
           |> Utils.Url.create_public_url
         in
         let given_name =
-          user.Sihl_user.given_name |> Option.value ~default:""
+          user.Sihl_user.given_name |> CCOption.value ~default:""
         in
-        let name = user.Sihl_user.name |> Option.value ~default:"" in
+        let name = user.Sihl_user.name |> CCOption.value ~default:"" in
         prepare_email
           pool
           "password_reset"

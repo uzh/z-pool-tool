@@ -36,7 +36,7 @@ end
 
 type t =
   { user : Sihl_user.t
-        [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
+        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Common.TermsAccepted.t
   ; paused : Common.Paused.t

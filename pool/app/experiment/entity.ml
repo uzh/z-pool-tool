@@ -7,7 +7,7 @@ module Title = struct
   let value m = m
 
   let create title =
-    if String.length title <= 0 then Error "Invalid title!" else Ok title
+    if CCString.is_empty title then Error "Invalid title!" else Ok title
   ;;
 end
 
@@ -17,7 +17,7 @@ module Description = struct
   let value m = m
 
   let create description =
-    if String.length description <= 0
+    if CCString.is_empty description
     then Error "Invalid description!"
     else Ok description
   ;;
@@ -53,7 +53,7 @@ type t =
 [@@deriving eq, show]
 
 let create ?id title description () =
-  { id = id |> Option.value ~default:(Id.create ())
+  { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
   ; created_at = Ptime_clock.now ()

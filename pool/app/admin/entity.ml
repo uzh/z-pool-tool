@@ -23,7 +23,7 @@ end
 
 type person =
   { user : Sihl_user.t
-        [@equal fun m k -> String.equal m.Sihl_user.id k.Sihl_user.id]
+        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; created_at : Common.CreatedAt.t
   ; updated_at : Common.UpdatedAt.t
   }
@@ -88,7 +88,7 @@ let equal_any one two =
     | Any (Recruiter { user; _ })
     | Any (Operator { user; _ }) -> user.Sihl_user.id
   in
-  String.equal (id one) (id two)
+  CCString.equal (id one) (id two)
 ;;
 
 let pp_any f (Any m) = pp f m

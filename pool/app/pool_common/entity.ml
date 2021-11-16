@@ -55,7 +55,7 @@ module Database = struct
     type t = string [@@deriving eq]
 
     let create url =
-      if String.length url <= 0
+      if CCString.is_empty url
       then Error PoolError.(Invalid DatabaseUrl)
       else Ok url
     ;;
@@ -75,7 +75,7 @@ module Database = struct
     let of_string m = m
 
     let create label =
-      if String.length label <= 0 || String.contains label ' '
+      if CCString.is_empty label || CCString.contains label ' '
       then Error PoolError.(Invalid DatabaseLabel)
       else Ok label
     ;;

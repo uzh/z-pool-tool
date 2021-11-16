@@ -4,7 +4,7 @@ module Password = struct
   type t = string [@@deriving eq]
 
   let default_password_policy p =
-    if String.length p < 8 then Error "password_policy_text" else Ok ()
+    if CCString.length p < 8 then Error "password_policy_text" else Ok ()
   ;;
 
   let validate ?(password_policy = default_password_policy) password =
@@ -47,7 +47,7 @@ module Firstname = struct
   type t = string [@@deriving eq, show]
 
   let create m =
-    if String.length m <= 0
+    if CCString.is_empty m
     then Error Pool_common.Message.(Invalid Firstname)
     else Ok m
   ;;
@@ -66,7 +66,7 @@ module Lastname = struct
   type t = string [@@deriving eq, show]
 
   let create m =
-    if String.length m <= 0
+    if CCString.is_empty m
     then Error Pool_common.Message.(Invalid Lastname)
     else Ok m
   ;;

@@ -31,7 +31,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         ; recruitment_channel
         ; terms_accepted
         ]
-        when String.equal terms_accepted "accept" ->
+        when CCString.equal terms_accepted "accept" ->
         let db_pool =
           Pool_common.Database.Label.create db_pool
           |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)

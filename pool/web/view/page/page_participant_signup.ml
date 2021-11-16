@@ -9,9 +9,9 @@ let signup
     terms
   =
   let submit_url = Sihl.Web.externalize_path "/participant/signup" in
-  let email = email |> Option.value ~default:"" in
-  let firstname = firstname |> Option.value ~default:"" in
-  let lastname = lastname |> Option.value ~default:"" in
+  let email = email |> CCOption.value ~default:"" in
+  let firstname = firstname |> CCOption.value ~default:"" in
+  let lastname = lastname |> CCOption.value ~default:"" in
   let children =
     let open Tyxml.Html in
     let channel_select =
@@ -27,7 +27,7 @@ let signup
       |> CCList.map (fun channel ->
              let is_selected =
                recruitment_channel
-               |> CCOption.map_or ~default:false (String.equal channel)
+               |> CCOption.map_or ~default:false (CCString.equal channel)
              in
              option
                ~a:
