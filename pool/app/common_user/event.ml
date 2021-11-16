@@ -35,14 +35,14 @@ module Email = struct
       create_token pool address
       >|= Email.create address
       >>= fun email ->
-      let%lwt _ = Repo.Email.insert pool email in
+      let%lwt () = Repo.Email.insert pool email in
       send_confirmation_email pool email firstname lastname
     in
     let update_email old_email new_address firstname lastname =
       create_token pool new_address
       >|= Email.create new_address
       >>= fun new_email ->
-      let%lwt _ = Repo.Email.update_email pool old_email new_email in
+      let%lwt () = Repo.Email.update_email pool old_email new_email in
       send_confirmation_email pool new_email firstname lastname
     in
     function
@@ -58,7 +58,7 @@ module Email = struct
       update_email old_email new_address firstname lastname
     | Verified (Email.(Unverified { token; _ }) as email) ->
       let%lwt () = deactivate_token pool token in
-      let%lwt _ = Repo.Email.update pool @@ Email.verify email in
+      let%lwt () = Repo.Email.update pool @@ Email.verify email in
       Lwt.return_unit
   ;;
 

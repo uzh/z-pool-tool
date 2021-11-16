@@ -23,7 +23,7 @@ module Language = struct
   let of_string = function
     | "EN" -> Ok En
     | "DE" -> Ok De
-    | _ -> Error (with_log_error ~level:Logs.Debug PoolError.(Invalid Language))
+    | _ -> Error PoolError.(Invalid Language)
   ;;
 
   let t =
@@ -55,8 +55,7 @@ module Database = struct
 
     let create url =
       if CCString.is_empty url
-      then
-        Error (with_log_error ~level:Logs.Debug PoolError.(Invalid DatabaseUrl))
+      then Error PoolError.(Invalid DatabaseUrl)
       else Ok url
     ;;
 
@@ -76,9 +75,7 @@ module Database = struct
 
     let create label =
       if CCString.is_empty label || String.contains label ' '
-      then
-        Error
-          (with_log_error ~level:Logs.Debug PoolError.(Invalid DatabaseLabel))
+      then Error PoolError.(Invalid DatabaseLabel)
       else Ok label
     ;;
 
