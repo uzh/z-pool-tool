@@ -11,6 +11,21 @@ let error =
 
 (* Helper functions *)
 
+let setup_test () =
+  let open Sihl.Configuration in
+  let file_configuration = read_env_file () in
+  let () = store @@ CCOption.value file_configuration ~default:[] in
+  let () = Logs.set_level (Some Logs.Error) in
+  let () = Logs.set_reporter Sihl.Log.default_reporter in
+  Lwt.return_unit
+;;
+
+let get_or_failwith_pool_error res =
+  res
+  |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+  |> CCResult.get_or_failwith
+;;
+
 let file_to_storage file =
   let open Database.SeedAssets in
   let stored_file =

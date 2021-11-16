@@ -3,12 +3,6 @@ module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
 
-let get_or_failwith_pool_error res =
-  res
-  |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-  |> CCResult.get_or_failwith
-;;
-
 module Data = struct
   module Asset = struct
     open Database.SeedAssets
@@ -22,8 +16,8 @@ module Data = struct
   let title = "Econ uzh"
   let description = "description"
   let url = "pool.econ.uzh.ch"
-  let database_url = "mariadb://root@database:3306/dev_econ"
-  let database_label = "econ-uzh"
+  let database_url = "mariadb://root@database-tenant:3306/test_econ"
+  let database_label = "econ-test"
   let smtp_auth_server = "smtp.uzh.ch"
   let smtp_auth_port = "587"
   let smtp_auth_username = "engineering@econ.uzh.ch"
@@ -32,11 +26,15 @@ module Data = struct
   let smtp_auth_protocol = "STARTTLS"
 
   let styles =
-    Asset.styles |> Tenant.Styles.Write.create |> get_or_failwith_pool_error
+    Asset.styles
+    |> Tenant.Styles.Write.create
+    |> Test_utils.get_or_failwith_pool_error
   ;;
 
   let icon =
-    Asset.icon |> Tenant.Icon.Write.create |> get_or_failwith_pool_error
+    Asset.icon
+    |> Tenant.Icon.Write.create
+    |> Test_utils.get_or_failwith_pool_error
   ;;
 
   let tenant_logo = Asset.tenant_logo
@@ -152,7 +150,7 @@ let[@warning "-4"] create_tenant () =
     =
     (* Read Ids and timestamps to create an equal event list *)
     events
-    |> get_or_failwith_pool_error
+    |> Test_utils.get_or_failwith_pool_error
     |> function
     | [ Pool_event.Tenant
           Tenant.(Created Write.{ id; created_at; updated_at; _ })
@@ -277,7 +275,7 @@ let[@warning "-4"] update_tenant_details () =
       let logo_event =
         (* read logo event, as it's not value of update in this test *)
         events
-        |> get_or_failwith_pool_error
+        |> Test_utils.get_or_failwith_pool_error
         |> function
         | [ _; (Pool_event.Tenant (Tenant.LogosUploaded [ _; _ ]) as logos) ] ->
           logos

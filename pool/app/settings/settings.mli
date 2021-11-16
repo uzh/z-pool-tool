@@ -3,9 +3,9 @@ module ContactEmail : sig
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val show : t -> t
+  val show : t -> string
   val value : t -> string
-  val create : t -> (t, Pool_common.Message.error) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -24,6 +24,7 @@ module InactiveUser : sig
   module DisableAfter : sig
     type t
 
+    val create : string -> (t, Pool_common.Message.error) result
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
@@ -35,6 +36,7 @@ module InactiveUser : sig
   module Warning : sig
     type t
 
+    val create : string -> (t, Pool_common.Message.error) result
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
@@ -49,7 +51,7 @@ module TermsAndConditions : sig
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val show : t -> t
+  val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t

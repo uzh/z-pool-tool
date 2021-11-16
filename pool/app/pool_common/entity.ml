@@ -52,7 +52,7 @@ end
 
 module Database = struct
   module Url = struct
-    type t = string [@@deriving eq]
+    type t = string [@@deriving eq, show]
 
     let create url =
       if CCString.is_empty url
@@ -107,7 +107,11 @@ module Database = struct
   ;;
 
   let read_pool m = m.label
-  let pp formatter m = Label.pp formatter m.label
+
+  let pp formatter m =
+    Label.pp formatter m.label;
+    Url.pp formatter m.url
+  ;;
 end
 
 module CreatedAt = struct

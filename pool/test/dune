@@ -1,14 +1,16 @@
-(test
- (name command)
+(tests
+ (names command integration)
  (libraries
-  alcotest
-  cqrs_command
-  pool_event
-  database
-  participant
   admin
+  alcotest
+  alcotest-lwt
+  caqti-driver-mariadb
+  cqrs_command
+  database
+  http_utils
+  participant
+  pool_event
   tenant
-  utils
-  http_utils)
+  utils)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
