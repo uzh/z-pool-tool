@@ -45,6 +45,8 @@
    (>= 2.0.1))
   (lwt
    (>= 5.4.1))
+  (logs
+   (>= 0.7.0))
   (containers
    (>= 3.6))
   (caqti-driver-mariadb

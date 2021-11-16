@@ -1,7 +1,5 @@
+open Pool_common_utils
 module PoolError = Entity_message
-
-let with_log_error = Pool_common_utils.with_log_error
-let schema_decoder = Pool_common_utils.schema_decoder
 
 module Id = struct
   type t = string [@@deriving eq, show]
@@ -25,7 +23,7 @@ module Language = struct
   let of_string = function
     | "EN" -> Ok En
     | "DE" -> Ok De
-    | _ -> Error (with_log_error ~level:`Debug PoolError.(Invalid Language))
+    | _ -> Error (with_log_error ~level:Logs.Debug PoolError.(Invalid Language))
   ;;
 
   let t =
@@ -56,13 +54,9 @@ module Database = struct
     type t = string [@@deriving eq]
 
     let create url =
-<<<<<<< HEAD
       if CCString.is_empty url
-      then Error PoolError.(Invalid DatabaseUrl)
-=======
-      if String.length url <= 0
-      then Error (with_log_error ~level:`Debug PoolError.(Invalid DatabaseUrl))
->>>>>>> 469c25f (init error logging for pool_common lib)
+      then
+        Error (with_log_error ~level:Logs.Debug PoolError.(Invalid DatabaseUrl))
       else Ok url
     ;;
 
@@ -83,7 +77,8 @@ module Database = struct
     let create label =
       if CCString.is_empty label || String.contains label ' '
       then
-        Error (with_log_error ~level:`Debug PoolError.(Invalid DatabaseLabel))
+        Error
+          (with_log_error ~level:Logs.Debug PoolError.(Invalid DatabaseLabel))
       else Ok label
     ;;
 

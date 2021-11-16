@@ -15,7 +15,7 @@ deps: ## Install development dependencies
 
 .PHONY: lock
 lock: ## Generate a lock file
-	opam lock -y .
+	opam lock .
 
 .PHONY: build
 build:
