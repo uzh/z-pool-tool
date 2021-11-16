@@ -15,9 +15,10 @@ services:
       - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
     environment:
-      - DATABASE_URL=mariadb://root@database:3306/development
+      - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true
       - DATABASE_CHOOSE_POOL=root
+      - MYSQL_ROOT_PASSWORD=''
       - OPAMSOLVERTIMEOUT=180
       - PUBLIC_URL=http://localhost:3016
       - SMTP_HOST=smtp.uzh.ch
@@ -27,11 +28,13 @@ services:
       - SMTP_START_TLS=true
       - SMTP_USERNAME=ecserv
       - VERSION=dev
-    depends_on: [database]
+    depends_on:
+      - database-root
+      - database-tenant
     ports: [3016:3000]
-    command: /workspace/.devcontainer/wait-for-database.sh test sleep infinity
+    command: sleep infinity
 
-  database:
+  database-root:
     image: mariadb:10.4
     command: --max_allowed_packet=629145600
     ports: [3316:3306]
@@ -42,14 +45,30 @@ services:
       - MYSQL_DATABASE=development
       - MYSQL_USER=root
     volumes:
-      - ./data/db:/var/lib/mysql
-      - ./init:/docker-entrypoint-initdb.d/:ro
+      - ./data/db-root:/var/lib/mysql
+      - ./init_root:/docker-entrypoint-initdb.d/:ro
+
+  database-tenant:
+    image: mariadb:10.4
+    command: --max_allowed_packet=629145600
+    ports: [3317:3306]
+    environment:
+      - TZ=Europe/Zurich
+      - MYSQL_ALLOW_EMPTY_PASSWORD='yes'
+      - MYSQL_ROOT_HOST=%
+      - MYSQL_DATABASE=dev_econ
+      - MYSQL_USER=root
+    volumes:
+      - ./data/db-tenant:/var/lib/mysql
+      - ./init_tenant:/docker-entrypoint-initdb.d/:ro
 
   adminer:
     image: adminer:4.7.6-standalone
     restart: always
     ports: [8080:8080]
-    depends_on: [database]
+    depends_on:
+      - database-root
+      - database-tenant
 
 volumes:
   opam:
