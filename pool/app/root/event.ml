@@ -47,6 +47,7 @@ let handle_event pool : event -> unit Lwt.t =
 let[@warning "-4"] equal_event event1 event2 : bool =
   let open Sihl.Contract.User in
   match event1, event2 with
+  | Created one, Created two -> equal_create one two
   | Disabled r1, Disabled r2 | Enabled r1, Enabled r2 ->
     CCString.equal r1.id r2.id
   | _ -> false

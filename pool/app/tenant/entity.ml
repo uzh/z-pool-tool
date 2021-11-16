@@ -13,7 +13,7 @@ module Title = struct
   let value m = m
 
   let create title =
-    if String.length title <= 0
+    if CCString.is_empty title
     then Error PoolError.(Invalid Title)
     else Ok title
   ;;
@@ -32,7 +32,7 @@ module Description = struct
   let value m = m
 
   let create description =
-    if String.length description <= 0
+    if CCString.is_empty description
     then Error PoolError.(Invalid Description)
     else Ok description
   ;;
@@ -51,7 +51,7 @@ module Url = struct
   let value m = m
 
   let create url =
-    if String.length url <= 0 then Error PoolError.(Invalid Url) else Ok url
+    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
   ;;
 
   let schema () =
@@ -73,7 +73,7 @@ module Styles = struct
     let value m = m
 
     let create styles =
-      if String.length styles <= 0
+      if CCString.is_empty styles
       then Error PoolError.(Invalid Styles)
       else Ok styles
     ;;
@@ -98,9 +98,7 @@ module Icon = struct
     let value m = m
 
     let create icon =
-      if String.length icon <= 0
-      then Error PoolError.(Invalid Icon)
-      else Ok icon
+      if CCString.is_empty icon then Error PoolError.(Invalid Icon) else Ok icon
     ;;
 
     let schema () =

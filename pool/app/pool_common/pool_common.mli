@@ -87,12 +87,14 @@ module File : sig
   module Name : sig
     type t
 
+    val create : string -> (t, Message.error) result
     val value : t -> string
   end
 
   module Size : sig
     type t
 
+    val create : int -> (t, Message.error) result
     val value : t -> int
   end
 
@@ -114,7 +116,14 @@ module File : sig
     val of_filename : string -> (t, Message.error) result
   end
 
-  type t
+  type t =
+    { id : Id.t
+    ; name : Name.t
+    ; size : Size.t
+    ; mime_type : Mime.t
+    ; created_at : CreatedAt.t
+    ; updated_at : UpdatedAt.t
+    }
 
   val pp : Format.formatter -> t -> unit
   val show : t -> string

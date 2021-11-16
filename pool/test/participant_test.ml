@@ -25,7 +25,11 @@ let sign_up_not_allowed_suffix () =
   in
   let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
   Alcotest.(
-    check (result (list Utils.event) Utils.error) "succeeds" expected events)
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;
 
 let sign_up () =
@@ -53,5 +57,9 @@ let sign_up () =
   in
   let expected = Ok [] in
   Alcotest.(
-    check (result (list Utils.event) Utils.error) "succeeds" expected events)
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;

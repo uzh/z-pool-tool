@@ -62,6 +62,9 @@ module SmtpAuth : sig
     ; protocol : Protocol.t
     }
 
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+
   module Write : sig
     type t =
       { server : Server.t
@@ -119,6 +122,7 @@ module Styles : sig
   module Write : sig
     type t
 
+    val create : string -> (t, Pool_common.Message.error) result
     val value : t -> string
     val schema : unit -> ('a, t) Conformist.Field.t
   end
@@ -133,6 +137,7 @@ module Icon : sig
   module Write : sig
     type t
 
+    val create : string -> (t, Pool_common.Message.error) result
     val value : t -> string
     val schema : unit -> ('a, t) Conformist.Field.t
   end

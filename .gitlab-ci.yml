@@ -84,14 +84,14 @@ compile-and-test:
   image: ocaml/opam:debian-ocaml-4.12
   services:
     - name: "mariadb:10.4"
-      alias: mariadb-root
+      alias: database-root
     - name: "mariadb:10.4"
-      alias: mariadb-tenant
+      alias: database-tenant
   variables:
     SIHL_ENV: test
-    MYSQL_DATABASE: dev
+    MYSQL_DATABASE: test_econ
     MYSQL_ROOT_PASSWORD: password
-    DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@mariadb-root:3306/${MYSQL_DATABASE}
+    DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@database-root:3306/${MYSQL_DATABASE}
   artifacts:
     paths:
       - _build/default/pool/run/run.exe
@@ -114,10 +114,10 @@ compile-and-test:
     - opam config exec -- dune exec --root . pool/run/run.exe migrate.root
     - opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
     - opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
+    - opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
 
     # run tests
-    # TODO: enable tests
-    # - opam config exec -- make test
+    - opam config exec -- make test
 
 build:
   stage: build

@@ -18,6 +18,8 @@ type field =
   | EmailAddress
   | EmailSuffix
   | FileMimeType
+  | Filename
+  | Filesize
   | Firstname
   | Host
   | Icon

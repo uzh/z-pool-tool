@@ -41,17 +41,17 @@ let create () =
     then (
       let password =
         Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
-        |> CCOption.value ~default:"password"
+        |> CCOption.get_exn_or "MYSQL_ROOT_PASSWORD undefined"
       in
       let database =
         Sihl.Configuration.read_string "MYSQL_DATABASE"
-        |> CCOption.value ~default:"dev"
+        |> CCOption.get_exn_or "MYSQL_DATABASE undefined"
       in
       [ ( "Econ test"
         , "description"
         , "test.pool.econ.uzh.ch"
         , Format.asprintf
-            "mariadb://root:%s@mariadb-tenant:3306/%s"
+            "mariadb://root:%s@database-tenant:3306/%s"
             password
             database
         , "econ-test"
@@ -73,7 +73,7 @@ let create () =
       [ ( "Econ uzh"
         , "description"
         , "localhost:3016"
-        , "mariadb://root@database:3306/dev_econ"
+        , "mariadb://root@database-tenant:3306/dev_econ"
         , "econ-uzh"
         , "smtp.uzh.ch"
         , "587"
@@ -91,7 +91,7 @@ let create () =
       ; ( "ZHAW"
         , "description"
         , "pool.zhaw.ch"
-        , "mariadb://root@database:3306/dev_zhaw"
+        , "mariadb://root@database-tenant:3306/dev_zhaw"
         , "zhaw"
         , "smtp.zhaw.ch"
         , "465"

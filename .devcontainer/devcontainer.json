@@ -7,11 +7,12 @@
   "service": "dev",
   "runServices": [
     "dev",
-    "database"
+    "database-root",
+    "database-tenant"
     // "adminer" // uncomment if adminer should run to see the database
   ],
   "workspaceFolder": "/workspace",
-  "postCreateCommand": ".devcontainer/wait-for-database.sh test .devcontainer/postCreate.sh",
+  "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
   // Use 'settings' to set *default* container specific settings.json values on container create.
   // You can edit these settings after create using File > Preferences > Settings > Remote.
   "settings": {

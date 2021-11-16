@@ -51,11 +51,12 @@
    (>= 1.6.0))
   (ocamlformat
    (>= 0.18.0))
-  (alcotest-lwt
-   (>= 1.4.0))
   (ppx_deriving
    (>= 5.2.1))
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (>= 0.14.1))))
+   (>= 0.14.1))
+  ;; Test/Dev dependencies
+  (alcotest-lwt :with-test)
+  (ppx_inline_test :with-test)))

@@ -1,3 +1,5 @@
+module SeedAssets = Seed_assets
+
 type config =
   { url : string
   ; pool_size : int option

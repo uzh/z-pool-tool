@@ -10,6 +10,8 @@ let field_to_string = function
   | EmailAddress -> "Email Adresse"
   | EmailSuffix -> "Email Endung"
   | FileMimeType -> "Mime Typ"
+  | Filename -> "Dateiname"
+  | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
   | Host -> "Host"
   | Icon -> "Icon"

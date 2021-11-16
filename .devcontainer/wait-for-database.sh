@@ -2,14 +2,21 @@
 
 set -e
 
-database="$1"
-shift
+while getopts "d:" opt; do
+    case $opt in
+        d) database+=("$OPTARG");;
+    esac
+done
+shift $((OPTIND -1))
+
 cmd="$@"
 
-# checking if database folder exists instead of connecting to mysql which would require to install mysql client in container
-until [ -d /workspace/.devcontainer/data/db/$database ]; do
-  echo "MySQL database not yet created - sleeping"
-  sleep 1
+for database in "${database[@]}"; do
+  # checking if database folder exists instead of connecting to mysql which would require to install mysql client in container
+  until [ -d /workspace/.devcontainer/data/$database ]; do
+    echo "MySQL database $database not yet created - sleeping"
+    sleep 1
+  done
 done
 
 echo "MySQL database created - executing command"

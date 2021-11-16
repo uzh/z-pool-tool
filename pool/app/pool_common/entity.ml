@@ -128,11 +128,20 @@ module File = struct
   module Name = struct
     type t = string [@@deriving eq, show]
 
+    let create m =
+      if CCString.is_empty m then Error PoolError.(Invalid Filename) else Ok m
+    ;;
+
     let value m = m
   end
 
   module Size = struct
     type t = int [@@deriving eq, show]
+
+    let create m =
+      let open CCInt.Infix in
+      if m >= CCInt.zero then Ok m else Error PoolError.(Invalid Filesize)
+    ;;
 
     let value m = m
   end
