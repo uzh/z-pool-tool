@@ -28,7 +28,22 @@ If any changes were made to files in `.devcontainer` folder the Container should
 ## Running Dev Container
 
 - The Makefile used in the DevContainer is located in the `.devcontainer` folder
-- Ports from outside (e.g. localhost) for webserver `3016` and database `3316`
+- Ports from outside (e.g. localhost) for webserver `3016`, root database `3316` and tenant database `3317`
+
+## Running Tests with Dev Container
+
+1. Create a `.env.test` file
+1. Add the following variables to it
+    - `DATABASE_URL=mariadb://root@database-root:3306/test`
+    - `MYSQL_DATABASE=test_econ`
+1. Run migrations and seeds for the test databases
+    ```
+    opam config exec -- dune exec --root . pool/run/run.exe migrate.root
+    opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
+    opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
+    opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+    ```
+1. Run `make test`
 
 ## Database View
 

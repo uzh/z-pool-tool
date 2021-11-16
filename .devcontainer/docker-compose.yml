@@ -18,7 +18,6 @@ services:
       - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true
       - DATABASE_CHOOSE_POOL=root
-      - MYSQL_ROOT_PASSWORD=''
       - OPAMSOLVERTIMEOUT=180
       - PUBLIC_URL=http://localhost:3016
       - SMTP_HOST=smtp.uzh.ch
@@ -63,7 +62,7 @@ services:
       - ./init_tenant:/docker-entrypoint-initdb.d/:ro
 
   adminer:
-    image: adminer:4.7.6-standalone
+    image: adminer:standalone
     restart: always
     ports: [8080:8080]
     depends_on:
