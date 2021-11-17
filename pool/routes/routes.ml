@@ -16,28 +16,21 @@ let global_middlewares =
 
 module Public = struct
   let routes =
-    [ get "/" Handler.Public.index
-    ; get "/login" Handler.Public.Login.login_get
-    ; post "/login" Handler.Public.Login.login_post
-    ; get "/logout" Handler.Public.Login.logout
-    ; get
-        "/request-reset-password"
-        Handler.Public.Login.request_reset_password_get
-    ; post
-        "/request-reset-password"
-        Handler.Public.Login.request_reset_password_post
-    ; get "/reset-password" Handler.Public.Login.reset_password_get
-    ; post "/reset-password" Handler.Public.Login.reset_password_post
-    ; get "/assets/:id/:filename" Handler.Public.asset
-    ]
+    Handler.Public.
+      [ get "/" index
+      ; get "/login" Login.login_get
+      ; post "/login" Login.login_post
+      ; get "/logout" Login.logout
+      ; get "/request-reset-password" Login.request_reset_password_get
+      ; post "/request-reset-password" Login.request_reset_password_post
+      ; get "/reset-password" Login.reset_password_get
+      ; post "/reset-password" Login.reset_password_post
+      ; get "/assets/:id/:filename" asset
+      ]
   ;;
 end
 
 module Participant = struct
-  let middlewares =
-    [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
-  ;;
-
   let routes =
     [ get "/signup" Handler.Participant.sign_up
     ; post "/signup" Handler.Participant.sign_up_create
@@ -48,39 +41,62 @@ module Participant = struct
     ]
   ;;
 
+  let middlewares =
+    [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
+  ;;
+
   let locked_routes = [ get "/dashboard" Handler.Participant.dashboard ]
 end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun _ ->
-          Sihl.Web.externalize_path "/login")
-    ]
+    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login") ]
   ;;
 
   let routes =
-    [ get "/dashboard" Handler.Admin.dashboard
-    ; get "/settings" Handler.Admin.Settings.show
-    ; post "/settings/:action" Handler.Admin.Settings.update_settings
-    ]
+    Handler.Admin.
+      [ get "/dashboard" dashboard
+      ; get "/settings" Settings.show
+      ; post "/settings/:action" Settings.update_settings
+      ]
   ;;
 end
 
 module Root = struct
+  let middlewares = CustomMiddleware.Root.[ from_root_only () ]
+
   let routes =
-    [ get "/tenants" Handler.Root.Tenant.tenants
-    ; post "/tenants/create" Handler.Root.Tenant.create
-    ; get "/tenants/:id" Handler.Root.Tenant.tenant_detail
-    ; post "/tenants/:id/update-detail" Handler.Root.Tenant.Update.update_detail
-    ; post
-        "/tenants/:id/update-database"
-        Handler.Root.Tenant.Update.update_database
+    let open Handler.Root in
+    [ get "" (forward_to_entrypoint "/root/tenants")
+    ; get "/login" Login.login_get
+    ; post "/login" Login.login_post
+    ; get "/logout" Login.logout
+    ; get "/request-reset-password" Login.request_reset_password_get
+    ; post "/request-reset-password" Login.request_reset_password_post
+    ; get "/reset-password" Login.reset_password_get
+    ; post "/reset-password" Login.reset_password_post
+    ]
+  ;;
+
+  let locked_middlewares =
+    middlewares
+    @ CustomMiddleware.Root.
+        [ require_root ~login_path_f:(fun () -> "/root/login") ]
+  ;;
+
+  let locked_routes =
+    let open Handler.Root in
+    [ get "/tenants" Tenant.tenants
+    ; post "/tenants/create" Tenant.create
+    ; get "/tenants/:id" Tenant.tenant_detail
+    ; post "/tenants/:id/create-operator" Tenant.create_operator
+    ; post "/tenants/:id/update-detail" Tenant.Update.update_detail
+    ; post "/tenants/:id/update-database" Tenant.Update.update_database
     ; post
         "/tenants/:tenant_id/assets/:asset_id/delete"
-        Handler.Root.Tenant.Update.delete_asset
-    ; post "/tenants/:id/create-operator" Handler.Root.Tenant.create_operator
-    ; post "/root/create" Handler.Root.Root.create
-    ; post "/root/:id/toggle-status" Handler.Root.Root.toggle_status
+        Tenant.Update.delete_asset
+    ; post "/root/create" Root.create
+    ; post "/root/:id/toggle-status" Root.toggle_status
     ]
   ;;
 end
@@ -88,11 +104,12 @@ end
 let router =
   choose
     [ choose Public.routes
+    ; Admin.(choose ~scope:"/admin" routes)
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
     ; Participant.(choose ~scope:"/participant" routes)
     ; Participant.(choose ~scope:"/participant" ~middlewares locked_routes)
-    ; choose ~scope:"/root" Root.routes
-    ; choose ~scope:"/admin" Admin.routes
+    ; Root.(choose ~scope:"/root" ~middlewares routes)
+    ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)
     ; get "/**" Handler.Public.not_found
     ]
 ;;

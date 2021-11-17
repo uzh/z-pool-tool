@@ -1,11 +1,11 @@
-module Id = Pool_common.Id
-module Database = Pool_common.Database
-module CreatedAt = Pool_common.CreatedAt
-module UpdatedAt = Pool_common.UpdatedAt
-module File = Pool_common.File
+module Common = Pool_common
+module Id = Common.Id
+module CreatedAt = Common.CreatedAt
+module UpdatedAt = Common.UpdatedAt
+module File = Common.File
 module SmtpAuth = Entity_smtp_auth
 module LogoMapping = Entity_logo_mapping
-module PoolError = Pool_common.Message
+module PoolError = Common.Message
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -20,7 +20,7 @@ module Title = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Title)
+      Common.(Utils.schema_decoder create Message.Title)
       CCList.pure
       "title"
   ;;
@@ -39,7 +39,7 @@ module Description = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Description)
+      Common.(Utils.schema_decoder create Message.Description)
       CCList.pure
       "description"
   ;;
@@ -56,7 +56,7 @@ module Url = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Url)
+      Common.(Utils.schema_decoder create Message.Url)
       CCList.pure
       "url"
   ;;
@@ -80,7 +80,7 @@ module Styles = struct
 
     let schema () =
       Conformist.custom
-        Pool_common.(Utils.schema_decoder create Message.Styles)
+        Common.(Utils.schema_decoder create Message.Styles)
         CCList.pure
         "styles"
     ;;
@@ -103,7 +103,7 @@ module Icon = struct
 
     let schema () =
       Conformist.custom
-        Pool_common.(Utils.schema_decoder create Message.Icon)
+        Common.(Utils.schema_decoder create Message.Icon)
         CCList.pure
         "icon"
     ;;
@@ -114,12 +114,12 @@ module Logos = struct
   type t = File.t list [@@deriving eq, show]
 
   let value m = m
-  let create m = Ok (CCList.map Pool_common.Id.of_string m)
+  let create m = Ok (CCList.map Common.Id.of_string m)
 
   let schema () =
     Conformist.custom
       (fun l -> l |> create)
-      (fun l -> l |> CCList.map Pool_common.Id.value)
+      (fun l -> l |> CCList.map Common.Id.value)
       "tenant_logo"
   ;;
 end
@@ -127,13 +127,13 @@ end
 module PartnerLogos = struct
   type t = File.t list [@@deriving eq, show]
 
-  let create m = Ok (CCList.map Pool_common.Id.of_string m)
+  let create m = Ok (CCList.map Common.Id.of_string m)
   let value m = m
 
   let schema () =
     Conformist.custom
       (fun l -> l |> create)
-      (fun l -> l |> CCList.map Pool_common.Id.value)
+      (fun l -> l |> CCList.map Common.Id.value)
       "partner_logo"
   ;;
 end
@@ -155,7 +155,7 @@ module Maintenance = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(
+      Common.(
         Utils.schema_decoder
           (fun m -> m |> of_string |> CCResult.pure)
           Message.TenantMaintenanceFlag)
@@ -182,7 +182,7 @@ module Disabled = struct
 
   let schema () =
     Conformist.custom
-      Pool_common.(
+      Common.(
         Utils.schema_decoder
           (fun m -> m |> of_string |> CCResult.pure)
           Message.TenantDisabledFlag)
@@ -196,7 +196,7 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; url : Url.t
-  ; database_label : Database.Label.t
+  ; database_label : Common.Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -204,7 +204,7 @@ type t =
   ; partner_logo : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
-  ; default_language : Pool_common.Language.t
+  ; default_language : Common.Language.t
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
@@ -216,13 +216,13 @@ module Read = struct
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database_label : Database.Label.t
+    ; database_label : Common.Database.Label.t
     ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
     ; icon : Icon.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Pool_common.Language.t
+    ; default_language : Common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
@@ -235,13 +235,13 @@ module Write = struct
     ; title : Title.t
     ; description : Description.t
     ; url : Url.t
-    ; database : Database.t
+    ; database : Common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
     ; maintenance : Maintenance.t
     ; disabled : Disabled.t
-    ; default_language : Pool_common.Language.t
+    ; default_language : Common.Language.t
     ; created_at : CreatedAt.t
     ; updated_at : CreatedAt.t
     }
@@ -277,13 +277,13 @@ end
 module Selection = struct
   type t =
     { url : Url.t
-    ; database_label : Database.Label.t
+    ; database_label : Common.Database.Label.t
     }
   [@@deriving eq, show]
 
   let create url database_label = { url; database_label }
-  let url (m : t) = m.url
-  let label (m : t) : Database.Label.t = m.database_label
+  let url ({ url; _ } : t) = url
+  let label ({ database_label; _ } : t) = database_label
 end
 
 (* The system should proactively report degraded health to operators *)

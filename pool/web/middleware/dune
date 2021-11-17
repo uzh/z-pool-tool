@@ -1,5 +1,5 @@
 (library
  (name middleware)
- (libraries sihl service participant tenant http_utils utils)
+ (libraries sihl service participant tenant page http_utils utils)
  (preprocess
   (pps lwt_ppx)))
