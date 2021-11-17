@@ -30,6 +30,7 @@ services:
         - "traefik.port=3000"
         - "traefik.docker.network=webgateway"
         - "traefik.frontend.rule=Host:pool.econ.uzh.ch"
+        - "traefik.frontend.rule=Host:pool-root.econ.uzh.ch"
 
 networks:
   webgateway:
