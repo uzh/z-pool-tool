@@ -20,7 +20,7 @@ let[@warning "-4"] terms_accepted () =
     | Ok true -> handler req
     | Ok false ->
       Http_utils.redirect_to_with_actions
-        "/participant/termsandconditions"
+        "/termsandconditions"
         [ Message.set ~error:[ Common.Message.TermsAndConditionsNotAccepted ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]

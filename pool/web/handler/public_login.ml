@@ -8,7 +8,7 @@ let dashboard_path tenant_db user =
   Admin.user_is_admin tenant_db user
   >|= function
   | true -> "/admin/dashboard"
-  | false -> "/participant/dashboard"
+  | false -> "/dashboard"
 ;;
 
 let redirect_to_dashboard tenant_db user =

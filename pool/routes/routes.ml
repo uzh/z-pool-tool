@@ -37,7 +37,7 @@ module Participant = struct
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
     ; get "/termsandconditions" Handler.Participant.terms
     ; get "/email-verified" Handler.Participant.email_verification
-    ; post ":id/terms-accepted" Handler.Participant.terms_accept
+    ; post "/terms-accepted/:id" Handler.Participant.terms_accept
     ]
   ;;
 
@@ -104,10 +104,9 @@ end
 let router =
   choose
     [ choose Public.routes
-    ; Admin.(choose ~scope:"/admin" routes)
+    ; Participant.(choose routes)
+    ; Participant.(choose ~middlewares locked_routes)
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
-    ; Participant.(choose ~scope:"/participant" routes)
-    ; Participant.(choose ~scope:"/participant" ~middlewares locked_routes)
     ; Root.(choose ~scope:"/root" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)
     ; get "/**" Handler.Public.not_found

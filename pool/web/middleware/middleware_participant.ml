@@ -43,12 +43,12 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         ]
     | Error Pool_common.Message.(TermsAndConditionsNotAccepted) ->
       Http_utils.redirect_to_with_actions
-        "/participant/termsandconditions"
+        "/termsandconditions"
         [ Message.set
             ~error:[ Pool_common.Message.(TermsAndConditionsNotAccepted) ]
         ]
     | Error Pool_common.Message.ParticipantUnconfirmed ->
-      Http_utils.redirect_to "/participant/email-confirmation"
+      Http_utils.redirect_to "/email-confirmation"
     | _ ->
       Http_utils.redirect_to_with_actions
         "/login"
