@@ -29,8 +29,9 @@ services:
         - "traefik.enable=true"
         - "traefik.port=3000"
         - "traefik.docker.network=webgateway"
-        - "traefik.frontend.rule=Host:pool.econ.uzh.ch"
-        - "traefik.frontend.rule=Host:pool-root.econ.uzh.ch"
+        # TODO: Move to other place in production (ECON only settings)
+        - "traefik.pool.frontend.rule=Host:pool.econ.uzh.ch"
+        - "traefik.pool-root.frontend.rule=Host:pool-root.econ.uzh.ch"
 
 networks:
   webgateway:
