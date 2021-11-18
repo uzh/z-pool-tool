@@ -4,8 +4,11 @@
 
 Access using following URL:
 
-- production: `https://pool.econ.uzh.ch/`
-- staging: `https://pool.econ.uzh.ch/staging/`
+- production root: `https://pool-root.econ.uzh.ch/`
+- production tenant: `https://pool.econ.uzh.ch/`
+- staging root: `https://pool-root.econ.uzh.ch/staging/`
+- staging tenant: `https://pool.econ.uzh.ch/staging/`
+- staging optional tenant: `https://tenant.econ.uzh.ch/staging/`
 
 For the staging login credentials see 1Password.
 
