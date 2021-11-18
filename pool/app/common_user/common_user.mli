@@ -74,7 +74,7 @@ module TermsAccepted : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : Ptime.t option -> t
-  val create_now : t
+  val create_now : unit -> t
   val value : t -> Ptime.t option
 end
 
@@ -85,7 +85,7 @@ module Verified : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : Ptime.t option -> t
-  val create_now : t
+  val create_now : unit -> t
   val value : t -> Ptime.t option
 end
 

@@ -113,7 +113,9 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () =
       Repo.update
         pool
-        { participant with terms_accepted_at = User.TermsAccepted.create_now }
+        { participant with
+          terms_accepted_at = User.TermsAccepted.create_now ()
+        }
     in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
