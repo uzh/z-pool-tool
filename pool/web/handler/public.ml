@@ -3,9 +3,12 @@ module Login = Public_login
 module Common = Pool_common
 
 let index req =
-  let open Sihl.Web in
-  let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-  Page.Public.index message () |> Response.of_html |> Lwt.return
+  if Http_utils.is_req_from_root_host req
+  then Http_utils.redirect_to "/root"
+  else
+    let open Sihl.Web in
+    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
+    Page.Public.index message () |> Response.of_html |> Lwt.return
 ;;
 
 let email_confirmation_note req =

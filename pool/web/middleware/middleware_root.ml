@@ -1,12 +1,7 @@
 let from_root_only () =
   let filter handler req =
-    let is_root_host =
-      req
-      |> Sihl.Web.Request.header "host"
-      |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
-      |> CCOption.value ~default:false
-    in
-    match is_root_host with
+    Http_utils.is_req_from_root_host req
+    |> function
     | true -> handler req
     | false ->
       Page.Utils.error_page_not_found ()

@@ -91,3 +91,10 @@ let format_request_boolean_values values urlencoded =
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 let find_csrf req = Sihl.Web.Csrf.find_exn req
+
+let is_req_from_root_host req =
+  req
+  |> Sihl.Web.Request.header "host"
+  |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
+  |> CCOption.value ~default:false
+;;
