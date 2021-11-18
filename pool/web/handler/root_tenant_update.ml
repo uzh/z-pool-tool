@@ -81,7 +81,7 @@ let delete_asset req =
       Lwt_list.iter_s (Pool_event.handle_event Common.Database.root)
     in
     let destroy_file () =
-      Service.Storage.delete ~ctx ~id:(Common.Id.value asset_id)
+      Service.Storage.delete ~ctx (Common.Id.value asset_id)
     in
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions

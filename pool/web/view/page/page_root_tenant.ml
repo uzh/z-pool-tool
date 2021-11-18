@@ -179,7 +179,7 @@ let detail csrf (tenant : Tenant.t) message () =
       | true -> [ a_input_type `Checkbox; a_name "disabled"; a_checked () ]
       | false -> [ a_input_type `Checkbox; a_name "disabled" ]
     in
-    input ~a:attributes ()
+    div [ label [ txt "Disabled" ]; input ~a:attributes () ]
   in
   let delete_img_form files =
     div

@@ -92,7 +92,7 @@ let file_to_storage_add filename =
       }
   in
   let base64 = Base64.encode_exn data in
-  let%lwt _ = Service.Storage.upload_base64 file ~base64 in
+  let%lwt _ = Service.Storage.upload_base64 file base64 in
   let%lwt () = remove_imported_file filename in
   file.Sihl_storage.id |> Lwt.return_ok
 ;;
@@ -129,7 +129,7 @@ let update_files files req =
       (match load_file filename with
       | Ok (filesize, mime, data) ->
         let ctx = Pool_common.Utils.pool_to_ctx Database.root in
-        let%lwt file = Service.Storage.find ~ctx ~id in
+        let%lwt file = Service.Storage.find ~ctx id in
         let updated_file =
           let open Sihl_storage in
           file
@@ -138,7 +138,7 @@ let update_files files req =
           |> set_mime_stored (File.Mime.to_string mime)
         in
         let base64 = Base64.encode_exn data in
-        let%lwt _ = Service.Storage.update_base64 updated_file ~base64 in
+        let%lwt _ = Service.Storage.update_base64 updated_file base64 in
         let%lwt () = remove_imported_file filename in
         Lwt.return_some (Ok id)
       | Error err -> Lwt.return_some (Error err))
