@@ -32,7 +32,13 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
       ()
   in
+  let stylesheet =
+    link
+      ~rel:[ `Stylesheet ]
+      ~href:(Sihl.Web.externalize_path "/assets/index.css")
+      ()
+  in
   let message = Message.create message lang () in
   let content = main [ message; children ] in
-  html (head page_title [ charset; viewport ]) (body [ content ])
+  html (head page_title [ charset; viewport; stylesheet ]) (body [ content ])
 ;;

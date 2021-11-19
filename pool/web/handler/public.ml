@@ -11,6 +11,34 @@ let index req =
     Page.Public.index message () |> Response.of_html |> Lwt.return
 ;;
 
+let index_css req =
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* styles = Tenant.find_styles tenant_db in
+    let%lwt file =
+      Service.Storage.find
+        ~ctx:(Pool_common.Utils.pool_to_ctx Pool_common.Database.root)
+        ~id:(styles |> Tenant.Styles.id |> Pool_common.Id.value)
+    in
+    let%lwt content =
+      Service.Storage.download_data_base64 file ||> Base64.decode_exn
+    in
+    Sihl.Web.Response.of_plain_text content
+    |> Sihl.Web.Response.set_content_type
+         (styles |> Tenant.Styles.mime_type |> Pool_common.File.Mime.to_string)
+    |> Lwt.return_ok
+  in
+  match result with
+  | Ok res -> Lwt.return res
+  | Error _ ->
+    Lwt.return
+      (Sihl.Web.Response.set_content_type
+         "text/css"
+         (Sihl.Web.Response.of_plain_text ""))
+;;
+
 let email_confirmation_note req =
   let open Sihl.Web in
   let message = CCOption.bind (Flash.find_alert req) Message.of_string in
