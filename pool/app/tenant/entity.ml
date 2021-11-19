@@ -66,6 +66,8 @@ module Styles = struct
   type t = File.t [@@deriving eq, show]
 
   let value m = m
+  let id m = m.File.id
+  let mime_type m = m.File.mime_type
 
   module Write = struct
     type t = string [@@deriving eq, show]

@@ -118,6 +118,8 @@ module Styles : sig
 
   val value : t -> File.t
   val equal : t -> t -> bool
+  val id : t -> Pool_common.Id.t
+  val mime_type : t -> Pool_common.File.Mime.t
 
   module Write : sig
     type t
@@ -303,6 +305,10 @@ val find_by_label
 
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Pool_common.Database.t list Lwt.t
+
+val find_styles
+  :  Pool_common.Database.Label.t
+  -> (Styles.t, Pool_common.Message.error) result Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t

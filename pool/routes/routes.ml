@@ -18,6 +18,7 @@ module Public = struct
   let routes =
     Handler.Public.
       [ get "/" index
+      ; get "/assets/index.css" index_css
       ; get "/login" Login.login_get
       ; post "/login" Login.login_post
       ; get "/logout" Login.logout
