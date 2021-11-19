@@ -28,7 +28,13 @@ If any changes were made to files in `.devcontainer` folder the Container should
 ## Running Dev Container
 
 - The Makefile used in the DevContainer is located in the `.devcontainer` folder
-- Ports from outside (e.g. localhost) for webserver `3016`, root database `3316` and tenant database `3317`
+- Ports from outside (e.g. localhost)
+    - webserver
+        - root `3016`
+        - tenant `3017`
+    - database
+        - root`3316`
+        - tenant `3317`
 
 ## Running Tests with Dev Container
 

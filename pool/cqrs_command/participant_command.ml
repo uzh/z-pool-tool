@@ -58,7 +58,7 @@ end = struct
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; recruitment_channel = command.recruitment_channel
-        ; terms_accepted_at = User.TermsAccepted.create_now
+        ; terms_accepted_at = User.TermsAccepted.create_now ()
         }
     in
     Ok

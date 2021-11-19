@@ -23,12 +23,12 @@ include:
   tags: [docker]
   environment:
     name: staging
-    url: https://pool.econ.uzh.ch/staging/
+    url: https://pool-root.econ.uzh.ch/staging/
   variables:
     DATABASE_URL: ${ECON_POOL_DATABASE_URL_STAGING}
     IP_ALLOWLIST: "${ECON_IP_ECON_ALL},${ECON_IP_UZH_VPN}"
     PREFIX_PATH: /staging
-    PUBLIC_URL: https://pool.econ.uzh.ch
+    PUBLIC_URL: https://pool-root.econ.uzh.ch
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -38,10 +38,10 @@ include:
   tags: [docker]
   environment:
     name: production
-    url: https://pool.econ.uzh.ch/
+    url: https://pool-root.econ.uzh.ch/
   variables:
     DATABASE_URL: ${ECON_POOL_DATABASE_URL}
-    PUBLIC_URL: https://pool.econ.uzh.ch
+    PUBLIC_URL: https://pool-root.econ.uzh.ch
   rules:
     - if: $CI_COMMIT_TAG
 

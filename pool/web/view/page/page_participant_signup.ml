@@ -8,7 +8,7 @@ let signup
     recruitment_channel
     terms
   =
-  let submit_url = Sihl.Web.externalize_path "/participant/signup" in
+  let submit_url = Sihl.Web.externalize_path "/signup" in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
   let lastname = lastname |> CCOption.value ~default:"" in

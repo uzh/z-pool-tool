@@ -68,9 +68,7 @@ module Email = struct
       in
       let subject = "Email verification" in
       let validation_url =
-        Format.asprintf
-          "/participant/email-verified?token=%s"
-          (Email.token email)
+        Format.asprintf "/email-verified?token=%s" (Email.token email)
         |> Sihl.Web.externalize_path
         |> Utils.Url.create_public_url
       in

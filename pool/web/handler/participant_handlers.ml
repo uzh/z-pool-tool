@@ -83,7 +83,7 @@ let sign_up_create req =
     Utils.Database.with_transaction tenant_db (fun () ->
         let%lwt () = Pool_event.handle_events tenant_db events in
         HttpUtils.redirect_to_with_actions
-          "/participant/email-confirmation"
+          "/email-confirmation"
           [ Message.set
               ~success:[ Pool_common.Message.EmailConfirmationMessage ]
           ])
@@ -91,9 +91,7 @@ let sign_up_create req =
   in
   result
   |> CCResult.map_err (fun msg ->
-         ( msg
-         , "/participant/signup"
-         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+         msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
   |> HttpUtils.extract_happy_path_with_actions
 ;;
 
@@ -164,7 +162,7 @@ let terms_accept req =
       Command.AcceptTermsAndConditions.handle participant |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
-    HttpUtils.redirect_to "/participant/dashboard" |> Lwt_result.ok
+    HttpUtils.redirect_to "/dashboard" |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path
 ;;

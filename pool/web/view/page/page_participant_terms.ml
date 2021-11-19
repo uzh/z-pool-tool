@@ -1,7 +1,6 @@
 let terms csrf message user_id terms =
   let submit_url =
-    Format.asprintf "/participant/%s/terms-accepted" user_id
-    |> Sihl.Web.externalize_path
+    Format.asprintf "/terms-accepted/%s" user_id |> Sihl.Web.externalize_path
   in
   let children =
     let open Tyxml.Html in
