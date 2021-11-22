@@ -10,6 +10,13 @@ opam remote remove --all default
 opam remote add default https://opam.ocaml.org
 
 # ensure all system dependencies are installed
+opam pin add -yn sihl git://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-email git://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-queue git://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-storage git://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-token git://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-user git://github.com/oxidizing/sihl.git
+
 opam pin add -yn pool .
 opam depext -y pool
 
