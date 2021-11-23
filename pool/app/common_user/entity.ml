@@ -39,7 +39,7 @@ module PasswordConfirmed = struct
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
+    m |> show |> Format.fprintf formatter "%s"
   ;;
 end
 
@@ -52,6 +52,7 @@ module Firstname = struct
     else Ok m
   ;;
 
+  let of_string m = m
   let value m = m
 
   let schema () =
@@ -71,6 +72,7 @@ module Lastname = struct
     else Ok m
   ;;
 
+  let of_string m = m
   let value m = m
 
   let schema () =
@@ -86,6 +88,15 @@ module Paused = struct
 
   let create m = m
   let value m = m
+
+  let schema () =
+    Conformist.custom
+      (Pool_common.Utils.schema_decoder
+         (fun m -> m |> Utils.Bool.of_string |> CCResult.pure)
+         Pool_common.Message.TenantMaintenanceFlag)
+      (fun l -> l |> Utils.Bool.stringify |> CCList.pure)
+      "maintenance"
+  ;;
 end
 
 module Disabled = struct

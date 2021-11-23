@@ -63,6 +63,38 @@ module Database : sig
   val read_pool : t -> Label.t
 end
 
+module ChangeSet : sig
+  module Version : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val value : t -> int
+    val create : unit -> t
+    val of_int : int -> t
+    val increment : t -> t
+  end
+
+  type t = (string * Version.t) list
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val value : t -> (string * Version.t) list
+  val create : (string * Version.t) list -> t
+  val to_string : t -> string
+  val of_string : string -> t
+  val empty : t
+  val find_version : t -> string -> int option
+
+  val check_for_update
+    :  t
+    -> t
+    -> (string * 'a) list
+    -> ((string * 'a) list, Message.error) result
+end
+
 module CreatedAt : sig
   type t = Ptime.t
 
@@ -156,6 +188,14 @@ module Repo : sig
     end
 
     val t : t Caqti_type.t
+  end
+
+  module ChangeSet : sig
+    module Version : sig
+      type t = ChangeSet.Version.t
+
+      val t : int Caqti_type.t
+    end
   end
 
   module CreatedAt : sig

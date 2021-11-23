@@ -17,20 +17,30 @@ end
 let t =
   let encode m =
     let open Common_user in
+    let open Pool_common.ChangeSet in
     Ok
       ( m.user
       , ( m.recruitment_channel
         , ( TermsAccepted.value m.terms_accepted_at
           , ( Paused.value m.paused
             , ( Disabled.value m.disabled
-              , (Verified.value m.verified, (m.created_at, m.updated_at)) ) ) )
-        ) )
+              , ( Verified.value m.verified
+                , ( Version.value m.firstname_version
+                  , ( Version.value m.lastname_version
+                    , ( Version.value m.paused_version
+                      , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( user
       , ( recruitment_channel
         , ( terms_accepted_at
-          , (paused, (disabled, (verified, (created_at, updated_at)))) ) ) )
+          , ( paused
+            , ( disabled
+              , ( verified
+                , ( firstname_version
+                  , ( lastname_version
+                    , (paused_version, (created_at, updated_at)) ) ) ) ) ) ) )
+      )
     =
     let open Common_user in
     Ok
@@ -40,6 +50,10 @@ let t =
       ; paused = Paused.create paused
       ; disabled = Disabled.create disabled
       ; verified = Verified.create verified
+      ; firstname_version =
+          Pool_common.ChangeSet.Version.of_int firstname_version
+      ; lastname_version = Pool_common.ChangeSet.Version.of_int lastname_version
+      ; paused_version = Pool_common.ChangeSet.Version.of_int paused_version
       ; created_at
       ; updated_at
       }
@@ -60,20 +74,32 @@ let t =
                   Paused.t
                   (tup2
                      Disabled.t
-                     (tup2 Verified.t (tup2 CreatedAt.t UpdatedAt.t))))))))
+                     (tup2
+                        Verified.t
+                        (tup2
+                           Pool_common.Repo.ChangeSet.Version.t
+                           (tup2
+                              Pool_common.Repo.ChangeSet.Version.t
+                              (tup2
+                                 Pool_common.Repo.ChangeSet.Version.t
+                                 (tup2 CreatedAt.t UpdatedAt.t)))))))))))
 ;;
 
 let participant =
   let encode m =
     let open Common_user in
+    let open Pool_common.ChangeSet in
     Ok
       ( m.user.Sihl_user.id
       , ( m.recruitment_channel
         , ( TermsAccepted.value m.terms_accepted_at
           , ( Paused.value m.paused
             , ( Disabled.value m.disabled
-              , (Verified.value m.verified, (m.created_at, m.updated_at)) ) ) )
-        ) )
+              , ( Verified.value m.verified
+                , ( Version.value m.firstname_version
+                  , ( Version.value m.lastname_version
+                    , ( Version.value m.paused_version
+                      , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -95,5 +121,13 @@ let participant =
                   Paused.t
                   (tup2
                      Disabled.t
-                     (tup2 Verified.t (tup2 CreatedAt.t UpdatedAt.t))))))))
+                     (tup2
+                        Verified.t
+                        (tup2
+                           Pool_common.Repo.ChangeSet.Version.t
+                           (tup2
+                              Pool_common.Repo.ChangeSet.Version.t
+                              (tup2
+                                 Pool_common.Repo.ChangeSet.Version.t
+                                 (tup2 CreatedAt.t UpdatedAt.t)))))))))))
 ;;

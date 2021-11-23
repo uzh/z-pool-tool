@@ -7,3 +7,5 @@ let dashboard message () =
 
 let sign_up = Page_participant_signup.signup
 let terms = Page_participant_terms.terms
+let detail = Page_participant_edit.detail
+let edit = Page_participant_edit.edit

@@ -39,6 +39,16 @@ module Database = struct
   ;;
 end
 
+module ChangeSet = struct
+  include Entity.ChangeSet
+
+  module Version = struct
+    include Version
+
+    let t = Caqti_type.int
+  end
+end
+
 module CreatedAt = struct
   include Entity.CreatedAt
 

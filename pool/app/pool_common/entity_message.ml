@@ -10,6 +10,7 @@ end
 
 type field =
   | Admin
+  | ChangeSetVersion
   | ContactEmail
   | DatabaseLabel
   | DatabaseUrl
@@ -32,6 +33,7 @@ type field =
   | Page
   | Participant
   | Password
+  | Paused
   | RecruitmentChannel
   | Role
   | Root
@@ -63,6 +65,7 @@ type error =
   | EmailMalformed
   | Invalid of field
   | LoginProvideDetails
+  | MeantimeUpdate of field
   | NoTenantsRegistered
   | NotFound of field
   | ParticipantSignupInvalidEmail

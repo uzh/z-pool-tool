@@ -2,6 +2,7 @@ open Entity_message
 
 let field_to_string = function
   | Admin -> "Administrator"
+  | ChangeSetVersion -> "ChangeSet Version"
   | ContactEmail -> "Kontakt Email Adresse"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
@@ -24,6 +25,7 @@ let field_to_string = function
   | Page -> "Seite"
   | Participant -> "Teilnehmer"
   | Password -> "Passwort"
+  | Paused -> "Pausiert"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | Role -> "Rolle"
   | Root -> "Root"
@@ -83,6 +85,11 @@ let error_to_string = function
   | Invalid field ->
     field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MeantimeUpdate field ->
+    field_message
+      ""
+      (field_to_string field)
+      "wurde in der Zwischenzeit bearbeitet!"
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotFound field ->

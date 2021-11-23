@@ -32,6 +32,7 @@ module Firstname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -43,6 +44,7 @@ module Lastname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -55,6 +57,7 @@ module Paused : sig
   val show : t -> string
   val value : t -> bool
   val create : bool -> t
+  val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module Disabled : sig

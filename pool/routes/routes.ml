@@ -39,6 +39,9 @@ module Participant = struct
     ; get "/termsandconditions" Handler.Participant.terms
     ; get "/email-verified" Handler.Participant.email_verification
     ; post "/terms-accepted/:id" Handler.Participant.terms_accept
+    ; get "/user" Handler.Participant.details
+    ; get "/user/edit" Handler.Participant.edit
+    ; post "/user/update" Handler.Participant.update
     ]
   ;;
 

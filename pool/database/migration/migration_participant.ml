@@ -18,7 +18,20 @@ let create_participant_table =
     |sql}
 ;;
 
+let add_changeset_version =
+  Sihl.Database.Migration.create_step
+    ~label:"add changeset version columns for participants"
+    {sql|
+     ALTER TABLE pool_participants
+     ADD COLUMN firstname_version bigint(20) NOT NULL DEFAULT 0 AFTER verified,
+     ADD COLUMN lastname_version bigint(20) NOT NULL DEFAULT 0 AFTER firstname_version,
+     ADD COLUMN paused_version bigint(20) NOT NULL DEFAULT 0 AFTER lastname_version;
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "participant" |> add_step create_participant_table)
+    empty "participant"
+    |> add_step create_participant_table
+    |> add_step add_changeset_version)
 ;;

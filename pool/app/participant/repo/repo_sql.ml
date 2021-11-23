@@ -27,6 +27,9 @@ let find_request_sql where_fragment =
         pool_participants.paused,
         pool_participants.disabled,
         pool_participants.verified,
+        pool_participants.firstname_version,
+        pool_participants.lastname_version,
+        pool_participants.paused_version,
         pool_participants.created_at,
         pool_participants.updated_at
       FROM pool_participants
@@ -102,6 +105,9 @@ let insert_request =
         paused,
         disabled,
         verified,
+        firstname_version,
+        lastname_version,
+        paused_version,
         created_at,
         updated_at
       ) VALUES (
@@ -121,6 +127,47 @@ let insert pool =
   Utils.Database.exec (Pool_common.Database.Label.value pool) insert_request
 ;;
 
+let update_paused_request =
+  let open Pool_common.Repo in
+  {sql|
+    UPDATE pool_participants
+    SET
+      paused = $2,
+      paused_version = $3
+    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+  |sql}
+  |> Caqti_request.exec
+       Caqti_type.(tup3 Id.t Common_user.Repo.Paused.t ChangeSet.Version.t)
+;;
+
+let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
+  Utils.Database.exec
+    (Pool_common.Database.Label.value pool)
+    update_paused_request
+    ( participant |> Entity.id |> Id.value
+    , paused |> Common_user.Paused.value
+    , paused_version |> Pool_common.ChangeSet.Version.value )
+;;
+
+let update_version_for_request field =
+  let field =
+    match field with
+    | `Firstname -> "firstname_version"
+    | `Lastname -> "lastname_version"
+  in
+  let update = {sql| UPDATE pool_participants SET |sql} in
+  let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')); |sql} in
+  Format.asprintf "%s\n%s = $2\n%s" update field where
+  |> Caqti_request.exec
+       Caqti_type.(Pool_common.Repo.(tup2 Id.t ChangeSet.Version.t))
+;;
+
+let update_version_for field pool =
+  field
+  |> update_version_for_request
+  |> Utils.Database.exec (Pool_common.Database.Label.value pool)
+;;
+
 let update_request =
   Caqti_request.exec
     Repo_model.participant
@@ -131,9 +178,7 @@ let update_request =
         terms_accepted_at = $3,
         paused = $4,
         disabled = $5,
-        verified = $6,
-        created_at = $7,
-        updated_at = $8
+        verified = $6
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
 ;;

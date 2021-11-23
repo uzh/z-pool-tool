@@ -77,36 +77,69 @@ end
 
 module UpdateDetails : sig
   type t =
-    { id : Id.t
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
-    ; paused : User.Paused.t
+    { firstname : User.Firstname.t option
+    ; lastname : User.Lastname.t option
+    ; paused : User.Paused.t option
     }
 
   val handle
     :  Participant.t
-    -> email:User.Email.Address.t
-    -> password:User.Password.t
+    -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can
+    :  Pool_common.Database.Label.t
+    -> Sihl_user.t
+    -> Participant.t
+    -> bool Lwt.t
 end = struct
   type t =
-    { id : Id.t
-    ; firstname : User.Firstname.t
-    ; lastname : User.Lastname.t
-    ; paused : User.Paused.t
+    { firstname : User.Firstname.t option
+    ; lastname : User.Lastname.t option
+    ; paused : User.Paused.t option
     }
 
-  let handle _ ~email:_ ~password:_ = Utils.todo ()
+  let command firstname lastname paused = { firstname; lastname; paused }
 
-  let can pool participant command =
+  let schema =
+    Conformist.(
+      make
+        Field.
+          [ Conformist.optional @@ User.Firstname.schema ()
+          ; Conformist.optional @@ User.Lastname.schema ()
+          ; Conformist.optional @@ User.Paused.schema ()
+          ]
+        command)
+  ;;
+
+  let handle participant (command : t) =
+    Participant.
+      [ command.firstname |> CCOption.map (firstnameupdated participant)
+      ; command.lastname |> CCOption.map (lastnameupdated participant)
+      ; command.paused |> CCOption.map (pausedupdated participant)
+      ]
+    |> CCList.filter_map CCFun.id
+    |> CCList.map Pool_event.participant
+    |> CCResult.pure
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
+
+  let can pool user participant =
     let open Utils.Lwt_result.Infix in
     let check_permission tenant =
       Permission.can
-        participant.Participant.user
+        user
         ~any_of:
-          [ Permission.Update (Permission.Participant, Some command.id)
+          [ Permission.Update
+              (Permission.Participant, Some (participant |> Participant.id))
           ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
           ]
     in
@@ -119,25 +152,32 @@ end
 
 module UpdatePassword : sig
   type t =
-    { id : Id.t
+    { participant : Participant.t
     ; current_password : User.Password.t
     ; new_password : User.Password.t
+    ; password_confirmation : User.PasswordConfirmed.t
     }
 
-  val handle
-    :  t
-    -> Participant.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Pool_common.Database.Label.t -> Participant.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { id : Id.t
+    { participant : Participant.t
     ; current_password : User.Password.t
     ; new_password : User.Password.t
+    ; password_confirmation : User.PasswordConfirmed.t
     }
 
-  let handle _ = Utils.todo
+  let handle command =
+    Ok
+      [ Participant.PasswordUpdated
+          ( command.participant
+          , command.current_password
+          , command.new_password
+          , command.password_confirmation )
+        |> Pool_event.participant
+      ]
+  ;;
 
   let can pool participant command =
     let open Utils.Lwt_result.Infix in
@@ -145,7 +185,9 @@ end = struct
       Permission.can
         participant.Participant.user
         ~any_of:
-          [ Permission.Update (Permission.Participant, Some command.id)
+          [ Permission.Update
+              ( Permission.Participant
+              , Some (command.participant |> Participant.id) )
           ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
           ]
     in

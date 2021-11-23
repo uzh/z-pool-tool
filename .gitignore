@@ -29,5 +29,7 @@ _opam/
 .cache
 .bsb.lock
 *.log
-node_modules
 .parcel-cache
+
+# NPM
+node_modules

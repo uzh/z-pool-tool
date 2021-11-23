@@ -38,8 +38,20 @@ module Url = struct
   ;;
 end
 
-let bool_to_result err value =
-  match value with
-  | true -> Ok ()
-  | false -> Error err
-;;
+module Bool = struct
+  let stringify = function
+    | true -> "true"
+    | false -> "false"
+  ;;
+
+  let of_string = function
+    | "true" -> true
+    | _ -> false
+  ;;
+
+  let to_result err value =
+    match value with
+    | true -> Ok ()
+    | false -> Error err
+  ;;
+end

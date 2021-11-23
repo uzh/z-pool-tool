@@ -109,6 +109,54 @@ module Database = struct
   let pp formatter m = Label.pp formatter m.label
 end
 
+module ChangeSet = struct
+  module Version = struct
+    type t = int [@@deriving eq, show, yojson]
+
+    let value m = m
+    let create () = 0
+    let of_int i = i
+    let increment m = m + 1
+  end
+
+  type t = (string * Version.t) list [@@deriving eq, show, yojson]
+
+  let value m = m
+  let create version_list = version_list
+  let to_string m = m |> yojson_of_t |> Yojson.Safe.to_string
+  let of_string m = m |> Yojson.Safe.from_string |> t_of_yojson
+  let empty : t = []
+
+  let find_version set key =
+    CCList.assoc_opt ~eq:CCString.equal key set |> CCOption.map Version.value
+  ;;
+
+  let check_for_update (old_set : t) (current_set : t) new_data =
+    let go_change = find_version old_set in
+    let go_form key = CCList.assoc_opt ~eq:CCString.equal key new_data in
+    let errors =
+      CCList.filter_map
+        (fun (key, cv) ->
+          match go_change key, go_form key with
+          | Some rv, Some _ ->
+            if cv > rv
+            then
+              let open PoolError in
+              let err_field =
+                match key with
+                | "firstname_version" -> Firstname
+                | "lastname_version" -> Lastname
+                | _ -> ChangeSetVersion
+              in
+              Some (Error (MeantimeUpdate err_field))
+            else None
+          | _ -> None)
+        current_set
+    in
+    if CCList.is_empty errors then Ok new_data else CCList.hd errors
+  ;;
+end
+
 module CreatedAt = struct
   type t = Ptime.t [@@deriving eq, show]
 

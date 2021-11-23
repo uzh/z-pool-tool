@@ -98,3 +98,24 @@ let is_req_from_root_host req =
   |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
   |> CCOption.value ~default:false
 ;;
+
+let changeset_of_request req =
+  Opium.Request.cookie "_changeset" req
+  |> CCOption.map Pool_common.ChangeSet.of_string
+  |> CCOption.value ~default:Pool_common.ChangeSet.empty
+;;
+
+let remove_csrf_from_urlencoded
+    : (string * string list) list -> (string * string list) list
+  =
+  CCList.filter (fun (key, _) -> not (CCString.equal key "_csrf"))
+;;
+
+let html_to_plain_text_response html =
+  let headers =
+    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
+  in
+  html
+  |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  |> Sihl.Web.Response.of_plain_text ~headers
+;;
