@@ -5,10 +5,21 @@ let detail participant message () =
   let open Participant in
   let content =
     div
-      [ div [ h1 [ txt (participant |> fullname) ] ]
+      [ div
+          ([ h1 [ txt "User Profile" ]
+           ; p [ participant |> fullname |> Format.asprintf "Name: %s" |> txt ]
+           ]
+          @
+          if participant.paused |> Common_user.Paused.value
+          then
+            [ p
+                [ txt
+                    "You paused all notifications for your user! (Click 'edit' \
+                     to update this setting)"
+                ]
+            ]
+          else [])
       ; a ~a:[ a_href (Sihl.Web.externalize_path "/user/edit") ] [ txt "Edit" ]
-      ; br ()
-      ; a ~a:[ a_href (Sihl.Web.externalize_path "/user") ] [ txt "Back" ]
       ]
   in
   let html = div [ content ] in
@@ -55,12 +66,11 @@ let edit csrf participant message () =
                  |> Utils.Bool.stringify
                , `Checkbox )
              ]
-         ; [ span [ txt "Update" ] ]
          ])
   in
   let html =
     div
-      [ h1 [ txt (participant |> fullname) ]
+      [ h1 [ txt "User Profile" ]
       ; div [ form ]
       ; a ~a:[ a_href (Sihl.Web.externalize_path "/user") ] [ txt "Back" ]
       ]

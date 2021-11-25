@@ -93,9 +93,9 @@ module Paused = struct
     Conformist.custom
       (Pool_common.Utils.schema_decoder
          (fun m -> m |> Utils.Bool.of_string |> CCResult.pure)
-         Pool_common.Message.TenantMaintenanceFlag)
+         Pool_common.Message.Paused)
       (fun l -> l |> Utils.Bool.stringify |> CCList.pure)
-      "maintenance"
+      "paused"
   ;;
 end
 

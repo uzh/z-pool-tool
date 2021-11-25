@@ -83,7 +83,16 @@ let format_request_boolean_values values urlencoded =
       k
       (function
         | None -> Some [ "false" ]
-        | Some _ -> Some [ "true" ])
+        | Some values ->
+          let handled_true_values = [ "on"; "checked"; "true" ] in
+          CCList.map
+            (fun v -> CCList.map (String.equal v) handled_true_values)
+            values
+          |> CCList.flatten
+          |> CCList.exists CCFun.id
+          |> Utils.Bool.stringify
+          |> CCList.pure
+          |> CCOption.some)
       m
   in
   CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq

@@ -178,7 +178,10 @@ let update_request =
         terms_accepted_at = $3,
         paused = $4,
         disabled = $5,
-        verified = $6
+        verified = $6,
+        firstname_version = $7,
+        lastname_version = $8,
+        paused_version = $9
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
 ;;

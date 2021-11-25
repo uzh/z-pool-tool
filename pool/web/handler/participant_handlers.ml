@@ -211,7 +211,10 @@ let edit = show true
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.format_request_boolean_values [ "paused" ]
+  in
   let%lwt result =
     let open Utils.Lwt_result.Syntax in
     let changeset = HttpUtils.changeset_of_request req in

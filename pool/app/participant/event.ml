@@ -101,7 +101,15 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | PausedUpdated (participant, paused) ->
-    let%lwt () = Repo.update pool { participant with paused } in
+    let%lwt () =
+      Repo.update_paused
+        pool
+        { participant with
+          paused
+        ; paused_version =
+            Pool_common.ChangeSet.Version.increment participant.paused_version
+        }
+    in
     Lwt.return_unit
   | EmailUpdated (participant, email) ->
     let%lwt _ =
