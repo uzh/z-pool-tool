@@ -31,7 +31,7 @@ module Email = struct
       let%lwt reset_token =
         Service.PasswordReset.create_reset_token
           ~ctx:(Pool_common.Utils.pool_to_ctx pool)
-          ~email
+          email
       in
       match reset_token with
       | None -> Lwt.return_error Pool_common.Message.PasswordResetFailMessage

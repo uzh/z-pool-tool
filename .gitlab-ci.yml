@@ -102,6 +102,15 @@ compile-and-test:
     - opam remote remove --all default
     - opam remote add default https://opam.ocaml.org
 
+    # pin sihl to quickly receive updates without having to wait for opam community repo
+    - opam pin add -yn sihl git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-cache git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-email git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-queue git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-storage git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-token git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-user git://github.com/oxidizing/sihl.git
+
     # pin payout and install system dependencies
     - opam pin add -yn pool .
     - OPAMSOLVERTIMEOUT=180 opam depext -y pool

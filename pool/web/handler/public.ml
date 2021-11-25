@@ -20,7 +20,7 @@ let index_css req =
     let%lwt file =
       Service.Storage.find
         ~ctx:(Pool_common.Utils.pool_to_ctx Pool_common.Database.root)
-        ~id:(styles |> Tenant.Styles.id |> Pool_common.Id.value)
+        (styles |> Tenant.Styles.id |> Pool_common.Id.value)
     in
     let%lwt content =
       Service.Storage.download_data_base64 file ||> Base64.decode_exn
@@ -57,9 +57,7 @@ let asset req =
   let open Sihl.Contract.Storage in
   let asset_id = Sihl.Web.Router.param req "id" in
   let%lwt file =
-    Service.Storage.find
-      ~ctx:Common.(Utils.pool_to_ctx Database.root)
-      ~id:asset_id
+    Service.Storage.find ~ctx:Common.(Utils.pool_to_ctx Database.root) asset_id
   in
   let%lwt content = Service.Storage.download_data_base64 file in
   let mime = file.file.mime in

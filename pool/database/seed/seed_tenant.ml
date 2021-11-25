@@ -26,7 +26,7 @@ let create () =
             }
         in
         let base64 = Base64.encode_exn file.body in
-        let%lwt _ = Service.Storage.upload_base64 stored_file ~base64 in
+        let%lwt _ = Service.Storage.upload_base64 stored_file base64 in
         Lwt.return_unit)
       [ styles; icon; tenant_logo; partner_logo ]
   in

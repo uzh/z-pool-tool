@@ -116,14 +116,12 @@ let reset_password_post req =
     in
     let go = CCFun.flip List.assoc params in
     let token = go "token" in
-    let password = go "password" in
-    let password_confirmation = go "password_confirmation" in
     let* () =
       Service.PasswordReset.reset_password
         ~ctx
         ~token
-        ~password
-        ~password_confirmation
+        (go "password")
+        (go "password_confirmation")
       |> Lwt_result.map_err (fun _ ->
              ( Pool_common.Message.PasswordResetInvalidData
              , Format.asprintf "/root/reset-password/?token=%s" token ))

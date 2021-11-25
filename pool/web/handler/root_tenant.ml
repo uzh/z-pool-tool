@@ -34,7 +34,7 @@ let create req =
       | Error err ->
         let ctx = Common.(Utils.pool_to_ctx Database.root) in
         let%lwt () =
-          Lwt_list.iter_s (fun (_, id) -> Service.Storage.delete ~ctx ~id) files
+          Lwt_list.iter_s (fun (_, id) -> Service.Storage.delete ~ctx id) files
         in
         Lwt.return_error err
     in
