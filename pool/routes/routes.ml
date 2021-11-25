@@ -42,6 +42,8 @@ module Participant = struct
     ; get "/user" Handler.Participant.details
     ; get "/user/edit" Handler.Participant.edit
     ; post "/user/update" Handler.Participant.update
+    ; post "/user/update-email" Handler.Participant.update_email
+    ; post "/user/update-password" Handler.Participant.update_password
     ]
   ;;
 

@@ -23,11 +23,11 @@ module Password = struct
     Format.fprintf formatter "%s" m
   ;;
 
-  let schema () =
+  let schema ?(name = "password") () =
     Conformist.custom
       Pool_common.(Utils.schema_decoder create Message.Password)
       CCList.pure
-      "password"
+      name
   ;;
 end
 
@@ -40,6 +40,16 @@ module PasswordConfirmed = struct
 
   let pp (formatter : Format.formatter) (m : t) : unit =
     m |> show |> Format.fprintf formatter "%s"
+  ;;
+
+  let schema ?(name = "password_confirmed") () =
+    Conformist.custom
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> create |> CCResult.pure)
+          Message.Password)
+      CCList.pure
+      name
   ;;
 end
 

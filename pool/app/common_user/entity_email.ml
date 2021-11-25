@@ -59,6 +59,7 @@ module Address = struct
   let validate = validate_suffix
   let value m = m
   let create email = email |> remove_whitespaces |> validate_characters
+  let of_string m = m
 
   let schema () =
     Conformist.custom

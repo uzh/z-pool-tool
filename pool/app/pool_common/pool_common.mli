@@ -63,6 +63,16 @@ module Database : sig
   val read_pool : t -> Label.t
 end
 
+module Url : sig
+  type t
+
+  val value : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val create : string -> (t, Message.error) result
+  val schema : unit -> ('a, t) Conformist.Field.t
+end
+
 module ChangeSet : sig
   module Version : sig
     type t
@@ -188,6 +198,13 @@ module Repo : sig
     end
 
     val t : t Caqti_type.t
+  end
+
+  module Url : sig
+    type t = Url.t
+
+    val t : string Caqti_type.t
+    val of_pool : Database.Label.t -> t Lwt.t
   end
 
   module ChangeSet : sig

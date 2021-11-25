@@ -73,7 +73,7 @@ let sign_up_create req =
       let open Utils.Lwt_result.Infix in
       Settings.find_email_suffixes tenant_db
       ||> fun suffixes ->
-      if CCList.length suffixes > 0 then Some suffixes else None
+      if CCList.is_empty suffixes then None else Some suffixes
     in
     let* events =
       let open CCResult.Infix in
@@ -287,4 +287,82 @@ let update req =
       input |> HttpUtils.html_to_plain_text_response |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path
+;;
+
+let update_email req =
+  let open Utils.Lwt_result.Infix in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* participant =
+      General.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound User)
+      >>= fun user ->
+      Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+    in
+    let%lwt allowed_email_suffixes =
+      let open Utils.Lwt_result.Infix in
+      Settings.find_email_suffixes tenant_db
+      ||> fun suffixes ->
+      if CCList.is_empty suffixes then None else Some suffixes
+    in
+    let* current_email =
+      Common_user.Email.find_verified
+        tenant_db
+        (Participant.email_address participant)
+    in
+    let* new_email =
+      Common_user.Email.Address.create
+        (CCList.assoc ~eq:( = ) "email" urlencoded |> CCList.hd)
+      |> Lwt_result.lift
+    in
+    let* events =
+      Command.UpdateEmail.(
+        handle ?allowed_email_suffixes participant { current_email; new_email })
+      |> Lwt_result.lift
+    in
+    Utils.Database.with_transaction tenant_db (fun () ->
+        let%lwt () = Pool_event.handle_events tenant_db events in
+        HttpUtils.redirect_to_with_actions
+          "/email-confirmation"
+          [ Message.set
+              ~success:[ Pool_common.Message.EmailConfirmationMessage ]
+          ])
+    |> Lwt_result.ok
+  in
+  result
+  |> CCResult.map_err (fun msg ->
+         msg, "/user/edit", [ HttpUtils.urlencoded_to_flash urlencoded ])
+  |> HttpUtils.extract_happy_path_with_actions
+;;
+
+let update_password req =
+  let open Utils.Lwt_result.Infix in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* participant =
+      General.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound User)
+      >>= fun user ->
+      Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+    in
+    let* events =
+      let open CCResult.Infix in
+      Command.UpdatePassword.(decode urlencoded >>= handle participant)
+      |> Lwt_result.lift
+    in
+    Utils.Database.with_transaction tenant_db (fun () ->
+        let%lwt () = Pool_event.handle_events tenant_db events in
+        HttpUtils.redirect_to_with_actions
+          "/user/edit"
+          [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ])
+    |> Lwt_result.ok
+  in
+  result
+  |> CCResult.map_err (fun msg ->
+         msg, "/user/edit", [ HttpUtils.urlencoded_to_flash urlencoded ])
+  |> HttpUtils.extract_happy_path_with_actions
 ;;

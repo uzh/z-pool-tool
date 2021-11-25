@@ -14,7 +14,7 @@ type smtp_auth_update =
 type update =
   { title : Title.t
   ; description : Description.t
-  ; url : Url.t
+  ; url : Pool_common.Url.t
   ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t

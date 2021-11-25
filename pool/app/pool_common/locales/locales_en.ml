@@ -60,6 +60,7 @@ let success_to_string : success -> string = function
     "Successfully created. An email has been sent to your email address for \
      verification."
   | FileDeleted -> "File was successfully deleted."
+  | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an \

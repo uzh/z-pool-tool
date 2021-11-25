@@ -1,5 +1,11 @@
 open Entity
 
+let create_public_url pool_url path =
+  path
+  |> Sihl.Web.externalize_path
+  |> Format.asprintf "%s%s" (Pool_common.Url.value pool_url)
+;;
+
 module Email = struct
   let prepare_email pool template_label subject email params =
     let%lwt template =
@@ -28,6 +34,7 @@ module Email = struct
   module PasswordReset = struct
     let create pool ~user =
       let email = user.Sihl_user.email in
+      let%lwt url = Pool_common.Repo.Url.of_pool pool in
       let%lwt reset_token =
         Service.PasswordReset.create_reset_token
           ~ctx:(Pool_common.Utils.pool_to_ctx pool)
@@ -39,8 +46,7 @@ module Email = struct
         let subject = "Password reset" in
         let reset_url =
           Format.asprintf "/reset-password/?token=%s" token
-          |> Sihl.Web.externalize_path
-          |> Utils.Url.create_public_url
+          |> create_public_url url
         in
         let given_name =
           user.Sihl_user.given_name |> CCOption.value ~default:""
@@ -60,6 +66,7 @@ module Email = struct
 
   module ConfirmationEmail = struct
     let create db_pool email firstname lastname =
+      let%lwt url = Pool_common.Repo.Url.of_pool db_pool in
       let name =
         Format.asprintf
           "%s %s"
@@ -69,8 +76,7 @@ module Email = struct
       let subject = "Email verification" in
       let validation_url =
         Format.asprintf "/email-verified?token=%s" (Email.token email)
-        |> Sihl.Web.externalize_path
-        |> Utils.Url.create_public_url
+        |> create_public_url url
       in
       prepare_email
         db_pool

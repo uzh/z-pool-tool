@@ -104,15 +104,6 @@ module Description : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-module Url : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end
-
 module Styles : sig
   type t
 
@@ -207,7 +198,7 @@ type t =
   { id : Pool_common.Id.t
   ; title : Title.t
   ; description : Description.t
-  ; url : Url.t
+  ; url : Pool_common.Url.t
   ; database_label : Pool_common.Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
@@ -226,7 +217,7 @@ module Write : sig
     { id : Pool_common.Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Url.t
+    ; url : Pool_common.Url.t
     ; database : Pool_common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
@@ -241,7 +232,7 @@ module Write : sig
   val create
     :  Title.t
     -> Description.t
-    -> Url.t
+    -> Pool_common.Url.t
     -> Pool_common.Database.t
     -> SmtpAuth.Write.t
     -> Styles.Write.t
@@ -269,7 +260,7 @@ type smtp_auth_update =
 type update =
   { title : Title.t
   ; description : Description.t
-  ; url : Url.t
+  ; url : Pool_common.Url.t
   ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
@@ -319,7 +310,7 @@ module Selection : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Url.t -> Pool_common.Database.Label.t -> t
+  val create : Pool_common.Url.t -> Pool_common.Database.Label.t -> t
   val find_all : unit -> t list Lwt.t
   val url : t -> string
   val label : t -> Pool_common.Database.Label.t

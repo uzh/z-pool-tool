@@ -77,6 +77,8 @@ let fullname m =
     (m |> lastname |> Common.Lastname.value)
 ;;
 
+let email_address m = m.user.Sihl_user.email |> Common.Email.Address.of_string
+
 let create_changeset m =
   [ "firstname", m.firstname_version
   ; "lastname", m.lastname_version

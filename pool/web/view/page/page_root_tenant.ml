@@ -123,7 +123,7 @@ let detail csrf (tenant : Tenant.t) message () =
   let detail_fields =
     [ "title", Title.value tenant.title
     ; "description", Description.value tenant.description
-    ; "url", Url.value tenant.url
+    ; "url", Pool_common.Url.value tenant.url
     ; "smtp_auth_server", Server.value tenant.smtp_auth.server
     ; "smtp_auth_port", Port.value tenant.smtp_auth.port
     ; "smtp_auth_username", Username.value tenant.smtp_auth.username

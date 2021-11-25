@@ -30,6 +30,7 @@ val id : t -> Pool_common.Id.t
 val firstname : t -> Common_user.Firstname.t
 val lastname : t -> Common_user.Lastname.t
 val fullname : t -> string
+val email_address : t -> Common_user.Email.Address.t
 val create_changeset : t -> Pool_common.ChangeSet.t
 val login : 'a -> email:'b -> password:'c -> 'd
 val insert : Pool_common.Database.Label.t -> t -> unit Lwt.t

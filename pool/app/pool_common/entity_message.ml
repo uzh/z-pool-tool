@@ -92,6 +92,7 @@ type success =
   | EmailVerified
   | EmailConfirmationMessage
   | FileDeleted
+  | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
   | SettingsUpdated

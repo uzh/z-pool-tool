@@ -59,6 +59,7 @@ let success_to_string : success -> string = function
   | EmailConfirmationMessage ->
     "Eine Email wurde an deine Email Adresse zur verifizierung gesendet."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
+  | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \

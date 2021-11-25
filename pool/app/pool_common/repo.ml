@@ -39,6 +39,30 @@ module Database = struct
   ;;
 end
 
+module Url = struct
+  include Entity.Url
+
+  let t = Caqti_type.string
+
+  let find_url_request =
+    {sql| SELECT url FROM pool_tenant WHERE database_label = ? |sql}
+    |> Caqti_request.find Database.Label.t t
+  ;;
+
+  let of_pool pool =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Database.Label.of_string "root")
+      find_url_request
+      pool
+    >|= function
+    | None ->
+      Sihl.Configuration.read_string "PUBLIC_URL"
+      |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
+    | Some url -> url
+  ;;
+end
+
 module ChangeSet = struct
   include Entity.ChangeSet
 
