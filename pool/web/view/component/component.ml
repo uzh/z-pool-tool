@@ -30,9 +30,7 @@ let hx_input_element
   =
   (* TODO[timhub]: select closest parent
 
-     - https://htmx.org/attributes/hx-target/ - https://htmx.org/api/#closest
-
-     - Remove name from submit *)
+     - https://htmx.org/attributes/hx-target/ - https://htmx.org/api/#closest *)
   let attributes =
     (match input_type with
     | `Checkbox -> if Utils.Bool.of_string value then [ a_checked () ] else []

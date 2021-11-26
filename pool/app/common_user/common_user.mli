@@ -175,6 +175,31 @@ module Email : sig
     :  Pool_common.Database.Label.t
     -> Address.t
     -> (verified t, Pool_common.Message.error) result Lwt.t
+
+  module PasswordReset : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> user:Sihl_user.t
+      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+  end
+
+  module PasswordChange : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> verified t
+      -> Firstname.t
+      -> Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
+
+  module ConfirmationEmail : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> unverified t
+      -> Firstname.t
+      -> Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
 end
 
 module Repo : sig

@@ -33,6 +33,12 @@ let set_password
   >|= ignore
 ;;
 
+let send_password_changed_email pool email firstname lastname =
+  let open Lwt.Infix in
+  Common_user.Email.PasswordChange.create pool email firstname lastname
+  >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+;;
+
 let has_terms_accepted pool (participant : t) =
   let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
@@ -132,6 +138,23 @@ let handle_event pool : event -> unit Lwt.t =
         ~new_password
         ~new_password_confirmation
         person.user
+    in
+    let%lwt email =
+      let open Lwt.Infix in
+      Common_user.Email.find_verified pool (email_address person)
+      >|= function
+      | Ok email -> email
+      | Error err ->
+        Logs.err (fun m ->
+            m "%s" Pool_common.(Utils.error_to_string Language.En err));
+        failwith ""
+    in
+    let%lwt () =
+      send_password_changed_email
+        pool
+        email
+        (firstname person)
+        (lastname person)
     in
     Lwt.return_unit
   | EmailUnconfirmed participant ->

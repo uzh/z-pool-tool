@@ -1,4 +1,4 @@
-let update_email_template_password_reset =
+let email_template_password_reset =
   Sihl.Database.Migration.create_step
     ~label:"update email template password reset"
     {|
@@ -129,9 +129,68 @@ Pool Tool
 |}
 ;;
 
+let email_template_change_password =
+  Sihl.Database.Migration.create_step
+    ~label:"email template change password"
+    {|
+INSERT INTO email_templates(uuid, label, content_text, content_html)
+VALUES
+  (UNHEX(REPLACE('82825a80-bee1-4297-9b7a-efd07a0ae9bd','-','')),
+  'password_change',
+  'Dear {name},
+
+You recently changed your password for your account.
+
+If you did not change your password, please get in contact with us.
+
+Yours sincerely,
+Pool Tool',
+  '
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title></title>
+  <style type="text/css">
+  </style>
+</head>
+<body style="margin:0; padding:0;">
+  <div style="margin: 1em 1em 1em 1em; max-width: 50em;">
+    <section style="margin-bottom: 1em;">
+        <p>Logo</p>
+    </section>
+    <section style="padding-top: 1em; color: #383838;">
+<h4>Dear {username},</h4>
+<p>
+You recently changed your password for your account.
+</p>
+<p>
+If you did not change your password, please get in contact with us.
+</p>
+<p>
+Yours sincerely,
+<br/>
+Pool Tool
+</p>
+    </section>
+    <footer style="margin-top: 4em;">
+      <center>
+        <small>Copyright</small>
+      </center>
+    </footer>
+  </div>
+</body>
+</html>
+')
+|}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "email_templates"
-    |> add_step update_email_template_password_reset
-    |> add_step email_verification)
+    |> add_step email_template_password_reset
+    |> add_step email_verification
+    |> add_step email_template_change_password)
 ;;

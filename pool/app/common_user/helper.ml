@@ -64,6 +64,24 @@ module Email = struct
     ;;
   end
 
+  module PasswordChange = struct
+    let create db_pool email firstname lastname =
+      let name =
+        Format.asprintf
+          "%s %s"
+          (Firstname.value firstname)
+          (Lastname.value lastname)
+      in
+      let subject = "Password has been changed" in
+      prepare_email
+        db_pool
+        "password_change"
+        subject
+        (Email.address email)
+        [ "name", name ]
+    ;;
+  end
+
   module ConfirmationEmail = struct
     let create db_pool email firstname lastname =
       let%lwt url = Pool_common.Repo.Url.of_pool db_pool in
