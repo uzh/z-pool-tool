@@ -1,3 +1,12 @@
 (library
  (name page)
- (libraries tyxml sihl service http_utils component tenant root utils))
+ (libraries
+  tyxml
+  sihl
+  service
+  http_utils
+  participant
+  component
+  tenant
+  root
+  utils))
