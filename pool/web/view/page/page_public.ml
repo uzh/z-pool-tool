@@ -6,8 +6,7 @@ let input_element = Component.input_element
 let index tenant message () =
   let html =
     div
-      [ h1 [ txt "Welcome to Pool Tool" ]
-      ; div
+      [ div
           (CCList.map
              (fun logo ->
                img
@@ -16,6 +15,7 @@ let index tenant message () =
                  ~a:[ a_style "width: 200px" ]
                  ())
              (tenant.Tenant.logos |> Tenant.Logos.value))
+      ; h1 [ txt "Welcome to Pool Tool" ]
       ]
   in
   Page_layout.create html message ()
