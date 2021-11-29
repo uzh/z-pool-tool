@@ -71,7 +71,7 @@ let create children message ?(lang = Pool_common.Language.En) () =
   let stylesheet =
     link
       ~rel:[ `Stylesheet ]
-      ~href:(Sihl.Web.externalize_path "/assets/index.css")
+      ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
       ()
   in
   let message = Message.create message lang () in
