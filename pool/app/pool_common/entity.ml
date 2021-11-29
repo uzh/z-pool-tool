@@ -204,6 +204,7 @@ module File = struct
   let size m = m.size
 
   let path m =
-    Sihl.Web.externalize_path (Format.asprintf "/assets/%s/%s" m.id m.name)
+    Sihl.Web.externalize_path
+      (Format.asprintf "/custom/assets/%s/%s" m.id m.name)
   ;;
 end
