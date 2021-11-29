@@ -5,10 +5,21 @@ module Common = Pool_common
 let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
-  else
-    let open Sihl.Web in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Public.index message () |> Response.of_html |> Lwt.return
+  else (
+    let%lwt result =
+      let open Lwt_result.Syntax in
+      let message =
+        CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+      in
+      let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+      let* tenant = Tenant.find_by_label tenant_db in
+      Page.Public.index tenant message ()
+      |> Sihl.Web.Response.of_html
+      |> Lwt.return_ok
+    in
+    result
+    |> CCResult.map_err (fun err -> err, "/")
+    |> Http_utils.extract_happy_path)
 ;;
 
 let index_css req =
