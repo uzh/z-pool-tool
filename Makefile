@@ -20,12 +20,12 @@ lock: ## Generate a lock file
 
 .PHONY: build
 build:
-	yarn build
+	yarn build --log-level 2
 	opam exec -- dune build --root .
 
 .PHONY: build-watch
 build-watch:
-	yarn build
+	yarn build --log-level 2
 	opam exec -- dune build --root . --watch
 
 .PHONY: install
@@ -63,7 +63,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	exit
 	}
 	trap sigint_handler SIGINT
-	yarn build
+	yarn build --log-level 2
 	while true; do
 	dune build
 	if [ $$? -eq 0 ]

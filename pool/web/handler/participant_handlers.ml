@@ -314,7 +314,7 @@ let update_email req =
     in
     let* new_email =
       Common_user.Email.Address.create
-        (CCList.assoc ~eq:( = ) "email" urlencoded |> CCList.hd)
+        (CCList.assoc ~eq:CCString.equal "email" urlencoded |> CCList.hd)
       |> Lwt_result.lift
     in
     let* events =

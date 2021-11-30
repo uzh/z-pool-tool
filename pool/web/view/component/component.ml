@@ -33,7 +33,10 @@ let hx_input_element
      - https://htmx.org/attributes/hx-target/ - https://htmx.org/api/#closest *)
   let attributes =
     (match input_type with
-    | `Checkbox -> if Utils.Bool.of_string value then [ a_checked () ] else []
+    | `Checkbox ->
+      if bool_of_string_opt value |> CCOption.get_or ~default:false
+      then [ a_checked () ]
+      else []
     | _ ->
       [ a_value value; a_placeholder (HttpUtils.placeholder_from_name name) ])
     @ [ a_input_type input_type

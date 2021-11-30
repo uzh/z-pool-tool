@@ -85,12 +85,11 @@ let format_request_boolean_values values urlencoded =
         | None -> Some [ "false" ]
         | Some values ->
           let handled_true_values = [ "on"; "checked"; "true" ] in
-          CCList.map
-            (fun v -> CCList.map (String.equal v) handled_true_values)
+          CCList.flat_map
+            (fun v -> CCList.map (CCString.equal v) handled_true_values)
             values
-          |> CCList.flatten
           |> CCList.exists CCFun.id
-          |> Utils.Bool.stringify
+          |> string_of_bool
           |> CCList.pure
           |> CCOption.some)
       m

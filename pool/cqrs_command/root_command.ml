@@ -37,7 +37,7 @@ end = struct
       make
         Field.
           [ User.Email.Address.schema ()
-          ; User.Password.schema ()
+          ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]

@@ -63,7 +63,7 @@ let edit csrf participant message () =
              ; ( "paused"
                , participant.paused
                  |> Common_user.Paused.value
-                 |> Utils.Bool.stringify
+                 |> string_of_bool
                , `Checkbox )
              ]
          ])

@@ -81,7 +81,7 @@ type event =
       * Common_user.PasswordConfirmed.t
   | EmailUnconfirmed of t
   | EmailConfirmed of t
-  | AcceptTerms of t
+  | TermsAccepted of t
   | Disabled of t
   | Verified of t
 

@@ -12,7 +12,7 @@ module Password : sig
 
   val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
-  val schema : ?name:string -> unit -> ('a, t) Conformist.Field.t
+  val schema : string -> ('a, t) Conformist.Field.t
 end
 
 module PasswordConfirmed : sig
@@ -23,7 +23,7 @@ module PasswordConfirmed : sig
   val show : t -> string
   val create : string -> t
   val to_sihl : t -> string
-  val schema : ?name:string -> unit -> ('a, t) Conformist.Field.t
+  val schema : string -> ('a, t) Conformist.Field.t
 end
 
 module Firstname : sig

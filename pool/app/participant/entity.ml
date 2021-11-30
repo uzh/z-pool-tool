@@ -55,18 +55,14 @@ let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 let firstname m =
   m.user.Sihl_user.given_name
   |> CCOption.get_exn_or
-       (Format.asprintf
-          "User '%s' could get created without firstname"
-          m.user.Sihl_user.id)
+       (Format.asprintf "User '%s' has no firstname" m.user.Sihl_user.id)
   |> Common.Firstname.of_string
 ;;
 
 let lastname m =
   m.user.Sihl_user.name
   |> CCOption.get_exn_or
-       (Format.asprintf
-          "User '%s' could get created without lastname"
-          m.user.Sihl_user.id)
+       (Format.asprintf "User '%s' has no lastname" m.user.Sihl_user.id)
   |> Common.Lastname.of_string
 ;;
 

@@ -37,7 +37,7 @@ end = struct
       make
         Field.
           [ User.Email.Address.schema ()
-          ; User.Password.schema ()
+          ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ; Participant.RecruitmentChannel.schema ()
@@ -187,9 +187,9 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Password.schema ~name:"current_password" ()
-          ; User.Password.schema ~name:"new_password" ()
-          ; User.PasswordConfirmed.schema ~name:"password_confirmation" ()
+          [ User.Password.schema "current_password"
+          ; User.Password.schema "new_password"
+          ; User.PasswordConfirmed.schema "password_confirmation"
           ]
         command)
   ;;
@@ -294,7 +294,7 @@ module AcceptTermsAndConditions : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   let handle participant =
-    Ok [ Participant.AcceptTerms participant |> Pool_event.participant ]
+    Ok [ Participant.TermsAccepted participant |> Pool_event.participant ]
   ;;
 end
 

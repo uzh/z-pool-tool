@@ -59,7 +59,7 @@ type event =
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | EmailUnconfirmed of t
   | EmailConfirmed of t
-  | AcceptTerms of t
+  | TermsAccepted of t
   | Disabled of t
   | Verified of t
 [@@deriving variants]
@@ -171,7 +171,7 @@ let handle_event pool : event -> unit Lwt.t =
         Sihl_user.{ participant.user with confirmed = true }
     in
     Lwt.return_unit
-  | AcceptTerms participant ->
+  | TermsAccepted participant ->
     let%lwt () =
       Repo.update
         pool
@@ -199,7 +199,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     equal p1 p2
     && User.Password.equal old1 old2
     && User.Password.equal new1 new2
-  | AcceptTerms p1, AcceptTerms p2 -> equal p1 p2
+  | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -226,7 +226,7 @@ let pp_event formatter (event : event) : unit =
     User.Password.pp formatter password
   | EmailUnconfirmed p
   | EmailConfirmed p
-  | AcceptTerms p
+  | TermsAccepted p
   | Disabled p
   | Verified p -> person_pp p
 ;;
