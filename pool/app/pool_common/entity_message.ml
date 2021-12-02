@@ -77,6 +77,8 @@ type error =
   | SessionTenantNotFound
   | TerminatoryTenantError
   | TerminatoryRootError
+  | TerminatoryTenantErrorTitle
+  | TerminatoryRootErrorTitle
   | TermsAndConditionsNotAccepted
   | TimeSpanPositive
   | TokenInvalidFormat

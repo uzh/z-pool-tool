@@ -77,13 +77,3 @@ let reset_password csrf message token () =
   in
   Page_layout.create html message ()
 ;;
-
-let error_page ?(lang = Pool_common.Language.En) message () =
-  let html =
-    div
-      [ h1 [ txt "An error occurred" ]
-      ; div [ txt (Pool_common.Utils.error_to_string lang message) ]
-      ]
-  in
-  Page_layout.create html None ()
-;;

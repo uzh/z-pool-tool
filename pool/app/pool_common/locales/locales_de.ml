@@ -109,6 +109,8 @@ let error_to_string = function
      kontaktieren."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
+  | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
+    "Ein Fehler is aufgetreten."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
