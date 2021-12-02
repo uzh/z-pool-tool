@@ -78,31 +78,11 @@ let reset_password csrf message token () =
   Page_layout.create html message ()
 ;;
 
-let tenant_error ?(lang = Pool_common.Language.En) () =
+let error_page ?(lang = Pool_common.Language.En) message () =
   let html =
     div
       [ h1 [ txt "An error occurred" ]
-      ; div
-          [ txt
-              (Pool_common.Utils.error_to_string
-                 lang
-                 Pool_common.Message.TerminatoryRootError)
-          ]
-      ]
-  in
-  Page_layout.create html None ()
-;;
-
-let root_error ?(lang = Pool_common.Language.En) () =
-  let html =
-    div
-      [ h1 [ txt "An error occurred" ]
-      ; div
-          [ txt
-              (Pool_common.Utils.error_to_string
-                 lang
-                 Pool_common.Message.TerminatoryRootError)
-          ]
+      ; div [ txt (Pool_common.Utils.error_to_string lang message) ]
       ]
   in
   Page_layout.create html None ()
