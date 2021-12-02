@@ -106,6 +106,8 @@ let error_to_string = function
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
+  | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
+    "An error occurred"
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenInvalidFormat -> "Invalid Token Format!"

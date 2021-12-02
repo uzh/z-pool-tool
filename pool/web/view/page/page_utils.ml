@@ -13,3 +13,10 @@ let error_page_not_found () =
         (PageNotFoundMessage |> Utils.to_string Language.En)
         None))
 ;;
+
+let error_page_terminatory ?(lang = Pool_common.Language.En) title info () =
+  note
+    (Pool_common.Utils.error_to_string lang title)
+    (Pool_common.Utils.error_to_string lang info)
+    None
+;;

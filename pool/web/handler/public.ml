@@ -83,10 +83,18 @@ let error req =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let* _ = Tenant.find_by_label tenant_db in
-    Ok Common.Message.TerminatoryTenantError |> Lwt.return
+    Ok
+      ( Common.Message.TerminatoryTenantErrorTitle
+      , Common.Message.TerminatoryTenantError )
+    |> Lwt.return
   in
-  let root_error = Common.Message.TerminatoryRootError in
-  let error_page msg = Page.Public.error_page msg () in
+  let root_error =
+    ( Common.Message.TerminatoryRootErrorTitle
+    , Common.Message.TerminatoryRootError )
+  in
+  let error_page (title, note) =
+    Page.Utils.error_page_terminatory title note ()
+  in
   (match tenant_error with
   | Ok tenant_error -> tenant_error
   | Error _ -> root_error)
