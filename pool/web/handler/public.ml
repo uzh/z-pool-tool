@@ -79,15 +79,18 @@ let asset req =
 ;;
 
 let error req =
-  let%lwt result =
+  let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let* _ = Tenant.find_by_label tenant_db in
-    Page.Public.tenant_error () |> Sihl.Web.Response.of_html |> Lwt.return_ok
+    Ok Common.Message.TerminatoryTenantError |> Lwt.return
   in
-  let root_error () = Page.Public.root_error () |> Sihl.Web.Response.of_html in
-  Lwt.return
-    (match result with
-    | Ok result -> result
-    | Error _ -> root_error ())
+  let root_error = Common.Message.TerminatoryRootError in
+  let error_page msg = Page.Public.error_page msg () in
+  (match tenant_error with
+  | Ok tenant_error -> tenant_error
+  | Error _ -> root_error)
+  |> error_page
+  |> Sihl.Web.Response.of_html
+  |> Lwt.return
 ;;
