@@ -18,7 +18,7 @@ let index req =
       |> Lwt.return_ok
     in
     result
-    |> CCResult.map_err (fun err -> err, "/")
+    |> CCResult.map_err (fun err -> err, "/error")
     |> Http_utils.extract_happy_path)
 ;;
 
@@ -76,4 +76,18 @@ let asset req =
   Sihl.Web.Response.of_plain_text content
   |> Sihl.Web.Response.set_content_type mime
   |> Lwt.return
+;;
+
+let error req =
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* _ = Tenant.find_by_label tenant_db in
+    Page.Public.tenant_error () |> Sihl.Web.Response.of_html |> Lwt.return_ok
+  in
+  let root_error () = Page.Public.root_error () |> Sihl.Web.Response.of_html in
+  Lwt.return
+    (match result with
+    | Ok result -> result
+    | Error _ -> root_error ())
 ;;
