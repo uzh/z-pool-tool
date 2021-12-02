@@ -6,7 +6,8 @@ let input_element = Component.input_element
 let index tenant message () =
   let html =
     div
-      [ div
+      [ h1 [ txt "Welcome to Pool Tool" ]
+      ; div
           (CCList.map
              (fun logo ->
                img
@@ -15,7 +16,6 @@ let index tenant message () =
                  ~a:[ a_style "width: 200px" ]
                  ())
              (tenant.Tenant.logos |> Tenant.Logos.value))
-      ; h1 [ txt "Welcome to Pool Tool" ]
       ]
   in
   Page_layout.create html message ()
@@ -76,4 +76,34 @@ let reset_password csrf message token () =
       ]
   in
   Page_layout.create html message ()
+;;
+
+let tenant_error ?(lang = Pool_common.Language.En) () =
+  let html =
+    div
+      [ h1 [ txt "An error occurred" ]
+      ; div
+          [ txt
+              (Pool_common.Utils.error_to_string
+                 lang
+                 Pool_common.Message.TerminatoryRootError)
+          ]
+      ]
+  in
+  Page_layout.create html None ()
+;;
+
+let root_error ?(lang = Pool_common.Language.En) () =
+  let html =
+    div
+      [ h1 [ txt "An error occurred" ]
+      ; div
+          [ txt
+              (Pool_common.Utils.error_to_string
+                 lang
+                 Pool_common.Message.TerminatoryRootError)
+          ]
+      ]
+  in
+  Page_layout.create html None ()
 ;;
