@@ -60,6 +60,18 @@ let add_styles =
   |css}
 ;;
 
+let header =
+  header
+    ~a:[ a_style "text-align: right; padding: 1rem;" ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt "Pool Tool" ] ]
+;;
+
+let footer =
+  footer
+    ~a:[ a_style "text-align: center; padding: 1rem;" ]
+    [ p [ txt "Pool Tool" ] ]
+;;
+
 let create children message ?(lang = Pool_common.Language.En) () =
   let page_title = title (txt "Pool tool") in
   let charset = meta ~a:[ a_charset "utf8" ] () in
@@ -75,9 +87,9 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ()
   in
   let message = Message.create message lang () in
-  let footer = script ~a:[ a_src "/assets/index.js"; a_defer () ] (txt "") in
+  let scripts = script ~a:[ a_src "/assets/index.js"; a_defer () ] (txt "") in
   let content = main [ message; children ] in
   html
     (head page_title [ charset; viewport; stylesheet ])
-    (body [ content; footer ])
+    (body [ header; content; footer; scripts ])
 ;;
