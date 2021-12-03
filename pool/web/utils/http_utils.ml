@@ -83,20 +83,22 @@ let handle_boolean_values update urlencoded values =
   CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
 ;;
 
+let intersection_to_bool_string values =
+  values
+  |> CCList.inter ~eq:CCString.equal handled_true_values
+  |> CCList.is_empty
+  |> not
+  |> string_of_bool
+  |> CCList.pure
+;;
+
 let format_request_boolean_values values urlencoded =
   let update m k =
     StringMap.update
       k
       (function
         | None -> Some [ "false" ]
-        | Some values ->
-          CCList.flat_map
-            (fun v -> CCList.map (CCString.equal v) handled_true_values)
-            values
-          |> CCList.exists CCFun.id
-          |> string_of_bool
-          |> CCList.pure
-          |> CCOption.some)
+        | Some values -> values |> intersection_to_bool_string |> CCOption.some)
       m
   in
   handle_boolean_values update urlencoded values
@@ -106,15 +108,7 @@ let format_htmx_request_boolean_values values urlencoded =
   let update m k =
     StringMap.update
       k
-      (fun values ->
-        values
-        |> CCOption.map (fun v ->
-               CCList.flat_map
-                 (fun v -> CCList.map (CCString.equal v) handled_true_values)
-                 v
-               |> CCList.exists CCFun.id
-               |> string_of_bool
-               |> CCList.pure))
+      (fun values -> values |> CCOption.map intersection_to_bool_string)
       m
   in
   handle_boolean_values update urlencoded values
