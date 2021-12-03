@@ -122,7 +122,6 @@ let insert_request =
         $9,
         $10,
         $11
-
       )
     |sql}
 ;;
@@ -166,10 +165,11 @@ let update_version_for_request field =
        Caqti_type.(Pool_common.Repo.(tup2 Id.t ChangeSet.Version.t))
 ;;
 
-let update_version_for field pool =
-  field
-  |> update_version_for_request
-  |> Utils.Database.exec (Pool_common.Database.Label.value pool)
+let update_version_for pool field (id, changeset_version) =
+  Utils.Database.exec
+    (Pool_common.Database.Label.value pool)
+    (field |> update_version_for_request)
+    (id |> Id.value, changeset_version |> Pool_common.ChangeSet.Version.value)
 ;;
 
 let update_request =
