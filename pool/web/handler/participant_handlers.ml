@@ -213,7 +213,7 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
-    ||> HttpUtils.format_request_boolean_values [ "paused" ]
+    ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
   in
   let%lwt result =
     let open Utils.Lwt_result.Syntax in
