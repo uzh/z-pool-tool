@@ -3,8 +3,21 @@ open Tyxml.Html
 let csrf_element = Component.csrf_element
 let input_element = Component.input_element
 
-let index message () =
-  let html = h1 [ txt "Welcome to Pool Tool" ] in
+let index tenant message () =
+  let html =
+    div
+      [ h1 [ txt "Welcome to Pool Tool" ]
+      ; div
+          (CCList.map
+             (fun logo ->
+               img
+                 ~src:(Pool_common.File.path logo)
+                 ~alt:""
+                 ~a:[ a_style "width: 200px" ]
+                 ())
+             (tenant.Tenant.logos |> Tenant.Logos.value))
+      ]
+  in
   Page_layout.create html message ()
 ;;
 

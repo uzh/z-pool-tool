@@ -45,6 +45,7 @@ type field =
   | Styles
   | Tenant
   | TenantDisabledFlag
+  | TenantLogos
   | TenantMaintenanceFlag
   | TermsAndConditions
   | TimeSpan
@@ -74,6 +75,10 @@ type error =
   | Retrieve of field
   | SessionInvalid
   | SessionTenantNotFound
+  | TerminatoryTenantError
+  | TerminatoryRootError
+  | TerminatoryTenantErrorTitle
+  | TerminatoryRootErrorTitle
   | TermsAndConditionsNotAccepted
   | TimeSpanPositive
   | TokenInvalidFormat

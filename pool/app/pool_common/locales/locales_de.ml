@@ -37,6 +37,7 @@ let field_to_string = function
   | Styles -> "Styles"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert Flag"
+  | TenantLogos -> "Tenant Logos"
   | TenantMaintenanceFlag -> "Wartungsflag"
   | TermsAndConditions -> "Teilnahmebedingungen"
   | TimeSpan -> "Zeitspanne"
@@ -106,6 +107,10 @@ let error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator \
      kontaktieren."
+  | TerminatoryTenantError | TerminatoryRootError ->
+    "Bitte versuchen Sie es später erneut."
+  | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
+    "Ein Fehler is aufgetreten."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
