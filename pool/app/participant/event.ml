@@ -98,14 +98,11 @@ let handle_event pool : event -> unit Lwt.t =
         ~given_name:(firstname |> User.Firstname.value)
         participant.user
     in
-    let%lwt _ =
-      Repo.update_version_for
-        pool
-        `Firstname
-        ( id participant
-        , participant.firstname_version |> ChangeSet.Version.increment )
-    in
-    Lwt.return_unit
+    Repo.update_version_for
+      pool
+      `Firstname
+      ( id participant
+      , participant.firstname_version |> ChangeSet.Version.increment )
   | LastnameUpdated (participant, lastname) ->
     let%lwt _ =
       Service.User.update
@@ -113,14 +110,11 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(lastname |> User.Lastname.value)
         participant.user
     in
-    let%lwt _ =
-      Repo.update_version_for
-        pool
-        `Lastname
-        ( id participant
-        , participant.lastname_version |> ChangeSet.Version.increment )
-    in
-    Lwt.return_unit
+    Repo.update_version_for
+      pool
+      `Lastname
+      ( id participant
+      , participant.lastname_version |> ChangeSet.Version.increment )
   | PausedUpdated (participant, paused) ->
     let%lwt () =
       Repo.update_paused
