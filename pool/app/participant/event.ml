@@ -1,5 +1,6 @@
 module User = Common_user
 module Id = Pool_common.Id
+module ChangeSet = Pool_common.ChangeSet
 open Entity
 
 type create =
@@ -35,7 +36,7 @@ let set_password
 
 let send_password_changed_email pool email firstname lastname =
   let open Lwt.Infix in
-  Common_user.Email.PasswordChange.create pool email firstname lastname
+  User.Email.PasswordChange.create pool email firstname lastname
   >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
 ;;
 
@@ -51,10 +52,10 @@ let has_terms_accepted pool (participant : t) =
 
 type event =
   | Created of create
-  | FirstnameUpdated of t * Common_user.Firstname.t
-  | LastnameUpdated of t * Common_user.Lastname.t
-  | PausedUpdated of t * Common_user.Paused.t
-  | EmailUpdated of t * Common_user.Email.Address.t
+  | FirstnameUpdated of t * User.Firstname.t
+  | LastnameUpdated of t * User.Lastname.t
+  | PausedUpdated of t * User.Paused.t
+  | EmailUpdated of t * User.Email.Address.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | EmailUnconfirmed of t
@@ -82,9 +83,9 @@ let handle_event pool : event -> unit Lwt.t =
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
-    ; firstname_version = Pool_common.ChangeSet.Version.create ()
-    ; lastname_version = Pool_common.ChangeSet.Version.create ()
-    ; paused_version = Pool_common.ChangeSet.Version.create ()
+    ; firstname_version = ChangeSet.Version.create ()
+    ; lastname_version = ChangeSet.Version.create ()
+    ; paused_version = ChangeSet.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -97,7 +98,11 @@ let handle_event pool : event -> unit Lwt.t =
         ~given_name:(firstname |> User.Firstname.value)
         participant.user
     in
-    Lwt.return_unit
+    Repo.update_version_for
+      pool
+      `Firstname
+      ( id participant
+      , participant.firstname_version |> ChangeSet.Version.increment )
   | LastnameUpdated (participant, lastname) ->
     let%lwt _ =
       Service.User.update
@@ -105,7 +110,11 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(lastname |> User.Lastname.value)
         participant.user
     in
-    Lwt.return_unit
+    Repo.update_version_for
+      pool
+      `Lastname
+      ( id participant
+      , participant.lastname_version |> ChangeSet.Version.increment )
   | PausedUpdated (participant, paused) ->
     let%lwt () =
       Repo.update_paused
@@ -113,7 +122,7 @@ let handle_event pool : event -> unit Lwt.t =
         { participant with
           paused
         ; paused_version =
-            Pool_common.ChangeSet.Version.increment participant.paused_version
+            ChangeSet.Version.increment participant.paused_version
         }
     in
     Lwt.return_unit
