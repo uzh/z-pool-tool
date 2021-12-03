@@ -76,15 +76,20 @@ let validate_email_existance pool email =
   | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
 ;;
 
-let format_request_boolean_values values urlencoded =
+let handled_true_values = [ "on"; "checked"; "true" ]
+
+let handle_boolean_values update urlencoded values =
   let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
+  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
+;;
+
+let format_request_boolean_values values urlencoded =
   let update m k =
     StringMap.update
       k
       (function
         | None -> Some [ "false" ]
         | Some values ->
-          let handled_true_values = [ "on"; "checked"; "true" ] in
           CCList.flat_map
             (fun v -> CCList.map (CCString.equal v) handled_true_values)
             values
@@ -94,7 +99,25 @@ let format_request_boolean_values values urlencoded =
           |> CCOption.some)
       m
   in
-  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
+  handle_boolean_values update urlencoded values
+;;
+
+let format_htmx_request_boolean_values values urlencoded =
+  let update m k =
+    StringMap.update
+      k
+      (fun values ->
+        values
+        |> CCOption.map (fun v ->
+               CCList.flat_map
+                 (fun v -> CCList.map (CCString.equal v) handled_true_values)
+                 v
+               |> CCList.exists CCFun.id
+               |> string_of_bool
+               |> CCList.pure))
+      m
+  in
+  handle_boolean_values update urlencoded values
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
