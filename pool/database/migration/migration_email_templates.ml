@@ -187,10 +187,15 @@ Pool Tool
 |}
 ;;
 
-let migration () =
+let migration_tenant () =
   Sihl.Database.Migration.(
     empty "email_templates"
     |> add_step email_template_password_reset
     |> add_step email_verification
     |> add_step email_template_change_password)
+;;
+
+let migration_root () =
+  Sihl.Database.Migration.(
+    empty "email_templates" |> add_step email_template_password_reset)
 ;;
