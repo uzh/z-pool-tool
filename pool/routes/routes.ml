@@ -18,7 +18,7 @@ module Public = struct
   let routes =
     Handler.Public.
       [ get "/" index
-      ; get "/assets/index.css" index_css
+      ; get "/custom/assets/index.css" index_css
       ; get "/login" Login.login_get
       ; post "/login" Login.login_post
       ; get "/logout" Login.logout
@@ -26,7 +26,8 @@ module Public = struct
       ; post "/request-reset-password" Login.request_reset_password_post
       ; get "/reset-password" Login.reset_password_get
       ; post "/reset-password" Login.reset_password_post
-      ; get "/assets/:id/:filename" asset
+      ; get "/custom/assets/:id/:filename" asset
+      ; get "/error" error
       ]
   ;;
 end

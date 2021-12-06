@@ -24,40 +24,16 @@ module Message = struct
   ;;
 end
 
-let add_styles =
-  {css|
-    input {
-      margin-right: 1rem;
-      margin-bottom: 1rem;
-    }
-    @keyframes input-success {
-      from {box-shadow: 0px 0px 5px 0px rgba(0,128,0,1);}
-      to {box-shadow: 0px 0px 5px 0px rgba(0,128,0,0);}
-    }
-    input.success {
-      animation-name: input-success;
-      animation-duration: 2s;
-    }
-    @keyframes input-error {
-      from {box-shadow: 0px 0px 5px 0px rgba(255,0,0,1);}
-      to {box-shadow: 0px 0px 5px 0px rgba(255,0,0,0);}
-    }
-    input.error {
-      animation-name: input-error;
-      animation-duration: 2s;
-    }
-    .flex-wrap  {
-      display: flex;
-      flex-wrap: wrap;
-    }
-    .flexcolumn {
-      display: flex;
-      flex-direction: column;
-    }
-    .error-message {
-      color: red;
-    }
-  |css}
+let header =
+  header
+    ~a:[ a_style "text-align: right; padding: 1rem;" ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt "Pool Tool" ] ]
+;;
+
+let footer =
+  footer
+    ~a:[ a_style "text-align: center; padding: 1rem;" ]
+    [ p [ txt "Pool Tool" ] ]
 ;;
 
 let create children message ?(lang = Pool_common.Language.En) () =
@@ -68,16 +44,24 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
       ()
   in
-  let stylesheet =
+  let custom_stylesheet =
+    link
+      ~rel:[ `Stylesheet ]
+      ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
+      ()
+  in
+  let global_stylesheet =
     link
       ~rel:[ `Stylesheet ]
       ~href:(Sihl.Web.externalize_path "/assets/index.css")
       ()
   in
   let message = Message.create message lang () in
-  let footer = script ~a:[ a_src "/assets/index.js"; a_defer () ] (txt "") in
+  let scripts = script ~a:[ a_src "/assets/index.js"; a_defer () ] (txt "") in
   let content = main [ message; children ] in
   html
-    (head page_title [ charset; viewport; stylesheet ])
-    (body [ content; footer ])
+    (head
+       page_title
+       [ charset; viewport; custom_stylesheet; global_stylesheet ])
+    (body [ header; content; footer; scripts ])
 ;;

@@ -57,7 +57,7 @@ let t =
       ( Id.value m.Read.id
       , ( m.title
         , ( m.description
-          , ( Pool_common.Url.value m.url
+          , ( Common.Url.value m.url
             , ( m.database_label
               , ( m.smtp_auth
                 , ( m.styles
@@ -141,7 +141,7 @@ module Write = struct
         ( Id.value m.Write.id
         , ( m.title
           , ( m.description
-            , ( Pool_common.Url.value m.url
+            , ( Common.Url.value m.url
               , ( m.database
                 , ( m.smtp_auth
                   , ( m.styles

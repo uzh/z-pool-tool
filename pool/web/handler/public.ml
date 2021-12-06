@@ -5,10 +5,21 @@ module Common = Pool_common
 let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
-  else
-    let open Sihl.Web in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Public.index message () |> Response.of_html |> Lwt.return
+  else (
+    let%lwt result =
+      let open Lwt_result.Syntax in
+      let message =
+        CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+      in
+      let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+      let* tenant = Tenant.find_by_label tenant_db in
+      Page.Public.index tenant message ()
+      |> Sihl.Web.Response.of_html
+      |> Lwt.return_ok
+    in
+    result
+    |> CCResult.map_err (fun err -> err, "/error")
+    |> Http_utils.extract_happy_path)
 ;;
 
 let index_css req =
@@ -64,5 +75,30 @@ let asset req =
   let content = content |> Base64.decode_exn in
   Sihl.Web.Response.of_plain_text content
   |> Sihl.Web.Response.set_content_type mime
+  |> Lwt.return
+;;
+
+let error req =
+  let%lwt tenant_error =
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* _ = Tenant.find_by_label tenant_db in
+    Ok
+      ( Common.Message.TerminatoryTenantErrorTitle
+      , Common.Message.TerminatoryTenantError )
+    |> Lwt.return
+  in
+  let root_error =
+    ( Common.Message.TerminatoryRootErrorTitle
+    , Common.Message.TerminatoryRootError )
+  in
+  let error_page (title, note) =
+    Page.Utils.error_page_terminatory title note ()
+  in
+  (match tenant_error with
+  | Ok tenant_error -> tenant_error
+  | Error _ -> root_error)
+  |> error_page
+  |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
