@@ -158,8 +158,11 @@ module ChangeSet = struct
               let open PoolError in
               let err_field =
                 match key with
+                (* TODO remove hardcoded for user? *)
+                (* TODO field names correct? *)
                 | "firstname_version" -> Firstname
                 | "lastname_version" -> Lastname
+                | "paused_version" -> Paused
                 | _ -> ChangeSetVersion
               in
               Some (Error (MeantimeUpdate err_field))

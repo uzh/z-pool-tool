@@ -193,14 +193,9 @@ let show is_edit req =
       |> Lwt.return_ok
     | true ->
       let csrf = HttpUtils.find_csrf req in
-      let changeset =
-        participant
-        |> Participant.create_changeset
-        |> Pool_common.ChangeSet.to_string
-      in
-      Page.Participant.edit csrf participant message ()
+      let changeset = participant |> Participant.create_changeset in
+      Page.Participant.edit csrf participant message changeset ()
       |> Sihl.Web.Response.of_html
-      |> Opium.Response.add_cookie_or_replace ("_changeset", changeset)
       |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path
@@ -215,9 +210,11 @@ let update req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values [ "paused" ]
   in
+  (* TODO [aerben] remove unsafe functions *)
+  let changeset_raw = List.hd @@ List.assoc "changeset" urlencoded in
   let%lwt result =
     let open Utils.Lwt_result.Syntax in
-    let changeset = HttpUtils.changeset_of_request req in
+    let changeset = Pool_common.ChangeSet.of_string changeset_raw in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
       |> Lwt_result.map_err (fun err -> err, "/")
@@ -241,7 +238,8 @@ let update req =
       >>= handle participant
     in
     let name, values =
-      urlencoded |> HttpUtils.remove_csrf_from_urlencoded |> CCList.hd
+      (* TODO don't use hd here, dangerous *)
+      urlencoded |> HttpUtils.remove_meta_from_urlencoded |> CCList.hd
     in
     let hx_target =
       Format.asprintf
@@ -250,7 +248,7 @@ let update req =
         name
     in
     let hx_post = Sihl.Web.externalize_path "/user/update" in
-    let base_input =
+    let base_input changeset =
       let type_of = function
         | "paused" -> `Checkbox
         | _ -> `Text
@@ -259,31 +257,29 @@ let update req =
         (type_of name)
         name
         (CCList.hd values)
+        ~changeset
         ~hx_post
         ~hx_target
         ~hx_params:[ name ]
     in
     match events with
     | Ok events ->
-      let open CCResult.Infix in
+      let open Utils.Lwt_result.Syntax in
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
-      let%lwt participant =
+      let* participant =
         Participant.(participant |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
       let update_form participant =
-        let changeset =
-          participant
-          |> Participant.create_changeset
-          |> Pool_common.ChangeSet.to_string
-        in
-        base_input ~classnames:[ "success" ] ()
+        base_input
+          (Participant.create_changeset participant)
+          ~classnames:[ "success" ]
+          ()
         |> HttpUtils.html_to_plain_text_response
-        |> Opium.Response.add_cookie_or_replace ("_changeset", changeset)
       in
-      participant >|= update_form |> Lwt.return
+      participant |> update_form |> Lwt_result.return
     | Error err ->
-      let input = base_input ~classnames:[ "error" ] ~error:err () in
+      let input = base_input [] ~classnames:[ "error" ] ~error:err () in
       input |> HttpUtils.html_to_plain_text_response |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path
