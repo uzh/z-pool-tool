@@ -61,7 +61,6 @@ let list csrf tenant_list root_list message () =
     ; "smtp_auth_password", "pw"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
-    ; "partner_logo", "partner logos"
     ; "default_language", "DE"
     ]
   in
