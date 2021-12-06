@@ -6,6 +6,13 @@ let create_public_url pool_url path =
   |> Format.asprintf "%s%s" (Pool_common.Url.value pool_url)
 ;;
 
+let prepend_root_directory pool url =
+  let open Pool_common.Database in
+  match Label.equal pool root with
+  | true -> Format.asprintf "/root%s" url
+  | false -> url
+;;
+
 module Email = struct
   let prepare_email pool template_label subject email params =
     let%lwt template =
@@ -46,6 +53,8 @@ module Email = struct
         let subject = "Password reset" in
         let reset_url =
           Format.asprintf "/reset-password/?token=%s" token
+          |> prepend_root_directory pool
+          |> Sihl.Web.externalize_path
           |> create_public_url url
         in
         let given_name =
@@ -83,8 +92,8 @@ module Email = struct
   end
 
   module ConfirmationEmail = struct
-    let create db_pool email firstname lastname =
-      let%lwt url = Pool_common.Repo.Url.of_pool db_pool in
+    let create pool email firstname lastname =
+      let%lwt url = Pool_common.Repo.Url.of_pool pool in
       let name =
         Format.asprintf
           "%s %s"
@@ -94,10 +103,11 @@ module Email = struct
       let subject = "Email verification" in
       let validation_url =
         Format.asprintf "/email-verified?token=%s" (Email.token email)
+        |> Sihl.Web.externalize_path
         |> create_public_url url
       in
       prepare_email
-        db_pool
+        pool
         "email_verification"
         subject
         (Email.address email)
