@@ -70,31 +70,35 @@ let show
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
   let languages_html =
-    let available_languages = Pool_common.Language.all () in
+    let all_languages =
+      [ tenant_languages |> CCList.map (fun k -> k, true)
+      ; Pool_common.Language.all ()
+        |> CCList.filter_map (fun k ->
+               match CCList.mem k tenant_languages with
+               | true -> None
+               | false -> Some (k, false))
+      ]
+      |> CCList.flatten
+    in
     let field_elements =
       div
         ~a:[ a_user_data "sortable" "" ]
         (CCList.map
-           (fun language ->
+           (fun (language, selected) ->
              let attrs =
                [ a_input_type `Checkbox
                ; a_name (Pool_common.Language.code language)
                ]
              in
              let checkbox =
-               match
-                 CCList.mem
-                   ~eq:Pool_common.Language.equal
-                   language
-                   tenant_languages
-               with
+               match selected with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
              in
              div
                ~a:[ a_user_data "sortable-item" "" ]
                [ label [ txt (Pool_common.Language.code language) ]; checkbox ])
-           available_languages)
+           all_languages)
     in
     div
       [ h2 [ txt "Languages" ]
