@@ -1,23 +1,16 @@
 module UpdateLanguages : sig
-  type t = (string * string list) list
+  type t = Pool_common.Language.t list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = (string * string list) list
+  type t = Pool_common.Language.t list
 
   let handle command =
     let open CCResult in
-    let* languages =
-      CCList.filter_map
-        (fun (k, v) ->
-          match CCList.hd v with
-          | "true" -> Some (Pool_common.Language.of_string k)
-          | _ -> None)
-        command
-      |> CCResult.flatten_l
-    in
-    Ok [ Settings.LanguagesUpdated languages |> Pool_event.settings ]
+    match CCList.length command > 0 with
+    | false -> Error Pool_common.Message.(NoOptionSelected Language)
+    | true -> Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ]
   ;;
 
   let can = Utils.todo
