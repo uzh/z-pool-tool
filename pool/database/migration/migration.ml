@@ -85,6 +85,7 @@ module Tenant = struct
       ; Migration_email.migration ()
       ; Migration_email_templates.migration_tenant ()
       ; Migration_settings.migration ()
+      ; Migration_email_templates.migration_signup ()
       ]
   ;;
 
