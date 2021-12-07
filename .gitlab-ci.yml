@@ -84,9 +84,9 @@ compile-and-test:
   stage: test
   image: ocaml/opam:debian-ocaml-4.12
   services:
-    - name: "mariadb:10.4"
+    - name: "mariadb:10.6"
       alias: database-root
-    - name: "mariadb:10.4"
+    - name: "mariadb:10.6"
       alias: database-tenant
   variables:
     SIHL_ENV: test
