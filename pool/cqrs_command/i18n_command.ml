@@ -26,7 +26,7 @@ end = struct
       make
         Field.
           [ I18n.Key.schema ()
-          ; Pool_common.Language.schema ()
+          ; Pool_common.Language.schema_i18n ()
           ; I18n.Content.schema ()
           ]
         command)

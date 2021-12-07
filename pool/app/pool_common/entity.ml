@@ -37,13 +37,15 @@ module Language = struct
 
   let label country_code = country_code |> code |> Utils.Countries.find
 
-  let schema () =
+  let base_schema field_name =
     Conformist.custom
       (Pool_common_utils.schema_decoder of_string PoolError.Language)
       (fun l -> [ code l ])
-      "default_language"
+      field_name
   ;;
 
+  let schema () = base_schema "default_language"
+  let schema_i18n () = base_schema "language"
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 end
