@@ -5,6 +5,15 @@ include:
   - project: econ/it/docker
     file: .gitlab/tasks.yml
 
+.assets:
+  stage: assets
+  image: node:14
+  artifacts:
+    paths: [public/]
+  script:
+    - yarn install
+    - yarn build
+
 .deploy:
   stage: deploy
   dependencies: []
@@ -68,6 +77,7 @@ variables:
 
 stages:
   - test
+  - assets
   - build
   - deploy
   - verify
@@ -128,6 +138,16 @@ compile-and-test:
 
     # run tests
     - opam config exec -- make test
+
+assets-staging:
+  extends:
+    - .assets
+    - .staging
+
+assets-production:
+  extends:
+    - .assets
+    - .production
 
 build:
   stage: build
