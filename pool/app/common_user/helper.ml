@@ -91,6 +91,29 @@ module Email = struct
     ;;
   end
 
+  module SignUp = struct
+    let create db_pool email firstname lastname =
+      let%lwt url = Pool_common.Repo.Url.of_pool db_pool in
+      let name =
+        Format.asprintf
+          "%s %s"
+          (Firstname.value firstname)
+          (Lastname.value lastname)
+      in
+      let subject = "Email verification" in
+      let validation_url =
+        Format.asprintf "/email-verified?token=%s" (Email.token email)
+        |> create_public_url url
+      in
+      prepare_email
+        db_pool
+        "signup_verification"
+        subject
+        (Email.address email)
+        [ "verificationUrl", validation_url; "name", name ]
+    ;;
+  end
+
   module ConfirmationEmail = struct
     let create pool email firstname lastname =
       let%lwt url = Pool_common.Repo.Url.of_pool pool in

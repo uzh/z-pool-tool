@@ -57,7 +57,11 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ()
   in
   let message = Message.create message lang () in
-  let scripts = script ~a:[ a_src "/assets/index.js"; a_defer () ] (txt "") in
+  let scripts =
+    script
+      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      (txt "")
+  in
   let content = main [ message; children ] in
   html
     (head

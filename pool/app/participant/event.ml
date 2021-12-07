@@ -72,8 +72,8 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt user =
       Service.User.create_user
         ~ctx
-        ~name:(participant.firstname |> User.Firstname.value)
-        ~given_name:(participant.lastname |> User.Lastname.value)
+        ~name:(participant.lastname |> User.Lastname.value)
+        ~given_name:(participant.firstname |> User.Firstname.value)
         ~password:(participant.password |> User.Password.to_sihl)
       @@ Email.Address.value participant.email
     in
