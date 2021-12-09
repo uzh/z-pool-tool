@@ -124,16 +124,11 @@ let is_req_from_root_host req =
   |> CCOption.value ~default:false
 ;;
 
-let changeset_of_request req =
-  Opium.Request.cookie "_changeset" req
-  |> CCOption.map Pool_common.ChangeSet.of_string
-  |> CCOption.value ~default:Pool_common.ChangeSet.empty
-;;
-
-let remove_csrf_from_urlencoded
+let remove_meta_from_urlencoded
     : (string * string list) list -> (string * string list) list
   =
-  CCList.filter (fun (key, _) -> not (CCString.equal key "_csrf"))
+  CCList.filter (fun (key, _) ->
+      not (CCList.mem ~eq:CCString.equal key [ "_csrf"; "changeset" ]))
 ;;
 
 let html_to_plain_text_response html =

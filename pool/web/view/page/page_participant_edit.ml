@@ -26,7 +26,7 @@ let detail participant message () =
   Page_layout.create html message ()
 ;;
 
-let edit csrf participant message () =
+let edit csrf participant message changeset () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
@@ -46,6 +46,7 @@ let edit csrf participant message () =
                  _type
                  name
                  value
+                 ~changeset
                  ~hx_post:action
                  ~hx_params:[ name ]
                  ~hx_target:

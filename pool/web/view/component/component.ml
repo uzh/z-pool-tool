@@ -21,6 +21,7 @@ let hx_input_element
     input_type
     name
     value
+    ?(changeset = [])
     ?hx_post
     ?hx_params
     ?hx_target
@@ -50,10 +51,16 @@ let hx_input_element
           |> CCOption.map (fun hx_params ->
                  a_user_data
                    "hx-params"
-                   (CCString.concat ", " (CCList.cons "_csrf" hx_params)))
+                   (CCString.concat ", " ("changeset" :: "_csrf" :: hx_params)))
         ; hx_post |> CCOption.map (a_user_data "hx-post")
         ; hx_target
           |> CCOption.map (fun hx_target -> a_user_data "hx-target" hx_target)
+        ; changeset
+          |> Pool_common.ChangeSet.to_string
+          |> CCString.escaped
+          |> Format.asprintf {|{"changeset": "%s"}|}
+          |> a_user_data "hx-vals"
+          |> CCOption.some
         ]
   in
   let error =
