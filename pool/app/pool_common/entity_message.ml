@@ -64,6 +64,7 @@ type error =
   | EmailMalformed
   | Invalid of field
   | LoginProvideDetails
+  | NoOptionSelected of field
   | NoTenantsRegistered
   | NotFound of field
   | ParticipantSignupInvalidEmail

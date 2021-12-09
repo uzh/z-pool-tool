@@ -84,6 +84,8 @@ let error_to_string = function
   | Invalid field ->
     field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | NoOptionSelected field ->
+    field_message "Bitte mindestens eine" (field_to_string field) "auswählen."
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotFound field ->

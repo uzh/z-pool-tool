@@ -83,6 +83,8 @@ let error_to_string = function
   | EmailMalformed -> "Malformed email"
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
+  | NoOptionSelected field ->
+    field_message "Please select at least one" (field_to_string field) "."
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | ParticipantSignupInvalidEmail ->

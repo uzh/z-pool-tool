@@ -53,9 +53,12 @@ let update_settings req =
         | `UpdateTenantLanguages ->
           fun m ->
             m
-            |> HttpUtils.format_request_boolean_values
-                 (Pool_common.Language.all_codes ())
-            |> UpdateLanguages.handle
+            |> CCList.filter_map (fun (k, _) ->
+                   match CCList.mem k (Pool_common.Language.all_codes ()) with
+                   | true -> Some (k |> Pool_common.Language.of_string)
+                   | false -> None)
+            |> CCResult.flatten_l
+            >>= UpdateLanguages.handle
             |> lift
         | `UpdateTenantEmailSuffixes ->
           fun m -> m |> UpdateEmailSuffixes.handle |> lift
