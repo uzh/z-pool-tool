@@ -63,14 +63,10 @@ module Url = struct
   ;;
 end
 
-module ChangeSet = struct
-  include Entity.ChangeSet
+module Version = struct
+  include Entity.Version
 
-  module Version = struct
-    include Version
-
-    let t = Caqti_type.int
-  end
+  let t = Caqti_type.int
 end
 
 module CreatedAt = struct

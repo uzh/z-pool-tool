@@ -1,6 +1,5 @@
 module User = Common_user
 module Id = Pool_common.Id
-module ChangeSet = Pool_common.ChangeSet
 open Entity
 
 type create =
@@ -83,9 +82,9 @@ let handle_event pool : event -> unit Lwt.t =
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
-    ; firstname_version = ChangeSet.Version.create ()
-    ; lastname_version = ChangeSet.Version.create ()
-    ; paused_version = ChangeSet.Version.create ()
+    ; firstname_version = Pool_common.Version.create ()
+    ; lastname_version = Pool_common.Version.create ()
+    ; paused_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -102,7 +101,7 @@ let handle_event pool : event -> unit Lwt.t =
       pool
       `Firstname
       ( id participant
-      , participant.firstname_version |> ChangeSet.Version.increment )
+      , Pool_common.Version.increment participant.firstname_version )
   | LastnameUpdated (participant, lastname) ->
     let%lwt _ =
       Service.User.update
@@ -114,7 +113,7 @@ let handle_event pool : event -> unit Lwt.t =
       pool
       `Lastname
       ( id participant
-      , participant.lastname_version |> ChangeSet.Version.increment )
+      , Pool_common.Version.increment participant.lastname_version )
   | PausedUpdated (participant, paused) ->
     let%lwt () =
       Repo.update_paused
@@ -122,7 +121,7 @@ let handle_event pool : event -> unit Lwt.t =
         { participant with
           paused
         ; paused_version =
-            ChangeSet.Version.increment participant.paused_version
+            Pool_common.Version.increment participant.paused_version
         }
     in
     Lwt.return_unit

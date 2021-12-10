@@ -17,7 +17,7 @@ end
 let t =
   let encode m =
     let open Common_user in
-    let open Pool_common.ChangeSet in
+    let open Pool_common in
     Ok
       ( m.user
       , ( m.recruitment_channel
@@ -50,10 +50,9 @@ let t =
       ; paused = Paused.create paused
       ; disabled = Disabled.create disabled
       ; verified = Verified.create verified
-      ; firstname_version =
-          Pool_common.ChangeSet.Version.of_int firstname_version
-      ; lastname_version = Pool_common.ChangeSet.Version.of_int lastname_version
-      ; paused_version = Pool_common.ChangeSet.Version.of_int paused_version
+      ; firstname_version = Pool_common.Version.of_int firstname_version
+      ; lastname_version = Pool_common.Version.of_int lastname_version
+      ; paused_version = Pool_common.Version.of_int paused_version
       ; created_at
       ; updated_at
       }
@@ -77,18 +76,18 @@ let t =
                      (tup2
                         Verified.t
                         (tup2
-                           Pool_common.Repo.ChangeSet.Version.t
+                           Pool_common.Repo.Version.t
                            (tup2
-                              Pool_common.Repo.ChangeSet.Version.t
+                              Pool_common.Repo.Version.t
                               (tup2
-                                 Pool_common.Repo.ChangeSet.Version.t
+                                 Pool_common.Repo.Version.t
                                  (tup2 CreatedAt.t UpdatedAt.t)))))))))))
 ;;
 
 let participant =
   let encode m =
     let open Common_user in
-    let open Pool_common.ChangeSet in
+    let open Pool_common in
     Ok
       ( m.user.Sihl_user.id
       , ( m.recruitment_channel
@@ -124,10 +123,10 @@ let participant =
                      (tup2
                         Verified.t
                         (tup2
-                           Pool_common.Repo.ChangeSet.Version.t
+                           Pool_common.Repo.Version.t
                            (tup2
-                              Pool_common.Repo.ChangeSet.Version.t
+                              Pool_common.Repo.Version.t
                               (tup2
-                                 Pool_common.Repo.ChangeSet.Version.t
+                                 Pool_common.Repo.Version.t
                                  (tup2 CreatedAt.t UpdatedAt.t)))))))))))
 ;;

@@ -140,7 +140,7 @@ let update_paused_request =
     WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
   |sql}
   |> Caqti_request.exec
-       Caqti_type.(tup3 Id.t Common_user.Repo.Paused.t ChangeSet.Version.t)
+       Caqti_type.(tup3 Id.t Common_user.Repo.Paused.t Version.t)
 ;;
 
 let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
@@ -149,7 +149,7 @@ let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
     update_paused_request
     ( participant |> Entity.id |> Id.value
     , paused |> Common_user.Paused.value
-    , paused_version |> Pool_common.ChangeSet.Version.value )
+    , paused_version |> Pool_common.Version.value )
 ;;
 
 let update_version_for_request field =
@@ -161,15 +161,14 @@ let update_version_for_request field =
   let update = {sql| UPDATE pool_participants SET |sql} in
   let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')); |sql} in
   Format.asprintf "%s\n%s = $2\n%s" update field where
-  |> Caqti_request.exec
-       Caqti_type.(Pool_common.Repo.(tup2 Id.t ChangeSet.Version.t))
+  |> Caqti_request.exec Caqti_type.(Pool_common.Repo.(tup2 Id.t Version.t))
 ;;
 
-let update_version_for pool field (id, changeset_version) =
+let update_version_for pool field (id, version) =
   Utils.Database.exec
     (Pool_common.Database.Label.value pool)
     (field |> update_version_for_request)
-    (id |> Id.value, changeset_version |> Pool_common.ChangeSet.Version.value)
+    (id |> Id.value, version |> Pool_common.Version.value)
 ;;
 
 let update_request =

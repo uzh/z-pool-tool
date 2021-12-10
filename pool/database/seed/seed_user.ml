@@ -155,9 +155,9 @@ let participants db_pool () =
           ; paused = Paused.create paused
           ; disabled = Disabled.create disabled
           ; verified = Verified.create verified
-          ; firstname_version = Pool_common.ChangeSet.Version.create ()
-          ; lastname_version = Pool_common.ChangeSet.Version.create ()
-          ; paused_version = Pool_common.ChangeSet.Version.create ()
+          ; firstname_version = Pool_common.Version.create ()
+          ; lastname_version = Pool_common.Version.create ()
+          ; paused_version = Pool_common.Version.create ()
           ; created_at = Ptime_clock.now ()
           ; updated_at = Ptime_clock.now ()
           }

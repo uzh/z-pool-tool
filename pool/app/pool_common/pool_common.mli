@@ -73,36 +73,16 @@ module Url : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-module ChangeSet : sig
-  module Version : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> int
-    val create : unit -> t
-    val of_int : int -> t
-    val increment : t -> t
-  end
-
-  type t = (string * Version.t) list
+module Version : sig
+  type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val value : t -> (string * Version.t) list
-  val create : (string * Version.t) list -> t
-  val to_string : t -> string
-  val of_string : string -> t
-  val empty : t
-  val find_version : t -> string -> int option
-
-  val check_for_update
-    :  t
-    -> t
-    -> (string * 'a) list
-    -> ((string * 'a) list, Message.error) result
+  val value : t -> int
+  val create : unit -> t
+  val of_int : int -> t
+  val increment : t -> t
 end
 
 module CreatedAt : sig
@@ -207,12 +187,10 @@ module Repo : sig
     val of_pool : Database.Label.t -> t Lwt.t
   end
 
-  module ChangeSet : sig
-    module Version : sig
-      type t = ChangeSet.Version.t
+  module Version : sig
+    type t = Version.t
 
-      val t : int Caqti_type.t
-    end
+    val t : int Caqti_type.t
   end
 
   module CreatedAt : sig

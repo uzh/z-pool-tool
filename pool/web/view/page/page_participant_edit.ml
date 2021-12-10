@@ -26,7 +26,7 @@ let detail participant message () =
   Page_layout.create html message ()
 ;;
 
-let edit csrf participant message changeset () =
+let edit csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
@@ -46,14 +46,11 @@ let edit csrf participant message changeset () =
                  _type
                  name
                  value
-                 ~changeset
+                 (Participant.version_selector participant name
+                 |> CCOption.get_exn_or
+                      (Format.asprintf "No version found for field '%s'" name))
                  ~hx_post:action
                  ~hx_params:[ name ]
-                 ~hx_target:
-                   (Format.asprintf
-                      "form[data-id='%s'] div[data-name='%s']"
-                      id
-                      name)
                  ())
              [ ( "firstname"
                , participant |> firstname |> Common_user.Firstname.value

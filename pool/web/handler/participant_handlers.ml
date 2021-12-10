@@ -193,8 +193,7 @@ let show is_edit req =
       |> Lwt.return_ok
     | true ->
       let csrf = HttpUtils.find_csrf req in
-      let changeset = participant |> Participant.create_changeset in
-      Page.Participant.edit csrf participant message changeset ()
+      Page.Participant.edit csrf participant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in
@@ -210,11 +209,17 @@ let update req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
   in
-  (* TODO [aerben] remove unsafe functions *)
-  let changeset_raw = List.hd @@ List.assoc "changeset" urlencoded in
+  let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
+  let version_raw = go "version" in
+  let name = go "field" in
+  let version =
+    version_raw
+    |> CCInt.of_string
+    |> CCOption.get_exn_or
+       @@ Format.asprintf "Version '%s' not a number" version_raw
+  in
   let%lwt result =
     let open Utils.Lwt_result.Syntax in
-    let changeset = Pool_common.ChangeSet.of_string changeset_raw in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
       |> Lwt_result.map_err (fun err -> err, "/")
@@ -227,39 +232,43 @@ let update req =
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
       |> Lwt_result.map_err (fun err -> err, "/login")
     in
+    let value = go name in
+    let get_version =
+      CCOption.get_exn_or
+        (Format.asprintf "No version found for field '%s'" name)
+    in
+    let current_version =
+      Participant.version_selector participant name |> get_version
+    in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Participant_command.UpdateDetails in
-      urlencoded
-      |> Pool_common.ChangeSet.check_for_update
-           changeset
-           (participant |> Participant.create_changeset)
-      >>= decode
-      >>= handle participant
-    in
-    let name, values =
-      (* TODO don't use hd here, dangerous *)
-      urlencoded |> HttpUtils.remove_meta_from_urlencoded |> CCList.hd
-    in
-    let hx_target =
-      Format.asprintf
-        "form[data-id='%s'] div[data-name='%s']"
-        (participant |> Participant.id |> Pool_common.Id.value)
-        name
+      if Pool_common.Version.value current_version <= version
+      then urlencoded |> decode >>= handle participant
+      else
+        let open Pool_common.Message in
+        let err_field =
+          match name with
+          | "firstname" -> Firstname
+          | "lastname" -> Lastname
+          | "paused" -> Paused
+          | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
+        in
+        Error (MeantimeUpdate err_field)
     in
     let hx_post = Sihl.Web.externalize_path "/user/update" in
-    let base_input changeset =
+    let base_input version =
       let type_of = function
         | "paused" -> `Checkbox
-        | _ -> `Text
+        | "firstname" | "lastname" -> `Text
+        | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
       in
       Component.hx_input_element
         (type_of name)
         name
-        (CCList.hd values)
-        ~changeset
+        value
+        version
         ~hx_post
-        ~hx_target
         ~hx_params:[ name ]
     in
     match events with
@@ -270,17 +279,16 @@ let update req =
         Participant.(participant |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
-      let update_form participant =
-        base_input
-          (Participant.create_changeset participant)
-          ~classnames:[ "success" ]
-          ()
-        |> HttpUtils.html_to_plain_text_response
-      in
-      participant |> update_form |> Lwt_result.return
+      base_input
+        (Participant.version_selector participant name |> get_version)
+        ~classnames:[ "success" ]
+        ()
+      |> HttpUtils.html_to_plain_text_response
+      |> Lwt_result.return
     | Error err ->
-      let input = base_input [] ~classnames:[ "error" ] ~error:err () in
-      input |> HttpUtils.html_to_plain_text_response |> Lwt.return_ok
+      base_input current_version ~classnames:[ "error" ] ~error:err ()
+      |> HttpUtils.html_to_plain_text_response
+      |> Lwt_result.return
   in
   result |> HttpUtils.extract_happy_path
 ;;

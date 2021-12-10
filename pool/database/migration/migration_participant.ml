@@ -18,9 +18,9 @@ let create_participant_table =
     |sql}
 ;;
 
-let add_changeset_version =
+let add_field_versioning =
   Sihl.Database.Migration.create_step
-    ~label:"add changeset version columns for participants"
+    ~label:"add field versioning for participants"
     {sql|
      ALTER TABLE pool_participants
      ADD COLUMN firstname_version bigint(20) NOT NULL DEFAULT 0 AFTER verified,
@@ -33,5 +33,5 @@ let migration () =
   Sihl.Database.Migration.(
     empty "participant"
     |> add_step create_participant_table
-    |> add_step add_changeset_version)
+    |> add_step add_field_versioning)
 ;;

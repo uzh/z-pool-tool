@@ -21,17 +21,14 @@ let hx_input_element
     input_type
     name
     value
-    ?(changeset = [])
+    (* TODO [aerben] Do we generally want HTMX input fields to be versioned? *)
+      version
     ?hx_post
     ?hx_params
-    ?hx_target
     ?(classnames = [])
     ?error
     ()
   =
-  (* TODO[timhub]: select closest parent
-
-     - https://htmx.org/attributes/hx-target/ - https://htmx.org/api/#closest *)
   let attributes =
     (match input_type with
     | `Checkbox ->
@@ -47,21 +44,25 @@ let hx_input_element
     @ (if not (CCList.is_empty classnames) then [ a_class classnames ] else [])
     @ CCList.filter_map
         CCFun.id
-        [ hx_params
-          |> CCOption.map (fun hx_params ->
-                 a_user_data
-                   "hx-params"
-                   (CCString.concat ", " ("changeset" :: "_csrf" :: hx_params)))
-        ; hx_post |> CCOption.map (a_user_data "hx-post")
-        ; hx_target
-          |> CCOption.map (fun hx_target -> a_user_data "hx-target" hx_target)
-        ; changeset
-          |> Pool_common.ChangeSet.to_string
-          |> CCString.escaped
-          |> Format.asprintf {|{"changeset": "%s"}|}
-          |> a_user_data "hx-vals"
-          |> CCOption.some
-        ]
+        CCOption.
+          [ (hx_params
+            >|= fun hx_params ->
+            a_user_data
+              "hx-params"
+              (CCString.concat ", "
+              (* DO NOT FORGET TO EXTEND THIS LIST IF YOU WISH TO TRANSMIT MORE
+                 META DATA *)
+              @@ [ "_csrf"; "version"; "field" ]
+              @ hx_params))
+          ; hx_post >|= a_user_data "hx-post"
+          ; Some (a_user_data "hx-target" "closest div")
+          ; Format.asprintf
+              {|{"version": "%i", "field": "%s"}|}
+              (version |> Pool_common.Version.value)
+              name
+            |> a_user_data "hx-vals"
+            |> CCOption.return
+          ]
   in
   let error =
     match error with

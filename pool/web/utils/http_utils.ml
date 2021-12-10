@@ -45,7 +45,8 @@ let extract_happy_path_with_actions result =
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =
   keys
-  |> CCList.map @@ fun key -> key, CCList.assoc_opt ~eq:( = ) key urlencoded
+  |> CCList.map
+     @@ fun key -> key, CCList.assoc_opt ~eq:CCString.equal key urlencoded
 ;;
 
 let urlencoded_to_params urlencoded keys =
@@ -122,13 +123,6 @@ let is_req_from_root_host req =
   |> Sihl.Web.Request.header "host"
   |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
   |> CCOption.value ~default:false
-;;
-
-let remove_meta_from_urlencoded
-    : (string * string list) list -> (string * string list) list
-  =
-  CCList.filter (fun (key, _) ->
-      not (CCList.mem ~eq:CCString.equal key [ "_csrf"; "changeset" ]))
 ;;
 
 let html_to_plain_text_response html =

@@ -42,9 +42,9 @@ type t =
   ; paused : Common.Paused.t
   ; disabled : Common.Disabled.t
   ; verified : Common.Verified.t
-  ; firstname_version : Pool_common.ChangeSet.Version.t
-  ; lastname_version : Pool_common.ChangeSet.Version.t
-  ; paused_version : Pool_common.ChangeSet.Version.t
+  ; firstname_version : Pool_common.Version.t
+  ; lastname_version : Pool_common.Version.t
+  ; paused_version : Pool_common.Version.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -75,12 +75,11 @@ let fullname m =
 
 let email_address m = m.user.Sihl_user.email |> Common.Email.Address.of_string
 
-let create_changeset m =
-  [ "firstname", m.firstname_version
-  ; "lastname", m.lastname_version
-  ; "paused", m.paused_version
-  ]
-  |> Pool_common.ChangeSet.create
+let version_selector p = function
+  | "firstname" -> Some p.firstname_version
+  | "lastname" -> Some p.lastname_version
+  | "paused" -> Some p.paused_version
+  | _ -> None
 ;;
 
 module Duplicate = struct

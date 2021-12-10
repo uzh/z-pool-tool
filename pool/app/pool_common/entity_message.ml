@@ -10,7 +10,6 @@ end
 
 type field =
   | Admin
-  | ChangeSetVersion
   | ContactEmail
   | DatabaseLabel
   | DatabaseUrl

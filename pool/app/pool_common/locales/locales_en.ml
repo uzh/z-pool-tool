@@ -2,7 +2,6 @@ open Entity_message
 
 let field_to_string = function
   | Admin -> "admin"
-  | ChangeSetVersion -> "changeset version"
   | ContactEmail -> "contact email address"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
