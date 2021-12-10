@@ -32,6 +32,7 @@ type field =
   | Page
   | Participant
   | Password
+  | Paused
   | RecruitmentChannel
   | Role
   | Root
@@ -64,6 +65,7 @@ type error =
   | EmailMalformed
   | Invalid of field
   | LoginProvideDetails
+  | MeantimeUpdate of field
   | NoOptionSelected of field
   | NoTenantsRegistered
   | NotFound of field
@@ -95,6 +97,7 @@ type success =
   | EmailVerified
   | EmailConfirmationMessage
   | FileDeleted
+  | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
   | SettingsUpdated

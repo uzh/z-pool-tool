@@ -61,7 +61,6 @@ let list csrf tenant_list root_list message () =
     ; "smtp_auth_password", "pw"
     ; "smtp_auth_authentication_method", "LOGIN"
     ; "smtp_auth_protocol", "SSL/TLS"
-    ; "partner_logo", "partner logos"
     ; "default_language", "DE"
     ]
   in
@@ -107,7 +106,10 @@ let list csrf tenant_list root_list message () =
       ; h1 [ txt "Root users" ]
       ; div root_list
       ; form
-          ~a:[ a_action (Format.asprintf "/root/root/create"); a_method `Post ]
+          ~a:
+            [ a_action (Sihl.Web.externalize_path "/root/root/create")
+            ; a_method `Post
+            ]
           (CCList.map
              (fun name -> input_element `Text (Some name) "")
              [ "email"; "password"; "firstname"; "lastname" ]
@@ -123,7 +125,7 @@ let detail csrf (tenant : Tenant.t) message () =
   let detail_fields =
     [ "title", Title.value tenant.title
     ; "description", Description.value tenant.description
-    ; "url", Url.value tenant.url
+    ; "url", Pool_common.Url.value tenant.url
     ; "smtp_auth_server", Server.value tenant.smtp_auth.server
     ; "smtp_auth_port", Port.value tenant.smtp_auth.port
     ; "smtp_auth_username", Username.value tenant.smtp_auth.username
@@ -195,10 +197,11 @@ let detail csrf (tenant : Tenant.t) message () =
              ; form
                  ~a:
                    [ a_action
-                       (Format.asprintf
-                          "/root/tenants/%s/assets/%s/delete"
-                          (tenant.id |> Id.value)
-                          (File.id file |> Id.value))
+                       (Sihl.Web.externalize_path
+                          (Format.asprintf
+                             "/root/tenants/%s/assets/%s/delete"
+                             (tenant.id |> Id.value)
+                             (File.id file |> Id.value)))
                    ; a_method `Post
                    ]
                  [ csrf_element csrf ()
@@ -249,9 +252,10 @@ let detail csrf (tenant : Tenant.t) message () =
       ; form
           ~a:
             [ a_action
-                (Format.asprintf
-                   "/root/tenants/%s/create-operator"
-                   (Id.value tenant.id))
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/root/tenants/%s/create-operator"
+                      (Id.value tenant.id)))
             ; a_method `Post
             ]
           ((csrf_element csrf ()

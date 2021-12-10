@@ -36,7 +36,7 @@ services:
     command: sleep infinity
 
   database-root:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     ports: [3316:3306]
     environment:
@@ -50,7 +50,7 @@ services:
       - ./init_root:/docker-entrypoint-initdb.d/:ro
 
   database-tenant:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     ports: [3317:3306]
     environment:

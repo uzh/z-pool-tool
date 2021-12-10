@@ -24,6 +24,7 @@ let field_to_string = function
   | Page -> "Seite"
   | Participant -> "Teilnehmer"
   | Password -> "Passwort"
+  | Paused -> "Pausiert"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | Role -> "Rolle"
   | Root -> "Root"
@@ -58,6 +59,7 @@ let success_to_string : success -> string = function
   | EmailConfirmationMessage ->
     "Eine Email wurde an deine Email Adresse zur verifizierung gesendet."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
+  | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
@@ -84,6 +86,11 @@ let error_to_string = function
   | Invalid field ->
     field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | MeantimeUpdate field ->
+    field_message
+      ""
+      (field_to_string field)
+      "wurde in der Zwischenzeit bearbeitet!"
   | NoOptionSelected field ->
     field_message "Bitte mindestens eine" (field_to_string field) "auswählen."
   | NoTenantsRegistered ->

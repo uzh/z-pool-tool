@@ -33,6 +33,12 @@ let set_password
   >|= ignore
 ;;
 
+let send_password_changed_email pool email firstname lastname =
+  let open Lwt.Infix in
+  User.Email.PasswordChange.create pool email firstname lastname
+  >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+;;
+
 let has_terms_accepted pool (participant : t) =
   let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
@@ -45,13 +51,18 @@ let has_terms_accepted pool (participant : t) =
 
 type event =
   | Created of create
-  | DetailsUpdated of t * update
-  | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
+  | FirstnameUpdated of t * User.Firstname.t
+  | LastnameUpdated of t * User.Lastname.t
+  | PausedUpdated of t * User.Paused.t
+  | EmailUpdated of t * User.Email.Address.t
+  | PasswordUpdated of
+      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | EmailUnconfirmed of t
   | EmailConfirmed of t
-  | AcceptTerms of t
+  | TermsAccepted of t
   | Disabled of t
   | Verified of t
+[@@deriving variants]
 
 let handle_event pool : event -> unit Lwt.t =
   let ctx = Pool_common.Utils.pool_to_ctx pool in
@@ -60,8 +71,8 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt user =
       Service.User.create_user
         ~ctx
-        ~name:(participant.firstname |> User.Firstname.value)
-        ~given_name:(participant.lastname |> User.Lastname.value)
+        ~name:(participant.lastname |> User.Lastname.value)
+        ~given_name:(participant.firstname |> User.Firstname.value)
         ~password:(participant.password |> User.Password.to_sihl)
       @@ Email.Address.value participant.email
     in
@@ -71,28 +82,87 @@ let handle_event pool : event -> unit Lwt.t =
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
+    ; firstname_version = Pool_common.Version.create ()
+    ; lastname_version = Pool_common.Version.create ()
+    ; paused_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
-  | DetailsUpdated (participant, update) ->
+  | FirstnameUpdated (participant, firstname) ->
     let%lwt _ =
       Service.User.update
         ~ctx
-        ~given_name:(update.firstname |> User.Firstname.value)
-        ~name:(update.lastname |> User.Lastname.value)
+        ~given_name:(firstname |> User.Firstname.value)
         participant.user
     in
-    let%lwt () = Repo.update pool { participant with paused = update.paused } in
-    Lwt.return_unit
-  | PasswordUpdated (person, password, confirmed) ->
+    Repo.update_version_for
+      pool
+      `Firstname
+      ( id participant
+      , Pool_common.Version.increment participant.firstname_version )
+  | LastnameUpdated (participant, lastname) ->
     let%lwt _ =
-      set_password
+      Service.User.update
+        ~ctx
+        ~name:(lastname |> User.Lastname.value)
+        participant.user
+    in
+    Repo.update_version_for
+      pool
+      `Lastname
+      ( id participant
+      , Pool_common.Version.increment participant.lastname_version )
+  | PausedUpdated (participant, paused) ->
+    let%lwt () =
+      Repo.update_paused
         pool
-        person
-        (password |> User.Password.to_sihl)
-        (confirmed |> User.PasswordConfirmed.to_sihl)
+        { participant with
+          paused
+        ; paused_version =
+            Pool_common.Version.increment participant.paused_version
+        }
+    in
+    Lwt.return_unit
+  | EmailUpdated (participant, email) ->
+    let%lwt _ =
+      Service.User.update
+        ~ctx
+        ~email:(Common_user.Email.Address.value email)
+        participant.user
+    in
+    Lwt.return_unit
+  | PasswordUpdated (person, old_password, new_password, confirmed) ->
+    let old_password = old_password |> User.Password.to_sihl in
+    let new_password = new_password |> User.Password.to_sihl in
+    let new_password_confirmation =
+      confirmed |> User.PasswordConfirmed.to_sihl
+    in
+    let%lwt _ =
+      Service.User.update_password
+        ~ctx
+        ~old_password
+        ~new_password
+        ~new_password_confirmation
+        person.user
+    in
+    let%lwt email =
+      let open Lwt.Infix in
+      Common_user.Email.find_verified pool (email_address person)
+      >|= function
+      | Ok email -> email
+      | Error err ->
+        Logs.err (fun m ->
+            m "%s" Pool_common.(Utils.error_to_string Language.En err));
+        failwith ""
+    in
+    let%lwt () =
+      send_password_changed_email
+        pool
+        email
+        (firstname person)
+        (lastname person)
     in
     Lwt.return_unit
   | EmailUnconfirmed participant ->
@@ -109,7 +179,7 @@ let handle_event pool : event -> unit Lwt.t =
         Sihl_user.{ participant.user with confirmed = true }
     in
     Lwt.return_unit
-  | AcceptTerms participant ->
+  | TermsAccepted participant ->
     let%lwt () =
       Repo.update
         pool
@@ -125,11 +195,19 @@ let handle_event pool : event -> unit Lwt.t =
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   match one, two with
   | Created m, Created p -> equal_create m p
-  | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
-    equal p1 p2 && equal_update one two
-  | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
-    equal p1 p2 && User.Password.equal one two
-  | AcceptTerms p1, AcceptTerms p2 -> equal p1 p2
+  | FirstnameUpdated (p1, one), FirstnameUpdated (p2, two) ->
+    equal p1 p2 && User.Firstname.equal one two
+  | LastnameUpdated (p1, one), LastnameUpdated (p2, two) ->
+    equal p1 p2 && User.Lastname.equal one two
+  | PausedUpdated (p1, one), PausedUpdated (p2, two) ->
+    equal p1 p2 && User.Paused.equal one two
+  | EmailUpdated (p1, e1), EmailUpdated (p2, e2) ->
+    equal p1 p2 && Common_user.Email.Address.equal e1 e2
+  | PasswordUpdated (p1, old1, new1, _), PasswordUpdated (p2, old2, new2, _) ->
+    equal p1 p2
+    && User.Password.equal old1 old2
+    && User.Password.equal new1 new2
+  | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
   | _ -> false
@@ -139,15 +217,24 @@ let pp_event formatter (event : event) : unit =
   let person_pp = pp formatter in
   match event with
   | Created m -> pp_create formatter m
-  | DetailsUpdated (p, updated) ->
+  | FirstnameUpdated (p, m) ->
     person_pp p;
-    pp_update formatter updated
-  | PasswordUpdated (person, password, _) ->
+    User.Firstname.pp formatter m
+  | LastnameUpdated (p, m) ->
+    person_pp p;
+    User.Lastname.pp formatter m
+  | PausedUpdated (p, m) ->
+    person_pp p;
+    User.Paused.pp formatter m
+  | EmailUpdated (p, m) ->
+    person_pp p;
+    Common_user.Email.Address.pp formatter m
+  | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password
   | EmailUnconfirmed p
   | EmailConfirmed p
-  | AcceptTerms p
+  | TermsAccepted p
   | Disabled p
   | Verified p -> person_pp p
 ;;

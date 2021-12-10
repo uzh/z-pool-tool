@@ -45,7 +45,8 @@ let extract_happy_path_with_actions result =
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =
   keys
-  |> CCList.map @@ fun key -> key, CCList.assoc_opt ~eq:( = ) key urlencoded
+  |> CCList.map
+     @@ fun key -> key, CCList.assoc_opt ~eq:CCString.equal key urlencoded
 ;;
 
 let urlencoded_to_params urlencoded keys =
@@ -76,17 +77,42 @@ let validate_email_existance pool email =
   | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
 ;;
 
-let format_request_boolean_values values urlencoded =
+let handled_true_values = [ "on"; "checked"; "true" ]
+
+let handle_boolean_values update urlencoded values =
   let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
+  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
+;;
+
+let intersection_to_bool_string values =
+  values
+  |> CCList.inter ~eq:CCString.equal handled_true_values
+  |> CCList.is_empty
+  |> not
+  |> string_of_bool
+  |> CCList.pure
+;;
+
+let format_request_boolean_values values urlencoded =
   let update m k =
     StringMap.update
       k
       (function
         | None -> Some [ "false" ]
-        | Some _ -> Some [ "true" ])
+        | Some values -> values |> intersection_to_bool_string |> CCOption.some)
       m
   in
-  CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
+  handle_boolean_values update urlencoded values
+;;
+
+let format_htmx_request_boolean_values values urlencoded =
+  let update m k =
+    StringMap.update
+      k
+      (fun values -> values |> CCOption.map intersection_to_bool_string)
+      m
+  in
+  handle_boolean_values update urlencoded values
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
@@ -97,4 +123,13 @@ let is_req_from_root_host req =
   |> Sihl.Web.Request.header "host"
   |> CCOption.map2 CCString.equal_caseless Utils.Url.public_host
   |> CCOption.value ~default:false
+;;
+
+let html_to_plain_text_response html =
+  let headers =
+    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
+  in
+  html
+  |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
+  |> Sihl.Web.Response.of_plain_text ~headers
 ;;

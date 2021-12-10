@@ -12,7 +12,7 @@ module Password : sig
 
   val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : string -> ('a, t) Conformist.Field.t
 end
 
 module PasswordConfirmed : sig
@@ -23,6 +23,7 @@ module PasswordConfirmed : sig
   val show : t -> string
   val create : string -> t
   val to_sihl : t -> string
+  val schema : string -> ('a, t) Conformist.Field.t
 end
 
 module Firstname : sig
@@ -32,6 +33,7 @@ module Firstname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -43,6 +45,7 @@ module Lastname : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
   val value : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
 end
@@ -55,6 +58,7 @@ module Paused : sig
   val show : t -> string
   val value : t -> bool
   val create : bool -> t
+  val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module Disabled : sig
@@ -114,6 +118,7 @@ module Email : sig
 
     val value : t -> string
     val create : string -> (t, Pool_common.Message.error) result
+    val of_string : string -> t
     val schema : unit -> ('a, t) Conformist.Field.t
   end
 
@@ -170,6 +175,31 @@ module Email : sig
     :  Pool_common.Database.Label.t
     -> Address.t
     -> (verified t, Pool_common.Message.error) result Lwt.t
+
+  module PasswordReset : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> user:Sihl_user.t
+      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+  end
+
+  module PasswordChange : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> verified t
+      -> Firstname.t
+      -> Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
+
+  module ConfirmationEmail : sig
+    val create
+      :  Pool_common.Database.Label.t
+      -> unverified t
+      -> Firstname.t
+      -> Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
 end
 
 module Repo : sig

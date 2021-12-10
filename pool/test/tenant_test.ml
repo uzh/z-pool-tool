@@ -75,7 +75,7 @@ module Data = struct
     let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
-    let* url = url |> Url.create in
+    let* url = url |> Common.Url.create in
     let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
     let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
     let* smtp_auth_username = smtp_auth_username |> SmtpAuth.Username.create in
@@ -171,7 +171,7 @@ let[@warning "-4"] create_tenant () =
     let open CCResult in
     let* title = title |> Tenant.Title.create in
     let* description = description |> Tenant.Description.create in
-    let* url = url |> Tenant.Url.create in
+    let* url = url |> Common.Url.create in
     let* database =
       let open Common.Database in
       let* url = database_url |> Url.create in
@@ -255,7 +255,7 @@ let[@warning "-4"] update_tenant_details () =
       let open CCResult in
       let* title = title |> Title.create in
       let* description = description |> Description.create in
-      let* url = url |> Url.create in
+      let* url = url |> Common.Url.create in
       let* smtp_auth =
         let* server = smtp_auth_server |> SmtpAuth.Server.create in
         let* port = smtp_auth_port |> SmtpAuth.Port.create in

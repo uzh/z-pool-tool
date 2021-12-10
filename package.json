@@ -1,0 +1,13 @@
+{
+    "name": "pool",
+    "version": "0.0.1",
+    "scripts": {
+        "build": "export NODE_OPTIONS=--trace-warnings; parcel build resources/index.js --dist-dir public --public-url $PREFIX_PATH/assets/"
+    },
+    "devDependencies": {
+        "parcel": "^2.0.0"
+    },
+    "dependencies": {
+        "htmx.org": "^1.6.0"
+    }
+}

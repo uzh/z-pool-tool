@@ -12,6 +12,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	exit
 	}
 	trap sigint_handler SIGINT
+	yarn build --log-level warn
 	while true; do
 	dune build
 	if [ $$? -eq 0 ]

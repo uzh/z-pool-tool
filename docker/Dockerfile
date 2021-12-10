@@ -2,7 +2,7 @@ FROM debian:11
 WORKDIR /app
 
 COPY _build/default/pool/run/run.exe run.exe
-COPY pool/public public/
+COPY public pool/public public/
 
   # install dependencies
 RUN apt-get update \

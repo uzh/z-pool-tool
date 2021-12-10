@@ -45,23 +45,6 @@ module Description = struct
   ;;
 end
 
-module Url = struct
-  type t = string [@@deriving eq, show]
-
-  let value m = m
-
-  let create url =
-    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
-  ;;
-
-  let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create Message.Url)
-      CCList.pure
-      "url"
-  ;;
-end
-
 module Styles = struct
   type t = File.t [@@deriving eq, show]
 
@@ -197,7 +180,7 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
-  ; url : Url.t
+  ; url : Common.Url.t
   ; database_label : Common.Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
@@ -217,7 +200,7 @@ module Read = struct
     { id : Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Url.t
+    ; url : Common.Url.t
     ; database_label : Common.Database.Label.t
     ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
@@ -236,7 +219,7 @@ module Write = struct
     { id : Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Url.t
+    ; url : Common.Url.t
     ; database : Common.Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
@@ -278,13 +261,13 @@ end
 
 module Selection = struct
   type t =
-    { url : Url.t
+    { url : Common.Url.t
     ; database_label : Common.Database.Label.t
     }
   [@@deriving eq, show]
 
   let create url database_label = { url; database_label }
-  let url ({ url; _ } : t) = url
+  let url ({ url; _ } : t) = url |> Pool_common.Url.value
   let label ({ database_label; _ } : t) = database_label
 end
 

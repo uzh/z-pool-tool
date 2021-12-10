@@ -28,11 +28,11 @@ let schema_decoder create_fcn err l =
   let open CCResult in
   let open Locales_en in
   let create_fcn m = create_fcn m |> CCResult.map_err error_to_string in
-  l
-  |> CCList.head_opt
-  |> CCOption.to_result
-       (Entity_message.Undefined err
-       |> with_log_error ~level:Logs.Info
-       |> error_to_string)
-  >>= create_fcn
+  match l with
+  | x :: _ -> create_fcn x
+  | [] ->
+    Error
+      (Entity_message.Undefined err
+      |> with_log_error ~level:Logs.Info
+      |> error_to_string)
 ;;

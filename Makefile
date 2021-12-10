@@ -6,6 +6,7 @@ $(eval $(ARGS):;@:)
 
 .PHONY: all
 all:
+	yarn install
 	opam exec -- dune build --root . @install
 
 .PHONY: deps
@@ -19,14 +20,17 @@ lock: ## Generate a lock file
 
 .PHONY: build
 build:
+	yarn build --log-level warn
 	opam exec -- dune build --root .
 
 .PHONY: build-watch
 build-watch:
+	yarn build --log-level warn
 	opam exec -- dune build --root . --watch
 
 .PHONY: install
 install: all ## Install the packages on the system
+	yarn install
 	opam exec -- dune install --root .
 
 .PHONY: sihl
@@ -59,6 +63,7 @@ dev:: ## Run the Sihl app, watch files and restart on change
 	exit
 	}
 	trap sigint_handler SIGINT
+	yarn build --log-level warn
 	while true; do
 	dune build
 	if [ $$? -eq 0 ]

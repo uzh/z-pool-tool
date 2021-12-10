@@ -23,11 +23,11 @@ module Password = struct
     Format.fprintf formatter "%s" m
   ;;
 
-  let schema () =
+  let schema name =
     Conformist.custom
       Pool_common.(Utils.schema_decoder create Message.Password)
       CCList.pure
-      "password"
+      name
   ;;
 end
 
@@ -39,7 +39,17 @@ module PasswordConfirmed = struct
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
+    m |> show |> Format.fprintf formatter "%s"
+  ;;
+
+  let schema name =
+    Conformist.custom
+      Pool_common.(
+        Utils.schema_decoder
+          (fun m -> m |> create |> CCResult.pure)
+          Message.Password)
+      CCList.pure
+      name
   ;;
 end
 
@@ -52,6 +62,7 @@ module Firstname = struct
     else Ok m
   ;;
 
+  let of_string m = m
   let value m = m
 
   let schema () =
@@ -71,6 +82,7 @@ module Lastname = struct
     else Ok m
   ;;
 
+  let of_string m = m
   let value m = m
 
   let schema () =
@@ -86,6 +98,19 @@ module Paused = struct
 
   let create m = m
   let value m = m
+
+  let schema () =
+    Conformist.custom
+      (Pool_common.Utils.schema_decoder
+         (fun m ->
+           m
+           |> bool_of_string_opt
+           |> CCOption.get_or ~default:false
+           |> CCResult.pure)
+         Pool_common.Message.Paused)
+      (fun l -> l |> string_of_bool |> CCList.pure)
+      "paused"
+  ;;
 end
 
 module Disabled = struct

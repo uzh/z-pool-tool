@@ -15,6 +15,12 @@ module Email = struct
     Service.Token.deactivate ~ctx:(Pool_common.Utils.pool_to_ctx pool) token
   ;;
 
+  let send_signup_email pool email firstname lastname =
+    let open Lwt.Infix in
+    Helper.Email.SignUp.create pool email firstname lastname
+    >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+  ;;
+
   let send_confirmation_email pool email firstname lastname =
     let open Lwt.Infix in
     Helper.Email.ConfirmationEmail.create pool email firstname lastname
@@ -36,7 +42,7 @@ module Email = struct
       >|= Email.create address
       >>= fun email ->
       let%lwt () = Repo.Email.insert pool email in
-      send_confirmation_email pool email firstname lastname
+      send_signup_email pool email firstname lastname
     in
     let update_email old_email new_address firstname lastname =
       create_token pool new_address

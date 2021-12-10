@@ -44,15 +44,28 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ~a:[ a_name "viewport"; a_content "width=device-width, initial-scale=1" ]
       ()
   in
-  let stylesheet =
+  let custom_stylesheet =
+    link
+      ~rel:[ `Stylesheet ]
+      ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
+      ()
+  in
+  let global_stylesheet =
     link
       ~rel:[ `Stylesheet ]
       ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
       ()
   in
   let message = Message.create message lang () in
+  let scripts =
+    script
+      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      (txt "")
+  in
   let content = main [ message; children ] in
   html
-    (head page_title [ charset; viewport; stylesheet ])
-    (body [ header; content; footer ])
+    (head
+       page_title
+       [ charset; viewport; custom_stylesheet; global_stylesheet ])
+    (body [ header; content; footer; scripts ])
 ;;

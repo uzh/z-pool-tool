@@ -2,6 +2,7 @@ module Id = Pool_common.Id
 module Database = Pool_common.Database
 module User = Common_user
 module File = Pool_common.File
+module Url = Pool_common.Url
 
 let create_logo_mappings files tenant logo_type =
   let open Tenant in
@@ -16,7 +17,7 @@ module Create : sig
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
-    ; url : Tenant.Url.t
+    ; url : Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
@@ -43,7 +44,7 @@ end = struct
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
-    ; url : Tenant.Url.t
+    ; url : Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
@@ -102,7 +103,7 @@ end = struct
         Field.
           [ Tenant.Title.schema ()
           ; Tenant.Description.schema ()
-          ; Tenant.Url.schema ()
+          ; Url.schema ()
           ; Database.Url.schema ()
           ; Database.Label.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
@@ -169,7 +170,7 @@ module EditDetails : sig
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
-    ; url : Tenant.Url.t
+    ; url : Url.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -195,7 +196,7 @@ end = struct
   type t =
     { title : Tenant.Title.t
     ; description : Tenant.Description.t
-    ; url : Tenant.Url.t
+    ; url : Url.t
     ; smtp_auth_server : Tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant.SmtpAuth.Username.t
@@ -242,7 +243,7 @@ end = struct
         Field.
           [ Tenant.Title.schema ()
           ; Tenant.Description.schema ()
-          ; Tenant.Url.schema ()
+          ; Pool_common.Url.schema ()
           ; Tenant.SmtpAuth.Server.schema ()
           ; Tenant.SmtpAuth.Port.schema ()
           ; Tenant.SmtpAuth.Username.schema ()

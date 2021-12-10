@@ -109,6 +109,29 @@ module Database = struct
   let pp formatter m = Label.pp formatter m.label
 end
 
+module Url = struct
+  type t = string [@@deriving eq, show]
+
+  let value m = m
+
+  let create url =
+    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
+  ;;
+
+  let schema () =
+    Conformist.custom (schema_decoder create PoolError.Url) CCList.pure "url"
+  ;;
+end
+
+module Version = struct
+  type t = int [@@deriving eq, show, yojson]
+
+  let value m = m
+  let create () = 0
+  let of_int i = i
+  let increment m = m + 1
+end
+
 module CreatedAt = struct
   type t = Ptime.t [@@deriving eq, show]
 

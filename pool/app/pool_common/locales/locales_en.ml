@@ -24,6 +24,7 @@ let field_to_string = function
   | Page -> "page"
   | Participant -> "participant"
   | Password -> "password"
+  | Paused -> "paused"
   | RecruitmentChannel -> "recruitment channel"
   | Role -> "role"
   | Root -> "root"
@@ -59,6 +60,7 @@ let success_to_string : success -> string = function
     "Successfully created. An email has been sent to your email address for \
      verification."
   | FileDeleted -> "File was successfully deleted."
+  | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an \
@@ -83,6 +85,8 @@ let error_to_string = function
   | EmailMalformed -> "Malformed email"
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
+  | MeantimeUpdate field ->
+    field_message "" (field_to_string field) "was updated in the meantime!"
   | NoOptionSelected field ->
     field_message "Please select at least one" (field_to_string field) "."
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
