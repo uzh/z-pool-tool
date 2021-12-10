@@ -66,6 +66,7 @@ type error =
   | Invalid of field
   | LoginProvideDetails
   | MeantimeUpdate of field
+  | NoOptionSelected of field
   | NoTenantsRegistered
   | NotFound of field
   | ParticipantSignupInvalidEmail

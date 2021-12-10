@@ -91,6 +91,8 @@ let error_to_string = function
       ""
       (field_to_string field)
       "wurde in der Zwischenzeit bearbeitet!"
+  | NoOptionSelected field ->
+    field_message "Bitte mindestens eine" (field_to_string field) "auswählen."
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotFound field ->

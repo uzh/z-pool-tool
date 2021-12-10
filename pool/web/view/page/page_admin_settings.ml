@@ -1,5 +1,59 @@
 open Tyxml.Html
 
+let sortable =
+  {js|
+      function slist (target) {
+        target.classList.add("slist");
+        var items = target.children, current = null;
+        for (let i of items) {
+          i.draggable = true;
+          i.addEventListener("dragstart", function (e) {
+            current = this;
+            for (let it of items) {
+              if (it != current) { it.classList.add("hint"); }
+            }
+          });
+          i.addEventListener("dragenter", function (e) {
+            if (this != current) { this.classList.add("active"); }
+          });
+          i.addEventListener("dragleave", function () {
+            this.classList.remove("active");
+          });
+          i.addEventListener("dragend", function () {
+            for (let it of items) {
+              it.classList.remove("hint");
+              it.classList.remove("active");
+            }
+          });
+          i.addEventListener("dragover", function (e) {
+            e.preventDefault();
+          });
+          i.addEventListener("drop", function (e) {
+            e.preventDefault();
+            if (this != current) {
+              let currentpos = 0, droppedpos = 0;
+              for (let it=0; it<items.length; it++) {
+                if (current == items[it]) { currentpos = it; }
+                if (this == items[it]) { droppedpos = it; }
+              }
+              if (currentpos < droppedpos) {
+                this.parentNode.insertBefore(current, this.nextSibling);
+              } else {
+                this.parentNode.insertBefore(current, this);
+              }
+            }
+          });
+        }
+      }
+
+      window.addEventListener("DOMContentLoaded", function(){
+        document.querySelectorAll('[data-sortable]').forEach(elm => {
+          slist(elm);
+        });
+      });
+  |js}
+;;
+
 let show
     csrf
     tenant_languages
@@ -16,36 +70,42 @@ let show
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
   let languages_html =
-    let available_languages = Pool_common.Language.all () in
+    let all_languages =
+      [ tenant_languages |> CCList.map (fun k -> k, true)
+      ; Pool_common.Language.all ()
+        |> CCList.filter_map (fun k ->
+               match CCList.mem k tenant_languages with
+               | true -> None
+               | false -> Some (k, false))
+      ]
+      |> CCList.flatten
+    in
     let field_elements =
-      CCList.cons
-        (Component.csrf_element csrf ())
+      div
+        ~a:[ a_user_data "sortable" "" ]
         (CCList.map
-           (fun language ->
+           (fun (language, selected) ->
              let attrs =
                [ a_input_type `Checkbox
                ; a_name (Pool_common.Language.code language)
                ]
              in
              let checkbox =
-               match
-                 CCList.mem
-                   ~eq:Pool_common.Language.equal
-                   language
-                   tenant_languages
-               with
+               match selected with
                | false -> input ~a:attrs ()
                | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
              in
              div
+               ~a:[ a_user_data "sortable-item" "" ]
                [ label [ txt (Pool_common.Language.code language) ]; checkbox ])
-           available_languages)
+           all_languages)
     in
     div
       [ h2 [ txt "Languages" ]
       ; form
           ~a:[ a_action (action_path `UpdateTenantLanguages); a_method `Post ]
-          (field_elements @ [ Component.input_element `Submit None "Save" ])
+          ([ Component.csrf_element csrf (); field_elements ]
+          @ [ Component.input_element `Submit None "Save" ])
       ]
   in
   let email_suffixes_html =
@@ -159,6 +219,7 @@ let show
       ; contact_email_html
       ; inactive_user_html
       ; terms_and_conditions_html
+      ; script (Unsafe.data sortable)
       ]
   in
   Page_layout.create html message ()
