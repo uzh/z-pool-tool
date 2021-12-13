@@ -331,7 +331,7 @@ let create_operator () =
     in
     let expected =
       let open CCResult in
-      let* email = email |> Common_user.Email.Address.create in
+      let* email = email |> Common_user.EmailAddress.create in
       let* password = password |> Common_user.Password.create in
       let* firstname = firstname |> Common_user.Firstname.create in
       let* lastname = lastname |> Common_user.Lastname.create in

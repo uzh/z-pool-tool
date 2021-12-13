@@ -71,7 +71,7 @@ let find_by_email pool email =
   Utils.Database.find_opt
     (Pool_common.Database.Label.value pool)
     find_by_email_request
-    (Common_user.Email.Address.value email)
+    (Common_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
@@ -90,7 +90,7 @@ let find_confirmed pool email =
   Utils.Database.find_opt
     (Pool_common.Database.Label.value pool)
     find_confirmed_request
-    (Common_user.Email.Address.value email)
+    (Common_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 

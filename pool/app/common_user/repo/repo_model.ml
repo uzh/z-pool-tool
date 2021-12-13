@@ -25,22 +25,10 @@ module Verified = struct
 end
 
 module Email = struct
-  module Token = struct
-    include Email.Token
-
-    let t = Caqti_type.(string)
-  end
-
   module Address = struct
-    include Email.Address
+    include EmailAddress
 
     let t = Caqti_type.(string)
-  end
-
-  module VerifiedAt = struct
-    include Email.VerifiedAt
-
-    let t = Caqti_type.(ptime)
   end
 end
 

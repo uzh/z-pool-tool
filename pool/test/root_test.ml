@@ -22,7 +22,7 @@ let create_root () =
   let expected =
     let open Common_user in
     let open CCResult in
-    let* email = email |> Email.Address.create in
+    let* email = email |> EmailAddress.create in
     let* password = password |> Password.create in
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in

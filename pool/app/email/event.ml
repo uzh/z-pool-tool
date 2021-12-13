@@ -6,14 +6,12 @@ let create_token pool address =
   let open Lwt.Infix in
   Service.Token.create
     ~ctx:(Pool_common.Utils.pool_to_ctx pool)
-    [ "email", Common.Email.Address.value address ]
-  >|= Common.Email.Token.create
+    [ "email", User.EmailAddress.value address ]
+  >|= Token.create
 ;;
 
 let deactivate_token pool token =
-  Service.Token.deactivate
-    ~ctx:(Pool_common.Utils.pool_to_ctx pool)
-    (User.Email.Token.value token)
+  Service.Token.deactivate ~ctx:(Pool_common.Utils.pool_to_ctx pool) token
 ;;
 
 let send_signup_email pool email firstname lastname =
@@ -29,13 +27,11 @@ let send_confirmation_email pool email firstname lastname =
 ;;
 
 type event =
-  | Created of Common.Email.Address.t * Common.Firstname.t * Common.Lastname.t
+  | Created of User.EmailAddress.t * User.Firstname.t * User.Lastname.t
   | UpdatedUnverified of
-      unverified t
-      * (Common.Email.Address.t * Common.Firstname.t * Common.Lastname.t)
+      unverified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
   | UpdatedVerified of
-      verified t
-      * (Common.Email.Address.t * Common.Firstname.t * Common.Lastname.t)
+      verified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
   | Verified of unverified t
 
 let handle_event pool : event -> unit Lwt.t =
@@ -72,43 +68,42 @@ let handle_event pool : event -> unit Lwt.t =
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
-  let open User.Email in
   match one, two with
   | Created (a1, f1, l1), Created (a2, f2, l2) ->
-    Address.equal a1 a2
-    && Common.Firstname.equal f1 f2
-    && Common.Lastname.equal l1 l2
+    User.EmailAddress.equal a1 a2
+    && User.Firstname.equal f1 f2
+    && User.Lastname.equal l1 l2
   | UpdatedUnverified (m1, (a1, f1, l1)), UpdatedUnverified (m2, (a2, f2, l2))
     ->
     equal m1 m2
-    && Address.equal a1 a2
-    && Common.Firstname.equal f1 f2
-    && Common.Lastname.equal l1 l2
+    && User.EmailAddress.equal a1 a2
+    && User.Firstname.equal f1 f2
+    && User.Lastname.equal l1 l2
   | UpdatedVerified (m1, (a1, f1, l1)), UpdatedVerified (m2, (a2, f2, l2)) ->
     equal m1 m2
-    && Address.equal a1 a2
-    && Common.Firstname.equal f1 f2
-    && Common.Lastname.equal l1 l2
+    && User.EmailAddress.equal a1 a2
+    && User.Firstname.equal f1 f2
+    && User.Lastname.equal l1 l2
   | Verified m, Verified p -> equal m p
   | _ -> false
 ;;
 
 let pp_event formatter (event : event) : unit =
-  let pp_address = User.Email.Address.pp formatter in
+  let pp_address = User.EmailAddress.pp formatter in
   match event with
   | Created (m, f, l) ->
     pp_address m;
-    Common.Firstname.pp formatter f;
-    Common.Lastname.pp formatter l
+    User.Firstname.pp formatter f;
+    User.Lastname.pp formatter l
   | UpdatedUnverified (m, (a, f, l)) ->
     pp formatter m;
     pp_address a;
-    Common.Firstname.pp formatter f;
-    Common.Lastname.pp formatter l
+    User.Firstname.pp formatter f;
+    User.Lastname.pp formatter l
   | UpdatedVerified (m, (a, f, l)) ->
     pp formatter m;
     pp_address a;
-    Common.Firstname.pp formatter f;
-    Common.Lastname.pp formatter l
+    User.Firstname.pp formatter f;
+    User.Lastname.pp formatter l
   | Verified m -> pp formatter m
 ;;

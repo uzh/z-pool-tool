@@ -11,7 +11,7 @@ type creatable_admin =
 [@@deriving eq, show]
 
 type create =
-  { email : User.Email.Address.t
+  { email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -85,7 +85,7 @@ let handle_event pool : event -> unit Lwt.t = function
         ~name:(admin.lastname |> User.Lastname.value)
         ~given_name:(admin.firstname |> User.Firstname.value)
         ~password:(admin.password |> User.Password.to_sihl)
-        (User.Email.Address.value admin.email)
+        (User.EmailAddress.value admin.email)
     in
     let person =
       { user

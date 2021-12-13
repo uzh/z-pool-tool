@@ -1,17 +1,32 @@
 module PoolError = Pool_common.Message
-module Common = Common_user
+module User = Common_user
+
+module Token = struct
+  type t = string [@@deriving eq, show]
+
+  let create m = m
+  let value m = m
+end
+
+module VerifiedAt = struct
+  type t = Ptime.t [@@deriving eq, show]
+
+  let value m = m
+  let create m = m
+  let create_now = Ptime_clock.now
+end
 
 type email_unverified =
-  { address : Common.Email.Address.t
-  ; token : Common.Email.Token.t
+  { address : User.EmailAddress.t
+  ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
 type email_verified =
-  { address : Common.Email.Address.t
-  ; verified_at : Common.Email.VerifiedAt.t
+  { address : User.EmailAddress.t
+  ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -48,14 +63,14 @@ let pp : type state. Format.formatter -> state t -> unit =
 
 let show : type state. state t -> string = function
   | Unverified { address; _ } | Verified { address; _ } ->
-    Common.Email.Address.show address
+    User.EmailAddress.show address
 ;;
 
-let address : type state. state t -> Common.Email.Address.t = function
+let address : type state. state t -> User.EmailAddress.t = function
   | Unverified { address; _ } | Verified { address; _ } -> address
 ;;
 
-let token (Unverified email) = Common.Email.Token.value email.token
+let token (Unverified email) = Token.value email.token
 
 let create address token =
   Unverified
@@ -69,7 +84,7 @@ let create address token =
 let verify (Unverified email) =
   Verified
     { address = email.address
-    ; verified_at = Common.Email.VerifiedAt.create_now ()
+    ; verified_at = VerifiedAt.create_now ()
     ; created_at = email.created_at
     ; updated_at = Ptime_clock.now ()
     }
@@ -152,15 +167,15 @@ module PasswordChange = struct
     let name =
       Format.asprintf
         "%s %s"
-        (Common.Firstname.value firstname)
-        (Common.Lastname.value lastname)
+        (User.Firstname.value firstname)
+        (User.Lastname.value lastname)
     in
     let subject = "Password has been changed" in
     prepare_email
       db_pool
       "password_change"
       subject
-      (address email |> Common_user.Email.Address.value)
+      (address email |> Common_user.EmailAddress.value)
       [ "name", name ]
   ;;
 end
@@ -171,8 +186,8 @@ module SignUp = struct
     let name =
       Format.asprintf
         "%s %s"
-        (Common.Firstname.value firstname)
-        (Common.Lastname.value lastname)
+        (User.Firstname.value firstname)
+        (User.Lastname.value lastname)
     in
     let subject = "Email verification" in
     let validation_url =
@@ -183,7 +198,7 @@ module SignUp = struct
       db_pool
       "signup_verification"
       subject
-      (address email |> Common_user.Email.Address.value)
+      (address email |> Common_user.EmailAddress.value)
       [ "verificationUrl", validation_url; "name", name ]
   ;;
 end
@@ -194,8 +209,8 @@ module ConfirmationEmail = struct
     let name =
       Format.asprintf
         "%s %s"
-        (Common.Firstname.value firstname)
-        (Common.Lastname.value lastname)
+        (User.Firstname.value firstname)
+        (User.Lastname.value lastname)
     in
     let subject = "Email verification" in
     let validation_url =
@@ -207,7 +222,7 @@ module ConfirmationEmail = struct
       pool
       "email_verification"
       subject
-      (address email |> Common_user.Email.Address.value)
+      (address email |> Common_user.EmailAddress.value)
       [ "verificationUrl", validation_url; "name", name ]
   ;;
 end

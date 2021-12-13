@@ -72,7 +72,7 @@ let fullname m =
     (m |> lastname |> Common.Lastname.value)
 ;;
 
-let email_address m = m.user.Sihl_user.email |> Common.Email.Address.of_string
+let email_address m = m.user.Sihl_user.email |> Common.EmailAddress.of_string
 
 let version_selector p = function
   | "firstname" -> Some p.firstname_version

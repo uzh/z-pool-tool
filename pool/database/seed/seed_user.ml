@@ -125,7 +125,7 @@ let[@warning "-41"] participants db_pool () =
         in
         let%lwt () =
           let address =
-            User.Email.Address.create email |> get_or_failwith_pool_error
+            User.EmailAddress.create email |> get_or_failwith_pool_error
           in
           let firstname =
             User.Firstname.create given_name |> get_or_failwith_pool_error

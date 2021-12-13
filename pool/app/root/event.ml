@@ -3,7 +3,7 @@ module User = Common_user
 module Common = Pool_common
 
 type create =
-  { email : User.Email.Address.t
+  { email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -25,7 +25,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(root.lastname |> User.Lastname.value)
         ~given_name:(root.firstname |> User.Firstname.value)
         ~password:(root.password |> User.Password.to_sihl)
-        (User.Email.Address.value root.email)
+        (User.EmailAddress.value root.email)
     in
     Permission.assign user Role.root
   | Disabled root ->

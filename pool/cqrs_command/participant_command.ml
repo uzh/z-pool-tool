@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 
 module SignUp : sig
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -21,7 +21,7 @@ module SignUp : sig
     -> (t, Pool_common.Message.error) result
 end = struct
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -36,7 +36,7 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Email.Address.schema ()
+          [ User.EmailAddress.schema ()
           ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
@@ -48,9 +48,7 @@ end = struct
   let handle ?allowed_email_suffixes ?password_policy command =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
-    let* () =
-      User.Email.Address.validate allowed_email_suffixes command.email
-    in
+    let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
     let participant =
       Participant.
         { email = command.email
@@ -232,7 +230,7 @@ end
 module UpdateEmail : sig
   type t =
     { current_email : Email.verified Email.t
-    ; new_email : User.Email.Address.t
+    ; new_email : User.EmailAddress.t
     }
 
   val handle
@@ -249,13 +247,13 @@ module UpdateEmail : sig
 end = struct
   type t =
     { current_email : Email.verified Email.t
-    ; new_email : User.Email.Address.t
+    ; new_email : User.EmailAddress.t
     }
 
   let handle ?allowed_email_suffixes participant command =
     let open CCResult in
     let* () =
-      User.Email.Address.validate allowed_email_suffixes command.new_email
+      User.EmailAddress.validate allowed_email_suffixes command.new_email
     in
     Ok
       [ Participant.EmailUpdated (participant, command.new_email)

@@ -44,7 +44,7 @@ let find pool carrier address =
   Utils.Database.find_opt
     (Pool_common.Database.Label.value pool)
     (find_request carrier)
-    (address |> User.Email.Address.value)
+    (address |> User.EmailAddress.value)
   >|= CCOption.to_result Pool_common.Message.(NotFound Email)
 ;;
 
@@ -100,13 +100,12 @@ let update : type a. Pool_common.Database.Label.t -> a t -> unit Lwt.t =
     Utils.Database.exec
       pool
       update_unverified_request
-      (address |> User.Email.Address.value, token |> User.Email.Token.value)
+      (address |> User.EmailAddress.value, token |> Token.value)
   | Verified { address; verified_at; _ } ->
     Utils.Database.exec
       pool
       update_verified_request
-      ( address |> User.Email.Address.value
-      , verified_at |> User.Email.VerifiedAt.value )
+      (address |> User.EmailAddress.value, verified_at |> VerifiedAt.value)
 ;;
 
 let update_email_request =
@@ -129,8 +128,8 @@ let update_email pool old_email new_email =
   Utils.Database.exec
     (Pool_common.Database.Label.value pool)
     update_email_request
-    ( address old_email |> Common_user.Email.Address.value
-    , (address new_email |> Common_user.Email.Address.value, token new_email) )
+    ( address old_email |> Common_user.EmailAddress.value
+    , (address new_email |> Common_user.EmailAddress.value, token new_email) )
 ;;
 
 let delete_request =
@@ -143,5 +142,5 @@ let delete_request =
 
 let delete pool email =
   Utils.Database.exec (Pool_common.Database.Label.value pool) delete_request
-  @@ (address email |> Common_user.Email.Address.value)
+  @@ (address email |> Common_user.EmailAddress.value)
 ;;

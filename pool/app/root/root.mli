@@ -1,5 +1,5 @@
 type create = Event.create =
-  { email : Common_user.Email.Address.t
+  { email : Common_user.EmailAddress.t
   ; password : Common_user.Password.t
   ; firstname : Common_user.Firstname.t
   ; lastname : Common_user.Lastname.t

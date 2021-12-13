@@ -10,7 +10,7 @@ val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
 val show_creatable_admin : creatable_admin -> string
 
 type create = Event.create =
-  { email : Common_user.Email.Address.t
+  { email : Common_user.EmailAddress.t
   ; password : Common_user.Password.t
   ; firstname : Common_user.Firstname.t
   ; lastname : Common_user.Lastname.t

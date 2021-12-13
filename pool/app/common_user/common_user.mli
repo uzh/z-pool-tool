@@ -93,45 +93,22 @@ module Verified : sig
   val value : t -> Ptime.t option
 end
 
-module Email : sig
-  module Token : sig
-    type t
+module EmailAddress : sig
+  type t
 
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : string -> t
-    val value : t -> string
-  end
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
 
-  module Address : sig
-    type t
+  val validate
+    :  Settings.EmailSuffix.t list option
+    -> t
+    -> (unit, Pool_common.Message.error) result
 
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-
-    val validate
-      :  Settings.EmailSuffix.t list option
-      -> t
-      -> (unit, Pool_common.Message.error) result
-
-    val value : t -> string
-    val create : string -> (t, Pool_common.Message.error) result
-    val of_string : string -> t
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  module VerifiedAt : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val value : t -> Ptime.t
-    val create : Ptime.t -> t
-    val create_now : unit -> t
-  end
+  val value : t -> string
+  val create : string -> (t, Pool_common.Message.error) result
+  val of_string : string -> t
+  val schema : unit -> ('a, t) Conformist.Field.t
 end
 
 module Repo : sig
