@@ -128,77 +128,9 @@ module Email : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-  end
-
-  type email_unverified =
-    { address : Address.t
-    ; token : Token.t
-    ; created_at : Pool_common.CreatedAt.t
-    ; updated_at : Pool_common.UpdatedAt.t
-    }
-
-  type email_verified =
-    { address : Address.t
-    ; verified_at : VerifiedAt.t
-    ; created_at : Pool_common.CreatedAt.t
-    ; updated_at : Pool_common.UpdatedAt.t
-    }
-
-  type unverified
-  type verified
-
-  val equal_email_unverified : email_unverified -> email_unverified -> bool
-  val equal_email_verified : email_verified -> email_verified -> bool
-  val pp_email_unverified : Format.formatter -> email_unverified -> unit
-  val pp_email_verified : Format.formatter -> email_verified -> unit
-  val show_email_unverified : email_unverified -> string
-  val show_email_verified : email_verified -> string
-
-  type _ t =
-    | Unverified : email_unverified -> unverified t
-    | Verified : email_verified -> verified t
-
-  val equal : 'email t -> 'email t -> bool
-  val pp : Format.formatter -> 'email t -> unit
-  val show : 'state t -> string
-  val token : unverified t -> string
-  val create : Address.t -> Token.t -> unverified t
-  val verify : unverified t -> verified t
-  val address : 'email t -> Address.t
-
-  val find_unverified
-    :  Pool_common.Database.Label.t
-    -> Address.t
-    -> (unverified t, Pool_common.Message.error) result Lwt.t
-
-  val find_verified
-    :  Pool_common.Database.Label.t
-    -> Address.t
-    -> (verified t, Pool_common.Message.error) result Lwt.t
-
-  module PasswordReset : sig
-    val create
-      :  Pool_common.Database.Label.t
-      -> user:Sihl_user.t
-      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-  end
-
-  module PasswordChange : sig
-    val create
-      :  Pool_common.Database.Label.t
-      -> verified t
-      -> Firstname.t
-      -> Lastname.t
-      -> Sihl_email.t Lwt.t
-  end
-
-  module ConfirmationEmail : sig
-    val create
-      :  Pool_common.Database.Label.t
-      -> unverified t
-      -> Firstname.t
-      -> Lastname.t
-      -> Sihl_email.t Lwt.t
+    val value : t -> Ptime.t
+    val create : Ptime.t -> t
+    val create_now : unit -> t
   end
 end
 
@@ -219,34 +151,5 @@ module Repo : sig
     val t : Ptime.t option Caqti_type.t
   end
 
-  module Email : sig
-    val unverified_t : Entity_email.unverified Entity_email.t Caqti_type.t
-    val verified_t : Entity_email.verified Entity_email.t Caqti_type.t
-  end
-
   val user_caqti : Sihl_user.t Caqti_type.t
-end
-
-module Event : sig
-  module Email : sig
-    type event =
-      | Created of Email.Address.t * Firstname.t * Lastname.t
-      | UpdatedUnverified of
-          Email.unverified Email.t
-          * (Email.Address.t * Firstname.t * Lastname.t)
-      | UpdatedVerified of
-          Email.verified Email.t * (Email.Address.t * Firstname.t * Lastname.t)
-      | Verified of Email.unverified Email.t
-
-    val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
-    val equal_event : event -> event -> bool
-    val pp_event : Format.formatter -> event -> unit
-
-    module PasswordReset : sig
-      val create
-        :  Pool_common.Database.Label.t
-        -> user:Sihl_user.t
-        -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-    end
-  end
 end

@@ -1,7 +1,7 @@
 module Command = Cqrs_command.Participant_command
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Email = Common_user.Email
+module User = Common_user
 
 let dashboard req =
   let message =
@@ -100,16 +100,16 @@ let email_verification req =
   (let open Lwt_result.Syntax in
   let* token =
     Sihl.Web.Request.query "token" req
-    |> CCOption.map Email.Token.create
+    |> CCOption.map User.Email.Token.create
     |> CCOption.to_result Pool_common.Message.(NotFound Token)
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
   let ctx = Pool_common.Utils.pool_to_ctx tenant_db in
   let* email =
-    Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
+    Service.Token.read ~ctx (User.Email.Token.value token) ~k:"email"
     ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat
-    >== Email.Address.create
+    >== User.Email.Address.create
     >>= Email.find_unverified tenant_db
   in
   let* participant =
@@ -312,9 +312,7 @@ let update_email req =
       if CCList.is_empty suffixes then None else Some suffixes
     in
     let* current_email =
-      Common_user.Email.find_verified
-        tenant_db
-        (Participant.email_address participant)
+      Email.find_verified tenant_db (Participant.email_address participant)
     in
     let* new_email =
       Common_user.Email.Address.create

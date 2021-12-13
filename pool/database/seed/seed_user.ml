@@ -1,3 +1,5 @@
+module User = Common_user
+
 let get_or_failwith_pool_error m =
   m
   |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
@@ -40,7 +42,8 @@ let admins db_pool () =
     data
 ;;
 
-let participants db_pool () =
+(* TODO [timhub]: Remove warning *)
+let[@warning "-41"] participants db_pool () =
   let users =
     [ ( "Hansruedi"
       , "Rüdisüli"
@@ -117,20 +120,21 @@ let participants db_pool () =
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->
-        let open Common_user in
         let%lwt user =
           Service.User.create_user ~ctx ~name ~given_name ~password email
         in
         let%lwt () =
           let address =
-            Email.Address.create email |> get_or_failwith_pool_error
+            User.Email.Address.create email |> get_or_failwith_pool_error
           in
           let firstname =
-            Firstname.create given_name |> get_or_failwith_pool_error
+            User.Firstname.create given_name |> get_or_failwith_pool_error
           in
-          let lastname = Lastname.create name |> get_or_failwith_pool_error in
+          let lastname =
+            User.Lastname.create name |> get_or_failwith_pool_error
+          in
           let%lwt () =
-            Event.Email.Created (address, firstname, lastname)
+            Email.Created (address, firstname, lastname)
             |> Pool_event.email_address
             |> Pool_event.handle_event db_pool
           in
@@ -143,7 +147,7 @@ let participants db_pool () =
               Email.find_unverified db_pool address
               |> Lwt.map get_or_failwith_pool_error
             in
-            Event.Email.Verified unverified
+            Email.Verified unverified
             |> Pool_event.email_address
             |> Pool_event.handle_event db_pool)
           else Lwt.return_unit
@@ -151,10 +155,10 @@ let participants db_pool () =
         Participant.
           { user
           ; recruitment_channel
-          ; terms_accepted_at = TermsAccepted.create terms_accepted_at
-          ; paused = Paused.create paused
-          ; disabled = Disabled.create disabled
-          ; verified = Verified.create verified
+          ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
+          ; paused = User.Paused.create paused
+          ; disabled = User.Disabled.create disabled
+          ; verified = User.Verified.create verified
           ; firstname_version = Pool_common.Version.create ()
           ; lastname_version = Pool_common.Version.create ()
           ; paused_version = Pool_common.Version.create ()

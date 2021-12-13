@@ -1,5 +1,4 @@
 module Common = Common_user
-module Email = Common.Email
 
 module RecruitmentChannel = struct
   type t =

@@ -63,8 +63,7 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; User.Event.Email.Created
-          (command.email, command.firstname, command.lastname)
+      ; Email.Created (command.email, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
   ;;
@@ -232,7 +231,7 @@ end
 
 module UpdateEmail : sig
   type t =
-    { current_email : User.Email.verified User.Email.t
+    { current_email : Email.verified Email.t
     ; new_email : User.Email.Address.t
     }
 
@@ -249,7 +248,7 @@ module UpdateEmail : sig
     -> bool Lwt.t
 end = struct
   type t =
-    { current_email : User.Email.verified User.Email.t
+    { current_email : Email.verified Email.t
     ; new_email : User.Email.Address.t
     }
 
@@ -261,7 +260,7 @@ end = struct
     Ok
       [ Participant.EmailUpdated (participant, command.new_email)
         |> Pool_event.participant
-      ; User.Event.Email.UpdatedVerified
+      ; Email.UpdatedVerified
           ( command.current_email
           , ( command.new_email
             , Participant.firstname participant
@@ -299,21 +298,20 @@ end = struct
 end
 
 module ConfirmEmail : sig
-  type t = { email : User.Email.unverified User.Email.t }
+  type t = { email : Email.unverified Email.t }
 
   val handle
     :  t
     -> Participant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  module Email = User.Email
-
   type t = { email : Email.unverified Email.t }
 
-  let handle command participant =
+  (* TODO[timhub]: Remove Warning *)
+  let[@warning "-41"] handle command participant =
     Ok
       [ Participant.EmailConfirmed participant |> Pool_event.participant
-      ; User.Event.Email.Verified command.email |> Pool_event.email_address
+      ; Email.Verified command.email |> Pool_event.email_address
       ]
   ;;
 end

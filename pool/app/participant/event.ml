@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 open Entity
 
 type create =
-  { email : Email.Address.t
+  { email : User.Email.Address.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -35,7 +35,7 @@ let set_password
 
 let send_password_changed_email pool email firstname lastname =
   let open Lwt.Infix in
-  User.Email.PasswordChange.create pool email firstname lastname
+  Email.PasswordChange.create pool email firstname lastname
   >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
 ;;
 
@@ -74,7 +74,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(participant.lastname |> User.Lastname.value)
         ~given_name:(participant.firstname |> User.Firstname.value)
         ~password:(participant.password |> User.Password.to_sihl)
-      @@ Email.Address.value participant.email
+      @@ User.Email.Address.value participant.email
     in
     { user
     ; recruitment_channel = participant.recruitment_channel
@@ -149,7 +149,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let%lwt email =
       let open Lwt.Infix in
-      Common_user.Email.find_verified pool (email_address person)
+      Email.find_verified pool (email_address person)
       >|= function
       | Ok email -> email
       | Error err ->

@@ -6,6 +6,7 @@
   admin
   root
   common_user
+  email
   participant
   tenant
   experiment
