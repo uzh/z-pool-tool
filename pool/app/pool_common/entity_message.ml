@@ -48,6 +48,7 @@ type field =
   | TenantDisabledFlag
   | TenantLogos
   | TenantMaintenanceFlag
+  | TenantPool
   | TermsAndConditions
   | TimeSpan
   | Title

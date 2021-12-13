@@ -12,7 +12,7 @@ let index req =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
       let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-      let* tenant = Tenant.find_by_label tenant_db in
+      let* tenant = Tenant_pool.find_by_label tenant_db in
       Page.Public.index tenant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
@@ -27,18 +27,20 @@ let index_css req =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* styles = Tenant.find_styles tenant_db in
+    let* styles = Tenant_pool.find_styles tenant_db in
     let%lwt file =
       Service.Storage.find
         ~ctx:(Pool_common.Utils.pool_to_ctx Pool_common.Database.root)
-        (styles |> Tenant.Styles.id |> Pool_common.Id.value)
+        (styles |> Tenant_pool.Styles.id |> Pool_common.Id.value)
     in
     let%lwt content =
       Service.Storage.download_data_base64 file ||> Base64.decode_exn
     in
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
-         (styles |> Tenant.Styles.mime_type |> Pool_common.File.Mime.to_string)
+         (styles
+         |> Tenant_pool.Styles.mime_type
+         |> Pool_common.File.Mime.to_string)
     |> Lwt.return_ok
   in
   match result with
@@ -82,7 +84,7 @@ let error req =
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* _ = Tenant.find_by_label tenant_db in
+    let* _ = Tenant_pool.find_by_label tenant_db in
     Ok
       ( Common.Message.TerminatoryTenantErrorTitle
       , Common.Message.TerminatoryTenantError )

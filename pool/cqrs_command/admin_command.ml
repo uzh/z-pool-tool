@@ -12,7 +12,7 @@ module CreateOperator : sig
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
-    -> Tenant.Write.t
+    -> Tenant_pool.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -48,7 +48,7 @@ end = struct
   let handle
       ?allowed_email_suffixes
       ?password_policy
-      (_ : Tenant.Write.t)
+      (_ : Tenant_pool.Write.t)
       command
     =
     let open CCResult in

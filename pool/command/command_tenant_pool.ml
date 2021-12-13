@@ -1,6 +1,6 @@
-let create_tenant =
+let create_tenant_pool =
   Sihl.Command.make
-    ~name:"tenant.create"
+    ~name:"tenant_pool.create"
     ~help:
       "<title> <description> <url> <database_url> <smtp_auth_server> \
        <smtp_auth_port> <smtp_auth_username> <smtp_auth_authentication_method> \
@@ -57,7 +57,7 @@ let create_tenant =
             Lwt_result.lift
             @@
             let open CCResult.Infix in
-            Cqrs_command.Tenant_command.Create.decode
+            Cqrs_command.Tenant_pool_command.Create.decode
               [ "title", [ title ]
               ; "description", [ description ]
               ; "url", [ url ]
@@ -79,7 +79,7 @@ let create_tenant =
               ; "firstname", [ firstname ]
               ; "lastname", [ lastname ]
               ]
-            >>= Cqrs_command.Tenant_command.Create.handle
+            >>= Cqrs_command.Tenant_pool_command.Create.handle
           in
           let run_events =
             Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)

@@ -4,6 +4,7 @@ type t =
   | Admin of Admin.event
   | Root of Root.event
   | EmailAddress of Email.event
+  | TenantPool of Tenant_pool.event
   | Tenant of Tenant.event
   | Experiment of Experiment.event
   | Settings of Settings.event
@@ -12,6 +13,7 @@ type t =
 let participant events = Participant events
 let admin events = Admin events
 let root events = Root events
+let tenant_pool events = TenantPool events
 let tenant events = Tenant events
 let email_address events = EmailAddress events
 let settings events = Settings events
@@ -23,6 +25,7 @@ let handle_event pool event =
   | Admin event -> Admin.handle_event pool event
   | Root event -> Root.handle_event pool event
   | EmailAddress event -> Email.handle_event pool event
+  | TenantPool event -> Tenant_pool.handle_event pool event
   | Tenant event -> Tenant.handle_event pool event
   | Experiment event -> Experiment.handle_event pool event
   | Settings event -> Settings.handle_event pool event

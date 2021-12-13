@@ -41,7 +41,7 @@ let check_find_tenant_database _ () =
     |> Test_utils.get_or_failwith_pool_error
   in
   let expected = CCList.map (CCFun.uncurry create) Data.databases in
-  let%lwt tenants = Tenant.find_databases () in
+  let%lwt tenants = Tenant_pool.find_databases () in
   Alcotest.(check (list Testable.database) "databases found" expected tenants)
   |> Lwt.return
 ;;

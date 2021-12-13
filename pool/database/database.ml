@@ -73,7 +73,7 @@ module Tenant = struct
   end
 
   let setup () =
-    let%lwt tenants = Tenant.find_databases () in
+    let%lwt tenants = Tenant_pool.find_databases () in
     match tenants with
     | [] ->
       failwith

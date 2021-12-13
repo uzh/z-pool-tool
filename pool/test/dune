@@ -10,6 +10,7 @@
   http_utils
   participant
   pool_event
+  tenant_pool
   tenant
   utils)
  (preprocess

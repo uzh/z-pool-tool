@@ -15,7 +15,7 @@ let index tenant message () =
                  ~alt:""
                  ~a:[ a_style "width: 200px" ]
                  ())
-             (tenant.Tenant.logos |> Tenant.Logos.value))
+             (tenant.Tenant_pool.logos |> Tenant_pool.Logos.value))
       ]
   in
   Page_layout.create html message ()

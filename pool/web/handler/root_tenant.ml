@@ -9,7 +9,7 @@ let tenants req =
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
-  let%lwt tenant_list = Tenant.find_all () in
+  let%lwt tenant_list = Tenant_pool.find_all () in
   let%lwt root_list = Root.find_all () in
   Page.Root.Tenant.list csrf tenant_list root_list message ()
   |> Sihl.Web.Response.of_html
@@ -26,7 +26,7 @@ let create req =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
     let file_fields =
-      [ "styles"; "icon" ] @ Tenant.LogoMapping.LogoType.all ()
+      [ "styles"; "icon" ] @ Tenant_pool.LogoMapping.LogoType.all ()
     in
     let* files = File.upload_files file_fields req in
     let finalize = function
@@ -40,7 +40,7 @@ let create req =
     in
     let events =
       let open CCResult.Infix in
-      let open Cqrs_command.Tenant_command.Create in
+      let open Cqrs_command.Tenant_pool_command.Create in
       files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
       |> decode
@@ -73,7 +73,7 @@ let create_operator req =
     ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
     >>= HttpUtils.validate_email_existance tenant_db
   in
-  let find_tenant () = Tenant.find_full id in
+  let find_tenant () = Tenant_pool.find_full id in
   let events tenant =
     let open CCResult.Infix in
     let open Cqrs_command.Admin_command.CreateOperator in
@@ -109,7 +109,7 @@ let tenant_detail req =
     let csrf = HttpUtils.find_csrf req in
     let message = CCOption.bind (Flash.find_alert req) Message.of_string in
     let id = Router.param req "id" |> Common.Id.of_string in
-    let* tenant = Tenant.find id in
+    let* tenant = Tenant_pool.find id in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Response.of_html
     |> Lwt.return_ok

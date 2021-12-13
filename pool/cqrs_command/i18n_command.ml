@@ -17,10 +17,11 @@ end = struct
     let check_permission tenant =
       Permission.can
         (Admin.user admin)
-        ~any_of:[ Permission.Update (Permission.Tenant, Some tenant.Tenant.id) ]
+        ~any_of:
+          [ Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id) ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Tenant_pool.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
  ;;

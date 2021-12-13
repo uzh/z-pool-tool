@@ -40,6 +40,7 @@ let field_to_string = function
   | TenantDisabledFlag -> "disabled flag"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
+  | TenantPool -> "Tenant pool"
   | TermsAndConditions -> "terms and conditions"
   | TimeSpan -> "time span"
   | Title -> "title"

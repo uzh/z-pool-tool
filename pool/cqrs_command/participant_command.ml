@@ -137,11 +137,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Tenant_pool.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -217,11 +217,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Tenant_pool.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -275,11 +275,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (Participant.id participant))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Tenant_pool.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;

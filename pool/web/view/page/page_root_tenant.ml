@@ -7,11 +7,11 @@ let input_element = Component.input_element
 
 let list csrf tenant_list root_list message () =
   let build_tenant_rows tenant_list =
-    let open Tenant in
+    let open Tenant_pool in
     CCList.map
-      (fun (tenant : Tenant.t) ->
+      (fun (tenant : Tenant_pool.t) ->
         div
-          [ h2 [ txt (tenant.title |> Tenant.Title.value) ]
+          [ h2 [ txt (tenant.title |> Tenant_pool.Title.value) ]
           ; a
               ~a:
                 [ a_href
@@ -119,9 +119,9 @@ let list csrf tenant_list root_list message () =
   Page_layout.create html message ()
 ;;
 
-let detail csrf (tenant : Tenant.t) message () =
-  let open Tenant in
-  let open Tenant.SmtpAuth in
+let detail csrf (tenant : Tenant_pool.t) message () =
+  let open Tenant_pool in
+  let open Tenant_pool.SmtpAuth in
   let detail_fields =
     [ "title", Title.value tenant.title
     ; "description", Description.value tenant.description
@@ -146,13 +146,15 @@ let detail csrf (tenant : Tenant.t) message () =
       detail_fields
     @ [ div
           [ a
-              ~a:[ a_href (File.path (tenant.styles |> Tenant.Styles.value)) ]
+              ~a:
+                [ a_href (File.path (tenant.styles |> Tenant_pool.Styles.value))
+                ]
               [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles" ] ()
           ]
       ; div
           [ a
-              ~a:[ a_href (File.path (tenant.icon |> Tenant.Icon.value)) ]
+              ~a:[ a_href (File.path (tenant.icon |> Tenant_pool.Icon.value)) ]
               [ txt "icon" ]
           ; input ~a:[ a_input_type `File; a_name "icon" ] ()
           ]
@@ -177,7 +179,7 @@ let detail csrf (tenant : Tenant.t) message () =
   in
   let disabled =
     let attributes =
-      match tenant.disabled |> Tenant.Disabled.value with
+      match tenant.disabled |> Tenant_pool.Disabled.value with
       | true -> [ a_input_type `Checkbox; a_name "disabled"; a_checked () ]
       | false -> [ a_input_type `Checkbox; a_name "disabled" ]
     in
@@ -213,14 +215,14 @@ let detail csrf (tenant : Tenant.t) message () =
   let delete_file_forms =
     div
       [ h3 [ txt "Tenant Logos" ]
-      ; delete_img_form (tenant.logos |> Tenant.Logos.value)
+      ; delete_img_form (tenant.logos |> Tenant_pool.Logos.value)
       ; h3 [ txt "Partner Logos" ]
-      ; delete_img_form (tenant.partner_logo |> Tenant.PartnerLogos.value)
+      ; delete_img_form (tenant.partner_logo |> Tenant_pool.PartnerLogos.value)
       ]
   in
   let html =
     div
-      [ h1 [ txt (tenant.Tenant.title |> Tenant.Title.value) ]
+      [ h1 [ txt (tenant.Tenant_pool.title |> Tenant_pool.Title.value) ]
       ; form
           ~a:
             [ a_action

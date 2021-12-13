@@ -1,0 +1,7 @@
+(library
+ (name tenant_pool)
+ (libraries sihl sihl-user conformist pool_common utils)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
+
+(include_subdirs unqualified)
