@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let pool_to_ctx = Pool_common.Utils.pool_to_ctx
+let pool_to_ctx = Tenant_pool.pool_to_ctx
 
 let dashboard_path tenant_db user =
   let open Lwt.Infix in

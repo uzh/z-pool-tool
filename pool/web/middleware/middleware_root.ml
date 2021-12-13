@@ -16,7 +16,7 @@ let require_root ~login_path_f =
   let fail_action = () |> login_path_f |> Http_utils.redirect_to in
   let filter handler req =
     Service.User.Web.user_from_session
-      ~ctx:(Pool_common.Utils.pool_to_ctx Pool_common.Database.root)
+      ~ctx:(Tenant_pool.pool_to_ctx Pool_common.Database.root)
       req
     >|> function
     | Some user ->

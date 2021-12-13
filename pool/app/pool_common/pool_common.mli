@@ -219,7 +219,6 @@ module Utils : sig
     -> 'a list
     -> ('b, string) result
 
-  val pool_to_ctx : Database.Label.t -> (string * string) list
   val to_string : Language.t -> Message.t -> string
   val info_to_string : Language.t -> Message.info -> string
   val success_to_string : Language.t -> Message.success -> string

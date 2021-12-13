@@ -275,6 +275,7 @@ type event =
 val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val pool_to_ctx : Pool_common.Database.Label.t -> (string * string) list
 val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_full

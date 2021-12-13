@@ -106,7 +106,7 @@ let prepend_root_directory pool url =
 let prepare_email pool template_label subject email params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
-      ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+      ~ctx:(Tenant_pool.pool_to_ctx pool)
       template_label
   in
   match template, Sihl.Configuration.read_string "SMTP_SENDER" with
@@ -133,7 +133,7 @@ module PasswordReset = struct
     let%lwt url = Pool_common.Repo.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+        ~ctx:(Tenant_pool.pool_to_ctx pool)
         email
     in
     match reset_token with

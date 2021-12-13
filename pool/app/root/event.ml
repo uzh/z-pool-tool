@@ -16,7 +16,7 @@ type event =
   | Enabled of t
 
 let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_common.Utils.pool_to_ctx pool in
+  let ctx = Tenant_pool.pool_to_ctx pool in
   function
   | Created root ->
     let%lwt user =

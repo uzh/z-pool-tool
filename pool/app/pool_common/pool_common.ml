@@ -5,8 +5,6 @@ module Repo = Repo
 module Utils = struct
   include Pool_common_utils
 
-  let pool_to_ctx pool = [ "pool", Database.Label.value pool ]
-
   let to_string lang =
     match lang with
     | Language.De ->

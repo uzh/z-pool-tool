@@ -10,7 +10,7 @@ let require_admin ~login_path_f =
     | Error _ -> fail_action
     | Ok db_pool ->
       Service.User.Web.user_from_session
-        ~ctx:(Pool_common.Utils.pool_to_ctx db_pool)
+        ~ctx:(Tenant_pool.pool_to_ctx db_pool)
         req
       >|> (function
       | Some user ->

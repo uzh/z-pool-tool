@@ -41,7 +41,7 @@ let set_password
   | Recruiter { user; _ }
   | Operator { user; _ } ->
     Service.User.set_password
-      ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+      ~ctx:(Tenant_pool.pool_to_ctx pool)
       user
       ~password
       ~password_confirmation
@@ -81,7 +81,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created (role, admin) ->
     let%lwt user =
       Service.User.create_admin
-        ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+        ~ctx:(Tenant_pool.pool_to_ctx pool)
         ~name:(admin.lastname |> User.Lastname.value)
         ~given_name:(admin.firstname |> User.Firstname.value)
         ~password:(admin.password |> User.Password.to_sihl)

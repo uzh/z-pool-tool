@@ -29,7 +29,7 @@ let check_root_database _ () =
   let ctx =
     Database.Root.label
     |> Pool_common.Database.Label.of_string
-    |> Pool_common.Utils.pool_to_ctx
+    |> Tenant_pool.pool_to_ctx
   in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
@@ -49,7 +49,7 @@ let check_find_tenant_database _ () =
 let check_tenant_database _ () =
   let open Pool_common in
   let ctx =
-    Data.database_label |> Database.Label.of_string |> Utils.pool_to_ctx
+    Data.database_label |> Database.Label.of_string |> Tenant_pool.pool_to_ctx
   in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit
