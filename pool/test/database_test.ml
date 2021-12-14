@@ -1,5 +1,5 @@
 module Testable = struct
-  let database = Pool_common.Database.(Alcotest.testable pp equal)
+  let database = Database_pool.(Alcotest.testable pp equal)
 end
 
 module Data = struct
@@ -28,7 +28,7 @@ end
 let check_root_database _ () =
   let ctx =
     Database.Root.label
-    |> Pool_common.Database.Label.of_string
+    |> Database_pool.Label.of_string
     |> Tenant_pool.pool_to_ctx
   in
   let _ = Sihl.Database.fetch_pool ~ctx () in
@@ -37,8 +37,7 @@ let check_root_database _ () =
 
 let check_find_tenant_database _ () =
   let create url label =
-    Pool_common.Database.create url label
-    |> Test_utils.get_or_failwith_pool_error
+    Database_pool.create url label |> Test_utils.get_or_failwith_pool_error
   in
   let expected = CCList.map (CCFun.uncurry create) Data.databases in
   let%lwt tenants = Tenant_pool.find_databases () in
@@ -47,9 +46,10 @@ let check_find_tenant_database _ () =
 ;;
 
 let check_tenant_database _ () =
-  let open Pool_common in
   let ctx =
-    Data.database_label |> Database.Label.of_string |> Tenant_pool.pool_to_ctx
+    Data.database_label
+    |> Database_pool.Label.of_string
+    |> Tenant_pool.pool_to_ctx
   in
   let _ = Sihl.Database.fetch_pool ~ctx () in
   Lwt.return_unit

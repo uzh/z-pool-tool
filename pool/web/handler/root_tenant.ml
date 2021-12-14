@@ -3,6 +3,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Update = Root_tenant_update
+module Database = Database_pool
 
 let tenants req =
   let csrf = HttpUtils.find_csrf req in
@@ -32,7 +33,7 @@ let create req =
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
       | Error err ->
-        let ctx = Tenant_pool.pool_to_ctx Common.Database.root in
+        let ctx = Tenant_pool.pool_to_ctx Database.root in
         let%lwt () =
           Lwt_list.iter_s (fun (_, id) -> Service.Storage.delete ~ctx id) files
         in
@@ -49,7 +50,7 @@ let create req =
     in
     events >|> finalize
   in
-  let handle = Lwt_list.iter_s (Pool_event.handle_event Common.Database.root) in
+  let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"

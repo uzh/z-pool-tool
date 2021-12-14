@@ -82,7 +82,7 @@ let create_tenant_pool =
             >>= Cqrs_command.Tenant_pool_command.Create.handle
           in
           let run_events =
-            Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
+            Lwt_list.iter_s (Pool_event.handle_event Database_pool.root)
           in
           () |> run_command |>> run_events
         in

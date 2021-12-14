@@ -1,4 +1,5 @@
 module PoolError = Pool_common.Message
+module Database = Database_pool
 module User = Common_user
 
 module Token = struct
@@ -93,12 +94,11 @@ let verify (Unverified email) =
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
-  |> Format.asprintf "%s%s" (Pool_common.Url.value pool_url)
+  |> Format.asprintf "%s%s" (Tenant_pool.Url.value pool_url)
 ;;
 
 let prepend_root_directory pool url =
-  let open Pool_common.Database in
-  match Label.equal pool root with
+  match Database.Label.equal pool Database.root with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
@@ -130,7 +130,7 @@ let prepare_email pool template_label subject email params =
 module PasswordReset = struct
   let create pool ~user =
     let email = user.Sihl_user.email in
-    let%lwt url = Pool_common.Repo.Url.of_pool pool in
+    let%lwt url = Tenant_pool.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
         ~ctx:(Tenant_pool.pool_to_ctx pool)
@@ -182,7 +182,7 @@ end
 
 module SignUp = struct
   let create db_pool email firstname lastname =
-    let%lwt url = Pool_common.Repo.Url.of_pool db_pool in
+    let%lwt url = Tenant_pool.Url.of_pool db_pool in
     let name =
       Format.asprintf
         "%s %s"
@@ -205,7 +205,7 @@ end
 
 module ConfirmationEmail = struct
   let create pool email firstname lastname =
-    let%lwt url = Pool_common.Repo.Url.of_pool pool in
+    let%lwt url = Tenant_pool.Url.of_pool pool in
     let name =
       Format.asprintf
         "%s %s"

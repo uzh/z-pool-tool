@@ -30,49 +30,6 @@ module Language : sig
   val all_codes : unit -> string list
 end
 
-module Database : sig
-  module Url : sig
-    type t
-
-    val equal : t -> t -> bool
-    val create : string -> (t, Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  module Label : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val value : t -> string
-    val create : string -> (t, Message.error) result
-    val of_string : string -> t
-    val schema : unit -> ('a, t) Conformist.Field.t
-  end
-
-  type t =
-    { url : Url.t
-    ; label : Label.t
-    }
-
-  val root : Label.t
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val create : string -> string -> (t, Message.error) result
-  val add_pool : t -> unit
-  val read_pool : t -> Label.t
-end
-
-module Url : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val create : string -> (t, Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
-end
-
 module Version : sig
   type t
 
@@ -160,31 +117,6 @@ module Repo : sig
     type t = Id.t
 
     val t : string Caqti_type.t
-  end
-
-  module Database : sig
-    type t = Database.t
-
-    module Url : sig
-      type t = Database.Url.t
-
-      val t : t Caqti_type.t
-    end
-
-    module Label : sig
-      type t = Database.Label.t
-
-      val t : t Caqti_type.t
-    end
-
-    val t : t Caqti_type.t
-  end
-
-  module Url : sig
-    type t = Url.t
-
-    val t : string Caqti_type.t
-    val of_pool : Database.Label.t -> t Lwt.t
   end
 
   module Version : sig

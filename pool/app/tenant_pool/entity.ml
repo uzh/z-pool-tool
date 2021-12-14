@@ -1,4 +1,5 @@
 module Common = Pool_common
+module Database = Database_pool
 module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt
@@ -42,6 +43,23 @@ module Description = struct
       Common.(Utils.schema_decoder create Message.Description)
       CCList.pure
       "description"
+  ;;
+end
+
+module Url = struct
+  type t = string [@@deriving eq, show]
+
+  let value m = m
+
+  let create url =
+    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
+  ;;
+
+  let schema () =
+    Conformist.custom
+      Common.(Utils.schema_decoder create PoolError.Url)
+      CCList.pure
+      "url"
   ;;
 end
 
@@ -180,8 +198,8 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
-  ; url : Common.Url.t
-  ; database_label : Common.Database.Label.t
+  ; url : Url.t
+  ; database_label : Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -200,8 +218,8 @@ module Read = struct
     { id : Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Common.Url.t
-    ; database_label : Common.Database.Label.t
+    ; url : Url.t
+    ; database_label : Database.Label.t
     ; smtp_auth : SmtpAuth.t
     ; styles : Styles.t
     ; icon : Icon.t
@@ -219,8 +237,8 @@ module Write = struct
     { id : Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Common.Url.t
-    ; database : Common.Database.t
+    ; url : Url.t
+    ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
@@ -261,12 +279,12 @@ end
 
 module Selection = struct
   type t =
-    { url : Common.Url.t
-    ; database_label : Common.Database.Label.t
+    { url : Url.t
+    ; database_label : Database.Label.t
     }
   [@@deriving eq, show]
 
   let create url database_label = { url; database_label }
-  let url ({ url; _ } : t) = url |> Pool_common.Url.value
+  let url ({ url; _ } : t) = url |> Url.value
   let label ({ database_label; _ } : t) = database_label
 end

@@ -44,7 +44,7 @@ let tenant_data_clean =
         Lwt_list.iter_s
           (fun pool ->
             let%lwt () =
-              Utils.Database.clean_all (Pool_common.Database.Label.value pool)
+              Utils.Database.clean_all (Database_pool.Label.value pool)
             in
             Lwt.return_unit)
           db_pools

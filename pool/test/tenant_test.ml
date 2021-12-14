@@ -76,7 +76,7 @@ module Data = struct
     let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
-    let* url = url |> Common.Url.create in
+    let* url = url |> Tenant_pool.Url.create in
     let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
     let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
     let* smtp_auth_username = smtp_auth_username |> SmtpAuth.Username.create in
@@ -94,7 +94,7 @@ module Data = struct
         smtp_auth_authentication_method
         smtp_auth_protocol
     in
-    let* database = Common.Database.create database_url database_label in
+    let* database = Database_pool.create database_url database_label in
     Ok
       Write.
         { id = Common.Id.create ()
@@ -173,9 +173,9 @@ let[@warning "-4"] create_tenant () =
     let open CCResult in
     let* title = title |> Tenant_pool.Title.create in
     let* description = description |> Tenant_pool.Description.create in
-    let* url = url |> Common.Url.create in
+    let* url = url |> Tenant_pool.Url.create in
     let* database =
-      let open Common.Database in
+      let open Database_pool in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in
       Ok { url; label }
@@ -257,7 +257,7 @@ let[@warning "-4"] update_tenant_details () =
       let open CCResult in
       let* title = title |> Title.create in
       let* description = description |> Description.create in
-      let* url = url |> Common.Url.create in
+      let* url = url |> Tenant_pool.Url.create in
       let* smtp_auth =
         let* server = smtp_auth_server |> SmtpAuth.Server.create in
         let* port = smtp_auth_port |> SmtpAuth.Port.create in
@@ -309,7 +309,7 @@ let update_tenant_database () =
       >>= handle tenant
     in
     let expected =
-      let open Common.Database in
+      let open Database_pool in
       let open CCResult in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in

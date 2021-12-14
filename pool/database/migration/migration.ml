@@ -1,3 +1,4 @@
+module Database = Database_pool
 module Map = CCMap.Make (String)
 
 let execute db_pools steps =
@@ -35,7 +36,7 @@ let extend_migrations additional_steps () =
 ;;
 
 let run_pending_migrations db_pools migration_steps =
-  let open Pool_common.Database.Label in
+  let open Database.Label in
   let%lwt status =
     Lwt_list.map_s
       (fun label ->
@@ -70,10 +71,10 @@ module Root = struct
       ]
   ;;
 
-  let run () = execute [ Pool_common.Database.root ] @@ steps ()
+  let run () = execute [ Database.root ] @@ steps ()
 
   let run_pending_migrations () =
-    run_pending_migrations [ Pool_common.Database.root ] @@ steps ()
+    run_pending_migrations [ Database.root ] @@ steps ()
   ;;
 end
 

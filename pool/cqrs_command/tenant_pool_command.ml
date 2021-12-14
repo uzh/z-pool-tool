@@ -1,8 +1,7 @@
 module Id = Pool_common.Id
-module Database = Pool_common.Database
+module Database = Database_pool
 module User = Common_user
 module File = Pool_common.File
-module Url = Pool_common.Url
 
 let create_logo_mappings files tenant logo_type =
   let open Tenant_pool in
@@ -17,7 +16,7 @@ module Create : sig
   type t =
     { title : Tenant_pool.Title.t
     ; description : Tenant_pool.Description.t
-    ; url : Url.t
+    ; url : Tenant_pool.Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
@@ -45,7 +44,7 @@ end = struct
   type t =
     { title : Tenant_pool.Title.t
     ; description : Tenant_pool.Description.t
-    ; url : Url.t
+    ; url : Tenant_pool.Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
     ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
@@ -105,7 +104,7 @@ end = struct
         Field.
           [ Tenant_pool.Title.schema ()
           ; Tenant_pool.Description.schema ()
-          ; Url.schema ()
+          ; Tenant_pool.Url.schema ()
           ; Database.Url.schema ()
           ; Database.Label.schema ()
           ; Tenant_pool.SmtpAuth.Server.schema ()
@@ -172,7 +171,7 @@ module EditDetails : sig
   type t =
     { title : Tenant_pool.Title.t
     ; description : Tenant_pool.Description.t
-    ; url : Url.t
+    ; url : Tenant_pool.Url.t
     ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
@@ -199,7 +198,7 @@ end = struct
   type t =
     { title : Tenant_pool.Title.t
     ; description : Tenant_pool.Description.t
-    ; url : Url.t
+    ; url : Tenant_pool.Url.t
     ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
     ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
     ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
@@ -247,7 +246,7 @@ end = struct
         Field.
           [ Tenant_pool.Title.schema ()
           ; Tenant_pool.Description.schema ()
-          ; Pool_common.Url.schema ()
+          ; Tenant_pool.Url.schema ()
           ; Tenant_pool.SmtpAuth.Server.schema ()
           ; Tenant_pool.SmtpAuth.Port.schema ()
           ; Tenant_pool.SmtpAuth.Username.schema ()

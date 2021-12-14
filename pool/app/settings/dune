@@ -5,6 +5,7 @@
   conformist
   permission
   utils
+  database_pool
   pool_common
   ppx_deriving_yojson.runtime)
  (preprocess

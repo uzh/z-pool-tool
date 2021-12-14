@@ -1,4 +1,5 @@
 module File = Pool_common.File
+module Database = Database_pool
 
 module SmtpAuth : sig
   module Server : sig
@@ -104,6 +105,17 @@ module Description : sig
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
+module Url : sig
+  type t
+
+  val value : t -> string
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val create : string -> (t, Pool_common.Message.error) result
+  val schema : unit -> ('a, t) Conformist.Field.t
+  val of_pool : Database.Label.t -> t Lwt.t
+end
+
 module Styles : sig
   type t
 
@@ -198,8 +210,8 @@ type t =
   { id : Pool_common.Id.t
   ; title : Title.t
   ; description : Description.t
-  ; url : Pool_common.Url.t
-  ; database_label : Pool_common.Database.Label.t
+  ; url : Url.t
+  ; database_label : Database.Label.t
   ; smtp_auth : SmtpAuth.t
   ; styles : Styles.t
   ; icon : Icon.t
@@ -217,8 +229,8 @@ module Write : sig
     { id : Pool_common.Id.t
     ; title : Title.t
     ; description : Description.t
-    ; url : Pool_common.Url.t
-    ; database : Pool_common.Database.t
+    ; url : Url.t
+    ; database : Database.t
     ; smtp_auth : SmtpAuth.Write.t
     ; styles : Styles.Write.t
     ; icon : Icon.Write.t
@@ -232,8 +244,8 @@ module Write : sig
   val create
     :  Title.t
     -> Description.t
-    -> Pool_common.Url.t
-    -> Pool_common.Database.t
+    -> Url.t
+    -> Database.t
     -> SmtpAuth.Write.t
     -> Styles.Write.t
     -> Icon.Write.t
@@ -254,7 +266,7 @@ type smtp_auth_update =
 type update =
   { title : Title.t
   ; description : Description.t
-  ; url : Pool_common.Url.t
+  ; url : Url.t
   ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
@@ -267,15 +279,15 @@ type event =
   | LogosUploaded of logo_mappings
   | LogoDeleted of t * Pool_common.Id.t
   | DetailsEdited of Write.t * update
-  | DatabaseEdited of Write.t * Pool_common.Database.t
+  | DatabaseEdited of Write.t * Database.t
   | Destroyed of Pool_common.Id.t
   | ActivateMaintenance of Write.t
   | DeactivateMaintenance of Write.t
 
-val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-val pool_to_ctx : Pool_common.Database.Label.t -> (string * string) list
+val pool_to_ctx : Database.Label.t -> (string * string) list
 val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_full
@@ -283,14 +295,14 @@ val find_full
   -> (Write.t, Pool_common.Message.error) result Lwt.t
 
 val find_by_label
-  :  Pool_common.Database.Label.t
+  :  Database.Label.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : unit -> t list Lwt.t
-val find_databases : unit -> Pool_common.Database.t list Lwt.t
+val find_databases : unit -> Database.t list Lwt.t
 
 val find_styles
-  :  Pool_common.Database.Label.t
+  :  Database.Label.t
   -> (Styles.t, Pool_common.Message.error) result Lwt.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
@@ -302,8 +314,8 @@ module Selection : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Pool_common.Url.t -> Pool_common.Database.Label.t -> t
+  val create : Url.t -> Database.Label.t -> t
   val find_all : unit -> t list Lwt.t
   val url : t -> string
-  val label : t -> Pool_common.Database.Label.t
+  val label : t -> Database.Label.t
 end

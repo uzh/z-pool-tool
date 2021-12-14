@@ -97,32 +97,23 @@ type event =
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | TermsAndConditionsUpdated of TermsAndConditions.t
 
-val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-
-val find_languages
-  :  Pool_common.Database.Label.t
-  -> Pool_common.Language.t list Lwt.t
-
-val find_email_suffixes
-  :  Pool_common.Database.Label.t
-  -> EmailSuffix.t list Lwt.t
-
-val find_contact_email : Pool_common.Database.Label.t -> ContactEmail.t Lwt.t
+val find_languages : Database_pool.Label.t -> Pool_common.Language.t list Lwt.t
+val find_email_suffixes : Database_pool.Label.t -> EmailSuffix.t list Lwt.t
+val find_contact_email : Database_pool.Label.t -> ContactEmail.t Lwt.t
 
 val find_inactive_user_disable_after
-  :  Pool_common.Database.Label.t
+  :  Database_pool.Label.t
   -> InactiveUser.DisableAfter.t Lwt.t
 
 val find_inactive_user_warning
-  :  Pool_common.Database.Label.t
+  :  Database_pool.Label.t
   -> InactiveUser.Warning.t Lwt.t
 
 val find_terms_and_conditions
-  :  Pool_common.Database.Label.t
+  :  Database_pool.Label.t
   -> TermsAndConditions.t Lwt.t
 
-val terms_and_conditions_last_updated
-  :  Pool_common.Database.Label.t
-  -> Ptime.t Lwt.t
+val terms_and_conditions_last_updated : Database_pool.Label.t -> Ptime.t Lwt.t

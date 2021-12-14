@@ -33,16 +33,13 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         ]
         when CCString.equal terms_accepted "accept" ->
         let db_pool =
-          Pool_common.Database.Label.create db_pool
+          Database_pool.Label.create db_pool
           |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
           |> CCResult.get_or_failwith
         in
         Database.Root.setup ();
         let%lwt available_pools = Database.Tenant.setup () in
-        if CCList.mem
-             ~eq:Pool_common.Database.Label.equal
-             db_pool
-             available_pools
+        if CCList.mem ~eq:Database_pool.Label.equal db_pool available_pools
         then (
           let events =
             let open CCResult.Infix in

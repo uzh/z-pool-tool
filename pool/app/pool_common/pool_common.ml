@@ -55,9 +55,3 @@ module Utils = struct
       error_to_string
   ;;
 end
-
-module Database = struct
-  include Database
-
-  let root = Label.of_string "root"
-end

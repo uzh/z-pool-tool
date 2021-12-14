@@ -1,5 +1,5 @@
 let tenant_db_of_request req
-    : (Pool_common.Database.Label.t, Pool_common.Message.error) result Lwt.t
+    : (Database_pool.Label.t, Pool_common.Message.error) result Lwt.t
   =
   (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
      host cannot be handled at the moment *)

@@ -155,9 +155,7 @@ let create () =
         >>= handle
         |> function
         | Ok events ->
-          Lwt_list.iter_s
-            (Pool_event.handle_event Pool_common.Database.root)
-            events
+          Lwt_list.iter_s (Pool_event.handle_event Database_pool.root) events
         | Error err ->
           failwith Pool_common.(Utils.error_to_string Language.En err))
       data

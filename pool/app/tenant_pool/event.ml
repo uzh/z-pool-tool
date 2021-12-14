@@ -1,6 +1,6 @@
 open Entity
 module Id = Pool_common.Id
-module Database = Pool_common.Database
+module Database = Database_pool
 
 type smtp_auth_update =
   { server : SmtpAuth.Server.t
@@ -14,7 +14,7 @@ type smtp_auth_update =
 type update =
   { title : Title.t
   ; description : Description.t
-  ; url : Pool_common.Url.t
+  ; url : Url.t
   ; smtp_auth : smtp_auth_update
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t

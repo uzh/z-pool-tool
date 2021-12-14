@@ -1,5 +1,6 @@
 module User = Common_user
 module Id = Pool_common.Id
+module Database = Database_pool
 open Entity
 
 type create =
@@ -20,8 +21,7 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    :  Pool_common.Database.Label.t -> t -> string -> string
-    -> (unit, string) result Lwt.t
+    : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in

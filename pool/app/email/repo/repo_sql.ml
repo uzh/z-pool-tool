@@ -42,7 +42,7 @@ let find_request
 let find pool carrier address =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     (find_request carrier)
     (address |> User.EmailAddress.value)
   >|= CCOption.to_result Pool_common.Message.(NotFound Email)
@@ -65,9 +65,7 @@ let insert_request =
   |> Caqti_request.exec RepoEntity.unverified_t
 ;;
 
-let insert pool =
-  Utils.Database.exec (Pool_common.Database.Label.value pool) insert_request
-;;
+let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 
 let update_unverified_request =
   {sql|
@@ -92,9 +90,9 @@ let update_verified_request =
        Caqti_type.(tup2 RepoEntity.Address.t RepoEntity.VerifiedAt.t)
 ;;
 
-let update : type a. Pool_common.Database.Label.t -> a t -> unit Lwt.t =
+let update : type a. Database.Label.t -> a t -> unit Lwt.t =
  fun pool model ->
-  let pool = Pool_common.Database.Label.value pool in
+  let pool = Database.Label.value pool in
   match model with
   | Unverified { address; token; _ } ->
     Utils.Database.exec
@@ -126,7 +124,7 @@ let update_email_request =
 
 let update_email pool old_email new_email =
   Utils.Database.exec
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     update_email_request
     ( address old_email |> Common_user.EmailAddress.value
     , (address new_email |> Common_user.EmailAddress.value, token new_email) )
@@ -141,6 +139,6 @@ let delete_request =
 ;;
 
 let delete pool email =
-  Utils.Database.exec (Pool_common.Database.Label.value pool) delete_request
+  Utils.Database.exec (Database.Label.value pool) delete_request
   @@ (address email |> Common_user.EmailAddress.value)
 ;;

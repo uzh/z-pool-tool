@@ -2,15 +2,14 @@ module Update : sig
   type t = { new_settings : (string * string) list }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Pool_common.Database.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
+  val can : Database_pool.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
 end = struct
   type t = { new_settings : (string * string) list }
 
   let handle = Utils.todo
 
   let can
-      : type admin.
-        Pool_common.Database.Label.t -> admin Admin.t -> t -> bool Lwt.t
+      : type admin. Database_pool.Label.t -> admin Admin.t -> t -> bool Lwt.t
     =
    fun pool admin _ ->
     let open Utils.Lwt_result.Infix in

@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Database = Pool_common.Database
+module Database = Database_pool
 
 module Sql = struct
   let select_from_settings_sql =
@@ -41,7 +41,7 @@ module Sql = struct
   let update_request = Caqti_request.exec RepoEntity.Write.t update_sql
 
   let update pool =
-    Utils.Database.exec (Pool_common.Database.Label.value pool) update_request
+    Utils.Database.exec (Database.Label.value pool) update_request
   ;;
 end
 

@@ -89,7 +89,7 @@ module UpdateDetails : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Tenant_pool.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -165,7 +165,7 @@ module UpdatePassword : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Tenant_pool.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -240,7 +240,7 @@ module UpdateEmail : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Tenant_pool.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t

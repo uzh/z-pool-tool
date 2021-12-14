@@ -1,6 +1,12 @@
 include Entity
 include Event
 
+module Url = struct
+  include Entity.Url
+
+  let of_pool = Repo.Url.of_pool
+end
+
 let pool_to_ctx pool = [ "pool", Database.Label.value pool ]
 let find = Repo.find Database.root
 let find_full = Repo.find_full Database.root

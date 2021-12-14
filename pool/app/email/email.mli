@@ -1,5 +1,6 @@
 module PoolError = Pool_common.Message
 module User = Common_user
+module Database = Database_pool
 
 module Token : sig
   type t
@@ -59,25 +60,25 @@ val verify : unverified t -> verified t
 val address : 'email t -> User.EmailAddress.t
 
 val find_unverified
-  :  Pool_common.Database.Label.t
+  :  Database.Label.t
   -> User.EmailAddress.t
   -> (unverified t, PoolError.error) result Lwt.t
 
 val find_verified
-  :  Pool_common.Database.Label.t
+  :  Database.Label.t
   -> User.EmailAddress.t
   -> (verified t, PoolError.error) result Lwt.t
 
 module PasswordReset : sig
   val create
-    :  Pool_common.Database.Label.t
+    :  Database.Label.t
     -> user:Sihl_user.t
     -> (Sihl_email.t, PoolError.error) result Lwt.t
 end
 
 module PasswordChange : sig
   val create
-    :  Pool_common.Database.Label.t
+    :  Database.Label.t
     -> verified t
     -> User.Firstname.t
     -> User.Lastname.t
@@ -86,7 +87,7 @@ end
 
 module ConfirmationEmail : sig
   val create
-    :  Pool_common.Database.Label.t
+    :  Database.Label.t
     -> unverified t
     -> User.Firstname.t
     -> User.Lastname.t
@@ -101,6 +102,6 @@ type event =
       verified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
   | Verified of unverified t
 
-val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

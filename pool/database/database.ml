@@ -39,14 +39,14 @@ let schema =
               "The database connection pool name that should be used by \
                default. By default ['root'] is used for this application."
             (string
-               ~default:Pool_common.Database.(Label.value root)
+               ~default:Database_pool.(Label.value root)
                "DATABASE_CHOOSE_POOL")
         ]
       config)
 ;;
 
 module Root = struct
-  let label = Pool_common.Database.(Label.value root)
+  let label = Database_pool.(Label.value root)
 
   module Migration = struct
     include Migration.Root
@@ -82,7 +82,7 @@ module Tenant = struct
     | tenants ->
       CCList.map
         (fun pool ->
-          let open Pool_common.Database in
+          let open Database_pool in
           add_pool pool;
           pool.label)
         tenants
@@ -103,7 +103,7 @@ let start () =
   Lwt_list.iter_s
     (fun pool ->
       Logs.info (fun m ->
-          m "Start database %s" (Pool_common.Database.Label.value pool));
+          m "Start database %s" (Database_pool.Label.value pool));
       Service.Migration.check_migrations_status
         ~ctx:(Tenant_pool.pool_to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())

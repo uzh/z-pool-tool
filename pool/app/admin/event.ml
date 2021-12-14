@@ -1,5 +1,6 @@
 module User = Common_user
 module Common = Pool_common
+module Database = Database_pool
 open Entity
 
 type creatable_admin =
@@ -26,7 +27,7 @@ type update =
 
 let set_password
     : type person.
-      Pool_common.Database.Label.t
+      Database.Label.t
       -> person t
       -> string
       -> string

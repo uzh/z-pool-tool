@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Common = Pool_common
+module Database = Database_pool
 
 let update req command success_message =
   let open Utils.Lwt_result.Infix in
@@ -39,7 +40,7 @@ let update req command success_message =
     |> events_list
     |> Lwt_result.lift
   in
-  let handle = Lwt_list.iter_s (Pool_event.handle_event Common.Database.root) in
+  let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       redirect_path
@@ -73,14 +74,12 @@ let delete_asset req =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = Common.(Tenant_pool.pool_to_ctx Database.root) in
+    let ctx = Tenant_pool.pool_to_ctx Database.root in
     let event tenant =
       Cqrs_command.Tenant_pool_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
-    let handle =
-      Lwt_list.iter_s (Pool_event.handle_event Common.Database.root)
-    in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
     let destroy_file () =
       Service.Storage.delete ~ctx (Common.Id.value asset_id)
     in

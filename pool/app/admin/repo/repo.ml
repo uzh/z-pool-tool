@@ -1,5 +1,6 @@
 open Entity
 module RepoPerson = Repo_person
+module Database = Database_pool
 
 let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in
@@ -27,7 +28,7 @@ module Sql = struct
 
   let update pool t =
     Utils.Database.exec
-      (Pool_common.Database.Label.value pool)
+      (Database.Label.value pool)
       update_request
       (RepoPerson.Write.extract t)
   ;;
@@ -75,7 +76,7 @@ module Sql = struct
   let find_all_by_role pool role =
     let caqti_type, role_val = extract role in
     Utils.Database.collect
-      (Pool_common.Database.Label.value pool)
+      (Database.Label.value pool)
       (find_all_by_role_request caqti_type)
       role_val
   ;;
@@ -96,7 +97,7 @@ module Sql = struct
     let open Lwt.Infix in
     let caqti_type, role_val = extract role in
     Utils.Database.find_opt
-      (Pool_common.Database.Label.value pool)
+      (Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
     >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
@@ -116,7 +117,7 @@ module Sql = struct
   let find_role_by_user pool user =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      (Pool_common.Database.Label.value pool)
+      (Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
     >|= CCOption.map Stringify.person_from_string
@@ -143,7 +144,7 @@ module Sql = struct
 
   let insert pool (t : 'a t) =
     Utils.Database.exec
-      (Pool_common.Database.Label.value pool)
+      (Database.Label.value pool)
       insert_request
       (RepoPerson.Write.extract t)
   ;;

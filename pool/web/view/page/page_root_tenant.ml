@@ -125,7 +125,7 @@ let detail csrf (tenant : Tenant_pool.t) message () =
   let detail_fields =
     [ "title", Title.value tenant.title
     ; "description", Description.value tenant.description
-    ; "url", Pool_common.Url.value tenant.url
+    ; "url", Tenant_pool.Url.value tenant.url
     ; "smtp_auth_server", Server.value tenant.smtp_auth.server
     ; "smtp_auth_port", Port.value tenant.smtp_auth.port
     ; "smtp_auth_username", Username.value tenant.smtp_auth.username
@@ -137,7 +137,7 @@ let detail csrf (tenant : Tenant_pool.t) message () =
   in
   let database_fields =
     [ "database_url", ""
-    ; "database_label", Pool_common.Database.Label.value tenant.database_label
+    ; "database_label", Database_pool.Label.value tenant.database_label
     ]
   in
   let detail_input_fields =
