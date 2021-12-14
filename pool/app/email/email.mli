@@ -100,7 +100,7 @@ type event =
       unverified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
   | UpdatedVerified of
       verified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
-  | Verified of unverified t
+  | EmailVerified of unverified t
 
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

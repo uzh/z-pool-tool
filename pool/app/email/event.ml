@@ -32,7 +32,7 @@ type event =
       unverified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
   | UpdatedVerified of
       verified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
-  | Verified of unverified t
+  | EmailVerified of unverified t
 
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
@@ -61,7 +61,7 @@ let handle_event pool : event -> unit Lwt.t =
   | UpdatedVerified
       ((Verified _ as old_email), (new_address, firstname, lastname)) ->
     update_email old_email new_address firstname lastname
-  | Verified (Unverified { token; _ } as email) ->
+  | EmailVerified (Unverified { token; _ } as email) ->
     let%lwt () = deactivate_token pool token in
     let%lwt () = Repo.update pool @@ verify email in
     Lwt.return_unit
@@ -84,7 +84,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     && User.EmailAddress.equal a1 a2
     && User.Firstname.equal f1 f2
     && User.Lastname.equal l1 l2
-  | Verified m, Verified p -> equal m p
+  | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
 
@@ -105,5 +105,5 @@ let pp_event formatter (event : event) : unit =
     pp_address a;
     User.Firstname.pp formatter f;
     User.Lastname.pp formatter l
-  | Verified m -> pp formatter m
+  | EmailVerified m -> pp formatter m
 ;;

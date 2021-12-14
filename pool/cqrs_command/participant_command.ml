@@ -305,11 +305,10 @@ module ConfirmEmail : sig
 end = struct
   type t = { email : Email.unverified Email.t }
 
-  (* TODO[timhub]: Remove Warning *)
-  let[@warning "-41"] handle command participant =
+  let handle command participant =
     Ok
       [ Participant.EmailConfirmed participant |> Pool_event.participant
-      ; Email.Verified command.email |> Pool_event.email_address
+      ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
 end

@@ -147,7 +147,7 @@ let[@warning "-41"] participants db_pool () =
               Email.find_unverified db_pool address
               |> Lwt.map get_or_failwith_pool_error
             in
-            Email.Verified unverified
+            Email.EmailVerified unverified
             |> Pool_event.email_address
             |> Pool_event.handle_event db_pool)
           else Lwt.return_unit
