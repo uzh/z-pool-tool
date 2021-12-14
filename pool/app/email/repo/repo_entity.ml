@@ -29,11 +29,10 @@ let unverified_t =
       , m.updated_at |> Pool_common.UpdatedAt.value )
   in
   let decode (address, token, created_at, updated_at) =
-    let* address =
-      address |> User.EmailAddress.create |> CCResult.map_err (fun _ -> "TODO")
-    in
-    let token = token |> Token.create in
-    Ok (Unverified { address; token; created_at; updated_at })
+    map_err (fun _ -> "decode unverified email")
+    @@ let* address = address |> User.EmailAddress.create in
+       let token = token |> Token.create in
+       Ok (Unverified { address; token; created_at; updated_at })
   in
   Caqti_type.(
     custom
@@ -56,12 +55,10 @@ let verified_t =
       , m.updated_at |> Pool_common.UpdatedAt.value )
   in
   let decode (address, verified_at, created_at, updated_at) =
-    (* TODO [timhub]: Fix map_err *)
-    let* address =
-      address |> User.EmailAddress.create |> CCResult.map_err (fun _ -> "TODO")
-    in
-    let verified_at = verified_at |> VerifiedAt.create in
-    Ok (Verified { address; verified_at; created_at; updated_at })
+    map_err (fun _ -> "decode verified email")
+    @@ let* address = address |> User.EmailAddress.create in
+       let verified_at = verified_at |> VerifiedAt.create in
+       Ok (Verified { address; verified_at; created_at; updated_at })
   in
   Caqti_type.(
     custom
