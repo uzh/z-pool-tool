@@ -1,6 +1,6 @@
 let create_tenant_pool =
   Sihl.Command.make
-    ~name:"tenant_pool.create"
+    ~name:"tenant.create"
     ~help:
       "<title> <description> <url> <database_url> <smtp_auth_server> \
        <smtp_auth_port> <smtp_auth_username> <smtp_auth_authentication_method> \

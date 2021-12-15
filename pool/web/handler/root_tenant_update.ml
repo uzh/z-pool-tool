@@ -74,7 +74,7 @@ let delete_asset req =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = Tenant_pool.pool_to_ctx Database.root in
+    let ctx = Tenant_pool.to_ctx Database.root in
     let event tenant =
       Cqrs_command.Tenant_pool_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift

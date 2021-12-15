@@ -31,7 +31,7 @@ let index_css req =
     let* styles = Tenant_pool.find_styles tenant_db in
     let%lwt file =
       Service.Storage.find
-        ~ctx:(Tenant_pool.pool_to_ctx Database.root)
+        ~ctx:(Tenant_pool.to_ctx Database.root)
         (styles |> Tenant_pool.Styles.id |> Pool_common.Id.value)
     in
     let%lwt content =
@@ -71,7 +71,7 @@ let asset req =
   let open Sihl.Contract.Storage in
   let asset_id = Sihl.Web.Router.param req "id" in
   let%lwt file =
-    Service.Storage.find ~ctx:(Tenant_pool.pool_to_ctx Database.root) asset_id
+    Service.Storage.find ~ctx:(Tenant_pool.to_ctx Database.root) asset_id
   in
   let%lwt content = Service.Storage.download_data_base64 file in
   let mime = file.file.mime in

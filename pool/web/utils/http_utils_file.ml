@@ -128,7 +128,7 @@ let update_files files req =
     | Some filename ->
       (match load_file filename with
       | Ok (filesize, mime, data) ->
-        let ctx = Tenant_pool.pool_to_ctx Database.root in
+        let ctx = Tenant_pool.to_ctx Database.root in
         let%lwt file = Service.Storage.find ~ctx id in
         let updated_file =
           let open Sihl_storage in

@@ -33,7 +33,7 @@ let create req =
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
       | Error err ->
-        let ctx = Tenant_pool.pool_to_ctx Database.root in
+        let ctx = Tenant_pool.to_ctx Database.root in
         let%lwt () =
           Lwt_list.iter_s (fun (_, id) -> Service.Storage.delete ~ctx id) files
         in

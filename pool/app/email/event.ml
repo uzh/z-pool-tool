@@ -4,25 +4,25 @@ module User = Common_user
 let create_token pool address =
   let open Lwt.Infix in
   Service.Token.create
-    ~ctx:(Tenant_pool.pool_to_ctx pool)
+    ~ctx:(Tenant_pool.to_ctx pool)
     [ "email", User.EmailAddress.value address ]
   >|= Token.create
 ;;
 
 let deactivate_token pool token =
-  Service.Token.deactivate ~ctx:(Tenant_pool.pool_to_ctx pool) token
+  Service.Token.deactivate ~ctx:(Tenant_pool.to_ctx pool) token
 ;;
 
 let send_signup_email pool email firstname lastname =
   let open Lwt.Infix in
   Helper.SignUp.create pool email firstname lastname
-  >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
+  >>= Service.Email.send ~ctx:(Tenant_pool.to_ctx pool)
 ;;
 
 let send_confirmation_email pool email firstname lastname =
   let open Lwt.Infix in
   Helper.ConfirmationEmail.create pool email firstname lastname
-  >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
+  >>= Service.Email.send ~ctx:(Tenant_pool.to_ctx pool)
 ;;
 
 type event =

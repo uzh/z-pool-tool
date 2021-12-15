@@ -12,7 +12,7 @@ let admins db_pool () =
     ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
     ]
   in
-  let ctx = Tenant_pool.pool_to_ctx db_pool in
+  let ctx = Tenant_pool.to_ctx db_pool in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"admin"
@@ -116,7 +116,7 @@ let[@warning "-41"] participants db_pool () =
          , paused
          , disabled
          , verified ) ->
-      let ctx = Tenant_pool.pool_to_ctx db_pool in
+      let ctx = Tenant_pool.to_ctx db_pool in
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->

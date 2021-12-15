@@ -6,7 +6,7 @@ let find_all = Repo.find_all Database_pool.root
 let find id =
   let%lwt user =
     Service.User.find_opt
-      ~ctx:(Tenant_pool.pool_to_ctx Database_pool.root)
+      ~ctx:(Tenant_pool.to_ctx Database_pool.root)
       (id |> Pool_common.Id.value)
   in
   user

@@ -26,7 +26,7 @@ let set_password
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
-    ~ctx:(Tenant_pool.pool_to_ctx pool)
+    ~ctx:(Tenant_pool.to_ctx pool)
     user
     ~password
     ~password_confirmation
@@ -36,7 +36,7 @@ let set_password
 let send_password_changed_email pool email firstname lastname =
   let open Lwt.Infix in
   Email.Helper.PasswordChange.create pool email firstname lastname
-  >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
+  >>= Service.Email.send ~ctx:(Tenant_pool.to_ctx pool)
 ;;
 
 let has_terms_accepted pool (participant : t) =
@@ -65,7 +65,7 @@ type event =
 [@@deriving variants]
 
 let handle_event pool : event -> unit Lwt.t =
-  let ctx = Tenant_pool.pool_to_ctx pool in
+  let ctx = Tenant_pool.to_ctx pool in
   function
   | Created participant ->
     let%lwt user =
