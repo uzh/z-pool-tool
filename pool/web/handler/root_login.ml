@@ -75,7 +75,8 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    Email.PasswordReset.create Database.root ~user >|= Service.Email.send ~ctx
+    Email.Helper.PasswordReset.create Database.root ~user
+    >|= Service.Email.send ~ctx
   in
   match result with
   | Ok _ | Error _ ->

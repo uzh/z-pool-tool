@@ -35,7 +35,7 @@ let set_password
 
 let send_password_changed_email pool email firstname lastname =
   let open Lwt.Infix in
-  Email.PasswordChange.create pool email firstname lastname
+  Email.Helper.PasswordChange.create pool email firstname lastname
   >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
 ;;
 

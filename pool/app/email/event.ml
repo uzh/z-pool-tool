@@ -1,6 +1,5 @@
 open Entity
 module User = Common_user
-module PasswordReset = PasswordReset
 
 let create_token pool address =
   let open Lwt.Infix in
@@ -16,13 +15,13 @@ let deactivate_token pool token =
 
 let send_signup_email pool email firstname lastname =
   let open Lwt.Infix in
-  SignUp.create pool email firstname lastname
+  Helper.SignUp.create pool email firstname lastname
   >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
 ;;
 
 let send_confirmation_email pool email firstname lastname =
   let open Lwt.Infix in
-  ConfirmationEmail.create pool email firstname lastname
+  Helper.ConfirmationEmail.create pool email firstname lastname
   >>= Service.Email.send ~ctx:(Tenant_pool.pool_to_ctx pool)
 ;;
 

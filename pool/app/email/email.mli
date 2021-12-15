@@ -65,31 +65,6 @@ val find_verified
   -> Common_user.EmailAddress.t
   -> (verified t, Pool_common.Message.error) result Lwt.t
 
-module PasswordReset : sig
-  val create
-    :  Database_pool.Label.t
-    -> user:Sihl_user.t
-    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-end
-
-module PasswordChange : sig
-  val create
-    :  Database_pool.Label.t
-    -> verified t
-    -> Common_user.Firstname.t
-    -> Common_user.Lastname.t
-    -> Sihl_email.t Lwt.t
-end
-
-module ConfirmationEmail : sig
-  val create
-    :  Database_pool.Label.t
-    -> unverified t
-    -> Common_user.Firstname.t
-    -> Common_user.Lastname.t
-    -> Sihl_email.t Lwt.t
-end
-
 type event =
   | Created of
       Common_user.EmailAddress.t
@@ -110,3 +85,30 @@ type event =
 val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+
+module Helper : sig
+  module PasswordReset : sig
+    val create
+      :  Database_pool.Label.t
+      -> user:Sihl_user.t
+      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+  end
+
+  module PasswordChange : sig
+    val create
+      :  Database_pool.Label.t
+      -> verified t
+      -> Common_user.Firstname.t
+      -> Common_user.Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
+
+  module ConfirmationEmail : sig
+    val create
+      :  Database_pool.Label.t
+      -> unverified t
+      -> Common_user.Firstname.t
+      -> Common_user.Lastname.t
+      -> Sihl_email.t Lwt.t
+  end
+end
