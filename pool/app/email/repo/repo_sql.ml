@@ -76,7 +76,7 @@ let update_unverified_request =
       WHERE address = $1;
     |sql}
   |> Caqti_request.exec
-       Caqti_type.(tup2 RepoEntity.Address.t RepoEntity.Token.t)
+       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.Token.t)
 ;;
 
 let update_verified_request =
@@ -87,7 +87,7 @@ let update_verified_request =
       WHERE address = $1;
     |sql}
   |> Caqti_request.exec
-       Caqti_type.(tup2 RepoEntity.Address.t RepoEntity.VerifiedAt.t)
+       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t)
 ;;
 
 let update : type a. Database.Label.t -> a t -> unit Lwt.t =
@@ -118,8 +118,8 @@ let update_email_request =
   |> Caqti_request.exec
        Caqti_type.(
          tup2
-           RepoEntity.Address.t
-           (tup2 RepoEntity.Address.t RepoEntity.Token.t))
+           User.Repo.EmailAddress.t
+           (tup2 User.Repo.EmailAddress.t RepoEntity.Token.t))
 ;;
 
 let update_email pool old_email new_email =

@@ -14,4 +14,8 @@ module Verified = struct
   include Repo_model.Verified
 end
 
+module EmailAddress = struct
+  include Repo_model.EmailAddress
+end
+
 let user_caqti = Repo_model.User.user_caqti

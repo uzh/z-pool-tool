@@ -128,5 +128,9 @@ module Repo : sig
     val t : Ptime.t option Caqti_type.t
   end
 
+  module EmailAddress : sig
+    val t : string Caqti_type.t
+  end
+
   val user_caqti : Sihl_user.t Caqti_type.t
 end

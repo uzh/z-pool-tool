@@ -24,12 +24,10 @@ module Verified = struct
   let t = Caqti_type.(option ptime)
 end
 
-module Email = struct
-  module Address = struct
-    include EmailAddress
+module EmailAddress = struct
+  include EmailAddress
 
-    let t = Caqti_type.(string)
-  end
+  let t = Caqti_type.(string)
 end
 
 module User = struct

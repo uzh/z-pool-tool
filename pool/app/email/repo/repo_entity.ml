@@ -1,12 +1,6 @@
 open Entity
 module User = Common_user
 
-module Address = struct
-  include User.EmailAddress
-
-  let t = Caqti_type.(string)
-end
-
 module Token = struct
   include Entity.Token
 
@@ -39,7 +33,7 @@ let unverified_t =
       ~encode
       ~decode
       (tup4
-         Address.t
+         User.Repo.EmailAddress.t
          Token.t
          Pool_common.Repo.CreatedAt.t
          Pool_common.Repo.UpdatedAt.t))
@@ -65,7 +59,7 @@ let verified_t =
       ~encode
       ~decode
       (tup4
-         Address.t
+         User.Repo.EmailAddress.t
          VerifiedAt.t
          Pool_common.Repo.CreatedAt.t
          Pool_common.Repo.UpdatedAt.t))
