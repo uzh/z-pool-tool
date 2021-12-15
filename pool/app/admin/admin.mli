@@ -1,5 +1,3 @@
-module Database = Database_pool
-
 type creatable_admin = Event.creatable_admin =
   | Assistant
   | Experimenter
@@ -46,8 +44,8 @@ type event =
   | RecruiterEvents of Entity.recruiter person_event
   | OperatorEvents of Entity.operator person_event
 
-val handle_person_event : Database.Label.t -> 'a person_event -> unit Lwt.t
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_person_event : Database_pool.Label.t -> 'a person_event -> unit Lwt.t
+val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
 val equal_person_event : 'a person_event -> 'a person_event -> bool
 val pp_person_event : Format.formatter -> 'a person_event -> unit
 val equal_event : event -> event -> bool
@@ -88,7 +86,7 @@ val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
 
-val insert : Database.Label.t -> 'a t -> unit Lwt.t
+val insert : Database_pool.Label.t -> 'a t -> unit Lwt.t
 val find_by_user : 'a -> 'b
-val user_is_admin : Database.Label.t -> Sihl_user.t -> bool Lwt.t
+val user_is_admin : Database_pool.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

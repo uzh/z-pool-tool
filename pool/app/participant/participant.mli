@@ -1,6 +1,3 @@
-module Id = Pool_common.Id
-module Database = Database_pool
-
 module RecruitmentChannel : sig
   type t =
     | Friend
@@ -34,25 +31,25 @@ val fullname : t -> string
 val email_address : t -> Common_user.EmailAddress.t
 val version_selector : t -> string -> Pool_common.Version.t option
 val login : 'a -> email:'b -> password:'c -> 'd
-val insert : Database.Label.t -> t -> unit Lwt.t
+val insert : Database_pool.Label.t -> t -> unit Lwt.t
 
 val find
-  :  Database.Label.t
+  :  Database_pool.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_by_email
-  :  Database.Label.t
+  :  Database_pool.Label.t
   -> Common_user.EmailAddress.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_by_user
-  :  Database.Label.t
+  :  Database_pool.Label.t
   -> Sihl_user.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_duplicates : 'a -> 'b
-val has_terms_accepted : Database.Label.t -> t -> bool Lwt.t
+val has_terms_accepted : Database_pool.Label.t -> t -> bool Lwt.t
 
 type create =
   { email : Common_user.EmailAddress.t
@@ -90,6 +87,6 @@ val created : create -> event
 val firstnameupdated : t -> Common_user.Firstname.t -> event
 val lastnameupdated : t -> Common_user.Lastname.t -> event
 val pausedupdated : t -> Common_user.Paused.t -> event
-val handle_event : Database.Label.t -> event -> unit Lwt.t
+val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -1,4 +1,3 @@
-module File = Pool_common.File
 module Database = Database_pool
 
 module SmtpAuth : sig
@@ -119,7 +118,7 @@ end
 module Styles : sig
   type t
 
-  val value : t -> File.t
+  val value : t -> Pool_common.File.t
   val equal : t -> t -> bool
   val id : t -> Pool_common.Id.t
   val mime_type : t -> Pool_common.File.Mime.t
@@ -136,7 +135,7 @@ end
 module Icon : sig
   type t
 
-  val value : t -> File.t
+  val value : t -> Pool_common.File.t
   val equal : t -> t -> bool
 
   module Write : sig
@@ -151,7 +150,7 @@ end
 module Logos : sig
   type t
 
-  val value : t -> File.t list
+  val value : t -> Pool_common.File.t list
   val equal : t -> t -> bool
   val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
@@ -159,7 +158,7 @@ end
 module PartnerLogos : sig
   type t
 
-  val value : t -> File.t list
+  val value : t -> Pool_common.File.t list
   val equal : t -> t -> bool
   val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
 end
