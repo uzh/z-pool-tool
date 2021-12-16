@@ -62,6 +62,7 @@ val create
 
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
+val user_id : 'email t -> Pool_common.Id.t
 
 val find_unverified
   :  Pool_database.Label.t

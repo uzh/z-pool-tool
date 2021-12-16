@@ -5,7 +5,18 @@ module User = Pool_user
 let find_request_sql : type a. a carrier -> string -> string =
  fun carrier where_fragment ->
   let basic_select = {sql| SELECT |sql} in
-  let basic_fields = [ "address"; "sihl_user_uuid" ] in
+  let user_id =
+    {sql|
+    LOWER(CONCAT(
+      SUBSTR(HEX(sihl_user_uuid), 1, 8), '-',
+      SUBSTR(HEX(sihl_user_uuid), 9, 4), '-',
+      SUBSTR(HEX(sihl_user_uuid), 13, 4), '-',
+      SUBSTR(HEX(sihl_user_uuid), 17, 4), '-',
+      SUBSTR(HEX(sihl_user_uuid), 21)
+    ))
+    |sql}
+  in
+  let basic_fields = [ "address"; user_id ] in
   let email_unverified = [ "token" ] in
   let email_verified = [ "verified" ] in
   let created_updated_at = [ "created_at"; "updated_at" ] in

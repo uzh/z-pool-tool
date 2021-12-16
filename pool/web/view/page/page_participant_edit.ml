@@ -71,11 +71,6 @@ let edit csrf participant message () =
         ; a_method `Post
         ]
       [ csrf_element csrf ()
-      ; p
-          [ txt
-              "NOTE: Updating the email address won't allow you to log back in \
-               until the new email address is verified!"
-          ]
       ; input_element `Email (Some "email") participant.user.Sihl_user.email
       ; input_element `Submit None "Update email"
       ]

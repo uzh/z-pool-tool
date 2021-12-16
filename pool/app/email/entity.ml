@@ -69,6 +69,10 @@ let show : type state. state t -> string = function
     User.EmailAddress.show address
 ;;
 
+let user_id : type state. state t -> Pool_common.Id.t = function
+  | Unverified { user_id; _ } | Verified { user_id; _ } -> user_id
+;;
+
 let address : type state. state t -> User.EmailAddress.t = function
   | Unverified { address; _ } | Verified { address; _ } -> address
 ;;

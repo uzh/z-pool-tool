@@ -112,11 +112,12 @@ let email_verification req =
     >== User.EmailAddress.create
     >>= Email.find_unverified tenant_db
   in
-  let* participant =
-    Participant.find_by_email tenant_db (Email.address email)
-  in
+  let* participant = Participant.find tenant_db (Email.user_id email) in
   let* events =
-    Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
+    match participant.Participant.user.Sihl.Contract.User.confirmed with
+    | false ->
+      Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
+    | true -> Command.UpdateEmail.(handle participant email) |> Lwt_result.lift
   in
   let%lwt () = Pool_event.handle_events tenant_db events in
   HttpUtils.redirect_to_with_actions
@@ -294,6 +295,7 @@ let update req =
 ;;
 
 let update_email req =
+  Logs.info (fun m -> m "%s" "update email");
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let%lwt result =
@@ -320,7 +322,7 @@ let update_email req =
       |> Lwt_result.lift
     in
     let* events =
-      Command.UpdateEmail.(
+      Command.RequestEmailValidation.(
         handle ?allowed_email_suffixes participant { current_email; new_email })
       |> Lwt_result.lift
     in

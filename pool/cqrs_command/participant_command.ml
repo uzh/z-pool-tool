@@ -230,7 +230,7 @@ end = struct
   ;;
 end
 
-module UpdateEmail : sig
+module RequestEmailValidation : sig
   type t =
     { current_email : Email.verified Email.t
     ; new_email : User.EmailAddress.t
@@ -259,14 +259,55 @@ end = struct
       User.EmailAddress.validate allowed_email_suffixes command.new_email
     in
     Ok
-      [ Participant.EmailUpdated (participant, command.new_email)
-        |> Pool_event.participant
-      ; Email.UpdatedVerified
+      [ Email.UpdatedVerified
           ( command.current_email
           , ( command.new_email
             , Participant.firstname participant
             , Participant.lastname participant ) )
         |> Pool_event.email_address
+      ]
+  ;;
+
+  let can pool user participant =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        user
+        ~any_of:
+          [ Permission.Update
+              (Permission.Participant, Some (Participant.id participant))
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
+          ]
+    in
+    pool
+    |> Pool_tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
+  ;;
+end
+
+module UpdateEmail : sig
+  type t = Email.unverified Email.t
+
+  val handle
+    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    -> Participant.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Pool_database.Label.t -> Sihl_user.t -> Participant.t -> bool Lwt.t
+end = struct
+  type t = Email.unverified Email.t
+
+  let handle ?allowed_email_suffixes participant email =
+    let open CCResult in
+    let* () =
+      User.EmailAddress.validate allowed_email_suffixes (Email.address email)
+    in
+    Ok
+      [ Participant.EmailUpdated (participant, Email.address email)
+        |> Pool_event.participant
+      ; Email.EmailVerified email |> Pool_event.email_address
       ]
   ;;
 
