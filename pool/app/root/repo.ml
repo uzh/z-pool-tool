@@ -34,7 +34,7 @@ module Sql = struct
         admin = 1
       |sql}
     |> select_from_users_sql
-    |> Caqti_request.collect Caqti_type.unit Common_user.Repo.user_caqti
+    |> Caqti_request.collect Caqti_type.unit Pool_user.Repo.user_caqti
   ;;
 
   let find_all pool =

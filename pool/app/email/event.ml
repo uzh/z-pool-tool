@@ -1,5 +1,5 @@
 open Entity
-module User = Common_user
+module User = Pool_user
 
 let create_token pool address =
   let open Lwt.Infix in

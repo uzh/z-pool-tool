@@ -1,5 +1,5 @@
 open Entity
-module User = Common_user
+module User = Pool_user
 module Database = Database_pool
 
 let create_public_url pool_url path =
@@ -86,7 +86,7 @@ module PasswordChange = struct
       db_pool
       "password_change"
       subject
-      (address email |> Common_user.EmailAddress.value)
+      (address email |> Pool_user.EmailAddress.value)
       [ "name", name ]
   ;;
 end
@@ -109,7 +109,7 @@ module SignUp = struct
       db_pool
       "signup_verification"
       subject
-      (address email |> Common_user.EmailAddress.value)
+      (address email |> Pool_user.EmailAddress.value)
       [ "verificationUrl", validation_url; "name", name ]
   ;;
 end
@@ -133,7 +133,7 @@ module ConfirmationEmail = struct
       pool
       "email_verification"
       subject
-      (address email |> Common_user.EmailAddress.value)
+      (address email |> Pool_user.EmailAddress.value)
       [ "verificationUrl", validation_url; "name", name ]
   ;;
 end

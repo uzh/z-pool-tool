@@ -1,4 +1,4 @@
-module User = Common_user
+module User = Pool_user
 
 let get_or_failwith_pool_error m =
   m

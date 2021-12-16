@@ -1,8 +1,8 @@
 type create = Event.create =
-  { email : Common_user.EmailAddress.t
-  ; password : Common_user.Password.t
-  ; firstname : Common_user.Firstname.t
-  ; lastname : Common_user.Lastname.t
+  { email : Pool_user.EmailAddress.t
+  ; password : Pool_user.Password.t
+  ; firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
   }
 
 type t

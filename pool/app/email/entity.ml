@@ -1,6 +1,6 @@
 module PoolError = Pool_common.Message
 module Database = Database_pool
-module User = Common_user
+module User = Pool_user
 
 module Token = struct
   type t = string [@@deriving eq, show]

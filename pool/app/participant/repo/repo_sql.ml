@@ -72,7 +72,7 @@ let find_by_email pool email =
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_by_email_request
-    (Common_user.EmailAddress.value email)
+    (Pool_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
@@ -91,7 +91,7 @@ let find_confirmed pool email =
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_confirmed_request
-    (Common_user.EmailAddress.value email)
+    (Pool_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
@@ -138,8 +138,7 @@ let update_paused_request =
       paused_version = $3
     WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
   |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup3 Id.t Common_user.Repo.Paused.t Version.t)
+  |> Caqti_request.exec Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
 ;;
 
 let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
@@ -147,7 +146,7 @@ let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
     (Database.Label.value pool)
     update_paused_request
     ( participant |> Entity.id |> Id.value
-    , paused |> Common_user.Paused.value
+    , paused |> Pool_user.Paused.value
     , paused_version |> Pool_common.Version.value )
 ;;
 

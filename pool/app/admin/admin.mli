@@ -10,10 +10,10 @@ val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
 val show_creatable_admin : creatable_admin -> string
 
 type create = Event.create =
-  { email : Common_user.EmailAddress.t
-  ; password : Common_user.Password.t
-  ; firstname : Common_user.Firstname.t
-  ; lastname : Common_user.Lastname.t
+  { email : Pool_user.EmailAddress.t
+  ; password : Pool_user.Password.t
+  ; firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
   }
 
 val equal_create : create -> create -> bool
@@ -21,8 +21,8 @@ val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
 type update = Event.update =
-  { firstname : Common_user.Firstname.t
-  ; lastname : Common_user.Lastname.t
+  { firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
   }
 
 val equal_update : update -> update -> bool
@@ -32,7 +32,7 @@ val show_update : update -> string
 type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
-      'a Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+      'a Entity.t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 

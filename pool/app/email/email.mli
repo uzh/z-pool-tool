@@ -20,14 +20,14 @@ module VerifiedAt : sig
 end
 
 type email_unverified =
-  { address : Common_user.EmailAddress.t
+  { address : Pool_user.EmailAddress.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
 type email_verified =
-  { address : Common_user.EmailAddress.t
+  { address : Pool_user.EmailAddress.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -51,35 +51,33 @@ val equal : 'email t -> 'email t -> bool
 val pp : Format.formatter -> 'email t -> unit
 val show : 'state t -> string
 val token : unverified t -> string
-val create : Common_user.EmailAddress.t -> Token.t -> unverified t
+val create : Pool_user.EmailAddress.t -> Token.t -> unverified t
 val verify : unverified t -> verified t
-val address : 'email t -> Common_user.EmailAddress.t
+val address : 'email t -> Pool_user.EmailAddress.t
 
 val find_unverified
   :  Database_pool.Label.t
-  -> Common_user.EmailAddress.t
+  -> Pool_user.EmailAddress.t
   -> (unverified t, Pool_common.Message.error) result Lwt.t
 
 val find_verified
   :  Database_pool.Label.t
-  -> Common_user.EmailAddress.t
+  -> Pool_user.EmailAddress.t
   -> (verified t, Pool_common.Message.error) result Lwt.t
 
 type event =
   | Created of
-      Common_user.EmailAddress.t
-      * Common_user.Firstname.t
-      * Common_user.Lastname.t
+      Pool_user.EmailAddress.t * Pool_user.Firstname.t * Pool_user.Lastname.t
   | UpdatedUnverified of
       unverified t
-      * (Common_user.EmailAddress.t
-        * Common_user.Firstname.t
-        * Common_user.Lastname.t)
+      * (Pool_user.EmailAddress.t
+        * Pool_user.Firstname.t
+        * Pool_user.Lastname.t)
   | UpdatedVerified of
       verified t
-      * (Common_user.EmailAddress.t
-        * Common_user.Firstname.t
-        * Common_user.Lastname.t)
+      * (Pool_user.EmailAddress.t
+        * Pool_user.Firstname.t
+        * Pool_user.Lastname.t)
   | EmailVerified of unverified t
 
 val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
@@ -98,8 +96,8 @@ module Helper : sig
     val create
       :  Database_pool.Label.t
       -> verified t
-      -> Common_user.Firstname.t
-      -> Common_user.Lastname.t
+      -> Pool_user.Firstname.t
+      -> Pool_user.Lastname.t
       -> Sihl_email.t Lwt.t
   end
 
@@ -107,8 +105,8 @@ module Helper : sig
     val create
       :  Database_pool.Label.t
       -> unverified t
-      -> Common_user.Firstname.t
-      -> Common_user.Lastname.t
+      -> Pool_user.Firstname.t
+      -> Pool_user.Lastname.t
       -> Sihl_email.t Lwt.t
   end
 end

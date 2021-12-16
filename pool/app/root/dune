@@ -8,6 +8,6 @@
   permission
   tenant_pool
   pool_common
-  common_user)
+  pool_user)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))

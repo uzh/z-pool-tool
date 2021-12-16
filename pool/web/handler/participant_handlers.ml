@@ -1,7 +1,7 @@
 module Command = Cqrs_command.Participant_command
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module User = Common_user
+module User = Pool_user
 
 let dashboard req =
   let message =
@@ -315,7 +315,7 @@ let update_email req =
       Email.find_verified tenant_db (Participant.email_address participant)
     in
     let* new_email =
-      Common_user.EmailAddress.create
+      Pool_user.EmailAddress.create
         (CCList.assoc ~eq:CCString.equal "email" urlencoded |> CCList.hd)
       |> Lwt_result.lift
     in

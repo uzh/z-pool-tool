@@ -20,7 +20,7 @@ let create_root () =
   in
   let events = Root_command.Create.handle command in
   let expected =
-    let open Common_user in
+    let open Pool_user in
     let open CCResult in
     let* email = email |> EmailAddress.create in
     let* password = password |> Password.create in

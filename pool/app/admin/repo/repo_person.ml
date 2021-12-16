@@ -29,7 +29,7 @@ let make_caqti_type person decode_fcn =
     custom
       ~encode:(encode_person person)
       ~decode:(decode_person decode_fcn)
-      (tup2 string (tup2 Common_user.Repo.user_caqti (tup2 ptime ptime))))
+      (tup2 string (tup2 Pool_user.Repo.user_caqti (tup2 ptime ptime))))
 ;;
 
 let assistant = make_caqti_type `Assistant @@ fun person -> Assistant person

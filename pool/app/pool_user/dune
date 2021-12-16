@@ -1,5 +1,5 @@
 (library
- (name common_user)
+ (name pool_user)
  (libraries
   sihl
   service

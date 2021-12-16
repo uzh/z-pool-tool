@@ -1,4 +1,4 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 
 module SignUp : sig

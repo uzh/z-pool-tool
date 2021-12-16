@@ -1,5 +1,5 @@
 open Entity
-module User = Common_user
+module User = Pool_user
 module Common = Pool_common
 
 type create =

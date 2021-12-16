@@ -1,4 +1,4 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 module Database = Database_pool
 open Entity
@@ -129,7 +129,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt _ =
       Service.User.update
         ~ctx
-        ~email:(Common_user.EmailAddress.value email)
+        ~email:(Pool_user.EmailAddress.value email)
         participant.user
     in
     Lwt.return_unit
@@ -202,7 +202,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   | PausedUpdated (p1, one), PausedUpdated (p2, two) ->
     equal p1 p2 && User.Paused.equal one two
   | EmailUpdated (p1, e1), EmailUpdated (p2, e2) ->
-    equal p1 p2 && Common_user.EmailAddress.equal e1 e2
+    equal p1 p2 && Pool_user.EmailAddress.equal e1 e2
   | PasswordUpdated (p1, old1, new1, _), PasswordUpdated (p2, old2, new2, _) ->
     equal p1 p2
     && User.Password.equal old1 old2
@@ -228,7 +228,7 @@ let pp_event formatter (event : event) : unit =
     User.Paused.pp formatter m
   | EmailUpdated (p, m) ->
     person_pp p;
-    Common_user.EmailAddress.pp formatter m
+    Pool_user.EmailAddress.pp formatter m
   | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password

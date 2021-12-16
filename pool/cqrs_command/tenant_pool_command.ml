@@ -1,6 +1,6 @@
 module Id = Pool_common.Id
 module Database = Database_pool
-module User = Common_user
+module User = Pool_user
 module File = Pool_common.File
 
 let create_logo_mappings files tenant logo_type =

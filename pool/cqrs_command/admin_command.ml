@@ -1,4 +1,4 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 
 module CreateOperator : sig
@@ -54,7 +54,7 @@ end = struct
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
-      Common_user.EmailAddress.validate allowed_email_suffixes command.email
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)

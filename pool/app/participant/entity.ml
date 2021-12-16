@@ -1,4 +1,4 @@
-module Common = Common_user
+module Common = Pool_user
 
 module RecruitmentChannel = struct
   type t =

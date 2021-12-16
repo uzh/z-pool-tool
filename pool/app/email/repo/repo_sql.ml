@@ -1,6 +1,6 @@
 open Entity
 module RepoEntity = Repo_entity
-module User = Common_user
+module User = Pool_user
 
 let find_request_sql : type a. a carrier -> string -> string =
  fun carrier where_fragment ->
@@ -126,8 +126,8 @@ let update_email pool old_email new_email =
   Utils.Database.exec
     (Database.Label.value pool)
     update_email_request
-    ( address old_email |> Common_user.EmailAddress.value
-    , (address new_email |> Common_user.EmailAddress.value, token new_email) )
+    ( address old_email |> Pool_user.EmailAddress.value
+    , (address new_email |> Pool_user.EmailAddress.value, token new_email) )
 ;;
 
 let delete_request =
@@ -140,5 +140,5 @@ let delete_request =
 
 let delete pool email =
   Utils.Database.exec (Database.Label.value pool) delete_request
-  @@ (address email |> Common_user.EmailAddress.value)
+  @@ (address email |> Pool_user.EmailAddress.value)
 ;;
