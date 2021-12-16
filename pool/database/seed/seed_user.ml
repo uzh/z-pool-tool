@@ -1,4 +1,5 @@
 module User = Pool_user
+module Id = Pool_common.Id
 
 let get_or_failwith_pool_error m =
   m
@@ -45,7 +46,8 @@ let admins db_pool () =
 (* TODO [timhub]: Remove warning *)
 let[@warning "-41"] participants db_pool () =
   let users =
-    [ ( "Hansruedi"
+    [ ( Id.create ()
+      , "Hansruedi"
       , "Rüdisüli"
       , "one@test.com"
       , Participant.RecruitmentChannel.Friend
@@ -53,7 +55,8 @@ let[@warning "-41"] participants db_pool () =
       , false
       , false
       , Some (Ptime_clock.now ()) )
-    ; ( "Jane"
+    ; ( Id.create ()
+      , "Jane"
       , "Doe"
       , "two@test.com"
       , Participant.RecruitmentChannel.Online
@@ -61,7 +64,8 @@ let[@warning "-41"] participants db_pool () =
       , false
       , false
       , None )
-    ; ( "John"
+    ; ( Id.create ()
+      , "John"
       , "Dorrian"
       , "three@mail.com"
       , Participant.RecruitmentChannel.Lecture
@@ -69,7 +73,8 @@ let[@warning "-41"] participants db_pool () =
       , true
       , false
       , Some (Ptime_clock.now ()) )
-    ; ( "Kevin"
+    ; ( Id.create ()
+      , "Kevin"
       , "McCallistor"
       , "four@mail.com"
       , Participant.RecruitmentChannel.Mailing
@@ -77,7 +82,8 @@ let[@warning "-41"] participants db_pool () =
       , true
       , false
       , None )
-    ; ( "Hello"
+    ; ( Id.create ()
+      , "Hello"
       , "Kitty"
       , "five@mail.com"
       , Participant.RecruitmentChannel.Online
@@ -85,7 +91,8 @@ let[@warning "-41"] participants db_pool () =
       , true
       , true
       , Some (Ptime_clock.now ()) )
-    ; ( "Dr."
+    ; ( Id.create ()
+      , "Dr."
       , "Murphy"
       , "six@mail.com"
       , Participant.RecruitmentChannel.Friend
@@ -93,7 +100,8 @@ let[@warning "-41"] participants db_pool () =
       , true
       , true
       , None )
-    ; ( "Mr."
+    ; ( Id.create ()
+      , "Mr."
       , "Do not accept terms"
       , "six@mail.com"
       , Participant.RecruitmentChannel.Friend
@@ -108,7 +116,8 @@ let[@warning "-41"] participants db_pool () =
     |> CCOption.value ~default:"user"
   in
   Lwt_list.iter_s
-    (fun ( given_name
+    (fun ( user_id
+         , given_name
          , name
          , email
          , recruitment_channel
@@ -134,7 +143,7 @@ let[@warning "-41"] participants db_pool () =
             User.Lastname.create name |> get_or_failwith_pool_error
           in
           let%lwt () =
-            Email.Created (address, firstname, lastname)
+            Email.Created (address, user_id, firstname, lastname)
             |> Pool_event.email_address
             |> Pool_event.handle_event db_pool
           in

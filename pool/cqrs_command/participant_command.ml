@@ -49,9 +49,11 @@ end = struct
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
+    let user_id = Id.create () in
     let participant =
       Participant.
-        { email = command.email
+        { user_id
+        ; email = command.email
         ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
@@ -61,7 +63,8 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; Email.Created (command.email, command.firstname, command.lastname)
+      ; Email.Created
+          (command.email, user_id, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
   ;;

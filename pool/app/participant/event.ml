@@ -4,7 +4,8 @@ module Database = Pool_database
 open Entity
 
 type create =
-  { email : User.EmailAddress.t
+  { user_id : Id.t
+  ; email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -71,6 +72,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt user =
       Service.User.create_user
         ~ctx
+        ~id:(participant.user_id |> Id.value)
         ~name:(participant.lastname |> User.Lastname.value)
         ~given_name:(participant.firstname |> User.Firstname.value)
         ~password:(participant.password |> User.Password.to_sihl)

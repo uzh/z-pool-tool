@@ -19,6 +19,7 @@ end
 
 type email_unverified =
   { address : User.EmailAddress.t
+  ; user_id : Pool_common.Id.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -27,6 +28,7 @@ type email_unverified =
 
 type email_verified =
   { address : User.EmailAddress.t
+  ; user_id : Pool_common.Id.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -73,9 +75,10 @@ let address : type state. state t -> User.EmailAddress.t = function
 
 let token (Unverified email) = Token.value email.token
 
-let create address token =
+let create address user_id token =
   Unverified
     { address
+    ; user_id
     ; token
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -85,6 +88,7 @@ let create address token =
 let verify (Unverified email) =
   Verified
     { address = email.address
+    ; user_id = email.user_id
     ; verified_at = VerifiedAt.create_now ()
     ; created_at = email.created_at
     ; updated_at = Ptime_clock.now ()

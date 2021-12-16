@@ -5,15 +5,16 @@ module User = Pool_user
 let find_request_sql : type a. a carrier -> string -> string =
  fun carrier where_fragment ->
   let basic_select = {sql| SELECT |sql} in
-  let email_unverified = [ "address"; "token" ] in
-  let email_verified = [ "address"; "verified" ] in
+  let basic_fields = [ "address"; "sihl_user_uuid" ] in
+  let email_unverified = [ "token" ] in
+  let email_verified = [ "verified" ] in
   let created_updated_at = [ "created_at"; "updated_at" ] in
   let from_fragment = {sql| FROM pool_email_verifications |sql} in
   let select fields =
     Format.asprintf
       "%s %s\n%s\n%s;"
       basic_select
-      (fields @ created_updated_at |> CCString.concat ", ")
+      (basic_fields @ fields @ created_updated_at |> CCString.concat ", ")
       from_fragment
       where_fragment
   in
@@ -52,14 +53,16 @@ let insert_request =
   {sql|
       INSERT INTO pool_email_verifications (
         address,
+        sihl_user_uuid,
         token,
         created_at,
         updated_at
       ) VALUES (
         $1,
-        $2,
+        UNHEX(REPLACE($2, '-', '')),
         $3,
-        $4
+        $4,
+        $5
       )
     |sql}
   |> Caqti_request.exec RepoEntity.unverified_t

@@ -21,6 +21,7 @@ end
 
 type email_unverified =
   { address : Pool_user.EmailAddress.t
+  ; user_id : Pool_common.Id.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -28,6 +29,7 @@ type email_unverified =
 
 type email_verified =
   { address : Pool_user.EmailAddress.t
+  ; user_id : Pool_common.Id.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -51,7 +53,13 @@ val equal : 'email t -> 'email t -> bool
 val pp : Format.formatter -> 'email t -> unit
 val show : 'state t -> string
 val token : unverified t -> string
-val create : Pool_user.EmailAddress.t -> Token.t -> unverified t
+
+val create
+  :  Pool_user.EmailAddress.t
+  -> Pool_common.Id.t
+  -> Token.t
+  -> unverified t
+
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 
@@ -67,7 +75,10 @@ val find_verified
 
 type event =
   | Created of
-      Pool_user.EmailAddress.t * Pool_user.Firstname.t * Pool_user.Lastname.t
+      Pool_user.EmailAddress.t
+      * Pool_common.Id.t
+      * Pool_user.Firstname.t
+      * Pool_user.Lastname.t
   | UpdatedUnverified of
       unverified t
       * (Pool_user.EmailAddress.t
