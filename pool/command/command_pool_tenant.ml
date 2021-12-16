@@ -57,7 +57,7 @@ let create_tenant_pool =
             Lwt_result.lift
             @@
             let open CCResult.Infix in
-            Cqrs_command.Tenant_pool_command.Create.decode
+            Cqrs_command.Pool_tenant_command.Create.decode
               [ "title", [ title ]
               ; "description", [ description ]
               ; "url", [ url ]
@@ -79,7 +79,7 @@ let create_tenant_pool =
               ; "firstname", [ firstname ]
               ; "lastname", [ lastname ]
               ]
-            >>= Cqrs_command.Tenant_pool_command.Create.handle
+            >>= Cqrs_command.Pool_tenant_command.Create.handle
           in
           let run_events =
             Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)

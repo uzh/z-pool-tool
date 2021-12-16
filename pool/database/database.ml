@@ -73,7 +73,7 @@ module Tenant = struct
   end
 
   let setup () =
-    let%lwt tenants = Tenant_pool.find_databases () in
+    let%lwt tenants = Pool_tenant.find_databases () in
     match tenants with
     | [] ->
       failwith
@@ -105,7 +105,7 @@ let start () =
       Logs.info (fun m ->
           m "Start database %s" (Pool_database.Label.value pool));
       Service.Migration.check_migrations_status
-        ~ctx:(Tenant_pool.to_ctx pool)
+        ~ctx:(Pool_tenant.to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())
         ())
     db_pools

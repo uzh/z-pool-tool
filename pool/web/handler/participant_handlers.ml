@@ -105,7 +105,7 @@ let email_verification req =
     |> Lwt_result.lift
   in
   let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-  let ctx = Tenant_pool.to_ctx tenant_db in
+  let ctx = Pool_tenant.to_ctx tenant_db in
   let* email =
     Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
     ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat

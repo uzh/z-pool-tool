@@ -70,7 +70,7 @@ module GenerateStatusReport : sig
 
   val handle
     :  t
-    -> Tenant_pool.t
+    -> Pool_tenant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = { tenant_id : string }

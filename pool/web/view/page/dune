@@ -7,7 +7,7 @@
   http_utils
   participant
   component
-  tenant_pool
+  pool_tenant
   tenant
   root
   utils))

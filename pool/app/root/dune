@@ -6,7 +6,7 @@
   service
   role
   permission
-  tenant_pool
+  pool_tenant
   pool_common
   pool_user)
  (preprocess

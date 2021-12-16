@@ -89,7 +89,7 @@ module UpdateDetails : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Tenant_pool.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -137,11 +137,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant_pool.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -165,7 +165,7 @@ module UpdatePassword : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Tenant_pool.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -217,11 +217,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant_pool.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -240,7 +240,7 @@ module UpdateEmail : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can
-    :  Tenant_pool.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -275,11 +275,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (Participant.id participant))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant_pool.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;

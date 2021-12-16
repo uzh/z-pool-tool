@@ -16,22 +16,22 @@ let update req command success_message =
     let* _ =
       File.update_files
         [ ( "styles"
-          , tenant.Tenant_pool.Write.styles |> Tenant_pool.Styles.Write.value )
-        ; "icon", tenant.Tenant_pool.Write.icon |> Tenant_pool.Icon.Write.value
+          , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value )
+        ; "icon", tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value
         ]
         req
     in
     let* logo_files =
-      File.upload_files (Tenant_pool.LogoMapping.LogoType.all ()) req
+      File.upload_files (Pool_tenant.LogoMapping.LogoType.all ()) req
     in
     let events_list urlencoded =
       let open CCResult.Infix in
       match command with
       | `EditDetail ->
-        Cqrs_command.Tenant_pool_command.EditDetails.(
+        Cqrs_command.Pool_tenant_command.EditDetails.(
           decode urlencoded >>= handle tenant)
       | `EditDatabase ->
-        Cqrs_command.Tenant_pool_command.EditDatabase.(
+        Cqrs_command.Pool_tenant_command.EditDatabase.(
           decode urlencoded >>= handle tenant)
     in
     logo_files @ multipart_encoded
@@ -47,7 +47,7 @@ let update req command success_message =
       [ Message.set ~success:[ success_message ] ]
   in
   id
-  |> Tenant_pool.find_full
+  |> Pool_tenant.find_full
   >>= events
   |> Lwt_result.map_err (fun err -> err, redirect_path)
   |>> handle
@@ -74,9 +74,9 @@ let delete_asset req =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = Tenant_pool.to_ctx Database.root in
+    let ctx = Pool_tenant.to_ctx Database.root in
     let event tenant =
-      Cqrs_command.Tenant_pool_command.DestroyLogo.handle tenant asset_id
+      Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift
     in
     let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
@@ -89,7 +89,7 @@ let delete_asset req =
         [ Message.set ~success:[ Pool_common.Message.FileDeleted ] ]
     in
     tenant_id
-    |> Tenant_pool.find
+    |> Pool_tenant.find
     >>= event
     |>> handle
     |>> destroy_file

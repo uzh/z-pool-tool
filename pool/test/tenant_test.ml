@@ -1,5 +1,5 @@
 module Tenant_command = Cqrs_command.Tenant_command
-module Tenant_pool_command = Cqrs_command.Tenant_pool_command
+module Pool_tenant_command = Cqrs_command.Pool_tenant_command
 module Admin_command = Cqrs_command.Admin_command
 module HttpUtils = Http_utils
 module Common = Pool_common
@@ -28,13 +28,13 @@ module Data = struct
 
   let styles =
     Asset.styles
-    |> Tenant_pool.Styles.Write.create
+    |> Pool_tenant.Styles.Write.create
     |> Test_utils.get_or_failwith_pool_error
   ;;
 
   let icon =
     Asset.icon
-    |> Tenant_pool.Icon.Write.create
+    |> Pool_tenant.Icon.Write.create
     |> Test_utils.get_or_failwith_pool_error
   ;;
 
@@ -47,7 +47,7 @@ module Data = struct
   let lastname = "Ötzi"
 
   let urlencoded =
-    let open Tenant_pool.LogoMapping.LogoType in
+    let open Pool_tenant.LogoMapping.LogoType in
     [ "title", [ title ]
     ; "description", [ description ]
     ; "url", [ url ]
@@ -72,11 +72,11 @@ module Data = struct
   ;;
 
   let tenant =
-    let open Tenant_pool in
+    let open Pool_tenant in
     let open CCResult in
     let* title = title |> Title.create in
     let* description = description |> Description.create in
-    let* url = url |> Tenant_pool.Url.create in
+    let* url = url |> Pool_tenant.Url.create in
     let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
     let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
     let* smtp_auth_username = smtp_auth_username |> SmtpAuth.Username.create in
@@ -116,7 +116,7 @@ end
 
 let create_smtp_auth () =
   let open Data in
-  let open Tenant_pool.SmtpAuth in
+  let open Pool_tenant.SmtpAuth in
   let smtp_auth =
     let open CCResult in
     let* server = smtp_auth_server |> Server.create in
@@ -141,7 +141,7 @@ let[@warning "-4"] create_tenant () =
   let open Data in
   let events =
     let open CCResult.Infix in
-    Tenant_pool_command.Create.(Data.urlencoded |> decode >>= handle)
+    Pool_tenant_command.Create.(Data.urlencoded |> decode >>= handle)
   in
   let ( tenant_id
       , created_at
@@ -153,12 +153,12 @@ let[@warning "-4"] create_tenant () =
     events
     |> Test_utils.get_or_failwith_pool_error
     |> function
-    | [ Pool_event.TenantPool
-          Tenant_pool.(Created Write.{ id; created_at; updated_at; _ })
-      ; Pool_event.TenantPool
-          (Tenant_pool.LogosUploaded [ partner_logo; tenant_logo ])
+    | [ Pool_event.PoolTenant
+          Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
+      ; Pool_event.PoolTenant
+          (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
       ] ->
-      let read_ids Tenant_pool.LogoMapping.Write.{ id; asset_id; _ } =
+      let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
       in
       ( id
@@ -169,11 +169,11 @@ let[@warning "-4"] create_tenant () =
     | _ -> failwith "Tenant create events don't match in test."
   in
   let expected =
-    let open Tenant_pool in
+    let open Pool_tenant in
     let open CCResult in
-    let* title = title |> Tenant_pool.Title.create in
-    let* description = description |> Tenant_pool.Description.create in
-    let* url = url |> Tenant_pool.Url.create in
+    let* title = title |> Pool_tenant.Title.create in
+    let* description = description |> Pool_tenant.Description.create in
+    let* url = url |> Pool_tenant.Url.create in
     let* database =
       let open Pool_database in
       let* url = database_url |> Url.create in
@@ -181,7 +181,7 @@ let[@warning "-4"] create_tenant () =
       Ok { url; label }
     in
     let* smtp_auth =
-      let open Tenant_pool.SmtpAuth in
+      let open Pool_tenant.SmtpAuth in
       let* server = smtp_auth_server |> Server.create in
       let* port = smtp_auth_port |> Port.create in
       let* username = smtp_auth_username |> Username.create in
@@ -195,8 +195,8 @@ let[@warning "-4"] create_tenant () =
           { server; port; username; password; authentication_method; protocol }
     in
     let* default_language = default_language |> Common.Language.of_string in
-    let create : Tenant_pool.Write.t =
-      Tenant_pool.Write.
+    let create : Pool_tenant.Write.t =
+      Pool_tenant.Write.
         { id = tenant_id
         ; title
         ; description
@@ -212,23 +212,23 @@ let[@warning "-4"] create_tenant () =
         ; updated_at
         }
     in
-    let logos : Tenant_pool.LogoMapping.Write.t list =
-      Tenant_pool.LogoMapping.Write.
+    let logos : Pool_tenant.LogoMapping.Write.t list =
+      Pool_tenant.LogoMapping.Write.
         [ { id = partner_logo_id
           ; tenant_id
           ; asset_id = partner_logo_asset_id
-          ; logo_type = Tenant_pool.LogoMapping.LogoType.PartnerLogo
+          ; logo_type = Pool_tenant.LogoMapping.LogoType.PartnerLogo
           }
         ; { id = logo_id
           ; tenant_id
           ; asset_id = logo_asset_id
-          ; logo_type = Tenant_pool.LogoMapping.LogoType.TenantLogo
+          ; logo_type = Pool_tenant.LogoMapping.LogoType.TenantLogo
           }
         ]
     in
     Ok
-      [ Tenant_pool.Created create |> Pool_event.tenant_pool
-      ; Tenant_pool.LogosUploaded logos |> Pool_event.tenant_pool
+      [ Pool_tenant.Created create |> Pool_event.pool_tenant
+      ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ]
   in
   Alcotest.(
@@ -246,18 +246,18 @@ let[@warning "-4"] update_tenant_details () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
-      let open Tenant_pool_command.EditDetails in
+      let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values [ "disabled" ]
       |> decode
       >>= handle tenant
     in
     let expected =
-      let open Tenant_pool in
+      let open Pool_tenant in
       let open CCResult in
       let* title = title |> Title.create in
       let* description = description |> Description.create in
-      let* url = url |> Tenant_pool.Url.create in
+      let* url = url |> Pool_tenant.Url.create in
       let* smtp_auth =
         let* server = smtp_auth_server |> SmtpAuth.Server.create in
         let* port = smtp_auth_port |> SmtpAuth.Port.create in
@@ -280,13 +280,13 @@ let[@warning "-4"] update_tenant_details () =
         |> Test_utils.get_or_failwith_pool_error
         |> function
         | [ _
-          ; (Pool_event.TenantPool (Tenant_pool.LogosUploaded [ _; _ ]) as
+          ; (Pool_event.PoolTenant (Pool_tenant.LogosUploaded [ _; _ ]) as
             logos)
           ] -> logos
         | _ -> failwith "Tenant create events don't match in test."
       in
       Ok
-        [ DetailsEdited (tenant, update) |> Pool_event.tenant_pool; logo_event ]
+        [ DetailsEdited (tenant, update) |> Pool_event.pool_tenant; logo_event ]
     in
     Alcotest.(
       check
@@ -303,7 +303,7 @@ let update_tenant_database () =
   | Ok tenant ->
     let events =
       let open CCResult.Infix in
-      let open Tenant_pool_command.EditDatabase in
+      let open Pool_tenant_command.EditDatabase in
       [ "database_url", [ database_url ]; "database_label", [ database_label ] ]
       |> decode
       >>= handle tenant
@@ -315,8 +315,8 @@ let update_tenant_database () =
       let* label = database_label |> Label.create in
       let database = { url; label } in
       Ok
-        [ Tenant_pool.DatabaseEdited (tenant, database)
-          |> Pool_event.tenant_pool
+        [ Pool_tenant.DatabaseEdited (tenant, database)
+          |> Pool_event.pool_tenant
         ]
     in
     Alcotest.(

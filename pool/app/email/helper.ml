@@ -5,7 +5,7 @@ module Database = Pool_database
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
-  |> Format.asprintf "%s%s" (Tenant_pool.Url.value pool_url)
+  |> Format.asprintf "%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
 let prepend_root_directory pool url =
@@ -17,7 +17,7 @@ let prepend_root_directory pool url =
 let prepare_email pool template_label subject email params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
-      ~ctx:(Tenant_pool.to_ctx pool)
+      ~ctx:(Pool_tenant.to_ctx pool)
       template_label
   in
   match template, Sihl.Configuration.read_string "SMTP_SENDER" with
@@ -41,10 +41,10 @@ let prepare_email pool template_label subject email params =
 module PasswordReset = struct
   let create pool ~user =
     let email = user.Sihl_user.email in
-    let%lwt url = Tenant_pool.Url.of_pool pool in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
-        ~ctx:(Tenant_pool.to_ctx pool)
+        ~ctx:(Pool_tenant.to_ctx pool)
         email
     in
     match reset_token with
@@ -93,7 +93,7 @@ end
 
 module SignUp = struct
   let create db_pool email firstname lastname =
-    let%lwt url = Tenant_pool.Url.of_pool db_pool in
+    let%lwt url = Pool_tenant.Url.of_pool db_pool in
     let name =
       Format.asprintf
         "%s %s"
@@ -116,7 +116,7 @@ end
 
 module ConfirmationEmail = struct
   let create pool email firstname lastname =
-    let%lwt url = Tenant_pool.Url.of_pool pool in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
     let name =
       Format.asprintf
         "%s %s"

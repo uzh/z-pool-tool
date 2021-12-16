@@ -4,7 +4,7 @@ module User = Pool_user
 module File = Pool_common.File
 
 let create_logo_mappings files tenant logo_type =
-  let open Tenant_pool in
+  let open Pool_tenant in
   CCList.map
     (fun asset_id ->
       LogoMapping.Write.
@@ -14,20 +14,20 @@ let create_logo_mappings files tenant logo_type =
 
 module Create : sig
   type t =
-    { title : Tenant_pool.Title.t
-    ; description : Tenant_pool.Description.t
-    ; url : Tenant_pool.Url.t
+    { title : Pool_tenant.Title.t
+    ; description : Pool_tenant.Description.t
+    ; url : Pool_tenant.Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
-    ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
-    ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
-    ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
-    ; smtp_auth_password : Tenant_pool.SmtpAuth.Password.t
+    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
+    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method :
-        Tenant_pool.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Tenant_pool.SmtpAuth.Protocol.t
-    ; styles : Tenant_pool.Styles.Write.t
-    ; icon : Tenant_pool.Icon.Write.t
+        Pool_tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
+    ; styles : Pool_tenant.Styles.Write.t
+    ; icon : Pool_tenant.Icon.Write.t
     ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list
     ; partner_logos : Id.t list
@@ -42,20 +42,20 @@ module Create : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { title : Tenant_pool.Title.t
-    ; description : Tenant_pool.Description.t
-    ; url : Tenant_pool.Url.t
+    { title : Pool_tenant.Title.t
+    ; description : Pool_tenant.Description.t
+    ; url : Pool_tenant.Url.t
     ; database_url : Database.Url.t
     ; database_label : Database.Label.t
-    ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
-    ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
-    ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
-    ; smtp_auth_password : Tenant_pool.SmtpAuth.Password.t
+    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
+    ; smtp_auth_password : Pool_tenant.SmtpAuth.Password.t
     ; smtp_auth_authentication_method :
-        Tenant_pool.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Tenant_pool.SmtpAuth.Protocol.t
-    ; styles : Tenant_pool.Styles.Write.t
-    ; icon : Tenant_pool.Icon.Write.t
+        Pool_tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
+    ; styles : Pool_tenant.Styles.Write.t
+    ; icon : Pool_tenant.Icon.Write.t
     ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list
     ; partner_logos : Id.t list
@@ -102,30 +102,30 @@ end = struct
     Conformist.(
       make
         Field.
-          [ Tenant_pool.Title.schema ()
-          ; Tenant_pool.Description.schema ()
-          ; Tenant_pool.Url.schema ()
+          [ Pool_tenant.Title.schema ()
+          ; Pool_tenant.Description.schema ()
+          ; Pool_tenant.Url.schema ()
           ; Database.Url.schema ()
           ; Database.Label.schema ()
-          ; Tenant_pool.SmtpAuth.Server.schema ()
-          ; Tenant_pool.SmtpAuth.Port.schema ()
-          ; Tenant_pool.SmtpAuth.Username.schema ()
-          ; Tenant_pool.SmtpAuth.Password.schema ()
-          ; Tenant_pool.SmtpAuth.AuthenticationMethod.schema ()
-          ; Tenant_pool.SmtpAuth.Protocol.schema ()
-          ; Tenant_pool.Styles.Write.schema ()
-          ; Tenant_pool.Icon.Write.schema ()
+          ; Pool_tenant.SmtpAuth.Server.schema ()
+          ; Pool_tenant.SmtpAuth.Port.schema ()
+          ; Pool_tenant.SmtpAuth.Username.schema ()
+          ; Pool_tenant.SmtpAuth.Password.schema ()
+          ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Pool_tenant.SmtpAuth.Protocol.schema ()
+          ; Pool_tenant.Styles.Write.schema ()
+          ; Pool_tenant.Icon.Write.schema ()
           ; Pool_common.Language.schema ()
-          ; Tenant_pool.Logos.schema ()
-          ; Tenant_pool.PartnerLogos.schema ()
+          ; Pool_tenant.Logos.schema ()
+          ; Pool_tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
 
   let handle (command : t) =
-    let open Tenant_pool in
+    let open Pool_tenant in
     let tenant =
-      Tenant_pool.Write.create
+      Pool_tenant.Write.create
         command.title
         command.description
         command.url
@@ -146,14 +146,14 @@ end = struct
       CCList.map
         (fun (id_list, logo_type) ->
           create_logo_mappings id_list tenant logo_type)
-        [ command.partner_logos, Tenant_pool.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Tenant_pool.LogoMapping.LogoType.TenantLogo
+        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
+        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
         ]
       |> CCList.flatten
     in
     Ok
-      [ Tenant_pool.Created tenant |> Pool_event.tenant_pool
-      ; Tenant_pool.LogosUploaded logo_mappings |> Pool_event.tenant_pool
+      [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
+      ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ]
   ;;
 
@@ -169,23 +169,23 @@ end
 
 module EditDetails : sig
   type t =
-    { title : Tenant_pool.Title.t
-    ; description : Tenant_pool.Description.t
-    ; url : Tenant_pool.Url.t
-    ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
-    ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
-    ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
+    { title : Pool_tenant.Title.t
+    ; description : Pool_tenant.Description.t
+    ; url : Pool_tenant.Url.t
+    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method :
-        Tenant_pool.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Tenant_pool.SmtpAuth.Protocol.t
-    ; disabled : Tenant_pool.Disabled.t
+        Pool_tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
+    ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list option
     ; partner_logos : Id.t list option
     }
 
   val handle
-    :  Tenant_pool.Write.t
+    :  Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -193,19 +193,19 @@ module EditDetails : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Tenant_pool.t -> bool Lwt.t
+  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t =
-    { title : Tenant_pool.Title.t
-    ; description : Tenant_pool.Description.t
-    ; url : Tenant_pool.Url.t
-    ; smtp_auth_server : Tenant_pool.SmtpAuth.Server.t
-    ; smtp_auth_port : Tenant_pool.SmtpAuth.Port.t
-    ; smtp_auth_username : Tenant_pool.SmtpAuth.Username.t
+    { title : Pool_tenant.Title.t
+    ; description : Pool_tenant.Description.t
+    ; url : Pool_tenant.Url.t
+    ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
+    ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
+    ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
     ; smtp_auth_authentication_method :
-        Tenant_pool.SmtpAuth.AuthenticationMethod.t
-    ; smtp_auth_protocol : Tenant_pool.SmtpAuth.Protocol.t
-    ; disabled : Tenant_pool.Disabled.t
+        Pool_tenant.SmtpAuth.AuthenticationMethod.t
+    ; smtp_auth_protocol : Pool_tenant.SmtpAuth.Protocol.t
+    ; disabled : Pool_tenant.Disabled.t
     ; default_language : Pool_common.Language.t
     ; tenant_logos : Id.t list option
     ; partner_logos : Id.t list option
@@ -244,25 +244,25 @@ end = struct
     Conformist.(
       make
         Field.
-          [ Tenant_pool.Title.schema ()
-          ; Tenant_pool.Description.schema ()
-          ; Tenant_pool.Url.schema ()
-          ; Tenant_pool.SmtpAuth.Server.schema ()
-          ; Tenant_pool.SmtpAuth.Port.schema ()
-          ; Tenant_pool.SmtpAuth.Username.schema ()
-          ; Tenant_pool.SmtpAuth.AuthenticationMethod.schema ()
-          ; Tenant_pool.SmtpAuth.Protocol.schema ()
-          ; Tenant_pool.Disabled.schema ()
+          [ Pool_tenant.Title.schema ()
+          ; Pool_tenant.Description.schema ()
+          ; Pool_tenant.Url.schema ()
+          ; Pool_tenant.SmtpAuth.Server.schema ()
+          ; Pool_tenant.SmtpAuth.Port.schema ()
+          ; Pool_tenant.SmtpAuth.Username.schema ()
+          ; Pool_tenant.SmtpAuth.AuthenticationMethod.schema ()
+          ; Pool_tenant.SmtpAuth.Protocol.schema ()
+          ; Pool_tenant.Disabled.schema ()
           ; Pool_common.Language.schema ()
-          ; Conformist.optional @@ Tenant_pool.Logos.schema ()
-          ; Conformist.optional @@ Tenant_pool.PartnerLogos.schema ()
+          ; Conformist.optional @@ Pool_tenant.Logos.schema ()
+          ; Conformist.optional @@ Pool_tenant.PartnerLogos.schema ()
           ]
         command)
   ;;
 
-  let handle (tenant : Tenant_pool.Write.t) (command : t) =
+  let handle (tenant : Pool_tenant.Write.t) (command : t) =
     let update =
-      Tenant_pool.
+      Pool_tenant.
         { title = command.title
         ; description = command.description
         ; url = command.url
@@ -283,14 +283,14 @@ end = struct
           id_list
           |> CCOption.map (fun ids -> create_logo_mappings ids tenant logo_type)
           |> CCOption.value ~default:[])
-        [ command.partner_logos, Tenant_pool.LogoMapping.LogoType.PartnerLogo
-        ; command.tenant_logos, Tenant_pool.LogoMapping.LogoType.TenantLogo
+        [ command.partner_logos, Pool_tenant.LogoMapping.LogoType.PartnerLogo
+        ; command.tenant_logos, Pool_tenant.LogoMapping.LogoType.TenantLogo
         ]
       |> CCList.flatten
     in
     Ok
-      [ Tenant_pool.DetailsEdited (tenant, update) |> Pool_event.tenant_pool
-      ; Tenant_pool.LogosUploaded logo_mappings |> Pool_event.tenant_pool
+      [ Pool_tenant.DetailsEdited (tenant, update) |> Pool_event.pool_tenant
+      ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ]
   ;;
 
@@ -299,11 +299,11 @@ end = struct
     |> CCResult.map_err Pool_common.Message.conformist
   ;;
 
-  let can user (tenant : Tenant_pool.t) =
+  let can user (tenant : Pool_tenant.t) =
     Permission.can
       user
       ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id) ]
+        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
   ;;
 end
 
@@ -314,7 +314,7 @@ module EditDatabase : sig
     }
 
   val handle
-    :  Tenant_pool.Write.t
+    :  Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -322,7 +322,7 @@ module EditDatabase : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Tenant_pool.t -> bool Lwt.t
+  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t =
     { database_url : Database.Url.t
@@ -336,12 +336,12 @@ end = struct
       make Field.[ Database.Url.schema (); Database.Label.schema () ] command)
   ;;
 
-  let handle (tenant : Tenant_pool.Write.t) (command : t) =
+  let handle (tenant : Pool_tenant.Write.t) (command : t) =
     let database =
       Database.{ url = command.database_url; label = command.database_label }
     in
     Ok
-      [ Tenant_pool.DatabaseEdited (tenant, database) |> Pool_event.tenant_pool
+      [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
       ]
   ;;
 
@@ -350,24 +350,24 @@ end = struct
     |> CCResult.map_err Pool_common.Message.conformist
   ;;
 
-  let can user (tenant : Tenant_pool.t) =
+  let can user (tenant : Pool_tenant.t) =
     Permission.can
       user
       ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Tenant_pool.id) ]
+        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
   ;;
 end
 
 module DestroyLogo : sig
   val handle
-    :  Tenant_pool.t
+    :  Pool_tenant.t
     -> Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> bool Lwt.t
 end = struct
   let handle tenant asset_id =
-    Ok [ Tenant_pool.LogoDeleted (tenant, asset_id) |> Pool_event.tenant_pool ]
+    Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
   let can user =
@@ -385,8 +385,8 @@ end = struct
 
   let handle t =
     Ok
-      [ Tenant_pool.Destroyed (t.tenant_id |> Id.of_string)
-        |> Pool_event.tenant_pool
+      [ Pool_tenant.Destroyed (t.tenant_id |> Id.of_string)
+        |> Pool_event.pool_tenant
       ]
   ;;
 

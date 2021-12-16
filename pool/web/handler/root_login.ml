@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Database = Pool_database
 
-let ctx = Tenant_pool.(to_ctx Database.root)
+let ctx = Pool_tenant.(to_ctx Database.root)
 let root_login_path = "/root/login"
 let root_entrypoint_path = "/root/tenants"
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path

@@ -13,7 +13,7 @@
   email
   pool_user
   pool_common
-  tenant_pool
+  pool_tenant
   tenant
   experiment
   conformist)

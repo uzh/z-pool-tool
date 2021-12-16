@@ -2,7 +2,7 @@
 let event = Alcotest.testable Pool_event.pp Pool_event.equal
 
 let tenant_smtp_auth =
-  Alcotest.testable Tenant_pool.SmtpAuth.pp Tenant_pool.SmtpAuth.equal
+  Alcotest.testable Pool_tenant.SmtpAuth.pp Pool_tenant.SmtpAuth.equal
 ;;
 
 let error =

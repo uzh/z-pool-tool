@@ -71,7 +71,7 @@ let urlencoded_to_flash urlencoded =
 
 let validate_email_existance pool email =
   let open Lwt.Infix in
-  Service.User.find_by_email_opt ~ctx:(Tenant_pool.to_ctx pool) email
+  Service.User.find_by_email_opt ~ctx:(Pool_tenant.to_ctx pool) email
   >|= function
   | None -> Ok ()
   | Some _ -> Error Pool_common.Message.EmailAlreadyInUse

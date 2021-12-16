@@ -6,7 +6,7 @@
   service
   permission
   role
-  tenant_pool
+  pool_tenant
   pool_user
   pool_common
   utils

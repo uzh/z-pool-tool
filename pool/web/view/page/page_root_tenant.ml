@@ -7,11 +7,11 @@ let input_element = Component.input_element
 
 let list csrf tenant_list root_list message () =
   let build_tenant_rows tenant_list =
-    let open Tenant_pool in
+    let open Pool_tenant in
     CCList.map
-      (fun (tenant : Tenant_pool.t) ->
+      (fun (tenant : Pool_tenant.t) ->
         div
-          [ h2 [ txt (tenant.title |> Tenant_pool.Title.value) ]
+          [ h2 [ txt (tenant.title |> Pool_tenant.Title.value) ]
           ; a
               ~a:
                 [ a_href
@@ -119,13 +119,13 @@ let list csrf tenant_list root_list message () =
   Page_layout.create html message ()
 ;;
 
-let detail csrf (tenant : Tenant_pool.t) message () =
-  let open Tenant_pool in
-  let open Tenant_pool.SmtpAuth in
+let detail csrf (tenant : Pool_tenant.t) message () =
+  let open Pool_tenant in
+  let open Pool_tenant.SmtpAuth in
   let detail_fields =
     [ "title", Title.value tenant.title
     ; "description", Description.value tenant.description
-    ; "url", Tenant_pool.Url.value tenant.url
+    ; "url", Pool_tenant.Url.value tenant.url
     ; "smtp_auth_server", Server.value tenant.smtp_auth.server
     ; "smtp_auth_port", Port.value tenant.smtp_auth.port
     ; "smtp_auth_username", Username.value tenant.smtp_auth.username
@@ -147,14 +147,14 @@ let detail csrf (tenant : Tenant_pool.t) message () =
     @ [ div
           [ a
               ~a:
-                [ a_href (File.path (tenant.styles |> Tenant_pool.Styles.value))
+                [ a_href (File.path (tenant.styles |> Pool_tenant.Styles.value))
                 ]
               [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles" ] ()
           ]
       ; div
           [ a
-              ~a:[ a_href (File.path (tenant.icon |> Tenant_pool.Icon.value)) ]
+              ~a:[ a_href (File.path (tenant.icon |> Pool_tenant.Icon.value)) ]
               [ txt "icon" ]
           ; input ~a:[ a_input_type `File; a_name "icon" ] ()
           ]
@@ -179,7 +179,7 @@ let detail csrf (tenant : Tenant_pool.t) message () =
   in
   let disabled =
     let attributes =
-      match tenant.disabled |> Tenant_pool.Disabled.value with
+      match tenant.disabled |> Pool_tenant.Disabled.value with
       | true -> [ a_input_type `Checkbox; a_name "disabled"; a_checked () ]
       | false -> [ a_input_type `Checkbox; a_name "disabled" ]
     in
@@ -215,14 +215,14 @@ let detail csrf (tenant : Tenant_pool.t) message () =
   let delete_file_forms =
     div
       [ h3 [ txt "Tenant Logos" ]
-      ; delete_img_form (tenant.logos |> Tenant_pool.Logos.value)
+      ; delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
       ; h3 [ txt "Partner Logos" ]
-      ; delete_img_form (tenant.partner_logo |> Tenant_pool.PartnerLogos.value)
+      ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
       ]
   in
   let html =
     div
-      [ h1 [ txt (tenant.Tenant_pool.title |> Tenant_pool.Title.value) ]
+      [ h1 [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
       ; form
           ~a:
             [ a_action

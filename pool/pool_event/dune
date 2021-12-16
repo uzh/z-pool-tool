@@ -8,7 +8,7 @@
   pool_user
   email
   participant
-  tenant_pool
+  pool_tenant
   tenant
   experiment
   settings)

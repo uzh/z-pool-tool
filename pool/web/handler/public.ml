@@ -13,7 +13,7 @@ let index req =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
       let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-      let* tenant = Tenant_pool.find_by_label tenant_db in
+      let* tenant = Pool_tenant.find_by_label tenant_db in
       Page.Public.index tenant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
@@ -28,11 +28,11 @@ let index_css req =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* styles = Tenant_pool.find_styles tenant_db in
+    let* styles = Pool_tenant.find_styles tenant_db in
     let%lwt file =
       Service.Storage.find
-        ~ctx:(Tenant_pool.to_ctx Database.root)
-        (styles |> Tenant_pool.Styles.id |> Pool_common.Id.value)
+        ~ctx:(Pool_tenant.to_ctx Database.root)
+        (styles |> Pool_tenant.Styles.id |> Pool_common.Id.value)
     in
     let%lwt content =
       Service.Storage.download_data_base64 file ||> Base64.decode_exn
@@ -40,7 +40,7 @@ let index_css req =
     Sihl.Web.Response.of_plain_text content
     |> Sihl.Web.Response.set_content_type
          (styles
-         |> Tenant_pool.Styles.mime_type
+         |> Pool_tenant.Styles.mime_type
          |> Pool_common.File.Mime.to_string)
     |> Lwt.return_ok
   in
@@ -71,7 +71,7 @@ let asset req =
   let open Sihl.Contract.Storage in
   let asset_id = Sihl.Web.Router.param req "id" in
   let%lwt file =
-    Service.Storage.find ~ctx:(Tenant_pool.to_ctx Database.root) asset_id
+    Service.Storage.find ~ctx:(Pool_tenant.to_ctx Database.root) asset_id
   in
   let%lwt content = Service.Storage.download_data_base64 file in
   let mime = file.file.mime in
@@ -85,7 +85,7 @@ let error req =
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* _ = Tenant_pool.find_by_label tenant_db in
+    let* _ = Pool_tenant.find_by_label tenant_db in
     Ok
       ( Common.Message.TerminatoryTenantErrorTitle
       , Common.Message.TerminatoryTenantError )
