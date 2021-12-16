@@ -115,7 +115,7 @@ module SignUp = struct
 end
 
 module ConfirmationEmail = struct
-  let create pool email firstname lastname =
+  let create pool email firstname lastname event =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let name =
       Format.asprintf
@@ -129,11 +129,18 @@ module ConfirmationEmail = struct
       |> Sihl.Web.externalize_path
       |> create_public_url url
     in
-    prepare_email
-      pool
-      "email_verification"
-      subject
-      (address email |> Pool_user.EmailAddress.value)
-      [ "verificationUrl", validation_url; "name", name ]
+    let create_email template =
+      prepare_email
+        pool
+        template
+        subject
+        (address email |> Pool_user.EmailAddress.value)
+        [ "verificationUrl", validation_url; "name", name ]
+    in
+    create_email
+    @@
+    match event with
+    | `SignUp -> "signup_verification"
+    | `EmailUpdate -> "email_verification"
   ;;
 end

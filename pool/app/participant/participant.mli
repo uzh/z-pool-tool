@@ -78,7 +78,6 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | EmailUnconfirmed of t
   | EmailConfirmed of t
   | TermsAccepted of t
   | Disabled of t

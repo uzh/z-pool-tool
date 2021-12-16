@@ -90,16 +90,11 @@ type event =
       * Pool_common.Id.t
       * Pool_user.Firstname.t
       * Pool_user.Lastname.t
-  | UpdatedUnverified of
-      unverified t
-      * (Pool_user.EmailAddress.t
-        * Pool_user.Firstname.t
-        * Pool_user.Lastname.t)
-  | UpdatedVerified of
-      verified t
-      * (Pool_user.EmailAddress.t
-        * Pool_user.Firstname.t
-        * Pool_user.Lastname.t)
+  | Updated of
+      Pool_user.EmailAddress.t
+      * Pool_common.Id.t
+      * Pool_user.Firstname.t
+      * Pool_user.Lastname.t
   | EmailVerified of unverified t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -129,6 +124,7 @@ module Helper : sig
       -> unverified t
       -> Pool_user.Firstname.t
       -> Pool_user.Lastname.t
+      -> [< `EmailUpdate | `SignUp ]
       -> Sihl_email.t Lwt.t
   end
 end

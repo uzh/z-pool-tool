@@ -58,7 +58,6 @@ type event =
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
-  | EmailUnconfirmed of t
   | EmailConfirmed of t
   | TermsAccepted of t
   | Disabled of t
@@ -169,13 +168,6 @@ let handle_event pool : event -> unit Lwt.t =
         (lastname person)
     in
     Lwt.return_unit
-  | EmailUnconfirmed participant ->
-    let%lwt _ =
-      Service.User.update
-        ~ctx
-        Sihl_user.{ participant.user with confirmed = false }
-    in
-    Lwt.return_unit
   | EmailConfirmed participant ->
     let%lwt _ =
       Service.User.update
@@ -236,9 +228,5 @@ let pp_event formatter (event : event) : unit =
   | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password
-  | EmailUnconfirmed p
-  | EmailConfirmed p
-  | TermsAccepted p
-  | Disabled p
-  | Verified p -> person_pp p
+  | EmailConfirmed p | TermsAccepted p | Disabled p | Verified p -> person_pp p
 ;;

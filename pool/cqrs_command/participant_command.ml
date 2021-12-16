@@ -331,7 +331,7 @@ end = struct
   ;;
 end
 
-module ConfirmEmail : sig
+module VerifyAccount : sig
   type t = { email : Email.unverified Email.t }
 
   val handle

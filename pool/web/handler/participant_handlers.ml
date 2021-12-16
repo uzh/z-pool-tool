@@ -127,7 +127,7 @@ let email_verification req =
      let* events =
        match participant.Participant.user.Sihl.Contract.User.confirmed with
        | false ->
-         Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
+         Command.VerifyAccount.(handle { email } participant) |> Lwt_result.lift
        | true ->
          Command.UpdateEmail.(handle participant email) |> Lwt_result.lift
      in
