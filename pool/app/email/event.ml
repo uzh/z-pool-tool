@@ -55,6 +55,7 @@ let handle_event pool : event -> unit Lwt.t =
   in
   function
   | Created (address, user_id, firstname, lastname) ->
+    let%lwt () = Repo.delete_unverified_by_user pool user_id in
     create_email user_id address firstname lastname
   | UpdatedUnverified
       ( (Unverified { user_id; token; _ } as old_email)

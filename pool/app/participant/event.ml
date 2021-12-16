@@ -151,7 +151,9 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let%lwt email =
       let open Lwt.Infix in
-      Email.find_verified pool (email_address person)
+      Email.find_verified_by_user
+        pool
+        (person.user.Sihl.Contract.User.id |> Id.of_string)
       >|= function
       | Ok email -> email
       | Error err ->

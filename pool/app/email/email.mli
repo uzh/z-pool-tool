@@ -64,15 +64,25 @@ val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_common.Id.t
 
-val find_unverified
+val find_unverified_by_user
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (unverified t, Pool_common.Message.error) result Lwt.t
+
+val find_verified_by_user
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (verified t, Pool_common.Message.error) result Lwt.t
+
+val find_unverified_by_address
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
   -> (unverified t, Pool_common.Message.error) result Lwt.t
 
-val find_verified
+val delete_unverified_by_user
   :  Pool_database.Label.t
-  -> Pool_user.EmailAddress.t
-  -> (verified t, Pool_common.Message.error) result Lwt.t
+  -> Pool_common.Id.t
+  -> unit Lwt.t
 
 type event =
   | Created of

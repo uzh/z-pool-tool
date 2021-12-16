@@ -34,7 +34,7 @@ let find_request_sql : type a. a carrier -> string -> string =
   | VerifiedC -> select email_verified
 ;;
 
-let find_request
+let find_by_user_request
     : type a.
       a carrier
       -> (string, a t, [< `Many | `One | `Zero > `One ]) Caqti_request.t
@@ -42,20 +42,46 @@ let find_request
   | UnverifiedC ->
     find_request_sql
       UnverifiedC
-      {sql| WHERE address = ? AND verified IS NULL |sql}
+      {sql| WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL ORDER BY created_at DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.unverified_t
   | VerifiedC ->
     find_request_sql
       VerifiedC
-      {sql| WHERE address = ? AND verified IS NOT NULL |sql}
+      {sql| WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NOT NULL ORDER BY created_at DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.verified_t
 ;;
 
-let find pool carrier address =
+let find_by_address_request
+    : type a.
+      a carrier
+      -> (string, a t, [< `Many | `One | `Zero > `One ]) Caqti_request.t
+  = function
+  | UnverifiedC ->
+    find_request_sql
+      UnverifiedC
+      {sql| WHERE address = ? AND verified IS NULL ORDER BY created_at DESC LIMIT 1 |sql}
+    |> Caqti_request.find Caqti_type.string RepoEntity.unverified_t
+  | VerifiedC ->
+    find_request_sql
+      VerifiedC
+      {sql| WHERE address = ? AND verified IS NOT NULL ORDER BY created_at DESC LIMIT 1 |sql}
+    |> Caqti_request.find Caqti_type.string RepoEntity.verified_t
+;;
+
+let find_by_user pool carrier user_id =
+  let open Lwt.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    (find_by_user_request carrier)
+    (Pool_common.Id.value user_id)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Email)
+;;
+
+let find_by_address pool carrier address =
   let open Lwt.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
-    (find_request carrier)
+    (find_by_address_request carrier)
     (address |> User.EmailAddress.value)
   >|= CCOption.to_result Pool_common.Message.(NotFound Email)
 ;;
@@ -144,15 +170,17 @@ let update_email pool old_email new_email =
     , (address new_email |> Pool_user.EmailAddress.value, token new_email) )
 ;;
 
-let delete_request =
+let delete_unverified_by_user_request =
   {sql|
-      DELETE FROM pool_email_verifications
-      WHERE address = ?;
-    |sql}
+    DELETE FROM pool_email_verifications
+    WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+  |sql}
   |> Caqti_request.exec Caqti_type.string
 ;;
 
-let delete pool email =
-  Utils.Database.exec (Database.Label.value pool) delete_request
-  @@ (address email |> Pool_user.EmailAddress.value)
+let delete_unverified_by_user pool id =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    delete_unverified_by_user_request
+  @@ Pool_common.Id.value id
 ;;

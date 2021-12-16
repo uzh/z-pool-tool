@@ -153,7 +153,7 @@ let[@warning "-41"] participants db_pool () =
               Service.User.update ~ctx Sihl_user.{ user with confirmed = true }
             in
             let%lwt unverified =
-              Email.find_unverified db_pool address
+              Email.find_unverified_by_user db_pool user_id
               |> Lwt.map get_or_failwith_pool_error
             in
             Email.EmailVerified unverified

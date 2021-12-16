@@ -110,7 +110,8 @@ let email_verification req =
     Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
     ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat
     >== User.EmailAddress.create
-    >>= Email.find_unverified tenant_db
+    >>= Email.find_unverified_by_address tenant_db
+    |> Lwt_result.map_err (fun _ -> Pool_common.Message.(Invalid Token))
   in
   let* participant = Participant.find tenant_db (Email.user_id email) in
   let* events =
@@ -313,9 +314,6 @@ let update_email req =
       ||> fun suffixes ->
       if CCList.is_empty suffixes then None else Some suffixes
     in
-    let* current_email =
-      Email.find_verified tenant_db (Participant.email_address participant)
-    in
     let* new_email =
       Pool_user.EmailAddress.create
         (CCList.assoc ~eq:CCString.equal "email" urlencoded |> CCList.hd)
@@ -323,8 +321,7 @@ let update_email req =
     in
     let* events =
       Command.RequestEmailValidation.(
-        handle ?allowed_email_suffixes participant { current_email; new_email })
-      |> Lwt_result.lift
+        handle ?allowed_email_suffixes participant new_email |> Lwt_result.lift)
     in
     Utils.Database.with_transaction tenant_db (fun () ->
         let%lwt () = Pool_event.handle_events tenant_db events in

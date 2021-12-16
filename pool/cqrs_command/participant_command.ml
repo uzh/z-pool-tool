@@ -231,10 +231,7 @@ end = struct
 end
 
 module RequestEmailValidation : sig
-  type t =
-    { current_email : Email.verified Email.t
-    ; new_email : User.EmailAddress.t
-    }
+  type t = Pool_user.EmailAddress.t
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
@@ -248,22 +245,17 @@ module RequestEmailValidation : sig
     -> Participant.t
     -> bool Lwt.t
 end = struct
-  type t =
-    { current_email : Email.verified Email.t
-    ; new_email : User.EmailAddress.t
-    }
+  type t = Pool_user.EmailAddress.t
 
-  let handle ?allowed_email_suffixes participant command =
+  let handle ?allowed_email_suffixes participant email =
     let open CCResult in
-    let* () =
-      User.EmailAddress.validate allowed_email_suffixes command.new_email
-    in
+    let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
-      [ Email.UpdatedVerified
-          ( command.current_email
-          , ( command.new_email
-            , Participant.firstname participant
-            , Participant.lastname participant ) )
+      [ Email.Created
+          ( email
+          , Participant.id participant
+          , Participant.firstname participant
+          , Participant.lastname participant )
         |> Pool_event.email_address
       ]
   ;;
