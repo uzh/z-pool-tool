@@ -137,7 +137,7 @@ let detail csrf (tenant : Tenant_pool.t) message () =
   in
   let database_fields =
     [ "database_url", ""
-    ; "database_label", Database_pool.Label.value tenant.database_label
+    ; "database_label", Pool_database.Label.value tenant.database_label
     ]
   in
   let detail_input_fields =

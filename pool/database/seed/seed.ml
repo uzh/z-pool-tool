@@ -9,7 +9,7 @@ module Tenant = struct
   let create db_pools () =
     Lwt_list.iter_s
       (fun pool ->
-        Logs.info (fun m -> m "%s" (Database_pool.Label.value pool));
+        Logs.info (fun m -> m "%s" (Pool_database.Label.value pool));
         let%lwt () = Seed_settings.create pool () in
         let%lwt () = Seed_user.admins pool () in
         let%lwt () = Seed_user.participants pool () in

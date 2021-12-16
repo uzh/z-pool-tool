@@ -56,12 +56,12 @@ val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 
 val find_unverified
-  :  Database_pool.Label.t
+  :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
   -> (unverified t, Pool_common.Message.error) result Lwt.t
 
 val find_verified
-  :  Database_pool.Label.t
+  :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
   -> (verified t, Pool_common.Message.error) result Lwt.t
 
@@ -80,21 +80,21 @@ type event =
         * Pool_user.Lastname.t)
   | EmailVerified of unverified t
 
-val handle_event : Database_pool.Label.t -> event -> unit Lwt.t
+val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
 module Helper : sig
   module PasswordReset : sig
     val create
-      :  Database_pool.Label.t
+      :  Pool_database.Label.t
       -> user:Sihl_user.t
       -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
   end
 
   module PasswordChange : sig
     val create
-      :  Database_pool.Label.t
+      :  Pool_database.Label.t
       -> verified t
       -> Pool_user.Firstname.t
       -> Pool_user.Lastname.t
@@ -103,7 +103,7 @@ module Helper : sig
 
   module ConfirmationEmail : sig
     val create
-      :  Database_pool.Label.t
+      :  Pool_database.Label.t
       -> unverified t
       -> Pool_user.Firstname.t
       -> Pool_user.Lastname.t

@@ -38,7 +38,7 @@ module Sql = struct
   ;;
 
   let find_all pool =
-    Utils.Database.collect (Database_pool.Label.value pool) find_all_request
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
   ;;
 end
 

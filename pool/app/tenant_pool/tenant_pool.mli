@@ -1,4 +1,4 @@
-module Database = Database_pool
+module Database = Pool_database
 
 module SmtpAuth : sig
   module Server : sig

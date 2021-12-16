@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Database = Database_pool
+module Database = Pool_database
 
 module Sql = struct
   let select_from_settings_sql =

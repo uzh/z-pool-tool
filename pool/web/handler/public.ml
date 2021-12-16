@@ -1,7 +1,7 @@
 module Message = Http_utils.Message
 module Login = Public_login
 module Common = Pool_common
-module Database = Database_pool
+module Database = Pool_database
 
 let index req =
   if Http_utils.is_req_from_root_host req

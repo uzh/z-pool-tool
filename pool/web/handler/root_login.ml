@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Database = Database_pool
+module Database = Pool_database
 
 let ctx = Tenant_pool.(to_ctx Database.root)
 let root_login_path = "/root/login"

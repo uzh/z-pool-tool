@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Database = Database_pool
+module Database = Pool_database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping

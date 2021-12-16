@@ -1,5 +1,5 @@
 module Common = Pool_common
-module Database = Database_pool
+module Database = Pool_database
 module Id = Common.Id
 module CreatedAt = Common.CreatedAt
 module UpdatedAt = Common.UpdatedAt

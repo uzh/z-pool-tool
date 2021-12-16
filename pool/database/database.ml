@@ -25,9 +25,9 @@ let schema =
               "The amount of connections in the database connection pool that \
                Sihl manages. If the number is too high, the server might \
                struggle. If the number is too low, your Sihl app performs \
-               badly. This can be configured using DATABASE_POOL_SIZE and the \
+               badly. This can be configured using Pool_database_SIZE and the \
                default is 10."
-            (int ~default:10 "DATABASE_POOL_SIZE")
+            (int ~default:10 "Pool_database_SIZE")
         ; Conformist.optional
             ~meta:
               "This value is by default set to [true] to skip the creation of \
@@ -39,14 +39,14 @@ let schema =
               "The database connection pool name that should be used by \
                default. By default ['root'] is used for this application."
             (string
-               ~default:Database_pool.(Label.value root)
+               ~default:Pool_database.(Label.value root)
                "DATABASE_CHOOSE_POOL")
         ]
       config)
 ;;
 
 module Root = struct
-  let label = Database_pool.(Label.value root)
+  let label = Pool_database.(Label.value root)
 
   module Migration = struct
     include Migration.Root
@@ -82,7 +82,7 @@ module Tenant = struct
     | tenants ->
       CCList.map
         (fun pool ->
-          let open Database_pool in
+          let open Pool_database in
           add_pool pool;
           pool.label)
         tenants
@@ -103,7 +103,7 @@ let start () =
   Lwt_list.iter_s
     (fun pool ->
       Logs.info (fun m ->
-          m "Start database %s" (Database_pool.Label.value pool));
+          m "Start database %s" (Pool_database.Label.value pool));
       Service.Migration.check_migrations_status
         ~ctx:(Tenant_pool.to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())

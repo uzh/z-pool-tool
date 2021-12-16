@@ -1,6 +1,6 @@
 open Entity
 module RepoPerson = Repo_person
-module Database = Database_pool
+module Database = Pool_database
 
 let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
   let open Repo_person in

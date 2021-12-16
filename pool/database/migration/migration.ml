@@ -1,4 +1,4 @@
-module Database = Database_pool
+module Database = Pool_database
 module Map = CCMap.Make (String)
 
 let execute db_pools steps =

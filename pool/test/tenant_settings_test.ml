@@ -18,7 +18,7 @@ module Testable = struct
 end
 
 module Data = struct
-  let database_label = "econ-test" |> Database_pool.Label.of_string
+  let database_label = "econ-test" |> Pool_database.Label.of_string
 end
 
 let check_contact_email _ () =

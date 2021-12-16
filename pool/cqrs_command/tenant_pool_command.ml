@@ -1,5 +1,5 @@
 module Id = Pool_common.Id
-module Database = Database_pool
+module Database = Pool_database
 module User = Pool_user
 module File = Pool_common.File
 

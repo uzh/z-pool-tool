@@ -1,5 +1,5 @@
 (library
- (name database_pool)
+ (name pool_database)
  (libraries containers pool_common)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

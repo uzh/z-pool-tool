@@ -1,5 +1,5 @@
 module Id = Pool_common.Id
-module Database = Database_pool
+module Database = Pool_database
 
 let find_request_sql where_fragment =
   Format.asprintf

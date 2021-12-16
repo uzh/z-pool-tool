@@ -3,7 +3,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Update = Root_tenant_update
-module Database = Database_pool
+module Database = Pool_database
 
 let tenants req =
   let csrf = HttpUtils.find_csrf req in

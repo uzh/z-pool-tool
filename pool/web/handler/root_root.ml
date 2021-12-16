@@ -1,6 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
-module Database = Database_pool
+module Database = Pool_database
 
 let create req =
   let open Lwt_result.Syntax in

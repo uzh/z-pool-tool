@@ -94,7 +94,7 @@ module Data = struct
         smtp_auth_authentication_method
         smtp_auth_protocol
     in
-    let* database = Database_pool.create database_url database_label in
+    let* database = Pool_database.create database_url database_label in
     Ok
       Write.
         { id = Common.Id.create ()
@@ -175,7 +175,7 @@ let[@warning "-4"] create_tenant () =
     let* description = description |> Tenant_pool.Description.create in
     let* url = url |> Tenant_pool.Url.create in
     let* database =
-      let open Database_pool in
+      let open Pool_database in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in
       Ok { url; label }
@@ -309,7 +309,7 @@ let update_tenant_database () =
       >>= handle tenant
     in
     let expected =
-      let open Database_pool in
+      let open Pool_database in
       let open CCResult in
       let* url = database_url |> Url.create in
       let* label = database_label |> Label.create in

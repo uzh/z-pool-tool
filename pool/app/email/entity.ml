@@ -1,5 +1,5 @@
 module PoolError = Pool_common.Message
-module Database = Database_pool
+module Database = Pool_database
 module User = Pool_user
 
 module Token = struct

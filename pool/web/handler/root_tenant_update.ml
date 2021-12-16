@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Common = Pool_common
-module Database = Database_pool
+module Database = Pool_database
 
 let update req command success_message =
   let open Utils.Lwt_result.Infix in

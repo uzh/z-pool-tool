@@ -1,6 +1,6 @@
 module User = Pool_user
 module Id = Pool_common.Id
-module Database = Database_pool
+module Database = Pool_database
 open Entity
 
 type create =

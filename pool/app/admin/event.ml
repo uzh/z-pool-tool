@@ -1,6 +1,6 @@
 module User = Pool_user
 module Common = Pool_common
-module Database = Database_pool
+module Database = Pool_database
 open Entity
 
 type creatable_admin =

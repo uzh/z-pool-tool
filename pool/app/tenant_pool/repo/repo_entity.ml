@@ -1,6 +1,6 @@
 open Entity
 module Common = Pool_common
-module Database = Database_pool
+module Database = Pool_database
 module SmtpAuth = Repo_entity_smtp_auth
 
 module Title = struct

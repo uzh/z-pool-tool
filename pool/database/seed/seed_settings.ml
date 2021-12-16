@@ -11,4 +11,4 @@ let sql =
   |> Caqti_request.exec Caqti_type.unit
 ;;
 
-let create pool () = Utils.Database.exec (Database_pool.Label.value pool) sql ()
+let create pool () = Utils.Database.exec (Pool_database.Label.value pool) sql ()

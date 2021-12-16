@@ -1,6 +1,6 @@
 (library
  (name tenant_pool)
- (libraries sihl sihl-user conformist database_pool pool_common utils)
+ (libraries sihl sihl-user conformist pool_database pool_common utils)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 

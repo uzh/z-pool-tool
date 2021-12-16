@@ -1,6 +1,6 @@
 open Entity
 module User = Pool_user
-module Database = Database_pool
+module Database = Pool_database
 
 let create_public_url pool_url path =
   path

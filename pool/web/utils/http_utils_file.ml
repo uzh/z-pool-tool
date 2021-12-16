@@ -1,4 +1,4 @@
-module Database = Database_pool
+module Database = Pool_database
 module Id = Pool_common.Id
 module File = Pool_common.File
 
