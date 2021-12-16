@@ -5,8 +5,10 @@
   sihl
   admin
   root
-  common_user
+  pool_user
+  email
   participant
+  pool_tenant
   tenant
   experiment
   settings)

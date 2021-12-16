@@ -1,9 +1,9 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 
 module CreateOperator : sig
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -12,7 +12,7 @@ module CreateOperator : sig
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
-    -> Tenant.Write.t
+    -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -23,7 +23,7 @@ module CreateOperator : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -37,7 +37,7 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Email.Address.schema ()
+          [ User.EmailAddress.schema ()
           ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
@@ -48,13 +48,13 @@ end = struct
   let handle
       ?allowed_email_suffixes
       ?password_policy
-      (_ : Tenant.Write.t)
+      (_ : Pool_tenant.Write.t)
       command
     =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
-      Common_user.Email.Address.validate allowed_email_suffixes command.email
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)

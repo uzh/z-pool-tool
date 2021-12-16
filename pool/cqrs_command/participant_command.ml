@@ -1,9 +1,9 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 
 module SignUp : sig
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -21,7 +21,7 @@ module SignUp : sig
     -> (t, Pool_common.Message.error) result
 end = struct
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -36,7 +36,7 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Email.Address.schema ()
+          [ User.EmailAddress.schema ()
           ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
@@ -48,9 +48,7 @@ end = struct
   let handle ?allowed_email_suffixes ?password_policy command =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
-    let* () =
-      User.Email.Address.validate allowed_email_suffixes command.email
-    in
+    let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
     let participant =
       Participant.
         { email = command.email
@@ -63,8 +61,7 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; User.Event.Email.Created
-          (command.email, command.firstname, command.lastname)
+      ; Email.Created (command.email, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
   ;;
@@ -92,7 +89,7 @@ module UpdateDetails : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -140,11 +137,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -168,7 +165,7 @@ module UpdatePassword : sig
     -> (t, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
@@ -220,11 +217,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -232,8 +229,8 @@ end
 
 module UpdateEmail : sig
   type t =
-    { current_email : User.Email.verified User.Email.t
-    ; new_email : User.Email.Address.t
+    { current_email : Email.verified Email.t
+    ; new_email : User.EmailAddress.t
     }
 
   val handle
@@ -243,25 +240,25 @@ module UpdateEmail : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can
-    :  Pool_common.Database.Label.t
+    :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
     -> Participant.t
     -> bool Lwt.t
 end = struct
   type t =
-    { current_email : User.Email.verified User.Email.t
-    ; new_email : User.Email.Address.t
+    { current_email : Email.verified Email.t
+    ; new_email : User.EmailAddress.t
     }
 
   let handle ?allowed_email_suffixes participant command =
     let open CCResult in
     let* () =
-      User.Email.Address.validate allowed_email_suffixes command.new_email
+      User.EmailAddress.validate allowed_email_suffixes command.new_email
     in
     Ok
       [ Participant.EmailUpdated (participant, command.new_email)
         |> Pool_event.participant
-      ; User.Event.Email.UpdatedVerified
+      ; Email.UpdatedVerified
           ( command.current_email
           , ( command.new_email
             , Participant.firstname participant
@@ -278,11 +275,11 @@ end = struct
         ~any_of:
           [ Permission.Update
               (Permission.Participant, Some (Participant.id participant))
-          ; Permission.Update (Permission.Tenant, Some tenant.Tenant.id)
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
     pool
-    |> Tenant.find_by_label
+    |> Pool_tenant.find_by_label
     |>> check_permission
     |> Lwt.map (CCResult.get_or ~default:false)
   ;;
@@ -299,21 +296,19 @@ end = struct
 end
 
 module ConfirmEmail : sig
-  type t = { email : User.Email.unverified User.Email.t }
+  type t = { email : Email.unverified Email.t }
 
   val handle
     :  t
     -> Participant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  module Email = User.Email
-
   type t = { email : Email.unverified Email.t }
 
   let handle command participant =
     Ok
       [ Participant.EmailConfirmed participant |> Pool_event.participant
-      ; User.Event.Email.Verified command.email |> Pool_event.email_address
+      ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
 end

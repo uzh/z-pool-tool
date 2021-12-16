@@ -1,9 +1,9 @@
 open Entity
-module User = Common_user
+module User = Pool_user
 module Common = Pool_common
 
 type create =
-  { email : User.Email.Address.t
+  { email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -16,7 +16,7 @@ type event =
   | Enabled of t
 
 let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_common.Utils.pool_to_ctx pool in
+  let ctx = Pool_tenant.to_ctx pool in
   function
   | Created root ->
     let%lwt user =
@@ -25,7 +25,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(root.lastname |> User.Lastname.value)
         ~given_name:(root.firstname |> User.Firstname.value)
         ~password:(root.password |> User.Password.to_sihl)
-        (User.Email.Address.value root.email)
+        (User.EmailAddress.value root.email)
     in
     Permission.assign user Role.root
   | Disabled root ->

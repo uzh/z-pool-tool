@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Database = Pool_database
 
 let create req =
   let open Lwt_result.Syntax in
@@ -18,9 +19,7 @@ let create req =
     >>= Cqrs_command.Root_command.Create.handle
     |> Lwt_result.lift
   in
-  let handle =
-    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
-  in
+  let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
@@ -41,9 +40,7 @@ let toggle_status req =
   let events user =
     Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift
   in
-  let handle =
-    Lwt_list.iter_s (Pool_event.handle_event Pool_common.Database.root)
-  in
+  let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"

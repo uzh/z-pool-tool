@@ -1,4 +1,5 @@
 module Id = Pool_common.Id
+module Database = Pool_database
 
 let find_request_sql where_fragment =
   Format.asprintf
@@ -51,7 +52,7 @@ let find_request =
 let find pool id =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
@@ -69,9 +70,9 @@ let find_by_email_request =
 let find_by_email pool email =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     find_by_email_request
-    (Common_user.Email.Address.value email)
+    (Pool_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
@@ -88,9 +89,9 @@ let find_confirmed_request =
 let find_confirmed pool email =
   let open Lwt.Infix in
   Utils.Database.find_opt
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     find_confirmed_request
-    (Common_user.Email.Address.value email)
+    (Pool_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
@@ -126,9 +127,7 @@ let insert_request =
     |sql}
 ;;
 
-let insert pool =
-  Utils.Database.exec (Pool_common.Database.Label.value pool) insert_request
-;;
+let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 
 let update_paused_request =
   let open Pool_common.Repo in
@@ -139,16 +138,15 @@ let update_paused_request =
       paused_version = $3
     WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
   |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup3 Id.t Common_user.Repo.Paused.t Version.t)
+  |> Caqti_request.exec Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
 ;;
 
 let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
   Utils.Database.exec
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     update_paused_request
     ( participant |> Entity.id |> Id.value
-    , paused |> Common_user.Paused.value
+    , paused |> Pool_user.Paused.value
     , paused_version |> Pool_common.Version.value )
 ;;
 
@@ -166,7 +164,7 @@ let update_version_for_request field =
 
 let update_version_for pool field (id, version) =
   Utils.Database.exec
-    (Pool_common.Database.Label.value pool)
+    (Database.Label.value pool)
     (field |> update_version_for_request)
     (id |> Id.value, version |> Pool_common.Version.value)
 ;;
@@ -189,6 +187,4 @@ let update_request =
     |sql}
 ;;
 
-let update pool =
-  Utils.Database.exec (Pool_common.Database.Label.value pool) update_request
-;;
+let update pool = Utils.Database.exec (Database.Label.value pool) update_request

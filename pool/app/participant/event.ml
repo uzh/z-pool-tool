@@ -1,9 +1,10 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
+module Database = Pool_database
 open Entity
 
 type create =
-  { email : Email.Address.t
+  { email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -20,13 +21,12 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    :  Pool_common.Database.Label.t -> t -> string -> string
-    -> (unit, string) result Lwt.t
+    : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
   Service.User.set_password
-    ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+    ~ctx:(Pool_tenant.to_ctx pool)
     user
     ~password
     ~password_confirmation
@@ -35,8 +35,8 @@ let set_password
 
 let send_password_changed_email pool email firstname lastname =
   let open Lwt.Infix in
-  User.Email.PasswordChange.create pool email firstname lastname
-  >>= Service.Email.send ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+  Email.Helper.PasswordChange.create pool email firstname lastname
+  >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 let has_terms_accepted pool (participant : t) =
@@ -54,7 +54,7 @@ type event =
   | FirstnameUpdated of t * User.Firstname.t
   | LastnameUpdated of t * User.Lastname.t
   | PausedUpdated of t * User.Paused.t
-  | EmailUpdated of t * User.Email.Address.t
+  | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | EmailUnconfirmed of t
@@ -65,7 +65,7 @@ type event =
 [@@deriving variants]
 
 let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_common.Utils.pool_to_ctx pool in
+  let ctx = Pool_tenant.to_ctx pool in
   function
   | Created participant ->
     let%lwt user =
@@ -74,7 +74,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~name:(participant.lastname |> User.Lastname.value)
         ~given_name:(participant.firstname |> User.Firstname.value)
         ~password:(participant.password |> User.Password.to_sihl)
-      @@ Email.Address.value participant.email
+      @@ User.EmailAddress.value participant.email
     in
     { user
     ; recruitment_channel = participant.recruitment_channel
@@ -129,7 +129,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt _ =
       Service.User.update
         ~ctx
-        ~email:(Common_user.Email.Address.value email)
+        ~email:(Pool_user.EmailAddress.value email)
         participant.user
     in
     Lwt.return_unit
@@ -149,7 +149,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let%lwt email =
       let open Lwt.Infix in
-      Common_user.Email.find_verified pool (email_address person)
+      Email.find_verified pool (email_address person)
       >|= function
       | Ok email -> email
       | Error err ->
@@ -202,7 +202,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   | PausedUpdated (p1, one), PausedUpdated (p2, two) ->
     equal p1 p2 && User.Paused.equal one two
   | EmailUpdated (p1, e1), EmailUpdated (p2, e2) ->
-    equal p1 p2 && Common_user.Email.Address.equal e1 e2
+    equal p1 p2 && Pool_user.EmailAddress.equal e1 e2
   | PasswordUpdated (p1, old1, new1, _), PasswordUpdated (p2, old2, new2, _) ->
     equal p1 p2
     && User.Password.equal old1 old2
@@ -228,7 +228,7 @@ let pp_event formatter (event : event) : unit =
     User.Paused.pp formatter m
   | EmailUpdated (p, m) ->
     person_pp p;
-    Common_user.Email.Address.pp formatter m
+    Pool_user.EmailAddress.pp formatter m
   | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password

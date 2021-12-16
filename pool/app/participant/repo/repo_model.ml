@@ -16,7 +16,7 @@ end
 
 let t =
   let encode m =
-    let open Common_user in
+    let open Pool_user in
     let open Pool_common in
     Ok
       ( m.user
@@ -42,7 +42,7 @@ let t =
                     , (paused_version, (created_at, updated_at)) ) ) ) ) ) ) )
       )
     =
-    let open Common_user in
+    let open Pool_user in
     Ok
       { user
       ; recruitment_channel
@@ -57,14 +57,14 @@ let t =
       ; updated_at
       }
   in
-  let open Common_user.Repo in
+  let open Pool_user.Repo in
   let open Pool_common.Repo in
   Caqti_type.(
     custom
       ~encode
       ~decode
       (tup2
-         Common_user.Repo.user_caqti
+         Pool_user.Repo.user_caqti
          (tup2
             RecruitmentChannel.t
             (tup2
@@ -86,7 +86,7 @@ let t =
 
 let participant =
   let encode m =
-    let open Common_user in
+    let open Pool_user in
     let open Pool_common in
     Ok
       ( m.user.Sihl_user.id
@@ -104,7 +104,7 @@ let participant =
     failwith
       Pool_common.(Message.WriteOnlyModel |> Utils.error_to_string Language.En)
   in
-  let open Common_user.Repo in
+  let open Pool_user.Repo in
   let open Pool_common.Repo in
   Caqti_type.(
     custom

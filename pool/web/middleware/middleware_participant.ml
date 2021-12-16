@@ -7,9 +7,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       let open Lwt_result.Syntax in
       let* pool = Middleware_tenant.tenant_db_of_request req in
       let* user =
-        Service.User.Web.user_from_session
-          ~ctx:(Pool_common.Utils.pool_to_ctx pool)
-          req
+        Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
         ||> CCOption.to_result Pool_common.Message.(NotFound User)
       in
       let is_confirmed participant =

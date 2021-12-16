@@ -1,5 +1,5 @@
 module RepoEntity = Repo_entity
-module Label = Pool_common.Database.Label
+module Database = Pool_database
 module Id = Pool_common.Id
 module LogoMapping = Entity_logo_mapping
 module LogoMappingRepo = Repo_logo_mapping
@@ -33,7 +33,9 @@ module Sql = struct
     |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let update pool = Utils.Database.exec (Label.value pool) update_request
+  let update pool =
+    Utils.Database.exec (Database.Label.value pool) update_request
+  ;;
 
   let select_from_tenants_sql where_fragment full =
     let database_fragment =
@@ -173,7 +175,10 @@ module Sql = struct
 
   let find pool id =
     let open Lwt.Infix in
-    Utils.Database.find_opt (Label.value pool) find_request (Id.value id)
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_request
+      (Id.value id)
     >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
@@ -184,7 +189,10 @@ module Sql = struct
 
   let find_full pool id =
     let open Lwt.Infix in
-    Utils.Database.find_opt (Label.value pool) find_full_request (Id.value id)
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_full_request
+      (Id.value id)
     >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
@@ -198,9 +206,9 @@ module Sql = struct
   let find_by_label pool label =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      (Label.value pool)
+      (Database.Label.value pool)
       find_by_label_request
-      (Label.value label)
+      (Database.Label.value label)
     >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
@@ -209,7 +217,9 @@ module Sql = struct
     |> Caqti_request.collect Caqti_type.unit RepoEntity.t
   ;;
 
-  let find_all pool = Utils.Database.collect (Label.value pool) find_all_request
+  let find_all pool =
+    Utils.Database.collect (Database.Label.value pool) find_all_request
+  ;;
 
   let find_databases_request =
     {sql|
@@ -219,11 +229,11 @@ module Sql = struct
         FROM pool_tenant
         WHERE NOT disabled
       |sql}
-    |> Caqti_request.collect Caqti_type.unit Pool_common.Repo.Database.t
+    |> Caqti_request.collect Caqti_type.unit Database.Repo.t
   ;;
 
   let find_databases pool =
-    Utils.Database.collect (Label.value pool) find_databases_request
+    Utils.Database.collect (Database.Label.value pool) find_databases_request
   ;;
 
   let insert_request =
@@ -273,7 +283,9 @@ module Sql = struct
     |> Caqti_request.exec RepoEntity.Write.t
   ;;
 
-  let insert pool = Utils.Database.exec (Label.value pool) insert_request
+  let insert pool =
+    Utils.Database.exec (Database.Label.value pool) insert_request
+  ;;
 
   let find_selectable_request =
     {sql|
@@ -286,7 +298,7 @@ module Sql = struct
   ;;
 
   let find_selectable pool =
-    Utils.Database.collect (Label.value pool) find_selectable_request
+    Utils.Database.collect (Database.Label.value pool) find_selectable_request
   ;;
 end
 
@@ -351,3 +363,7 @@ let find_selectable = Sql.find_selectable
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Utils.todo
+
+module Url = struct
+  let of_pool = RepoEntity.Url.of_pool
+end

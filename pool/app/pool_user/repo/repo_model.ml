@@ -24,62 +24,10 @@ module Verified = struct
   let t = Caqti_type.(option ptime)
 end
 
-module Email = struct
-  open Email
+module EmailAddress = struct
+  include EmailAddress
 
-  module Token = struct
-    include Email.Token
-
-    let t = Caqti_type.(string)
-  end
-
-  module Address = struct
-    include Email.Address
-
-    let t = Caqti_type.(string)
-  end
-
-  module VerifiedAt = struct
-    include Email.VerifiedAt
-
-    let t = Caqti_type.(ptime)
-  end
-
-  let unverified_t =
-    let encode (Unverified m) =
-      Ok (m.address, m.token, m.created_at, m.updated_at)
-    in
-    let decode (address, token, created_at, updated_at) =
-      Ok (Unverified { address; token; created_at; updated_at })
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup4
-           Address.t
-           Token.t
-           Pool_common.Repo.CreatedAt.t
-           Pool_common.Repo.UpdatedAt.t))
-  ;;
-
-  let verified_t =
-    let encode (Verified m) =
-      Ok (m.address, m.verified_at, m.created_at, m.updated_at)
-    in
-    let decode (address, verified_at, created_at, updated_at) =
-      Ok (Verified { address; verified_at; created_at; updated_at })
-    in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup4
-           Address.t
-           VerifiedAt.t
-           Pool_common.Repo.CreatedAt.t
-           Pool_common.Repo.UpdatedAt.t))
-  ;;
+  let t = Caqti_type.(string)
 end
 
 module User = struct

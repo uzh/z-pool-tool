@@ -1,88 +1,31 @@
+open Entity
+
 module Id = struct
-  include Entity.Id
+  include Id
 
   let t = Caqti_type.string
-end
-
-module Database = struct
-  include Entity.Database
-
-  module Url = struct
-    include Url
-
-    let t = Caqti_type.string
-  end
-
-  module Label = struct
-    include Label
-
-    let t =
-      let open CCResult in
-      Caqti_type.(
-        custom
-          ~encode:pure
-          ~decode:(fun m -> map_err (fun _ -> "decode label") @@ create m)
-          string)
-    ;;
-  end
-
-  let t =
-    let open CCResult in
-    let encode m = Ok (m.url, m.label) in
-    let decode (url, label) =
-      map_err (fun _ -> "decode database")
-      @@ let* url = Url.create url in
-         let* label = Label.create label in
-         Ok { url; label }
-    in
-    Caqti_type.(custom ~encode ~decode (tup2 Url.t Label.t))
-  ;;
-end
-
-module Url = struct
-  include Entity.Url
-
-  let t = Caqti_type.string
-
-  let find_url_request =
-    {sql| SELECT url FROM pool_tenant WHERE database_label = ? |sql}
-    |> Caqti_request.find Database.Label.t t
-  ;;
-
-  let of_pool pool =
-    let open Lwt.Infix in
-    Utils.Database.find_opt
-      (Database.Label.of_string "root")
-      find_url_request
-      pool
-    >|= function
-    | None ->
-      Sihl.Configuration.read_string "PUBLIC_URL"
-      |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
-    | Some url -> url
-  ;;
 end
 
 module Version = struct
-  include Entity.Version
+  include Version
 
   let t = Caqti_type.int
 end
 
 module CreatedAt = struct
-  include Entity.CreatedAt
+  include CreatedAt
 
   let t = Caqti_type.ptime
 end
 
 module UpdatedAt = struct
-  include Entity.UpdatedAt
+  include UpdatedAt
 
   let t = Caqti_type.ptime
 end
 
 module File = struct
-  include Entity.File
+  include File
 
   module Name = struct
     include Name

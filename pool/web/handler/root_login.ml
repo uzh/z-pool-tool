@@ -1,7 +1,8 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Database = Pool_database
 
-let ctx = Pool_common.(Utils.pool_to_ctx Database.root)
+let ctx = Pool_tenant.(to_ctx Database.root)
 let root_login_path = "/root/login"
 let root_entrypoint_path = "/root/tenants"
 let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
@@ -74,7 +75,7 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    Common_user.Event.Email.PasswordReset.create Pool_common.Database.root ~user
+    Email.Helper.PasswordReset.create Database.root ~user
     >|= Service.Email.send ~ctx
   in
   match result with

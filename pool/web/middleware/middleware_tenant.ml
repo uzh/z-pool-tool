@@ -1,5 +1,5 @@
 let tenant_db_of_request req
-    : (Pool_common.Database.Label.t, Pool_common.Message.error) result Lwt.t
+    : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
   =
   (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
      host cannot be handled at the moment *)
@@ -10,12 +10,13 @@ let tenant_db_of_request req
     |> CCOption.to_result Pool_common.Message.(NotFound Host)
     |> Lwt_result.lift
   in
-  let%lwt selections = Tenant.Selection.find_all () in
+  let%lwt selections = Pool_tenant.Selection.find_all () in
   CCList.assoc_opt
     ~eq:(fun m k -> CCString.prefix ~pre:m k)
     host
-    (selections |> CCList.map (fun sel -> Tenant.Selection.(url sel, label sel)))
-  |> CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    (selections
+    |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
+  |> CCOption.to_result Pool_common.Message.(NotFound TenantPool)
   |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
   |> Lwt_result.lift
 ;;

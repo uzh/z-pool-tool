@@ -1,9 +1,9 @@
-module User = Common_user
+module User = Pool_user
 module Id = Pool_common.Id
 
 module Create : sig
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -22,7 +22,7 @@ module Create : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { email : User.Email.Address.t
+    { email : User.EmailAddress.t
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
@@ -36,7 +36,7 @@ end = struct
     Conformist.(
       make
         Field.
-          [ User.Email.Address.schema ()
+          [ User.EmailAddress.schema ()
           ; User.Password.schema "password"
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
@@ -48,7 +48,7 @@ end = struct
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
-      Common_user.Email.Address.validate allowed_email_suffixes command.email
+      Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     let admin : Root.create =
       Root.

@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 module RepoId = Pool_common.Repo.Id
 module File = Pool_common.File
 module RepoFile = Pool_common.Repo.File
-module Database = Pool_common.Database
+module Database = Pool_database
 
 let t =
   let encode m =

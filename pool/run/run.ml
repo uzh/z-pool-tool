@@ -6,7 +6,7 @@ let commands =
   ; Seed.root_data_clean
   ; Seed.tenant_data
   ; Seed.tenant_data_clean
-  ; Tenant.create_tenant
+  ; Tenant_pool.create_tenant_pool
   ; Participant.sign_up
   ]
 ;;

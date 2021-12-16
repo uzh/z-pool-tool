@@ -1,5 +1,6 @@
-module User = Common_user
+module User = Pool_user
 module Common = Pool_common
+module Database = Pool_database
 open Entity
 
 type creatable_admin =
@@ -11,7 +12,7 @@ type creatable_admin =
 [@@deriving eq, show]
 
 type create =
-  { email : User.Email.Address.t
+  { email : User.EmailAddress.t
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -26,7 +27,7 @@ type update =
 
 let set_password
     : type person.
-      Pool_common.Database.Label.t
+      Database.Label.t
       -> person t
       -> string
       -> string
@@ -41,7 +42,7 @@ let set_password
   | Recruiter { user; _ }
   | Operator { user; _ } ->
     Service.User.set_password
-      ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+      ~ctx:(Pool_tenant.to_ctx pool)
       user
       ~password
       ~password_confirmation
@@ -81,11 +82,11 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created (role, admin) ->
     let%lwt user =
       Service.User.create_admin
-        ~ctx:(Pool_common.Utils.pool_to_ctx pool)
+        ~ctx:(Pool_tenant.to_ctx pool)
         ~name:(admin.lastname |> User.Lastname.value)
         ~given_name:(admin.firstname |> User.Firstname.value)
         ~password:(admin.password |> User.Password.to_sihl)
-        (User.Email.Address.value admin.email)
+        (User.EmailAddress.value admin.email)
     in
     let person =
       { user

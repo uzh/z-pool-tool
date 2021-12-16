@@ -6,7 +6,8 @@
   service
   permission
   role
-  common_user
+  pool_tenant
+  pool_user
   pool_common
   utils
   ptime)

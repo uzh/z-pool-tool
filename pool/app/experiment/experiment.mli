@@ -122,7 +122,7 @@ type event =
   | AssistantAssigned of t * Admin__Entity.assistant Admin__Entity.t
   | AssistantDivested of t * Admin__Entity.assistant Admin__Entity.t
 
-val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
+val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 

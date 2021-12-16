@@ -1,5 +1,6 @@
 open Entity
 module Common = Pool_common
+module Database = Pool_database
 module SmtpAuth = Repo_entity_smtp_auth
 
 module Title = struct
@@ -12,6 +13,30 @@ module Description = struct
   include Description
 
   let t = Caqti_type.string
+end
+
+module Url = struct
+  include Entity.Url
+
+  let t = Caqti_type.string
+
+  let find_url_request =
+    {sql| SELECT url FROM pool_tenant WHERE database_label = ? |sql}
+    |> Caqti_request.find Database.Repo.Label.t t
+  ;;
+
+  let of_pool pool =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value Database.root)
+      find_url_request
+      pool
+    >|= function
+    | None ->
+      Sihl.Configuration.read_string "PUBLIC_URL"
+      |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"
+    | Some url -> url
+  ;;
 end
 
 module Styles = struct
@@ -57,7 +82,7 @@ let t =
       ( Id.value m.Read.id
       , ( m.title
         , ( m.description
-          , ( Common.Url.value m.url
+          , ( Url.value m.url
             , ( m.database_label
               , ( m.smtp_auth
                 , ( m.styles
@@ -84,7 +109,7 @@ let t =
     map_err (fun _ -> "decode tenant read")
     @@ let* title = Title.create title in
        let* description = Description.create description in
-       let* url = Common.Url.create url in
+       let* url = Url.create url in
        Ok
          { id = Id.of_string id
          ; title
@@ -112,9 +137,9 @@ let t =
             (tup2
                Description.t
                (tup2
-                  Common.Repo.Url.t
+                  Url.t
                   (tup2
-                     Common.Repo.Database.Label.t
+                     Database.Repo.Label.t
                      (tup2
                         SmtpAuth.t
                         (tup2
@@ -141,7 +166,7 @@ module Write = struct
         ( Id.value m.Write.id
         , ( m.title
           , ( m.description
-            , ( Common.Url.value m.url
+            , ( Url.value m.url
               , ( m.database
                 , ( m.smtp_auth
                   , ( m.styles
@@ -169,7 +194,7 @@ module Write = struct
       map_err (fun _ -> "decode tenant write")
       @@ let* title = Title.create title in
          let* description = Description.create description in
-         let* url = Common.Url.create url in
+         let* url = Url.create url in
          Ok
            { id = Id.of_string id
            ; title
@@ -197,9 +222,9 @@ module Write = struct
               (tup2
                  Description.t
                  (tup2
-                    Common.Repo.Url.t
+                    Url.t
                     (tup2
-                       Common.Repo.Database.t
+                       Database.Repo.t
                        (tup2
                           SmtpAuth.Write.t
                           (tup2
@@ -222,16 +247,13 @@ module Selection = struct
   open Entity.Selection
 
   let t =
-    let encode m =
-      Ok (Pool_common.Url.value m.Selection.url, m.database_label)
-    in
+    let encode m = Ok (Url.value m.Selection.url, m.database_label) in
     let decode (url, database_label) =
       let open CCResult in
       map_err (fun _ -> "decode tenant selection")
-      @@ let* url = Common.Url.create url in
+      @@ let* url = Url.create url in
          Ok { url; database_label }
     in
-    Caqti_type.(
-      custom ~encode ~decode Common.Repo.(tup2 Url.t Database.Label.t))
+    Caqti_type.(custom ~encode ~decode (tup2 Url.t Database.Repo.Label.t))
   ;;
 end

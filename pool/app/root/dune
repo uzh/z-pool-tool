@@ -1,5 +1,13 @@
 (library
  (name root)
- (libraries sihl sihl-user service role permission pool_common common_user)
+ (libraries
+  sihl
+  sihl-user
+  service
+  role
+  permission
+  pool_tenant
+  pool_common
+  pool_user)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))

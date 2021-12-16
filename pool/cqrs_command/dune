@@ -11,8 +11,9 @@
   admin
   root
   email
-  common_user
+  pool_user
   pool_common
+  pool_tenant
   tenant
   experiment
   conformist)

@@ -31,7 +31,7 @@ let create () =
       [ styles; icon; tenant_logo; partner_logo ]
   in
   let logos =
-    let open Tenant.LogoMapping.LogoType in
+    let open Pool_tenant.LogoMapping.LogoType in
     [ to_string TenantLogo, [ tenant_logo.Assets.id ]
     ; to_string PartnerLogo, [ partner_logo.Assets.id ]
     ]
@@ -129,7 +129,7 @@ let create () =
            , firstname
            , lastname ) ->
         let open CCResult.Infix in
-        let open Cqrs_command.Tenant_command.Create in
+        let open Cqrs_command.Pool_tenant_command.Create in
         logos
         @ [ "title", [ title ]
           ; "description", [ description ]
@@ -155,9 +155,7 @@ let create () =
         >>= handle
         |> function
         | Ok events ->
-          Lwt_list.iter_s
-            (Pool_event.handle_event Pool_common.Database.root)
-            events
+          Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) events
         | Error err ->
           failwith Pool_common.(Utils.error_to_string Language.En err))
       data

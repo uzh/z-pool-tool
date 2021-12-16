@@ -3,13 +3,14 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module File = HttpUtils.File
 module Update = Root_tenant_update
+module Database = Pool_database
 
 let tenants req =
   let csrf = HttpUtils.find_csrf req in
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
-  let%lwt tenant_list = Tenant.find_all () in
+  let%lwt tenant_list = Pool_tenant.find_all () in
   let%lwt root_list = Root.find_all () in
   Page.Root.Tenant.list csrf tenant_list root_list message ()
   |> Sihl.Web.Response.of_html
@@ -26,13 +27,13 @@ let create req =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
     let file_fields =
-      [ "styles"; "icon" ] @ Tenant.LogoMapping.LogoType.all ()
+      [ "styles"; "icon" ] @ Pool_tenant.LogoMapping.LogoType.all ()
     in
     let* files = File.upload_files file_fields req in
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
       | Error err ->
-        let ctx = Common.(Utils.pool_to_ctx Database.root) in
+        let ctx = Pool_tenant.to_ctx Database.root in
         let%lwt () =
           Lwt_list.iter_s (fun (_, id) -> Service.Storage.delete ~ctx id) files
         in
@@ -40,7 +41,7 @@ let create req =
     in
     let events =
       let open CCResult.Infix in
-      let open Cqrs_command.Tenant_command.Create in
+      let open Cqrs_command.Pool_tenant_command.Create in
       files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
       |> decode
@@ -49,7 +50,7 @@ let create req =
     in
     events >|> finalize
   in
-  let handle = Lwt_list.iter_s (Pool_event.handle_event Common.Database.root) in
+  let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
       "/root/tenants"
@@ -73,7 +74,7 @@ let create_operator req =
     ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
     >>= HttpUtils.validate_email_existance tenant_db
   in
-  let find_tenant () = Tenant.find_full id in
+  let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
     let open CCResult.Infix in
     let open Cqrs_command.Admin_command.CreateOperator in
@@ -109,7 +110,7 @@ let tenant_detail req =
     let csrf = HttpUtils.find_csrf req in
     let message = CCOption.bind (Flash.find_alert req) Message.of_string in
     let id = Router.param req "id" |> Common.Id.of_string in
-    let* tenant = Tenant.find id in
+    let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Response.of_html
     |> Lwt.return_ok

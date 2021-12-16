@@ -1,9 +1,9 @@
+module Database = Pool_database
 module Map = CCMap.Make (String)
 
 let execute db_pools steps =
   Lwt_list.iter_s
-    (fun pool ->
-      Service.Migration.execute ~ctx:(Pool_common.Utils.pool_to_ctx pool) steps)
+    (fun pool -> Service.Migration.execute ~ctx:(Pool_tenant.to_ctx pool) steps)
     db_pools
 ;;
 
@@ -35,7 +35,7 @@ let extend_migrations additional_steps () =
 ;;
 
 let run_pending_migrations db_pools migration_steps =
-  let open Pool_common.Database.Label in
+  let open Database.Label in
   let%lwt status =
     Lwt_list.map_s
       (fun label ->
@@ -70,10 +70,10 @@ module Root = struct
       ]
   ;;
 
-  let run () = execute [ Pool_common.Database.root ] @@ steps ()
+  let run () = execute [ Database.root ] @@ steps ()
 
   let run_pending_migrations () =
-    run_pending_migrations [ Pool_common.Database.root ] @@ steps ()
+    run_pending_migrations [ Database.root ] @@ steps ()
   ;;
 end
 

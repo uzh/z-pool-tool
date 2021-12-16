@@ -5,9 +5,10 @@
   service
   participant
   tenant
-  common_user
+  pool_user
   admin
   utils
+  email
   cqrs_command
   conformist)
  (preprocess

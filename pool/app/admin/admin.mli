@@ -10,10 +10,10 @@ val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
 val show_creatable_admin : creatable_admin -> string
 
 type create = Event.create =
-  { email : Common_user.Email.Address.t
-  ; password : Common_user.Password.t
-  ; firstname : Common_user.Firstname.t
-  ; lastname : Common_user.Lastname.t
+  { email : Pool_user.EmailAddress.t
+  ; password : Pool_user.Password.t
+  ; firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
   }
 
 val equal_create : create -> create -> bool
@@ -21,8 +21,8 @@ val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
 type update = Event.update =
-  { firstname : Common_user.Firstname.t
-  ; lastname : Common_user.Lastname.t
+  { firstname : Pool_user.Firstname.t
+  ; lastname : Pool_user.Lastname.t
   }
 
 val equal_update : update -> update -> bool
@@ -32,7 +32,7 @@ val show_update : update -> string
 type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
-      'a Entity.t * Common_user.Password.t * Common_user.PasswordConfirmed.t
+      'a Entity.t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 
@@ -44,12 +44,8 @@ type event =
   | RecruiterEvents of Entity.recruiter person_event
   | OperatorEvents of Entity.operator person_event
 
-val handle_person_event
-  :  Pool_common.Database.Label.t
-  -> 'a person_event
-  -> unit Lwt.t
-
-val handle_event : Pool_common.Database.Label.t -> event -> unit Lwt.t
+val handle_person_event : Pool_database.Label.t -> 'a person_event -> unit Lwt.t
+val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_person_event : 'a person_event -> 'a person_event -> bool
 val pp_person_event : Format.formatter -> 'a person_event -> unit
 val equal_event : event -> event -> bool
@@ -90,7 +86,7 @@ val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
 
-val insert : Pool_common.Database.Label.t -> 'a t -> unit Lwt.t
+val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
 val find_by_user : 'a -> 'b
-val user_is_admin : Pool_common.Database.Label.t -> Sihl_user.t -> bool Lwt.t
+val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

@@ -10,7 +10,7 @@ let detail participant message () =
            ; p [ participant |> fullname |> Format.asprintf "Name: %s" |> txt ]
            ]
           @
-          if participant.paused |> Common_user.Paused.value
+          if participant.paused |> Pool_user.Paused.value
           then
             [ p
                 [ txt
@@ -53,15 +53,13 @@ let edit csrf participant message () =
                  ~hx_params:[ name ]
                  ())
              [ ( "firstname"
-               , participant |> firstname |> Common_user.Firstname.value
+               , participant |> firstname |> Pool_user.Firstname.value
                , `Text )
              ; ( "lastname"
-               , participant |> lastname |> Common_user.Lastname.value
+               , participant |> lastname |> Pool_user.Lastname.value
                , `Text )
              ; ( "paused"
-               , participant.paused
-                 |> Common_user.Paused.value
-                 |> string_of_bool
+               , participant.paused |> Pool_user.Paused.value |> string_of_bool
                , `Checkbox )
              ]
          ])

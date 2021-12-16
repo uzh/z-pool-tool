@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let pool_to_ctx = Pool_common.Utils.pool_to_ctx
+let to_ctx = Pool_tenant.to_ctx
 
 let dashboard_path tenant_db user =
   let open Lwt.Infix in
@@ -23,7 +23,7 @@ let login_get req =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let%lwt user =
-      Service.User.Web.user_from_session ~ctx:(pool_to_ctx tenant_db) req
+      Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
     in
     match user with
     | Some user -> redirect_to_dashboard tenant_db user |> Lwt_result.ok
@@ -52,7 +52,7 @@ let login_post req =
     let email = List.assoc "email" params in
     let password = List.assoc "password" params in
     let* user =
-      Service.User.login ~ctx:(pool_to_ctx tenant_db) email ~password
+      Service.User.login ~ctx:(to_ctx tenant_db) email ~password
       |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
     in
     dashboard_path tenant_db user
@@ -72,7 +72,7 @@ let request_reset_password_get req =
     let open Utils.Lwt_result.Infix in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let open Sihl.Web in
-    Service.User.Web.user_from_session ~ctx:(pool_to_ctx tenant_db) req
+    Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
     >|> function
     | Some user ->
       dashboard_path tenant_db user
@@ -98,12 +98,12 @@ let request_reset_password_post req =
       ||> CCOption.to_result Pool_common.Message.(NotFound Email)
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let ctx = pool_to_ctx tenant_db in
+    let ctx = to_ctx tenant_db in
     let* user =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    Common_user.Event.Email.PasswordReset.create tenant_db ~user
+    Email.Helper.PasswordReset.create tenant_db ~user
     >|= Service.Email.send ~ctx
   in
   match result with
@@ -149,7 +149,7 @@ let reset_password_post req =
           err, Format.asprintf "/reset-password/?token=%s" token)
       @@ let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
          Service.PasswordReset.reset_password
-           ~ctx:(pool_to_ctx tenant_db)
+           ~ctx:(to_ctx tenant_db)
            ~token
            (go "password")
            (go "password_confirmation")

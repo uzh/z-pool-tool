@@ -1,4 +1,4 @@
-module Database = Pool_common.Database
+module Database = Pool_database
 module Id = Pool_common.Id
 module File = Pool_common.File
 
@@ -128,7 +128,7 @@ let update_files files req =
     | Some filename ->
       (match load_file filename with
       | Ok (filesize, mime, data) ->
-        let ctx = Pool_common.Utils.pool_to_ctx Database.root in
+        let ctx = Pool_tenant.to_ctx Database.root in
         let%lwt file = Service.Storage.find ~ctx id in
         let updated_file =
           let open Sihl_storage in
