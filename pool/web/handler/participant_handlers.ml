@@ -97,36 +97,48 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  (let open Lwt_result.Syntax in
-  let* token =
-    Sihl.Web.Request.query "token" req
-    |> CCOption.map Email.Token.create
-    |> CCOption.to_result Pool_common.Message.(NotFound Token)
-    |> Lwt_result.lift
+  let result =
+    let open Lwt_result.Syntax in
+    let* tenant_db =
+      Middleware.Tenant.tenant_db_of_request req
+      |> Lwt_result.map_err (fun err -> err, "/")
+    in
+    let%lwt redirect_path =
+      let%lwt user = General.user_from_session tenant_db req in
+      CCOption.bind user (fun user ->
+          Some (General.dashboard_path tenant_db user))
+      |> Option.value ~default:("/login" |> Lwt.return)
+    in
+    (let* token =
+       Sihl.Web.Request.query "token" req
+       |> CCOption.map Email.Token.create
+       |> CCOption.to_result Pool_common.Message.(NotFound Token)
+       |> Lwt_result.lift
+     in
+     let ctx = Pool_tenant.to_ctx tenant_db in
+     let* email =
+       Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
+       ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat
+       >== Pool_user.EmailAddress.create
+       >>= Email.find_unverified_by_address tenant_db
+       |> Lwt_result.map_err (fun _ -> Pool_common.Message.(Invalid Token))
+     in
+     let* participant = Participant.find tenant_db (Email.user_id email) in
+     let* events =
+       match participant.Participant.user.Sihl.Contract.User.confirmed with
+       | false ->
+         Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
+       | true ->
+         Command.UpdateEmail.(handle participant email) |> Lwt_result.lift
+     in
+     let%lwt () = Pool_event.handle_events tenant_db events in
+     HttpUtils.redirect_to_with_actions
+       redirect_path
+       [ Message.set ~success:[ Pool_common.Message.EmailVerified ] ]
+     |> Lwt_result.ok)
+    |> Lwt_result.map_err (fun msg -> msg, redirect_path)
   in
-  let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-  let ctx = Pool_tenant.to_ctx tenant_db in
-  let* email =
-    Service.Token.read ~ctx (Email.Token.value token) ~k:"email"
-    ||> CCOption.to_result Pool_common.Message.TokenInvalidFormat
-    >== User.EmailAddress.create
-    >>= Email.find_unverified_by_address tenant_db
-    |> Lwt_result.map_err (fun _ -> Pool_common.Message.(Invalid Token))
-  in
-  let* participant = Participant.find tenant_db (Email.user_id email) in
-  let* events =
-    match participant.Participant.user.Sihl.Contract.User.confirmed with
-    | false ->
-      Command.ConfirmEmail.(handle { email } participant) |> Lwt_result.lift
-    | true -> Command.UpdateEmail.(handle participant email) |> Lwt_result.lift
-  in
-  let%lwt () = Pool_event.handle_events tenant_db events in
-  HttpUtils.redirect_to_with_actions
-    "/login"
-    [ Message.set ~success:[ Pool_common.Message.EmailVerified ] ]
-  |> Lwt_result.ok)
-  |> Lwt_result.map_err (fun msg -> msg, "/login")
-  >|> HttpUtils.extract_happy_path
+  result >|> HttpUtils.extract_happy_path
 ;;
 
 let terms req =
