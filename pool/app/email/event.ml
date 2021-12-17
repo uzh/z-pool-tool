@@ -50,7 +50,7 @@ let handle_event pool : event -> unit Lwt.t =
     create_email user_id address firstname lastname `EmailUpdate
   | EmailVerified (Unverified { token; _ } as email) ->
     let%lwt () = deactivate_token pool token in
-    let%lwt () = Repo.update pool @@ verify email in
+    let%lwt () = Repo.verify pool @@ verify email in
     Lwt.return_unit
 ;;
 
