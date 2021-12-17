@@ -171,9 +171,10 @@ let update_version_for pool field (id, version) =
 
 let update_request =
   Caqti_request.exec
-    Repo_model.participant
+    Repo_model.Write.t
     {sql|
-      UPDATE pool_participants
+      UPDATE
+        pool_participants
       SET
         recruitment_channel = $2,
         terms_accepted_at = $3,
@@ -183,8 +184,50 @@ let update_request =
         firstname_version = $7,
         lastname_version = $8,
         paused_version = $9
-      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+      WHERE
+        user_uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}
 ;;
 
-let update pool = Utils.Database.exec (Database.Label.value pool) update_request
+let update pool t =
+  Utils.Database.exec
+    (Database.Label.value pool)
+    update_request
+    (Entity.Write.create t)
+;;
+
+let delete_unverified_participant_request =
+  {sql|
+    DELETE FROM pool_participants
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
+  |sql}
+  |> Caqti_request.exec Caqti_type.string
+;;
+
+let delete_unverified_user_request =
+  {sql|
+    DELETE FROM user_users
+    WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+  |sql}
+  |> Caqti_request.exec Caqti_type.string
+;;
+
+let delete_unverified_email_verifications_request =
+  {sql|
+    DELETE FROM pool_email_verifications
+    WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+  |sql}
+  |> Caqti_request.exec Caqti_type.string
+;;
+
+let delete_unverified pool id =
+  let exec request =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      request
+      (Pool_common.Id.value id)
+  in
+  let%lwt _ = exec delete_unverified_user_request in
+  let%lwt _ = exec delete_unverified_email_verifications_request in
+  exec delete_unverified_participant_request
+;;

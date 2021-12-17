@@ -58,10 +58,10 @@ type event =
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
-  | EmailConfirmed of t
+  | AccountVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | Verified of t
+  | UnverifiedDeleted of Id.t
 [@@deriving variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -168,24 +168,21 @@ let handle_event pool : event -> unit Lwt.t =
         (lastname person)
     in
     Lwt.return_unit
-  | EmailConfirmed participant ->
+  | AccountVerified participant ->
     let%lwt _ =
       Service.User.update
         ~ctx
         Sihl_user.{ participant.user with confirmed = true }
     in
-    Lwt.return_unit
+    Repo.update
+      pool
+      { participant with verified = Pool_user.Verified.create_now () }
   | TermsAccepted participant ->
-    let%lwt () =
-      Repo.update
-        pool
-        { participant with
-          terms_accepted_at = User.TermsAccepted.create_now ()
-        }
-    in
-    Lwt.return_unit
+    Repo.update
+      pool
+      { participant with terms_accepted_at = User.TermsAccepted.create_now () }
   | Disabled _ -> Utils.todo ()
-  | Verified _ -> Utils.todo ()
+  | UnverifiedDeleted id -> Repo.delete_unverified pool id
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
@@ -203,9 +200,10 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     equal p1 p2
     && User.Password.equal old1 old2
     && User.Password.equal new1 new2
+  | AccountVerified p1, AccountVerified p2 -> equal p1 p2
   | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
-  | Verified p1, Verified p2 -> equal p1 p2
+  | UnverifiedDeleted id1, UnverifiedDeleted id2 -> Id.equal id1 id2
   | _ -> false
 ;;
 
@@ -228,5 +226,6 @@ let pp_event formatter (event : event) : unit =
   | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password
-  | EmailConfirmed p | TermsAccepted p | Disabled p | Verified p -> person_pp p
+  | AccountVerified p | TermsAccepted p | Disabled p -> person_pp p
+  | UnverifiedDeleted id -> Id.pp formatter id
 ;;

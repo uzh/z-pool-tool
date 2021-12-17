@@ -78,10 +78,10 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | EmailConfirmed of t
+  | AccountVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | Verified of t
+  | UnverifiedDeleted of Pool_common.Id.t
 
 val created : create -> event
 val firstnameupdated : t -> Pool_user.Firstname.t -> event

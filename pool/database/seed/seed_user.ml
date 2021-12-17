@@ -43,8 +43,7 @@ let admins db_pool () =
     data
 ;;
 
-(* TODO [timhub]: Remove warning *)
-let[@warning "-41"] participants db_pool () =
+let participants db_pool () =
   let users =
     [ ( Id.create ()
       , "Hansruedi"

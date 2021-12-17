@@ -41,7 +41,24 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         let%lwt available_pools = Database.Tenant.setup () in
         if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
         then (
-          let events =
+          let%lwt events =
+            let open Lwt_result.Syntax in
+            let* participant =
+              let open Utils.Lwt_result.Infix in
+              let find_participant email =
+                email
+                |> Participant.find_by_email db_pool
+                ||> function
+                | Ok partitipant ->
+                  if partitipant.Participant.user.Sihl_user.confirmed
+                  then Error Pool_common.Message.EmailAlreadyInUse
+                  else Ok (Some partitipant)
+                | Error _ -> Ok None
+              in
+              Pool_user.EmailAddress.create email
+              |> Lwt_result.lift
+              >>= find_participant
+            in
             let open CCResult.Infix in
             Cqrs_command.Participant_command.SignUp.decode
               [ "email", [ email ]
@@ -50,14 +67,16 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
               ; "lastname", [ lastname ]
               ; "recruitment_channel", [ recruitment_channel ]
               ]
-            >>= Cqrs_command.Participant_command.SignUp.handle
-            |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-            |> CCResult.get_or_failwith
+            >>= Cqrs_command.Participant_command.SignUp.handle participant
+            |> Lwt_result.lift
           in
-          let%lwt handle_event =
-            Lwt_list.iter_s (Pool_event.handle_event db_pool) events
-          in
-          Lwt.return_some handle_event)
+          match events with
+          | Error err -> failwith (Pool_common.Message.show_error err)
+          | Ok events ->
+            let%lwt handle_event =
+              Lwt_list.iter_s (Pool_event.handle_event db_pool) events
+            in
+            Lwt.return_some handle_event)
         else (
           print_endline "The specified database pool is not available.";
           return)

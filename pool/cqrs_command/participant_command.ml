@@ -13,6 +13,7 @@ module SignUp : sig
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
+    -> Participant.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -45,7 +46,12 @@ end = struct
         command)
   ;;
 
-  let handle ?allowed_email_suffixes ?password_policy command =
+  let handle
+      ?allowed_email_suffixes
+      ?password_policy
+      existing_participant
+      command
+    =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
@@ -61,12 +67,19 @@ end = struct
         ; terms_accepted_at = User.TermsAccepted.create_now ()
         }
     in
-    Ok
-      [ Participant.Created participant |> Pool_event.participant
+    (existing_participant
+    |> function
+    | None -> []
+    | Some participant ->
+      [ Participant.UnverifiedDeleted (Participant.id participant)
+        |> Pool_event.participant
+      ])
+    @ [ Participant.Created participant |> Pool_event.participant
       ; Email.Created
           (command.email, user_id, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
+    |> CCResult.return
   ;;
 
   let decode data =
@@ -343,7 +356,7 @@ end = struct
 
   let handle command participant =
     Ok
-      [ Participant.EmailConfirmed participant |> Pool_event.participant
+      [ Participant.AccountVerified participant |> Pool_event.participant
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
