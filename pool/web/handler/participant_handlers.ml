@@ -211,16 +211,16 @@ let update req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
   in
-  let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
-  let version_raw = go "version" in
-  let name = go "field" in
-  let version =
-    version_raw
-    |> CCInt.of_string
-    |> CCOption.get_exn_or
-       @@ Format.asprintf "Version '%s' not a number" version_raw
-  in
   let result () =
+    let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
+    let version_raw = go "version" in
+    let name = go "field" in
+    let version =
+      version_raw
+      |> CCInt.of_string
+      |> CCOption.get_exn_or
+         @@ Format.asprintf "Version '%s' not a number" version_raw
+    in
     let open Utils.Lwt_result.Syntax in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
