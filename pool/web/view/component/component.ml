@@ -1,15 +1,18 @@
 module HttpUtils = Http_utils
 open Tyxml.Html
 
-let csrf_attibs csrf =
-  [ a_input_type `Hidden; a_name "_csrf"; a_value csrf; a_id "_csrf" ]
+let csrf_attibs ?id csrf =
+  let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in
+  match id with
+  | Some id -> a_id id :: attribs
+  | None -> attribs
 ;;
 
-let csrf_element csrf = input ~a:(csrf_attibs csrf)
+let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
 (* Use this CSRF element as HTMX response in POSTs*)
-let csrf_element_swap csrf =
-  input ~a:(a_user_data "hx-swap-oob" "true" :: csrf_attibs csrf)
+let csrf_element_swap csrf ?id =
+  input ~a:(a_user_data "hx-swap-oob" "true" :: csrf_attibs ?id csrf)
 ;;
 
 let input_element input_type name value =

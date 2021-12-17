@@ -167,6 +167,8 @@ let terms_accept req =
   result |> HttpUtils.extract_happy_path
 ;;
 
+let user_update_csrf = "_user_update_csrf"
+
 let show is_edit req =
   let%lwt result =
     let open Utils.Lwt_result.Infix in
@@ -193,7 +195,7 @@ let show is_edit req =
       |> Lwt.return_ok
     | true ->
       let csrf = HttpUtils.find_csrf req in
-      Page.Participant.edit csrf participant message ()
+      Page.Participant.edit csrf user_update_csrf participant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in
@@ -218,7 +220,7 @@ let update req =
     |> CCOption.get_exn_or
        @@ Format.asprintf "Version '%s' not a number" version_raw
   in
-  let%lwt result =
+  let result () =
     let open Utils.Lwt_result.Syntax in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
@@ -284,18 +286,24 @@ let update req =
           (Participant.version_selector participant name |> get_version)
           ~classnames:[ "success" ]
           ()
-      ; Component.csrf_element_swap csrf ()
+      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
       ]
       |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
     | Error err ->
       [ base_input current_version ~classnames:[ "error" ] ~error:err ()
-      ; Component.csrf_element_swap csrf ()
+      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
       ]
       |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
   in
-  result |> HttpUtils.extract_happy_path
+  Lwt.catch
+    (fun () -> result () >|> HttpUtils.extract_happy_path)
+    (fun exn ->
+      Logs.err (fun m -> m "%s" @@ Printexc.to_string exn);
+      Sihl.Web.Response.of_plain_text ""
+      |> Sihl.Web.Response.add_header ("HX-Redirect", "/error")
+      |> Lwt.return)
 ;;
 
 let update_email req =
