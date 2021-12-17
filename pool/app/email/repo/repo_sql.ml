@@ -107,67 +107,28 @@ let insert_request =
 
 let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 
-let update_unverified_request =
+let verify_request =
   {sql|
       UPDATE pool_email_verifications
       SET
-        token = $2,
-        verified = NULL
-      WHERE address = $1;
-    |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.Token.t)
-;;
-
-let update_verified_request =
-  {sql|
-      UPDATE pool_email_verifications
-      SET
-        verified = $2
-      WHERE address = $1;
-    |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t)
-;;
-
-let update : type a. Database.Label.t -> a t -> unit Lwt.t =
- fun pool model ->
-  let pool = Database.Label.value pool in
-  match model with
-  | Unverified { address; token; _ } ->
-    Utils.Database.exec
-      pool
-      update_unverified_request
-      (address |> User.EmailAddress.value, token |> Token.value)
-  | Verified { address; verified_at; _ } ->
-    Utils.Database.exec
-      pool
-      update_verified_request
-      (address |> User.EmailAddress.value, verified_at |> VerifiedAt.value)
-;;
-
-let update_email_request =
-  {sql|
-      UPDATE pool_email_verifications
-      SET
-        address = $2,
-        token = $3,
-        verified = NULL
-      WHERE address = $1;
+        verified = $3
+      WHERE sihl_user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL;
     |sql}
   |> Caqti_request.exec
        Caqti_type.(
-         tup2
+         tup3
+           Pool_common.Repo.Id.t
            User.Repo.EmailAddress.t
-           (tup2 User.Repo.EmailAddress.t RepoEntity.Token.t))
+           RepoEntity.VerifiedAt.t)
 ;;
 
-let update_email pool old_email new_email =
+let verify pool t =
   Utils.Database.exec
     (Database.Label.value pool)
-    update_email_request
-    ( address old_email |> Pool_user.EmailAddress.value
-    , (address new_email |> Pool_user.EmailAddress.value, token new_email) )
+    verify_request
+    ( user_id t |> Pool_common.Id.value
+    , address t |> Pool_user.EmailAddress.value
+    , VerifiedAt.create_now () )
 ;;
 
 let delete_unverified_by_user_request =
