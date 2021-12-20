@@ -8,11 +8,11 @@ let find_request_sql : type a. a carrier -> string -> string =
   let user_id =
     {sql|
     LOWER(CONCAT(
-      SUBSTR(HEX(sihl_user_uuid), 1, 8), '-',
-      SUBSTR(HEX(sihl_user_uuid), 9, 4), '-',
-      SUBSTR(HEX(sihl_user_uuid), 13, 4), '-',
-      SUBSTR(HEX(sihl_user_uuid), 17, 4), '-',
-      SUBSTR(HEX(sihl_user_uuid), 21)
+      SUBSTR(HEX(user_uuid), 1, 8), '-',
+      SUBSTR(HEX(user_uuid), 9, 4), '-',
+      SUBSTR(HEX(user_uuid), 13, 4), '-',
+      SUBSTR(HEX(user_uuid), 17, 4), '-',
+      SUBSTR(HEX(user_uuid), 21)
     ))
     |sql}
   in
@@ -42,12 +42,12 @@ let find_by_user_request
   | UnverifiedC ->
     find_request_sql
       UnverifiedC
-      {sql| WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL ORDER BY created_at DESC LIMIT 1 |sql}
+      {sql| WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL ORDER BY created_at DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.unverified_t
   | VerifiedC ->
     find_request_sql
       VerifiedC
-      {sql| WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NOT NULL ORDER BY created_at DESC LIMIT 1 |sql}
+      {sql| WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NOT NULL ORDER BY verified DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.verified_t
 ;;
 
@@ -90,7 +90,7 @@ let insert_request =
   {sql|
       INSERT INTO pool_email_verifications (
         address,
-        sihl_user_uuid,
+        user_uuid,
         token,
         created_at,
         updated_at
@@ -112,7 +112,7 @@ let verify_request =
       UPDATE pool_email_verifications
       SET
         verified = $3
-      WHERE sihl_user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL;
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL;
     |sql}
   |> Caqti_request.exec
        Caqti_type.(
@@ -134,7 +134,7 @@ let verify pool t =
 let delete_unverified_by_user_request =
   {sql|
     DELETE FROM pool_email_verifications
-    WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
   |sql}
   |> Caqti_request.exec Caqti_type.string
 ;;

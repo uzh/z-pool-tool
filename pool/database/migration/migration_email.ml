@@ -5,7 +5,7 @@ let create_email_address_table =
       CREATE TABLE IF NOT EXISTS pool_email_verifications (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `address` varchar(128) NOT NULL,
-        `sihl_user_uuid` binary(16) NOT NULL,
+        `user_uuid` binary(16) NOT NULL,
         `token` varchar(128) NOT NULL,
         `verified` timestamp NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

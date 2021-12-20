@@ -215,7 +215,7 @@ let delete_unverified_user_request =
 let delete_unverified_email_verifications_request =
   {sql|
     DELETE FROM pool_email_verifications
-    WHERE sihl_user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
   |sql}
   |> Caqti_request.exec Caqti_type.string
 ;;

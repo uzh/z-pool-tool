@@ -320,7 +320,6 @@ let update req =
 ;;
 
 let update_email req =
-  Logs.info (fun m -> m "%s" "update email");
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let%lwt result =
