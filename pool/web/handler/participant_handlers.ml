@@ -257,6 +257,7 @@ let update req =
         Error (MeantimeUpdate err_field)
     in
     let hx_post = Sihl.Web.externalize_path "/user/update" in
+    let csrf = HttpUtils.find_csrf req in
     let base_input version =
       let type_of = function
         | "paused" -> `Checkbox
@@ -279,15 +280,19 @@ let update req =
         Participant.(participant |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
-      base_input
-        (Participant.version_selector participant name |> get_version)
-        ~classnames:[ "success" ]
-        ()
-      |> HttpUtils.html_to_plain_text_response
+      [ base_input
+          (Participant.version_selector participant name |> get_version)
+          ~classnames:[ "success" ]
+          ()
+      ; Component.csrf_element_swap csrf ()
+      ]
+      |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
     | Error err ->
-      base_input current_version ~classnames:[ "error" ] ~error:err ()
-      |> HttpUtils.html_to_plain_text_response
+      [ base_input current_version ~classnames:[ "error" ] ~error:err ()
+      ; Component.csrf_element_swap csrf ()
+      ]
+      |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
   in
   result |> HttpUtils.extract_happy_path

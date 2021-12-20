@@ -133,3 +133,14 @@ let html_to_plain_text_response html =
   |> Format.asprintf "%a" (Tyxml.Html.pp_elt ())
   |> Sihl.Web.Response.of_plain_text ~headers
 ;;
+
+let multi_html_to_plain_text_response html_els =
+  let headers =
+    Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
+  in
+  html_els
+  |> CCList.fold_left
+       (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
+       ""
+  |> Sihl.Web.Response.of_plain_text ~headers
+;;
