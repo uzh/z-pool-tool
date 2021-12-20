@@ -26,7 +26,7 @@ let detail participant message () =
   Page_layout.create html message ()
 ;;
 
-let edit csrf participant message () =
+let edit csrf user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
@@ -39,7 +39,7 @@ let edit csrf participant message () =
         ; a_user_data "id" id
         ]
       (CCList.flatten
-         [ [ Component.csrf_element csrf () ]
+         [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
              (fun (name, value, _type) ->
                hx_input_element
