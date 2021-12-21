@@ -31,11 +31,17 @@ type event =
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
   let create_email user_id address firstname lastname event : unit Lwt.t =
+    let ctx = Pool_tenant.to_ctx pool in
     let%lwt token = create_token pool address in
-    create pool address user_id token
-    >>= fun email ->
-    let%lwt () = Repo.insert pool email in
-    send_confirmation_email pool email firstname lastname event
+    user_id
+    |> Pool_common.Id.value
+    |> Service.User.find_opt ~ctx
+    >>= function
+    | None -> failwith (PoolError.(NotFound User) |> PoolError.show_error)
+    | Some user ->
+      let email = create address user token in
+      let%lwt () = Repo.insert pool email in
+      send_confirmation_email pool email firstname lastname event
   in
   function
   | Created (address, user_id, firstname, lastname) ->

@@ -82,23 +82,14 @@ let address : type state. state t -> User.EmailAddress.t = function
 
 let token (Unverified email) = Token.value email.token
 
-let create pool address user_id token =
-  let open Lwt.Infix in
-  let ctx = Pool_tenant.to_ctx pool in
-  user_id
-  |> Pool_common.Id.value
-  |> Service.User.find_opt ~ctx
-  >|= fun user ->
-  match user with
-  | Some user ->
-    Unverified
-      { address
-      ; user
-      ; token
-      ; created_at = Ptime_clock.now ()
-      ; updated_at = Ptime_clock.now ()
-      }
-  | None -> failwith (PoolError.(NotFound User) |> PoolError.show_error)
+let create address user token =
+  Unverified
+    { address
+    ; user
+    ; token
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
 ;;
 
 let verify (Unverified email) =
