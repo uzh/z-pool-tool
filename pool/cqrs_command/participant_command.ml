@@ -13,7 +13,6 @@ module SignUp : sig
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
-    -> Participant.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -46,12 +45,7 @@ end = struct
         command)
   ;;
 
-  let handle
-      ?allowed_email_suffixes
-      ?password_policy
-      existing_participant
-      command
-    =
+  let handle ?allowed_email_suffixes ?password_policy command =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
@@ -67,24 +61,30 @@ end = struct
         ; terms_accepted_at = User.TermsAccepted.create_now ()
         }
     in
-    (existing_participant
-    |> function
-    | None -> []
-    | Some participant ->
-      [ Participant.UnverifiedDeleted (Participant.id participant)
-        |> Pool_event.participant
-      ])
-    @ [ Participant.Created participant |> Pool_event.participant
+    Ok
+      [ Participant.Created participant |> Pool_event.participant
       ; Email.Created
           (command.email, user_id, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
-    |> CCResult.return
   ;;
 
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.conformist
+  ;;
+end
+
+module DeleteUnverified : sig
+  val handle
+    :  Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  let handle participant =
+    Ok
+      [ Participant.UnverifiedDeleted (Participant.id participant)
+        |> Pool_event.participant
+      ]
   ;;
 end
 

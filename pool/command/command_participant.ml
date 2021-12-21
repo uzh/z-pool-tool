@@ -42,23 +42,6 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
         then (
           let%lwt events =
-            let open Lwt_result.Syntax in
-            let* participant =
-              let open Utils.Lwt_result.Infix in
-              let find_participant email =
-                email
-                |> Participant.find_by_email db_pool
-                ||> function
-                | Ok partitipant ->
-                  if partitipant.Participant.user.Sihl_user.confirmed
-                  then Error Pool_common.Message.EmailAlreadyInUse
-                  else Ok (Some partitipant)
-                | Error _ -> Ok None
-              in
-              Pool_user.EmailAddress.create email
-              |> Lwt_result.lift
-              >>= find_participant
-            in
             let open CCResult.Infix in
             Cqrs_command.Participant_command.SignUp.decode
               [ "email", [ email ]
@@ -67,7 +50,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
               ; "lastname", [ lastname ]
               ; "recruitment_channel", [ recruitment_channel ]
               ]
-            >>= Cqrs_command.Participant_command.SignUp.handle participant
+            >>= Cqrs_command.Participant_command.SignUp.handle
             |> Lwt_result.lift
           in
           match events with

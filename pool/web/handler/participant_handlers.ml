@@ -64,7 +64,7 @@ let sign_up_create req =
       |> Lwt_result.lift
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* participant =
+    let* remove_participant_event =
       let find_participant email =
         email
         |> Participant.find_by_email tenant_db
@@ -79,6 +79,8 @@ let sign_up_create req =
       ||> CCOption.to_result Pool_common.Message.ParticipantSignupInvalidEmail
       >== Pool_user.EmailAddress.create
       >>= find_participant
+      >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
+              Command.DeleteUnverified.handle p |> Lwt_result.lift)
     in
     let%lwt allowed_email_suffixes =
       let open Utils.Lwt_result.Infix in
@@ -88,8 +90,8 @@ let sign_up_create req =
     in
     let* events =
       let open CCResult.Infix in
-      Command.SignUp.(
-        decode urlencoded >>= handle ?allowed_email_suffixes participant)
+      Command.SignUp.(decode urlencoded >>= handle ?allowed_email_suffixes)
+      >>= (fun e -> Ok (remove_participant_event @ e))
       |> Lwt_result.lift
     in
     Utils.Database.with_transaction tenant_db (fun () ->

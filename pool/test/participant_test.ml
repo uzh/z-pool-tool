@@ -21,7 +21,7 @@ let sign_up_not_allowed_suffix () =
                ] )
            ]
     in
-    Participant_command.SignUp.handle None command ~allowed_email_suffixes
+    Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
   Alcotest.(
@@ -53,7 +53,7 @@ let sign_up () =
                ] )
            ]
     in
-    Participant_command.SignUp.handle None command ~allowed_email_suffixes
+    Participant_command.SignUp.handle command ~allowed_email_suffixes
   in
   let expected = Ok [] in
   Alcotest.(
