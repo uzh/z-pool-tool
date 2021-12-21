@@ -129,7 +129,13 @@ let participants db_pool () =
       match user with
       | None ->
         let%lwt user =
-          Service.User.create_user ~ctx ~name ~given_name ~password email
+          Service.User.create_user
+            ~ctx
+            ~id:(user_id |> Pool_common.Id.value)
+            ~name
+            ~given_name
+            ~password
+            email
         in
         let%lwt () =
           let address =

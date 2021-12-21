@@ -21,7 +21,7 @@ end
 
 type email_unverified =
   { address : Pool_user.EmailAddress.t
-  ; user_id : Pool_common.Id.t
+  ; user : Sihl_user.t
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -29,7 +29,7 @@ type email_unverified =
 
 type email_verified =
   { address : Pool_user.EmailAddress.t
-  ; user_id : Pool_common.Id.t
+  ; user : Sihl_user.t
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -53,13 +53,6 @@ val equal : 'email t -> 'email t -> bool
 val pp : Format.formatter -> 'email t -> unit
 val show : 'state t -> string
 val token : unverified t -> string
-
-val create
-  :  Pool_user.EmailAddress.t
-  -> Pool_common.Id.t
-  -> Token.t
-  -> unverified t
-
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_common.Id.t
@@ -90,11 +83,7 @@ type event =
       * Pool_common.Id.t
       * Pool_user.Firstname.t
       * Pool_user.Lastname.t
-  | Updated of
-      Pool_user.EmailAddress.t
-      * Pool_common.Id.t
-      * Pool_user.Firstname.t
-      * Pool_user.Lastname.t
+  | Updated of Pool_user.EmailAddress.t * Sihl_user.t
   | EmailVerified of unverified t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -122,8 +111,8 @@ module Helper : sig
     val create
       :  Pool_database.Label.t
       -> unverified t
-      -> Pool_user.Firstname.t
-      -> Pool_user.Lastname.t
+      -> Pool_user.Firstname.t option
+      -> Pool_user.Lastname.t option
       -> [< `EmailUpdate | `SignUp ]
       -> Sihl_email.t Lwt.t
   end

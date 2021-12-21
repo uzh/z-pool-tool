@@ -264,11 +264,7 @@ end = struct
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
-      [ Email.Created
-          ( email
-          , Participant.id participant
-          , Participant.firstname participant
-          , Participant.lastname participant )
+      [ Email.Updated (email, participant.Participant.user)
         |> Pool_event.email_address
       ]
   ;;
