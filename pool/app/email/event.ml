@@ -37,7 +37,10 @@ let handle_event pool : event -> unit Lwt.t =
     |> Pool_common.Id.value
     |> Service.User.find_opt ~ctx
     >>= function
-    | None -> failwith (PoolError.(NotFound User) |> PoolError.show_error)
+    | None ->
+      let error = PoolError.(NotFound User) |> PoolError.show_error in
+      Logs.err (fun m -> m "%s" error);
+      failwith error
     | Some user ->
       let email = create address user token in
       let%lwt () = Repo.insert pool email in
