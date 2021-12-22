@@ -91,37 +91,17 @@ module PasswordChange = struct
   ;;
 end
 
-module SignUp = struct
-  let create db_pool email firstname lastname =
-    let%lwt url = Pool_tenant.Url.of_pool db_pool in
-    let name =
-      Format.asprintf
-        "%s %s"
-        (User.Firstname.value firstname)
-        (User.Lastname.value lastname)
-    in
-    let subject = "Email verification" in
-    let validation_url =
-      Format.asprintf "/email-verified?token=%s" (token email)
-      |> create_public_url url
-    in
-    prepare_email
-      db_pool
-      "signup_verification"
-      subject
-      (address email |> Pool_user.EmailAddress.value)
-      [ "verificationUrl", validation_url; "name", name ]
-  ;;
-end
-
 module ConfirmationEmail = struct
-  let create pool email firstname lastname =
+  let create pool email firstname lastname event =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let name =
-      Format.asprintf
-        "%s %s"
-        (User.Firstname.value firstname)
-        (User.Lastname.value lastname)
+      CCString.concat
+        " "
+        (CCList.filter_map
+           CCFun.id
+           [ firstname |> CCOption.map Pool_user.Firstname.value
+           ; lastname |> CCOption.map Pool_user.Lastname.value
+           ])
     in
     let subject = "Email verification" in
     let validation_url =
@@ -129,11 +109,18 @@ module ConfirmationEmail = struct
       |> Sihl.Web.externalize_path
       |> create_public_url url
     in
-    prepare_email
-      pool
-      "email_verification"
-      subject
-      (address email |> Pool_user.EmailAddress.value)
-      [ "verificationUrl", validation_url; "name", name ]
+    let create_email template =
+      prepare_email
+        pool
+        template
+        subject
+        (address email |> Pool_user.EmailAddress.value)
+        [ "verificationUrl", validation_url; "name", name ]
+    in
+    create_email
+    @@
+    match event with
+    | `SignUp -> "signup_verification"
+    | `EmailUpdate -> "email_verification"
   ;;
 end

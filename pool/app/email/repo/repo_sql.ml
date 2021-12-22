@@ -5,15 +5,47 @@ module User = Pool_user
 let find_request_sql : type a. a carrier -> string -> string =
  fun carrier where_fragment ->
   let basic_select = {sql| SELECT |sql} in
-  let email_unverified = [ "address"; "token" ] in
-  let email_verified = [ "address"; "verified" ] in
-  let created_updated_at = [ "created_at"; "updated_at" ] in
-  let from_fragment = {sql| FROM pool_email_verifications |sql} in
+  let basic_fields =
+    {sql|
+      pool_email_verifications.address,
+      LOWER(CONCAT(
+        SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+        SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 21)
+      )),
+      user_users.email,
+      user_users.username,
+      user_users.name,
+      user_users.given_name,
+      user_users.password,
+      user_users.status,
+      user_users.admin,
+      user_users.confirmed,
+      user_users.created_at,
+      user_users.updated_at
+    |sql}
+  in
+  let email_unverified = "pool_email_verifications.token" in
+  let email_verified = "pool_email_verifications.verified" in
+  let created_updated_at =
+    [ "pool_email_verifications.created_at"
+    ; "pool_email_verifications.updated_at"
+    ]
+  in
+  let from_fragment =
+    {sql|
+      FROM pool_email_verifications
+      LEFT JOIN user_users
+      ON pool_email_verifications.user_uuid = user_users.uuid
+    |sql}
+  in
   let select fields =
     Format.asprintf
       "%s %s\n%s\n%s;"
       basic_select
-      (fields @ created_updated_at |> CCString.concat ", ")
+      ([ basic_fields; fields ] @ created_updated_at |> CCString.concat ", ")
       from_fragment
       where_fragment
   in
@@ -22,7 +54,7 @@ let find_request_sql : type a. a carrier -> string -> string =
   | VerifiedC -> select email_verified
 ;;
 
-let find_request
+let find_by_user_request
     : type a.
       a carrier
       -> (string, a t, [< `Many | `One | `Zero > `One ]) Caqti_request.t
@@ -30,20 +62,46 @@ let find_request
   | UnverifiedC ->
     find_request_sql
       UnverifiedC
-      {sql| WHERE address = ? AND verified IS NULL |sql}
+      {sql| WHERE pool_email_verifications.user_uuid = UNHEX(REPLACE(?, '-', '')) AND pool_email_verifications.verified IS NULL ORDER BY pool_email_verifications.created_at DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.unverified_t
   | VerifiedC ->
     find_request_sql
       VerifiedC
-      {sql| WHERE address = ? AND verified IS NOT NULL |sql}
+      {sql| WHERE pool_email_verifications.user_uuid = UNHEX(REPLACE(?, '-', '')) AND pool_email_verifications.verified IS NOT NULL ORDER BY pool_email_verifications.verified DESC LIMIT 1 |sql}
     |> Caqti_request.find Caqti_type.string RepoEntity.verified_t
 ;;
 
-let find pool carrier address =
+let find_by_address_request
+    : type a.
+      a carrier
+      -> (string, a t, [< `Many | `One | `Zero > `One ]) Caqti_request.t
+  = function
+  | UnverifiedC ->
+    find_request_sql
+      UnverifiedC
+      {sql| WHERE pool_email_verifications.address = ? AND pool_email_verifications.verified IS NULL ORDER BY pool_email_verifications.created_at DESC LIMIT 1 |sql}
+    |> Caqti_request.find Caqti_type.string RepoEntity.unverified_t
+  | VerifiedC ->
+    find_request_sql
+      VerifiedC
+      {sql| WHERE pool_email_verifications.address = ? AND pool_email_verifications.verified IS NOT NULL ORDER BY pool_email_verifications.created_at DESC LIMIT 1 |sql}
+    |> Caqti_request.find Caqti_type.string RepoEntity.verified_t
+;;
+
+let find_by_user pool carrier user_id =
+  let open Lwt.Infix in
+  Utils.Database.find_opt
+    (Pool_database.Label.value pool)
+    (find_by_user_request carrier)
+    (Pool_common.Id.value user_id)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Email)
+;;
+
+let find_by_address pool carrier address =
   let open Lwt.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
-    (find_request carrier)
+    (find_by_address_request carrier)
     (address |> User.EmailAddress.value)
   >|= CCOption.to_result Pool_common.Message.(NotFound Email)
 ;;
@@ -52,93 +110,63 @@ let insert_request =
   {sql|
       INSERT INTO pool_email_verifications (
         address,
-        token,
-        created_at,
-        updated_at
+        user_uuid,
+        token
       ) VALUES (
         $1,
-        $2,
-        $3,
-        $4
+        UNHEX(REPLACE($2, '-', '')),
+        $3
       )
-    |sql}
-  |> Caqti_request.exec RepoEntity.unverified_t
-;;
-
-let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
-
-let update_unverified_request =
-  {sql|
-      UPDATE pool_email_verifications
-      SET
-        token = $2,
-        verified = NULL
-      WHERE address = $1;
-    |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.Token.t)
-;;
-
-let update_verified_request =
-  {sql|
-      UPDATE pool_email_verifications
-      SET
-        verified = $2
-      WHERE address = $1;
-    |sql}
-  |> Caqti_request.exec
-       Caqti_type.(tup2 User.Repo.EmailAddress.t RepoEntity.VerifiedAt.t)
-;;
-
-let update : type a. Database.Label.t -> a t -> unit Lwt.t =
- fun pool model ->
-  let pool = Database.Label.value pool in
-  match model with
-  | Unverified { address; token; _ } ->
-    Utils.Database.exec
-      pool
-      update_unverified_request
-      (address |> User.EmailAddress.value, token |> Token.value)
-  | Verified { address; verified_at; _ } ->
-    Utils.Database.exec
-      pool
-      update_verified_request
-      (address |> User.EmailAddress.value, verified_at |> VerifiedAt.value)
-;;
-
-let update_email_request =
-  {sql|
-      UPDATE pool_email_verifications
-      SET
-        address = $2,
-        token = $3,
-        verified = NULL
-      WHERE address = $1;
     |sql}
   |> Caqti_request.exec
        Caqti_type.(
-         tup2
-           User.Repo.EmailAddress.t
-           (tup2 User.Repo.EmailAddress.t RepoEntity.Token.t))
+         tup3 User.Repo.EmailAddress.t Pool_common.Repo.Id.t RepoEntity.Token.t)
 ;;
 
-let update_email pool old_email new_email =
+let insert pool t =
   Utils.Database.exec
     (Database.Label.value pool)
-    update_email_request
-    ( address old_email |> Pool_user.EmailAddress.value
-    , (address new_email |> Pool_user.EmailAddress.value, token new_email) )
+    insert_request
+    ( address t |> Pool_user.EmailAddress.value
+    , user_id t |> Pool_common.Id.value
+    , token t |> Token.value )
 ;;
 
-let delete_request =
+let verify_request =
   {sql|
-      DELETE FROM pool_email_verifications
-      WHERE address = ?;
+      UPDATE pool_email_verifications
+      SET
+        verified = $3
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) AND address = $2 AND verified IS NULL;
     |sql}
+  |> Caqti_request.exec
+       Caqti_type.(
+         tup3
+           Pool_common.Repo.Id.t
+           User.Repo.EmailAddress.t
+           RepoEntity.VerifiedAt.t)
+;;
+
+let verify pool t =
+  Utils.Database.exec
+    (Database.Label.value pool)
+    verify_request
+    ( user_id t |> Pool_common.Id.value
+    , address t |> Pool_user.EmailAddress.value
+    , VerifiedAt.create_now () )
+;;
+
+let delete_unverified_by_user_request =
+  {sql|
+    DELETE FROM pool_email_verifications
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+  |sql}
   |> Caqti_request.exec Caqti_type.string
 ;;
 
-let delete pool email =
-  Utils.Database.exec (Database.Label.value pool) delete_request
-  @@ (address email |> Pool_user.EmailAddress.value)
+let delete_unverified_by_user pool id =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    delete_unverified_by_user_request
+  @@ Pool_common.Id.value id
 ;;

@@ -41,7 +41,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         let%lwt available_pools = Database.Tenant.setup () in
         if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
         then (
-          let events =
+          let%lwt events =
             let open CCResult.Infix in
             Cqrs_command.Participant_command.SignUp.decode
               [ "email", [ email ]
@@ -51,13 +51,15 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
               ; "recruitment_channel", [ recruitment_channel ]
               ]
             >>= Cqrs_command.Participant_command.SignUp.handle
-            |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-            |> CCResult.get_or_failwith
+            |> Lwt_result.lift
           in
-          let%lwt handle_event =
-            Lwt_list.iter_s (Pool_event.handle_event db_pool) events
-          in
-          Lwt.return_some handle_event)
+          match events with
+          | Error err -> failwith (Pool_common.Message.show_error err)
+          | Ok events ->
+            let%lwt handle_event =
+              Lwt_list.iter_s (Pool_event.handle_event db_pool) events
+            in
+            Lwt.return_some handle_event)
         else (
           print_endline "The specified database pool is not available.";
           return)

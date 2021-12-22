@@ -5,13 +5,13 @@ let create_email_address_table =
       CREATE TABLE IF NOT EXISTS pool_email_verifications (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `address` varchar(128) NOT NULL,
+        `user_uuid` binary(16) NOT NULL,
         `token` varchar(128) NOT NULL,
         `verified` timestamp NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      PRIMARY KEY (id),
-      UNIQUE KEY `unique_address` (`address`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      PRIMARY KEY (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     |sql}
 ;;
 

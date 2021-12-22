@@ -49,6 +49,34 @@ type t =
   }
 [@@deriving eq, show]
 
+module Write = struct
+  type t =
+    { user_id : Pool_common.Id.t
+    ; recruitment_channel : RecruitmentChannel.t
+    ; terms_accepted_at : Common.TermsAccepted.t
+    ; paused : Common.Paused.t
+    ; disabled : Common.Disabled.t
+    ; verified : Common.Verified.t
+    ; firstname_version : Pool_common.Version.t
+    ; lastname_version : Pool_common.Version.t
+    ; paused_version : Pool_common.Version.t
+    }
+  [@@deriving eq, show]
+
+  let create m =
+    { user_id = Pool_common.Id.of_string m.user.Sihl.Contract.User.id
+    ; recruitment_channel = m.recruitment_channel
+    ; terms_accepted_at = m.terms_accepted_at
+    ; paused = m.paused
+    ; disabled = m.disabled
+    ; verified = m.verified
+    ; firstname_version = m.firstname_version
+    ; lastname_version = m.lastname_version
+    ; paused_version = m.paused_version
+    }
+  ;;
+end
+
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 
 let firstname m =

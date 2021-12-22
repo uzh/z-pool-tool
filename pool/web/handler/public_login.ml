@@ -3,17 +3,9 @@ module Message = HttpUtils.Message
 
 let to_ctx = Pool_tenant.to_ctx
 
-let dashboard_path tenant_db user =
-  let open Lwt.Infix in
-  Admin.user_is_admin tenant_db user
-  >|= function
-  | true -> "/admin/dashboard"
-  | false -> "/dashboard"
-;;
-
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in
-  dashboard_path tenant_db user >>= HttpUtils.redirect_to
+  General.dashboard_path tenant_db user >>= HttpUtils.redirect_to
 ;;
 
 let login_get req =
@@ -55,7 +47,7 @@ let login_post req =
       Service.User.login ~ctx:(to_ctx tenant_db) email ~password
       |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
     in
-    dashboard_path tenant_db user
+    General.dashboard_path tenant_db user
     >|> CCFun.flip
           HttpUtils.redirect_to_with_actions
           [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
@@ -75,7 +67,7 @@ let request_reset_password_get req =
     Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
     >|> function
     | Some user ->
-      dashboard_path tenant_db user
+      General.dashboard_path tenant_db user
       ||> externalize_path
       ||> Response.redirect_to
       >|> Lwt.return_ok

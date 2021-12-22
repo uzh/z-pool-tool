@@ -130,3 +130,52 @@ let participant =
                                  Pool_common.Repo.Version.t
                                  (tup2 CreatedAt.t UpdatedAt.t)))))))))))
 ;;
+
+module Write = struct
+  open Entity.Write
+
+  let t =
+    let encode m =
+      let open Pool_user in
+      let open Pool_common in
+      Ok
+        ( Id.value m.user_id
+        , ( m.recruitment_channel
+          , ( TermsAccepted.value m.terms_accepted_at
+            , ( Paused.value m.paused
+              , ( Disabled.value m.disabled
+                , ( Verified.value m.verified
+                  , ( Version.value m.firstname_version
+                    , ( Version.value m.lastname_version
+                      , Version.value m.paused_version ) ) ) ) ) ) ) )
+    in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
+    let open Pool_user.Repo in
+    let open Pool_common.Repo in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Id.t
+           (tup2
+              RecruitmentChannel.t
+              (tup2
+                 TermsAccepted.t
+                 (tup2
+                    Paused.t
+                    (tup2
+                       Disabled.t
+                       (tup2
+                          Verified.t
+                          (tup2
+                             Pool_common.Repo.Version.t
+                             (tup2
+                                Pool_common.Repo.Version.t
+                                Pool_common.Repo.Version.t)))))))))
+  ;;
+end

@@ -19,6 +19,8 @@ end
 
 type email_unverified =
   { address : User.EmailAddress.t
+  ; user : Sihl_user.t
+        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -27,6 +29,8 @@ type email_unverified =
 
 type email_verified =
   { address : User.EmailAddress.t
+  ; user : Sihl_user.t
+        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -67,15 +71,21 @@ let show : type state. state t -> string = function
     User.EmailAddress.show address
 ;;
 
+let user_id : type state. state t -> Pool_common.Id.t = function
+  | Unverified { user; _ } | Verified { user; _ } ->
+    user.Sihl.Contract.User.id |> Pool_common.Id.of_string
+;;
+
 let address : type state. state t -> User.EmailAddress.t = function
   | Unverified { address; _ } | Verified { address; _ } -> address
 ;;
 
 let token (Unverified email) = Token.value email.token
 
-let create address token =
+let create address user token =
   Unverified
     { address
+    ; user
     ; token
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
@@ -85,6 +95,7 @@ let create address token =
 let verify (Unverified email) =
   Verified
     { address = email.address
+    ; user = email.user
     ; verified_at = VerifiedAt.create_now ()
     ; created_at = email.created_at
     ; updated_at = Ptime_clock.now ()

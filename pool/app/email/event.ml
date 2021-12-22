@@ -13,76 +13,69 @@ let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
 ;;
 
-let send_signup_email pool email firstname lastname =
+let send_confirmation_email pool email firstname lastname event =
   let open Lwt.Infix in
-  Helper.SignUp.create pool email firstname lastname
-  >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
-;;
-
-let send_confirmation_email pool email firstname lastname =
-  let open Lwt.Infix in
-  Helper.ConfirmationEmail.create pool email firstname lastname
+  Helper.ConfirmationEmail.create pool email firstname lastname event
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 type event =
-  | Created of User.EmailAddress.t * User.Firstname.t * User.Lastname.t
-  | UpdatedUnverified of
-      unverified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
-  | UpdatedVerified of
-      verified t * (User.EmailAddress.t * User.Firstname.t * User.Lastname.t)
+  | Created of
+      User.EmailAddress.t
+      * Pool_common.Id.t
+      * User.Firstname.t
+      * User.Lastname.t
+  | Updated of User.EmailAddress.t * Sihl_user.t
   | EmailVerified of unverified t
 
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
-  let create_email address firstname lastname : unit Lwt.t =
-    create_token pool address
-    >|= create address
-    >>= fun email ->
-    let%lwt () = Repo.insert pool email in
-    send_signup_email pool email firstname lastname
-  in
-  let update_email old_email new_address firstname lastname =
-    create_token pool new_address
-    >|= create new_address
-    >>= fun new_email ->
-    let%lwt () = Repo.update_email pool old_email new_email in
-    send_confirmation_email pool new_email firstname lastname
+  let create_email user_id address firstname lastname event : unit Lwt.t =
+    let ctx = Pool_tenant.to_ctx pool in
+    let%lwt token = create_token pool address in
+    user_id
+    |> Pool_common.Id.value
+    |> Service.User.find_opt ~ctx
+    >>= function
+    | None ->
+      let error = PoolError.(NotFound User) |> PoolError.show_error in
+      Logs.err (fun m -> m "Cannot create verification email: %s" error);
+      failwith error
+    | Some user ->
+      let email = create address user token in
+      let%lwt () = Repo.insert pool email in
+      send_confirmation_email pool email firstname lastname event
   in
   function
-  | Created (address, firstname, lastname) ->
-    create_email address firstname lastname
-  | UpdatedUnverified
-      ( (Unverified { token; _ } as old_email)
-      , (new_address, firstname, lastname) ) ->
-    let%lwt () = deactivate_token pool token in
-    update_email old_email new_address firstname lastname
-  | UpdatedVerified
-      ((Verified _ as old_email), (new_address, firstname, lastname)) ->
-    update_email old_email new_address firstname lastname
+  | Created (address, user_id, firstname, lastname) ->
+    let%lwt () = Repo.delete_unverified_by_user pool user_id in
+    create_email user_id address (Some firstname) (Some lastname) `SignUp
+  | Updated (address, user) ->
+    let open Sihl.Contract.User in
+    let user_id = user.id |> Pool_common.Id.of_string in
+    let%lwt () = Repo.delete_unverified_by_user pool user_id in
+    create_email
+      user_id
+      address
+      (user.given_name |> CCOption.map Pool_user.Firstname.of_string)
+      (user.name |> CCOption.map Pool_user.Lastname.of_string)
+      `EmailUpdate
   | EmailVerified (Unverified { token; _ } as email) ->
     let%lwt () = deactivate_token pool token in
-    let%lwt () = Repo.update pool @@ verify email in
+    let%lwt () = Repo.verify pool @@ verify email in
     Lwt.return_unit
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   match one, two with
-  | Created (a1, f1, l1), Created (a2, f2, l2) ->
+  | Created (a1, id1, f1, l1), Created (a2, id2, f2, l2) ->
     User.EmailAddress.equal a1 a2
+    && Pool_common.Id.equal id1 id2
     && User.Firstname.equal f1 f2
     && User.Lastname.equal l1 l2
-  | UpdatedUnverified (m1, (a1, f1, l1)), UpdatedUnverified (m2, (a2, f2, l2))
-    ->
-    equal m1 m2
-    && User.EmailAddress.equal a1 a2
-    && User.Firstname.equal f1 f2
-    && User.Lastname.equal l1 l2
-  | UpdatedVerified (m1, (a1, f1, l1)), UpdatedVerified (m2, (a2, f2, l2)) ->
-    equal m1 m2
-    && User.EmailAddress.equal a1 a2
-    && User.Firstname.equal f1 f2
-    && User.Lastname.equal l1 l2
+  | Updated (a1, u1), Updated (a2, u2) ->
+    User.EmailAddress.equal a1 a2
+    && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
   | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
@@ -90,19 +83,13 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
 let pp_event formatter (event : event) : unit =
   let pp_address = User.EmailAddress.pp formatter in
   match event with
-  | Created (m, f, l) ->
+  | Created (m, id, f, l) ->
     pp_address m;
+    Pool_common.Id.pp formatter id;
     User.Firstname.pp formatter f;
     User.Lastname.pp formatter l
-  | UpdatedUnverified (m, (a, f, l)) ->
-    pp formatter m;
-    pp_address a;
-    User.Firstname.pp formatter f;
-    User.Lastname.pp formatter l
-  | UpdatedVerified (m, (a, f, l)) ->
-    pp formatter m;
-    pp_address a;
-    User.Firstname.pp formatter f;
-    User.Lastname.pp formatter l
+  | Updated (m, u) ->
+    pp_address m;
+    Sihl_user.pp formatter u
   | EmailVerified m -> pp formatter m
 ;;

@@ -52,7 +52,8 @@ val find_duplicates : 'a -> 'b
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =
-  { email : Pool_user.EmailAddress.t
+  { user_id : Pool_common.Id.t
+  ; email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
@@ -77,11 +78,10 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | EmailUnconfirmed of t
-  | EmailConfirmed of t
+  | AccountVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | Verified of t
+  | UnverifiedDeleted of Pool_common.Id.t
 
 val created : create -> event
 val firstnameupdated : t -> Pool_user.Firstname.t -> event

@@ -49,9 +49,11 @@ end = struct
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
+    let user_id = Id.create () in
     let participant =
       Participant.
-        { email = command.email
+        { user_id
+        ; email = command.email
         ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
@@ -61,7 +63,8 @@ end = struct
     in
     Ok
       [ Participant.Created participant |> Pool_event.participant
-      ; Email.Created (command.email, command.firstname, command.lastname)
+      ; Email.Created
+          (command.email, user_id, command.firstname, command.lastname)
         |> Pool_event.email_address
       ]
   ;;
@@ -69,6 +72,19 @@ end = struct
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.conformist
+  ;;
+end
+
+module DeleteUnverified : sig
+  val handle
+    :  Participant.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  let handle participant =
+    Ok
+      [ Participant.UnverifiedDeleted (Participant.id participant)
+        |> Pool_event.participant
+      ]
   ;;
 end
 
@@ -227,11 +243,8 @@ end = struct
   ;;
 end
 
-module UpdateEmail : sig
-  type t =
-    { current_email : Email.verified Email.t
-    ; new_email : User.EmailAddress.t
-    }
+module RequestEmailValidation : sig
+  type t = Pool_user.EmailAddress.t
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
@@ -245,25 +258,57 @@ module UpdateEmail : sig
     -> Participant.t
     -> bool Lwt.t
 end = struct
-  type t =
-    { current_email : Email.verified Email.t
-    ; new_email : User.EmailAddress.t
-    }
+  type t = Pool_user.EmailAddress.t
 
-  let handle ?allowed_email_suffixes participant command =
+  let handle ?allowed_email_suffixes participant email =
+    let open CCResult in
+    let* () = User.EmailAddress.validate allowed_email_suffixes email in
+    Ok
+      [ Email.Updated (email, participant.Participant.user)
+        |> Pool_event.email_address
+      ]
+  ;;
+
+  let can pool user participant =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        user
+        ~any_of:
+          [ Permission.Update
+              (Permission.Participant, Some (Participant.id participant))
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
+          ]
+    in
+    pool
+    |> Pool_tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
+  ;;
+end
+
+module UpdateEmail : sig
+  type t = Email.unverified Email.t
+
+  val handle
+    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    -> Participant.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Pool_database.Label.t -> Sihl_user.t -> Participant.t -> bool Lwt.t
+end = struct
+  type t = Email.unverified Email.t
+
+  let handle ?allowed_email_suffixes participant email =
     let open CCResult in
     let* () =
-      User.EmailAddress.validate allowed_email_suffixes command.new_email
+      User.EmailAddress.validate allowed_email_suffixes (Email.address email)
     in
     Ok
-      [ Participant.EmailUpdated (participant, command.new_email)
+      [ Participant.EmailUpdated (participant, Email.address email)
         |> Pool_event.participant
-      ; Email.UpdatedVerified
-          ( command.current_email
-          , ( command.new_email
-            , Participant.firstname participant
-            , Participant.lastname participant ) )
-        |> Pool_event.email_address
+      ; Email.EmailVerified email |> Pool_event.email_address
       ]
   ;;
 
@@ -295,7 +340,7 @@ end = struct
   ;;
 end
 
-module ConfirmEmail : sig
+module VerifyAccount : sig
   type t = { email : Email.unverified Email.t }
 
   val handle
@@ -307,7 +352,7 @@ end = struct
 
   let handle command participant =
     Ok
-      [ Participant.EmailConfirmed participant |> Pool_event.participant
+      [ Participant.AccountVerified participant |> Pool_event.participant
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
