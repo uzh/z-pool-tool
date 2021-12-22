@@ -39,7 +39,7 @@ let handle_event pool : event -> unit Lwt.t =
     >>= function
     | None ->
       let error = PoolError.(NotFound User) |> PoolError.show_error in
-      Logs.err (fun m -> m "%s" error);
+      Logs.err (fun m -> m "Cannot create verification email: %s" error);
       failwith error
     | Some user ->
       let email = create address user token in
