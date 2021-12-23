@@ -11,6 +11,7 @@ type create =
   ; lastname : User.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : User.TermsAccepted.t
+  ; language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
 
@@ -80,6 +81,7 @@ let handle_event pool : event -> unit Lwt.t =
     { user
     ; recruitment_channel = participant.recruitment_channel
     ; terms_accepted_at = participant.terms_accepted_at
+    ; language = participant.language
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None

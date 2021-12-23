@@ -13,6 +13,7 @@ module SignUp : sig
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
+    -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -45,7 +46,7 @@ end = struct
         command)
   ;;
 
-  let handle ?allowed_email_suffixes ?password_policy command =
+  let handle ?allowed_email_suffixes ?password_policy default_language command =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
@@ -59,6 +60,7 @@ end = struct
         ; lastname = command.lastname
         ; recruitment_channel = command.recruitment_channel
         ; terms_accepted_at = User.TermsAccepted.create_now ()
+        ; language = default_language
         }
     in
     Ok

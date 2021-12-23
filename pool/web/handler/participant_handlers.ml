@@ -88,9 +88,11 @@ let sign_up_create req =
       ||> fun suffixes ->
       if CCList.is_empty suffixes then None else Some suffixes
     in
+    let default_language = HttpUtils.browser_language_from_req req in
     let* events =
       let open CCResult.Infix in
-      Command.SignUp.(decode urlencoded >>= handle ?allowed_email_suffixes)
+      Command.SignUp.(
+        decode urlencoded >>= handle ?allowed_email_suffixes default_language)
       >>= (fun e -> Ok (remove_participant_event @ e))
       |> Lwt_result.lift
     in

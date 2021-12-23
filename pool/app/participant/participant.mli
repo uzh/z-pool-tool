@@ -14,6 +14,7 @@ type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t
+  ; language : Pool_common.Language.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t
@@ -59,6 +60,7 @@ type create =
   ; lastname : Pool_user.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t
+  ; language : Pool_common.Language.t option
   }
 
 type update = Event.update =
