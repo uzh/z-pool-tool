@@ -27,7 +27,7 @@ let schema =
                struggle. If the number is too low, your Sihl app performs \
                badly. This can be configured using Pool_database_SIZE and the \
                default is 10."
-            (int ~default:10 "Pool_database_SIZE")
+            (int ~default:10 "POOL_DATABASE_SIZE")
         ; Conformist.optional
             ~meta:
               "This value is by default set to [true] to skip the creation of \

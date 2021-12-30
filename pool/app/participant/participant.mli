@@ -12,7 +12,7 @@ end
 
 type t =
   { user : Sihl_user.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
@@ -56,7 +56,7 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t
   }
 

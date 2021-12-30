@@ -36,7 +36,7 @@ end
 type t =
   { user : Sihl_user.t
         [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Common.TermsAccepted.t
   ; paused : Common.Paused.t
   ; disabled : Common.Disabled.t

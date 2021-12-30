@@ -8,7 +8,7 @@ type create =
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : User.TermsAccepted.t
   }
 [@@deriving eq, show]

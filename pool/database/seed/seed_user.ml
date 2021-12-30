@@ -48,7 +48,7 @@ let[@warning "-41"] participants db_pool () =
     [ ( "Hansruedi"
       , "Rüdisüli"
       , "one@test.com"
-      , Participant.RecruitmentChannel.Friend
+      , Some Participant.RecruitmentChannel.Friend
       , Some (Ptime_clock.now ())
       , false
       , false
@@ -56,7 +56,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "Jane"
       , "Doe"
       , "two@test.com"
-      , Participant.RecruitmentChannel.Online
+      , Some Participant.RecruitmentChannel.Online
       , Some (Ptime_clock.now ())
       , false
       , false
@@ -64,7 +64,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "John"
       , "Dorrian"
       , "three@mail.com"
-      , Participant.RecruitmentChannel.Lecture
+      , Some Participant.RecruitmentChannel.Lecture
       , Some (Ptime_clock.now ())
       , true
       , false
@@ -72,7 +72,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "Kevin"
       , "McCallistor"
       , "four@mail.com"
-      , Participant.RecruitmentChannel.Mailing
+      , Some Participant.RecruitmentChannel.Mailing
       , Some (Ptime_clock.now ())
       , true
       , false
@@ -80,7 +80,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "Hello"
       , "Kitty"
       , "five@mail.com"
-      , Participant.RecruitmentChannel.Online
+      , Some Participant.RecruitmentChannel.Online
       , Some (Ptime_clock.now ())
       , true
       , true
@@ -88,7 +88,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "Dr."
       , "Murphy"
       , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , Some Participant.RecruitmentChannel.Friend
       , Some (Ptime_clock.now ())
       , true
       , true
@@ -96,7 +96,7 @@ let[@warning "-41"] participants db_pool () =
     ; ( "Mr."
       , "Do not accept terms"
       , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , Some Participant.RecruitmentChannel.Friend
       , None
       , true
       , true

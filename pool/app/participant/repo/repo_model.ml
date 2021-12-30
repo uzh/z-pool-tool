@@ -6,11 +6,12 @@ module RecruitmentChannel = struct
   let t =
     let open CCResult in
     Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> to_string |> pure)
-        ~decode:(fun m ->
-          map_err (fun _ -> "decode recruitment channel") @@ of_string m)
-        string)
+      option
+      @@ custom
+           ~encode:(fun m -> m |> to_string |> pure)
+           ~decode:(fun m ->
+             map_err (fun _ -> "decode recruitment channel") @@ of_string m)
+           string)
   ;;
 end
 
