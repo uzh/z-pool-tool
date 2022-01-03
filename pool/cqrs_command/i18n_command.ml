@@ -66,7 +66,7 @@ end = struct
  ;;
 end
 
-module Edit : sig
+module Update : sig
   type t = { content : I18n.Content.t }
 
   val handle
@@ -87,7 +87,7 @@ end = struct
 
   let handle property (command : t) =
     let edit : I18n.edit = I18n.{ content = command.content } in
-    Ok [ I18n.Edited (property, edit) |> Pool_event.i18n ]
+    Ok [ I18n.Updated (property, edit) |> Pool_event.i18n ]
   ;;
 
   let decode data =

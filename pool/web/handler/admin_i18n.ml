@@ -50,8 +50,8 @@ let update req =
       let open CCResult.Infix in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
-      |> Cqrs_command.I18n_command.Edit.decode
-      >>= Cqrs_command.I18n_command.Edit.handle property
+      |> Cqrs_command.I18n_command.Update.decode
+      >>= Cqrs_command.I18n_command.Update.handle property
       |> Lwt_result.lift
     in
     let handle events =

@@ -11,7 +11,7 @@ type edit = { content : Content.t } [@@deriving eq, show]
 
 type event =
   | Created of create
-  | Edited of t * edit
+  | Updated of t * edit
 
 let handle_event pool : event -> unit Lwt.t = function
   | Created create ->
@@ -20,7 +20,7 @@ let handle_event pool : event -> unit Lwt.t = function
       |> Repo.insert pool
     in
     Lwt.return_unit
-  | Edited (property, update) ->
+  | Updated (property, update) ->
     let%lwt _ =
       { property with content = update.content } |> Repo.update pool
     in
@@ -30,7 +30,7 @@ let handle_event pool : event -> unit Lwt.t = function
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | Created one, Created two -> equal_create one two
-  | Edited (property_one, edit_one), Edited (property_two, edit_two) ->
+  | Updated (property_one, edit_one), Updated (property_two, edit_two) ->
     equal property_one property_two && equal_edit edit_one edit_two
   | _ -> false
 ;;
@@ -38,7 +38,7 @@ let[@warning "-4"] equal_event event1 event2 =
 let pp_event formatter event =
   match event with
   | Created m -> pp_create formatter m
-  | Edited (property, m) ->
+  | Updated (property, m) ->
     let () = pp formatter property in
     pp_edit formatter m
 ;;
