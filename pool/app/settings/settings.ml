@@ -103,7 +103,16 @@ let user_language_terms_and_conditions pool user_language =
   match user_language with
   | None -> default_language_terms_and_conditions pool
   | Some language ->
-    let%lwt terms = find_terms_and_conditions pool in
+    let open Lwt.Infix in
+    let%lwt tenant_languages = find_languages pool in
+    let%lwt terms =
+      find_terms_and_conditions pool
+      >|= CCList.filter (fun (lang, _) ->
+              CCList.find_opt
+                (fun x -> Pool_common.Language.equal lang x)
+                tenant_languages
+              |> CCOption.is_some)
+    in
     (match CCList.assoc_opt ~eq:Pool_common.Language.equal language terms with
     | None -> default_language_terms_and_conditions pool
     | Some terms -> Ok terms |> Lwt_result.lift)
