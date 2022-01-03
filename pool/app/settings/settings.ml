@@ -85,3 +85,16 @@ let terms_and_conditions_last_updated pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
 ;;
+
+let default_language pool =
+  let open Lwt.Infix in
+  find_languages pool >|= CCList.hd
+;;
+
+let default_language_terms_and_conditions pool =
+  let%lwt terms = find_terms_and_conditions pool in
+  let%lwt default_language = default_language pool in
+  CCList.assoc_opt ~eq:Pool_common.Language.equal default_language terms
+  |> CCOption.to_result Pool_common.Message.(Retrieve TermsAndConditions)
+  |> Lwt_result.lift
+;;

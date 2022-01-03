@@ -77,7 +77,9 @@ let update_settings req =
         | `UpdateInactiveUserWarning ->
           fun m -> InactiveUser.Warning.(m |> decode >>= handle) |> lift
         | `UpdateTermsAndConditions ->
-          fun m -> UpdateTermsAndConditions.(m |> decode >>= handle) |> lift
+          fun m ->
+            let%lwt languages = Settings.find_languages tenant_db in
+            UpdateTermsAndConditions.(handle languages m) |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param

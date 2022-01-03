@@ -98,22 +98,28 @@ module InactiveUser = struct
 end
 
 module TermsAndConditions = struct
-  type t = string [@@deriving eq, show, yojson]
+  module Terms = struct
+    type t = string [@@deriving eq, show, yojson]
 
-  let create terms =
-    if CCString.length terms > 0
-    then Ok terms
-    else Error Pool_common.Message.(Invalid TermsAndConditions)
+    let create terms =
+      if CCString.length terms > 0
+      then Ok terms
+      else Error Pool_common.Message.(Invalid TermsAndConditions)
+    ;;
+
+    let value m = m
+  end
+
+  type t = Pool_common.Language.t * Terms.t [@@deriving eq, show, yojson]
+
+  let create (language, content) =
+    let open CCResult in
+    let* language = Pool_common.Language.of_string language in
+    let* content = Terms.create content in
+    Ok (language, content)
   ;;
 
   let value m = m
-
-  let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.TermsAndConditions)
-      CCList.pure
-      "terms_and_conditions"
-  ;;
 end
 
 module Value = struct
@@ -129,7 +135,8 @@ module Value = struct
   type inactive_user_warning = InactiveUser.DisableAfter.t
   [@@deriving eq, show, yojson]
 
-  type terms_and_conditions = TermsAndConditions.t [@@deriving eq, show, yojson]
+  type terms_and_conditions = TermsAndConditions.t list
+  [@@deriving eq, show, yojson]
 
   type t =
     | TenantLanguages of tenant_languages

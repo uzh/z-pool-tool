@@ -30,7 +30,7 @@ let sign_up req =
     let lastname = go "lastname" in
     let recruitment_channel = go "recruitment_channel" in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let%lwt terms = Settings.find_terms_and_conditions tenant_db in
+    let* terms = Settings.default_language_terms_and_conditions tenant_db in
     Page.Participant.sign_up
       csrf
       message

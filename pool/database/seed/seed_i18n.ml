@@ -76,8 +76,6 @@ let i18n db_pool () =
       , [ "EN", "Please complete the participants data."
         ; "DE", "Bitte vervollständigen Sie noch die Teilnahmedaten."
         ] )
-    ; ( "terms_and_conditions"
-      , [ "EN", "Terms & Conditions"; "DE", "Nutzerbedingungen" ] )
     ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
     ; ( "password_policy_text"
       , [ "EN", "Password must be at least 6 characters in length."

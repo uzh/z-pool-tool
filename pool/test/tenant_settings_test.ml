@@ -86,8 +86,6 @@ let check_languages _ () =
 let check_terms_and_conditions _ () =
   let open Settings in
   let%lwt terms = find_terms_and_conditions Data.database_label in
-  let has_terms =
-    terms |> TermsAndConditions.value |> CCString.is_empty |> not
-  in
+  let has_terms = terms |> CCList.is_empty |> not in
   Alcotest.(check bool "has terms and conditions" has_terms true) |> Lwt.return
 ;;

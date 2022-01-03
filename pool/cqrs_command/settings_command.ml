@@ -216,25 +216,48 @@ module InactiveUser = struct
 end
 
 module UpdateTermsAndConditions : sig
-  type t = Settings.TermsAndConditions.t
+  type t = (string * string list) list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val handle
+    :  Pool_common.Language.t list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = Settings.TermsAndConditions.t
+  type t = (string * string list) list
 
-  let command terms_and_conditions = terms_and_conditions
-
-  let schema =
-    Conformist.(make Field.[ Settings.TermsAndConditions.schema () ] command)
-  ;;
-
-  let handle terms_and_conditions =
+  let handle tenant_languages urlencoded =
+    let open CCResult in
+    let open CCResult.Infix in
+    let ignore_emtpy =
+      CCList.filter (fun (_, terms) -> not (CCString.is_empty terms))
+    in
+    let tenant_languages_are_set terms =
+      let result =
+        CCResult.flatten_l
+        @@ CCList.map
+             (fun tenant_language ->
+               CCList.assoc_opt
+                 ~eq:CCString.equal
+                 (tenant_language |> Pool_common.Language.code)
+                 terms
+               |> CCOption.to_result ())
+             tenant_languages
+      in
+      match result with
+      | Error _ -> Error Pool_common.Message.RequestRequiredFields
+      | Ok _ -> Ok terms
+    in
+    let* terms_and_conditions =
+      urlencoded
+      |> CCList.map (fun (l, t) -> l, CCList.hd t)
+      |> ignore_emtpy
+      |> tenant_languages_are_set
+      >>= fun urlencoded ->
+      CCResult.flatten_l
+        (CCList.map Settings.TermsAndConditions.create urlencoded)
+    in
     Ok
       [ Settings.TermsAndConditionsUpdated terms_and_conditions
         |> Pool_event.settings
@@ -242,9 +265,4 @@ end = struct
   ;;
 
   let can = Utils.todo
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
 end

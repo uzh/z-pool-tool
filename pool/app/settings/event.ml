@@ -6,7 +6,7 @@ type event =
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
-  | TermsAndConditionsUpdated of TermsAndConditions.t
+  | TermsAndConditionsUpdated of TermsAndConditions.t list
 
 let handle_event pool : event -> unit Lwt.t = function
   | LanguagesUpdated languages ->
