@@ -18,6 +18,7 @@ let field_to_string = function
   | Icon -> "icon"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
+  | Key -> "key"
   | Language -> "language"
   | Lastname -> "lastname"
   | LogoType -> "logo type"
@@ -46,6 +47,7 @@ let field_to_string = function
   | TimeSpan -> "time span"
   | Title -> "title"
   | Token -> "token"
+  | Translation -> "translation"
   | Url -> "url"
   | User -> "user"
 ;;

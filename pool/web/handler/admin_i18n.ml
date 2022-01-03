@@ -11,7 +11,7 @@ let index req =
       let _ =
         CCList.map
           (fun (translation : I18n.t) ->
-            let key = translation.I18n.key |> I18n.Key.value in
+            let key = translation |> I18n.key |> I18n.Key.value in
             match Hashtbl.find_opt hash key with
             | None -> Hashtbl.add hash key [ translation ]
             | Some lst -> Hashtbl.replace hash key (CCList.cons translation lst))

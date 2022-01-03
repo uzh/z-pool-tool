@@ -3,7 +3,7 @@ module Key : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
@@ -12,18 +12,11 @@ module Content : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
   val schema : unit -> ('a, t) Conformist.Field.t
 end
 
-(* TODO Hide t*)
-type t =
-  { id : Pool_common.Id.t
-  ; key : Key.t
-  ; language : Pool_common.Language.t
-  ; content : Content.t
-  }
-[@@deriving eq, show]
+type t
 
 val create : Key.t -> Pool_common.Language.t -> Content.t -> t
 
@@ -34,6 +27,11 @@ type create =
   }
 
 type edit = { content : Content.t }
+
+val id : t -> Pool_common.Id.t
+val key : t -> Key.t
+val language : t -> Pool_common.Language.t
+val content : t -> Content.t
 
 type event =
   | Created of create

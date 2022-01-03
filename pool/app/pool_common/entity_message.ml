@@ -26,6 +26,7 @@ type field =
   | Icon
   | InactiveUserDisableAfter
   | InactiveUserWarning
+  | Key
   | Language
   | Lastname
   | LogoType
@@ -53,6 +54,7 @@ type field =
   | TermsAndConditions
   | TimeSpan
   | Title
+  | Translation
   | Token
   | Url
   | User

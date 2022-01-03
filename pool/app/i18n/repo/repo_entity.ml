@@ -16,10 +16,11 @@ end
 let t =
   let encode m = Ok (Common.Id.value m.id, (m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =
-    let ( let* ) = Result.bind in
-    let* key = Key.create key in
-    let* content = Content.create content in
-    Ok { id = Common.Id.of_string id; key; language; content }
+    let open CCResult in
+    map_err (fun _ -> "decode unverified email")
+    @@ let* key = Key.create key in
+       let* content = Content.create content in
+       Ok { id = Common.Id.of_string id; key; language; content }
   in
   Caqti_type.(
     custom

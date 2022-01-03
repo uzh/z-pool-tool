@@ -1,4 +1,5 @@
 module Common = Pool_common
+module PoolError = Common.Message
 
 module Key = struct
   type t = string [@@deriving eq, show]
@@ -6,11 +7,14 @@ module Key = struct
   let value m = m
 
   let create key =
-    if String.length key <= 0 then Error "Invalid key!" else Ok key
+    if CCString.is_empty key then Error PoolError.(Invalid Key) else Ok key
   ;;
 
   let schema () =
-    Conformist.custom (fun l -> l |> List.hd |> create) (fun l -> [ l ]) "key"
+    Conformist.custom
+      (Pool_common.Utils.schema_decoder create PoolError.Key)
+      CCList.pure
+      "key"
   ;;
 end
 
@@ -20,13 +24,15 @@ module Content = struct
   let value m = m
 
   let create content =
-    if String.length content <= 0 then Error "Invalid content!" else Ok content
+    if CCString.is_empty content
+    then Error PoolError.(Invalid Translation)
+    else Ok content
   ;;
 
   let schema () =
     Conformist.custom
-      (fun l -> l |> List.hd |> create)
-      (fun l -> [ l ])
+      (Pool_common.Utils.schema_decoder create PoolError.Translation)
+      CCList.pure
       "content"
   ;;
 end
@@ -42,3 +48,8 @@ type t =
 let create key language content =
   { id = Common.Id.create (); key; language; content }
 ;;
+
+let id m = m.id
+let key m = m.key
+let language m = m.language
+let content m = m.content
