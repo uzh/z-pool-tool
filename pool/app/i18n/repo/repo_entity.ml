@@ -13,7 +13,6 @@ module Content = struct
   let t = Caqti_type.string
 end
 
-(* TODO [timhub]: Shoud we use serialized data instead of language column? *)
 let t =
   let encode m = Ok (Common.Id.value m.id, (m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =

@@ -158,26 +158,39 @@ let email_verification req =
 ;;
 
 let terms req =
-  CCFun.flip Lwt.bind HttpUtils.extract_happy_path
-  @@
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let csrf = HttpUtils.find_csrf req in
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
-  let* tenant_db =
-    Middleware.Tenant.tenant_db_of_request req
-    |> Lwt_result.map_err (fun err -> err, "/")
+  let%lwt result =
+    let error_path = "/login" in
+    let* tenant_db =
+      Middleware.Tenant.tenant_db_of_request req
+      |> Lwt_result.map_err (fun err -> err, "/")
+    in
+    let* user =
+      General.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound User, error_path)
+    in
+    let* participant =
+      Participant.find
+        tenant_db
+        (user.Sihl.Contract.User.id |> Pool_common.Id.of_string)
+      |> Lwt_result.map_err (fun err -> err, error_path)
+    in
+    let* terms =
+      Settings.user_language_terms_and_conditions
+        tenant_db
+        (Participant.preferred_language participant)
+      |> Lwt_result.map_err (fun err -> err, error_path)
+    in
+    Page.Participant.terms csrf message user.Sihl_user.id terms ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
   in
-  let* user =
-    General.user_from_session tenant_db req
-    ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
-  in
-  let%lwt terms = Settings.find_terms_and_conditions tenant_db in
-  Page.Participant.terms csrf message user.Sihl_user.id terms ()
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return_ok
+  result |> HttpUtils.extract_happy_path
 ;;
 
 let terms_accept req =

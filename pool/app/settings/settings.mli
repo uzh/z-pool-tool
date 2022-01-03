@@ -126,3 +126,8 @@ val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
 val default_language_terms_and_conditions
   :  Pool_database.Label.t
   -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t
+
+val user_language_terms_and_conditions
+  :  Pool_database.Label.t
+  -> Pool_common.Language.t option
+  -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t

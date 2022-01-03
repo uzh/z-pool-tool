@@ -104,6 +104,7 @@ let fullname m =
 ;;
 
 let email_address m = m.user.Sihl_user.email |> Common.EmailAddress.of_string
+let preferred_language m = m.language
 
 let version_selector p = function
   | "firstname" -> Some p.firstname_version

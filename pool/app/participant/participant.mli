@@ -30,6 +30,7 @@ val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
+val preferred_language : t -> Pool_common.Language.t option
 val version_selector : t -> string -> Pool_common.Version.t option
 val login : 'a -> email:'b -> password:'c -> 'd
 val insert : Pool_database.Label.t -> t -> unit Lwt.t

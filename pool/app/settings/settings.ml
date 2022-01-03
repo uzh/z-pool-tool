@@ -98,3 +98,13 @@ let default_language_terms_and_conditions pool =
   |> CCOption.to_result Pool_common.Message.(Retrieve TermsAndConditions)
   |> Lwt_result.lift
 ;;
+
+let user_language_terms_and_conditions pool user_language =
+  match user_language with
+  | None -> default_language_terms_and_conditions pool
+  | Some language ->
+    let%lwt terms = find_terms_and_conditions pool in
+    (match CCList.assoc_opt ~eq:Pool_common.Language.equal language terms with
+    | None -> default_language_terms_and_conditions pool
+    | Some terms -> Ok terms |> Lwt_result.lift)
+;;
