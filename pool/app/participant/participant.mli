@@ -92,3 +92,5 @@ val pausedupdated : t -> Pool_user.Paused.t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val pp : Format.formatter -> t -> unit
+val equal : t -> t -> bool
