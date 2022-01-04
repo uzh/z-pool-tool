@@ -183,7 +183,7 @@ let terms req =
     let* terms =
       Settings.user_language_terms_and_conditions
         tenant_db
-        (Participant.preferred_language participant)
+        participant.Participant.language
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
     Page.Participant.terms csrf message user.Sihl_user.id terms ()
