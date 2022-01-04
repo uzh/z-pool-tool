@@ -124,6 +124,8 @@ let error_to_string = function
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "Ein Fehler is aufgetreten."
+  | TermsAndConditionsMissing ->
+    "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"

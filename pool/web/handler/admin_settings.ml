@@ -52,13 +52,16 @@ let update_settings req =
         function
         | `UpdateTenantLanguages ->
           fun m ->
+            let%lwt terms_and_conditions =
+              Settings.find_terms_and_conditions tenant_db
+            in
             m
             |> CCList.filter_map (fun (k, _) ->
                    match CCList.mem k (Pool_common.Language.all_codes ()) with
                    | true -> Some (k |> Pool_common.Language.of_string)
                    | false -> None)
             |> CCResult.flatten_l
-            >>= UpdateLanguages.handle
+            >>= UpdateLanguages.handle terms_and_conditions
             |> lift
         | `UpdateTenantEmailSuffixes ->
           fun m -> m |> UpdateEmailSuffixes.handle |> lift

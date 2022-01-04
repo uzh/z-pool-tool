@@ -86,6 +86,7 @@ type error =
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle
   | TerminatoryRootErrorTitle
+  | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
   | TimeSpanPositive
   | TokenInvalidFormat

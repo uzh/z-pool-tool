@@ -113,6 +113,7 @@ let error_to_string = function
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"
+  | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenInvalidFormat -> "Invalid Token Format!"

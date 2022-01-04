@@ -1,16 +1,30 @@
 module UpdateLanguages : sig
   type t = Pool_common.Language.t list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  Settings.TermsAndConditions.t list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Pool_common.Language.t list
 
-  let handle command =
+  let handle terms command =
     let open CCResult in
     match CCList.length command > 0 with
     | false -> Error Pool_common.Message.(NoOptionSelected Language)
-    | true -> Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ]
+    | true ->
+      let open CCResult.Infix in
+      let terms = CCList.map Settings.TermsAndConditions.value terms in
+      CCList.map
+        (fun l ->
+          CCList.assoc_opt ~eq:Pool_common.Language.equal l terms
+          |> CCOption.to_result Pool_common.Message.TermsAndConditionsMissing)
+        command
+      |> CCResult.flatten_l
+      >>= CCFun.const
+            (Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ])
   ;;
 
   let can = Utils.todo
