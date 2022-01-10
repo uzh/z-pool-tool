@@ -65,6 +65,10 @@ module Admin = struct
       [ get "/dashboard" dashboard
       ; get "/settings" Settings.show
       ; post "/settings/:action" Settings.update_settings
+      ; get "/admins" Users.list_admins
+      ; get "/admins/:id" Users.show_admin
+      ; get "/participants" Users.list_participants
+      ; get "/participants/:id" Users.show_participant
       ]
   ;;
 end

@@ -76,6 +76,14 @@ let find_by_email pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
 ;;
 
+let find_all_request =
+  find_request_sql "" |> Caqti_request.collect Caqti_type.unit Repo_model.t
+;;
+
+let find_all pool =
+  Utils.Database.collect (Database.Label.value pool) find_all_request
+;;
+
 let find_confirmed_request =
   find_request_sql
     {sql|

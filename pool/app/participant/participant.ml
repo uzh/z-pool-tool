@@ -4,6 +4,7 @@ include Event
 let login _ ~email:_ ~password:_ = Utils.todo ()
 let find = Repo.find
 let find_by_email = Repo.find_by_email
+let find_all = Repo.find_all
 let insert = Repo.insert
 
 let find_by_user pool (user : Sihl_user.t) =

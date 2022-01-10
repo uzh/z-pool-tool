@@ -60,6 +60,10 @@ type _ carrier =
   | RecruiterC : recruiter carrier
   | OperatorC : operator carrier
 
+let all_admin_roles =
+  [ `Assistant; `Experimenter; `LocationManager; `Recruiter; `Operator ]
+;;
+
 let equal : type person. person t -> person t -> bool =
  fun p1 p2 ->
   match p1, p2 with

@@ -1,5 +1,6 @@
 module Message = Http_utils.Message
 module Settings = Admin_settings
+module Users = Admin_users
 
 let dashboard req =
   let message =
