@@ -17,8 +17,8 @@ let find_all pool () =
   let open Lwt.Infix in
   let to_any results = CCList.map (fun m -> Any m) results in
   Lwt_list.fold_left_s
-    (fun _ status ->
-      let all_admins =
+    (fun all status ->
+      let%lwt all_admins =
         match status with
         | `Assistant -> Repo.find_all_by_role pool AssistantC >|= to_any
         | `Experimenter -> Repo.find_all_by_role pool ExperimenterC >|= to_any
@@ -27,18 +27,19 @@ let find_all pool () =
         | `Recruiter -> Repo.find_all_by_role pool RecruiterC >|= to_any
         | `Operator -> Repo.find_all_by_role pool OperatorC >|= to_any
       in
-      all_admins)
+      Lwt.return (CCList.append all all_admins))
     []
     all_admin_roles
 ;;
 
-module Human = struct
-  let user (admin : any) =
-    match admin with
-    | Any (Assistant _ as admin) -> user admin
-    | Any (Experimenter _ as admin) -> user admin
-    | Any (LocationManager _ as admin) -> user admin
-    | Any (Recruiter _ as admin) -> user admin
-    | Any (Operator _ as admin) -> user admin
-  ;;
-end
+(* TODO: implement customized permissions *)
+let roles_authorized_to_edit admin =
+  match admin with
+  | Any (Assistant _) -> [ `Assistant ]
+  | Any (Experimenter _) -> [ `Assistant; `Experimenter ]
+  | Any (LocationManager _) -> [ `Assistant; `Experimenter; `LocationManager ]
+  | Any (Recruiter _) ->
+    [ `Assistant; `Experimenter; `LocationManager; `Recruiter ]
+  | Any (Operator _) ->
+    [ `Assistant; `Experimenter; `LocationManager; `Recruiter; `Operator ]
+;;

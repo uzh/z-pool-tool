@@ -11,6 +11,8 @@ let admins db_pool () =
   let data =
     [ "The", "One", "admin@example.com", `Operator
     ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
+    ; "Scooby", "Doo", "assistant@econ.uzh.ch", `Assistant
+    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", `Experimenter
     ]
   in
   let ctx = Pool_tenant.to_ctx db_pool in

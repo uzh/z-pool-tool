@@ -113,3 +113,23 @@ module Duplicate = struct
     }
   [@@deriving eq, show]
 end
+
+module Any = struct
+  let user admin =
+    match admin with
+    | Any (Assistant _ as admin) -> user admin
+    | Any (Experimenter _ as admin) -> user admin
+    | Any (LocationManager _ as admin) -> user admin
+    | Any (Recruiter _ as admin) -> user admin
+    | Any (Operator _ as admin) -> user admin
+  ;;
+
+  let role admin =
+    match admin with
+    | Any (Assistant _) -> `Assistant
+    | Any (Experimenter _) -> `Experimenter
+    | Any (LocationManager _) -> `LocationManager
+    | Any (Recruiter _) -> `Recruiter
+    | Any (Operator _) -> `Operator
+  ;;
+end

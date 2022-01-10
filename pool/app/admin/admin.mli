@@ -97,6 +97,20 @@ val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b
 val find_all : Pool_database.Label.t -> unit -> any list Lwt.t
 
-module Human : sig
+module Any : sig
   val user : any -> Sihl_user.t
+
+  val role
+    :  any
+    -> [> `Assistant
+       | `Experimenter
+       | `LocationManager
+       | `Operator
+       | `Recruiter
+       ]
 end
+
+val roles_authorized_to_edit
+  :  any
+  -> [> `Assistant | `Experimenter | `LocationManager | `Operator | `Recruiter ]
+     list

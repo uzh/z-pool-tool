@@ -2,7 +2,7 @@ open Tyxml.Html
 
 let admin_row admin =
   let open Sihl.Contract.User in
-  let user = Admin.Human.user admin in
+  let user = Admin.Any.user admin in
   div
     [ a
         ~a:
@@ -20,8 +20,36 @@ let list_admins admins message () =
   Page_layout.create html message ()
 ;;
 
-let show_admin user message () =
+let show_admin roles_authorized_to_edit admin message () =
   let open Sihl.Contract.User in
+  let user = Admin.Any.user admin in
+  let edit_link =
+    match CCList.mem (Admin.Any.role admin) roles_authorized_to_edit with
+    | true ->
+      [ a
+          ~a:[ a_href (Format.asprintf "/admin/admins/%s/edit" user.id) ]
+          [ txt "edit" ]
+      ]
+    | false -> []
+  in
+  let html =
+    div
+      [ h1
+          [ txt
+              (Format.asprintf
+                 "%s %s"
+                 (user.given_name |> Option.value ~default:"")
+                 (user.name |> Option.value ~default:""))
+          ]
+      ; div edit_link
+      ]
+  in
+  Page_layout.create html message ()
+;;
+
+let edit_admin _ editabe_admin message () =
+  let open Sihl.Contract.User in
+  let user = Admin.Any.user editabe_admin in
   let html =
     div
       [ h1
