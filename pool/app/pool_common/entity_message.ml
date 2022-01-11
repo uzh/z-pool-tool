@@ -140,3 +140,10 @@ module I18n = struct
     let note = "Please check your emails and confirm your address first."
   end
 end
+
+type submit =
+  | Accept of field option
+  | Create of field option
+  | Save of field option
+  | Update of field option
+[@@deriving eq, show, yojson, variants]
