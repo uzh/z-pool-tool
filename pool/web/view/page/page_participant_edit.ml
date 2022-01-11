@@ -78,7 +78,7 @@ let edit csrf language user_update_csrf participant message () =
         ]
       [ csrf_element csrf ()
       ; input_element `Email (Some "email") participant.user.Sihl_user.email
-      ; input_element `Submit None "Update email"
+      ; submit_element language Field.(Update (Some Field.email))
       ]
   in
   let password_form =
@@ -91,7 +91,7 @@ let edit csrf language user_update_csrf participant message () =
       ; input_element `Password (Some "current_password") ""
       ; input_element `Password (Some "new_password") ""
       ; input_element `Password (Some "password_confirmation") ""
-      ; input_element `Submit None "Change Password"
+      ; submit_element language Field.(Update (Some Field.password))
       ]
   in
   let html =

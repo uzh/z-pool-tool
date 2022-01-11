@@ -122,6 +122,20 @@ let error_to_string = function
   | WriteOnlyModel -> "Write only model!"
 ;;
 
+let format_submit submit field =
+  let field_opt_message f =
+    f |> CCOption.map field_to_string |> Option.value ~default:""
+  in
+  field_message "" submit (field_opt_message field)
+;;
+
+let submit_to_string = function
+  | Accept field -> format_submit "accept" field
+  | Create field -> format_submit "create" field
+  | Save field -> format_submit "save" field
+  | Update field -> format_submit "update" field
+;;
+
 let to_string = function
   | Message string -> string
   | PageNotFoundMessage -> "The requested page could not be found."

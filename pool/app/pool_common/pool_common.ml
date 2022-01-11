@@ -64,4 +64,14 @@ module Utils = struct
       let open Locales_en in
       field_to_string
   ;;
+
+  let submit_to_string lang =
+    match lang with
+    | Language.De ->
+      let open Locales_de in
+      submit_to_string
+    | Language.En ->
+      let open Locales_en in
+      submit_to_string
+  ;;
 end
