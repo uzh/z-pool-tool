@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 open Tyxml.Html
+module Field = Pool_common.Message
 
 let csrf_attibs ?id csrf =
   let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in
@@ -33,12 +34,15 @@ let hx_input_element
     value
     (* TODO [aerben] Do we generally want HTMX input fields to be versioned? *)
       version
+    input_label
+    language
     ?hx_post
     ?hx_params
     ?(classnames = [])
     ?error
     ()
   =
+  let field_to_string = Pool_common.Utils.field_to_string language in
   let attributes =
     (match input_type with
     | `Checkbox ->
@@ -85,7 +89,7 @@ let hx_input_element
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "name" name ]
     [ label
-        [ name
+        [ field_to_string input_label
           |> HttpUtils.placeholder_from_name
           |> CCString.capitalize_ascii
           |> txt

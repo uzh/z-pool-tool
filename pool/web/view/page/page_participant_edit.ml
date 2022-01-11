@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+module Field = Pool_common.Message
 
 let detail participant message () =
   let open Participant in
@@ -26,7 +27,7 @@ let detail participant message () =
   Page_layout.create html message ()
 ;;
 
-let edit csrf user_update_csrf participant message () =
+let edit csrf language user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
@@ -41,7 +42,7 @@ let edit csrf user_update_csrf participant message () =
       (CCList.flatten
          [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
-             (fun (name, value, _type) ->
+             (fun (name, value, label, _type) ->
                hx_input_element
                  _type
                  name
@@ -49,17 +50,22 @@ let edit csrf user_update_csrf participant message () =
                  (Participant.version_selector participant name
                  |> CCOption.get_exn_or
                       (Format.asprintf "No version found for field '%s'" name))
+                 label
+                 language
                  ~hx_post:action
                  ~hx_params:[ name ]
                  ())
              [ ( "firstname"
                , participant |> firstname |> Pool_user.Firstname.value
+               , Field.firstname
                , `Text )
              ; ( "lastname"
                , participant |> lastname |> Pool_user.Lastname.value
+               , Field.lastname
                , `Text )
              ; ( "paused"
                , participant.paused |> Pool_user.Paused.value |> string_of_bool
+               , Field.paused
                , `Checkbox )
              ]
          ])

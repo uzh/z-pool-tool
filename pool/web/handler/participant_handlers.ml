@@ -30,10 +30,12 @@ let sign_up req =
     let lastname = go "lastname" in
     let recruitment_channel = go "recruitment_channel" in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let%lwt language = HttpUtils.language_from_request req tenant_db None in
     let* terms = Settings.default_language_terms_and_conditions tenant_db in
     Page.Participant.sign_up
       csrf
       message
+      language
       channels
       email
       firstname
@@ -231,6 +233,12 @@ let show is_edit req =
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
+    let%lwt language =
+      HttpUtils.language_from_request
+        req
+        tenant_db
+        participant.Participant.language
+    in
     match is_edit with
     | false ->
       Page.Participant.detail participant message ()
@@ -238,7 +246,13 @@ let show is_edit req =
       |> Lwt.return_ok
     | true ->
       let csrf = HttpUtils.find_csrf req in
-      Page.Participant.edit csrf user_update_csrf participant message ()
+      Page.Participant.edit
+        csrf
+        language
+        user_update_csrf
+        participant
+        message
+        ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in
@@ -253,6 +267,14 @@ let update req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
+  in
+  let field_name =
+    let open Pool_common.Message in
+    function
+    | "firstname" -> Firstname
+    | "lastname" -> Lastname
+    | "paused" -> Paused
+    | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
   in
   let result () =
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
@@ -290,16 +312,17 @@ let update req =
       let open Cqrs_command.Participant_command.UpdateDetails in
       if Pool_common.Version.value current_version <= version
       then urlencoded |> decode >>= handle participant
-      else
-        let open Pool_common.Message in
-        let err_field =
-          match name with
-          | "firstname" -> Firstname
-          | "lastname" -> Lastname
-          | "paused" -> Paused
-          | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
-        in
-        Error (MeantimeUpdate err_field)
+      else Error (Pool_common.Message.MeantimeUpdate (field_name name))
+    in
+    let* participant =
+      Participant.(participant |> id |> find tenant_db)
+      |> Lwt_result.map_err (fun err -> err, "/login")
+    in
+    let%lwt language =
+      HttpUtils.language_from_request
+        req
+        tenant_db
+        participant.Participant.language
     in
     let hx_post = Sihl.Web.externalize_path "/user/update" in
     let csrf = HttpUtils.find_csrf req in
@@ -314,17 +337,14 @@ let update req =
         name
         value
         version
+        (field_name name)
+        language
         ~hx_post
         ~hx_params:[ name ]
     in
     match events with
     | Ok events ->
-      let open Utils.Lwt_result.Syntax in
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
-      let* participant =
-        Participant.(participant |> id |> find tenant_db)
-        |> Lwt_result.map_err (fun err -> err, "/login")
-      in
       [ base_input
           (Participant.version_selector participant name |> get_version)
           ~classnames:[ "success" ]
