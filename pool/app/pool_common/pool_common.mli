@@ -157,6 +157,7 @@ module Utils : sig
   val success_to_string : Language.t -> Message.success -> string
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
+  val field_to_string : Language.t -> Message.field -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
 

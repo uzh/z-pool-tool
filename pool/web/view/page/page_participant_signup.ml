@@ -1,6 +1,9 @@
+module Field = Pool_common.Message
+
 let signup
     csrf
     message
+    language
     channels
     email
     firstname
@@ -8,6 +11,7 @@ let signup
     recruitment_channel
     terms
   =
+  let field_to_string = Pool_common.Utils.field_to_string language in
   let submit_url = Sihl.Web.externalize_path "/signup" in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
@@ -43,10 +47,10 @@ let signup
           ~a:[ a_action submit_url; a_method `Post ]
           [ Component.csrf_element csrf ()
           ; div
-              [ label [ txt "Email" ]
+              [ label [ txt (field_to_string Field.Email) ]
               ; input
                   ~a:
-                    [ a_placeholder "example@mail.com"
+                    [ a_placeholder (field_to_string Field.Email)
                     ; a_required ()
                     ; a_name "email"
                     ; a_value email
@@ -55,10 +59,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Firstname" ]
+              [ label [ txt (field_to_string Field.Firstname) ]
               ; input
                   ~a:
-                    [ a_placeholder "Firstname"
+                    [ a_placeholder (field_to_string Field.Firstname)
                     ; a_required ()
                     ; a_name "firstname"
                     ; a_value firstname
@@ -67,10 +71,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Lastname" ]
+              [ label [ txt (field_to_string Field.Lastname) ]
               ; input
                   ~a:
-                    [ a_placeholder "Lastname"
+                    [ a_placeholder (field_to_string Field.Lastname)
                     ; a_required ()
                     ; a_name "lastname"
                     ; a_value lastname
@@ -79,10 +83,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Password" ]
+              [ label [ txt (field_to_string Field.Password) ]
               ; input
                   ~a:
-                    [ a_placeholder "Password"
+                    [ a_placeholder (field_to_string Field.Password)
                     ; a_required ()
                     ; a_name "password"
                     ; a_input_type `Password
@@ -90,7 +94,7 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Recruitment Channel" ]
+              [ label [ txt (field_to_string Field.RecruitmentChannel) ]
               ; select
                   ~a:[ a_required (); a_name "recruitment_channel" ]
                   channel_select

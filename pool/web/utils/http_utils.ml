@@ -160,3 +160,26 @@ let browser_language_from_req req =
   >>= Utils.LanguageCodes.find
   >>= to_lang
 ;;
+
+let language_from_request req tenant_db user_language =
+  let open CCOption in
+  let%lwt tenant_languages = Settings.find_languages tenant_db in
+  let is_valid lang =
+    match CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages with
+    | true -> Some lang
+    | false -> None
+  in
+  Sihl.Web.Request.query "lang" req
+  |> CCFun.flip bind (fun l ->
+         l
+         |> CCString.uppercase_ascii
+         |> Pool_common.Language.of_string
+         |> CCResult.to_opt)
+  |> CCFun.flip bind is_valid
+  |> value
+       ~default:
+         (user_language
+         |> CCFun.flip bind is_valid
+         |> value ~default:(CCList.hd tenant_languages))
+  |> Lwt.return
+;;
