@@ -1,6 +1,6 @@
 open Tyxml.Html
 open Component
-module Field = Pool_common.Message
+module Message = Pool_common.Message
 
 let detail participant message () =
   let open Participant in
@@ -57,15 +57,15 @@ let edit csrf language user_update_csrf participant message () =
                  ())
              [ ( "firstname"
                , participant |> firstname |> Pool_user.Firstname.value
-               , Field.firstname
+               , Message.firstname
                , `Text )
              ; ( "lastname"
                , participant |> lastname |> Pool_user.Lastname.value
-               , Field.lastname
+               , Message.lastname
                , `Text )
              ; ( "paused"
                , participant.paused |> Pool_user.Paused.value |> string_of_bool
-               , Field.paused
+               , Message.paused
                , `Checkbox )
              ]
          ])
@@ -78,7 +78,7 @@ let edit csrf language user_update_csrf participant message () =
         ]
       [ csrf_element csrf ()
       ; input_element `Email (Some "email") participant.user.Sihl_user.email
-      ; submit_element language Field.(Update (Some Field.email))
+      ; submit_element language Message.(Update (Some Message.email))
       ]
   in
   let password_form =
@@ -91,7 +91,7 @@ let edit csrf language user_update_csrf participant message () =
       ; input_element `Password (Some "current_password") ""
       ; input_element `Password (Some "new_password") ""
       ; input_element `Password (Some "password_confirmation") ""
-      ; submit_element language Field.(Update (Some Field.password))
+      ; submit_element language Message.(Update (Some Message.password))
       ]
   in
   let html =

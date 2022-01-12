@@ -13,7 +13,7 @@ let login csrf message () =
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
           ; input_element `Password (Some "password") ""
-          ; input_element `Submit None "Login"
+          ; submit_element Pool_common.Language.En Pool_common.Message.(Login)
           ]
       ; a
           ~a:
@@ -37,7 +37,9 @@ let request_reset_password csrf message () =
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
-          ; input_element `Submit None "Send reset link"
+          ; submit_element
+              Pool_common.Language.En
+              Pool_common.Message.(SendResetLink)
           ]
       ]
   in
@@ -57,7 +59,9 @@ let reset_password csrf message token () =
           ; input_element `Hidden (Some "token") token
           ; input_element `Password (Some "password") ""
           ; input_element `Password (Some "password_confirmation") ""
-          ; input_element `Submit None "Set new password"
+          ; submit_element
+              Pool_common.Language.En
+              Pool_common.Message.(Save (Some password))
           ]
       ]
   in

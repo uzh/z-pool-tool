@@ -155,8 +155,16 @@ let format_submit submit field =
 
 let submit_to_string = function
   | Accept field -> format_submit "akzeptieren" field
+  | Add field -> format_submit "hinzufügen" field
   | Create field -> format_submit "erstellen" field
+  | Delete field -> format_submit "löschen" field
+  | Decline -> format_submit "ablehnen" None
+  | Disable -> format_submit "deaktivieren" None
+  | Enable -> format_submit "aktivieren" None
+  | Login -> format_submit "anmelden" None
   | Save field -> format_submit "speichern" field
+  | SendResetLink -> format_submit "link senden" None
+  | SignUp -> format_submit "registrieren" None
   | Update field -> format_submit "aktualisieren" field
 ;;
 

@@ -143,7 +143,15 @@ end
 
 type submit =
   | Accept of field option
+  | Add of field option
   | Create of field option
+  | Delete of field option
+  | Decline
+  | Disable
+  | Enable
+  | Login
   | Save of field option
+  | SendResetLink
+  | SignUp
   | Update of field option
 [@@deriving eq, show, yojson, variants]

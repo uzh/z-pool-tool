@@ -1,6 +1,6 @@
 open Tyxml.Html
-
-let input_element = Component.input_element
+open Component
+module Message = Pool_common.Message
 
 let list csrf translation_list message () =
   let build_translations_row translation_list =
@@ -29,7 +29,9 @@ let list csrf translation_list message () =
                         `Text
                         (Some "content")
                         (translation |> I18n.content |> I18n.Content.value)
-                    ; input_element `Submit None "Update"
+                    ; submit_element
+                        Pool_common.Language.En
+                        Message.(Update (Some Message.password))
                     ]
                 ])
             translations
