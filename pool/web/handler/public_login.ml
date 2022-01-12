@@ -20,10 +20,13 @@ let login_get req =
     match user with
     | Some user -> redirect_to_dashboard tenant_db user |> Lwt_result.ok
     | None ->
+      let%lwt language = HttpUtils.language_from_request req tenant_db None in
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.login csrf message () |> Response.of_html |> Lwt.return_ok
+      Page.Public.login csrf language message ()
+      |> Response.of_html
+      |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path
 ;;
@@ -73,8 +76,9 @@ let request_reset_password_get req =
       >|> Lwt.return_ok
     | None ->
       let csrf = HttpUtils.find_csrf req in
+      let%lwt language = HttpUtils.language_from_request req tenant_db None in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.request_reset_password csrf message ()
+      Page.Public.request_reset_password csrf language message ()
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -107,19 +111,30 @@ let request_reset_password_post req =
 ;;
 
 let reset_password_get req =
-  let open Sihl.Web in
-  let token = Request.query "token" req in
-  match token with
-  | None ->
-    HttpUtils.redirect_to_with_actions
-      "/request-reset-password/"
-      [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
-  | Some token ->
-    let csrf = HttpUtils.find_csrf req in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Public.reset_password csrf message token ()
-    |> Response.of_html
-    |> Lwt.return
+  let error_path = "/request-reset-password/" in
+  let%lwt result =
+    Lwt_result.map_err (fun err -> err, error_path)
+    @@
+    let open Lwt_result.Syntax in
+    let token = Sihl.Web.Request.query "token" req in
+    match token with
+    | None ->
+      HttpUtils.redirect_to_with_actions
+        error_path
+        [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
+      |> Lwt_result.ok
+    | Some token ->
+      let csrf = HttpUtils.find_csrf req in
+      let message =
+        CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+      in
+      let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+      let%lwt language = HttpUtils.language_from_request req tenant_db None in
+      Page.Public.reset_password csrf language message token ()
+      |> Sihl.Web.Response.of_html
+      |> Lwt.return_ok
+  in
+  result |> HttpUtils.extract_happy_path
 ;;
 
 let reset_password_post req =

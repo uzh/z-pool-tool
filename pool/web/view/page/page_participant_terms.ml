@@ -1,4 +1,4 @@
-let terms csrf message user_id terms =
+let terms csrf language message user_id terms =
   let submit_url =
     Format.asprintf "/terms-accepted/%s" user_id |> Sihl.Web.externalize_path
   in
@@ -15,8 +15,12 @@ let terms csrf message user_id terms =
               ()
           ; a
               ~a:[ a_href ("/logout" |> Sihl.Web.externalize_path) ]
-              [ txt "Decline" ]
-          ; button ~a:[ a_button_type `Submit ] [ txt "Accept" ]
+              [ txt
+                  Pool_common.(Utils.submit_to_string language Message.Decline)
+              ]
+          ; Component.submit_element
+              language
+              Pool_common.Message.(Accept (Some termsandconditions))
           ]
       ]
   in

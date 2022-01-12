@@ -1,9 +1,8 @@
 open Tyxml.Html
 module File = Pool_common.File
 module Id = Pool_common.Id
-
-let csrf_element = Component.csrf_element
-let input_element = Component.input_element
+module Message = Pool_common.Message
+open Component
 
 let list csrf tenant_list root_list message () =
   let build_tenant_rows tenant_list =
@@ -28,8 +27,8 @@ let list csrf tenant_list root_list message () =
     let status_toggle (status : Sihl.Contract.User.status) id =
       let text =
         match status with
-        | Active -> "Disable"
-        | Inactive -> "Enable"
+        | Active -> Message.Disable
+        | Inactive -> Message.Enable
       in
       form
         ~a:
@@ -38,7 +37,7 @@ let list csrf tenant_list root_list message () =
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
           ]
-        [ input_element `Submit None text ]
+        [ submit_element Pool_common.Language.En text ]
     in
     CCList.map
       (fun root ->
@@ -101,7 +100,7 @@ let list csrf tenant_list root_list message () =
             ; a_enctype "multipart/form-data"
             ]
           ((csrf_element csrf () :: input_fields)
-          @ [ input_element `Submit None "Create new" ])
+          @ [ submit_element Pool_common.Language.En Message.(Create None) ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -113,7 +112,10 @@ let list csrf tenant_list root_list message () =
           (CCList.map
              (fun name -> input_element `Text (Some name) "")
              [ "email"; "password"; "firstname"; "lastname" ]
-          @ [ input_element `Submit None "Create root" ])
+          @ [ submit_element
+                Pool_common.Language.En
+                Message.(Create (Some root))
+            ])
       ]
   in
   Page_layout.create html message ()
@@ -207,7 +209,9 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                    ; a_method `Post
                    ]
                  [ csrf_element csrf ()
-                 ; input_element `Submit None "Delete Image"
+                 ; submit_element
+                     Pool_common.Language.En
+                     Message.(Create (Some root))
                  ]
              ])
          files)
@@ -234,7 +238,9 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_enctype "multipart/form-data"
             ]
           ((csrf_element csrf () :: detail_input_fields)
-          @ [ disabled; input_element `Submit None "Update" ])
+          @ [ disabled
+            ; submit_element Pool_common.Language.En Message.(Update None)
+            ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -249,7 +255,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_enctype "multipart/form-data"
             ]
           ((csrf_element csrf () :: database_input_fields)
-          @ [ input_element `Submit None "Update database" ])
+          @ [ submit_element Pool_common.Language.En Message.(Update None) ])
       ; hr ()
       ; form
           ~a:
@@ -264,7 +270,10 @@ let detail csrf (tenant : Pool_tenant.t) message () =
            :: CCList.map
                 (fun name -> input_element `Text (Some name) "")
                 [ "email"; "password"; "firstname"; "lastname" ])
-          @ [ input_element `Submit None "Create operator" ])
+          @ [ submit_element
+                Pool_common.Language.En
+                Message.(Create (Some operator))
+            ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
           [ txt "back" ]

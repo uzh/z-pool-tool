@@ -1,6 +1,5 @@
 module HttpUtils = Http_utils
 open Tyxml.Html
-module Field = Pool_common.Message
 
 let csrf_attibs ?id csrf =
   let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in

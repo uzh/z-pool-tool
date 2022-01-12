@@ -1,7 +1,5 @@
 open Tyxml.Html
-
-let csrf_element = Component.csrf_element
-let input_element = Component.input_element
+open Component
 
 let index tenant message () =
   let html =
@@ -21,7 +19,7 @@ let index tenant message () =
   Page_layout.create html message ()
 ;;
 
-let login csrf message () =
+let login csrf language message () =
   let html =
     div
       [ h1 [ txt "Login" ]
@@ -30,7 +28,7 @@ let login csrf message () =
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
           ; input_element `Password (Some "password") ""
-          ; input_element `Submit None "Login"
+          ; submit_element language Pool_common.Message.(Login)
           ]
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/request-reset-password") ]
@@ -40,7 +38,7 @@ let login csrf message () =
   Page_layout.create html message ()
 ;;
 
-let request_reset_password csrf message () =
+let request_reset_password csrf language message () =
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -51,14 +49,14 @@ let request_reset_password csrf message () =
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") ""
-          ; input_element `Submit None "Send reset link"
+          ; submit_element language Pool_common.Message.(SendResetLink)
           ]
       ]
   in
   Page_layout.create html message ()
 ;;
 
-let reset_password csrf message token () =
+let reset_password csrf language message token () =
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -71,7 +69,7 @@ let reset_password csrf message token () =
           ; input_element `Hidden (Some "token") token
           ; input_element `Password (Some "password") ""
           ; input_element `Password (Some "password_confirmation") ""
-          ; input_element `Submit None "Set new password"
+          ; submit_element language Pool_common.Message.(Save (Some password))
           ]
       ]
   in

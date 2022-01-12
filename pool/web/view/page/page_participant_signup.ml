@@ -114,7 +114,7 @@ let signup
                       [ txt "I accept the terms and conditions." ]
                   ]
               ]
-          ; button ~a:[ a_button_type `Submit ] [ txt "Sign Up" ]
+          ; Component.submit_element language Pool_common.Message.(SignUp)
           ]
       ]
   in

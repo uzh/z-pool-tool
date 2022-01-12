@@ -182,13 +182,17 @@ let terms req =
         (user.Sihl.Contract.User.id |> Pool_common.Id.of_string)
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
-    let* terms =
-      Settings.user_language_terms_and_conditions
+    let%lwt language =
+      HttpUtils.language_from_request
+        req
         tenant_db
         participant.Participant.language
+    in
+    let* terms =
+      Settings.terms_and_conditions tenant_db language
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
-    Page.Participant.terms csrf message user.Sihl_user.id terms ()
+    Page.Participant.terms csrf language message user.Sihl_user.id terms ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in

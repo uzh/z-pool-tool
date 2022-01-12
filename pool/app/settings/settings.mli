@@ -123,11 +123,11 @@ val find_terms_and_conditions
 val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
 val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
 
-val default_language_terms_and_conditions
+val terms_and_conditions
   :  Pool_database.Label.t
+  -> Pool_common.Language.t
   -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t
 
-val user_language_terms_and_conditions
+val default_language_terms_and_conditions
   :  Pool_database.Label.t
-  -> Pool_common.Language.t option
   -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t
