@@ -8,7 +8,13 @@ module Label = struct
     Caqti_type.(
       custom
         ~encode:pure
-        ~decode:(fun m -> map_err (fun _ -> "decode label") @@ create m)
+        ~decode:(fun m ->
+          map_err (fun _ ->
+              Pool_common.(
+                Utils.error_to_string
+                  Pool_common.Language.En
+                  (Message.Decode Message.DatabaseLabel)))
+          @@ create m)
         string)
   ;;
 end
@@ -23,7 +29,11 @@ let t =
   let open CCResult in
   let encode m = Ok (m.url, m.label) in
   let decode (url, label) =
-    map_err (fun _ -> "decode database")
+    map_err (fun _ ->
+        Pool_common.(
+          Utils.error_to_string
+            Pool_common.Language.En
+            (Message.Decode Message.Database)))
     @@ let* url = Url.create url in
        let* label = Label.create label in
        Ok { url; label }

@@ -17,7 +17,11 @@ let t =
   let encode m = Ok (Common.Id.value m.id, (m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =
     let open CCResult in
-    map_err (fun _ -> "decode unverified email")
+    map_err (fun _ ->
+        Pool_common.(
+          Utils.error_to_string
+            Pool_common.Language.En
+            (Message.Decode Message.I18n)))
     @@ let* key = Key.create key in
        let* content = Content.create content in
        Ok { id = Common.Id.of_string id; key; language; content }

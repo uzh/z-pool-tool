@@ -3,11 +3,14 @@ open Entity_message
 let field_to_string = function
   | Admin -> "admin"
   | ContactEmail -> "contact email address"
+  | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
   | Description -> "description"
   | Email -> "email address"
   | EmailAddress -> "email address"
+  | EmailAddressUnverified -> "unverified email address"
+  | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
@@ -36,6 +39,8 @@ let field_to_string = function
   | SmtpPassword -> "smtp password"
   | SmtpPort -> "smtp port"
   | SmtpProtocol -> "smtp protocol"
+  | SmtpReadModel -> "smtp read model"
+  | SmtpWriteModel -> "smtp write model"
   | SmtpUsername -> "smtp username"
   | Styles -> "styles"
   | Tenant -> "tenant"
@@ -83,6 +88,7 @@ let warning_to_string : warning -> string = function
 let error_to_string = function
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Cannot decode action."
+  | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."

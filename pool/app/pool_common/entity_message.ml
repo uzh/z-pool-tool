@@ -11,12 +11,15 @@ end
 type field =
   | Admin
   | ContactEmail
+  | Database
   | DatabaseLabel
   | DatabaseUrl
   | Description
   | Email
   | EmailAddress
   | EmailSuffix
+  | EmailAddressUnverified
+  | EmailAddressVerified
   | FileMimeType
   | Filename
   | Filesize
@@ -44,6 +47,8 @@ type field =
   | SmtpPassword
   | SmtpPort
   | SmtpProtocol
+  | SmtpReadModel
+  | SmtpWriteModel
   | SmtpUsername
   | Styles
   | Tenant
@@ -63,6 +68,7 @@ type field =
 type error =
   | Conformist of ConformistError.t list
   | DecodeAction
+  | Decode of field
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
