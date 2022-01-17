@@ -88,12 +88,15 @@ let terms_and_conditions_last_updated pool =
 
 let default_language pool =
   let open Lwt.Infix in
-  find_languages pool >|= CCList.hd
+  find_languages pool
+  >|= CCList.head_opt
+  >|= CCOption.to_result Pool_common.Message.(NotFound Language)
 ;;
 
 let default_language_terms_and_conditions pool =
+  let open Lwt_result.Syntax in
   let%lwt terms = find_terms_and_conditions pool in
-  let%lwt default_language = default_language pool in
+  let* default_language = default_language pool in
   CCList.assoc_opt ~eq:Pool_common.Language.equal default_language terms
   |> CCOption.to_result Pool_common.Message.(Retrieve TermsAndConditions)
   |> Lwt_result.lift
@@ -108,10 +111,7 @@ let user_language_terms_and_conditions pool user_language =
     let%lwt terms =
       find_terms_and_conditions pool
       >|= CCList.filter (fun (lang, _) ->
-              CCList.find_opt
-                (fun x -> Pool_common.Language.equal lang x)
-                tenant_languages
-              |> CCOption.is_some)
+              CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages)
     in
     (match CCList.assoc_opt ~eq:Pool_common.Language.equal language terms with
     | None -> default_language_terms_and_conditions pool

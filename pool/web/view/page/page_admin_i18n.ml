@@ -38,6 +38,7 @@ let list csrf translation_list message () =
           [ h2
               [ txt
                   (key
+                  |> I18n.Key.value
                   |> CCString.replace ~which:`All ~sub:"_" ~by:" "
                   |> CCString.capitalize_ascii)
               ]

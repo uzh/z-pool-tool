@@ -148,16 +148,15 @@ let multi_html_to_plain_text_response html_els =
 
 let browser_language_from_req req =
   let open CCOption in
-  let hd = CCFun.flip CCList.nth_opt 0 in
   let to_lang lang =
     lang |> Pool_common.Language.of_string |> CCResult.to_opt
   in
   req
   |> Opium.Request.header "Accept-Language"
-  |> map (CCString.split ~by:",")
-  |> CCFun.flip bind hd
-  |> map (fun lang -> CCString.split ~by:";" lang)
-  |> CCFun.flip bind hd
-  |> CCFun.flip bind Utils.LanguageCodes.find
-  |> CCFun.flip bind to_lang
+  >|= CCString.split ~by:","
+  >>= CCList.head_opt
+  >|= (fun lang -> CCString.split ~by:";" lang)
+  >>= CCList.head_opt
+  >>= Utils.LanguageCodes.find
+  >>= to_lang
 ;;

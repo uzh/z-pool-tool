@@ -47,4 +47,3 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
-val translate : Pool_common.Language.t -> string -> string Lwt.t

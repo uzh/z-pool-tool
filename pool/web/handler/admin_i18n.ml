@@ -11,7 +11,7 @@ let index req =
       let _ =
         CCList.map
           (fun (translation : I18n.t) ->
-            let key = translation |> I18n.key |> I18n.Key.value in
+            let key = translation |> I18n.key in
             match Hashtbl.find_opt hash key with
             | None -> Hashtbl.add hash key [ translation ]
             | Some lst -> Hashtbl.replace hash key (CCList.cons translation lst))
@@ -20,11 +20,12 @@ let index req =
       hash
       |> Hashtbl.to_seq
       |> CCList.of_seq
-      |> CCList.sort (fun (k1, _) (k2, _) -> CCString.compare k1 k2)
+      |> CCList.sort (fun (k1, _) (k2, _) ->
+             CCString.compare (I18n.Key.value k1) (I18n.Key.value k2))
       |> Lwt.return
     in
     let message =
-      Sihl.Web.Flash.find_alert req |> CCFun.flip Option.bind Message.of_string
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in

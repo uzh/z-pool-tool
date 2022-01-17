@@ -41,7 +41,8 @@ let update_terms_and_conditions () =
     let open CCResult in
     let* terms =
       [ "EN", "Terms and Conditions"; "DE", "Nutzungsbedingungen" ]
-      |> CCList.map Settings.TermsAndConditions.create
+      |> CCList.map (fun (language, content) ->
+             Settings.TermsAndConditions.create language content)
       |> CCResult.flatten_l
     in
     Ok [ Settings.TermsAndConditionsUpdated terms |> Pool_event.settings ]

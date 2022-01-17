@@ -243,9 +243,14 @@ end = struct
 
   let handle tenant_languages urlencoded =
     let open CCResult in
-    let open CCResult.Infix in
     let ignore_emtpy =
-      CCList.filter (fun (_, terms) -> not (CCString.is_empty terms))
+      CCList.filter_map (fun (lang, terms) ->
+          match terms with
+          | None -> None
+          | Some terms ->
+            (match CCString.is_empty terms with
+            | true -> None
+            | false -> Some (lang, terms)))
     in
     let tenant_languages_are_set terms =
       let result =
@@ -264,13 +269,16 @@ end = struct
       | Ok _ -> Ok terms
     in
     let* terms_and_conditions =
-      urlencoded
-      |> CCList.map (fun (l, t) -> l, CCList.hd t)
+      (urlencoded : (string * string list) list)
+      |> CCList.map (fun (l, t) -> l, CCList.head_opt t)
       |> ignore_emtpy
       |> tenant_languages_are_set
       >>= fun urlencoded ->
       CCResult.flatten_l
-        (CCList.map Settings.TermsAndConditions.create urlencoded)
+        (CCList.map
+           (fun (language, content) ->
+             Settings.TermsAndConditions.create language content)
+           urlencoded)
     in
     Ok
       [ Settings.TermsAndConditionsUpdated terms_and_conditions
