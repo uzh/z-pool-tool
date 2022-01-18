@@ -159,7 +159,7 @@ module Utils : sig
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
   val field_to_string : Language.t -> Message.field -> string
-  val submit_to_string : Language.t -> Message.submit -> string
+  val control_to_string : Language.t -> Message.control -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success

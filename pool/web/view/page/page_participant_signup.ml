@@ -30,7 +30,8 @@ let signup
             | None -> [ a_disabled (); a_selected () ]
             | Some _ -> [ a_disabled () ])
           (txt
-             Pool_common.(Utils.submit_to_string language (Message.Choose None)))
+             Pool_common.(
+               Utils.control_to_string language (Message.Choose None)))
       in
       channels
       |> CCList.map (fun channel ->

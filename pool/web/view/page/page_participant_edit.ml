@@ -20,7 +20,7 @@ let detail language participant message () =
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/user/edit") ]
           [ txt
-              Pool_common.(Utils.submit_to_string language (Message.Edit None))
+              Pool_common.(Utils.control_to_string language (Message.Edit None))
           ]
       ]
   in
@@ -125,7 +125,7 @@ let edit csrf language user_update_csrf participant message () =
           ]
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-          [ txt Pool_common.(Utils.submit_to_string language Message.Back) ]
+          [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
       ]
   in
   Page_layout.create html message ()
