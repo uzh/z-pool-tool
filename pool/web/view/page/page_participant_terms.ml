@@ -1,5 +1,5 @@
-let terms csrf language query_language message user_id terms =
-  let externalize = Http_utils.externalize_path_with_language query_language in
+let terms csrf language query_lang message user_id terms =
+  let externalize = Http_utils.externalize_path_with_lang query_lang in
   let submit_url =
     Format.asprintf "/terms-accepted/%s" user_id |> externalize
   in
