@@ -97,8 +97,3 @@ let terms_and_conditions pool language =
   |> CCOption.to_result Pool_common.Message.(Retrieve TermsAndConditions)
   |> Lwt_result.lift
 ;;
-
-let default_language_terms_and_conditions pool =
-  let%lwt default_language = default_language pool in
-  terms_and_conditions pool default_language
-;;
