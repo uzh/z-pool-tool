@@ -4,6 +4,7 @@ let signup
     csrf
     message
     language
+    query_language
     channels
     email
     firstname
@@ -11,13 +12,16 @@ let signup
     recruitment_channel
     terms
   =
+  let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in
-  let submit_url = Sihl.Web.externalize_path "/signup" in
+  let submit_url =
+    Http_utils.externalize_path_with_query_language "/signup" query_language
+  in
+  let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
   let lastname = lastname |> CCOption.value ~default:"" in
   let children =
-    let open Tyxml.Html in
     let channel_select =
       let default =
         option
@@ -42,7 +46,7 @@ let signup
       |> CCList.cons default
     in
     div
-      [ h1 [ txt "Participant SignUp" ]
+      [ h1 (txt_to_string Pool_common.I18n.SignUpTitle)
       ; form
           ~a:[ a_action submit_url; a_method `Post ]
           [ Component.csrf_element csrf ()
@@ -111,7 +115,8 @@ let signup
                       ()
                   ; label
                       ~a:[ a_label_for "_terms_accepted" ]
-                      [ txt "I accept the terms and conditions." ]
+                      (txt_to_string
+                         Pool_common.I18n.SignUpAcceptTermsAndConditions)
                   ]
               ]
           ; Component.submit_element language Pool_common.Message.(SignUp)

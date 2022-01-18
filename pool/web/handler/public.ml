@@ -60,15 +60,15 @@ let email_confirmation_note req =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let%lwt language = Http_utils.language_from_request req tenant_db None in
-    let txt_to_string m =
-      Common.(Utils.text_to_string language I18n.(EmailConfirmation m))
-    in
+    let txt_to_string m = Common.Utils.text_to_string language m in
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let html =
-      Common.I18n.EmailConfirmation.(
-        Page.Utils.note (txt_to_string Title) (txt_to_string Note))
+      Common.I18n.(
+        Page.Utils.note
+          (txt_to_string EmailConfirmationTitle)
+          (txt_to_string EmailConfirmationNote))
     in
     message |> html |> Sihl.Web.Response.of_html |> Lwt.return_ok
   in
