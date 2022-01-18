@@ -2,8 +2,10 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
+let language = Pool_common.Language.En
+
 let login csrf message () =
-  let input_element = input_element Pool_common.Language.En in
+  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Root Login" ]
@@ -15,7 +17,7 @@ let login csrf message () =
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""
           ; input_element `Password (Some "password") Message.Password ""
-          ; submit_element Pool_common.Language.En Pool_common.Message.(Login)
+          ; submit_element language Pool_common.Message.(Login)
           ]
       ; a
           ~a:
@@ -24,11 +26,11 @@ let login csrf message () =
           [ txt "Reset password" ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let request_reset_password csrf message () =
-  let input_element = input_element Pool_common.Language.En in
+  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -40,17 +42,15 @@ let request_reset_password csrf message () =
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""
-          ; submit_element
-              Pool_common.Language.En
-              Pool_common.Message.(SendResetLink)
+          ; submit_element language Pool_common.Message.(SendResetLink)
           ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let reset_password csrf message token () =
-  let input_element = input_element Pool_common.Language.En in
+  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -67,11 +67,9 @@ let reset_password csrf message token () =
               (Some "password_confirmation")
               Message.PasswordConfirmation
               ""
-          ; submit_element
-              Pool_common.Language.En
-              Pool_common.Message.(Save (Some password))
+          ; submit_element language Pool_common.Message.(Save (Some password))
           ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;

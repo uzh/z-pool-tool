@@ -93,8 +93,7 @@ let error_to_string = function
   | EmailMalformed -> "Fehlerhafte Email Adresse"
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
-  | Invalid field ->
-    field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
+  | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

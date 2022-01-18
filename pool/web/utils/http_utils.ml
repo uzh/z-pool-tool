@@ -2,6 +2,16 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
+let path_with_language lang path =
+  lang
+  |> CCOption.map (fun lang ->
+         Format.asprintf
+           "%s?lang=%s"
+           path
+           (lang |> Pool_common.Language.code |> CCString.lowercase_ascii))
+  |> Option.value ~default:path
+;;
+
 let redirect_to_with_actions path actions =
   path
   |> Sihl.Web.externalize_path
@@ -162,6 +172,7 @@ let browser_language_from_req req =
   |> CCFun.flip bind to_lang
 ;;
 
+(*TODO [timhub]: Rename to find_query_lang ?? *)
 let query_language_from_request req =
   let open CCOption.Infix in
   Sihl.Web.Request.query "lang" req
@@ -190,16 +201,6 @@ let language_from_request req tenant_db user_language =
   |> Lwt.return
 ;;
 
-let path_with_language path lang =
-  Format.asprintf
-    "%s?lang=%s"
-    path
-    (lang |> Pool_common.Language.code |> CCString.lowercase_ascii)
-;;
-
-let externalize_path_with_query_language path lang =
-  lang
-  |> CCOption.map (fun lang -> path_with_language path lang)
-  |> Option.value ~default:path
-  |> Sihl.Web.externalize_path
+let externalize_path_with_language path lang =
+  lang |> path_with_language path |> Sihl.Web.externalize_path
 ;;

@@ -15,7 +15,7 @@ let signup
   let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in
   let submit_url =
-    Http_utils.externalize_path_with_query_language "/signup" query_language
+    Http_utils.externalize_path_with_language query_language "/signup"
   in
   let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
   let email = email |> CCOption.value ~default:"" in
@@ -125,5 +125,5 @@ let signup
           ]
       ]
   in
-  Page_layout.create children message
+  Page_layout.create children message language
 ;;

@@ -19,29 +19,30 @@ let index language tenant message () =
              (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
-let login csrf language message () =
+let login csrf language query_language message () =
   let txt_to_string = txt_to_string language in
   let input_element = input_element language in
+  let externalize = HttpUtils.externalize_path_with_language query_language in
   let open Pool_common in
   let html =
     div
       [ h1 (txt_to_string Pool_common.I18n.LoginTitle)
       ; form
-          ~a:[ a_action (Sihl.Web.externalize_path "/login"); a_method `Post ]
+          ~a:[ a_action (externalize "/login"); a_method `Post ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.EmailAddress ""
           ; input_element `Password (Some "password") Message.Password ""
           ; submit_element language Message.Login
           ]
       ; a
-          ~a:[ a_href (Sihl.Web.externalize_path "/request-reset-password") ]
+          ~a:[ a_href (externalize "/request-reset-password") ]
           (txt_to_string Pool_common.I18n.ResetPasswordLink)
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let request_reset_password csrf language message () =
@@ -68,7 +69,7 @@ let request_reset_password csrf language message () =
           ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let reset_password csrf language message token () =
@@ -98,5 +99,5 @@ let reset_password csrf language message token () =
           ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;

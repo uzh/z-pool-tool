@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail language participant message () =
+let detail language query_language participant message () =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -18,20 +18,26 @@ let detail language participant message () =
             ]
           else [])
       ; a
-          ~a:[ a_href (Sihl.Web.externalize_path "/user/edit") ]
+          ~a:
+            [ a_href
+                (HttpUtils.externalize_path_with_language
+                   query_language
+                   "/user/edit")
+            ]
           [ txt
               Pool_common.(Utils.control_to_string language (Message.Edit None))
           ]
       ]
   in
   let html = div [ content ] in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
-let edit csrf language user_update_csrf participant message () =
+let edit csrf language query_language user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
-  let action = Sihl.Web.externalize_path "/user/update" in
+  let externalize = HttpUtils.externalize_path_with_language query_language in
+  let action = externalize "/user/update" in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let input_element = input_element language in
   let details_form =
@@ -78,10 +84,7 @@ let edit csrf language user_update_csrf participant message () =
   in
   let email_form =
     form
-      ~a:
-        [ a_action (Sihl.Web.externalize_path "/user/update-email")
-        ; a_method `Post
-        ]
+      ~a:[ a_action (externalize "/user/update-email"); a_method `Post ]
       [ csrf_element csrf ()
       ; input_element
           `Email
@@ -93,10 +96,7 @@ let edit csrf language user_update_csrf participant message () =
   in
   let password_form =
     form
-      ~a:
-        [ a_action (Sihl.Web.externalize_path "/user/update-password")
-        ; a_method `Post
-        ]
+      ~a:[ a_action (externalize "/user/update-password"); a_method `Post ]
       [ csrf_element csrf ()
       ; input_element
           `Password
@@ -128,5 +128,5 @@ let edit csrf language user_update_csrf participant message () =
           [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;

@@ -8,7 +8,7 @@ let dashboard language message () =
           ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let sign_up = Page_participant_signup.signup

@@ -24,10 +24,12 @@ module Message = struct
   ;;
 end
 
-let header =
+let header lang =
   header
     ~a:[ a_style "text-align: right; padding: 1rem;" ]
-    [ h1 ~a:[ a_style "margin: 0;" ] [ txt "Pool Tool" ] ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt "Pool Tool" ]
+    ; div [ txt (Pool_common.Language.code lang) ]
+    ]
 ;;
 
 let footer =
@@ -36,7 +38,7 @@ let footer =
     [ p [ txt "Pool Tool" ] ]
 ;;
 
-let create children message ?(lang = Pool_common.Language.En) () =
+let create children message lang () =
   let page_title = title (txt "Pool tool") in
   let charset = meta ~a:[ a_charset "utf8" ] () in
   let viewport =
@@ -67,5 +69,5 @@ let create children message ?(lang = Pool_common.Language.En) () =
     (head
        page_title
        [ charset; viewport; custom_stylesheet; global_stylesheet ])
-    (body [ header; content; footer; scripts ])
+    (body [ header lang; content; footer; scripts ])
 ;;

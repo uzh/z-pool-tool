@@ -5,12 +5,15 @@ let to_ctx = Pool_tenant.to_ctx
 
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in
-  General.dashboard_path tenant_db user >>= HttpUtils.redirect_to
+  General.dashboard_path tenant_db None user >>= HttpUtils.redirect_to
 ;;
 
 let login_get req =
+  let query_language = HttpUtils.query_language_from_request req in
   let%lwt result =
-    Lwt_result.map_err (fun err -> err, "/")
+    Lwt_result.map_err (fun err ->
+        (* TODO[timhub]: redirect to home with query param *)
+        err, HttpUtils.path_with_language query_language "/")
     @@
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
@@ -24,7 +27,7 @@ let login_get req =
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.login csrf language message ()
+      Page.Public.login csrf language query_language message ()
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -33,8 +36,10 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let query_language = HttpUtils.query_language_from_request req in
   let%lwt result =
-    Lwt_result.map_err (fun err -> err, "/login")
+    Lwt_result.map_err (fun err ->
+        err, HttpUtils.path_with_language query_language "/login")
     @@
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
@@ -50,7 +55,7 @@ let login_post req =
       Service.User.login ~ctx:(to_ctx tenant_db) email ~password
       |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
     in
-    General.dashboard_path tenant_db user
+    General.dashboard_path tenant_db query_language user
     >|> CCFun.flip
           HttpUtils.redirect_to_with_actions
           [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
@@ -60,8 +65,11 @@ let login_post req =
 ;;
 
 let request_reset_password_get req =
+  let query_language = HttpUtils.query_language_from_request req in
   let%lwt result =
-    Lwt_result.map_err (fun err -> err, "/")
+    Lwt_result.map_err (fun err ->
+        (* TODO[timhub]: redirect to home with query param *)
+        err, HttpUtils.path_with_language query_language "/")
     @@
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
@@ -70,7 +78,7 @@ let request_reset_password_get req =
     Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
     >|> function
     | Some user ->
-      General.dashboard_path tenant_db user
+      General.dashboard_path tenant_db query_language user
       ||> externalize_path
       ||> Response.redirect_to
       >|> Lwt.return_ok
@@ -86,6 +94,7 @@ let request_reset_password_get req =
 ;;
 
 let request_reset_password_post req =
+  let query_language = HttpUtils.query_language_from_request req in
   let%lwt result =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
@@ -104,14 +113,19 @@ let request_reset_password_post req =
   in
   match result with
   | Ok _ | Error _ ->
-    HttpUtils.redirect_to_with_actions
-      "/request-reset-password"
-      [ Message.set ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
-      ]
+    HttpUtils.(
+      redirect_to_with_actions
+        (path_with_language query_language "/request-reset-password")
+        [ Message.set
+            ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
+        ])
 ;;
 
 let reset_password_get req =
-  let error_path = "/request-reset-password/" in
+  let query_language = HttpUtils.query_language_from_request req in
+  let error_path =
+    "/request-reset-password/" |> HttpUtils.path_with_language query_language
+  in
   let%lwt result =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
@@ -139,6 +153,7 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let query_language = HttpUtils.query_language_from_request req in
   let%lwt result =
     let open Lwt_result.Syntax in
     let* params =
@@ -146,13 +161,15 @@ let reset_password_post req =
         urlencoded
         [ "token"; "password"; "password_confirmation" ]
       |> CCOption.to_result
-           (Pool_common.Message.PasswordResetInvalidData, "/reset-password/")
+           ( Pool_common.Message.PasswordResetInvalidData
+           , HttpUtils.path_with_language query_language "/reset-password/" )
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
     let token = go "token" in
     let* () =
       Lwt_result.map_err (fun err ->
+          (* TODO[timhub]: add language query *)
           err, Format.asprintf "/reset-password/?token=%s" token)
       @@ let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
          Service.PasswordReset.reset_password
@@ -163,16 +180,19 @@ let reset_password_post req =
          |> Lwt_result.map_err
               (CCFun.const Pool_common.Message.passwordresetinvaliddata)
     in
-    HttpUtils.redirect_to_with_actions
-      "/login"
-      [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
+    HttpUtils.(
+      redirect_to_with_actions
+        (path_with_language query_language "/login")
+        [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ])
     |> Lwt_result.ok
   in
   HttpUtils.extract_happy_path result
 ;;
 
-let logout _ =
-  HttpUtils.redirect_to_with_actions
-    "/login"
-    [ Sihl.Web.Session.set [ "user_id", "" ] ]
+let logout req =
+  let query_language = HttpUtils.query_language_from_request req in
+  HttpUtils.(
+    redirect_to_with_actions
+      (HttpUtils.path_with_language query_language "/login")
+      [ Sihl.Web.Session.set [ "user_id", "" ] ])
 ;;

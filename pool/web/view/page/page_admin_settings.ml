@@ -71,7 +71,8 @@ let show
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
-  let input_element = input_element Pool_common.Language.En in
+  let language = Pool_common.Language.En in
+  let input_element = input_element language in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
@@ -127,7 +128,7 @@ let show
       ; form
           ~a:[ a_action (action_path `UpdateTenantLanguages); a_method `Post ]
           ([ Component.csrf_element csrf (); field_elements ]
-          @ [ submit_element Pool_common.Language.En Message.(Update None) ])
+          @ [ submit_element language Message.(Update None) ])
       ]
   in
   let email_suffixes_html =
@@ -146,11 +147,11 @@ let show
                  Message.EmailSuffix
                  (suffix |> Settings.EmailSuffix.value))
              email_suffixes
-          @ [ submit_element Pool_common.Language.En Message.(Update None) ])
+          @ [ submit_element language Message.(Update None) ])
       ; form
           ~a:[ a_action (action_path `CreateTenantEmailSuffix); a_method `Post ]
           [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
-          ; submit_element Pool_common.Language.En Message.(Add None)
+          ; submit_element language Message.(Add None)
           ]
       ; hr ()
       ; div
@@ -170,7 +171,7 @@ let show
                        ; a_readonly ()
                        ]
                      ()
-                 ; submit_element Pool_common.Language.En Message.(Delete None)
+                 ; submit_element language Message.(Delete None)
                  ])
              email_suffixes)
       ]
@@ -186,7 +187,7 @@ let show
               (Some "contact_email")
               Message.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
-          ; submit_element Pool_common.Language.En Message.(Add None)
+          ; submit_element language Message.(Add None)
           ]
       ]
   in
@@ -207,7 +208,7 @@ let show
               (inactive_user_disable_after
               |> DisableAfter.value
               |> CCInt.to_string)
-          ; submit_element Pool_common.Language.En Message.(Update None)
+          ; submit_element language Message.(Update None)
           ]
       ; form
           ~a:
@@ -220,7 +221,7 @@ let show
               (Some "inactive_user_warning")
               Message.InactiveUserWarning
               (inactive_user_warning |> Warning.value |> CCInt.to_string)
-          ; submit_element Pool_common.Language.En Message.(Update None)
+          ; submit_element language Message.(Update None)
           ]
       ]
   in
@@ -251,7 +252,7 @@ let show
           ~a:
             [ a_action (action_path `UpdateTermsAndConditions); a_method `Post ]
           (terms_and_conditions_textareas
-          @ [ submit_element Pool_common.Language.En Message.(Update None) ])
+          @ [ submit_element language Message.(Update None) ])
       ]
   in
   let html =
@@ -265,5 +266,5 @@ let show
       ; script (Unsafe.data sortable)
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
