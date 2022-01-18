@@ -15,16 +15,15 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: csrf_attibs ?id csrf)
 ;;
 
-let input_element input_type name value =
+let input_element language input_type name input_label value =
+  let input_label = Pool_common.Utils.field_to_string language input_label in
   let base_attributes = [ a_input_type input_type; a_value value ] in
   let attributes =
     match name with
-    | Some name ->
-      base_attributes
-      @ [ a_name name; a_placeholder (HttpUtils.placeholder_from_name name) ]
+    | Some name -> base_attributes @ [ a_name name; a_placeholder input_label ]
     | None -> base_attributes
   in
-  input ~a:attributes ()
+  div [ label [ txt input_label ]; input ~a:attributes () ]
 ;;
 
 let submit_element lang submit =
@@ -57,8 +56,7 @@ let hx_input_element
       if bool_of_string_opt value |> CCOption.get_or ~default:false
       then [ a_checked () ]
       else []
-    | _ ->
-      [ a_value value; a_placeholder (HttpUtils.placeholder_from_name name) ])
+    | _ -> [ a_value value; a_placeholder (field_to_string input_label) ])
     @ [ a_input_type input_type
       ; a_name name
       ; a_user_data "hx-swap" "outerHTML"
@@ -96,12 +94,7 @@ let hx_input_element
   in
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "name" name ]
-    [ label
-        [ field_to_string input_label
-          |> HttpUtils.placeholder_from_name
-          |> CCString.capitalize_ascii
-          |> txt
-        ]
+    [ label [ txt (field_to_string input_label) ]
     ; input ~a:attributes ()
     ; error
     ]

@@ -1,7 +1,9 @@
 open Tyxml.Html
 open Component
+module Message = Pool_common.Message
 
 let login csrf message () =
+  let input_element = input_element Pool_common.Language.En in
   let html =
     div
       [ h1 [ txt "Root Login" ]
@@ -11,8 +13,8 @@ let login csrf message () =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") ""
-          ; input_element `Password (Some "password") ""
+          ; input_element `Text (Some "email") Message.Email ""
+          ; input_element `Password (Some "password") Message.Password ""
           ; submit_element Pool_common.Language.En Pool_common.Message.(Login)
           ]
       ; a
@@ -26,6 +28,7 @@ let login csrf message () =
 ;;
 
 let request_reset_password csrf message () =
+  let input_element = input_element Pool_common.Language.En in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -36,7 +39,7 @@ let request_reset_password csrf message () =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") ""
+          ; input_element `Text (Some "email") Message.Email ""
           ; submit_element
               Pool_common.Language.En
               Pool_common.Message.(SendResetLink)
@@ -47,6 +50,7 @@ let request_reset_password csrf message () =
 ;;
 
 let reset_password csrf message token () =
+  let input_element = input_element Pool_common.Language.En in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -56,9 +60,13 @@ let reset_password csrf message token () =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Hidden (Some "token") token
-          ; input_element `Password (Some "password") ""
-          ; input_element `Password (Some "password_confirmation") ""
+          ; input_element `Hidden (Some "token") Message.Token token
+          ; input_element `Password (Some "password") Message.Password ""
+          ; input_element
+              `Password
+              (Some "password_confirmation")
+              Message.PasswordConfirmation
+              ""
           ; submit_element
               Pool_common.Language.En
               Pool_common.Message.(Save (Some password))

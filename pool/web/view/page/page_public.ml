@@ -23,15 +23,17 @@ let index tenant message () =
 
 let login csrf language message () =
   let txt_to_string = txt_to_string language in
+  let input_element = input_element language in
+  let open Pool_common in
   let html =
     div
       [ h1 (txt_to_string Pool_common.I18n.LoginTitle)
       ; form
           ~a:[ a_action (Sihl.Web.externalize_path "/login"); a_method `Post ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") ""
-          ; input_element `Password (Some "password") ""
-          ; submit_element language Pool_common.Message.(Login)
+          ; input_element `Text (Some "email") Message.EmailAddress ""
+          ; input_element `Password (Some "password") Message.Password ""
+          ; submit_element language Message.Login
           ]
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/request-reset-password") ]
@@ -42,6 +44,7 @@ let login csrf language message () =
 ;;
 
 let request_reset_password csrf language message () =
+  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -51,7 +54,11 @@ let request_reset_password csrf language message () =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") ""
+          ; input_element
+              `Text
+              (Some "email")
+              Pool_common.Message.EmailAddress
+              ""
           ; submit_element language Pool_common.Message.(SendResetLink)
           ]
       ]
@@ -60,6 +67,8 @@ let request_reset_password csrf language message () =
 ;;
 
 let reset_password csrf language message token () =
+  let open Pool_common in
+  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -69,10 +78,14 @@ let reset_password csrf language message token () =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Hidden (Some "token") token
-          ; input_element `Password (Some "password") ""
-          ; input_element `Password (Some "password_confirmation") ""
-          ; submit_element language Pool_common.Message.(Save (Some password))
+          ; input_element `Hidden (Some "token") Message.Token token
+          ; input_element `Password (Some "password") Message.Password ""
+          ; input_element
+              `Password
+              (Some "password_confirmation")
+              Message.PasswordConfirmation
+              ""
+          ; submit_element language Message.(Save (Some password))
           ]
       ]
   in
