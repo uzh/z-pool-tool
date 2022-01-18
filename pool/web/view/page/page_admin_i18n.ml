@@ -51,6 +51,11 @@ let list csrf translation_list message () =
       translation_list
   in
   let translations = build_translations_row translation_list in
-  let html = div [ h1 [ txt "Translations" ]; div translations ] in
+  let html =
+    div
+      [ h1 [ txt Pool_common.(Utils.text_to_string Language.En I18n.I18nTitle) ]
+      ; div translations
+      ]
+  in
   Page_layout.create html message ()
 ;;

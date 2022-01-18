@@ -29,7 +29,8 @@ let signup
             (match recruitment_channel with
             | None -> [ a_disabled (); a_selected () ]
             | Some _ -> [ a_disabled () ])
-          (txt "Choose")
+          (txt
+             Pool_common.(Utils.submit_to_string language (Message.Choose None)))
       in
       channels
       |> CCList.map (fun channel ->
