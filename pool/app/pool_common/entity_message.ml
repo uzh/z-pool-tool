@@ -128,13 +128,6 @@ let handle_sihl_login_error = function
   | `Incorrect_password | `Does_not_exist -> Invalid Password
 ;;
 
-module I18n = struct
-  module EmailConfirmation = struct
-    let title = "Email confirmation"
-    let note = "Please check your emails and confirm your address first."
-  end
-end
-
 type submit =
   | Accept of field option
   | Add of field option

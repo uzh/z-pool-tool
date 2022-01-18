@@ -1,5 +1,6 @@
 include Entity
 module Message = Entity_message
+module I18n = Entity_i18n
 module Repo = Repo
 
 module Utils = struct
@@ -73,5 +74,12 @@ module Utils = struct
     | Language.En ->
       let open Locales_en in
       submit_to_string
+  ;;
+
+  let text_to_string lang m =
+    let open Entity_i18n in
+    match lang with
+    | Language.De -> De.to_string m
+    | Language.En -> En.to_string m
   ;;
 end
