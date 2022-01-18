@@ -3,6 +3,7 @@ open Component
 module Message = Pool_common.Message
 
 let list csrf translation_list message () =
+  let input_element = input_element Pool_common.Language.En in
   let build_translations_row translation_list =
     CCList.map
       (fun (key, translations) ->
@@ -28,6 +29,7 @@ let list csrf translation_list message () =
                     ; input_element
                         `Text
                         (Some "content")
+                        Message.Translation
                         (translation |> I18n.content |> I18n.Content.value)
                     ; submit_element
                         Pool_common.Language.En

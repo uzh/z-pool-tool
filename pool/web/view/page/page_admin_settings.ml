@@ -71,6 +71,7 @@ let show
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
+  let input_element = input_element Pool_common.Language.En in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
@@ -139,15 +140,16 @@ let show
             ]
           (CCList.map
              (fun suffix ->
-               Component.input_element
+               input_element
                  `Text
                  (Some "email_suffix")
+                 Message.EmailSuffix
                  (suffix |> Settings.EmailSuffix.value))
              email_suffixes
           @ [ submit_element Pool_common.Language.En Message.(Update None) ])
       ; form
           ~a:[ a_action (action_path `CreateTenantEmailSuffix); a_method `Post ]
-          [ Component.input_element `Text (Some "email_suffix") ""
+          [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
           ; submit_element Pool_common.Language.En Message.(Add None)
           ]
       ; hr ()
@@ -179,9 +181,10 @@ let show
       ; form
           ~a:
             [ a_action (action_path `UpdateTenantContactEmail); a_method `Post ]
-          [ Component.input_element
+          [ input_element
               `Text
               (Some "contact_email")
+              Message.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
           ; submit_element Pool_common.Language.En Message.(Add None)
           ]
@@ -197,9 +200,10 @@ let show
             ; a_method `Post
             ]
           [ p [ txt "Disable user after (weeks)" ]
-          ; Component.input_element
+          ; input_element
               `Number
               (Some "inactive_user_disable_after")
+              Message.InactiveUserDisableAfter
               (inactive_user_disable_after
               |> DisableAfter.value
               |> CCInt.to_string)
@@ -211,9 +215,10 @@ let show
             ; a_method `Post
             ]
           [ p [ txt "Send warning before disabling (days)" ]
-          ; Component.input_element
+          ; input_element
               `Number
               (Some "inactive_user_warning")
+              Message.InactiveUserWarning
               (inactive_user_warning |> Warning.value |> CCInt.to_string)
           ; submit_element Pool_common.Language.En Message.(Update None)
           ]

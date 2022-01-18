@@ -11,8 +11,10 @@ end
 type field =
   | Admin
   | ContactEmail
+  | CurrentPassword
   | DatabaseLabel
   | DatabaseUrl
+  | DefaultLanguage
   | Description
   | Email
   | EmailAddress
@@ -30,10 +32,12 @@ type field =
   | Language
   | Lastname
   | LogoType
+  | NewPassword
   | Operator
   | Page
   | Participant
   | Password
+  | PasswordConfirmation
   | Paused
   | RecruitmentChannel
   | Role

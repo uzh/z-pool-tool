@@ -31,6 +31,7 @@ let edit csrf language user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
+  let input_element = input_element language in
   let details_form =
     form
       ~a:
@@ -77,7 +78,11 @@ let edit csrf language user_update_csrf participant message () =
         ; a_method `Post
         ]
       [ csrf_element csrf ()
-      ; input_element `Email (Some "email") participant.user.Sihl_user.email
+      ; input_element
+          `Email
+          (Some "email")
+          Message.Email
+          participant.user.Sihl_user.email
       ; submit_element language Message.(Update (Some Message.email))
       ]
   in
@@ -88,9 +93,17 @@ let edit csrf language user_update_csrf participant message () =
         ; a_method `Post
         ]
       [ csrf_element csrf ()
-      ; input_element `Password (Some "current_password") ""
-      ; input_element `Password (Some "new_password") ""
-      ; input_element `Password (Some "password_confirmation") ""
+      ; input_element
+          `Password
+          (Some "current_password")
+          Message.CurrentPassword
+          ""
+      ; input_element `Password (Some "new_password") Message.NewPassword ""
+      ; input_element
+          `Password
+          (Some "password_confirmation")
+          Message.PasswordConfirmation
+          ""
       ; submit_element language Message.(Update (Some Message.password))
       ]
   in
