@@ -30,7 +30,7 @@ let submit_element lang submit =
   input
     ~a:
       [ a_input_type `Submit
-      ; a_value (Pool_common.Utils.submit_to_string lang submit)
+      ; a_value (Pool_common.Utils.control_to_string lang submit)
       ]
     ()
 ;;

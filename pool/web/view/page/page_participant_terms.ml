@@ -20,7 +20,7 @@ let terms csrf language message user_id terms =
           ; a
               ~a:[ a_href ("/logout" |> Sihl.Web.externalize_path) ]
               [ txt
-                  Pool_common.(Utils.submit_to_string language Message.Decline)
+                  Pool_common.(Utils.control_to_string language Message.Decline)
               ]
           ; Component.submit_element
               language

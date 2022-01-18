@@ -139,7 +139,7 @@ let handle_sihl_login_error = function
   | `Incorrect_password | `Does_not_exist -> Invalid Password
 ;;
 
-type submit =
+type control =
   | Accept of field option
   | Add of field option
   | Back

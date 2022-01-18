@@ -141,7 +141,7 @@ let format_submit submit field =
   field_message "" submit (field_opt_message field)
 ;;
 
-let submit_to_string = function
+let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | Back -> format_submit "back" None
