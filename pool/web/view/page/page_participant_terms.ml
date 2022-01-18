@@ -1,6 +1,7 @@
-let terms csrf language message user_id terms =
+let terms csrf language query_language message user_id terms =
+  let externalize = Http_utils.externalize_path_with_language query_language in
   let submit_url =
-    Format.asprintf "/terms-accepted/%s" user_id |> Sihl.Web.externalize_path
+    Format.asprintf "/terms-accepted/%s" user_id |> externalize
   in
   let children =
     let open Tyxml.Html in
@@ -18,7 +19,7 @@ let terms csrf language message user_id terms =
               ~a:[ a_input_type `Checkbox; a_name "_accepted"; a_required () ]
               ()
           ; a
-              ~a:[ a_href ("/logout" |> Sihl.Web.externalize_path) ]
+              ~a:[ a_href ("/logout" |> externalize) ]
               [ txt
                   Pool_common.(Utils.control_to_string language Message.Decline)
               ]
@@ -28,5 +29,5 @@ let terms csrf language message user_id terms =
           ]
       ]
   in
-  Page_layout.create children message
+  Page_layout.create children message language
 ;;

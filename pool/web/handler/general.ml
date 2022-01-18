@@ -3,10 +3,11 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   Service.User.Web.user_from_session ~ctx req
 ;;
 
-let dashboard_path tenant_db user =
+let dashboard_path tenant_db query_language user =
   let open Lwt.Infix in
   Admin.user_is_admin tenant_db user
-  >|= function
-  | true -> "/admin/dashboard"
-  | false -> "/dashboard"
+  >|= (function
+        | true -> "/admin/dashboard"
+        | false -> "/dashboard")
+  >|= Http_utils.path_with_language query_language
 ;;

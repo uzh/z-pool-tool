@@ -4,6 +4,7 @@ module Common = Pool_common
 module Database = Pool_database
 
 let index req =
+  let query_language = Http_utils.query_language_from_request req in
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
@@ -20,7 +21,8 @@ let index req =
       |> Lwt.return_ok
     in
     result
-    |> CCResult.map_err (fun err -> err, "/error")
+    |> CCResult.map_err (fun err ->
+           err, Http_utils.path_with_language query_language "/error")
     |> Http_utils.extract_happy_path)
 ;;
 
@@ -68,6 +70,7 @@ let email_confirmation_note req =
     let html =
       Common.I18n.(
         Page.Utils.note
+          language
           (txt_to_string EmailConfirmationTitle)
           (txt_to_string EmailConfirmationNote))
     in
@@ -76,9 +79,18 @@ let email_confirmation_note req =
   result |> Http_utils.extract_happy_path
 ;;
 
-let not_found _ =
-  let html = Page.Utils.error_page_not_found () in
-  Sihl.Web.Response.of_html html |> Lwt.return
+let not_found req =
+  let query_language = Http_utils.query_language_from_request req in
+  let open Lwt_result.Syntax in
+  let%lwt result =
+    Lwt_result.map_err (fun err ->
+        err, Http_utils.path_with_language query_language "/error")
+    @@ let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+       let%lwt language = Http_utils.language_from_request req tenant_db None in
+       let html = Page.Utils.error_page_not_found language () in
+       Sihl.Web.Response.of_html html |> Lwt.return_ok
+  in
+  result |> Http_utils.extract_happy_path
 ;;
 
 let asset req =

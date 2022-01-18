@@ -90,7 +90,7 @@ let hx_input_element
     | Some error ->
       span
         ~a:[ a_class [ "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string Language.En)) ]
+        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
   in
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "name" name ]

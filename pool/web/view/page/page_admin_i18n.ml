@@ -3,7 +3,8 @@ open Component
 module Message = Pool_common.Message
 
 let list csrf translation_list message () =
-  let input_element = input_element Pool_common.Language.En in
+  let language = Pool_common.Language.En in
+  let input_element = input_element language in
   let build_translations_row translation_list =
     CCList.map
       (fun (key, translations) ->
@@ -57,5 +58,5 @@ let list csrf translation_list message () =
       ; div translations
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;

@@ -4,7 +4,7 @@ let from_root_only () =
     |> function
     | true -> handler req
     | false ->
-      Page.Utils.error_page_not_found ()
+      Page.Utils.error_page_not_found Pool_common.Language.En ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return
   in

@@ -3,7 +3,8 @@ module File = Pool_common.File
 module Id = Pool_common.Id
 module Message = Pool_common.Message
 
-let submit_element = Component.submit_element Pool_common.Language.En
+let language = Pool_common.Language.En
+let submit_element = Component.submit_element language
 
 let system_language_select name input_label =
   [ div
@@ -22,7 +23,7 @@ let system_language_select name input_label =
 ;;
 
 let list csrf tenant_list root_list message () =
-  let input_element = Component.input_element Pool_common.Language.En in
+  let input_element = Component.input_element language in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
     CCList.map
@@ -138,13 +139,13 @@ let list csrf tenant_list root_list message () =
           @ [ submit_element Message.(Create (Some root)) ])
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
 
 let detail csrf (tenant : Pool_tenant.t) message () =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
-  let input_element = Component.input_element Pool_common.Language.En in
+  let input_element = Component.input_element language in
   let detail_fields =
     [ "title", Message.Title, Title.value tenant.title
     ; "description", Message.Description, Description.value tenant.description
@@ -306,5 +307,5 @@ let detail csrf (tenant : Pool_tenant.t) message () =
           [ txt "back" ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language ()
 ;;
