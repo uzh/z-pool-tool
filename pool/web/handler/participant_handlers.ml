@@ -4,12 +4,20 @@ module Message = HttpUtils.Message
 module User = Pool_user
 
 let dashboard req =
-  let message =
-    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+  let open Lwt_result.Syntax in
+  let%lwt result =
+    Lwt_result.map_err (fun err -> err, "/")
+    @@
+    let message =
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+    in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let%lwt language = HttpUtils.language_from_request req tenant_db None in
+    Page.Participant.dashboard language message ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
   in
-  Page.Participant.dashboard message ()
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+  result |> HttpUtils.extract_happy_path
 ;;
 
 let sign_up req =
@@ -252,7 +260,7 @@ let show is_edit req =
     in
     match is_edit with
     | false ->
-      Page.Participant.detail participant message ()
+      Page.Participant.detail language participant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     | true ->

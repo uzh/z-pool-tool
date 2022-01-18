@@ -91,6 +91,8 @@ let error_to_string = function
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
+  | HtmxVersionNotFound field ->
+    Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field ->
     field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
@@ -150,10 +152,13 @@ let format_submit submit field =
 let submit_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
+  | Back -> format_submit "zurück" None
+  | Choose field -> format_submit "wählen" field
   | Create field -> format_submit "erstellen" field
   | Delete field -> format_submit "löschen" field
   | Decline -> format_submit "ablehnen" None
   | Disable -> format_submit "deaktivieren" None
+  | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Login -> format_submit "anmelden" None
   | Save field -> format_submit "speichern" field

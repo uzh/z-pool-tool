@@ -5,7 +5,11 @@ let terms csrf language message user_id terms =
   let children =
     let open Tyxml.Html in
     div
-      [ h1 [ txt "Terms and Conditions" ]
+      [ h1
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.TermsAndConditionsTitle)
+          ]
       ; p [ txt (terms |> Settings.TermsAndConditions.Terms.value) ]
       ; form
           ~a:[ a_action submit_url; a_method `Post ]

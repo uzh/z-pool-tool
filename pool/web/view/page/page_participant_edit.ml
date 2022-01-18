@@ -2,25 +2,26 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail participant message () =
+let detail language participant message () =
   let open Participant in
+  let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
     div
       [ div
-          ([ h1 [ txt "User Profile" ]
+          ([ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
            ; p [ participant |> fullname |> Format.asprintf "Name: %s" |> txt ]
            ]
           @
           if participant.paused |> Pool_user.Paused.value
           then
-            [ p
-                [ txt
-                    "You paused all notifications for your user! (Click 'edit' \
-                     to update this setting)"
-                ]
+            [ p [ txt (text_to_string Pool_common.I18n.UserProfilePausedNote) ]
             ]
           else [])
-      ; a ~a:[ a_href (Sihl.Web.externalize_path "/user/edit") ] [ txt "Edit" ]
+      ; a
+          ~a:[ a_href (Sihl.Web.externalize_path "/user/edit") ]
+          [ txt
+              Pool_common.(Utils.submit_to_string language (Message.Edit None))
+          ]
       ]
   in
   let html = div [ content ] in
@@ -31,6 +32,7 @@ let edit csrf language user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
   let action = Sihl.Web.externalize_path "/user/update" in
+  let text_to_string = Pool_common.Utils.text_to_string language in
   let input_element = input_element language in
   let details_form =
     form
@@ -50,7 +52,10 @@ let edit csrf language user_update_csrf participant message () =
                  value
                  (Participant.version_selector participant name
                  |> CCOption.get_exn_or
-                      (Format.asprintf "No version found for field '%s'" name))
+                      Pool_common.(
+                        Utils.error_to_string
+                          language
+                          (Message.HtmxVersionNotFound name)))
                  label
                  language
                  ~hx_post:action
@@ -109,15 +114,18 @@ let edit csrf language user_update_csrf participant message () =
   in
   let html =
     div
-      [ h1 [ txt "User Profile" ]
+      [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
       ; div
           [ details_form
           ; hr ()
-          ; h2 [ txt "Login Information" ]
+          ; h2
+              [ txt (text_to_string Pool_common.I18n.UserProfileLoginSubtitle) ]
           ; email_form
           ; password_form
           ]
-      ; a ~a:[ a_href (Sihl.Web.externalize_path "/user") ] [ txt "Back" ]
+      ; a
+          ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
+          [ txt Pool_common.(Utils.submit_to_string language Message.Back) ]
       ]
   in
   Page_layout.create html message ()

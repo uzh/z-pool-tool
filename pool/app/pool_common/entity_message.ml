@@ -71,6 +71,7 @@ type error =
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailMalformed
+  | HtmxVersionNotFound of string
   | Invalid of field
   | LoginProvideDetails
   | MeantimeUpdate of field
@@ -135,10 +136,13 @@ let handle_sihl_login_error = function
 type submit =
   | Accept of field option
   | Add of field option
+  | Back
+  | Choose of field option
   | Create of field option
   | Delete of field option
   | Decline
   | Disable
+  | Edit of field option
   | Enable
   | Login
   | Save of field option

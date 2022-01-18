@@ -14,7 +14,8 @@ let index req =
       in
       let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
       let* tenant = Pool_tenant.find_by_label tenant_db in
-      Page.Public.index tenant message ()
+      let%lwt language = Http_utils.language_from_request req tenant_db None in
+      Page.Public.index language tenant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     in

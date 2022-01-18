@@ -15,6 +15,7 @@ let global_middlewares =
 ;;
 
 module Public = struct
+  (* TODO:[timhub]: redirect root path to index page, where query params work *)
   let routes =
     Handler.Public.
       [ get "/" index

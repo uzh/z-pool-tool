@@ -1,7 +1,13 @@
 open Tyxml.Html
 
-let dashboard message () =
-  let html = div [ h1 [ txt "Participant Dashboard" ] ] in
+let dashboard language message () =
+  let html =
+    div
+      [ h1
+          [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle)
+          ]
+      ]
+  in
   Page_layout.create html message ()
 ;;
 

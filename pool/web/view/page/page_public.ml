@@ -3,10 +3,11 @@ open Component
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index tenant message () =
+let index language tenant message () =
+  let text_to_string = Pool_common.Utils.text_to_string language in
   let html =
     div
-      [ h1 [ txt "Welcome to Pool Tool" ]
+      [ h1 [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
       ; div
           (CCList.map
              (fun logo ->
@@ -47,7 +48,11 @@ let request_reset_password csrf language message () =
   let input_element = input_element language in
   let html =
     div
-      [ h1 [ txt "Reset Password" ]
+      [ h1
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ResetPasswordTitle)
+          ]
       ; form
           ~a:
             [ a_action (Sihl.Web.externalize_path "/request-reset-password")
@@ -71,7 +76,11 @@ let reset_password csrf language message token () =
   let input_element = input_element language in
   let html =
     div
-      [ h1 [ txt "Reset Password" ]
+      [ h1
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ResetPasswordTitle)
+          ]
       ; form
           ~a:
             [ a_action (Sihl.Web.externalize_path "/reset-password")
