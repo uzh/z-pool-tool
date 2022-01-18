@@ -30,12 +30,14 @@ let sign_up req =
     let lastname = go "lastname" in
     let recruitment_channel = go "recruitment_channel" in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let query_language = HttpUtils.query_language_from_request req in
     let%lwt language = HttpUtils.language_from_request req tenant_db None in
-    let* terms = Settings.default_language_terms_and_conditions tenant_db in
+    let* terms = Settings.terms_and_conditions tenant_db language in
     Page.Participant.sign_up
       csrf
       message
       language
+      query_language
       channels
       email
       firstname
@@ -90,21 +92,26 @@ let sign_up_create req =
       ||> fun suffixes ->
       if CCList.is_empty suffixes then None else Some suffixes
     in
-    let default_language = HttpUtils.browser_language_from_req req in
+    let preferred_language = HttpUtils.browser_language_from_req req in
+    let query_language = HttpUtils.query_language_from_request req in
     let* events =
       let open CCResult.Infix in
       Command.SignUp.(
-        decode urlencoded >>= handle ?allowed_email_suffixes default_language)
+        decode urlencoded >>= handle ?allowed_email_suffixes preferred_language)
       >>= (fun e -> Ok (remove_participant_event @ e))
       |> Lwt_result.lift
     in
     Utils.Database.with_transaction tenant_db (fun () ->
+        let path = "/email-confirmation" in
         let%lwt () = Pool_event.handle_events tenant_db events in
-        HttpUtils.redirect_to_with_actions
-          "/email-confirmation"
-          [ Message.set
-              ~success:[ Pool_common.Message.EmailConfirmationMessage ]
-          ])
+        HttpUtils.(
+          redirect_to_with_actions
+            (query_language
+            |> CCOption.map (fun l -> path_with_language path l)
+            |> Option.value ~default:path)
+            [ Message.set
+                ~success:[ Pool_common.Message.EmailConfirmationMessage ]
+            ]))
     |> Lwt_result.ok
   in
   result

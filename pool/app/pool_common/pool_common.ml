@@ -76,10 +76,13 @@ module Utils = struct
       submit_to_string
   ;;
 
-  let text_to_string lang m =
-    let open Entity_i18n in
+  let text_to_string lang =
     match lang with
-    | Language.De -> De.to_string m
-    | Language.En -> En.to_string m
+    | Language.De ->
+      let open I18n_de in
+      to_string
+    | Language.En ->
+      let open I18n_en in
+      to_string
   ;;
 end

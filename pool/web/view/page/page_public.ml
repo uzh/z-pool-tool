@@ -1,6 +1,8 @@
 open Tyxml.Html
 open Component
 
+let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
+
 let index tenant message () =
   let html =
     div
@@ -20,9 +22,10 @@ let index tenant message () =
 ;;
 
 let login csrf language message () =
+  let txt_to_string = txt_to_string language in
   let html =
     div
-      [ h1 [ txt "Login" ]
+      [ h1 (txt_to_string Pool_common.I18n.LoginTitle)
       ; form
           ~a:[ a_action (Sihl.Web.externalize_path "/login"); a_method `Post ]
           [ csrf_element csrf ()
@@ -32,7 +35,7 @@ let login csrf language message () =
           ]
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/request-reset-password") ]
-          [ txt "Reset password" ]
+          (txt_to_string Pool_common.I18n.ResetPasswordLink)
       ]
   in
   Page_layout.create html message ()

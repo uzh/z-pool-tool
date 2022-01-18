@@ -162,6 +162,16 @@ let browser_language_from_req req =
   |> CCFun.flip bind to_lang
 ;;
 
+let query_language_from_request req =
+  let open CCOption.Infix in
+  Sihl.Web.Request.query "lang" req
+  >>= fun l ->
+  l
+  |> CCString.uppercase_ascii
+  |> Pool_common.Language.of_string
+  |> CCOption.of_result
+;;
+
 let language_from_request req tenant_db user_language =
   let open CCOption in
   let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -170,12 +180,7 @@ let language_from_request req tenant_db user_language =
     | true -> Some lang
     | false -> None
   in
-  Sihl.Web.Request.query "lang" req
-  |> CCFun.flip bind (fun l ->
-         l
-         |> CCString.uppercase_ascii
-         |> Pool_common.Language.of_string
-         |> CCResult.to_opt)
+  query_language_from_request req
   |> CCFun.flip bind is_valid
   |> value
        ~default:
@@ -183,4 +188,18 @@ let language_from_request req tenant_db user_language =
          |> CCFun.flip bind is_valid
          |> value ~default:(CCList.hd tenant_languages))
   |> Lwt.return
+;;
+
+let path_with_language path lang =
+  Format.asprintf
+    "%s?lang=%s"
+    path
+    (lang |> Pool_common.Language.code |> CCString.lowercase_ascii)
+;;
+
+let externalize_path_with_query_language path lang =
+  lang
+  |> CCOption.map (fun lang -> path_with_language path lang)
+  |> Option.value ~default:path
+  |> Sihl.Web.externalize_path
 ;;
