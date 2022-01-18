@@ -22,10 +22,10 @@ let index language tenant message () =
   Page_layout.create html message language ()
 ;;
 
-let login csrf language query_language message () =
+let login csrf language query_lang message () =
   let txt_to_string = txt_to_string language in
   let input_element = input_element language in
-  let externalize = HttpUtils.externalize_path_with_language query_language in
+  let externalize = HttpUtils.externalize_path_with_lang query_lang in
   let open Pool_common in
   let html =
     div

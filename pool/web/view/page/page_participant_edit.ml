@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail language query_language participant message () =
+let detail language query_lang participant message () =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -20,9 +20,7 @@ let detail language query_language participant message () =
       ; a
           ~a:
             [ a_href
-                (HttpUtils.externalize_path_with_language
-                   query_language
-                   "/user/edit")
+                (HttpUtils.externalize_path_with_lang query_lang "/user/edit")
             ]
           [ txt
               Pool_common.(Utils.control_to_string language (Message.Edit None))
@@ -33,10 +31,10 @@ let detail language query_language participant message () =
   Page_layout.create html message language ()
 ;;
 
-let edit csrf language query_language user_update_csrf participant message () =
+let edit csrf language query_lang user_update_csrf participant message () =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
-  let externalize = HttpUtils.externalize_path_with_language query_language in
+  let externalize = HttpUtils.externalize_path_with_lang query_lang in
   let action = externalize "/user/update" in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let input_element = input_element language in

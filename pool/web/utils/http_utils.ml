@@ -2,7 +2,18 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
-let path_with_language lang path =
+(*TODO [timhub]: Rename to find_query_lang ?? *)
+let find_query_lang req =
+  let open CCOption.Infix in
+  Sihl.Web.Request.query "lang" req
+  >>= fun l ->
+  l
+  |> CCString.uppercase_ascii
+  |> Pool_common.Language.of_string
+  |> CCOption.of_result
+;;
+
+let path_with_lang lang path =
   lang
   |> CCOption.map (fun lang ->
          Format.asprintf
@@ -171,17 +182,6 @@ let browser_language_from_req req =
   >>= to_lang
 ;;
 
-(*TODO [timhub]: Rename to find_query_lang ?? *)
-let query_language_from_request req =
-  let open CCOption.Infix in
-  Sihl.Web.Request.query "lang" req
-  >>= fun l ->
-  l
-  |> CCString.uppercase_ascii
-  |> Pool_common.Language.of_string
-  |> CCOption.of_result
-;;
-
 let language_from_request req tenant_db user_language =
   let open CCOption in
   let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -190,16 +190,16 @@ let language_from_request req tenant_db user_language =
     | true -> Some lang
     | false -> None
   in
-  query_language_from_request req
-  |> CCFun.flip bind is_valid
+  find_query_lang req
+  >>= is_valid
   |> value
        ~default:
          (user_language
-         |> CCFun.flip bind is_valid
+         >>= is_valid
          |> value ~default:(CCList.hd tenant_languages))
   |> Lwt.return
 ;;
 
-let externalize_path_with_language path lang =
-  lang |> path_with_language path |> Sihl.Web.externalize_path
+let externalize_path_with_lang path lang =
+  lang |> path_with_lang path |> Sihl.Web.externalize_path
 ;;

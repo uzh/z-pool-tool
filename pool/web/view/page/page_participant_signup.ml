@@ -4,7 +4,7 @@ let signup
     csrf
     message
     language
-    query_language
+    query_lang
     channels
     email
     firstname
@@ -14,9 +14,7 @@ let signup
   =
   let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in
-  let submit_url =
-    Http_utils.externalize_path_with_language query_language "/signup"
-  in
+  let submit_url = Http_utils.externalize_path_with_lang query_lang "/signup" in
   let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
