@@ -1,4 +1,5 @@
 module Message = Entity_message
+module I18n = Entity_i18n
 
 module Id : sig
   type t
@@ -159,6 +160,7 @@ module Utils : sig
   val error_to_string : Language.t -> Message.error -> string
   val field_to_string : Language.t -> Message.field -> string
   val submit_to_string : Language.t -> Message.submit -> string
+  val text_to_string : Language.t -> Entity_i18n.t -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
 

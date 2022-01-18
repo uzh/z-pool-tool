@@ -54,12 +54,25 @@ let index_css req =
 ;;
 
 let email_confirmation_note req =
-  let open Sihl.Web in
-  let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-  let html =
-    Common.Message.I18n.EmailConfirmation.(Page.Utils.note title note)
+  let%lwt result =
+    Lwt_result.map_err (fun err -> err, "/")
+    @@
+    let open Lwt_result.Syntax in
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let%lwt language = Http_utils.language_from_request req tenant_db None in
+    let txt_to_string m =
+      Common.(Utils.text_to_string language I18n.(EmailConfirmation m))
+    in
+    let message =
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+    in
+    let html =
+      Common.I18n.EmailConfirmation.(
+        Page.Utils.note (txt_to_string Title) (txt_to_string Note))
+    in
+    message |> html |> Sihl.Web.Response.of_html |> Lwt.return_ok
   in
-  message |> html |> Response.of_html |> Lwt.return
+  result |> Http_utils.extract_happy_path
 ;;
 
 let not_found _ =
