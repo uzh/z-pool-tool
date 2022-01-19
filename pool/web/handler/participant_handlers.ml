@@ -309,6 +309,7 @@ let update req =
     ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
   in
   let query_lang = HttpUtils.find_query_lang req in
+  let path_with_lang = HttpUtils.path_with_lang query_lang in
   let field_name =
     let open Pool_common.Message in
     function
@@ -336,15 +337,17 @@ let update req =
     in
     let* user =
       General.user_from_session tenant_db req
-      ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
+      ||> CCOption.to_result
+            Pool_common.Message.(NotFound User, path_with_lang "/login")
     in
     let* participant =
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_err (fun err -> err, "/login")
+      |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
     let value = go name in
     let get_version =
       CCOption.get_exn_or
+      (* TODO[timhub] *)
         (Format.asprintf "No version found for field '%s'" name)
     in
     let current_version =
@@ -363,14 +366,13 @@ let update req =
         tenant_db
         participant.Participant.language
     in
-    let hx_post =
-      HttpUtils.externalize_path_with_lang query_lang "/user/update"
-    in
+    let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in
     let base_input version =
       let type_of = function
         | "paused" -> `Checkbox
-        | "firstname" | "lastname" -> `Text (* TODO[timhub] *)
+        | "firstname" | "lastname" -> `Text
+        (* TODO[timhub] *)
         | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
       in
       Component.hx_input_element
