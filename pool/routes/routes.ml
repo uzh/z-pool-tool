@@ -3,7 +3,7 @@ open Sihl.Web
 
 let global_middlewares =
   [ Middleware.id ()
-  ; Middleware.error ()
+  ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
   ; Middleware.csrf ()
