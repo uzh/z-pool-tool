@@ -269,15 +269,14 @@ end = struct
       | Ok _ -> Ok terms
     in
     let* terms_and_conditions =
-      (urlencoded : (string * string list) list)
+      urlencoded
       |> CCList.map (fun (l, t) -> l, CCList.head_opt t)
       |> ignore_emtpy
       |> tenant_languages_are_set
       >>= fun urlencoded ->
       CCResult.flatten_l
         (CCList.map
-           (fun (language, content) ->
-             Settings.TermsAndConditions.create language content)
+           (CCFun.uncurry Settings.TermsAndConditions.create)
            urlencoded)
     in
     Ok
