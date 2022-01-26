@@ -21,12 +21,14 @@ let index req =
           (I18n.key t)
           (function
             | None -> Some [ t ]
-            | Some values -> Some (values @ [ t ]))
+            | Some values -> Some (t :: values))
           m
       in
       CCList.fold_left update I18nMap.empty translations
       |> I18nMap.to_seq
       |> CCList.of_seq
+      |> CCList.sort (fun (k1, _) (k2, _) ->
+             CCString.compare (I18n.Key.value k1) (I18n.Key.value k2))
       |> Lwt.return
     in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in

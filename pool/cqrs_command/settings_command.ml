@@ -246,11 +246,8 @@ end = struct
     let ignore_emtpy =
       CCList.filter_map (fun (lang, terms) ->
           match terms with
-          | None -> None
-          | Some terms ->
-            (match CCString.is_empty terms with
-            | true -> None
-            | false -> Some (lang, terms)))
+          | None | Some "" -> None
+          | Some terms -> Some (lang, terms))
     in
     let tenant_languages_are_set terms =
       let result =
