@@ -4,8 +4,9 @@ module Message = HttpUtils.Message
 module User = Pool_user
 
 let dashboard req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt result =
+    let open Lwt_result.Syntax in
     (* TODO[timhub]: redirect to home with query param *)
     Lwt_result.map_err (fun err -> err, "/")
     @@
@@ -13,7 +14,18 @@ let dashboard req =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let%lwt language = HttpUtils.language_from_request req tenant_db None in
+    let* participant =
+      General.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound User)
+      >>= fun user ->
+      Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+    in
+    let%lwt language =
+      HttpUtils.language_from_request
+        req
+        tenant_db
+        participant.Participant.language
+    in
     Page.Participant.dashboard language message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
@@ -347,7 +359,7 @@ let update req =
     let value = go name in
     let get_version =
       CCOption.get_exn_or
-      (* TODO[timhub] *)
+        (* TODO[timhub] *)
         (Format.asprintf "No version found for field '%s'" name)
     in
     let current_version =
