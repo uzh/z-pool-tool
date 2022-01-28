@@ -86,15 +86,11 @@ let terms_and_conditions_last_updated pool =
   Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
 ;;
 
-(* TODO [timhub]: Do not use CCList.hd *)
-let terms_and_conditions_last_updated pool =
-  let open Utils.Lwt_result.Infix in
-  Repo.find_terms_and_conditions pool ||> fun { updated_at; _ } -> updated_at
-;;
-
 let default_language pool =
   let open Lwt.Infix in
-  find_languages pool >|= CCList.hd
+  find_languages pool
+  >|= CCList.head_opt
+  >|= CCOption.to_result Pool_common.Message.(Retrieve Language)
 ;;
 
 let terms_and_conditions pool language =
