@@ -50,6 +50,7 @@ let participants db_pool () =
       , "Rüdisüli"
       , "one@test.com"
       , Participant.RecruitmentChannel.Friend
+      , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , false
       , false
@@ -59,6 +60,7 @@ let participants db_pool () =
       , "Doe"
       , "two@test.com"
       , Participant.RecruitmentChannel.Online
+      , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , false
       , false
@@ -68,6 +70,7 @@ let participants db_pool () =
       , "Dorrian"
       , "three@mail.com"
       , Participant.RecruitmentChannel.Lecture
+      , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , true
       , false
@@ -77,6 +80,7 @@ let participants db_pool () =
       , "McCallistor"
       , "four@mail.com"
       , Participant.RecruitmentChannel.Mailing
+      , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , true
       , false
@@ -86,6 +90,7 @@ let participants db_pool () =
       , "Kitty"
       , "five@mail.com"
       , Participant.RecruitmentChannel.Online
+      , None
       , Some (Ptime_clock.now ())
       , true
       , true
@@ -95,6 +100,7 @@ let participants db_pool () =
       , "Murphy"
       , "six@mail.com"
       , Participant.RecruitmentChannel.Friend
+      , None
       , Some (Ptime_clock.now ())
       , true
       , true
@@ -104,6 +110,7 @@ let participants db_pool () =
       , "Do not accept terms"
       , "six@mail.com"
       , Participant.RecruitmentChannel.Friend
+      , Some Pool_common.Language.En
       , None
       , true
       , true
@@ -120,6 +127,7 @@ let participants db_pool () =
          , name
          , email
          , recruitment_channel
+         , language
          , terms_accepted_at
          , paused
          , disabled
@@ -170,6 +178,7 @@ let participants db_pool () =
           { user
           ; recruitment_channel
           ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
+          ; language
           ; paused = User.Paused.create paused
           ; disabled = User.Disabled.create disabled
           ; verified = User.Verified.create verified

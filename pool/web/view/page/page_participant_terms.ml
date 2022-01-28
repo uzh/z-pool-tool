@@ -6,7 +6,7 @@ let terms csrf message user_id terms =
     let open Tyxml.Html in
     div
       [ h1 [ txt "Terms and Conditions" ]
-      ; p [ txt (terms |> Settings.TermsAndConditions.value) ]
+      ; p [ txt (terms |> Settings.TermsAndConditions.Terms.value) ]
       ; form
           ~a:[ a_action submit_url; a_method `Post ]
           [ Component.csrf_element csrf ()

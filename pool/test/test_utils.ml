@@ -1,3 +1,7 @@
+module Data = struct
+  let database_label = "econ-test" |> Pool_database.Label.of_string
+end
+
 (* Testable *)
 let event = Alcotest.testable Pool_event.pp Pool_event.equal
 
@@ -8,6 +12,8 @@ let tenant_smtp_auth =
 let error =
   Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
 ;;
+
+let participant = Alcotest.testable Participant.pp Participant.equal
 
 (* Helper functions *)
 

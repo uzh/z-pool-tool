@@ -25,6 +25,7 @@ let find_request_sql where_fragment =
         user_users.updated_at,
         pool_participants.recruitment_channel,
         pool_participants.terms_accepted_at,
+        pool_participants.language,
         pool_participants.paused,
         pool_participants.disabled,
         pool_participants.verified,
@@ -103,6 +104,7 @@ let insert_request =
         user_uuid,
         recruitment_channel,
         terms_accepted_at,
+        language,
         paused,
         disabled,
         verified,
@@ -122,7 +124,8 @@ let insert_request =
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12
       )
     |sql}
 ;;
@@ -178,12 +181,13 @@ let update_request =
       SET
         recruitment_channel = $2,
         terms_accepted_at = $3,
-        paused = $4,
-        disabled = $5,
-        verified = $6,
-        firstname_version = $7,
-        lastname_version = $8,
-        paused_version = $9
+        language = $4,
+        paused = $5,
+        disabled = $6,
+        verified = $7,
+        firstname_version = $8,
+        lastname_version = $9,
+        paused_version = $10
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}

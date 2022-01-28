@@ -3,20 +3,25 @@ open Entity_message
 let field_to_string = function
   | Admin -> "Administrator"
   | ContactEmail -> "Kontakt Email Adresse"
+  | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
   | Description -> "Beschreibung"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
+  | EmailAddressUnverified -> "Unverifizierte Email Adresse"
+  | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
   | FileMimeType -> "Mime Typ"
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
   | Host -> "Host"
+  | I18n -> "Übersetzung"
   | Icon -> "Icon"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Key -> "Schlüssel"
   | Language -> "Sprache"
   | Lastname -> "Nachname"
   | LogoType -> "Logo Typ"
@@ -34,6 +39,8 @@ let field_to_string = function
   | SmtpPassword -> "Smtp Passwort"
   | SmtpPort -> "Smtp Port"
   | SmtpProtocol -> "Smtp Protokoll"
+  | SmtpReadModel -> "Smtp read model"
+  | SmtpWriteModel -> "Smtp write model"
   | SmtpUsername -> "Smtp Benutzername"
   | Styles -> "Styles"
   | Tenant -> "Tenant"
@@ -45,6 +52,7 @@ let field_to_string = function
   | TimeSpan -> "Zeitspanne"
   | Title -> "Titel"
   | Token -> "Token"
+  | Translation -> "Übersetzung"
   | Url -> "Url"
   | User -> "Benutzer"
 ;;
@@ -80,6 +88,11 @@ let warning_to_string : warning -> string = function
 let error_to_string = function
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | Decode field ->
+    field_message
+      ""
+      (field_to_string field)
+      "konnte nicht entschlüsselt werden."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
@@ -121,6 +134,8 @@ let error_to_string = function
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "Ein Fehler is aufgetreten."
+  | TermsAndConditionsMissing ->
+    "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"

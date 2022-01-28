@@ -145,3 +145,18 @@ let multi_html_to_plain_text_response html_els =
        ""
   |> Sihl.Web.Response.of_plain_text ~headers
 ;;
+
+let browser_language_from_req req =
+  let open CCOption in
+  let to_lang lang =
+    lang |> Pool_common.Language.of_string |> CCResult.to_opt
+  in
+  req
+  |> Opium.Request.header "Accept-Language"
+  >|= CCString.split ~by:","
+  >>= CCList.head_opt
+  >|= (fun lang -> CCString.split ~by:";" lang)
+  >>= CCList.head_opt
+  >>= Utils.LanguageCodes.find
+  >>= to_lang
+;;

@@ -80,6 +80,9 @@ let show
       ]
       |> CCList.flatten
     in
+    let terms_and_conditions =
+      CCList.map Settings.TermsAndConditions.value terms_and_conditions
+    in
     let field_elements =
       div
         ~a:[ a_user_data "sortable" "" ]
@@ -90,11 +93,22 @@ let show
                ; a_name (Pool_common.Language.code language)
                ]
              in
-             let checkbox =
+             let selected =
                match selected with
-               | false -> input ~a:attrs ()
-               | true -> input ~a:(CCList.cons' attrs (a_checked ())) ()
+               | false -> []
+               | true -> [ a_checked () ]
              in
+             let disabled =
+               match
+                 CCList.assoc_opt
+                   ~eq:Pool_common.Language.equal
+                   language
+                   terms_and_conditions
+               with
+               | Some _ -> []
+               | None -> [ a_disabled () ]
+             in
+             let checkbox = input ~a:(attrs @ selected @ disabled) () in
              div
                ~a:[ a_user_data "sortable-item" "" ]
                [ label [ txt (Pool_common.Language.code language) ]; checkbox ])
@@ -102,6 +116,11 @@ let show
     in
     div
       [ h2 [ txt "Languages" ]
+      ; p
+          [ txt
+              "You have to add Terms and Condidions before you can activate a \
+               new language."
+          ]
       ; form
           ~a:[ a_action (action_path `UpdateTenantLanguages); a_method `Post ]
           ([ Component.csrf_element csrf (); field_elements ]
@@ -199,16 +218,33 @@ let show
       ]
   in
   let terms_and_conditions_html =
+    let terms_and_conditions =
+      CCList.map Settings.TermsAndConditions.value terms_and_conditions
+    in
+    let terms_and_conditions_textareas =
+      CCList.map
+        (fun language ->
+          div
+            [ label [ txt (language |> Pool_common.Language.code) ]
+            ; textarea
+                ~a:[ a_name (Pool_common.Language.code language) ]
+                (txt
+                   (CCList.assoc_opt
+                      ~eq:Pool_common.Language.equal
+                      language
+                      terms_and_conditions
+                   |> CCOption.map Settings.TermsAndConditions.Terms.value
+                   |> Option.value ~default:""))
+            ])
+        (Pool_common.Language.all ())
+    in
     div
       [ h2 [ txt "Terms and conditions" ]
       ; form
           ~a:
             [ a_action (action_path `UpdateTermsAndConditions); a_method `Post ]
-          [ textarea
-              ~a:[ a_name "terms_and_conditions" ]
-              (txt (terms_and_conditions |> Settings.TermsAndConditions.value))
-          ; Component.input_element `Submit None "Update"
-          ]
+          (terms_and_conditions_textareas
+          @ [ Component.input_element `Submit None "Update" ])
       ]
   in
   let html =

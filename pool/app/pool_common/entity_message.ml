@@ -11,20 +11,25 @@ end
 type field =
   | Admin
   | ContactEmail
+  | Database
   | DatabaseLabel
   | DatabaseUrl
   | Description
   | Email
   | EmailAddress
   | EmailSuffix
+  | EmailAddressUnverified
+  | EmailAddressVerified
   | FileMimeType
   | Filename
   | Filesize
   | Firstname
   | Host
+  | I18n
   | Icon
   | InactiveUserDisableAfter
   | InactiveUserWarning
+  | Key
   | Language
   | Lastname
   | LogoType
@@ -42,6 +47,8 @@ type field =
   | SmtpPassword
   | SmtpPort
   | SmtpProtocol
+  | SmtpReadModel
+  | SmtpWriteModel
   | SmtpUsername
   | Styles
   | Tenant
@@ -52,6 +59,7 @@ type field =
   | TermsAndConditions
   | TimeSpan
   | Title
+  | Translation
   | Token
   | Url
   | User
@@ -60,6 +68,7 @@ type field =
 type error =
   | Conformist of ConformistError.t list
   | DecodeAction
+  | Decode of field
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
@@ -83,6 +92,7 @@ type error =
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle
   | TerminatoryRootErrorTitle
+  | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
   | TimeSpanPositive
   | TokenInvalidFormat

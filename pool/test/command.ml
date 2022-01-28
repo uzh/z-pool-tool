@@ -34,5 +34,12 @@ let () =
             `Quick
             Root_test.create_root_with_invalid_password
         ] )
+    ; ( "i18n"
+      , [ test_case "create translation" `Quick I18n_test.create
+        ; test_case
+            "update terms and conditions"
+            `Quick
+            I18n_test.update_terms_and_conditions
+        ] )
     ]
 ;;

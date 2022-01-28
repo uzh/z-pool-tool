@@ -38,6 +38,7 @@ type t =
         [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Common.TermsAccepted.t
+  ; language : Pool_common.Language.t option
   ; paused : Common.Paused.t
   ; disabled : Common.Disabled.t
   ; verified : Common.Verified.t
@@ -54,6 +55,7 @@ module Write = struct
     { user_id : Pool_common.Id.t
     ; recruitment_channel : RecruitmentChannel.t
     ; terms_accepted_at : Common.TermsAccepted.t
+    ; language : Pool_common.Language.t option
     ; paused : Common.Paused.t
     ; disabled : Common.Disabled.t
     ; verified : Common.Verified.t
@@ -67,6 +69,7 @@ module Write = struct
     { user_id = Pool_common.Id.of_string m.user.Sihl.Contract.User.id
     ; recruitment_channel = m.recruitment_channel
     ; terms_accepted_at = m.terms_accepted_at
+    ; language = m.language
     ; paused = m.paused
     ; disabled = m.disabled
     ; verified = m.verified

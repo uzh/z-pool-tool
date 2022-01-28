@@ -26,6 +26,7 @@ module Language : sig
   val t : t Caqti_type.t
   val label : t -> string
   val schema : unit -> ('a, t) Conformist.Field.t
+  val schema_i18n : unit -> ('a, t) Conformist.Field.t
   val all : unit -> t list
   val all_codes : unit -> string list
 end

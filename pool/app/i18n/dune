@@ -1,3 +1,7 @@
 (library
  (name i18n)
- (libraries sihl settings))
+ (libraries sihl settings pool_common)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
+
+(include_subdirs unqualified)

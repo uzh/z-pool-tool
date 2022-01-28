@@ -15,6 +15,7 @@ let sign_up =
     <firstname>           : string
     <lastname>            : string
     <recruitment_channel> : string of 'friend', 'online', 'lecture', 'mailing'
+    <language>            : string of 'DE', 'EN'
     <terms_accepted>      : string 'accept' everything else is treated as declined
 
 Example: sihl participant.signup econ-uzh example@mail.com securePassword Max Muster online
@@ -29,6 +30,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         ; firstname
         ; lastname
         ; recruitment_channel
+        ; language
         ; terms_accepted
         ]
         when CCString.equal terms_accepted "accept" ->
@@ -43,6 +45,9 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         then (
           let%lwt events =
             let open CCResult.Infix in
+            let language =
+              Pool_common.Language.of_string language |> CCResult.to_opt
+            in
             Cqrs_command.Participant_command.SignUp.decode
               [ "email", [ email ]
               ; "password", [ password ]
@@ -50,7 +55,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
               ; "lastname", [ lastname ]
               ; "recruitment_channel", [ recruitment_channel ]
               ]
-            >>= Cqrs_command.Participant_command.SignUp.handle
+            >>= Cqrs_command.Participant_command.SignUp.handle language
             |> Lwt_result.lift
           in
           match events with

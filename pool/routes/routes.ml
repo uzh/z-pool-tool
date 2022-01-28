@@ -40,11 +40,6 @@ module Participant = struct
     ; get "/termsandconditions" Handler.Participant.terms
     ; get "/email-verified" Handler.Participant.email_verification
     ; post "/terms-accepted/:id" Handler.Participant.terms_accept
-    ; get "/user" Handler.Participant.details
-    ; get "/user/edit" Handler.Participant.edit
-    ; post "/user/update" Handler.Participant.update
-    ; post "/user/update-email" Handler.Participant.update_email
-    ; post "/user/update-password" Handler.Participant.update_password
     ]
   ;;
 
@@ -52,7 +47,15 @@ module Participant = struct
     [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
   ;;
 
-  let locked_routes = [ get "/dashboard" Handler.Participant.dashboard ]
+  let locked_routes =
+    [ get "/dashboard" Handler.Participant.dashboard
+    ; get "/user" Handler.Participant.details
+    ; get "/user/edit" Handler.Participant.edit
+    ; post "/user/update" Handler.Participant.update
+    ; post "/user/update-email" Handler.Participant.update_email
+    ; post "/user/update-password" Handler.Participant.update_password
+    ]
+  ;;
 end
 
 module Admin = struct
@@ -61,11 +64,12 @@ module Admin = struct
   ;;
 
   let routes =
-    Handler.Admin.
-      [ get "/dashboard" dashboard
-      ; get "/settings" Settings.show
-      ; post "/settings/:action" Settings.update_settings
-      ]
+    [ get "/dashboard" Handler.Admin.dashboard
+    ; get "/settings" Handler.Admin.Settings.show
+    ; post "/settings/:action" Handler.Admin.Settings.update_settings
+    ; get "/i18n" Handler.Admin.I18n.index
+    ; post "/i18n/:id" Handler.Admin.I18n.update
+    ]
   ;;
 end
 
