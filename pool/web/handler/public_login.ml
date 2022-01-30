@@ -23,7 +23,7 @@ let login_get req =
     match user with
     | Some user -> redirect_to_dashboard tenant_db user |> Lwt_result.ok
     | None ->
-      let%lwt language = HttpUtils.language_from_request req tenant_db None in
+      let%lwt language = General.language_from_request req tenant_db in
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
@@ -84,7 +84,7 @@ let request_reset_password_get req =
       >|> Lwt.return_ok
     | None ->
       let csrf = HttpUtils.find_csrf req in
-      let%lwt language = HttpUtils.language_from_request req tenant_db None in
+      let%lwt language = General.language_from_request req tenant_db in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
       Page.Public.request_reset_password csrf language message ()
       |> Response.of_html
@@ -143,7 +143,7 @@ let reset_password_get req =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
       let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-      let%lwt language = HttpUtils.language_from_request req tenant_db None in
+      let%lwt language = General.language_from_request req tenant_db in
       Page.Public.reset_password csrf language message token ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok

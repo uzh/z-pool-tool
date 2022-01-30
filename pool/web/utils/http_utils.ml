@@ -182,24 +182,6 @@ let browser_language_from_req req =
   >>= to_lang
 ;;
 
-let language_from_request req tenant_db user_language =
-  let open CCOption in
-  let%lwt tenant_languages = Settings.find_languages tenant_db in
-  let is_valid lang =
-    match CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages with
-    | true -> Some lang
-    | false -> None
-  in
-  find_query_lang req
-  >>= is_valid
-  |> value
-       ~default:
-         (user_language
-         >>= is_valid
-         |> value ~default:(CCList.hd tenant_languages))
-  |> Lwt.return
-;;
-
 let externalize_path_with_lang path lang =
   lang |> path_with_lang path |> Sihl.Web.externalize_path
 ;;
