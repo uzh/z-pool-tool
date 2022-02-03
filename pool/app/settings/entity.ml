@@ -15,6 +15,7 @@ module ContactEmail = struct
 
   let value m = m
 
+  (* TODO: email address validation *)
   let create email =
     if CCString.length email <= 0
     then Error Pool_common.Message.(Invalid EmailAddress)

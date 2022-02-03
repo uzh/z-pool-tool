@@ -2,7 +2,6 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
-(*TODO [timhub]: Rename to find_query_lang ?? *)
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query "lang" req
