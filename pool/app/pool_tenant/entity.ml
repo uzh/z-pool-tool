@@ -20,10 +20,7 @@ module Title = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create Message.Title)
-      CCList.pure
-      "title"
+    Pool_common.Utils.schema_decoder create value PoolError.Title "title"
   ;;
 end
 
@@ -39,9 +36,10 @@ module Description = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create Message.Description)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.Description
       "description"
   ;;
 end
@@ -56,10 +54,7 @@ module Url = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create PoolError.Url)
-      CCList.pure
-      "url"
+    Pool_common.Utils.schema_decoder create value PoolError.Url "url"
   ;;
 end
 
@@ -82,10 +77,7 @@ module Styles = struct
     ;;
 
     let schema () =
-      Conformist.custom
-        Common.(Utils.schema_decoder create Message.Styles)
-        CCList.pure
-        "styles"
+      Pool_common.Utils.schema_decoder create value PoolError.Styles "styles"
     ;;
   end
 end
@@ -105,10 +97,7 @@ module Icon = struct
     ;;
 
     let schema () =
-      Conformist.custom
-        Common.(Utils.schema_decoder create Message.Icon)
-        CCList.pure
-        "icon"
+      Pool_common.Utils.schema_decoder create value PoolError.Icon "icon"
     ;;
   end
 end
@@ -120,9 +109,10 @@ module Logos = struct
   let create m = Ok (CCList.map Common.Id.of_string m)
 
   let schema () =
-    Conformist.custom
-      (fun l -> l |> create)
-      (fun l -> l |> CCList.map Common.Id.value)
+    Pool_common.Utils.schema_list_decoder
+      create
+      (CCList.map Common.Id.value)
+      PoolError.TenantLogos
       "tenant_logo"
   ;;
 end
@@ -134,9 +124,10 @@ module PartnerLogos = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      (fun l -> l |> create)
+    Pool_common.Utils.schema_list_decoder
+      create
       (fun l -> l |> CCList.map Common.Id.value)
+      PoolError.TenantLogos
       "partner_logo"
   ;;
 end
@@ -157,12 +148,10 @@ module Maintenance = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(
-        Utils.schema_decoder
-          (fun m -> m |> of_string |> CCResult.pure)
-          Message.TenantMaintenanceFlag)
-      (fun l -> l |> stringify |> CCList.pure)
+    Pool_common.Utils.schema_decoder
+      (fun m -> Ok (of_string m))
+      stringify
+      PoolError.TenantMaintenanceFlag
       "maintenance"
   ;;
 end
@@ -184,12 +173,10 @@ module Disabled = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(
-        Utils.schema_decoder
-          (fun m -> m |> of_string |> CCResult.pure)
-          Message.TenantDisabledFlag)
-      (fun l -> l |> stringify |> CCList.pure)
+    Pool_common.Utils.schema_decoder
+      (fun m -> Ok (of_string m))
+      stringify
+      PoolError.TenantDisabledFlag
       "disabled"
   ;;
 end

@@ -1,3 +1,4 @@
+module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -16,10 +17,7 @@ module CreateOperator : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -34,7 +32,7 @@ end = struct
   ;;
 
   let schema =
-    Conformist.(
+    Pool_common.Utils.PoolConformist.(
       make
         Field.
           [ User.EmailAddress.schema ()
@@ -74,7 +72,6 @@ end = struct
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    Pool_common.Utils.PoolConformist.decode_and_validate schema data
   ;;
 end

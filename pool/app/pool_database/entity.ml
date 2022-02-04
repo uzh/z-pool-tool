@@ -9,10 +9,13 @@ module Url = struct
     else Ok url
   ;;
 
+  let value m = m
+
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder create PoolError.DatabaseUrl)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.Language
       "database_url"
   ;;
 end
@@ -30,9 +33,10 @@ module Label = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder create PoolError.DatabaseLabel)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.DatabaseLabel
       "database_label"
   ;;
 end

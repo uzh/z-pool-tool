@@ -24,9 +24,10 @@ module RecruitmentChannel = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder of_string Message.RecruitmentChannel)
-      (fun l -> [ to_string l ])
+    Pool_common.Utils.schema_decoder
+      of_string
+      to_string
+      Pool_common.Message.RecruitmentChannel
       "recruitment_channel"
   ;;
 

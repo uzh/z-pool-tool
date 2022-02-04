@@ -41,20 +41,7 @@ let with_log_result_error fcn =
       err)
 ;;
 
-let schema_decoder create_fcn err l =
-  let open CCResult in
-  let open Locales_en in
-  let create_fcn m = create_fcn m |> CCResult.map_err error_to_string in
-  match l with
-  | x :: _ -> create_fcn x
-  | [] ->
-    Error
-      (Entity_message.Undefined err
-      |> with_log_error ~level:Logs.Info
-      |> error_to_string)
-;;
-
-let decoder (create_fcn : string -> ('a, Entity_message.error) result) field l =
+let decoder create_fcn field l =
   let open CCResult in
   match l with
   | x :: _ -> create_fcn x
@@ -62,9 +49,18 @@ let decoder (create_fcn : string -> ('a, Entity_message.error) result) field l =
     Error (Entity_message.Undefined field |> with_log_error ~level:Logs.Info)
 ;;
 
-let schema_decoder_new create_fcn encode_fnc field field_string =
+let schema_decoder create_fcn encode_fnc field field_string =
   PoolConformist.custom
     (decoder create_fcn field)
     (fun l -> l |> encode_fnc |> CCList.pure)
+    field_string
+;;
+
+let list_decoder create_fcn l = create_fcn l
+
+let schema_list_decoder create_fcn encode_fnc field field_string =
+  PoolConformist.custom
+    (list_decoder create_fcn field)
+    (fun l -> l |> encode_fnc)
     field_string
 ;;

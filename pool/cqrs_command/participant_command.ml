@@ -1,3 +1,4 @@
+module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -17,9 +18,7 @@ module SignUp : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Conformist.error list) result
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -71,10 +70,7 @@ end = struct
       ]
   ;;
 
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module DeleteUnverified : sig
@@ -102,9 +98,7 @@ module UpdateDetails : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Conformist.error list) result
 
   val can
     :  Pool_tenant.Database.Label.t
@@ -142,10 +136,7 @@ end = struct
     |> CCResult.pure
   ;;
 
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 
   let can pool user participant =
     let open Utils.Lwt_result.Infix in
@@ -178,9 +169,7 @@ module UpdatePassword : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
+  val decode : (string * string list) list -> (t, Conformist.error list) result
 
   val can
     :  Pool_tenant.Database.Label.t
@@ -222,10 +211,7 @@ end = struct
       ]
   ;;
 
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 
   let can pool user participant =
     let open Utils.Lwt_result.Infix in

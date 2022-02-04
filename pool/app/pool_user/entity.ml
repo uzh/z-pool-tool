@@ -24,10 +24,7 @@ module Password = struct
   ;;
 
   let schema name =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Password)
-      CCList.pure
-      name
+    Pool_common.Utils.schema_decoder create show PoolError.Password name
   ;;
 end
 
@@ -43,12 +40,10 @@ module PasswordConfirmed = struct
   ;;
 
   let schema name =
-    Conformist.custom
-      Pool_common.(
-        Utils.schema_decoder
-          (fun m -> m |> create |> CCResult.pure)
-          Message.Password)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      (fun m -> Ok (create m))
+      show
+      PoolError.Password
       name
   ;;
 end
@@ -108,10 +103,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create PoolError.EmailAddress)
-      CCList.pure
-      "email"
+    Pool_common.Utils.schema_decoder create show PoolError.Password "email"
   ;;
 end
 
@@ -128,9 +120,10 @@ module Firstname = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Firstname)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.Firstname
       "firstname"
   ;;
 end
@@ -148,10 +141,7 @@ module Lastname = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Lastname)
-      CCList.pure
-      "lastname"
+    Pool_common.Utils.schema_decoder create value PoolError.Lastname "lastname"
   ;;
 end
 
@@ -162,15 +152,14 @@ module Paused = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder
-         (fun m ->
-           m
-           |> bool_of_string_opt
-           |> CCOption.get_or ~default:false
-           |> CCResult.pure)
-         Pool_common.Message.Paused)
-      (fun l -> l |> string_of_bool |> CCList.pure)
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      PoolError.Paused
       "paused"
   ;;
 end

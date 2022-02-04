@@ -6,7 +6,11 @@ module RecruitmentChannel : sig
     | Mailing
 
   val to_string : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
   val all : unit -> string list
 end
 

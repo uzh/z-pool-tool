@@ -26,8 +26,15 @@ module Language : sig
   val of_string : string -> (t, Message.error) result
   val t : t Caqti_type.t
   val label : t -> string
-  val schema : unit -> ('a, t) Pool_common_utils.PoolConformist.Field.t
-  val schema_i18n : unit -> ('a, t) Pool_common_utils.PoolConformist.Field.t
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val schema_i18n
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
   val all : unit -> t list
   val all_codes : unit -> string list
 end
@@ -150,19 +157,21 @@ module Utils : sig
   module PoolConformist = Pool_common_utils.PoolConformist
 
   val schema_decoder
-    :  ('a -> ('b, Message.error) result)
-    -> Message.field
-    -> 'a list
-    -> ('b, string) result
-
-  val schema_decoder_new
     :  (string -> ('b, Pool_common_utils.PoolConformist.error_msg) result)
     -> ('b -> string)
-    -> Message.field
+    -> Entity_message.field
     -> string
-    -> ( 'b
-       , Pool_common_utils.PoolConformist.error_msg )
-       Pool_common_utils.PoolConformist.Field.t
+    -> (Pool_common_utils.PoolConformist.error_msg, 'b) PoolConformist.Field.t
+
+  val schema_list_decoder
+    :  (string list
+        -> ('b list, Pool_common_utils.PoolConformist.error_msg) result)
+    -> ('b list -> string list)
+    -> Entity_message.field
+    -> string
+    -> ( Pool_common_utils.PoolConformist.error_msg
+       , 'b list )
+       PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
   val info_to_string : Language.t -> Message.info -> string

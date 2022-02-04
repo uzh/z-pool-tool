@@ -6,7 +6,10 @@ module ContactEmail : sig
   val show : t -> string
   val value : t -> string
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module EmailSuffix : sig
@@ -17,7 +20,10 @@ module EmailSuffix : sig
   val show : t -> t
   val value : t -> string
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module InactiveUser : sig
@@ -30,7 +36,10 @@ module InactiveUser : sig
     val show : t -> string
     val value : t -> int
     val to_timespan : t -> Ptime.span
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Warning : sig
@@ -42,7 +51,10 @@ module InactiveUser : sig
     val show : t -> string
     val value : t -> int
     val to_timespan : t -> Ptime.span
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 end
 

@@ -1,3 +1,5 @@
+module Conformist = Pool_common.Utils.PoolConformist
+
 module UpdateLanguages : sig
   type t = Pool_common.Language.t list
 
@@ -38,10 +40,7 @@ module CreateEmailSuffix : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.EmailSuffix.t
@@ -58,11 +57,7 @@ end = struct
   ;;
 
   let can = Utils.todo
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module UpdateEmailSuffixes : sig
@@ -95,10 +90,7 @@ module DeleteEmailSuffix : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.EmailSuffix.t
@@ -119,22 +111,14 @@ end = struct
   ;;
 
   let can = Utils.todo
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module UpdateContactEmail : sig
   type t = Settings.ContactEmail.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Conformist.error list) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Settings.ContactEmail.t
@@ -150,11 +134,7 @@ end = struct
   ;;
 
   let can = Utils.todo
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
-  ;;
+  let decode data = Conformist.decode_and_validate schema data
 end
 
 module InactiveUser = struct
@@ -165,7 +145,7 @@ module InactiveUser = struct
 
     val decode
       :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+      -> (t, Conformist.error list) result
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
@@ -186,11 +166,7 @@ module InactiveUser = struct
     ;;
 
     let can = Utils.todo
-
-    let decode data =
-      Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.conformist
-    ;;
+    let decode data = Conformist.decode_and_validate schema data
   end
 
   module Warning : sig
@@ -200,7 +176,7 @@ module InactiveUser = struct
 
     val decode
       :  (string * string list) list
-      -> (t, Pool_common.Message.error) result
+      -> (t, Conformist.error list) result
 
     val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
@@ -221,11 +197,7 @@ module InactiveUser = struct
     ;;
 
     let can = Utils.todo
-
-    let decode data =
-      Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.conformist
-    ;;
+    let decode data = Conformist.decode_and_validate schema data
   end
 end
 
