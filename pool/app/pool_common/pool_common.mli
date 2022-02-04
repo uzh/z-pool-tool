@@ -164,11 +164,10 @@ module Utils : sig
     -> (Message.error, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
-    :  (string list -> ('b list, Message.error) result)
-    -> ('b list -> string list)
-    -> Entity_message.field
+    :  (string list -> ('a, Entity_message.error) result)
+    -> ('a -> string list)
     -> string
-    -> (Message.error, 'b list) PoolConformist.Field.t
+    -> ('b, 'a) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
   val info_to_string : Language.t -> Message.info -> string

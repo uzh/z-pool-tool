@@ -112,7 +112,6 @@ module Logos = struct
     Pool_common.Utils.schema_list_decoder
       create
       (CCList.map Common.Id.value)
-      PoolError.TenantLogos
       "tenant_logo"
   ;;
 end
@@ -127,7 +126,6 @@ module PartnerLogos = struct
     Pool_common.Utils.schema_list_decoder
       create
       (fun l -> l |> CCList.map Common.Id.value)
-      PoolError.TenantLogos
       "partner_logo"
   ;;
 end

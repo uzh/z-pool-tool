@@ -58,9 +58,9 @@ let schema_decoder create_fcn encode_fnc field field_string =
 
 let list_decoder create_fcn l = create_fcn l
 
-let schema_list_decoder create_fcn encode_fnc field field_string =
+let schema_list_decoder create_fcn encode_fnc field_string =
   PoolConformist.custom
-    (list_decoder create_fcn field)
+    (list_decoder create_fcn)
     (fun l -> l |> encode_fnc)
     field_string
 ;;
