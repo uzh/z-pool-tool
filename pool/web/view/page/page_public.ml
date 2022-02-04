@@ -45,7 +45,7 @@ let login csrf language query_lang message () =
   Page_layout.create html message language ()
 ;;
 
-let request_reset_password csrf language message () =
+let request_reset_password csrf language query_lang message () =
   let input_element = input_element language in
   let html =
     div
@@ -56,7 +56,10 @@ let request_reset_password csrf language message () =
           ]
       ; form
           ~a:
-            [ a_action (Sihl.Web.externalize_path "/request-reset-password")
+            [ a_action
+                (HttpUtils.externalize_path_with_lang
+                   query_lang
+                   "/request-reset-password")
             ; a_method `Post
             ]
           [ csrf_element csrf ()

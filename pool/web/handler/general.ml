@@ -9,7 +9,7 @@ let dashboard_path tenant_db query_lang user =
   >|= (function
         | true -> "/admin/dashboard"
         | false -> "/dashboard")
-  >|= Http_utils.path_with_lang query_lang
+  >|= Http_utils.path_with_language query_lang
 ;;
 
 let language_from_request ?participant req tenant_db =
@@ -36,7 +36,7 @@ let language_from_request ?participant req tenant_db =
       in
       CCResult.get_or lang ~default:None |> Lwt.return
   in
-  Http_utils.find_query_lang req
+  Http_utils.QueryParam.find_lang req
   >>= is_valid
   |> function
   | Some lang -> Lwt.return lang

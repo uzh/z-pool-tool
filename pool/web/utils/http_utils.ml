@@ -1,24 +1,16 @@
 module Message = Http_utils_message
 module File = Http_utils_file
+module QueryParam = Http_utils_query_param
 module StringMap = CCMap.Make (CCString)
 
-let find_query_lang req =
-  let open CCOption.Infix in
-  Sihl.Web.Request.query "lang" req
-  >>= fun l ->
-  l
-  |> CCString.uppercase_ascii
-  |> Pool_common.Language.of_string
-  |> CCOption.of_result
-;;
-
-let path_with_lang lang path =
+let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
-         Format.asprintf
-           "%s?lang=%s"
+         QueryParam.add_query_params
            path
-           (lang |> Pool_common.Language.code |> CCString.lowercase_ascii))
+           [ ( Pool_common.Message.Language
+             , lang |> Pool_common.Language.code |> CCString.lowercase_ascii )
+           ])
   |> Option.value ~default:path
 ;;
 
@@ -181,6 +173,6 @@ let browser_language_from_req req =
   >>= to_lang
 ;;
 
-let externalize_path_with_lang path lang =
-  lang |> path_with_lang path |> Sihl.Web.externalize_path
+let externalize_path_with_lang lang path =
+  path_with_language lang path |> Sihl.Web.externalize_path
 ;;

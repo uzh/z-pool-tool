@@ -88,7 +88,7 @@ let request_reset_password_post req =
 
 let reset_password_get req =
   let open Sihl.Web in
-  Request.query "token" req
+  Request.query Pool_common.Message.(field_name Token) req
   |> function
   | None ->
     HttpUtils.redirect_to_with_actions
@@ -109,14 +109,17 @@ let reset_password_post req =
     let* params =
       HttpUtils.urlencoded_to_params
         urlencoded
-        [ "token"; "password"; "password_confirmation" ]
+        [ Pool_common.Message.(field_name Token)
+        ; "password"
+        ; "password_confirmation"
+        ]
       |> CCOption.to_result
            ( Pool_common.Message.PasswordResetInvalidData
            , "/root/reset-password/" )
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
-    let token = go "token" in
+    let token = go Pool_common.Message.(field_name Token) in
     let* () =
       Service.PasswordReset.reset_password
         ~ctx

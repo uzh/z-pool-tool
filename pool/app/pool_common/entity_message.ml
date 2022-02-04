@@ -57,7 +57,7 @@ type field =
   | Token
   | Url
   | User
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show { with_path = false }, yojson, variants]
 
 type error =
   | Conformist of error list
@@ -153,3 +153,5 @@ type control =
 let to_coformist_error error_list =
   CCList.map (fun (_, _, msg) -> msg) error_list |> conformist
 ;;
+
+let field_name field = field |> show_field |> CCString.lowercase_ascii

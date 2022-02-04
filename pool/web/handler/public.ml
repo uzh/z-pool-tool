@@ -4,7 +4,7 @@ module Common = Pool_common
 module Database = Pool_database
 
 let index req =
-  let query_lang = Http_utils.find_query_lang req in
+  let query_lang = Http_utils.QueryParam.find_lang req in
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
@@ -22,7 +22,7 @@ let index req =
     in
     result
     |> CCResult.map_err (fun err ->
-           err, Http_utils.path_with_lang query_lang "/error")
+           err, Http_utils.path_with_language query_lang "/error")
     |> Http_utils.extract_happy_path)
 ;;
 
@@ -80,11 +80,11 @@ let email_confirmation_note req =
 ;;
 
 let not_found req =
-  let query_lang = Http_utils.find_query_lang req in
+  let query_lang = Http_utils.QueryParam.find_lang req in
   let open Lwt_result.Syntax in
   let%lwt result =
     Lwt_result.map_err (fun err ->
-        err, Http_utils.path_with_lang query_lang "/error")
+        err, Http_utils.path_with_language query_lang "/error")
     @@ let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
        let%lwt language = General.language_from_request req tenant_db in
        let html = Page.Utils.error_page_not_found language () in
