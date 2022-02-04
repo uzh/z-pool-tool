@@ -45,7 +45,16 @@ module Language = struct
   ;;
 
   let schema () = base_schema "default_language"
-  let schema_i18n () = base_schema "language"
+  (* let schema_i18n () = base_schema "language" *)
+
+  let schema_i18n () =
+    Pool_common_utils.schema_decoder_new
+      of_string
+      code
+      PoolError.Language
+      "language"
+  ;;
+
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 end
@@ -93,6 +102,8 @@ module File = struct
     ;;
 
     let value m = m
+    (* let schema () = Pool_common_utils.schema_decoder_new create
+       PoolError.Key *)
   end
 
   module Mime = struct

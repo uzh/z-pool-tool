@@ -22,7 +22,7 @@ end = struct
   let command key language content = { key; language; content }
 
   let schema =
-    Conformist.(
+    Pool_common.Utils.PoolConformist.(
       make
         Field.
           [ I18n.Key.schema ()

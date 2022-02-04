@@ -4,7 +4,7 @@ module Key : sig
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Content : sig
@@ -13,7 +13,7 @@ module Content : sig
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+  val schema : unit -> ('a, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 type t
