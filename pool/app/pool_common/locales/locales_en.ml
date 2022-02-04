@@ -106,8 +106,10 @@ let rec error_to_string = function
     field_message "" (field_to_string field) "was updated in the meantime!"
   | NoOptionSelected field ->
     field_message "Please select at least one" (field_to_string field) "."
+  | NotANumber field -> Format.asprintf "Version '%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
+  | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | ParticipantSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | ParticipantUnconfirmed -> "Participant isn't confirmed!"

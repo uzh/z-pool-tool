@@ -113,10 +113,13 @@ let rec error_to_string = function
       "wurde in der Zwischenzeit bearbeitet!"
   | NoOptionSelected field ->
     field_message "Bitte mindestens eine" (field_to_string field) "auswählen."
+  | NotANumber field -> Format.asprintf "Version '%s' ist keine Nummer." field
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotFound field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
+  | NotHandled field ->
+    Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | ParticipantSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
   | ParticipantUnconfirmed -> "Teilnehmer noch nicht verifiziert!"

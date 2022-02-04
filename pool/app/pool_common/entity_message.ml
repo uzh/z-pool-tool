@@ -73,8 +73,10 @@ type error =
   | LoginProvideDetails
   | MeantimeUpdate of field
   | NoOptionSelected of field
+  | NotANumber of string
   | NoTenantsRegistered
   | NotFound of field
+  | NotHandled of string
   | ParticipantSignupInvalidEmail
   | ParticipantUnconfirmed
   | PasswordPolicy of string

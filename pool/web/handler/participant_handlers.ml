@@ -304,26 +304,10 @@ let update req =
   in
   let query_lang = HttpUtils.find_query_lang req in
   let path_with_lang = HttpUtils.path_with_lang query_lang in
-  let field_name =
-    let open Pool_common.Message in
-    function
-    | "firstname" -> Firstname
-    | "lastname" -> Lastname
-    | "paused" -> Paused
-    (* TODO[timhub] *)
-    | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
-  in
   let result () =
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
     let version_raw = go "version" in
     let name = go "field" in
-    let version =
-      version_raw
-      |> CCInt.of_string
-      |> CCOption.get_exn_or
-         (* TODO[timhub] *)
-         @@ Format.asprintf "Version '%s' not a number" version_raw
-    in
     let open Utils.Lwt_result.Syntax in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
@@ -338,11 +322,31 @@ let update req =
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
+    let%lwt language =
+      General.language_from_request ~participant req tenant_db
+    in
+    let version =
+      version_raw
+      |> CCInt.of_string
+      |> CCOption.get_exn_or
+           (Pool_common.Utils.error_to_string
+              language
+              Pool_common.Message.(NotANumber name))
+    in
+    let field_name =
+      let open Pool_common in
+      function
+      | "firstname" -> Message.Firstname
+      | "lastname" -> Message.Lastname
+      | "paused" -> Message.Paused
+      | k -> failwith @@ Utils.error_to_string language Message.(NotHandled k)
+    in
     let value = go name in
     let get_version =
       CCOption.get_exn_or
-        (* TODO[timhub] *)
-        (Format.asprintf "No version found for field '%s'" name)
+        (Pool_common.Utils.error_to_string
+           language
+           Pool_common.Message.(NotHandled name))
     in
     let current_version =
       Participant.version_selector participant name |> get_version
@@ -354,17 +358,17 @@ let update req =
       then urlencoded |> decode >>= handle participant
       else Error (Pool_common.Message.MeantimeUpdate (field_name name))
     in
-    let%lwt language =
-      General.language_from_request ~participant req tenant_db
-    in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in
     let base_input version =
       let type_of = function
         | "paused" -> `Checkbox
         | "firstname" | "lastname" -> `Text
-        (* TODO[timhub] *)
-        | k -> failwith @@ Format.asprintf "Field '%s' is not handled" k
+        | k ->
+          failwith
+          @@ Pool_common.Utils.error_to_string
+               language
+               Pool_common.Message.(NotHandled k)
       in
       Component.hx_input_element
         (type_of name)
