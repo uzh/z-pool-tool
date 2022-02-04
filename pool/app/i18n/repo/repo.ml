@@ -21,14 +21,10 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
-  let where_fragment =
+  let find_request =
     {sql|
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-  ;;
-
-  let find_request =
-    where_fragment
     |> select_from_i18n_sql
     |> Caqti_request.find Caqti_type.string RepoEntity.t
   ;;

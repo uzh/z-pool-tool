@@ -83,8 +83,8 @@ let i18n db_pool () =
         ] )
     ]
   in
-  let%lwt _ =
-    Lwt_list.map_s
+  let%lwt () =
+    Lwt_list.iter_s
       (fun (key, data) ->
         let%lwt result =
           let open Utils.Lwt_result.Infix in
@@ -92,20 +92,17 @@ let i18n db_pool () =
             Lwt_result.lift
             @@
             let open CCResult.Infix in
-            let events =
-              CCList.map
-                (fun (language, content) ->
-                  Cqrs_command.I18n_command.Create.decode
-                    [ "key", [ key ]
-                    ; "language", [ language ]
-                    ; "content", [ content ]
-                    ]
-                  >>= Cqrs_command.I18n_command.Create.handle)
-                data
-              |> CCList.all_ok
-              >|= CCList.flatten
-            in
-            events
+            CCList.map
+              (fun (language, content) ->
+                Cqrs_command.I18n_command.Create.decode
+                  [ "key", [ key ]
+                  ; "language", [ language ]
+                  ; "content", [ content ]
+                  ]
+                >>= Cqrs_command.I18n_command.Create.handle)
+              data
+            |> CCList.all_ok
+            >|= CCList.flatten
           in
           let run_events events =
             let%lwt _ =
@@ -116,10 +113,10 @@ let i18n db_pool () =
           () |> run_command >>= run_events
         in
         match result with
-        | Ok _ -> Lwt.return_ok ()
+        | Ok _ -> Lwt.return_unit
         | Error err ->
           print_endline (Pool_common.Message.show_error err);
-          Lwt.return_error err)
+          Lwt.return_unit)
       data
   in
   Lwt.return_unit

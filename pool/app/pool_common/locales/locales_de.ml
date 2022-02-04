@@ -4,12 +4,15 @@ let field_to_string = function
   | Admin -> "Administrator"
   | ContactEmail -> "Kontakt Email Adresse"
   | CurrentPassword -> "Aktuelles Passwort"
+  | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
   | DefaultLanguage -> "Standard Sprache"
   | Description -> "Beschreibung"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
+  | EmailAddressUnverified -> "Unverifizierte Email Adresse"
+  | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
   | FileMimeType -> "Mime Typ"
   | Filename -> "Dateiname"
@@ -40,6 +43,8 @@ let field_to_string = function
   | SmtpPassword -> "Smtp Passwort"
   | SmtpPort -> "Smtp Port"
   | SmtpProtocol -> "Smtp Protokoll"
+  | SmtpReadModel -> "Smtp read model"
+  | SmtpWriteModel -> "Smtp write model"
   | SmtpUsername -> "Smtp Benutzername"
   | Styles -> "Styles"
   | Tenant -> "Tenant"
@@ -87,6 +92,11 @@ let warning_to_string : warning -> string = function
 let error_to_string = function
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | Decode field ->
+    field_message
+      ""
+      (field_to_string field)
+      "konnte nicht entschlüsselt werden."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."

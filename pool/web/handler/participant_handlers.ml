@@ -4,8 +4,8 @@ module Message = HttpUtils.Message
 module User = Pool_user
 
 let dashboard req =
-  let open Lwt_result.Syntax in
   let%lwt result =
+    let open Lwt_result.Syntax in
     (* TODO[timhub]: redirect to home with query param *)
     Lwt_result.map_err (fun err -> err, "/")
     @@
@@ -13,7 +13,7 @@ let dashboard req =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let%lwt language = HttpUtils.language_from_request req tenant_db None in
+    let%lwt language = General.language_from_request req tenant_db in
     Page.Participant.dashboard language message ()
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
@@ -41,7 +41,7 @@ let sign_up req =
     let recruitment_channel = go "recruitment_channel" in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     let query_lang = HttpUtils.find_query_lang req in
-    let%lwt language = HttpUtils.language_from_request req tenant_db None in
+    let%lwt language = General.language_from_request req tenant_db in
     let* terms = Settings.terms_and_conditions tenant_db language in
     Page.Participant.sign_up
       csrf
@@ -205,10 +205,7 @@ let terms req =
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
     let%lwt language =
-      HttpUtils.language_from_request
-        req
-        tenant_db
-        participant.Participant.language
+      General.language_from_request ~participant req tenant_db
     in
     let* terms =
       Settings.terms_and_conditions tenant_db language
@@ -273,10 +270,7 @@ let show is_edit req =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let%lwt language =
-      HttpUtils.language_from_request
-        req
-        tenant_db
-        participant.Participant.language
+      General.language_from_request ~participant req tenant_db
     in
     match is_edit with
     | false ->
@@ -347,7 +341,7 @@ let update req =
     let value = go name in
     let get_version =
       CCOption.get_exn_or
-      (* TODO[timhub] *)
+        (* TODO[timhub] *)
         (Format.asprintf "No version found for field '%s'" name)
     in
     let current_version =
@@ -361,10 +355,7 @@ let update req =
       else Error (Pool_common.Message.MeantimeUpdate (field_name name))
     in
     let%lwt language =
-      HttpUtils.language_from_request
-        req
-        tenant_db
-        participant.Participant.language
+      General.language_from_request ~participant req tenant_db
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in

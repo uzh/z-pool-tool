@@ -57,7 +57,7 @@ module TermsAndConditions : sig
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
-  val create : string * string -> (t, Pool_common.Message.error) result
+  val create : string -> string -> (t, Pool_common.Message.error) result
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
@@ -121,7 +121,10 @@ val find_terms_and_conditions
   -> TermsAndConditions.t list Lwt.t
 
 val terms_and_conditions_last_updated : Pool_database.Label.t -> Ptime.t Lwt.t
-val default_language : Pool_database.Label.t -> Pool_common.Language.t Lwt.t
+
+val default_language
+  :  Pool_database.Label.t
+  -> (Pool_common.Language.t, Pool_common.Message.error) result Lwt.t
 
 val terms_and_conditions
   :  Pool_database.Label.t

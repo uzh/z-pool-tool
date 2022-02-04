@@ -88,7 +88,9 @@ let terms_and_conditions_last_updated pool =
 
 let default_language pool =
   let open Lwt.Infix in
-  find_languages pool >|= CCList.hd
+  find_languages pool
+  >|= CCList.head_opt
+  >|= CCOption.to_result Pool_common.Message.(Retrieve Language)
 ;;
 
 let terms_and_conditions pool language =

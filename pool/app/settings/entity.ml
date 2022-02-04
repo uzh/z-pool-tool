@@ -113,7 +113,7 @@ module TermsAndConditions = struct
 
   type t = Pool_common.Language.t * Terms.t [@@deriving eq, show, yojson]
 
-  let create (language, content) =
+  let create language content =
     let open CCResult in
     let* language = Pool_common.Language.of_string language in
     let* content = Terms.create content in

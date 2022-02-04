@@ -15,7 +15,7 @@ let index req =
       in
       let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
       let* tenant = Pool_tenant.find_by_label tenant_db in
-      let%lwt language = Http_utils.language_from_request req tenant_db None in
+      let%lwt language = General.language_from_request req tenant_db in
       Page.Public.index language tenant message ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
@@ -62,7 +62,7 @@ let email_confirmation_note req =
     @@
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let%lwt language = Http_utils.language_from_request req tenant_db None in
+    let%lwt language = General.language_from_request req tenant_db in
     let txt_to_string m = Common.Utils.text_to_string language m in
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
@@ -86,7 +86,7 @@ let not_found req =
     Lwt_result.map_err (fun err ->
         err, Http_utils.path_with_lang query_lang "/error")
     @@ let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-       let%lwt language = Http_utils.language_from_request req tenant_db None in
+       let%lwt language = General.language_from_request req tenant_db in
        let html = Page.Utils.error_page_not_found language () in
        Sihl.Web.Response.of_html html |> Lwt.return_ok
   in
