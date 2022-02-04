@@ -91,6 +91,7 @@ let warning_to_string : warning -> string = function
 
 let rec error_to_string = function
   | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
+  | ConformistModuleErrorType -> failwith "Do not use"
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | Decode field ->
     field_message

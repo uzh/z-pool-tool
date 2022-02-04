@@ -61,6 +61,7 @@ type field =
 
 type error =
   | Conformist of error list
+  | ConformistModuleErrorType
   | DecodeAction
   | Decode of field
   | EmailAddressMissingOperator

@@ -3,14 +3,14 @@ module Error = struct
 
   (* TODO: create dummy errors *)
 
-  let invalid_bool = Entity_message.(Invalid Key)
-  let invalid_float = Entity_message.(Invalid Key)
-  let invalid_int = Entity_message.(Invalid Key)
-  let invalid_string = Entity_message.(Invalid Key)
-  let invalid_date = Entity_message.(Invalid Key)
-  let invalid_datetime = Entity_message.(Invalid Key)
-  let no_value = Entity_message.(Invalid Key)
-  let of_string _ = Entity_message.(Invalid Key)
+  let invalid_bool = Entity_message.(ConformistModuleErrorType)
+  let invalid_float = Entity_message.(ConformistModuleErrorType)
+  let invalid_int = Entity_message.(ConformistModuleErrorType)
+  let invalid_string = Entity_message.(ConformistModuleErrorType)
+  let invalid_date = Entity_message.(ConformistModuleErrorType)
+  let invalid_datetime = Entity_message.(ConformistModuleErrorType)
+  let no_value = Entity_message.(ConformistModuleErrorType)
+  let of_string _ = Entity_message.(ConformistModuleErrorType)
 end
 
 module PoolConformist = Conformist.Make (Error)
