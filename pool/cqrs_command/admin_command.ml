@@ -17,7 +17,10 @@ module CreateOperator : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -72,6 +75,7 @@ end = struct
   ;;
 
   let decode data =
-    Pool_common.Utils.PoolConformist.decode_and_validate schema data
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 end

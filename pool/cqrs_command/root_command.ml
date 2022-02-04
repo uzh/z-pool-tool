@@ -16,7 +16,10 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -59,7 +62,10 @@ end = struct
     Ok [ Root.Created admin |> Pool_event.root ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]

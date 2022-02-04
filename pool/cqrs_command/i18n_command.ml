@@ -8,7 +8,11 @@ module Create : sig
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Pool_database.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -41,7 +45,10 @@ end = struct
     Ok [ I18n.Created property |> Pool_event.i18n ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 
   let can
       : type admin. Pool_database.Label.t -> admin Admin.t -> t -> bool Lwt.t
@@ -69,7 +76,10 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t = { content : I18n.Content.t }
@@ -82,7 +92,10 @@ end = struct
     Ok [ I18n.Updated (property, edit) |> Pool_event.i18n ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 
   let can user (tenant : Pool_tenant.t) =
     Permission.can

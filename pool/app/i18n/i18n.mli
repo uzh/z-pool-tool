@@ -15,7 +15,7 @@ module Content : sig
 
   val value : t -> string
   val equal : t -> t -> bool
-  val create : string -> (Pool_common.Message.error, t) result
+  val create : string -> (t, Pool_common.Message.error) result
 
   val schema
     :  unit

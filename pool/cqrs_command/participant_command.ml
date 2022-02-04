@@ -18,7 +18,9 @@ module SignUp : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -70,7 +72,10 @@ end = struct
       ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 end
 
 module DeleteUnverified : sig
@@ -98,7 +103,9 @@ module UpdateDetails : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
 
   val can
     :  Pool_tenant.Database.Label.t
@@ -136,7 +143,10 @@ end = struct
     |> CCResult.pure
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 
   let can pool user participant =
     let open Utils.Lwt_result.Infix in
@@ -169,7 +179,9 @@ module UpdatePassword : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error list) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
 
   val can
     :  Pool_tenant.Database.Label.t
@@ -211,7 +223,10 @@ end = struct
       ]
   ;;
 
-  let decode data = Conformist.decode_and_validate schema data
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
 
   let can pool user participant =
     let open Utils.Lwt_result.Infix in

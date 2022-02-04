@@ -89,8 +89,8 @@ let warning_to_string : warning -> string = function
   | Warning string -> string
 ;;
 
-let error_to_string = function
-  | Conformist err -> ConformistError.to_string err
+let rec error_to_string = function
+  | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
   | DecodeAction -> "Cannot decode action."
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | EmailAddressMissingOperator -> "Please provide operator email address."

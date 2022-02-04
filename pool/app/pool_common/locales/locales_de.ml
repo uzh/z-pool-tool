@@ -89,8 +89,8 @@ let warning_to_string : warning -> string = function
   | Warning string -> string
 ;;
 
-let error_to_string = function
-  | Conformist err -> ConformistError.to_string err
+let rec error_to_string = function
+  | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | Decode field ->
     field_message

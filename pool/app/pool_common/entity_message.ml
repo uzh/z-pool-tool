@@ -1,13 +1,3 @@
-module ConformistError = struct
-  type t = string * string list * string [@@deriving eq, show, yojson]
-
-  let to_string err =
-    CCString.concat
-      "\n"
-      (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
-  ;;
-end
-
 type field =
   | Admin
   | ContactEmail
@@ -70,7 +60,7 @@ type field =
 [@@deriving eq, show, yojson, variants]
 
 type error =
-  | Conformist of ConformistError.t list
+  | Conformist of error list
   | DecodeAction
   | Decode of field
   | EmailAddressMissingOperator
@@ -156,3 +146,7 @@ type control =
   | SignUp
   | Update of field option
 [@@deriving eq, show, yojson, variants]
+
+let to_coformist_error error_list =
+  CCList.map (fun (_, _, msg) -> msg) error_list |> conformist
+;;
