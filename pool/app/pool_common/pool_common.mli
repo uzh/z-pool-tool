@@ -157,21 +157,18 @@ module Utils : sig
   module PoolConformist = Pool_common_utils.PoolConformist
 
   val schema_decoder
-    :  (string -> ('b, Pool_common_utils.PoolConformist.error_msg) result)
+    :  (string -> ('b, Message.error) result)
     -> ('b -> string)
     -> Entity_message.field
     -> string
-    -> (Pool_common_utils.PoolConformist.error_msg, 'b) PoolConformist.Field.t
+    -> (Message.error, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
-    :  (string list
-        -> ('b list, Pool_common_utils.PoolConformist.error_msg) result)
+    :  (string list -> ('b list, Message.error) result)
     -> ('b list -> string list)
     -> Entity_message.field
     -> string
-    -> ( Pool_common_utils.PoolConformist.error_msg
-       , 'b list )
-       PoolConformist.Field.t
+    -> (Message.error, 'b list) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
   val info_to_string : Language.t -> Message.info -> string

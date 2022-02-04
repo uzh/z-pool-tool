@@ -1,5 +1,5 @@
 module Error = struct
-  type error = Entity_message.error
+  type error = Entity_message.error [@@deriving eq, show, yojson]
 
   (* TODO: create dummy errors *)
 
