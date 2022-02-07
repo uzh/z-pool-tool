@@ -4,7 +4,7 @@ module Common = Pool_common
 module Database = Pool_database
 
 let index req =
-  let query_lang = Http_utils.QueryParam.find_lang req in
+  let query_lang = Http_utils.find_query_lang req in
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
@@ -80,7 +80,7 @@ let email_confirmation_note req =
 ;;
 
 let not_found req =
-  let query_lang = Http_utils.QueryParam.find_lang req in
+  let query_lang = Http_utils.find_query_lang req in
   let open Lwt_result.Syntax in
   let%lwt result =
     Lwt_result.map_err (fun err ->

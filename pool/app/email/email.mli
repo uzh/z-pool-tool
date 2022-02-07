@@ -94,6 +94,7 @@ module Helper : sig
   module PasswordReset : sig
     val create
       :  Pool_database.Label.t
+      -> Pool_common.Language.t
       -> user:Sihl_user.t
       -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
   end

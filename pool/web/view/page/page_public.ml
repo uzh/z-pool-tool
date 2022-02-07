@@ -75,8 +75,9 @@ let request_reset_password csrf language query_lang message () =
   Page_layout.create html message language ()
 ;;
 
-let reset_password csrf language message token () =
+let reset_password csrf language query_lang message token () =
   let open Pool_common in
+  let externalize = HttpUtils.externalize_path_with_lang query_lang in
   let input_element = input_element language in
   let html =
     div
@@ -86,10 +87,7 @@ let reset_password csrf language message token () =
                 Utils.text_to_string language I18n.ResetPasswordTitle)
           ]
       ; form
-          ~a:
-            [ a_action (Sihl.Web.externalize_path "/reset-password")
-            ; a_method `Post
-            ]
+          ~a:[ a_action (externalize "/reset-password"); a_method `Post ]
           [ csrf_element csrf ()
           ; input_element `Hidden (Some "token") Message.Token token
           ; input_element `Password (Some "password") Message.Password ""

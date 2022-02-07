@@ -36,7 +36,7 @@ let language_from_request ?participant req tenant_db =
       in
       CCResult.get_or lang ~default:None |> Lwt.return
   in
-  Http_utils.QueryParam.find_lang req
+  Http_utils.find_query_lang req
   >>= is_valid
   |> function
   | Some lang -> Lwt.return lang

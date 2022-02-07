@@ -155,3 +155,13 @@ let to_coformist_error error_list =
 ;;
 
 let field_name field = field |> show_field |> CCString.lowercase_ascii
+
+let add_field_query_params path params =
+  Format.asprintf
+    "%s?%s"
+    path
+    (CCList.map
+       (fun (key, value) -> Format.asprintf "%s=%s" (field_name key) value)
+       params
+    |> CCString.concat "&")
+;;

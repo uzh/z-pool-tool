@@ -23,7 +23,9 @@ let input_element language input_type name input_label value =
     | Some name -> base_attributes @ [ a_name name; a_placeholder input_label ]
     | None -> base_attributes
   in
-  div [ label [ txt input_label ]; input ~a:attributes () ]
+  match input_type with
+  | `Hidden -> input ~a:attributes ()
+  | _ -> div [ label [ txt input_label ]; input ~a:attributes () ]
 ;;
 
 let submit_element lang submit =

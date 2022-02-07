@@ -1,16 +1,26 @@
 module Message = Http_utils_message
 module File = Http_utils_file
-module QueryParam = Http_utils_query_param
 module StringMap = CCMap.Make (CCString)
+
+let find_query_lang req =
+  let open CCOption.Infix in
+  Sihl.Web.Request.query Pool_common.Message.(field_name Language) req
+  >>= fun l ->
+  l
+  |> CCString.uppercase_ascii
+  |> Pool_common.Language.of_string
+  |> CCOption.of_result
+;;
 
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
-         QueryParam.add_query_params
-           path
-           [ ( Pool_common.Message.Language
-             , lang |> Pool_common.Language.code |> CCString.lowercase_ascii )
-           ])
+         Pool_common.(
+           Message.add_field_query_params
+             path
+             [ ( Message.Language
+               , lang |> Language.code |> CCString.lowercase_ascii )
+             ]))
   |> Option.value ~default:path
 ;;
 
