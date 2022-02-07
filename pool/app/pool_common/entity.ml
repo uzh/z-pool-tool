@@ -94,8 +94,6 @@ module File = struct
     ;;
 
     let value m = m
-    (* let schema () = Pool_common_utils.schema_decoder_new create
-       PoolError.Key *)
   end
 
   module Mime = struct
