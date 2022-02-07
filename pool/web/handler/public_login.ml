@@ -12,8 +12,7 @@ let login_get req =
   let query_lang = Http_utils.find_query_lang req in
   let%lwt result =
     Lwt_result.map_err (fun err ->
-        (* TODO[timhub]: redirect to home with query param *)
-        err, Http_utils.path_with_language query_lang "/")
+        err, HttpUtils.path_with_language query_lang "/index")
     @@
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
@@ -68,8 +67,7 @@ let request_reset_password_get req =
   let query_lang = Http_utils.find_query_lang req in
   let%lwt result =
     Lwt_result.map_err (fun err ->
-        (* TODO[timhub]: redirect to home with query param *)
-        err, HttpUtils.path_with_language query_lang "/")
+        err, HttpUtils.path_with_language query_lang "/index")
     @@
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in

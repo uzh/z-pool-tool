@@ -6,8 +6,9 @@ module User = Pool_user
 let dashboard req =
   let%lwt result =
     let open Lwt_result.Syntax in
-    (* TODO[timhub]: redirect to home with query param *)
-    Lwt_result.map_err (fun err -> err, "/")
+    let query_lang = Http_utils.find_query_lang req in
+    Lwt_result.map_err (fun err ->
+        err, HttpUtils.path_with_language query_lang "/index")
     @@
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
@@ -22,8 +23,8 @@ let dashboard req =
 ;;
 
 let sign_up req =
-  (* TODO[timhub]: redirect to home with query param *)
-  let error_path = "/" in
+  let query_lang = Http_utils.find_query_lang req in
+  let error_path = HttpUtils.path_with_language query_lang "/index" in
   let%lwt result =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
@@ -131,13 +132,13 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let query_lang = Http_utils.find_query_lang req in
   let result =
     let open Lwt_result.Syntax in
+    let query_lang = Http_utils.find_query_lang req in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
-      (* TODO[timhub]: redirect to home with query param *)
-      |> Lwt_result.map_err (fun err -> err, "/")
+      |> Lwt_result.map_err (fun err ->
+             err, HttpUtils.path_with_language query_lang "/index")
     in
     let%lwt redirect_path =
       let%lwt user = General.user_from_session tenant_db req in
@@ -191,8 +192,8 @@ let terms req =
     let error_path = "/login" |> HttpUtils.path_with_language query_lang in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req
-      (* TODO[timhub]: redirect to home with query param *)
-      |> Lwt_result.map_err (fun err -> err, "/")
+      |> Lwt_result.map_err (fun err ->
+             err, HttpUtils.path_with_language query_lang "/index")
     in
     let* user =
       General.user_from_session tenant_db req

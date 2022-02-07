@@ -3,6 +3,8 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
+let root_redirect _ = Http_utils.redirect_to "/index"
+
 let index req =
   let query_lang = Http_utils.find_query_lang req in
   if Http_utils.is_req_from_root_host req
