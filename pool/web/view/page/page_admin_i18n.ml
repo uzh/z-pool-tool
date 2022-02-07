@@ -34,7 +34,7 @@ let list csrf translation_list message () =
                         (translation |> I18n.content |> I18n.Content.value)
                     ; submit_element
                         Pool_common.Language.En
-                        Message.(Update (Some Message.password))
+                        Message.(Update (Some Message.translation))
                     ]
                 ])
             translations
