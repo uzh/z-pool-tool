@@ -121,6 +121,9 @@ compile-and-test:
     - opam pin add -yn sihl-token git://github.com/oxidizing/sihl.git
     - opam pin add -yn sihl-user git://github.com/oxidizing/sihl.git
 
+    # pin custom libraries hosted on the UZH gitlab
+    - opam pin add -yn notify_failures https://gitlab.uzh.ch/oxidizing/notify_failures.git
+
     # pin payout and install system dependencies
     - opam pin add -yn pool .
     - OPAMSOLVERTIMEOUT=180 opam depext -y pool
