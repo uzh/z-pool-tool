@@ -80,6 +80,8 @@
   (ppx_variants_conv
    (= v0.14.2))
   canary
+  (ocaml_authorize
+   (>= 0.0.0))
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))

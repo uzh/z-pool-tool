@@ -1,6 +1,6 @@
 (library
  (name tenant)
- (libraries admin conformist permission pool_common role settings sihl utils)
+ (libraries sihl conformist admin role pool_common settings utils ocauth)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

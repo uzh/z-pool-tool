@@ -28,6 +28,8 @@ services:
       - SMTP_START_TLS=true
       - SMTP_USERNAME=ecserv
       - VERSION=dev
+      - GITLAB_USER
+      - GITLAB_TOKEN=${CI_JOB_TOKEN}
     depends_on:
       - database-root
       - database-tenant

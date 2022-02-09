@@ -4,7 +4,7 @@ module Create : sig
   type t = Waiting_list.create
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = Waiting_list.create
 
@@ -16,9 +16,7 @@ end = struct
     else Error Pool_common.Message.NotEligible
   ;;
 
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Waiting_list ]
-  ;;
+  let effects = [ `Create, `Role `Waiting_list ]
 end
 
 module Update : sig
@@ -33,7 +31,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> bool Lwt.t
+  val effects : Waiting_list.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Waiting_list.update
 
@@ -57,8 +55,8 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Waiting_list ]
+  let effects waiting_list =
+    [ `Update, `Uniq (Pool_common.Id.to_uuidm waiting_list.Waiting_list.id) ]
   ;;
 end
 
@@ -66,13 +64,13 @@ module Destroy : sig
   type t = Waiting_list.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> bool Lwt.t
+  val effects : Waiting_list.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Waiting_list.t
 
   let handle m = Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
 
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Waiting_list ]
+  let effects waiting_list =
+    [ `Delete, `Uniq (Pool_common.Id.to_uuidm waiting_list.Waiting_list.id) ]
   ;;
 end

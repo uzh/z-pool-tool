@@ -101,15 +101,7 @@ end = struct
       | Error err -> Error err)
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            (Permission.Experiment, Some command.experiment.Experiment.id)
-        ; Permission.Create Permission.Invitation
-        ]
-  ;;
+  let can _user _command = Utils.todo [%here]
 end
 
 module Resend : sig
@@ -133,14 +125,7 @@ end = struct
     Ok [ Invitation.Resent (command, email) |> Pool_event.invitation ]
   ;;
 
-  let can user Invitation.{ experiment; invitation } =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            (Permission.Experiment, Some experiment.Experiment.id)
-        ; Permission.Manage
-            (Permission.Invitation, Some invitation.Invitation.id)
-        ]
+  let can _user Invitation.{ experiment = _; invitation = _ } =
+    Utils.todo [%here]
   ;;
 end

@@ -39,7 +39,8 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -166,8 +167,9 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
+  let build_checker _ =
+    let _effects = [ `Create, `Role `Tenant ] in
+    Utils.todo [%here]
   ;;
 
   let decode data =
@@ -202,7 +204,8 @@ module EditDetails : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -308,11 +311,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user (tenant : Pool_tenant.t) =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
+  let build_checker _ =
+    let _effects = [ `Update, `Uniq "tenant ID" ] in
+    Utils.todo [%here]
   ;;
 end
 
@@ -331,7 +332,8 @@ module EditDatabase : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t =
     { database_url : Pool_database.Url.t
@@ -362,11 +364,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user (tenant : Pool_tenant.t) =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
+  let build_checker _ =
+    let _effects = [ `Update, `Uniq "tenant ID" ] in
+    Utils.todo [%here]
   ;;
 end
 
@@ -376,14 +376,16 @@ module DestroyLogo : sig
     -> Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   let handle tenant asset_id =
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
+  let build_checker _ =
+    let _effects = [ `Create, `Role `Tenant ] in
+    Utils.todo [%here]
   ;;
 end
 
@@ -391,7 +393,9 @@ module Destroy : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t = { tenant_id : string }
 
@@ -402,12 +406,8 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
+  let build_checker _ =
+    let _effects = [ `Destroy, `Uniq "Tenant ID" ] in
+    Utils.todo [%here]
   ;;
 end

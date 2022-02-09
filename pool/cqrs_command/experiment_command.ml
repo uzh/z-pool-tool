@@ -54,7 +54,9 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : t -> ( actor:[ `User | `Admin ] Ocauth.Authorizable.t
+     -> (unit, Conformist.error_msg) result , Pool_common.Message.error )
+     Lwt_result.t *)
 end = struct
   type t = create
 
@@ -81,9 +83,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
-  ;;
+  (* let build_checker (_t : t) = let open Lwt_result.Syntax in let* rules =
+     Ocauth.collect_rules [ `Create, `Role `Experiment ] in Lwt.return_ok
+     (Ocauth.make_checker rules [@warning "-5"]) ;; *)
 end
 
 module Update : sig
@@ -98,7 +100,9 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : Experiment.t -> ( actor:[ `User | `Admin ]
+     Ocauth.Authorizable.t -> (unit, Conformist.error_msg) result ,
+     Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t = create
 
@@ -126,9 +130,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
-  ;;
+  (* let build_checker experiment = let open Lwt_result.Syntax in let* rules =
+     Ocauth.collect_rules [ `Update, `Uniq (experiment.id |>
+     Pool_common.Id.to_uuidm) ] in Lwt.return_ok (Ocauth.make_checker rules
+     [@warning "-5"]) ;; *)
 end
 
 module Delete : sig
@@ -138,7 +143,10 @@ module Delete : sig
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+
+  (* val build_checker : t -> ( actor:[ `User | `Admin ] Ocauth.Authorizable.t
+     -> (unit, Conformist.error_msg) result , Pool_common.Message.error )
+     Lwt_result.t *)
 end = struct
   (* Only when no sessions added *)
 
@@ -154,13 +162,10 @@ end = struct
       Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
-        ]
-  ;;
+  (* let build_checker command = let open Lwt_result.Syntax in let* rules =
+     Ocauth.collect_rules [ `Delete, `Uniq (command.experiment_id |>
+     Pool_common.Id.to_uuidm) ] in Lwt.return_ok (Ocauth.make_checker rules
+     [@warning "-5"]) ;; *)
 end
 
 module UpdateFilter : sig end = struct
@@ -175,7 +180,9 @@ module AddExperimenter : sig
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : Experiment.t -> Admin.experimenter Admin.t -> ( actor:[
+     `User | `Admin ] Ocauth.Authorizable.t -> (unit, Conformist.error_msg)
+     result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t = { user_id : Id.t }
 
@@ -186,9 +193,11 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  (* let build_checker experiment user = let open Lwt_result.Syntax in let*
+     rules = Ocauth.collect_rules [ `Update, `Uniq (experiment.id |>
+     Pool_common.Id.to_uuidm) ; ( `Update , `Uniq (Ocauth.Uuid.of_string_exn
+     (Admin.user user).Sihl_user.id) ) ] in Lwt.return_ok (Ocauth.make_checker
+     rules [@warning "-5"]) ;; *)
 end
 
 module DivestExperimenter : sig
@@ -202,7 +211,9 @@ module DivestExperimenter : sig
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : Experiment.t -> Admin.experimenter Admin.t -> ( actor:[
+     `User | `Admin ] Ocauth.Authorizable.t -> (unit, Conformist.error_msg)
+     result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t =
     { user_id : Id.t
@@ -216,14 +227,11 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
-        ]
-  ;;
+  (* let build_checker experiment user = let open Lwt_result.Syntax in let*
+     rules = Ocauth.collect_rules [ `Update, `Uniq (experiment.id |>
+     Pool_common.Id.to_uuidm) ; ( `Update , `Uniq (Ocauth.Uuid.of_string_exn
+     (Admin.user user).Sihl_user.id) ) ] in Lwt.return_ok (Ocauth.make_checker
+     rules [@warning "-5"]) ;; *)
 end
 
 module AddAssistant : sig
@@ -234,7 +242,9 @@ module AddAssistant : sig
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : Experiment.t -> Admin.experimenter Admin.t -> ( actor:[
+     `User | `Admin ] Ocauth.Authorizable.t -> (unit, Conformist.error_msg)
+     result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t = { user_id : Id.t }
 
@@ -244,9 +254,11 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  (* let build_checker experiment user = let open Lwt_result.Syntax in let*
+     rules = Ocauth.collect_rules [ `Update, `Uniq (experiment.id |>
+     Pool_common.Id.to_uuidm) ; ( `Update , `Uniq (Ocauth.Uuid.of_string_exn
+     (Admin.user user).Sihl_user.id) ) ] in Lwt.return_ok (Ocauth.make_checker
+     rules [@warning "-5"]) ;; *)
 end
 
 module DivestAssistant : sig
@@ -260,7 +272,9 @@ module DivestAssistant : sig
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  (* val build_checker : Experiment.t -> Admin.experimenter Admin.t -> ( actor:[
+     `User | `Admin ] Ocauth.Authorizable.t -> (unit, Conformist.error_msg)
+     result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t =
     { user_id : Id.t
@@ -273,12 +287,9 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
-        ]
-  ;;
+  (* let build_checker experiment user = let open Lwt_result.Syntax in let*
+     rules = Ocauth.collect_rules [ `Update, `Uniq (experiment.id |>
+     Pool_common.Id.to_uuidm) ; ( `Update , `Uniq (Ocauth.Uuid.of_string_exn
+     (Admin.user user).Sihl_user.id) ) ] in Lwt.return_ok (Ocauth.make_checker
+     rules [@warning "-5"]) ;; *)
 end

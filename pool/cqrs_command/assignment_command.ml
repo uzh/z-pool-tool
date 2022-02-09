@@ -14,7 +14,7 @@ module Create : sig
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { contact : Contact.t
@@ -62,16 +62,14 @@ end = struct
           ])
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Assignment ]
-  ;;
+  let effects = [ `Create, `Role `Assignment ]
 end
 
 module Cancel : sig
   type t = Assignment.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Assignment.t
 
@@ -81,12 +79,8 @@ end = struct
     Ok [ Assignment.Canceled command |> Pool_event.assignment ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Assignment, Some command.Assignment.id)
-        ]
+  let effects command =
+    [ `Update, `Uniq (Pool_common.Id.to_uuidm command.Assignment.id) ]
   ;;
 end
 
@@ -105,7 +99,7 @@ module SetAttendance : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Assignment.t -> bool Lwt.t
+  val effects : Assignment.t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { show_up : Assignment.ShowUp.t
@@ -137,13 +131,8 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user assignment =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update
-            (Permission.Assignment, Some assignment.Assignment.id)
-        ]
+  let effects assignment =
+    [ `Update, `Uniq (Pool_common.Id.to_uuidm assignment.Assignment.id) ]
   ;;
 end
 
@@ -159,7 +148,7 @@ module CreateFromWaitingList : sig
     -> Assignment.confirmation_email
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { session : Session.t
@@ -200,7 +189,5 @@ end = struct
           ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Assignment ]
-  ;;
+  let effects = [ `Create, `Role `Assignment ]
 end

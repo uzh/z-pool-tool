@@ -8,6 +8,7 @@ module Id = struct
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m
   let value m = m
+  let to_uuidm m = Uuidm.of_string m |> CCOption.get_exn_or "Invalid UUID"
 
   let schema () =
     Pool_common_utils.schema_decoder

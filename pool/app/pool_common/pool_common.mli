@@ -12,6 +12,7 @@ module Id : sig
   val value : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_sexp : Sexplib0.Sexp.t -> t
+  val to_uuidm : t -> Uuidm.t
 
   val schema
     :  unit

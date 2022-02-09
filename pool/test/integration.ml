@@ -33,6 +33,14 @@ let suite =
           ] )
     ; ( "dev/test"
       , [ test_case "intercept email" `Quick Common_test.validate_email ] )
+    ; ( "authorization"
+      , Authorization_test.
+          [ test_case "update language of user" `Quick admin_can_update_language
+          ; test_case
+              "update language of user"
+              `Quick
+              guest_cannot_update_language
+          ] )
     ]
 ;;
 

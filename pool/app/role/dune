@@ -1,3 +1,9 @@
 (library
  (name role)
- (libraries permission sihl))
+ (libraries sihl ocaml_authorize)
+ (preprocess
+  (pps
+   ppx_deriving.show
+   ppx_deriving.ord
+   ppx_deriving_yojson
+   ppx_deriving.eq)))

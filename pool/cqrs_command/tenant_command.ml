@@ -10,8 +10,6 @@ module AssignOperator : sig
     :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { user_id : Id.t
@@ -22,14 +20,7 @@ end = struct
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Tenant, Some command.tenant_id)
-        ]
-  ;;
+  let _effects = [ `Manage, `Role `System; `Manage, `Uniq "command.tenant_id" ]
 end
 
 module DivestOperator : sig
@@ -42,8 +33,6 @@ module DivestOperator : sig
     :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { user_id : string
@@ -54,15 +43,7 @@ end = struct
     Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
-  ;;
+  let _effects = [ `Manage, `Role `System; `Manage, `Uniq "command.tenant_id" ]
 end
 
 module GenerateStatusReport : sig
@@ -85,14 +66,9 @@ module AddRoot : sig
     :  t
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { user_id : string }
 
   let handle = Utils.todo
-
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let _effects = [ `Manage, `Role `System ]
 end

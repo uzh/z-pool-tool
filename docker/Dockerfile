@@ -16,6 +16,8 @@ RUN apt-get update \
     perl \
     pkg-config \
     zlib1g-dev \
+    libsqlite3-dev \
+    sqlite3 \
   #
   # Clean up
   && apt-get autoremove -y \

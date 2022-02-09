@@ -102,6 +102,11 @@ end = struct
     then Error Pool_common.Message.EmailDeleteAlreadyVerified
     else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
   ;;
+
+  (* let _build_checker subject = let open Lwt_result.Syntax in let effects = [
+     `Delete, `Uniq (Subject.id subject |> Pool_common.Id.to_uuidm) ] in let*
+     rules = Ocauth.collect_rules effects in Lwt.return_ok (Ocauth.make_checker
+     rules [@warning "-5"]) ;; *)
 end
 
 module Update : sig
@@ -117,15 +122,21 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
+  val get_effects
+    :  Pool_tenant.t
+    -> Contact.t
+    -> (Ocauth.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
+
+  (* val handle' : rules:Ocauth.Authorizer.auth_rule list -> actor:_
+     Ocauth.Authorizable.t -> Subject.t -> t -> (Pool_event.t list,
+     Pool_common.Message.error) result *)
+
+  (* val get_rules : Subject.t -> ( Ocauth.Authorizer.auth_rule list ,
+     Pool_common.Message.error ) Lwt_result.t *)
+
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val can
-    :  Pool_tenant.Database.Label.t
-    -> Sihl_user.t
-    -> Contact.t
-    -> bool Lwt.t
 end = struct
   type t =
     { firstname : User.Firstname.t option
@@ -162,25 +173,24 @@ end = struct
     |> CCResult.pure
   ;;
 
+  let get_effects pool subject =
+    Lwt.return_ok
+      [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
+      ; `Update, `Uniq (Pool_tenant.id pool |> Pool_common.Id.to_uuidm)
+      ]
+  ;;
+
+  (* let handle' ~rules ~actor subject command = Ocauth.wrap_handler ~actor
+     ~rules (handle subject) command ;; *)
+
+  (* let get_rules subject = let open Lwt_result.Syntax in let* _ =
+     Ocauth.Subject.to_authorizable subject in let effects = [ `Update, `Uniq
+     (Subject.id subject |> Pool_common.Id.to_uuidm) ] in Ocauth.collect_rules
+     effects ;; *)
+
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
-
-  let can pool user contact =
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        user
-        ~any_of:
-          [ Permission.Update (Permission.Contact, Some (contact |> Contact.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
-          ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -198,15 +208,11 @@ module UpdatePassword : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
+  val get_effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
+
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val can
-    :  Pool_tenant.Database.Label.t
-    -> Sihl_user.t
-    -> Contact.t
-    -> bool Lwt.t
 end = struct
   type t =
     { current_password : User.Password.t
@@ -255,25 +261,19 @@ end = struct
       ]
   ;;
 
+  (* let handle' ~actor ~rules ?password_policy subject command =
+     Ocauth.wrap_handler ~actor ~rules (handle ?password_policy subject) command
+     ;; *)
+
+  let get_effects tenant subject =
+    [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
+    ]
+  ;;
+
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
-  ;;
-
-  let can pool user contact =
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        user
-        ~any_of:
-          [ Permission.Update (Permission.Contact, Some (contact |> Contact.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
-          ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end
 
@@ -286,11 +286,10 @@ module RequestEmailValidation : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can
-    :  Pool_tenant.Database.Label.t
-    -> Sihl_user.t
-    -> Contact.t
-    -> bool Lwt.t
+  val get_effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
+  (* val build_checker : Pool_tenant.Database.Label.t -> Subject.t -> t -> (
+     actor:[ `User | `Admin ] Ocauth.Authorizable.t -> (unit,
+     Conformist.error_msg) result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -307,20 +306,10 @@ end = struct
       ]
   ;;
 
-  let can pool user contact =
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        user
-        ~any_of:
-          [ Permission.Update (Permission.Contact, Some (Contact.id contact))
-          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
-          ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
+  let get_effects tenant subject =
+    [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
+    ]
   ;;
 end
 
@@ -333,7 +322,9 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Pool_database.Label.t -> Sihl_user.t -> Contact.t -> bool Lwt.t
+  (* val build_checker : Pool_tenant.Database.Label.t -> Subject.t -> t -> (
+     actor:[ `User | `Admin ] Ocauth.Authorizable.t -> (unit,
+     Conformist.error_msg) result , Pool_common.Message.error ) Lwt_result.t *)
 end = struct
   type t = Email.unverified Email.t
 
@@ -349,21 +340,10 @@ end = struct
       ]
   ;;
 
-  let can pool user contact =
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        user
-        ~any_of:
-          [ Permission.Update (Permission.Contact, Some (Contact.id contact))
-          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
-          ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
-  ;;
+  (* let build_checker tenant subject _command = let open Lwt_result.Syntax in
+     let* rules = Ocauth.collect_rules [ `Update, `Uniq (Subject.id subject |>
+     Pool_common.Id.to_uuidm); `Update, `Uniq tenant.Pool_tenant.id ] in
+     Lwt.return_ok (Ocauth.make_checker rules [@warning "-5"]) ;; *)
 end
 
 module AcceptTermsAndConditions : sig

@@ -139,6 +139,7 @@ compile-and-test:
     # pin custom libraries hosted on the UZH gitlab
     - opam pin add -yn canary https://github.com/uzh/canary.git
     - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
+    - opam pin add -yn ocaml_authorize https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.uzh.ch/econ/it/framework/ocaml/permissions.git#feat/typed-roles
 
     # pin payout and install system dependencies
     - opam pin add -yn pool .

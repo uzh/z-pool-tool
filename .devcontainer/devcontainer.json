@@ -2,41 +2,41 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/master/containers/python-3 or the
 // devcontainer docu https://code.visualstudio.com/docs/remote/containers#_devcontainerjson-reference
 {
-  "name": "Pool Tool",
-  "dockerComposeFile": "./docker-compose.yml",
-  "service": "dev",
-  "runServices": [
-    "dev",
-    "database-root",
-    "database-tenant"
-    // "adminer" // uncomment if adminer should run to see the database
-  ],
-  "workspaceFolder": "/workspace",
-  "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
-  // Use 'settings' to set *default* container specific settings.json values on container create.
-  // You can edit these settings after create using File > Preferences > Settings > Remote.
-  "settings": {
-    "terminal.integrated.profiles.linux": {
-      "zsh": {
-        "path": "/bin/zsh"
-      }
+    "name": "Pool Tool",
+    "dockerComposeFile": "./docker-compose.yml",
+    "service": "dev",
+    "runServices": [
+        "dev",
+        "database-root",
+        "database-tenant",
+        "adminer" // uncomment if adminer should run to see the database
+    ],
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": "/bin/bash .devcontainer/wait-for-database.sh -d db-root/test -d db-tenant/dev_zhaw -d db-tenant/test_econ .devcontainer/postCreate.sh",
+    // Use 'settings' to set *default* container specific settings.json values on container create.
+    // You can edit these settings after create using File > Preferences > Settings > Remote.
+    "settings": {
+        "terminal.integrated.profiles.linux": {
+            "zsh": {
+                "path": "/bin/zsh"
+            }
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.formatOnSave": true,
+        "files.associations": {
+            "*.ml": "ocaml",
+            "*.mli": "ocaml"
+        },
+        "ocaml.sandbox": {
+            "kind": "global",
+        }
     },
-    "terminal.integrated.defaultProfile.linux": "zsh",
-    "editor.formatOnSave": true,
-    "files.associations": {
-      "*.ml": "ocaml",
-      "*.mli": "ocaml"
-    },
-    "ocaml.sandbox": {
-      "kind": "global",
-    }
-  },
-  // Add the IDs of extensions you want installed when the container is created in the array below.
-  "extensions": [
-    "donjayamanne.githistory",
-    "eamodio.gitlens",
-    "exiasr.hadolint",
-    "irongeek.vscode-env",
-    "ocamllabs.ocaml-platform"
-  ]
+    // Add the IDs of extensions you want installed when the container is created in the array below.
+    "extensions": [
+        "donjayamanne.githistory",
+        "eamodio.gitlens",
+        "exiasr.hadolint",
+        "irongeek.vscode-env",
+        "ocamllabs.ocaml-platform"
+    ]
 }

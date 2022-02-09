@@ -22,6 +22,7 @@ opam pin add -yn sihl-user $repo
 # pin custom libraries hosted on the UZH gitlab
 opam pin add -yn canary https://github.com/uzh/canary.git
 opam pin add -yn conformist https://github.com/oxidizing/conformist.git
+opam pin add -yn ocaml_authorize https://$GITLAB_USER:$GITLAB_TOKEN@gitlab.uzh.ch/econ/it/framework/ocaml/permissions.git#feat/typed-roles
 
 opam pin add -yn pool .
 opam depext -y pool

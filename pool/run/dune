@@ -1,3 +1,13 @@
 (executable
  (name run)
- (libraries caqti-driver-mariadb command database routes service sihl tenant))
+ (preprocess
+  (pps lwt_ppx ppx_deriving.show))
+ (libraries
+  caqti-driver-mariadb
+  command
+  database
+  routes
+  service
+  sihl
+  tenant
+  ocauth))

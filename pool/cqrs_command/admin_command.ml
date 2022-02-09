@@ -10,6 +10,9 @@ module CreateOperator : sig
     ; lastname : User.Lastname.t
     }
 
+  (* val build_checker : Pool_tenant.Write.t -> t -> ( actor:[ `User | `Admin ]
+     Ocauth.Authorizable.t -> bool , Pool_common.Message.error ) Lwt_result.t *)
+
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:
@@ -20,8 +23,6 @@ module CreateOperator : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -65,9 +66,12 @@ end = struct
     Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
-  ;;
+  (* let build_checker _tenant (_t : t) = let open Lwt_result.Syntax in (**
+     TODO: I want the effect to look more like [`Create, `Role (`Operator
+     tenant_id)] but can't for the life of me figure how to get the tenant ID
+     out of this type *) let* rules = Ocauth.collect_rules [ `Create, `Role
+     `Tenant ] in Lwt.return_ok (Ocauth.make_checker rules [@warning "-5"])
+     ;; *)
 
   let decode data =
     Conformist.decode_and_validate schema data

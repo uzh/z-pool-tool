@@ -1,0 +1,1 @@
+include Ocaml_authorize.Make (Role)

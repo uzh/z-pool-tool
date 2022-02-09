@@ -28,7 +28,12 @@ let handle_event pool : event -> unit Lwt.t =
         ~password:(root.password |> User.Password.to_sihl)
         (User.EmailAddress.value root.email)
     in
-    Permission.assign user Role.root
+    let%lwt rv =
+      Ocauth.Persistence.grant_roles
+        (Ocauth.Uuid.of_string_exn user.Sihl.Contract.User.id)
+        (Ocauth.Role_set.singleton `Admin)
+    in
+    Lwt.return (CCResult.get_exn rv)
   | Disabled root ->
     let%lwt _ =
       Sihl_user.

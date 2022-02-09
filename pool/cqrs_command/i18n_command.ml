@@ -13,7 +13,8 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Pool_database.Label.t -> 'admin Admin.t -> t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t =
     { key : I18n.Key.t
@@ -50,22 +51,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can
-      : type admin. Pool_database.Label.t -> admin Admin.t -> t -> bool Lwt.t
-    =
-   fun pool admin _ ->
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        (Admin.user admin)
-        ~any_of:
-          [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
- ;;
+  let build_checker _ =
+    let _effects = [ `Update, `Uniq "some_tenant_id" ] in
+    Utils.todo [%here]
+  ;;
 end
 
 module Update : sig
@@ -80,7 +69,8 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
+  (** TODO *)
+  val build_checker : 'a -> 'b
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -97,10 +87,8 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user (tenant : Pool_tenant.t) =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
+  let build_checker _ =
+    let _effects = [ `Update, `Uniq "some_tenant_id" ] in
+    Utils.todo [%here]
   ;;
 end
