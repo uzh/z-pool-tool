@@ -110,10 +110,11 @@ let list csrf tenant_list root_list message () =
             [ a_action (Sihl.Web.externalize_path "/root/root/create")
             ; a_method `Post
             ]
-          (CCList.map
-             (fun name -> input_element `Text (Some name) "")
-             [ "email"; "password"; "firstname"; "lastname" ]
-          @ [ input_element `Submit None "Create root" ])
+          (csrf_element csrf ()
+          :: (CCList.map
+                (fun name -> input_element `Text (Some name) "")
+                [ "email"; "password"; "firstname"; "lastname" ]
+             @ [ input_element `Submit None "Create root" ]))
       ]
   in
   Page_layout.create html message ()

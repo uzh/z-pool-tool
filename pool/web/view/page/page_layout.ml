@@ -30,10 +30,16 @@ let header =
     [ h1 ~a:[ a_style "margin: 0;" ] [ txt "Pool Tool" ] ]
 ;;
 
-let footer =
+let footer () =
+  let open CCOption in
+  let title = Some "Pool Tool" in
+  let version =
+    Sihl.Configuration.read_string "VERSION" >|= Format.asprintf "Version %s"
+  in
+  let meta = CCList.filter_map CCFun.id [ title; version ] in
   footer
     ~a:[ a_style "text-align: center; padding: 1rem;" ]
-    [ p [ txt "Pool Tool" ] ]
+    [ p [ txt @@ CCString.concat " | " meta ] ]
 ;;
 
 let create children message ?(lang = Pool_common.Language.En) () =
@@ -67,5 +73,5 @@ let create children message ?(lang = Pool_common.Language.En) () =
     (head
        page_title
        [ charset; viewport; custom_stylesheet; global_stylesheet ])
-    (body [ header; content; footer; scripts ])
+    (body [ header; content; footer (); scripts ])
 ;;

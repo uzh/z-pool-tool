@@ -67,7 +67,7 @@ let sign_up_create req =
     let* () =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Pool_common.Message.ParticipantSignupInvalidEmail
-      >>= HttpUtils.validate_email_existance tenant_db
+      >>= HttpUtils.validate_email_existence tenant_db
     in
     let%lwt allowed_email_suffixes =
       let open Utils.Lwt_result.Infix in

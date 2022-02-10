@@ -10,6 +10,8 @@ let tenant_db_of_request req
     |> CCOption.to_result Pool_common.Message.(NotFound Host)
     |> Lwt_result.lift
   in
+  print_endline host;
+  (* TODO [aerben] why not direct sql here? *)
   let%lwt selections = Pool_tenant.Selection.find_all () in
   CCList.assoc_opt
     ~eq:(fun m k -> CCString.prefix ~pre:m k)

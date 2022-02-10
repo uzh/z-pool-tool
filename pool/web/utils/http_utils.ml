@@ -69,7 +69,7 @@ let urlencoded_to_flash urlencoded =
   Sihl.Web.Flash.set (urlencoded |> CCList.map (fun (m, k) -> m, CCList.hd k))
 ;;
 
-let validate_email_existance pool email =
+let validate_email_existence pool email =
   let open Lwt.Infix in
   Service.User.find_by_email_opt ~ctx:(Pool_tenant.to_ctx pool) email
   >|= function

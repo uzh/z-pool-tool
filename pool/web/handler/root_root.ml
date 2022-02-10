@@ -6,10 +6,12 @@ let create req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let user () =
+    (* TODO [aerben] this is a root route, should not get tenant like this,
+       instead use route param *)
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
     ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
-    >>= HttpUtils.validate_email_existance tenant_db
+    >>= HttpUtils.validate_email_existence tenant_db
   in
   let events () =
     let open CCResult.Infix in

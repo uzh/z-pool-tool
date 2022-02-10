@@ -69,10 +69,12 @@ let create_operator req =
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
   let user () =
     let open Lwt_result.Syntax in
+    (* TODO [aerben] this is a root route, should not get tenant like this,
+       instead use route param *)
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
     ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
-    >>= HttpUtils.validate_email_existance tenant_db
+    >>= HttpUtils.validate_email_existence tenant_db
   in
   let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
@@ -82,6 +84,8 @@ let create_operator req =
     urlencoded |> decode >>= handle tenant |> Lwt_result.lift
   in
   let handle events =
+    (* TODO [aerben] this is a root route, should not get tenant like this,
+       instead use route param *)
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt_result.ok
   in
