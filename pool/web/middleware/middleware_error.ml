@@ -1,19 +1,30 @@
 let reporter =
-  let token = Sys.getenv_opt "CI_JOB_TOKEN" in
-  let project_id = Sys.getenv_opt "CI_PROJECT_ID" in
-  let project_name = Sys.getenv_opt "CI_PROJECT_NAME" in
-  let uri_base = Sys.getenv_opt "CI_API_V4_URL" in
-  let has_env_vars =
-    not (List.exists (( = ) None) [ token; project_id; project_name; uri_base ])
+  let envs =
+    let getenv_result env =
+      match Sys.getenv_opt env with
+      | Some x -> Ok x
+      | None -> Error ("Couldn't find environment variable " ^ env)
+    in
+    let ( let* ) = Result.bind in
+    let* token = getenv_result "CI_JOB_TOKEN" in
+    let* project_id =
+      Result.bind (getenv_result "CI_PROJECT_ID") (fun x ->
+          CCInt.of_string x
+          |> Option.to_result
+               ~none:"Couldn't find environment variable CI_PROJECT_ID")
+    in
+    let* project_name = getenv_result "CI_PROJECT_NAME" in
+    let* uri_base = getenv_result "CI_API_V4_URL" in
+    Ok (token, project_id, project_name, uri_base)
   in
-  if has_env_vars
-  then (
+  match envs with
+  | Ok (token, project_id, project_name, uri_base) ->
     let module Gitlab_notify =
       Notify_failures.Notifier.Gitlab (struct
-        let token = Option.get token
-        let uri_base = Option.get uri_base
-        let project_name = Option.get project_name
-        let project_id = int_of_string (Option.get project_id)
+        let token = token
+        let uri_base = uri_base
+        let project_name = project_name
+        let project_id = project_id
       end)
     in
     fun req exc backtrace ->
@@ -29,17 +40,20 @@ let reporter =
       let%lwt res =
         Gitlab_notify.make_gitlab_notifier ~additional exc backtrace
       in
-      match res with
+      (match res with
       | Ok iid ->
         Logs.info (fun m -> m "Successfully reported error to gitlab.");
         Lwt.return_ok iid
       | Error err ->
         Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
         Lwt.return_error err)
-  else
+  | Error msg ->
     fun _req _exc _backtrace ->
-    Lwt.return_error
-      "Unable to get environment variables to report error to gitlab."
+      Lwt.return_error
+        (Printf.sprintf
+           "Unable to get environment variable \"%s\" to report error to \
+            gitlab."
+           msg)
 ;;
 
 let error () =
