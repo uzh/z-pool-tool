@@ -38,17 +38,15 @@ let reporter =
         Lwt.return_error err)
   else
     fun _req _exc _backtrace ->
-    Logs.err (fun m ->
-        m "Unable to get environment variables to report error to gitlab.");
-    Lwt.return_ok (-1)
+    Lwt.return_error
+      "Unable to get environment variables to report error to gitlab."
 ;;
 
 let error () =
   Sihl.Web.Middleware.error
     ~reporter:(fun req exc ->
-      let%lwt (_ : (int, string) result) =
-        reporter req exc (Printexc.get_backtrace ())
-      in
-      Lwt.return_unit)
+      match%lwt reporter req exc (Printexc.get_backtrace ()) with
+      | Ok _ -> Lwt.return_unit
+      | Error err -> raise (Failure err))
     ()
 ;;
