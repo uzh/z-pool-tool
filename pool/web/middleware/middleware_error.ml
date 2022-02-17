@@ -9,10 +9,12 @@ let reporter =
     let* token = getenv_result "CI_JOB_TOKEN" in
     let* project_id =
       getenv_result "CI_PROJECT_ID"
-      >>= fun x ->
-      CCInt.of_string x
-      |> Option.to_result
-           ~none:"Couldn't find environment variable CI_PROJECT_ID"
+      >>= fun project_id ->
+      CCInt.of_string project_id
+      |> CCOption.to_result
+           (Format.asprintf
+              {|Failed to parse project ID as an integer: "%s"|}
+              project_id)
     in
     let* project_name = getenv_result "CI_PROJECT_NAME" in
     let* uri_base = getenv_result "CI_API_V4_URL" in
