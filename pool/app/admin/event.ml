@@ -3,7 +3,7 @@ module Common = Pool_common
 module Database = Pool_database
 open Entity
 
-type admin =
+type role =
   | Assistant
   | Experimenter
   | Recruiter
@@ -52,14 +52,12 @@ let set_password
 type 'a person_event =
   | DetailsUpdated of 'a t * update
   | PasswordUpdated of 'a t * User.Password.t * User.PasswordConfirmed.t
-  | RoleUpdated of 'a t * admin
+  | RoleUpdated of 'a t * role
   | Disabled of 'a t
   | Verified of 'a t
 
-type any_admin = AnyAdmin : _ -> any_admin
-
 type event =
-  | Created of admin * create
+  | Created of role * create
   | AssistantEvents of assistant person_event
   | ExperimenterEvents of experimenter person_event
   | LocationManagerEvents of location_manager person_event
@@ -100,22 +98,22 @@ let handle_event pool = function
       ; updated_at = Common.UpdatedAt.create ()
       }
     in
-    let%lwt () =
+    let open Lwt.Infix in
+    let%lwt fn =
       match role with
-      | Assistant -> Repo.insert pool (Assistant person)
-      | Experimenter -> Repo.insert pool (Experimenter person)
-      | Recruiter -> Repo.insert pool (Recruiter person)
-      | LocationManager -> Repo.insert pool (LocationManager person)
-      | Operator -> Repo.insert pool (Operator person)
+      | Assistant ->
+        Repo.insert pool (Assistant person) >|= fun _ -> Role.assistant
+      | Experimenter ->
+        Repo.insert pool (Experimenter person) >|= fun _ -> Role.experimenter
+      | Recruiter ->
+        Repo.insert pool (Recruiter person) >|= fun _ -> Role.recruiter
+      | LocationManager ->
+        Repo.insert pool (LocationManager person)
+        >|= fun _ -> Role.location_manager
+      | Operator ->
+        Repo.insert pool (Operator person) >|= fun _ -> Role.operator
     in
-    (match role with
-    | Assistant -> Role.assistant
-    | Experimenter -> Role.experimenter
-    | Recruiter -> Role.recruiter
-    | LocationManager -> Role.location_manager
-    | Operator -> Role.operator)
-    |> fun role ->
-    Permission.assign user (role (user.Sihl_user.id |> Common.Id.of_string))
+    Permission.assign user (fn (user.Sihl_user.id |> Common.Id.of_string))
   | AssistantEvents event -> handle_person_event pool event
   | ExperimenterEvents event -> handle_person_event pool event
   | LocationManagerEvents event -> handle_person_event pool event
@@ -132,7 +130,7 @@ let equal_person_event event1 event2 =
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
     equal p1 p2 && User.Password.equal one two
   | RoleUpdated (p1, a1), RoleUpdated (p2, a2) ->
-    equal p1 p2 && equal_admin a1 a2
+    equal p1 p2 && equal_role a1 a2
   | Disabled p1, Disabled p2 | Verified p1, Verified p2 -> equal p1 p2
   (* Match the rest for exhaustiveness *)
   | DetailsUpdated _, _
@@ -153,14 +151,14 @@ let pp_person_event formatter (event : 'a person_event) : unit =
     User.Password.pp formatter p
   | RoleUpdated (m, a) ->
     person_pp m;
-    pp_admin formatter a
+    pp_role formatter a
   | Disabled m | Verified m -> person_pp m
 ;;
 
 let[@warning "-4"] equal_event event1 event2 : bool =
   match event1, event2 with
   | Created (role1, m), Created (role2, p) ->
-    equal_admin role1 role2 && equal_create m p
+    equal_role role1 role2 && equal_create m p
   | AssistantEvents m, AssistantEvents p -> equal_person_event m p
   | ExperimenterEvents m, ExperimenterEvents p -> equal_person_event m p
   | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
@@ -172,7 +170,7 @@ let[@warning "-4"] equal_event event1 event2 : bool =
 let pp_event formatter event =
   match event with
   | Created (role, m) ->
-    pp_admin formatter role;
+    pp_role formatter role;
     pp_create formatter m
   | AssistantEvents m -> pp_person_event formatter m
   | ExperimenterEvents m -> pp_person_event formatter m

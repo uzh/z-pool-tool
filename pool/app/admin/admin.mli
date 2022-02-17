@@ -1,13 +1,13 @@
-type admin = Event.admin =
+type role = Event.role =
   | Assistant
   | Experimenter
   | Recruiter
   | LocationManager
   | Operator
 
-val equal_admin : admin -> admin -> bool
-val pp_admin : Format.formatter -> admin -> unit
-val show_admin : admin -> string
+val equal_role : role -> role -> bool
+val pp_role : Format.formatter -> role -> unit
+val show_role : role -> string
 
 type create = Event.create =
   { email : Pool_user.EmailAddress.t
@@ -33,12 +33,12 @@ type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
       'a Entity.t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
-  | RoleUpdated of 'a Entity.t * admin
+  | RoleUpdated of 'a Entity.t * role
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 
 type event =
-  | Created of admin * create
+  | Created of role * create
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
   | LocationManagerEvents of Entity.location_manager person_event
@@ -99,9 +99,8 @@ val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t
-  -> 'a carrier
   -> string
-  -> ('a t, Pool_common.Message.error) result Lwt.t
+  -> (any, Pool_common.Message.error) result Lwt.t
 
 val find_by_user : 'a -> 'b
 val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t

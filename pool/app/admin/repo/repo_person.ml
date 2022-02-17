@@ -7,20 +7,19 @@ let encode_person
       | `Recruiter
       | `LocationManager
       | `Operator
-      | `Root
       ]
       -> a Entity.t
-      -> (string * (Sihl_user.t * (Ptime.t * Ptime.t)), 'b) result
+      -> (string * Sihl_user.t * Ptime.t * Ptime.t, 'b) result
   =
  fun carrier person ->
   match person with
   | Assistant m | Experimenter m | LocationManager m | Recruiter m | Operator m
     ->
     let role = carrier |> Stringify.person in
-    Ok (role, (m.user, (m.created_at, m.updated_at)))
+    Ok (role, m.user, m.created_at, m.updated_at)
 ;;
 
-let decode_person constructor (_, (user, (created_at, updated_at))) =
+let decode_person constructor (_, user, created_at, updated_at) =
   Ok (constructor { user; created_at; updated_at })
 ;;
 
@@ -29,7 +28,7 @@ let make_caqti_type person decode_fcn =
     custom
       ~encode:(encode_person person)
       ~decode:(decode_person decode_fcn)
-      (tup2 string (tup2 Pool_user.Repo.user_caqti (tup2 ptime ptime))))
+      (tup4 string Pool_user.Repo.user_caqti ptime ptime))
 ;;
 
 let assistant = make_caqti_type `Assistant @@ fun person -> Assistant person

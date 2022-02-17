@@ -7,7 +7,6 @@ module Stringify = struct
     | `LocationManager -> "location_manager"
     | `Recruiter -> "recruiter"
     | `Operator -> "operator"
-    | `Root -> "root"
   ;;
 
   let person_from_string = function
@@ -16,7 +15,6 @@ module Stringify = struct
     | "location_manager" -> Ok `LocationManager
     | "recruiter" -> Ok `Recruiter
     | "operator" -> Ok `Operator
-    | "root" -> Ok `Root
     | _ -> Error Pool_common.Message.(Invalid Role)
   ;;
 end

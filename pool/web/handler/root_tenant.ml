@@ -82,10 +82,21 @@ let create_operator req =
     in
     let ctx = Pool_tenant.to_ctx tenant_db in
     let%lwt user = Service.User.find_by_email_opt ~ctx email in
-    let open CCResult.Infix in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     (* TODO [aerben] CONTINUE HERE *)
-    let bla = Admin.find_by_email in
+    let* bla = Admin.find_by_email tenant_db email in
+    let* foo =
+      let open Admin in
+      Lwt.return
+      @@
+      match bla with
+      | Any (Assistant _ as p) -> Ok (Utils.OneOf4.One p)
+      | Any (Experimenter _ as p) -> Ok (Utils.OneOf4.Two p)
+      | Any (LocationManager _ as p) -> Ok (Utils.OneOf4.Three p)
+      | Any (Recruiter _ as p) -> Ok (Utils.OneOf4.Four p)
+      | Any (Operator _) -> Error Pool_common.Message.AlreadyOperator
+    in
+    let open CCResult.Infix in
     let events =
       match user with
       | None ->
@@ -93,7 +104,7 @@ let create_operator req =
         urlencoded |> decode >>= handle tenant
       | Some _ ->
         let open Cqrs_command.Admin_command.PromoteToOperator in
-        urlencoded |> decode >>= handle
+        urlencoded |> decode >>= handle foo
     in
     events >|= CCPair.make tenant_db |> Lwt_result.lift
   in
