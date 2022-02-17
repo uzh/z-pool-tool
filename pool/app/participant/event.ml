@@ -139,6 +139,7 @@ let handle_event pool : event -> unit Lwt.t =
     let new_password_confirmation =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
+    (* TODO [aerben] this can fail, why is it not caught? *)
     let%lwt _ =
       Service.User.update_password
         ~ctx

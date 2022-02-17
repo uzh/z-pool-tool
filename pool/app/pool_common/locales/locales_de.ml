@@ -129,6 +129,7 @@ let error_to_string = function
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
+  | AlreadyOperator -> "Benutzer ist bereits Operator!"
 ;;
 
 let to_string = function

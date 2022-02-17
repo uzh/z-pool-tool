@@ -10,5 +10,6 @@ let user_is_admin pool (user : Sihl_user.t) =
 ;;
 
 let insert = Repo.insert
+let find_by_email = Repo.find_by_email
 let find_by_user = Utils.todo
 let find_duplicates = Utils.todo

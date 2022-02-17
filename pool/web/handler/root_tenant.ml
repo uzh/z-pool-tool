@@ -65,28 +65,39 @@ let create req =
 
 let create_operator req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
-  let user () =
-    let open Lwt_result.Syntax in
-    (* TODO [aerben] this is a root route, should not get tenant like this,
-       instead use route param *)
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    Sihl.Web.Request.urlencoded "email" req
-    ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
-    >>= HttpUtils.validate_email_existence tenant_db
-  in
+  (* TODO [aerben] promote here *)
+  (* let user tenant_db =
+   *   Sihl.Web.Request.urlencoded "email" req
+   *   ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
+   *   >>= HttpUtils.validate_email_existence tenant_db
+   * in *)
   let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
+    let open Lwt_result.Syntax in
+    let tenant_db = Pool_tenant.Write.(tenant.database.Database.label) in
+    let* email =
+      Sihl.Web.Request.urlencoded "email" req
+      ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
+    in
+    let ctx = Pool_tenant.to_ctx tenant_db in
+    let%lwt user = Service.User.find_by_email_opt ~ctx email in
     let open CCResult.Infix in
-    let open Cqrs_command.Admin_command.CreateOperator in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    urlencoded |> decode >>= handle tenant |> Lwt_result.lift
+    (* TODO [aerben] CONTINUE HERE *)
+    let bla = Admin.find_by_email in
+    let events =
+      match user with
+      | None ->
+        let open Cqrs_command.Admin_command.CreateOperator in
+        urlencoded |> decode >>= handle tenant
+      | Some _ ->
+        let open Cqrs_command.Admin_command.PromoteToOperator in
+        urlencoded |> decode >>= handle
+    in
+    events >|= CCPair.make tenant_db |> Lwt_result.lift
   in
-  let handle events =
-    (* TODO [aerben] this is a root route, should not get tenant like this,
-       instead use route param *)
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+  let handle tenant_db events =
     Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt_result.ok
   in
   let return_to_overview () =
@@ -95,10 +106,9 @@ let create_operator req =
       [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
   in
   ()
-  |> user
-  >>= find_tenant
+  |> find_tenant
   >>= events
-  >>= handle
+  >>= CCFun.uncurry handle
   |> Lwt_result.map_err (fun err ->
          err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
   |>> return_to_overview

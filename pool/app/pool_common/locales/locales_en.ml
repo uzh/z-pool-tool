@@ -116,6 +116,7 @@ let error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | WriteOnlyModel -> "Write only model!"
+  | AlreadyOperator -> "User already operator!"
 ;;
 
 let to_string = function

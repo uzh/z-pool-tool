@@ -1,13 +1,13 @@
-type creatable_admin = Event.creatable_admin =
+type admin = Event.admin =
   | Assistant
   | Experimenter
   | Recruiter
   | LocationManager
   | Operator
 
-val equal_creatable_admin : creatable_admin -> creatable_admin -> bool
-val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
-val show_creatable_admin : creatable_admin -> string
+val equal_admin : admin -> admin -> bool
+val pp_admin : Format.formatter -> admin -> unit
+val show_admin : admin -> string
 
 type create = Event.create =
   { email : Pool_user.EmailAddress.t
@@ -33,11 +33,12 @@ type 'a person_event =
   | DetailsUpdated of 'a Entity.t * update
   | PasswordUpdated of
       'a Entity.t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
+  | RoleUpdated of 'a Entity.t * admin
   | Disabled of 'a Entity.t
   | Verified of 'a Entity.t
 
 type event =
-  | Created of creatable_admin * create
+  | Created of admin * create
   | AssistantEvents of Entity.assistant person_event
   | ExperimenterEvents of Entity.experimenter person_event
   | LocationManagerEvents of Entity.location_manager person_event
@@ -75,6 +76,14 @@ type 'a t = 'a Entity.t =
   | Recruiter : person -> recruiter t
   | Operator : person -> operator t
 
+(* Carries type information, is a type "witness" *)
+type _ carrier =
+  | AssistantC : assistant carrier
+  | ExperimenterC : experimenter carrier
+  | LocationManagerC : location_manager carrier
+  | RecruiterC : recruiter carrier
+  | OperatorC : operator carrier
+
 val equal : 'person t -> 'person t -> bool
 val pp : Format.formatter -> 'person t -> unit
 
@@ -87,6 +96,13 @@ val user : 'person_function t -> Sihl_user.t
 module Duplicate = Admin__Entity.Duplicate
 
 val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
+
+val find_by_email
+  :  Pool_database.Label.t
+  -> 'a carrier
+  -> string
+  -> ('a t, Pool_common.Message.error) result Lwt.t
+
 val find_by_user : 'a -> 'b
 val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
 val find_duplicates : 'a -> 'b

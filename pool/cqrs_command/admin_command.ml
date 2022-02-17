@@ -52,6 +52,7 @@ end = struct
       command
     =
     let open CCResult in
+    (* TODO [aerben] why this not in schema decoding? *)
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
@@ -67,6 +68,68 @@ end = struct
         }
     in
     Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.conformist
+  ;;
+end
+
+(* TODO [aerben] maybe can use this *)
+(* module type Command = sig
+ *   type t
+ *
+ *   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+ *
+ *   val decode
+ *     :  (string * string list) list
+ *     -> (t, Pool_common.Message.error) result
+ *
+ *   val can : Sihl_user.t -> t -> bool Lwt.t
+ * end *)
+
+module PromoteToOperator : sig
+  type t = { email : User.EmailAddress.t }
+
+  val handle
+    :  ( Admin.assistant Admin.t
+       , Admin.experimenter Admin.t
+       , Admin.location_manager Admin.t
+       , Admin.recruiter Admin.t )
+       Utils.OneOf4.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = { email : User.EmailAddress.t }
+
+  let command email = { email }
+  let schema = Conformist.(make Field.[ User.EmailAddress.schema () ] command)
+
+  let handle person _ =
+    let open Admin in
+    let open Utils.OneOf4 in
+    match person with
+    | One p ->
+      Ok [ AssistantEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
+    | Two p ->
+      Ok [ ExperimenterEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
+    | Three p ->
+      Ok
+        [ LocationManagerEvents (RoleUpdated (p, Operator)) |> Pool_event.admin
+        ]
+    | Four p ->
+      Ok [ RecruiterEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
   ;;
 
   let can user _ =

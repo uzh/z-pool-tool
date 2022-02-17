@@ -89,6 +89,7 @@ type error =
   | TokenAlreadyUsed
   | Undefined of field
   | WriteOnlyModel
+  | AlreadyOperator
 [@@deriving eq, show, yojson, variants]
 
 type warning = Warning of string [@@deriving eq, show, yojson, variants]

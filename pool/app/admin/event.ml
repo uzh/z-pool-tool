@@ -3,7 +3,7 @@ module Common = Pool_common
 module Database = Pool_database
 open Entity
 
-type creatable_admin =
+type admin =
   | Assistant
   | Experimenter
   | Recruiter
@@ -52,11 +52,14 @@ let set_password
 type 'a person_event =
   | DetailsUpdated of 'a t * update
   | PasswordUpdated of 'a t * User.Password.t * User.PasswordConfirmed.t
+  | RoleUpdated of 'a t * admin
   | Disabled of 'a t
   | Verified of 'a t
 
+type any_admin = AnyAdmin : _ -> any_admin
+
 type event =
-  | Created of creatable_admin * create
+  | Created of admin * create
   | AssistantEvents of assistant person_event
   | ExperimenterEvents of experimenter person_event
   | LocationManagerEvents of location_manager person_event
@@ -66,6 +69,8 @@ type event =
 let handle_person_event pool : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
+    (* TODO [aerben] this can fail, why is it not caught? *)
+    (* TODO [aerben] use update_password? *)
     let%lwt _ =
       set_password
         pool
@@ -74,11 +79,12 @@ let handle_person_event pool : 'a person_event -> unit Lwt.t = function
         (confirmed |> User.PasswordConfirmed.to_sihl)
     in
     Lwt.return_unit
+  | RoleUpdated _ -> Utils.todo ()
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
 ;;
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool = function
   | Created (role, admin) ->
     let%lwt user =
       Service.User.create_admin
@@ -117,18 +123,23 @@ let handle_event pool : event -> unit Lwt.t = function
   | OperatorEvents event -> handle_person_event pool event
 ;;
 
-let[@warning "-4"] equal_person_event
-    (one : 'a person_event)
-    (two : 'a person_event)
-    : bool
-  =
-  match one, two with
+(* TODO [aerben] do this everywhere where warning -4 suppressed, also rename
+   args to make sense*)
+let equal_person_event event1 event2 =
+  match event1, event2 with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
     equal p1 p2 && equal_update one two
   | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
     equal p1 p2 && User.Password.equal one two
+  | RoleUpdated (p1, a1), RoleUpdated (p2, a2) ->
+    equal p1 p2 && equal_admin a1 a2
   | Disabled p1, Disabled p2 | Verified p1, Verified p2 -> equal p1 p2
-  | _ -> false
+  (* Match the rest for exhaustiveness *)
+  | DetailsUpdated _, _
+  | PasswordUpdated _, _
+  | RoleUpdated _, _
+  | Disabled _, _
+  | Verified _, _ -> false
 ;;
 
 let pp_person_event formatter (event : 'a person_event) : unit =
@@ -140,13 +151,16 @@ let pp_person_event formatter (event : 'a person_event) : unit =
   | PasswordUpdated (m, p, _) ->
     person_pp m;
     User.Password.pp formatter p
+  | RoleUpdated (m, a) ->
+    person_pp m;
+    pp_admin formatter a
   | Disabled m | Verified m -> person_pp m
 ;;
 
 let[@warning "-4"] equal_event event1 event2 : bool =
   match event1, event2 with
   | Created (role1, m), Created (role2, p) ->
-    equal_creatable_admin role1 role2 && equal_create m p
+    equal_admin role1 role2 && equal_create m p
   | AssistantEvents m, AssistantEvents p -> equal_person_event m p
   | ExperimenterEvents m, ExperimenterEvents p -> equal_person_event m p
   | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
@@ -158,7 +172,7 @@ let[@warning "-4"] equal_event event1 event2 : bool =
 let pp_event formatter event =
   match event with
   | Created (role, m) ->
-    pp_creatable_admin formatter role;
+    pp_admin formatter role;
     pp_create formatter m
   | AssistantEvents m -> pp_person_event formatter m
   | ExperimenterEvents m -> pp_person_event formatter m

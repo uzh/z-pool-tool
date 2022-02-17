@@ -103,6 +103,28 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
   ;;
 
+  let find_by_email_request caqti_type =
+    {sql|
+      WHERE user_users.email = ?
+      AND pool_person.role = ?
+      AND user_users.confirmed = 1
+    |sql}
+    |> select_from_persons_sql
+    |> Caqti_request.find
+         Caqti_type.(tup2 Pool_user.Repo.EmailAddress.t string)
+         caqti_type
+  ;;
+
+  let find_by_email pool role email =
+    let open Lwt.Infix in
+    let caqti_type, role_val = extract role in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      (find_by_email_request caqti_type)
+      (email, role_val)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
+  ;;
+
   let find_role_by_user_request =
     {sql|
       SELECT
@@ -151,6 +173,7 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_by_email = Sql.find_by_email
 let find_role_by_user = Sql.find_role_by_user
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
