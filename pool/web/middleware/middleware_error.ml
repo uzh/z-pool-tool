@@ -5,13 +5,14 @@ let reporter =
       | Some x -> Ok x
       | None -> Error ("Couldn't find environment variable " ^ env)
     in
-    let ( let* ) = Result.bind in
+    let open CCResult in
     let* token = getenv_result "CI_JOB_TOKEN" in
     let* project_id =
-      Result.bind (getenv_result "CI_PROJECT_ID") (fun x ->
-          CCInt.of_string x
-          |> Option.to_result
-               ~none:"Couldn't find environment variable CI_PROJECT_ID")
+      getenv_result "CI_PROJECT_ID"
+      >>= fun x ->
+      CCInt.of_string x
+      |> Option.to_result
+           ~none:"Couldn't find environment variable CI_PROJECT_ID"
     in
     let* project_name = getenv_result "CI_PROJECT_NAME" in
     let* uri_base = getenv_result "CI_API_V4_URL" in
@@ -50,9 +51,8 @@ let reporter =
   | Error msg ->
     fun _req _exc _backtrace ->
       Lwt.return_error
-        (Printf.sprintf
-           "Unable to get environment variable \"%s\" to report error to \
-            gitlab."
+        (Format.asprintf
+           {|Unable to get environment variable %s to report error to gitlab.|}
            msg)
 ;;
 
