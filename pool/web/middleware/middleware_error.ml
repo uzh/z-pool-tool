@@ -1,9 +1,9 @@
 let reporter =
   let envs =
     let getenv_result env =
-      match Sys.getenv_opt env with
-      | Some x -> Ok x
-      | None -> Error ("Couldn't find environment variable " ^ env)
+      Sys.getenv_opt env
+      |> CCOption.to_result
+           (Format.asprintf "Couldn't find environment variable %s" env)
     in
     let open CCResult in
     let* token = getenv_result "CI_JOB_TOKEN" in
