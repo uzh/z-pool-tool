@@ -75,6 +75,7 @@
    (>= 0.14.0))
   (ppx_variants_conv
    (>= 0.14.1))
+  canary
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))
