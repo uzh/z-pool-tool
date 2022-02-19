@@ -1,5 +1,14 @@
 (library
  (name middleware)
- (libraries sihl service participant tenant page http_utils utils)
+ (libraries
+  sihl
+  service
+  participant
+  tenant
+  page
+  http_utils
+  utils
+  canary
+  tyxml)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx tyxml-ppx)))

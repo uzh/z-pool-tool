@@ -14,6 +14,7 @@ services:
       - ${HOME}${USERPROFILE}/.ssh:/home/opam/.ssh
       - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true

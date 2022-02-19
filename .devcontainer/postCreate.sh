@@ -17,6 +17,9 @@ opam pin add -yn sihl-storage git://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-token git://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-user git://github.com/oxidizing/sihl.git
 
+# pin custom libraries hosted on the UZH gitlab
+opam pin add -yn canary https://github.com/chrismamo1/canary.git
+
 opam pin add -yn pool .
 opam depext -y pool
 
