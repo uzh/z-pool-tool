@@ -23,7 +23,7 @@ let reporter =
   match envs with
   | Ok (token, project_id, project_name, uri_base) ->
     let module Gitlab_notify =
-      Notify_failures.Notifier.Gitlab (struct
+      Canary.Notifier.Gitlab (struct
         let token = token
         let uri_base = uri_base
         let project_name = project_name
@@ -40,9 +40,7 @@ let reporter =
         Format.pp_print_flush formatter ();
         Buffer.contents buffer
       in
-      let%lwt res =
-        Gitlab_notify.make_gitlab_notifier ~additional exc backtrace
-      in
+      let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
       (match res with
       | Ok iid ->
         Logs.info (fun m -> m "Successfully reported error to gitlab.");
@@ -61,7 +59,7 @@ let reporter =
 let error () =
   Sihl.Web.Middleware.error
     ~reporter:(fun req exc ->
-      match%lwt reporter req exc (Printexc.get_backtrace ()) with
+      match%lwt reporter req (Failure exc) (Printexc.get_backtrace ()) with
       | Ok _ -> Lwt.return_unit
       | Error err -> raise (Failure err))
     ()
