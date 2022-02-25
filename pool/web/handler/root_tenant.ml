@@ -79,7 +79,7 @@ let create_operator req =
     let open CCResult.Infix in
     let events =
       match admin with
-      (* Admin not found, create them as an operator*)
+      (* Admin not found, create them as an operator *)
       | Error Pool_common.Message.(NotFound Admin) ->
         let open Cqrs_command.Admin_command.CreateOperator in
         urlencoded |> decode >>= handle tenant
@@ -91,9 +91,7 @@ let create_operator req =
               (Pool_common.Message.show_error msg));
         CCResult.return []
       (* Admin already exists, promote them to operator *)
-      | Ok admin ->
-        let open Cqrs_command.Admin_command.PromoteToOperator in
-        handle admin
+      | Ok admin -> Cqrs_command.Admin_command.PromoteToOperator.handle admin
     in
     events >|= CCPair.make tenant_db |> Lwt_result.lift
   in
