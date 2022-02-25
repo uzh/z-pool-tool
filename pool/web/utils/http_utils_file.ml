@@ -99,14 +99,12 @@ let file_to_storage_add filename =
 
 let multipart_form_data_to_urlencoded list =
   let fields = Hashtbl.create ~random:true (CCList.length list) in
-  let () =
-    CCList.iter
-      (fun (k, v) ->
-        match Hashtbl.find_opt fields k with
-        | None -> Hashtbl.add fields k [ v ]
-        | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
-      list
-  in
+  CCList.iter
+    (fun (k, v) ->
+      match Hashtbl.find_opt fields k with
+      | None -> Hashtbl.add fields k [ v ]
+      | Some lst -> Hashtbl.replace fields k (CCList.cons v lst))
+    list;
   fields |> Hashtbl.to_seq |> CCList.of_seq
 ;;
 

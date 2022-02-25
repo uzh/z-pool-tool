@@ -29,6 +29,21 @@ let () =
   Sihl.App.(
     empty
     |> with_services services
-    |> before_start (fun () -> Printexc.record_backtrace true |> Lwt.return)
+    |> before_start (fun () ->
+           (* Aggressively remove output from queue in DEBUG mode *)
+           (* This removes ALL debug output from schedule, queue, database and
+              Caqti requests *)
+           let silence = Sihl.Configuration.read_bool "SHUT_UP_QUEUE" in
+           (match silence with
+           | Some true ->
+             CCList.iter
+               (fun src -> Logs.Src.set_level src @@ Some Logs.Info)
+               [ Sihl.Schedule.log_src
+               ; Sihl_queue.log_src
+               ; Sihl.Database.log_src
+               ; Caqti_common_priv.request_log_src
+               ]
+           | _ -> ());
+           Printexc.record_backtrace true |> Lwt.return)
     |> run ~commands)
 ;;

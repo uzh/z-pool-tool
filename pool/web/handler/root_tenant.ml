@@ -66,12 +66,6 @@ let create req =
 let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
-  (* TODO [aerben] promote here *)
-  (* let user tenant_db =
-   *   Sihl.Web.Request.urlencoded "email" req
-   *   ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
-   *   >>= HttpUtils.validate_email_existence tenant_db
-   * in *)
   let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
     let open Lwt_result.Syntax in
@@ -80,31 +74,26 @@ let create_operator req =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
     in
-    let ctx = Pool_tenant.to_ctx tenant_db in
-    let%lwt user = Service.User.find_by_email_opt ~ctx email in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    (* TODO [aerben] CONTINUE HERE *)
-    let* bla = Admin.find_by_email tenant_db email in
-    let* foo =
-      let open Admin in
-      Lwt.return
-      @@
-      match bla with
-      | Any (Assistant _ as p) -> Ok (Utils.OneOf4.One p)
-      | Any (Experimenter _ as p) -> Ok (Utils.OneOf4.Two p)
-      | Any (LocationManager _ as p) -> Ok (Utils.OneOf4.Three p)
-      | Any (Recruiter _ as p) -> Ok (Utils.OneOf4.Four p)
-      | Any (Operator _) -> Error Pool_common.Message.AlreadyOperator
-    in
+    let%lwt admin = Admin.find_by_email tenant_db email in
     let open CCResult.Infix in
     let events =
-      match user with
-      | None ->
+      match admin with
+      (* Admin not found, create them as an operator*)
+      | Error Pool_common.Message.(NotFound Admin) ->
         let open Cqrs_command.Admin_command.CreateOperator in
         urlencoded |> decode >>= handle tenant
-      | Some _ ->
+      (* Something else went wrong => No events *)
+      | Error msg ->
+        Logs.err (fun m ->
+            m
+              "Could not create operator: %s"
+              (Pool_common.Message.show_error msg));
+        CCResult.return []
+      (* Admin already exists, promote them to operator *)
+      | Ok admin ->
         let open Cqrs_command.Admin_command.PromoteToOperator in
-        urlencoded |> decode >>= handle foo
+        handle admin
     in
     events >|= CCPair.make tenant_db |> Lwt_result.lift
   in

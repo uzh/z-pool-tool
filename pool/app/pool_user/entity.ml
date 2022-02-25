@@ -4,6 +4,7 @@ module Password = struct
   type t = string [@@deriving eq]
 
   let default_password_policy p =
+    (* TODO Fix this password policy text *)
     if CCString.length p < 8 then Error "password_policy_text" else Ok ()
   ;;
 

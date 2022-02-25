@@ -94,50 +94,26 @@ end
  * end *)
 
 module PromoteToOperator : sig
-  type t = { email : User.EmailAddress.t }
-
   val handle
-    :  ( Admin.assistant Admin.t
-       , Admin.experimenter Admin.t
-       , Admin.location_manager Admin.t
-       , Admin.recruiter Admin.t )
-       Utils.OneOf4.t
-    -> t
+    :  Admin.any_person
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> bool Lwt.t
 end = struct
-  type t = { email : User.EmailAddress.t }
-
-  let command email = { email }
-  let schema = Conformist.(make Field.[ User.EmailAddress.schema () ] command)
-
-  let handle person _ =
+  let handle person =
     let open Admin in
-    let open Utils.OneOf4 in
+    let event ctor p =
+      Ok [ ctor (RoleUpdated (p, Operator)) |> Pool_event.admin ]
+    in
     match person with
-    | One p ->
-      Ok [ AssistantEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
-    | Two p ->
-      Ok [ ExperimenterEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
-    | Three p ->
-      Ok
-        [ LocationManagerEvents (RoleUpdated (p, Operator)) |> Pool_event.admin
-        ]
-    | Four p ->
-      Ok [ RecruiterEvents (RoleUpdated (p, Operator)) |> Pool_event.admin ]
+    | Any (Assistant _ as p) -> event (fun m -> AssistantEvents m) p
+    | Any (Experimenter _ as p) -> event (fun m -> ExperimenterEvents m) p
+    | Any (LocationManager _ as p) -> event (fun m -> LocationManagerEvents m) p
+    | Any (Recruiter _ as p) -> event (fun m -> RecruiterEvents m) p
+    | Any (Operator _) -> Error Pool_common.Message.AlreadyOperator
   ;;
 
-  let can user _ =
+  let can user =
     Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
   ;;
 end

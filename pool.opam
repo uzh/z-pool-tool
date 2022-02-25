@@ -2,10 +2,7 @@
 opam-version: "2.0"
 version: "0.0.1"
 synopsis: "The Z-Pool tool"
-description: """
-
-TODO
-"""
+description: "Recruit and manage study participations"
 maintainer: ["engineering@uzh.econ.ch"]
 authors: ["Department of Economics, University of Zurich"]
 license: "PRIVATE"

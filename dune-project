@@ -24,7 +24,7 @@
 (package
  (name pool)
  (synopsis "The Z-Pool tool")
- (description "\nTODO\n")
+ (description "Recruit and manage study participations")
  (depends
   dune
   (ocaml

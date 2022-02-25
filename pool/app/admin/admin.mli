@@ -87,10 +87,10 @@ type _ carrier =
 val equal : 'person t -> 'person t -> bool
 val pp : Format.formatter -> 'person t -> unit
 
-type any = Entity.any = Any : 'a t -> any
+type any_person = Entity.any_person = Any : 'a t -> any_person
 
-val equal_any : any -> any -> bool
-val pp_any : Format.formatter -> any -> unit
+val equal_any_person : any_person -> any_person -> bool
+val pp_any_person : Format.formatter -> any_person -> unit
 val user : 'person_function t -> Sihl_user.t
 
 module Duplicate = Admin__Entity.Duplicate
@@ -100,7 +100,7 @@ val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
 val find_by_email
   :  Pool_database.Label.t
   -> string
-  -> (any, Pool_common.Message.error) result Lwt.t
+  -> (any_person, Pool_common.Message.error) result Lwt.t
 
 val find_by_user : 'a -> 'b
 val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t

@@ -107,7 +107,6 @@ module Sql = struct
     (* TODO [aerben] should be confirmed? *)
     {sql|
       WHERE user_users.email = ?
-      AND user_users.confirmed = 1
     |sql}
     |> select_from_persons_sql
     |> Caqti_request.find
@@ -115,6 +114,7 @@ module Sql = struct
          Caqti_type.(tup4 string Pool_user.Repo.user_caqti ptime ptime)
   ;;
 
+  (* Casts person to appropriate role wrapped in Any*)
   let find_by_email pool email =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
@@ -123,17 +123,17 @@ module Sql = struct
       email
     ||> CCOption.to_result Pool_common.Message.(NotFound Admin)
     >>= fun (role, user, created_at, updated_at) ->
+    let construct ctor = Any (ctor { user; created_at; updated_at }) in
     match Stringify.person_from_string role with
     | Ok role ->
       Lwt_result.return
       @@
       (match role with
-      | `Assistant -> Any (Assistant { user; created_at; updated_at })
-      | `Experimenter -> Any (Experimenter { user; created_at; updated_at })
-      | `LocationManager ->
-        Any (LocationManager { user; created_at; updated_at })
-      | `Recruiter -> Any (Recruiter { user; created_at; updated_at })
-      | `Operator -> Any (Operator { user; created_at; updated_at }))
+      | `Assistant -> construct (fun m -> Assistant m)
+      | `Experimenter -> construct (fun m -> Experimenter m)
+      | `LocationManager -> construct (fun m -> LocationManager m)
+      | `Recruiter -> construct (fun m -> Recruiter m)
+      | `Operator -> construct (fun m -> Operator m))
     | Error _ as err -> Lwt.return err
   ;;
 

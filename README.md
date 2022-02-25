@@ -20,6 +20,8 @@ Follow the [Architecture](./doc/ARCHITECTURE.md) documentation.
 
 A guide how to setup the project with devcontainers can be found [here](./.devcontainer/README.md).
 
+If you want to use the `DEBUG` log level and make all the noise from `Sihl_queue` go away, set `SHUT_UP_QUEUE=true` as an env variable.
+
 ### Build project
 
 When using a DevContainer, the `opam` packages and database files are mounted as volumes into the DevContainer.

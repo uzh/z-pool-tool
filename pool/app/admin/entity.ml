@@ -34,14 +34,11 @@ let create_person user =
   }
 ;;
 
-(* TODO hide private constructors if possible *)
-(* Don't use these private constructors *)
-(* They are needed so the typechecker understands they are disjoint *)
-type assistant = private XAssistantP
-type experimenter = private XExperimenterP
-type location_manager = private XLocationManagerP
-type recruiter = private XRecruiterP
-type operator = private XOperatorP
+type assistant
+type experimenter
+type location_manager
+type recruiter
+type operator
 
 type _ t =
   | Assistant : person -> assistant t
@@ -75,9 +72,9 @@ let pp : type person. Format.formatter -> person t -> unit =
     -> pp_person formatter m
 ;;
 
-type any = Any : 'a t -> any
+type any_person = Any : 'a t -> any_person
 
-let equal_any one two =
+let equal_any_person one two =
   let id model =
     match model with
     | Any (Assistant { user; _ })
@@ -89,7 +86,7 @@ let equal_any one two =
   CCString.equal (id one) (id two)
 ;;
 
-let pp_any f (Any m) = pp f m
+let pp_any_person f (Any m) = pp f m
 
 let user : type person_function. person_function t -> Sihl_user.t = function
   | Assistant { user; _ }
@@ -101,8 +98,8 @@ let user : type person_function. person_function t -> Sihl_user.t = function
 
 module Duplicate = struct
   type t =
-    { first : any [@equal equal_any] [@printer pp_any]
-    ; second : any [@equal equal_any] [@printer pp_any]
+    { first : any_person [@equal equal_any_person] [@printer pp_any_person]
+    ; second : any_person [@equal equal_any_person] [@printer pp_any_person]
     ; ignored_at : Ptime.t option
     }
   [@@deriving eq, show]

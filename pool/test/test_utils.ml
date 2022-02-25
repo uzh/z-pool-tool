@@ -14,9 +14,9 @@ let error =
 let setup_test () =
   let open Sihl.Configuration in
   let file_configuration = read_env_file () in
-  let () = store @@ CCOption.value file_configuration ~default:[] in
-  let () = Logs.set_level (Some Logs.Error) in
-  let () = Logs.set_reporter Sihl.Log.default_reporter in
+  store @@ CCOption.value file_configuration ~default:[];
+  Logs.set_level (Some Logs.Error);
+  Logs.set_reporter Sihl.Log.default_reporter;
   Lwt.return_unit
 ;;
 
