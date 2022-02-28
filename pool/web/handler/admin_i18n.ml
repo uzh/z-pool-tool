@@ -32,7 +32,8 @@ let index req =
       |> Lwt.return
     in
     let csrf = Sihl.Web.Csrf.find req |> Option.get in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
+    let tenant_db = context.Pool_tenant.Context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
     Page.Admin.I18n.list csrf translation_list message ()
     |> Sihl.Web.Response.of_html
@@ -49,7 +50,8 @@ let update req =
   let redirect_path = Format.asprintf "/admin/i18n" in
   let%lwt result =
     let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
+    let tenant_db = context.Pool_tenant.Context.tenant_db in
     let property () = I18n.find tenant_db (id |> Pool_common.Id.of_string) in
     let events property =
       let open CCResult.Infix in

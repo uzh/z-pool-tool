@@ -61,7 +61,9 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login") ]
+    [ CustomMiddleware.Tenant.tenant_context ~is_admin:true ()
+    ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
+    ]
   ;;
 
   let routes =
