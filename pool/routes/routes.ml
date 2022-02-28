@@ -117,9 +117,10 @@ let router =
   choose
     [ choose
         ~middlewares:[ CustomMiddleware.Tenant.tenant_context () ]
-        [ choose Public.routes ]
-    ; Participant.(choose routes)
-    ; Participant.(choose ~middlewares locked_routes)
+        [ choose Public.routes
+        ; Participant.(choose routes)
+        ; Participant.(choose ~middlewares locked_routes)
+        ]
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)
