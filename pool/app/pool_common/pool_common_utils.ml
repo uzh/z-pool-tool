@@ -1,8 +1,6 @@
 module Error = struct
   type error = Entity_message.error [@@deriving eq, show, yojson]
 
-  (* TODO: create dummy errors *)
-
   let invalid_bool = Entity_message.(ConformistModuleErrorType)
   let invalid_float = Entity_message.(ConformistModuleErrorType)
   let invalid_int = Entity_message.(ConformistModuleErrorType)

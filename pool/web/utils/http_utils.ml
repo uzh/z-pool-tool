@@ -21,7 +21,7 @@ let path_with_language lang path =
              [ ( Message.Language
                , lang |> Language.code |> CCString.lowercase_ascii )
              ]))
-  |> Option.value ~default:path
+  |> CCOption.value ~default:path
 ;;
 
 let redirect_to_with_actions path actions =

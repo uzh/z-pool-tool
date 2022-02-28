@@ -103,7 +103,7 @@ let update_terms_and_conditions _ () =
         data
       |> Lwt_result.lift
     in
-    let _ =
+    let%lwt (_ : (unit Lwt.t, Pool_common.Message.error) result) =
       result >|= Lwt_list.iter_s (Pool_event.handle_event database_label)
     in
     result

@@ -112,7 +112,7 @@ module ConfirmationEmail = struct
     let subject = "Email verification" in
     let validation_url =
       Pool_common.[ Message.Token, token email ]
-      |> Pool_common.Message.add_field_query_params "/reset-password/"
+      |> Pool_common.Message.add_field_query_params "/email-verified"
       |> Sihl.Web.externalize_path
       |> create_public_url url
     in

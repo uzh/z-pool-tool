@@ -4,12 +4,9 @@ module Message = HttpUtils.Message
 module User = Pool_user
 
 let dashboard req =
+  let query_lang = Http_utils.find_query_lang req in
   let%lwt result =
     let open Lwt_result.Syntax in
-    let query_lang = Http_utils.find_query_lang req in
-    Lwt_result.map_err (fun err ->
-        err, HttpUtils.path_with_language query_lang "/index")
-    @@
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
@@ -19,7 +16,10 @@ let dashboard req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result
+  |> CCResult.map_err (fun err ->
+         err, HttpUtils.path_with_language query_lang "/index")
+  |> HttpUtils.extract_happy_path
 ;;
 
 let sign_up req =
