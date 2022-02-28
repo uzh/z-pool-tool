@@ -24,6 +24,14 @@ let path_with_language lang path =
   |> CCOption.value ~default:path
 ;;
 
+let find_context_with_error_path req =
+  Pool_tenant.Context.find req
+  |> CCResult.map_err (fun err ->
+         let query_lang = find_query_lang req in
+         err, path_with_language query_lang "/error")
+  |> Lwt_result.lift
+;;
+
 let redirect_to_with_actions path actions =
   path
   |> Sihl.Web.externalize_path

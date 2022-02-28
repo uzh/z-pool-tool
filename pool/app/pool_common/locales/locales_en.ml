@@ -125,6 +125,7 @@ let rec error_to_string = function
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
+  | TenantContextNotFound -> "Tenant could not be found."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"

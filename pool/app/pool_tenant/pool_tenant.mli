@@ -368,3 +368,21 @@ module Selection : sig
   val url : t -> string
   val label : t -> Database.Label.t
 end
+
+module Context : sig
+  type t =
+    { query_language : Pool_common.Language.t option
+    ; language : Pool_common.Language.t
+    ; tenant_db : Database.Label.t
+    }
+
+  val create
+    :  Pool_common.Language.t option
+    -> Pool_common.Language.t
+    -> Database.Label.t
+    -> t
+
+  val find : Rock.Request.t -> (t, Pool_common.Message.error) result
+  val find_exn : Rock.Request.t -> t
+  val set : Rock.Request.t -> t -> Rock.Request.t
+end

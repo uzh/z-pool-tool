@@ -21,7 +21,9 @@ module Url = struct
 end
 
 module Label = struct
-  type t = string [@@deriving eq, show]
+  open Sexplib.Conv
+
+  type t = string [@@deriving eq, show, sexp]
 
   let value m = m
   let of_string m = m

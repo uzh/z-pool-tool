@@ -139,6 +139,7 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator \
      kontaktieren."
+  | TenantContextNotFound -> "Tenant konnte nicht gefunden werden."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->

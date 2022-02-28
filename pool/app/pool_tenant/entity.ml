@@ -273,3 +273,41 @@ module Selection = struct
   let url ({ url; _ } : t) = url |> Url.value
   let label ({ database_label; _ } : t) = database_label
 end
+
+module Context = struct
+  open Sexplib.Conv
+
+  type t =
+    { query_language : Pool_common.Language.t option
+    ; language : Pool_common.Language.t
+    ; tenant_db : Pool_database.Label.t
+    }
+  [@@deriving sexp]
+
+  let create query_language language tenant_db =
+    { query_language; language; tenant_db }
+  ;;
+
+  let key : t Opium.Context.key =
+    Opium.Context.Key.create ("tenant context", sexp_of_t)
+  ;;
+
+  let find req =
+    Opium.Context.find key req.Opium.Request.env
+    |> CCOption.to_result Pool_common.Message.TenantContextNotFound
+    |> CCResult.map_err (fun err -> Pool_common.Utils.with_log_error err)
+  ;;
+
+  let find_exn req =
+    match Opium.Context.find key req.Opium.Request.env with
+    | Some context -> context
+    | None -> failwith "Cannot find tenant context."
+  ;;
+
+  (* TODO: timhub Remove warning *)
+  let[@warning "-40"] set req context =
+    let env = req.Opium.Request.env in
+    let env = Opium.Context.add key context env in
+    { req with env }
+  ;;
+end

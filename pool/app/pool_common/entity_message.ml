@@ -86,6 +86,7 @@ type error =
   | Retrieve of field
   | SessionInvalid
   | SessionTenantNotFound
+  | TenantContextNotFound
   | TerminatoryTenantError
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle
