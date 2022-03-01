@@ -22,11 +22,6 @@ let tenant_db_of_request req
 ;;
 
 let tenant_context ?(is_admin = false) () =
-  (* TODO [timhub]: Do not duplicate function *)
-  let user_from_session db_pool req : Sihl_user.t option Lwt.t =
-    let ctx = Pool_tenant.to_ctx db_pool in
-    Service.User.Web.user_from_session ~ctx req
-  in
   let language_from_request ?participant req tenant_db =
     let open CCOption in
     let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -41,7 +36,7 @@ let tenant_context ?(is_admin = false) () =
       | Some (p : Participant.t) -> p.Participant.language |> Lwt.return
       | None ->
         let%lwt lang =
-          user_from_session tenant_db req
+          Http_utils.user_from_session tenant_db req
           ||> CCOption.to_result Pool_common.Message.(NotFound User)
           >>= fun user ->
           Participant.find

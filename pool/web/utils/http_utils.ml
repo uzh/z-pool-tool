@@ -2,6 +2,11 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
+let user_from_session db_pool req : Sihl_user.t option Lwt.t =
+  let ctx = Pool_tenant.to_ctx db_pool in
+  Service.User.Web.user_from_session ~ctx req
+;;
+
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_common.Message.(field_name Language) req

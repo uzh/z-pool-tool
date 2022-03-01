@@ -144,7 +144,7 @@ let email_verification req =
     let query_lang = context.Pool_tenant.Context.query_language in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let%lwt redirect_path =
-      let%lwt user = General.user_from_session tenant_db req in
+      let%lwt user = Http_utils.user_from_session tenant_db req in
       CCOption.bind user (fun user ->
           Some (General.dashboard_path tenant_db query_lang user))
       |> Option.value
@@ -196,7 +196,7 @@ let terms req =
     let error_path = "/login" |> HttpUtils.path_with_language query_lang in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let* user =
-      General.user_from_session tenant_db req
+      Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result Pool_common.Message.(NotFound User, error_path)
     in
     let language = context.Pool_tenant.Context.language in
@@ -251,7 +251,7 @@ let show is_edit req =
     let append_lang = HttpUtils.path_with_language query_lang in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let* user =
-      General.user_from_session tenant_db req
+      Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result
             Pool_common.Message.(NotFound User, append_lang "/login")
     in
@@ -304,7 +304,7 @@ let update req =
     let open Utils.Lwt_result.Syntax in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let* user =
-      General.user_from_session tenant_db req
+      Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result
             Pool_common.Message.(NotFound User, path_with_lang "/login")
     in
@@ -417,7 +417,7 @@ let update_email req =
     @@
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let* participant =
-      General.user_from_session tenant_db req
+      Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result Pool_common.Message.(NotFound User)
       >>= fun user ->
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
@@ -467,7 +467,7 @@ let update_password req =
           , path_with_language query_lang "/user/edit"
           , [ urlencoded_to_flash urlencoded ] )))
     @@ let* participant =
-         General.user_from_session tenant_db req
+         Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound User)
          >>= fun user ->
          Participant.find

@@ -1,8 +1,3 @@
-let user_from_session db_pool req : Sihl_user.t option Lwt.t =
-  let ctx = Pool_tenant.to_ctx db_pool in
-  Service.User.Web.user_from_session ~ctx req
-;;
-
 let dashboard_path tenant_db query_lang user =
   let open Lwt.Infix in
   Admin.user_is_admin tenant_db user
@@ -26,7 +21,7 @@ let language_from_request ?participant req tenant_db =
     | Some (p : Participant.t) -> p.Participant.language |> Lwt.return
     | None ->
       let%lwt lang =
-        user_from_session tenant_db req
+        Http_utils.user_from_session tenant_db req
         ||> CCOption.to_result Pool_common.Message.(NotFound User)
         >>= fun user ->
         Participant.find
