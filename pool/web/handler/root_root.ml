@@ -3,10 +3,9 @@ module Message = HttpUtils.Message
 module Database = Pool_database
 
 let create req =
-  let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let user () =
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let tenant_db = Database.root in
     Sihl.Web.Request.urlencoded "email" req
     ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
     >>= HttpUtils.validate_email_existance tenant_db

@@ -65,14 +65,12 @@ let create req =
 
 let create_operator req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
+  let pool = Database.root in
   let user () =
-    let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
     Sihl.Web.Request.urlencoded "email" req
     ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
-    >>= HttpUtils.validate_email_existance tenant_db
+    >>= HttpUtils.validate_email_existance pool
   in
   let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
@@ -82,8 +80,7 @@ let create_operator req =
     urlencoded |> decode >>= handle tenant |> Lwt_result.lift
   in
   let handle events =
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt_result.ok
+    Lwt_list.iter_s (Pool_event.handle_event pool) events |> Lwt_result.ok
   in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions

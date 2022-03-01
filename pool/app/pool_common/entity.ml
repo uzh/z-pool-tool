@@ -9,11 +9,10 @@ module Id = struct
 end
 
 module Language = struct
-  (* TODO: Remove warning -4 *)
   type t =
     | En [@name "EN"]
     | De [@name "DE"]
-  [@@deriving eq, show, yojson, sexp]
+  [@@deriving eq, show, yojson, sexp_of]
 
   let code = function
     | En -> "EN"

@@ -12,6 +12,7 @@ type field =
   | EmailSuffix
   | EmailAddressUnverified
   | EmailAddressVerified
+  | File
   | FileMimeType
   | Filename
   | Filesize
@@ -77,6 +78,7 @@ type error =
   | NoTenantsRegistered
   | NotFound of field
   | NotHandled of string
+  | NoValue
   | ParticipantSignupInvalidEmail
   | ParticipantUnconfirmed
   | PasswordPolicy of string

@@ -150,8 +150,7 @@ let reset_password_get req =
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
-      let tenant_db = context.Pool_tenant.Context.tenant_db in
-      let%lwt language = General.language_from_request req tenant_db in
+      let language = context.Pool_tenant.Context.language in
       Page.Public.reset_password csrf language query_lang message token ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok

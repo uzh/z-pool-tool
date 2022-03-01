@@ -7,7 +7,7 @@ module Error = struct
   let invalid_string = Entity_message.(ConformistModuleErrorType)
   let invalid_date = Entity_message.(ConformistModuleErrorType)
   let invalid_datetime = Entity_message.(ConformistModuleErrorType)
-  let no_value = Entity_message.(ConformistModuleErrorType)
+  let no_value = Entity_message.(NoValue)
   let of_string _ = Entity_message.(ConformistModuleErrorType)
 end
 

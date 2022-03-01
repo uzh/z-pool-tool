@@ -75,8 +75,7 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let%lwt language = General.language_from_request req tenant_db in
+    let language = Pool_common.Language.En in
     Email.Helper.PasswordReset.create Database.root language ~user
     >|= Service.Email.send ~ctx
   in

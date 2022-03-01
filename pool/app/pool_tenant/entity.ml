@@ -282,7 +282,7 @@ module Context = struct
     ; language : Pool_common.Language.t
     ; tenant_db : Pool_database.Label.t
     }
-  [@@deriving sexp]
+  [@@deriving sexp_of]
 
   let create query_language language tenant_db =
     { query_language; language; tenant_db }
@@ -304,10 +304,9 @@ module Context = struct
     | None -> failwith "Cannot find tenant context."
   ;;
 
-  (* TODO: timhub Remove warning *)
-  let[@warning "-40"] set req context =
+  let set req context =
     let env = req.Opium.Request.env in
     let env = Opium.Context.add key context env in
-    { req with env }
+    Opium.Request.{ req with env }
   ;;
 end

@@ -14,6 +14,7 @@ let field_to_string = function
   | EmailAddressUnverified -> "Unverifizierte Email Adresse"
   | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
+  | File -> "Datei"
   | FileMimeType -> "Mime Typ"
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
@@ -120,6 +121,7 @@ let rec error_to_string = function
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
+  | NoValue -> "Kein Wert angegeben"
   | ParticipantSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
   | ParticipantUnconfirmed -> "Teilnehmer noch nicht verifiziert!"

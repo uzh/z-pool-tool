@@ -240,7 +240,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                    ; a_method `Post
                    ]
                  [ Component.csrf_element csrf ()
-                 ; submit_element Message.(Create (Some root))
+                 ; submit_element Message.(Delete (Some file))
                  ]
              ])
          files)

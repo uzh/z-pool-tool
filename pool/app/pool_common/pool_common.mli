@@ -26,7 +26,6 @@ module Language : sig
   val of_string : string -> (t, Message.error) result
   val t : t Caqti_type.t
   val label : t -> string
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
   val schema

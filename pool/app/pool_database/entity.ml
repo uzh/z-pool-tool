@@ -23,7 +23,7 @@ end
 module Label = struct
   open Sexplib.Conv
 
-  type t = string [@@deriving eq, show, sexp]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
   let of_string m = m

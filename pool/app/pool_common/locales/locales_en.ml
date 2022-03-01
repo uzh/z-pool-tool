@@ -14,6 +14,7 @@ let field_to_string = function
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | File -> "file"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
   | Filesize -> "filesize"
@@ -110,6 +111,7 @@ let rec error_to_string = function
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
+  | NoValue -> "No value provided."
   | ParticipantSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | ParticipantUnconfirmed -> "Participant isn't confirmed!"
