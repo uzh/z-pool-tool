@@ -5,10 +5,11 @@ let require_admin ~login_path_f =
   let open Utils.Lwt_result.Infix in
   let fail_action = () |> login_path_f |> HttpUtils.redirect_to in
   let filter handler req =
-    let%lwt tenant_db = Middleware_tenant.tenant_db_of_request req in
-    match tenant_db with
+    let context = Pool_tenant.Context.find req in
+    match context with
     | Error _ -> fail_action
-    | Ok db_pool ->
+    | Ok context ->
+      let db_pool = context.Pool_tenant.Context.tenant_db in
       Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx db_pool) req
       >|> (function
       | Some user ->

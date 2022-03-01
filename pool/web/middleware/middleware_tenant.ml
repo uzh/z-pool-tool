@@ -21,20 +21,11 @@ let tenant_db_of_request req
   |> Lwt_result.lift
 ;;
 
-let tenant_context ?(is_admin_page = false) () =
+let tenant_context ?(is_admin = false) () =
   (* TODO [timhub]: Do not duplicate function *)
   let user_from_session db_pool req : Sihl_user.t option Lwt.t =
     let ctx = Pool_tenant.to_ctx db_pool in
     Service.User.Web.user_from_session ~ctx req
-  in
-  let find_query_lang req =
-    let open CCOption.Infix in
-    Sihl.Web.Request.query Pool_common.Message.(field_name Language) req
-    >>= fun l ->
-    l
-    |> CCString.uppercase_ascii
-    |> Pool_common.Language.of_string
-    |> CCOption.of_result
   in
   let language_from_request ?participant req tenant_db =
     let open CCOption in
@@ -60,8 +51,8 @@ let tenant_context ?(is_admin_page = false) () =
         in
         CCResult.get_or lang ~default:None |> Lwt.return
     in
-    find_query_lang req
-    >>= is_valid
+    let query_language = Http_utils.find_query_lang req >>= is_valid in
+    query_language
     |> function
     | Some lang -> Lwt.return lang
     | None ->
@@ -74,17 +65,19 @@ let tenant_context ?(is_admin_page = false) () =
                    (CCList.head_opt tenant_languages)))
   in
   let filter handler req =
-    let query_lang = find_query_lang req in
+    let query_lang = Http_utils.find_query_lang req in
     let%lwt tenant_db = tenant_db_of_request req in
     match tenant_db with
     | Error _ ->
       Http_utils.path_with_language query_lang "/error"
       |> Http_utils.redirect_to
     | Ok tenant_db ->
-      let%lwt language =
-        match is_admin_page with
-        | true -> Lwt.return Pool_common.Language.En
-        | false -> language_from_request req tenant_db
+      let%lwt query_lang, language =
+        match is_admin with
+        | true -> Lwt.return (None, Pool_common.Language.En)
+        | false ->
+          let%lwt language = language_from_request req tenant_db in
+          Lwt.return (Http_utils.find_query_lang req, language)
       in
       Pool_tenant.Context.create query_lang language tenant_db
       |> Pool_tenant.Context.set req
