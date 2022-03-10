@@ -1,4 +1,4 @@
-let tenant_context ?(is_admin = false) () =
+let tenant_context user () =
   let tenant_db_of_request req
       : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
     =
@@ -59,23 +59,27 @@ let tenant_context ?(is_admin = false) () =
                    (CCList.head_opt tenant_languages)))
   in
   let filter handler req =
+    let open Lwt_result.Syntax in
+    let open Lwt_result.Infix in
     let query_lang = Http_utils.find_query_lang req in
-    let%lwt tenant_db = tenant_db_of_request req in
-    match tenant_db with
+    (* How to deal with root url? *)
+    let%lwt context =
+      (match user with
+      | `Root ->
+        Lwt_result.return (None, Pool_common.Language.En, Pool_database.root)
+      | `Admin ->
+        let* tenant_db = tenant_db_of_request req in
+        Lwt_result.return (None, Pool_common.Language.En, tenant_db)
+      | `Participant ->
+        let* tenant_db = tenant_db_of_request req in
+        let%lwt language = language_from_request req tenant_db in
+        Lwt_result.return (query_lang, language, tenant_db))
+      >|= Pool_tenant.Context.create
+    in
+    match context with
+    | Ok context -> context |> Pool_tenant.Context.set req |> handler
     | Error _ ->
-      Http_utils.path_with_language query_lang "/error"
-      |> Http_utils.redirect_to
-    | Ok tenant_db ->
-      let%lwt query_lang, language =
-        match is_admin with
-        | true -> Lwt.return (None, Pool_common.Language.En)
-        | false ->
-          let%lwt language = language_from_request req tenant_db in
-          Lwt.return (Http_utils.find_query_lang req, language)
-      in
-      Pool_tenant.Context.create query_lang language tenant_db
-      |> Pool_tenant.Context.set req
-      |> handler
+      Http_utils.(path_with_language query_lang "/error" |> redirect_to)
   in
   Rock.Middleware.create ~name:"tenant.context" ~filter
 ;;

@@ -3,18 +3,19 @@ module Field = Pool_common.Message
 let signup
     csrf
     message
-    language
-    query_lang
     channels
     email
     firstname
     lastname
     recruitment_channel
     terms
+    Pool_tenant.Context.{ language; query_language; _ }
   =
   let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in
-  let submit_url = Http_utils.externalize_path_with_lang query_lang "/signup" in
+  let submit_url =
+    Http_utils.externalize_path_with_lang query_language "/signup"
+  in
   let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
@@ -123,5 +124,5 @@ let signup
           ]
       ]
   in
-  Page_layout.create children message language
+  Page_layout.create children message language ()
 ;;

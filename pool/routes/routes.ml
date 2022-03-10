@@ -28,7 +28,6 @@ module Public = struct
       ; get "/reset-password" Login.reset_password_get
       ; post "/reset-password" Login.reset_password_post
       ; get "/custom/assets/:id/:filename" asset
-      ; get "/error" error
       ]
   ;;
 end
@@ -61,7 +60,7 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.tenant_context ~is_admin:true ()
+    [ CustomMiddleware.Tenant.tenant_context `Admin ()
     ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
     ]
   ;;
@@ -77,7 +76,10 @@ module Admin = struct
 end
 
 module Root = struct
-  let middlewares = CustomMiddleware.Root.[ from_root_only () ]
+  let middlewares =
+    CustomMiddleware.Root.
+      [ from_root_only (); CustomMiddleware.Tenant.tenant_context `Root () ]
+  ;;
 
   let routes =
     let open Handler.Root in
@@ -95,7 +97,9 @@ module Root = struct
   let locked_middlewares =
     middlewares
     @ CustomMiddleware.Root.
-        [ require_root ~login_path_f:(fun () -> "/root/login") ]
+        [ CustomMiddleware.Tenant.tenant_context `Root ()
+        ; require_root ~login_path_f:(fun () -> "/root/login")
+        ]
   ;;
 
   let locked_routes =
@@ -118,7 +122,7 @@ end
 let router =
   choose
     [ choose
-        ~middlewares:[ CustomMiddleware.Tenant.tenant_context () ]
+        ~middlewares:[ CustomMiddleware.Tenant.tenant_context `Participant () ]
         [ choose Public.routes
         ; Participant.(choose routes)
         ; Participant.(choose ~middlewares locked_routes)
@@ -126,9 +130,10 @@ let router =
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)
+    ; get "/error" Handler.Public.error
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Tenant.tenant_context () ]
+        ~middlewares:[ CustomMiddleware.Tenant.tenant_context `Participant () ]
         Handler.Public.not_found
     ]
 ;;

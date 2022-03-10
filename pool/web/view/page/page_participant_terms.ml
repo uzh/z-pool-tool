@@ -1,5 +1,11 @@
-let terms csrf language query_lang message user_id terms =
-  let externalize = Http_utils.externalize_path_with_lang query_lang in
+let terms
+    csrf
+    message
+    user_id
+    terms
+    Pool_tenant.Context.{ language; query_language; _ }
+  =
+  let externalize = Http_utils.externalize_path_with_lang query_language in
   let submit_url =
     Format.asprintf "/terms-accepted/%s" user_id |> externalize
   in
@@ -29,5 +35,5 @@ let terms csrf language query_lang message user_id terms =
           ]
       ]
   in
-  Page_layout.create children message language
+  Page_layout.create children message language ()
 ;;

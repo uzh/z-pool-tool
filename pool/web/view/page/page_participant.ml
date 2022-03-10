@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let dashboard language message () =
+let dashboard message Pool_tenant.Context.{ language; _ } =
   let html =
     div
       [ h1

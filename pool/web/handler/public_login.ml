@@ -9,9 +9,7 @@ let redirect_to_dashboard tenant_db user =
 ;;
 
 let login_get req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun err ->
         err, HttpUtils.path_with_language query_lang "/index")
@@ -31,14 +29,13 @@ let login_get req =
       |> Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun err ->
         err, HttpUtils.path_with_language query_lang "/login")
@@ -62,13 +59,11 @@ let login_post req =
           [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_get req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun err ->
         err, HttpUtils.path_with_language query_lang "/index")
@@ -91,7 +86,7 @@ let request_reset_password_get req =
       |> Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_post req =
@@ -99,7 +94,6 @@ let request_reset_password_post req =
   let%lwt result =
     let open Lwt_result.Syntax in
     let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
-    let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
@@ -127,9 +121,7 @@ let request_reset_password_post req =
 ;;
 
 let reset_password_get req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     let error_path =
       "/request-reset-password/" |> HttpUtils.path_with_language query_lang
@@ -153,16 +145,15 @@ let reset_password_get req =
       let language = context.Pool_tenant.Context.language in
       Page.Public.reset_password csrf language query_lang message token ()
       |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
+      |> Lwt_result.return
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let context = Pool_tenant.Context.find_exn req in
     let query_lang = context.Pool_tenant.Context.query_language in
     let* params =
       HttpUtils.urlencoded_to_params
@@ -207,7 +198,7 @@ let reset_password_post req =
         [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ])
     |> Lwt_result.ok
   in
-  HttpUtils.extract_happy_path result
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let logout req =

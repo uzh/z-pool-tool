@@ -9,9 +9,8 @@ let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let%lwt result =
+    let result context =
       let open Lwt_result.Syntax in
-      let* context = Http_utils.find_context_with_error_path req in
       let query_lang = context.Pool_tenant.Context.query_language in
       let error_path = Http_utils.path_with_language query_lang "/error" in
       let message =
@@ -27,7 +26,7 @@ let index req =
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     in
-    result |> Http_utils.extract_happy_path)
+    result |> Http_utils.extract_happy_path req)
 ;;
 
 let index_css req =
@@ -62,11 +61,9 @@ let index_css req =
 ;;
 
 let email_confirmation_note req =
-  let%lwt result =
+  let result context =
     Lwt_result.map_err (fun err -> err, "/")
     @@
-    let open Lwt_result.Syntax in
-    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
     let language = context.Pool_tenant.Context.language in
     let txt_to_string m = Common.Utils.text_to_string language m in
     let message =
@@ -81,13 +78,11 @@ let email_confirmation_note req =
     in
     message |> html |> Sihl.Web.Response.of_html |> Lwt.return_ok
   in
-  result |> Http_utils.extract_happy_path
+  result |> Http_utils.extract_happy_path req
 ;;
 
 let not_found req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = Http_utils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun err ->
         err, Http_utils.path_with_language query_lang "/error")
@@ -96,7 +91,7 @@ let not_found req =
     let html = Page.Utils.error_page_not_found language () in
     Sihl.Web.Response.of_html html |> Lwt.return_ok
   in
-  result |> Http_utils.extract_happy_path
+  result |> Http_utils.extract_happy_path req
 ;;
 
 let asset req =
@@ -114,6 +109,8 @@ let asset req =
 ;;
 
 let error req =
+  (* TODO[timhub]: do not use context. This is the error path of the context
+     middleware *)
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* context = Pool_tenant.Context.find req |> Lwt_result.lift in

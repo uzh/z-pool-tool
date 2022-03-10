@@ -2,15 +2,13 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let show req =
-  let%lwt result =
+  let result context =
     Lwt_result.map_err (fun err -> err, "/")
     @@
-    let open Lwt_result.Syntax in
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let csrf = HttpUtils.find_csrf req in
-    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
     let db = context.Pool_tenant.Context.tenant_db in
     let%lwt languages = Settings.find_languages db in
     let%lwt email_suffixes = Settings.find_email_suffixes db in
@@ -33,7 +31,7 @@ let show req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let update_settings req =
@@ -41,11 +39,9 @@ let update_settings req =
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
   let redirect_path = "/admin/settings" in
-  let%lwt result =
+  let result context =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
-    let open Lwt_result.Syntax in
-    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events () =
@@ -99,5 +95,5 @@ let update_settings req =
     in
     () |> events |>> handle |>> return_to_settings
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;

@@ -377,9 +377,7 @@ module Context : sig
     }
 
   val create
-    :  Pool_common.Language.t option
-    -> Pool_common.Language.t
-    -> Database.Label.t
+    :  Pool_common.Language.t option * Pool_common.Language.t * Database.Label.t
     -> t
 
   val find : Rock.Request.t -> (t, Pool_common.Message.error) result

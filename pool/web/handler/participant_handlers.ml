@@ -4,31 +4,23 @@ module Message = HttpUtils.Message
 module User = Pool_user
 
 let dashboard req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
-    let query_lang = context.Pool_tenant.Context.query_language in
+  let result context =
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
-    Lwt_result.map_err (fun err ->
-        err, HttpUtils.path_with_language query_lang "/index")
-    @@
-    let language = context.Pool_tenant.Context.language in
-    Page.Participant.dashboard language message ()
+    Page.Participant.dashboard message context
     |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    |> CCResult.return
+    |> CCResult.map_err (fun err -> err, "/index")
+    |> Lwt_result.lift
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let sign_up req =
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
-    let query_lang = context.Pool_tenant.Context.query_language in
-    let error_path = HttpUtils.path_with_language query_lang "/index" in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_err (fun err -> err, "/index")
     @@
     let csrf = HttpUtils.find_csrf req in
     let message =
@@ -47,19 +39,17 @@ let sign_up req =
     Page.Participant.sign_up
       csrf
       message
-      language
-      query_lang
       channels
       email
       firstname
       lastname
       recruitment_channel
       terms
-      ()
+      context
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let sign_up_create req =
@@ -69,12 +59,8 @@ let sign_up_create req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context =
-      HttpUtils.find_context_with_error_path req
-      |> Lwt_result.map_err (fun (err, path) -> err, path, [])
-    in
     let query_lang = context.Pool_tenant.Context.query_language in
     let path_with_lang = HttpUtils.path_with_language query_lang in
     Lwt_result.map_err (fun msg ->
@@ -133,14 +119,13 @@ let sign_up_create req =
              ])
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
     let query_lang = context.Pool_tenant.Context.query_language in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let%lwt redirect_path =
@@ -180,7 +165,7 @@ let email_verification req =
      |> Lwt_result.ok)
     |> Lwt_result.map_err (fun msg -> msg, redirect_path)
   in
-  result >|> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let terms req =
@@ -190,11 +175,9 @@ let terms req =
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
-  let%lwt result =
-    let* context = HttpUtils.find_context_with_error_path req in
-    let query_lang = context.Pool_tenant.Context.query_language in
-    let error_path = "/login" |> HttpUtils.path_with_language query_lang in
+  let result context =
     let tenant_db = context.Pool_tenant.Context.tenant_db in
+    let error_path = "/login" in
     let* user =
       Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result Pool_common.Message.(NotFound User, error_path)
@@ -204,30 +187,21 @@ let terms req =
       Settings.terms_and_conditions tenant_db language
       |> Lwt_result.map_err (fun err -> err, error_path)
     in
-    Page.Participant.terms
-      csrf
-      language
-      query_lang
-      message
-      user.Sihl_user.id
-      terms
-      ()
+    Page.Participant.terms csrf message user.Sihl_user.id terms context
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let terms_accept req =
-  let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun msg ->
         msg, "/login" |> HttpUtils.path_with_language query_lang)
     @@
     let open Lwt_result.Syntax in
+    let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     let* participant = Participant.find tenant_db id in
     let* events =
@@ -237,16 +211,15 @@ let terms_accept req =
     HttpUtils.(redirect_to (path_with_language query_lang "/dashboard"))
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let user_update_csrf = "_user_update_csrf"
 
 let show is_edit req =
-  let%lwt result =
+  let result context =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
     let query_lang = context.Pool_tenant.Context.query_language in
     let append_lang = HttpUtils.path_with_language query_lang in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
@@ -281,7 +254,7 @@ let show is_edit req =
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let details = show false
@@ -293,9 +266,7 @@ let update req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values [ "paused" ]
   in
-  let result () =
-    let open Lwt_result.Syntax in
-    let* context = HttpUtils.find_context_with_error_path req in
+  let result context =
     let query_lang = context.Pool_tenant.Context.query_language in
     let path_with_lang = HttpUtils.path_with_language query_lang in
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
@@ -391,7 +362,7 @@ let update req =
       |> Lwt_result.return
   in
   Lwt.catch
-    (fun () -> result () >|> HttpUtils.extract_happy_path)
+    (fun () -> result |> HttpUtils.extract_happy_path req)
     (fun exn ->
       Logs.err (fun m -> m "%s" @@ Printexc.to_string exn);
       Sihl.Web.Response.of_plain_text ""
@@ -402,12 +373,8 @@ let update req =
 let update_email req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context =
-      HttpUtils.find_context_with_error_path req
-      |> Lwt_result.map_err (fun (msg, path) -> msg, path, [])
-    in
     let query_lang = context.Pool_tenant.Context.query_language in
     Lwt_result.map_err (fun msg ->
         HttpUtils.(
@@ -447,18 +414,14 @@ let update_email req =
             ]))
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let update_password req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result context =
     let open Lwt_result.Syntax in
-    let* context =
-      HttpUtils.find_context_with_error_path req
-      |> Lwt_result.map_err (fun (msg, path) -> msg, path, [])
-    in
     let query_lang = context.Pool_tenant.Context.query_language in
     let tenant_db = context.Pool_tenant.Context.tenant_db in
     Lwt_result.map_err (fun msg ->
@@ -487,5 +450,5 @@ let update_password req =
                [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path_with_actions
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;

@@ -29,13 +29,11 @@ let path_with_language lang path =
   |> CCOption.value ~default:path
 ;;
 
-let find_context_with_error_path req =
-  Pool_tenant.Context.find req
-  |> CCResult.map_err (fun err ->
-         let query_lang = find_query_lang req in
-         err, path_with_language query_lang "/error")
-  |> Lwt_result.lift
-;;
+(* TODO[timhub]: Remove if unused *)
+
+(* let find_context_with_error_path req = Pool_tenant.Context.find req |>
+   CCResult.map_err (fun err -> let query_lang = find_query_lang req in err,
+   path_with_language query_lang "/error") |> Lwt_result.lift ;; *)
 
 let redirect_to_with_actions path actions =
   path
@@ -47,34 +45,47 @@ let redirect_to_with_actions path actions =
 
 let redirect_to path = redirect_to_with_actions path []
 
-let extract_happy_path_generic result msgf =
-  result
-  |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
-  |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_msg, error_path) ->
-         redirect_to_with_actions error_path [ msgf error_msg ])
+(* TODO [timohub]: refactor *)
+let extract_happy_path_generic req result msgf =
+  let context = Pool_tenant.Context.find req in
+  match context with
+  | Ok context ->
+    let%lwt res = result context in
+    res
+    |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
+    |> CCResult.map Lwt.return
+    |> CCResult.get_lazy (fun (error_msg, error_path) ->
+           redirect_to_with_actions error_path [ msgf error_msg ])
+  | Error _ -> redirect_to "/error"
 ;;
 
-let extract_happy_path result =
-  extract_happy_path_generic result (fun err ->
+let extract_happy_path req result =
+  extract_happy_path_generic req result (fun err ->
       Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
-let extract_happy_path_with_actions result =
-  result
-  |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
-  |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-         redirect_to_with_actions
-           error_path
-           (CCList.append
-              [ Message.set
-                  ~warning:[]
-                  ~success:[]
-                  ~info:[]
-                  ~error:[ error_key ]
-              ]
-              error_actions))
+(* TODO [timohub]: refactor *)
+
+let extract_happy_path_with_actions req result =
+  let context = Pool_tenant.Context.find req in
+  match context with
+  | Ok context ->
+    let%lwt res = result context in
+    res
+    |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
+    |> CCResult.map Lwt.return
+    |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
+           redirect_to_with_actions
+             error_path
+             (CCList.append
+                [ Message.set
+                    ~warning:[]
+                    ~success:[]
+                    ~info:[]
+                    ~error:[ error_key ]
+                ]
+                error_actions))
+  | Error _ -> redirect_to "/error"
 ;;
 
 (* Read urlencoded values in any order *)

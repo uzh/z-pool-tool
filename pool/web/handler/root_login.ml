@@ -9,6 +9,7 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =
   let open Lwt.Infix in
+  Logs.info (fun m -> m "%s" "In Login Root get");
   Service.User.Web.user_from_session ~ctx req
   >>= function
   | Some _ -> redirect_to_entrypoint
@@ -21,7 +22,7 @@ let login_get req =
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result _ =
     Lwt_result.map_err (fun err -> err, root_login_path)
     @@
     let open Lwt_result.Syntax in
@@ -41,11 +42,11 @@ let login_post req =
       [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_get req =
-  let%lwt result =
+  let result _ =
     Lwt_result.map_err (fun err -> err, root_entrypoint_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -60,13 +61,14 @@ let request_reset_password_get req =
       |> Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_post req =
   let%lwt result =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
+    let* context = Pool_tenant.Context.find req |> Lwt_result.lift in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Pool_common.Message.(NotFound Email)
@@ -75,7 +77,7 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    let language = Pool_common.Language.En in
+    let language = context.Pool_tenant.Context.language in
     Email.Helper.PasswordReset.create Database.root language ~user
     >|= Service.Email.send ~ctx
   in
@@ -105,7 +107,7 @@ let reset_password_get req =
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result _ =
     let open Lwt_result.Syntax in
     let* params =
       HttpUtils.urlencoded_to_params
@@ -136,7 +138,7 @@ let reset_password_post req =
       [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
     |> Lwt_result.ok
   in
-  HttpUtils.extract_happy_path result
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let logout _ =

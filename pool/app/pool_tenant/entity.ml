@@ -284,7 +284,7 @@ module Context = struct
     }
   [@@deriving sexp_of]
 
-  let create query_language language tenant_db =
+  let create (query_language, language, tenant_db) =
     { query_language; language; tenant_db }
   ;;
 
