@@ -2,7 +2,11 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail language query_lang participant message () =
+let detail
+    participant
+    message
+    Pool_tenant.Context.{ language; query_language; _ }
+  =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -20,7 +24,9 @@ let detail language query_lang participant message () =
       ; a
           ~a:
             [ a_href
-                (HttpUtils.externalize_path_with_lang query_lang "/user/edit")
+                (HttpUtils.externalize_path_with_lang
+                   query_language
+                   "/user/edit")
             ]
           [ txt
               Pool_common.(Utils.control_to_string language (Message.Edit None))
@@ -28,13 +34,19 @@ let detail language query_lang participant message () =
       ]
   in
   let html = div [ content ] in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let edit csrf language query_lang user_update_csrf participant message () =
+let edit
+    csrf
+    user_update_csrf
+    participant
+    message
+    Pool_tenant.Context.{ language; query_language; _ }
+  =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in
-  let externalize = HttpUtils.externalize_path_with_lang query_lang in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let action = externalize "/user/update" in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let input_element = input_element language in
@@ -126,5 +138,5 @@ let edit csrf language query_lang user_update_csrf participant message () =
           [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

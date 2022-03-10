@@ -65,13 +65,12 @@ let show
     inactive_user_warning
     terms_and_conditions
     message
-    ()
+    Pool_tenant.Context.{ language; _ }
   =
   let action_path action =
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
-  let language = Pool_common.Language.En in
   let input_element = input_element language in
   let languages_html =
     let all_languages =
@@ -266,5 +265,5 @@ let show
       ; script (Unsafe.data sortable)
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

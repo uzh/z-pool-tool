@@ -40,7 +40,7 @@ let footer =
 
 (* TODO: timhub remove unit argument *)
 
-let create children message lang () =
+let create children message lang =
   let page_title = title (txt "Pool tool") in
   let charset = meta ~a:[ a_charset "utf8" ] () in
   let viewport =

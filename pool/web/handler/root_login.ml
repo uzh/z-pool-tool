@@ -9,15 +9,19 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =
   let open Lwt.Infix in
-  Logs.info (fun m -> m "%s" "In Login Root get");
-  Service.User.Web.user_from_session ~ctx req
-  >>= function
-  | Some _ -> redirect_to_entrypoint
-  | None ->
-    let open Sihl.Web in
-    let csrf = HttpUtils.find_csrf req in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Root.Login.login csrf message () |> Response.of_html |> Lwt.return
+  let result context =
+    Service.User.Web.user_from_session ~ctx req
+    >>= function
+    | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
+    | None ->
+      let open Sihl.Web in
+      let csrf = HttpUtils.find_csrf req in
+      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
+      Page.Root.Login.login csrf message context
+      |> Response.of_html
+      |> Lwt_result.return
+  in
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let login_post req =
@@ -46,7 +50,7 @@ let login_post req =
 ;;
 
 let request_reset_password_get req =
-  let result _ =
+  let result context =
     Lwt_result.map_err (fun err -> err, root_entrypoint_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -57,7 +61,7 @@ let request_reset_password_get req =
     | None ->
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Root.Login.request_reset_password csrf message ()
+      Page.Root.Login.request_reset_password csrf message context
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -90,19 +94,22 @@ let request_reset_password_post req =
 ;;
 
 let reset_password_get req =
-  let open Sihl.Web in
-  Request.query Pool_common.Message.(field_name Token) req
-  |> function
-  | None ->
-    HttpUtils.redirect_to_with_actions
-      "/root/request-reset-password/"
-      [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
-  | Some token ->
-    let csrf = HttpUtils.find_csrf req in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Root.Login.reset_password csrf message token ()
-    |> Response.of_html
-    |> Lwt.return
+  let result context =
+    let open Sihl.Web in
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, "/root/request-reset-password/")
+    @@ let* token =
+         Request.query Pool_common.Message.(field_name Token) req
+         |> CCOption.to_result Pool_common.Message.(NotFound Token)
+         |> Lwt_result.lift
+       in
+       let csrf = HttpUtils.find_csrf req in
+       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
+       Page.Root.Login.reset_password csrf message token context
+       |> Response.of_html
+       |> Lwt_result.return
+  in
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let reset_password_post req =

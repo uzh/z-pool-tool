@@ -2,9 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let language = Pool_common.Language.En
-
-let login csrf message () =
+let login csrf message Pool_tenant.Context.{ language; _ } =
   let input_element = input_element language in
   let html =
     div
@@ -26,10 +24,10 @@ let login csrf message () =
           [ txt "Reset password" ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let request_reset_password csrf message () =
+let request_reset_password csrf message Pool_tenant.Context.{ language; _ } =
   let input_element = input_element language in
   let html =
     div
@@ -46,10 +44,10 @@ let request_reset_password csrf message () =
           ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let reset_password csrf message token () =
+let reset_password csrf message token Pool_tenant.Context.{ language; _ } =
   let input_element = input_element language in
   let html =
     div
@@ -71,5 +69,5 @@ let reset_password csrf message token () =
           ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

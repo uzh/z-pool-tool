@@ -2,7 +2,7 @@ open Tyxml.Html
 
 let note language page_title info message =
   let html = div [ h1 [ txt page_title ]; p [ txt info ] ] in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
 let error_page_not_found language () =

@@ -7,12 +7,13 @@ module Database = Pool_database
 
 let tenants req =
   let csrf = HttpUtils.find_csrf req in
+  let context = Pool_tenant.Context.find_exn req in
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
   let%lwt tenant_list = Pool_tenant.find_all () in
   let%lwt root_list = Root.find_all () in
-  Page.Root.Tenant.list csrf tenant_list root_list message ()
+  Page.Root.Tenant.list csrf tenant_list root_list message context
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
@@ -106,14 +107,14 @@ let create_operator req =
 let tenant_detail req =
   let open Lwt_result.Syntax in
   let open Sihl.Web in
-  let result _ =
+  let result context =
     Lwt_result.map_err (fun err -> err, "/root/tenants")
     @@
     let csrf = HttpUtils.find_csrf req in
     let message = CCOption.bind (Flash.find_alert req) Message.of_string in
     let id = Router.param req "id" |> Common.Id.of_string in
     let* tenant = Pool_tenant.find id in
-    Page.Root.Tenant.detail csrf tenant message ()
+    Page.Root.Tenant.detail csrf tenant message context
     |> Response.of_html
     |> Lwt.return_ok
   in

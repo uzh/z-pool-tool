@@ -35,5 +35,5 @@ let terms
           ]
       ]
   in
-  Page_layout.create children message language ()
+  Page_layout.create children message language
 ;;

@@ -21,11 +21,10 @@ let login_get req =
     match user with
     | Some user -> redirect_to_dashboard tenant_db user |> Lwt_result.ok
     | None ->
-      let language = context.Pool_tenant.Context.language in
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.login csrf language query_lang message ()
+      Page.Public.login csrf message context
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -80,9 +79,8 @@ let request_reset_password_get req =
       >|> Lwt.return_ok
     | None ->
       let csrf = HttpUtils.find_csrf req in
-      let language = context.Pool_tenant.Context.language in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.request_reset_password csrf language query_lang message ()
+      Page.Public.request_reset_password csrf message context
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -142,8 +140,7 @@ let reset_password_get req =
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
-      let language = context.Pool_tenant.Context.language in
-      Page.Public.reset_password csrf language query_lang message token ()
+      Page.Public.reset_password csrf message token context
       |> Sihl.Web.Response.of_html
       |> Lwt_result.return
   in

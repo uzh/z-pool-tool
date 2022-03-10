@@ -2,8 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let list csrf translation_list message () =
-  let language = Pool_common.Language.En in
+let list csrf translation_list message Pool_tenant.Context.{ language; _ } =
   let input_element = input_element language in
   let build_translations_row translation_list =
     CCList.map
@@ -33,7 +32,7 @@ let list csrf translation_list message () =
                         Message.Translation
                         (translation |> I18n.content |> I18n.Content.value)
                     ; submit_element
-                        Pool_common.Language.En
+                        language
                         Message.(Update (Some Message.translation))
                     ]
                 ])
@@ -58,5 +57,5 @@ let list csrf translation_list message () =
       ; div translations
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

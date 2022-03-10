@@ -3,7 +3,7 @@ open Component
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index language tenant message () =
+let index tenant message Pool_tenant.Context.{ language; _ } =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let html =
     div
@@ -19,13 +19,13 @@ let index language tenant message () =
              (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let login csrf language query_lang message () =
+let login csrf message Pool_tenant.Context.{ language; query_language; _ } =
   let txt_to_string = txt_to_string language in
   let input_element = input_element language in
-  let externalize = HttpUtils.externalize_path_with_lang query_lang in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let open Pool_common in
   let html =
     div
@@ -42,10 +42,14 @@ let login csrf language query_lang message () =
           (txt_to_string Pool_common.I18n.ResetPasswordLink)
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let request_reset_password csrf language query_lang message () =
+let request_reset_password
+    csrf
+    message
+    Pool_tenant.Context.{ language; query_language; _ }
+  =
   let input_element = input_element language in
   let html =
     div
@@ -58,7 +62,7 @@ let request_reset_password csrf language query_lang message () =
           ~a:
             [ a_action
                 (HttpUtils.externalize_path_with_lang
-                   query_lang
+                   query_language
                    "/request-reset-password")
             ; a_method `Post
             ]
@@ -72,12 +76,17 @@ let request_reset_password csrf language query_lang message () =
           ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let reset_password csrf language query_lang message token () =
+let reset_password
+    csrf
+    message
+    token
+    Pool_tenant.Context.{ language; query_language; _ }
+  =
   let open Pool_common in
-  let externalize = HttpUtils.externalize_path_with_lang query_lang in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
   let input_element = input_element language in
   let html =
     div
@@ -100,5 +109,5 @@ let reset_password csrf language query_lang message token () =
           ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

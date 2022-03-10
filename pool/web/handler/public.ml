@@ -21,8 +21,7 @@ let index req =
         Pool_tenant.find_by_label tenant_db
         |> Lwt_result.map_err (fun err -> err, error_path)
       in
-      let language = context.Pool_tenant.Context.language in
-      Page.Public.index language tenant message ()
+      Page.Public.index tenant message context
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     in

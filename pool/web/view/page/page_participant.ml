@@ -8,7 +8,7 @@ let dashboard message Pool_tenant.Context.{ language; _ } =
           ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
 let sign_up = Page_participant_signup.signup

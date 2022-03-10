@@ -235,22 +235,14 @@ let show is_edit req =
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
-    let language = context.Pool_tenant.Context.language in
     match is_edit with
     | false ->
-      Page.Participant.detail language query_lang participant message ()
+      Page.Participant.detail participant message context
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     | true ->
       let csrf = HttpUtils.find_csrf req in
-      Page.Participant.edit
-        csrf
-        language
-        query_lang
-        user_update_csrf
-        participant
-        message
-        ()
+      Page.Participant.edit csrf user_update_csrf participant message context
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in

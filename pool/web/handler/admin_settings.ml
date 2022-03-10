@@ -27,7 +27,7 @@ let show req =
       inactive_user_warning
       terms_and_conditions
       message
-      ()
+      context
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in

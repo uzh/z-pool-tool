@@ -3,8 +3,7 @@ module File = Pool_common.File
 module Id = Pool_common.Id
 module Message = Pool_common.Message
 
-let language = Pool_common.Language.En
-let submit_element = Component.submit_element language
+let submit_element = Component.submit_element
 
 let system_language_select name input_label =
   [ div
@@ -22,7 +21,7 @@ let system_language_select name input_label =
   ]
 ;;
 
-let list csrf tenant_list root_list message () =
+let list csrf tenant_list root_list message Pool_tenant.Context.{ language; _ } =
   let input_element = Component.input_element language in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
@@ -56,7 +55,7 @@ let list csrf tenant_list root_list message () =
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
           ]
-        [ submit_element text ]
+        [ submit_element language text ]
     in
     CCList.map
       (fun root ->
@@ -120,7 +119,7 @@ let list csrf tenant_list root_list message () =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: input_fields)
-          @ [ submit_element Message.(Create None) ])
+          @ [ submit_element language Message.(Create None) ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -136,13 +135,18 @@ let list csrf tenant_list root_list message () =
              ; "firstname", Message.Firstname
              ; "lastname", Message.Lastname
              ]
-          @ [ submit_element Message.(Create (Some root)) ])
+          @ [ submit_element language Message.(Create (Some root)) ])
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;
 
-let detail csrf (tenant : Pool_tenant.t) message () =
+let detail
+    csrf
+    (tenant : Pool_tenant.t)
+    message
+    Pool_tenant.Context.{ language; _ }
+  =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
   let input_element = Component.input_element language in
@@ -240,7 +244,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                    ; a_method `Post
                    ]
                  [ Component.csrf_element csrf ()
-                 ; submit_element Message.(Delete (Some file))
+                 ; submit_element language Message.(Delete (Some file))
                  ]
              ])
          files)
@@ -267,7 +271,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
-          @ [ disabled; submit_element Message.(Update None) ])
+          @ [ disabled; submit_element language Message.(Update None) ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -282,7 +286,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: database_input_fields)
-          @ [ submit_element Message.(Update None) ])
+          @ [ submit_element language Message.(Update None) ])
       ; hr ()
       ; form
           ~a:
@@ -301,11 +305,11 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                 ; "firstname", Message.Firstname
                 ; "lastname", Message.Lastname
                 ])
-          @ [ submit_element Message.(Create (Some operator)) ])
+          @ [ submit_element language Message.(Create (Some operator)) ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
           [ txt "back" ]
       ]
   in
-  Page_layout.create html message language ()
+  Page_layout.create html message language
 ;;

@@ -62,7 +62,7 @@ let tenant_context user () =
     let open Lwt_result.Syntax in
     let open Lwt_result.Infix in
     let query_lang = Http_utils.find_query_lang req in
-    (* How to deal with root url? *)
+    (* TODO[timhub]: How to deal with root url? *)
     let%lwt context =
       (match user with
       | `Root ->
