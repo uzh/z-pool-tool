@@ -20,7 +20,7 @@ let tenants req =
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let result _ =
+  let result context =
     let events () =
       Lwt_result.map_err (fun err -> err, "/root/tenants")
       @@
@@ -35,8 +35,7 @@ let create req =
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
-          (* TODO[timhub]: Use context *)
-          let ctx = Pool_tenant.to_ctx Database.root in
+          let ctx = Pool_tenant.(context.Context.tenant_db |> to_ctx) in
           let%lwt () =
             Lwt_list.iter_s
               (fun (_, id) -> Service.Storage.delete ~ctx id)
@@ -67,11 +66,10 @@ let create req =
 ;;
 
 let create_operator req =
-  let result _ =
+  let result context =
     let open Utils.Lwt_result.Infix in
     let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
-    (* TODO[timhub]: use context *)
-    let pool = Database.root in
+    let pool = context.Pool_tenant.Context.tenant_db in
     let user () =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Common.Message.EmailAddressMissingOperator

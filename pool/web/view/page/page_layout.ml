@@ -58,8 +58,6 @@ let footer title =
   footer ~a:[ a_style "text-align: center; padding: 1rem;" ] [ p [ txt title ] ]
 ;;
 
-(* TODO: timhub remove unit argument *)
-
 let create children message lang =
   let title_text = "Pool tool" in
   let page_title = title (txt title_text) in

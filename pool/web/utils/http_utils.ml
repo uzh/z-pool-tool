@@ -29,12 +29,6 @@ let path_with_language lang path =
   |> CCOption.value ~default:path
 ;;
 
-(* TODO[timhub]: Remove if unused *)
-
-(* let find_context_with_error_path req = Pool_tenant.Context.find req |>
-   CCResult.map_err (fun err -> let query_lang = find_query_lang req in err,
-   path_with_language query_lang "/error") |> Lwt_result.lift ;; *)
-
 let redirect_to_with_actions path actions =
   path
   |> Sihl.Web.externalize_path
@@ -45,7 +39,6 @@ let redirect_to_with_actions path actions =
 
 let redirect_to path = redirect_to_with_actions path []
 
-(* TODO [timohub]: refactor *)
 let extract_happy_path_generic req result msgf =
   let context = Pool_tenant.Context.find req in
   match context with
@@ -63,8 +56,6 @@ let extract_happy_path req result =
   extract_happy_path_generic req result (fun err ->
       Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
-
-(* TODO [timohub]: refactor *)
 
 let extract_happy_path_with_actions req result =
   let context = Pool_tenant.Context.find req in
