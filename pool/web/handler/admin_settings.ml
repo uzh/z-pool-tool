@@ -9,7 +9,7 @@ let show req =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let csrf = HttpUtils.find_csrf req in
-    let db = context.Pool_tenant.Context.tenant_db in
+    let db = context.Pool_context.tenant_db in
     let%lwt languages = Settings.find_languages db in
     let%lwt email_suffixes = Settings.find_email_suffixes db in
     let%lwt contact_email = Settings.find_contact_email db in
@@ -42,7 +42,7 @@ let update_settings req =
   let result context =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
-    let tenant_db = context.Pool_tenant.Context.tenant_db in
+    let tenant_db = context.Pool_context.tenant_db in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events () =
       let command_handler =

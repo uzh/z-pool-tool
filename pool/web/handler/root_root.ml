@@ -6,7 +6,7 @@ let create req =
   let result context =
     let open Utils.Lwt_result.Infix in
     let user () =
-      let tenant_db = context.Pool_tenant.Context.tenant_db in
+      let tenant_db = context.Pool_context.tenant_db in
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
       >>= HttpUtils.validate_email_existance tenant_db
@@ -38,7 +38,7 @@ let create req =
 let toggle_status req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    let tenant_db = context.Pool_tenant.Context.tenant_db in
+    let tenant_db = context.Pool_context.tenant_db in
     let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift

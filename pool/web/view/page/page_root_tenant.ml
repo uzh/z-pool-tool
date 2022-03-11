@@ -21,7 +21,7 @@ let system_language_select name input_label =
   ]
 ;;
 
-let list csrf tenant_list root_list message Pool_tenant.Context.{ language; _ } =
+let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_element = Component.input_element language in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
@@ -141,12 +141,7 @@ let list csrf tenant_list root_list message Pool_tenant.Context.{ language; _ } 
   Page_layout.create_root_layout html message language
 ;;
 
-let detail
-    csrf
-    (tenant : Pool_tenant.t)
-    message
-    Pool_tenant.Context.{ language; _ }
-  =
+let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
   let input_element = Component.input_element language in

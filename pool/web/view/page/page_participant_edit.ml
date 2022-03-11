@@ -2,11 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail
-    participant
-    message
-    Pool_tenant.Context.{ language; query_language; _ }
-  =
+let detail participant message Pool_context.{ language; query_language; _ } =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -42,7 +38,7 @@ let edit
     user_update_csrf
     participant
     message
-    Pool_tenant.Context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; _ }
   =
   let open Participant in
   let id = participant |> id |> Pool_common.Id.value in

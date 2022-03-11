@@ -65,7 +65,7 @@ let show
     inactive_user_warning
     terms_and_conditions
     message
-    Pool_tenant.Context.{ language; _ }
+    Pool_context.{ language; _ }
   =
   let action_path action =
     Sihl.Web.externalize_path

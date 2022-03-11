@@ -40,7 +40,7 @@ let redirect_to_with_actions path actions =
 let redirect_to path = redirect_to_with_actions path []
 
 let extract_happy_path_generic req result msgf =
-  let context = Pool_tenant.Context.find req in
+  let context = Pool_context.find req in
   match context with
   | Ok context ->
     let%lwt res = result context in
@@ -58,7 +58,7 @@ let extract_happy_path req result =
 ;;
 
 let extract_happy_path_with_actions req result =
-  let context = Pool_tenant.Context.find req in
+  let context = Pool_context.find req in
   match context with
   | Ok context ->
     let%lwt res = result context in

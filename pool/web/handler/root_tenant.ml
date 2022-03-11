@@ -7,7 +7,7 @@ module Database = Pool_database
 
 let tenants req =
   let csrf = HttpUtils.find_csrf req in
-  let context = Pool_tenant.Context.find_exn req in
+  let context = Pool_context.find_exn req in
   let message =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
@@ -35,7 +35,7 @@ let create req =
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
-          let ctx = Pool_tenant.(context.Context.tenant_db |> to_ctx) in
+          let ctx = context.Pool_context.tenant_db |> Pool_tenant.to_ctx in
           let%lwt () =
             Lwt_list.iter_s
               (fun (_, id) -> Service.Storage.delete ~ctx id)
@@ -69,7 +69,7 @@ let create_operator req =
   let result context =
     let open Utils.Lwt_result.Infix in
     let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
-    let pool = context.Pool_tenant.Context.tenant_db in
+    let pool = context.Pool_context.tenant_db in
     let user () =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Common.Message.EmailAddressMissingOperator

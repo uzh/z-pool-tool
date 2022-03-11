@@ -74,10 +74,10 @@ let tenant_context user () =
         let* tenant_db = tenant_db_of_request req in
         let%lwt language = language_from_request req tenant_db in
         Lwt_result.return (query_lang, language, tenant_db))
-      >|= Pool_tenant.Context.create
+      >|= Pool_context.create
     in
     match context with
-    | Ok context -> context |> Pool_tenant.Context.set req |> handler
+    | Ok context -> context |> Pool_context.set req |> handler
     | Error _ ->
       Http_utils.(path_with_language query_lang "/error" |> redirect_to)
   in

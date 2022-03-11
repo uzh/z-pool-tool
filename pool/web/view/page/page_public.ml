@@ -3,7 +3,7 @@ open Component
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index tenant message Pool_tenant.Context.{ language; _ } =
+let index tenant message Pool_context.{ language; _ } =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let html =
     div
@@ -22,7 +22,7 @@ let index tenant message Pool_tenant.Context.{ language; _ } =
   Page_layout.create html message language
 ;;
 
-let login csrf message Pool_tenant.Context.{ language; query_language; _ } =
+let login csrf message Pool_context.{ language; query_language; _ } =
   let txt_to_string = txt_to_string language in
   let input_element = input_element language in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
@@ -48,7 +48,7 @@ let login csrf message Pool_tenant.Context.{ language; query_language; _ } =
 let request_reset_password
     csrf
     message
-    Pool_tenant.Context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; _ }
   =
   let input_element = input_element language in
   let html =
@@ -83,7 +83,7 @@ let reset_password
     csrf
     message
     token
-    Pool_tenant.Context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; _ }
   =
   let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_lang query_language in

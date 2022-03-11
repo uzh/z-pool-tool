@@ -9,7 +9,7 @@ let signup
     lastname
     recruitment_channel
     terms
-    Pool_tenant.Context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; _ }
   =
   let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in

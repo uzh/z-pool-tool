@@ -3,7 +3,7 @@ let terms
     message
     user_id
     terms
-    Pool_tenant.Context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; _ }
   =
   let externalize = Http_utils.externalize_path_with_lang query_language in
   let submit_url =
