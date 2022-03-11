@@ -17,8 +17,7 @@ let global_middlewares =
 module Public = struct
   let routes =
     Handler.Public.
-      [ get "/" root_redirect
-      ; get "/index" index
+      [ get "/index" index
       ; get "/custom/assets/index.css" index_css
       ; get "/login" Login.login_get
       ; post "/login" Login.login_post
@@ -120,7 +119,8 @@ end
 
 let router =
   choose
-    [ choose
+    [ get "/" Handler.Public.root_redirect
+    ; choose
         ~middlewares:[ CustomMiddleware.Tenant.tenant_context `Participant () ]
         [ choose Public.routes
         ; Participant.(choose routes)

@@ -3,7 +3,13 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
-let root_redirect _ = Http_utils.redirect_to "/index"
+let root_redirect req =
+  Http_utils.redirect_to
+  @@
+  match Http_utils.is_req_from_root_host req with
+  | true -> "/root"
+  | false -> "/index"
+;;
 
 let index req =
   if Http_utils.is_req_from_root_host req
