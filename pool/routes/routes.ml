@@ -27,7 +27,6 @@ module Public = struct
       ; post "/request-reset-password" Login.request_reset_password_post
       ; get "/reset-password" Login.reset_password_get
       ; post "/reset-password" Login.reset_password_post
-      ; get "/custom/assets/:id/:filename" asset
       ]
   ;;
 end
@@ -127,6 +126,7 @@ let router =
         ; Participant.(choose routes)
         ; Participant.(choose ~middlewares locked_routes)
         ]
+    ; get "/custom/assets/:id/:filename" Handler.Public.asset
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)

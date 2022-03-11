@@ -24,7 +24,7 @@ let login csrf message Pool_tenant.Context.{ language; _ } =
           [ txt "Reset password" ]
       ]
   in
-  Page_layout.create html message language
+  Page_layout.create_root_layout html message language
 ;;
 
 let request_reset_password csrf message Pool_tenant.Context.{ language; _ } =
@@ -44,7 +44,7 @@ let request_reset_password csrf message Pool_tenant.Context.{ language; _ } =
           ]
       ]
   in
-  Page_layout.create html message language
+  Page_layout.create_root_layout html message language
 ;;
 
 let reset_password csrf message token Pool_tenant.Context.{ language; _ } =
@@ -69,5 +69,5 @@ let reset_password csrf message token Pool_tenant.Context.{ language; _ } =
           ]
       ]
   in
-  Page_layout.create html message language
+  Page_layout.create_root_layout html message language
 ;;

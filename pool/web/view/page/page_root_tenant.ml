@@ -138,7 +138,7 @@ let list csrf tenant_list root_list message Pool_tenant.Context.{ language; _ } 
           @ [ submit_element language Message.(Create (Some root)) ])
       ]
   in
-  Page_layout.create html message language
+  Page_layout.create_root_layout html message language
 ;;
 
 let detail
@@ -311,5 +311,5 @@ let detail
           [ txt "back" ]
       ]
   in
-  Page_layout.create html message language
+  Page_layout.create_root_layout html message language
 ;;
