@@ -34,7 +34,6 @@ services:
         - "traefik.pool.frontend.rule=Host:pool.econ.uzh.ch;PathPrefix:/staging/"
         - "traefik.pool-root.frontend.rule=Host:pool-root.econ.uzh.ch;PathPrefix:/staging/"
         - "traefik.tenant.frontend.rule=Host:tenant.econ.uzh.ch;PathPrefix:/staging/"
-        - "traefik.frontend.whiteList.sourceRange=${IP_ALLOWLIST}"
 
 networks:
   webgateway:
