@@ -327,15 +327,21 @@ let update_tenant_database () =
         events)
 ;;
 
+(* TODO [aerben] extend tests *)
+
+(*       let admin = Service.User. |> Admin.create_person in
+ * Sihl_user.make ~email:"test@mail.com" *)
 let create_operator () =
   let open Data in
   match Data.tenant with
   | Error _ -> failwith "Failed to create tenant"
-  | Ok tenant ->
+  | Ok _ ->
     let events =
       let open CCResult.Infix in
       let open Admin_command.CreateOperator in
-      Data.urlencoded |> decode >>= handle tenant
+      let participant = Error Pool_common.Message.(NotFound Participant) in
+      let admin = Error Pool_common.Message.(NotFound Admin) in
+      Data.urlencoded |> decode >>= handle participant admin
     in
     let expected =
       let open CCResult in

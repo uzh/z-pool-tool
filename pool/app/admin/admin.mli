@@ -93,13 +93,13 @@ val equal_any_person : any_person -> any_person -> bool
 val pp_any_person : Format.formatter -> any_person -> unit
 val user : 'person_function t -> Sihl_user.t
 
-module Duplicate = Admin__Entity.Duplicate
+module Duplicate = Entity.Duplicate
 
 val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t
-  -> string
+  -> Pool_user.EmailAddress.t
   -> (any_person, Pool_common.Message.error) result Lwt.t
 
 val find_by_user : 'a -> 'b

@@ -265,6 +265,11 @@ let detail csrf (tenant : Pool_tenant.t) message () =
            :: CCList.map
                 (fun name -> input_element `Text (Some name) "")
                 [ "email"; "password"; "firstname"; "lastname" ])
+          @ [ input_element `Checkbox (Some "promote") "true"
+            ; label
+                ~a:[ a_label_for "promote" ]
+                [ txt "Promote if admin exists" ]
+            ]
           @ [ input_element `Submit None "Create operator" ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

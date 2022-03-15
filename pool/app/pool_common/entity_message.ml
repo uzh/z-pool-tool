@@ -90,6 +90,7 @@ type error =
   | Undefined of field
   | WriteOnlyModel
   | AlreadyOperator
+  | AlreadyParticipant
 [@@deriving eq, show, yojson, variants]
 
 type warning = Warning of string [@@deriving eq, show, yojson, variants]

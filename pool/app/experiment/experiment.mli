@@ -117,10 +117,10 @@ type event =
   | ExperimentAdded of create
   | ExperimentEdited of t * Event.update
   | ExperimentDestroyed of t
-  | ExperimenterAssigned of t * Admin__Entity.experimenter Admin__Entity.t
-  | ExperimenterDivested of t * Admin__Entity.experimenter Admin__Entity.t
-  | AssistantAssigned of t * Admin__Entity.assistant Admin__Entity.t
-  | AssistantDivested of t * Admin__Entity.assistant Admin__Entity.t
+  | ExperimenterAssigned of t * Admin.experimenter Admin.t
+  | ExperimenterDivested of t * Admin.experimenter Admin.t
+  | AssistantAssigned of t * Admin.assistant Admin.t
+  | AssistantDivested of t * Admin.assistant Admin.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

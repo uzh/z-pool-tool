@@ -73,25 +73,19 @@ let create_operator req =
     let* email =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
+      >|= Pool_user.EmailAddress.of_string
     in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    (* User is either admin or participant *)
     let%lwt admin = Admin.find_by_email tenant_db email in
+    let%lwt participant = Participant.find_by_email tenant_db email in
     let open CCResult.Infix in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.format_request_boolean_values [ "promote" ]
+    in
     let events =
-      match admin with
-      (* Admin not found, create them as an operator *)
-      | Error Pool_common.Message.(NotFound Admin) ->
-        let open Cqrs_command.Admin_command.CreateOperator in
-        urlencoded |> decode >>= handle tenant
-      (* Something else went wrong => No events *)
-      | Error msg ->
-        Logs.err (fun m ->
-            m
-              "Could not create operator: %s"
-              (Pool_common.Message.show_error msg));
-        CCResult.return []
-      (* Admin already exists, promote them to operator *)
-      | Ok admin -> Cqrs_command.Admin_command.PromoteToOperator.handle admin
+      Cqrs_command.Admin_command.CreateOperator.(
+        decode urlencoded >>= handle participant admin)
     in
     events >|= CCPair.make tenant_db |> Lwt_result.lift
   in

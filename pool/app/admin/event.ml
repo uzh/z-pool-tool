@@ -133,11 +133,12 @@ let equal_person_event event1 event2 =
     equal p1 p2 && equal_role a1 a2
   | Disabled p1, Disabled p2 | Verified p1, Verified p2 -> equal p1 p2
   (* Match the rest for exhaustiveness *)
-  | DetailsUpdated _, _
-  | PasswordUpdated _, _
-  | RoleUpdated _, _
-  | Disabled _, _
-  | Verified _, _ -> false
+  | ( ( DetailsUpdated _
+      | PasswordUpdated _
+      | RoleUpdated _
+      | Disabled _
+      | Verified _ )
+    , _ ) -> false
 ;;
 
 let pp_person_event formatter (event : 'a person_event) : unit =

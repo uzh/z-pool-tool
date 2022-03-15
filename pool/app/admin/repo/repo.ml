@@ -114,13 +114,13 @@ module Sql = struct
          Caqti_type.(tup4 string Pool_user.Repo.user_caqti ptime ptime)
   ;;
 
-  (* Casts person to appropriate role wrapped in Any*)
+  (* Casts person to appropriate role wrapped in existential Any *)
   let find_by_email pool email =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_by_email_request
-      email
+      (Pool_user.EmailAddress.value email)
     ||> CCOption.to_result Pool_common.Message.(NotFound Admin)
     >>= fun (role, user, created_at, updated_at) ->
     let construct ctor = Any (ctor { user; created_at; updated_at }) in

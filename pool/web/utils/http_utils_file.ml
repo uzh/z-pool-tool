@@ -25,6 +25,7 @@ let prepare_import_directory () =
   |> Lwt.map (raise_if_failed message)
 ;;
 
+(* TODO check if can directly save to db instead of file *)
 let save_files allow_list req =
   let%lwt () = prepare_import_directory () in
   let files = Hashtbl.create ~random:true 5 in
