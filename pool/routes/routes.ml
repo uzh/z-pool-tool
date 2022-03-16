@@ -58,7 +58,7 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Tenant.tenant_context `Admin ()
+    [ CustomMiddleware.Context.context `Admin ()
     ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
     ]
   ;;
@@ -76,7 +76,7 @@ end
 module Root = struct
   let middlewares =
     CustomMiddleware.Root.
-      [ from_root_only (); CustomMiddleware.Tenant.tenant_context `Root () ]
+      [ from_root_only (); CustomMiddleware.Context.context `Root () ]
   ;;
 
   let routes =
@@ -95,7 +95,7 @@ module Root = struct
   let locked_middlewares =
     middlewares
     @ CustomMiddleware.Root.
-        [ CustomMiddleware.Tenant.tenant_context `Root ()
+        [ CustomMiddleware.Context.context `Root ()
         ; require_root ~login_path_f:(fun () -> "/root/login")
         ]
   ;;
@@ -121,7 +121,7 @@ let router =
   choose
     [ get "/" Handler.Public.root_redirect
     ; choose
-        ~middlewares:[ CustomMiddleware.Tenant.tenant_context `Participant () ]
+        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
         [ choose Public.routes
         ; Participant.(choose routes)
         ; Participant.(choose ~middlewares locked_routes)
@@ -133,7 +133,7 @@ let router =
     ; get "/error" Handler.Public.error
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Tenant.tenant_context `Participant () ]
+        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
         Handler.Public.not_found
     ]
 ;;

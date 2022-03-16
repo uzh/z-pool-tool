@@ -1,4 +1,4 @@
-let tenant_context user () =
+let context user () =
   let tenant_db_of_request req
       : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
     =
