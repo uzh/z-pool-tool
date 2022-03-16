@@ -95,6 +95,7 @@ let rec error_to_string = function
   | ConformistModuleErrorType -> failwith "Do not use"
   | DecodeAction -> "Cannot decode action."
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
+  | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."

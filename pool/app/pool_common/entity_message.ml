@@ -65,6 +65,7 @@ type error =
   | ConformistModuleErrorType
   | DecodeAction
   | Decode of field
+  | Disabled of field
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
