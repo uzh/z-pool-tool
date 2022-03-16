@@ -82,7 +82,7 @@ let create children message lang =
 ;;
 
 let create_root_layout children message lang =
-  let title_text = "Pool tool (Root)" in
+  let title_text = "Pool tool" in
   let page_title = title (txt title_text) in
   let message = Message.create message lang () in
   let scripts =
