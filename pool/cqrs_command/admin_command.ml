@@ -1,6 +1,31 @@
 module User = Pool_user
 module Id = Pool_common.Id
 
+module PromoteToOperator : sig
+  val handle
+    :  Admin.any_person
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> bool Lwt.t
+end = struct
+  let handle admin =
+    let open Admin in
+    let event ctor p =
+      Ok [ ctor (RoleUpdated (p, Operator)) |> Pool_event.admin ]
+    in
+    match admin with
+    | Any (Assistant _ as p) -> event (fun m -> AssistantEvents m) p
+    | Any (Experimenter _ as p) -> event (fun m -> ExperimenterEvents m) p
+    | Any (LocationManager _ as p) -> event (fun m -> LocationManagerEvents m) p
+    | Any (Recruiter _ as p) -> event (fun m -> RecruiterEvents m) p
+    | Any (Operator _) -> Error Pool_common.Message.AlreadyOperator
+  ;;
+
+  let can user =
+    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
+  ;;
+end
+
 module CreateOperator : sig
   type t =
     { email : User.EmailAddress.t
@@ -66,17 +91,17 @@ end = struct
         ; lastname = command.lastname
         }
     in
-    let bla =
+    let _ =
       match[@warning "-4"] participant with
       (* Not a participant => Proceed *)
       | Error Pool_common.Message.(NotFound Participant) ->
-        (match admin, promote with
+        (match admin, command.promote with
         (* Admin not found, not intending to promote => Create them as an
            operator *)
         | Error Pool_common.Message.(NotFound Admin), false ->
           Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
         (* Something else went wrong => No events *)
-        | Error err ->
+        | Error err, _ ->
           Logs.err (fun m ->
               m
                 "Could not create operator: %s"
@@ -84,7 +109,9 @@ end = struct
           CCResult.fail err
         (* Admin already exists, promote them to operator *)
         (* TODO [aerben] add a confirmation screen*)
-        | Ok admin -> PromoteToOperator.handle admin)
+        | Ok admin, true -> PromoteToOperator.handle admin
+        (* Admin already exists, promote them to operator *)
+        | Ok admin, false -> PromoteToOperator.handle admin)
       (* Is already a participant => Proceed *)
       | Ok _ ->
         let err = Pool_common.Message.AlreadyParticipant in
@@ -111,31 +138,6 @@ end = struct
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.conformist
-  ;;
-end
-
-module PromoteToOperator : sig
-  val handle
-    :  Admin.any_person
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> bool Lwt.t
-end = struct
-  let handle admin =
-    let open Admin in
-    let event ctor p =
-      Ok [ ctor (RoleUpdated (p, Operator)) |> Pool_event.admin ]
-    in
-    match admin with
-    | Any (Assistant _ as p) -> event (fun m -> AssistantEvents m) p
-    | Any (Experimenter _ as p) -> event (fun m -> ExperimenterEvents m) p
-    | Any (LocationManager _ as p) -> event (fun m -> LocationManagerEvents m) p
-    | Any (Recruiter _ as p) -> event (fun m -> RecruiterEvents m) p
-    | Any (Operator _) -> Error Pool_common.Message.AlreadyOperator
-  ;;
-
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
   ;;
 end
 
