@@ -1,3 +1,18 @@
+module Error = struct
+  type error = Entity_message.error [@@deriving eq, show, yojson]
+
+  let invalid_bool = Entity_message.(ConformistModuleErrorType)
+  let invalid_float = Entity_message.(ConformistModuleErrorType)
+  let invalid_int = Entity_message.(ConformistModuleErrorType)
+  let invalid_string = Entity_message.(ConformistModuleErrorType)
+  let invalid_date = Entity_message.(ConformistModuleErrorType)
+  let invalid_datetime = Entity_message.(ConformistModuleErrorType)
+  let no_value = Entity_message.(NoValue)
+  let of_string _ = Entity_message.(ConformistModuleErrorType)
+end
+
+module PoolConformist = Conformist.Make (Error)
+
 let with_log_info ?(level = Logs.Info) info =
   Logs.msg level (fun m -> m "%s" (Locales_en.info_to_string info));
   info
@@ -24,15 +39,26 @@ let with_log_result_error fcn =
       err)
 ;;
 
-let schema_decoder create_fcn err l =
+let decoder create_fcn field l =
   let open CCResult in
-  let open Locales_en in
-  let create_fcn m = create_fcn m |> CCResult.map_err error_to_string in
   match l with
   | x :: _ -> create_fcn x
   | [] ->
-    Error
-      (Entity_message.Undefined err
-      |> with_log_error ~level:Logs.Info
-      |> error_to_string)
+    Error (Entity_message.Undefined field |> with_log_error ~level:Logs.Info)
+;;
+
+let schema_decoder create_fcn encode_fnc field field_string =
+  PoolConformist.custom
+    (decoder create_fcn field)
+    (fun l -> l |> encode_fnc |> CCList.pure)
+    field_string
+;;
+
+let list_decoder create_fcn l = create_fcn l
+
+let schema_list_decoder create_fcn encode_fnc field_string =
+  PoolConformist.custom
+    (list_decoder create_fcn)
+    (fun l -> l |> encode_fnc)
+    field_string
 ;;

@@ -1,3 +1,5 @@
+module Field = Pool_common.Message
+
 let signup
     csrf
     message
@@ -7,13 +9,18 @@ let signup
     lastname
     recruitment_channel
     terms
+    Pool_context.{ language; query_language; _ }
   =
-  let submit_url = Sihl.Web.externalize_path "/signup" in
+  let open Tyxml.Html in
+  let field_to_string = Pool_common.Utils.field_to_string language in
+  let submit_url =
+    Http_utils.externalize_path_with_lang query_language "/signup"
+  in
+  let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
   let lastname = lastname |> CCOption.value ~default:"" in
   let children =
-    let open Tyxml.Html in
     let channel_select =
       let default =
         option
@@ -21,7 +28,9 @@ let signup
             (match recruitment_channel with
             | None -> [ a_disabled (); a_selected () ]
             | Some _ -> [ a_disabled () ])
-          (txt "Choose")
+          (txt
+             Pool_common.(
+               Utils.control_to_string language (Message.Choose None)))
       in
       channels
       |> CCList.map (fun channel ->
@@ -38,15 +47,15 @@ let signup
       |> CCList.cons default
     in
     div
-      [ h1 [ txt "Participant SignUp" ]
+      [ h1 (txt_to_string Pool_common.I18n.SignUpTitle)
       ; form
           ~a:[ a_action submit_url; a_method `Post ]
           [ Component.csrf_element csrf ()
           ; div
-              [ label [ txt "Email" ]
+              [ label [ txt (field_to_string Field.Email) ]
               ; input
                   ~a:
-                    [ a_placeholder "example@mail.com"
+                    [ a_placeholder (field_to_string Field.Email)
                     ; a_required ()
                     ; a_name "email"
                     ; a_value email
@@ -55,10 +64,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Firstname" ]
+              [ label [ txt (field_to_string Field.Firstname) ]
               ; input
                   ~a:
-                    [ a_placeholder "Firstname"
+                    [ a_placeholder (field_to_string Field.Firstname)
                     ; a_required ()
                     ; a_name "firstname"
                     ; a_value firstname
@@ -67,10 +76,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Lastname" ]
+              [ label [ txt (field_to_string Field.Lastname) ]
               ; input
                   ~a:
-                    [ a_placeholder "Lastname"
+                    [ a_placeholder (field_to_string Field.Lastname)
                     ; a_required ()
                     ; a_name "lastname"
                     ; a_value lastname
@@ -79,10 +88,10 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Password" ]
+              [ label [ txt (field_to_string Field.Password) ]
               ; input
                   ~a:
-                    [ a_placeholder "Password"
+                    [ a_placeholder (field_to_string Field.Password)
                     ; a_required ()
                     ; a_name "password"
                     ; a_input_type `Password
@@ -90,7 +99,7 @@ let signup
                   ()
               ]
           ; div
-              [ label [ txt "Recruitment Channel" ]
+              [ label [ txt (field_to_string Field.RecruitmentChannel) ]
               ; select
                   ~a:[ a_required (); a_name "recruitment_channel" ]
                   channel_select
@@ -107,12 +116,13 @@ let signup
                       ()
                   ; label
                       ~a:[ a_label_for "_terms_accepted" ]
-                      [ txt "I accept the terms and conditions." ]
+                      (txt_to_string
+                         Pool_common.I18n.SignUpAcceptTermsAndConditions)
                   ]
               ]
-          ; button ~a:[ a_button_type `Submit ] [ txt "Sign Up" ]
+          ; Component.submit_element language Pool_common.Message.(SignUp)
           ]
       ]
   in
-  Page_layout.create children message
+  Page_layout.create children message language
 ;;

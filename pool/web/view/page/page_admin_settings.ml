@@ -1,4 +1,6 @@
 open Tyxml.Html
+open Component
+module Message = Pool_common.Message
 
 let sortable =
   {js|
@@ -63,12 +65,13 @@ let show
     inactive_user_warning
     terms_and_conditions
     message
-    ()
+    Pool_context.{ language; _ }
   =
   let action_path action =
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
+  let input_element = input_element language in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
@@ -124,7 +127,7 @@ let show
       ; form
           ~a:[ a_action (action_path `UpdateTenantLanguages); a_method `Post ]
           ([ Component.csrf_element csrf (); field_elements ]
-          @ [ Component.input_element `Submit None "Save" ])
+          @ [ submit_element language Message.(Update None) ])
       ]
   in
   let email_suffixes_html =
@@ -137,16 +140,17 @@ let show
             ]
           (CCList.map
              (fun suffix ->
-               Component.input_element
+               input_element
                  `Text
                  (Some "email_suffix")
+                 Message.EmailSuffix
                  (suffix |> Settings.EmailSuffix.value))
              email_suffixes
-          @ [ Component.input_element `Submit None "Save" ])
+          @ [ submit_element language Message.(Update None) ])
       ; form
           ~a:[ a_action (action_path `CreateTenantEmailSuffix); a_method `Post ]
-          [ Component.input_element `Text (Some "email_suffix") ""
-          ; Component.input_element `Submit None "Add new"
+          [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
+          ; submit_element language Message.(Add None)
           ]
       ; hr ()
       ; div
@@ -166,7 +170,7 @@ let show
                        ; a_readonly ()
                        ]
                      ()
-                 ; Component.input_element `Submit None "Delete"
+                 ; submit_element language Message.(Delete None)
                  ])
              email_suffixes)
       ]
@@ -177,11 +181,12 @@ let show
       ; form
           ~a:
             [ a_action (action_path `UpdateTenantContactEmail); a_method `Post ]
-          [ Component.input_element
+          [ input_element
               `Text
               (Some "contact_email")
+              Message.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
-          ; Component.input_element `Submit None "Add new"
+          ; submit_element language Message.(Add None)
           ]
       ]
   in
@@ -195,13 +200,14 @@ let show
             ; a_method `Post
             ]
           [ p [ txt "Disable user after (weeks)" ]
-          ; Component.input_element
+          ; input_element
               `Number
               (Some "inactive_user_disable_after")
+              Message.InactiveUserDisableAfter
               (inactive_user_disable_after
               |> DisableAfter.value
               |> CCInt.to_string)
-          ; Component.input_element `Submit None "Update"
+          ; submit_element language Message.(Update None)
           ]
       ; form
           ~a:
@@ -209,11 +215,12 @@ let show
             ; a_method `Post
             ]
           [ p [ txt "Send warning before disabling (days)" ]
-          ; Component.input_element
+          ; input_element
               `Number
               (Some "inactive_user_warning")
+              Message.InactiveUserWarning
               (inactive_user_warning |> Warning.value |> CCInt.to_string)
-          ; Component.input_element `Submit None "Update"
+          ; submit_element language Message.(Update None)
           ]
       ]
   in
@@ -234,7 +241,7 @@ let show
                       language
                       terms_and_conditions
                    |> CCOption.map Settings.TermsAndConditions.Terms.value
-                   |> Option.value ~default:""))
+                   |> CCOption.value ~default:""))
             ])
         (Pool_common.Language.all ())
     in
@@ -244,7 +251,7 @@ let show
           ~a:
             [ a_action (action_path `UpdateTermsAndConditions); a_method `Post ]
           (terms_and_conditions_textareas
-          @ [ Component.input_element `Submit None "Update" ])
+          @ [ submit_element language Message.(Update None) ])
       ]
   in
   let html =
@@ -258,5 +265,5 @@ let show
       ; script (Unsafe.data sortable)
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create html message language
 ;;

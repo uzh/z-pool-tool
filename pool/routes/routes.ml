@@ -17,7 +17,7 @@ let global_middlewares =
 module Public = struct
   let routes =
     Handler.Public.
-      [ get "/" index
+      [ get "/index" index
       ; get "/custom/assets/index.css" index_css
       ; get "/login" Login.login_get
       ; post "/login" Login.login_post
@@ -26,8 +26,6 @@ module Public = struct
       ; post "/request-reset-password" Login.request_reset_password_post
       ; get "/reset-password" Login.reset_password_get
       ; post "/reset-password" Login.reset_password_post
-      ; get "/custom/assets/:id/:filename" asset
-      ; get "/error" error
       ]
   ;;
 end
@@ -60,7 +58,9 @@ end
 
 module Admin = struct
   let middlewares =
-    [ CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login") ]
+    [ CustomMiddleware.Context.context `Admin ()
+    ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
+    ]
   ;;
 
   let routes =
@@ -74,7 +74,10 @@ module Admin = struct
 end
 
 module Root = struct
-  let middlewares = CustomMiddleware.Root.[ from_root_only () ]
+  let middlewares =
+    CustomMiddleware.Root.
+      [ from_root_only (); CustomMiddleware.Context.context `Root () ]
+  ;;
 
   let routes =
     let open Handler.Root in
@@ -92,7 +95,9 @@ module Root = struct
   let locked_middlewares =
     middlewares
     @ CustomMiddleware.Root.
-        [ require_root ~login_path_f:(fun () -> "/root/login") ]
+        [ CustomMiddleware.Context.context `Root ()
+        ; require_root ~login_path_f:(fun () -> "/root/login")
+        ]
   ;;
 
   let locked_routes =
@@ -114,12 +119,21 @@ end
 
 let router =
   choose
-    [ choose Public.routes
-    ; Participant.(choose routes)
-    ; Participant.(choose ~middlewares locked_routes)
+    [ get "/" Handler.Public.root_redirect
+    ; choose
+        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+        [ choose Public.routes
+        ; Participant.(choose routes)
+        ; Participant.(choose ~middlewares locked_routes)
+        ]
+    ; get "/custom/assets/:id/:filename" Handler.Public.asset
     ; Admin.(choose ~scope:"/admin" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares routes)
     ; Root.(choose ~scope:"/root" ~middlewares:locked_middlewares locked_routes)
-    ; get "/**" Handler.Public.not_found
+    ; get "/error" Handler.Public.error
+    ; get
+        "/**"
+        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+        Handler.Public.not_found
     ]
 ;;

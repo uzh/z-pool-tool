@@ -15,16 +15,26 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: csrf_attibs ?id csrf)
 ;;
 
-let input_element input_type name value =
+let input_element language input_type name input_label value =
+  let input_label = Pool_common.Utils.field_to_string language input_label in
   let base_attributes = [ a_input_type input_type; a_value value ] in
   let attributes =
     match name with
-    | Some name ->
-      base_attributes
-      @ [ a_name name; a_placeholder (HttpUtils.placeholder_from_name name) ]
+    | Some name -> base_attributes @ [ a_name name; a_placeholder input_label ]
     | None -> base_attributes
   in
-  input ~a:attributes ()
+  match input_type with
+  | `Hidden -> input ~a:attributes ()
+  | _ -> div [ label [ txt input_label ]; input ~a:attributes () ]
+;;
+
+let submit_element lang submit =
+  input
+    ~a:
+      [ a_input_type `Submit
+      ; a_value (Pool_common.Utils.control_to_string lang submit)
+      ]
+    ()
 ;;
 
 let hx_input_element
@@ -33,20 +43,22 @@ let hx_input_element
     value
     (* TODO [aerben] Do we generally want HTMX input fields to be versioned? *)
       version
+    input_label
+    language
     ?hx_post
     ?hx_params
     ?(classnames = [])
     ?error
     ()
   =
+  let field_to_string = Pool_common.Utils.field_to_string language in
   let attributes =
     (match input_type with
     | `Checkbox ->
       if bool_of_string_opt value |> CCOption.get_or ~default:false
       then [ a_checked () ]
       else []
-    | _ ->
-      [ a_value value; a_placeholder (HttpUtils.placeholder_from_name name) ])
+    | _ -> [ a_value value; a_placeholder (field_to_string input_label) ])
     @ [ a_input_type input_type
       ; a_name name
       ; a_user_data "hx-swap" "outerHTML"
@@ -80,16 +92,11 @@ let hx_input_element
     | Some error ->
       span
         ~a:[ a_class [ "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string Language.En)) ]
+        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
   in
   div
     ~a:[ a_class [ "flexcolumn" ]; a_user_data "name" name ]
-    [ label
-        [ name
-          |> HttpUtils.placeholder_from_name
-          |> CCString.capitalize_ascii
-          |> txt
-        ]
+    [ label [ txt (field_to_string input_label) ]
     ; input ~a:attributes ()
     ; error
     ]

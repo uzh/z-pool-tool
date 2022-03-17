@@ -1,4 +1,5 @@
 module Message = Entity_message
+module I18n = Entity_i18n
 
 module Id : sig
   type t
@@ -25,8 +26,16 @@ module Language : sig
   val of_string : string -> (t, Message.error) result
   val t : t Caqti_type.t
   val label : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
-  val schema_i18n : unit -> ('a, t) Conformist.Field.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val schema_i18n
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
   val all : unit -> t list
   val all_codes : unit -> string list
 end
@@ -146,17 +155,29 @@ module Repo : sig
 end
 
 module Utils : sig
+  module PoolConformist = Pool_common_utils.PoolConformist
+
   val schema_decoder
-    :  ('a -> ('b, Message.error) result)
-    -> Message.field
-    -> 'a list
-    -> ('b, string) result
+    :  (string -> ('b, Message.error) result)
+    -> ('b -> string)
+    -> Entity_message.field
+    -> string
+    -> (Message.error, 'b) PoolConformist.Field.t
+
+  val schema_list_decoder
+    :  (string list -> ('a, Entity_message.error) result)
+    -> ('a -> string list)
+    -> string
+    -> ('b, 'a) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
   val info_to_string : Language.t -> Message.info -> string
   val success_to_string : Language.t -> Message.success -> string
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
+  val field_to_string : Language.t -> Message.field -> string
+  val control_to_string : Language.t -> Message.control -> string
+  val text_to_string : Language.t -> Entity_i18n.t -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
 

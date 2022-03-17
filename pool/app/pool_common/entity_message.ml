@@ -1,25 +1,18 @@
-module ConformistError = struct
-  type t = string * string list * string [@@deriving eq, show, yojson]
-
-  let to_string err =
-    CCString.concat
-      "\n"
-      (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
-  ;;
-end
-
 type field =
   | Admin
   | ContactEmail
+  | CurrentPassword
   | Database
   | DatabaseLabel
   | DatabaseUrl
+  | DefaultLanguage
   | Description
   | Email
   | EmailAddress
   | EmailSuffix
   | EmailAddressUnverified
   | EmailAddressVerified
+  | File
   | FileMimeType
   | Filename
   | Filesize
@@ -33,10 +26,12 @@ type field =
   | Language
   | Lastname
   | LogoType
+  | NewPassword
   | Operator
   | Page
   | Participant
   | Password
+  | PasswordConfirmation
   | Paused
   | RecruitmentChannel
   | Role
@@ -63,22 +58,27 @@ type field =
   | Token
   | Url
   | User
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show { with_path = false }, yojson, variants]
 
 type error =
-  | Conformist of ConformistError.t list
+  | Conformist of error list
+  | ConformistModuleErrorType
   | DecodeAction
   | Decode of field
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailMalformed
+  | HtmxVersionNotFound of string
   | Invalid of field
   | LoginProvideDetails
   | MeantimeUpdate of field
   | NoOptionSelected of field
+  | NotANumber of string
   | NoTenantsRegistered
   | NotFound of field
+  | NotHandled of string
+  | NoValue
   | ParticipantSignupInvalidEmail
   | ParticipantUnconfirmed
   | PasswordPolicy of string
@@ -88,6 +88,7 @@ type error =
   | Retrieve of field
   | SessionInvalid
   | SessionTenantNotFound
+  | TenantContextNotFound
   | TerminatoryTenantError
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle
@@ -134,9 +135,32 @@ let handle_sihl_login_error = function
   | `Incorrect_password | `Does_not_exist -> Invalid Password
 ;;
 
-module I18n = struct
-  module EmailConfirmation = struct
-    let title = "Email confirmation"
-    let note = "Please check your emails and confirm your address first."
-  end
-end
+type control =
+  | Accept of field option
+  | Add of field option
+  | Back
+  | Choose of field option
+  | Create of field option
+  | Delete of field option
+  | Decline
+  | Disable
+  | Edit of field option
+  | Enable
+  | Login
+  | Save of field option
+  | SendResetLink
+  | SignUp
+  | Update of field option
+[@@deriving eq, show, yojson, variants]
+
+let to_coformist_error error_list =
+  CCList.map (fun (_, _, msg) -> msg) error_list |> conformist
+;;
+
+let field_name field = field |> show_field |> CCString.lowercase_ascii
+
+let add_field_query_params path params =
+  CCList.map (CCPair.map_fst field_name) params
+  |> Uri.add_query_params' (Uri.of_string path)
+  |> Uri.to_string
+;;

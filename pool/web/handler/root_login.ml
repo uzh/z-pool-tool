@@ -9,19 +9,24 @@ let redirect_to_entrypoint = HttpUtils.redirect_to root_entrypoint_path
 
 let login_get req =
   let open Lwt.Infix in
-  Service.User.Web.user_from_session ~ctx req
-  >>= function
-  | Some _ -> redirect_to_entrypoint
-  | None ->
-    let open Sihl.Web in
-    let csrf = HttpUtils.find_csrf req in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Root.Login.login csrf message () |> Response.of_html |> Lwt.return
+  let result context =
+    Service.User.Web.user_from_session ~ctx req
+    >>= function
+    | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
+    | None ->
+      let open Sihl.Web in
+      let csrf = HttpUtils.find_csrf req in
+      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
+      Page.Root.Login.login csrf message context
+      |> Response.of_html
+      |> Lwt_result.return
+  in
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result _ =
     Lwt_result.map_err (fun err -> err, root_login_path)
     @@
     let open Lwt_result.Syntax in
@@ -41,11 +46,11 @@ let login_post req =
       [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_get req =
-  let%lwt result =
+  let result context =
     Lwt_result.map_err (fun err -> err, root_entrypoint_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -56,17 +61,18 @@ let request_reset_password_get req =
     | None ->
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Root.Login.request_reset_password csrf message ()
+      Page.Root.Login.request_reset_password csrf message context
       |> Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_post req =
   let%lwt result =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
+    let* context = Pool_context.find req |> Lwt_result.lift in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
       ||> CCOption.to_result Pool_common.Message.(NotFound Email)
@@ -75,7 +81,8 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage
     in
-    Email.Helper.PasswordReset.create Database.root ~user
+    let language = context.Pool_context.language in
+    Email.Helper.PasswordReset.create Database.root language ~user
     >|= Service.Email.send ~ctx
   in
   match result with
@@ -87,36 +94,42 @@ let request_reset_password_post req =
 ;;
 
 let reset_password_get req =
-  let open Sihl.Web in
-  Request.query "token" req
-  |> function
-  | None ->
-    HttpUtils.redirect_to_with_actions
-      "/root/request-reset-password/"
-      [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
-  | Some token ->
-    let csrf = HttpUtils.find_csrf req in
-    let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    Page.Root.Login.reset_password csrf message token ()
-    |> Response.of_html
-    |> Lwt.return
+  let result context =
+    let open Sihl.Web in
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, "/root/request-reset-password/")
+    @@ let* token =
+         Request.query Pool_common.Message.(field_name Token) req
+         |> CCOption.to_result Pool_common.Message.(NotFound Token)
+         |> Lwt_result.lift
+       in
+       let csrf = HttpUtils.find_csrf req in
+       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
+       Page.Root.Login.reset_password csrf message token context
+       |> Response.of_html
+       |> Lwt_result.return
+  in
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result _ =
     let open Lwt_result.Syntax in
     let* params =
       HttpUtils.urlencoded_to_params
         urlencoded
-        [ "token"; "password"; "password_confirmation" ]
+        [ Pool_common.Message.(field_name Token)
+        ; "password"
+        ; "password_confirmation"
+        ]
       |> CCOption.to_result
            ( Pool_common.Message.PasswordResetInvalidData
            , "/root/reset-password/" )
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
-    let token = go "token" in
+    let token = go Pool_common.Message.(field_name Token) in
     let* () =
       Service.PasswordReset.reset_password
         ~ctx
@@ -132,7 +145,7 @@ let reset_password_post req =
       [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
     |> Lwt_result.ok
   in
-  HttpUtils.extract_happy_path result
+  result |> HttpUtils.extract_happy_path req
 ;;
 
 let logout _ =

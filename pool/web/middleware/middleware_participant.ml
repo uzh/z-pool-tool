@@ -5,7 +5,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
     let%lwt confirmed_and_terms_agreed =
       let open Utils.Lwt_result.Infix in
       let open Lwt_result.Syntax in
-      let* pool = Middleware_tenant.tenant_db_of_request req in
+      let* context = Pool_context.find req |> Lwt_result.lift in
+      let pool = context.Pool_context.tenant_db in
       let* user =
         Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
         ||> CCOption.to_result Pool_common.Message.(NotFound User)

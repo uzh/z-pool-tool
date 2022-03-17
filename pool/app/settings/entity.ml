@@ -1,3 +1,5 @@
+module Message = Pool_common.Message
+
 module Day = struct
   type t = int [@@deriving eq, show, yojson]
 
@@ -15,16 +17,18 @@ module ContactEmail = struct
 
   let value m = m
 
+  (* TODO: email address validation *)
   let create email =
     if CCString.length email <= 0
-    then Error Pool_common.Message.(Invalid EmailAddress)
+    then Error Message.(Invalid EmailAddress)
     else Ok email
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.EmailAddress)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      Message.EmailAddress
       "contact_email"
   ;;
 end
@@ -41,9 +45,10 @@ module EmailSuffix = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.EmailSuffix)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      Message.EmailSuffix
       "email_suffix"
   ;;
 end
@@ -65,10 +70,10 @@ module InactiveUser = struct
     let to_timespan = Week.to_timespan
 
     let schema () =
-      Conformist.custom
-        Pool_common.(
-          Utils.schema_decoder create Message.InactiveUserDisableAfter)
-        (fun l -> l |> CCInt.to_string |> CCList.pure)
+      Pool_common.Utils.schema_decoder
+        create
+        CCInt.to_string
+        Message.InactiveUserDisableAfter
         "inactive_user_disable_after"
     ;;
   end
@@ -89,9 +94,10 @@ module InactiveUser = struct
     let to_timespan = Day.to_timespan
 
     let schema () =
-      Conformist.custom
-        Pool_common.(Utils.schema_decoder create Message.InactiveUserWarning)
-        (fun l -> l |> CCInt.to_string |> CCList.pure)
+      Pool_common.Utils.schema_decoder
+        create
+        CCInt.to_string
+        Message.InactiveUserWarning
         "inactive_user_warning"
     ;;
   end

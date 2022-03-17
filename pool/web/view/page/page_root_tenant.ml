@@ -1,11 +1,28 @@
 open Tyxml.Html
 module File = Pool_common.File
 module Id = Pool_common.Id
+module Message = Pool_common.Message
 
-let csrf_element = Component.csrf_element
-let input_element = Component.input_element
+let submit_element = Component.submit_element
 
-let list csrf tenant_list root_list message () =
+let system_language_select name input_label =
+  [ div
+      [ label
+          [ txt Pool_common.(Utils.field_to_string Language.En input_label) ]
+      ; select
+          ~a:[ a_name name ]
+          (CCList.map
+             (fun l ->
+               option
+                 ~a:[ a_value (Pool_common.Language.code l) ]
+                 (txt (Pool_common.Language.code l)))
+             (Pool_common.Language.all ()))
+      ]
+  ]
+;;
+
+let list csrf tenant_list root_list message Pool_context.{ language; _ } =
+  let input_element = Component.input_element language in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
     CCList.map
@@ -28,8 +45,8 @@ let list csrf tenant_list root_list message () =
     let status_toggle (status : Sihl.Contract.User.status) id =
       let text =
         match status with
-        | Active -> "Disable"
-        | Inactive -> "Enable"
+        | Active -> Message.Disable
+        | Inactive -> Message.Enable
       in
       form
         ~a:
@@ -38,7 +55,7 @@ let list csrf tenant_list root_list message () =
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
           ]
-        [ input_element `Submit None text ]
+        [ submit_element language text ]
     in
     CCList.map
       (fun root ->
@@ -49,25 +66,26 @@ let list csrf tenant_list root_list message () =
   in
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
-  let fields =
-    [ "title", "title"
-    ; "description", "descr"
-    ; "url", "url"
-    ; "database_url", "db url"
-    ; "database_label", "label"
-    ; "smtp_auth_server", "server"
-    ; "smtp_auth_port", "587"
-    ; "smtp_auth_username", "username"
-    ; "smtp_auth_password", "pw"
-    ; "smtp_auth_authentication_method", "LOGIN"
-    ; "smtp_auth_protocol", "SSL/TLS"
-    ; "default_language", "DE"
+  let text_fields =
+    let open Message in
+    [ "title", Title
+    ; "description", Description
+    ; "url", Url
+    ; "database_url", DatabaseUrl
+    ; "database_label", DatabaseLabel
+    ; "smtp_auth_server", SmtpAuthServer
+    ; "smtp_auth_port", SmtpPort
+    ; "smtp_auth_username", SmtpUsername
+    ; "smtp_auth_password", SmtpPassword
+    ; "smtp_auth_authentication_method", SmtpAuthMethod
+    ; "smtp_auth_protocol", SmtpProtocol
     ]
   in
   let input_fields =
     CCList.map
-      (fun (name, value) -> input_element `Text (Some name) value)
-      fields
+      (fun (name, label) -> input_element `Text (Some name) label "")
+      text_fields
+    @ system_language_select "default_language" Message.DefaultLanguage
     @ [ div
           [ label [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
@@ -100,8 +118,8 @@ let list csrf tenant_list root_list message () =
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((csrf_element csrf () :: input_fields)
-          @ [ input_element `Submit None "Create new" ])
+          ((Component.csrf_element csrf () :: input_fields)
+          @ [ submit_element language Message.(Create None) ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -111,39 +129,53 @@ let list csrf tenant_list root_list message () =
             ; a_method `Post
             ]
           (CCList.map
-             (fun name -> input_element `Text (Some name) "")
-             [ "email"; "password"; "firstname"; "lastname" ]
-          @ [ input_element `Submit None "Create root" ])
+             (fun (name, label) -> input_element `Text (Some name) label "")
+             [ "email", Message.Email
+             ; "password", Message.Password
+             ; "firstname", Message.Firstname
+             ; "lastname", Message.Lastname
+             ]
+          @ [ submit_element language Message.(Create (Some root)) ])
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create_root_layout html message language
 ;;
 
-let detail csrf (tenant : Pool_tenant.t) message () =
+let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
+  let input_element = Component.input_element language in
   let detail_fields =
-    [ "title", Title.value tenant.title
-    ; "description", Description.value tenant.description
-    ; "url", Pool_tenant.Url.value tenant.url
-    ; "smtp_auth_server", Server.value tenant.smtp_auth.server
-    ; "smtp_auth_port", Port.value tenant.smtp_auth.port
-    ; "smtp_auth_username", Username.value tenant.smtp_auth.username
+    [ "title", Message.Title, Title.value tenant.title
+    ; "description", Message.Description, Description.value tenant.description
+    ; "url", Message.Url, Pool_tenant.Url.value tenant.url
+    ; ( "smtp_auth_server"
+      , Message.SmtpAuthServer
+      , Server.value tenant.smtp_auth.server )
+    ; "smtp_auth_port", Message.SmtpPort, Port.value tenant.smtp_auth.port
+    ; ( "smtp_auth_username"
+      , Message.SmtpUsername
+      , Username.value tenant.smtp_auth.username )
     ; ( "smtp_auth_authentication_method"
+      , Message.SmtpAuthMethod
       , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
-    ; "smtp_auth_protocol", Protocol.value tenant.smtp_auth.protocol
-    ; "default_language", Pool_common.Language.code tenant.default_language
+    ; ( "smtp_auth_protocol"
+      , Message.SmtpProtocol
+      , Protocol.value tenant.smtp_auth.protocol )
     ]
   in
   let database_fields =
-    [ "database_url", ""
-    ; "database_label", Pool_database.Label.value tenant.database_label
+    [ "database_url", Message.DatabaseUrl, ""
+    ; ( "database_label"
+      , Message.DatabaseLabel
+      , Pool_database.Label.value tenant.database_label )
     ]
   in
   let detail_input_fields =
-    CCList.map
-      (fun (name, value) -> input_element `Text (Some name) value)
-      detail_fields
+    (CCList.map
+       (fun (name, label, value) -> input_element `Text (Some name) label value)
+       detail_fields
+    @ system_language_select "default_language" Message.DefaultLanguage)
     @ [ div
           [ a
               ~a:
@@ -174,7 +206,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
   in
   let database_input_fields =
     CCList.map
-      (fun (name, value) -> input_element `Text (Some name) value)
+      (fun (name, label, value) -> input_element `Text (Some name) label value)
       database_fields
   in
   let disabled =
@@ -206,8 +238,8 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                              (File.id file |> Id.value)))
                    ; a_method `Post
                    ]
-                 [ csrf_element csrf ()
-                 ; input_element `Submit None "Delete Image"
+                 [ Component.csrf_element csrf ()
+                 ; submit_element language Message.(Delete (Some file))
                  ]
              ])
          files)
@@ -233,8 +265,8 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((csrf_element csrf () :: detail_input_fields)
-          @ [ disabled; input_element `Submit None "Update" ])
+          ((Component.csrf_element csrf () :: detail_input_fields)
+          @ [ disabled; submit_element language Message.(Update None) ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -248,8 +280,8 @@ let detail csrf (tenant : Pool_tenant.t) message () =
             ; a_method `Post
             ; a_enctype "multipart/form-data"
             ]
-          ((csrf_element csrf () :: database_input_fields)
-          @ [ input_element `Submit None "Update database" ])
+          ((Component.csrf_element csrf () :: database_input_fields)
+          @ [ submit_element language Message.(Update None) ])
       ; hr ()
       ; form
           ~a:
@@ -260,15 +292,19 @@ let detail csrf (tenant : Pool_tenant.t) message () =
                       (Id.value tenant.id)))
             ; a_method `Post
             ]
-          ((csrf_element csrf ()
+          ((Component.csrf_element csrf ()
            :: CCList.map
-                (fun name -> input_element `Text (Some name) "")
-                [ "email"; "password"; "firstname"; "lastname" ])
-          @ [ input_element `Submit None "Create operator" ])
+                (fun (name, label) -> input_element `Text (Some name) label "")
+                [ "email", Message.Email
+                ; "password", Message.Password
+                ; "firstname", Message.Firstname
+                ; "lastname", Message.Lastname
+                ])
+          @ [ submit_element language Message.(Create (Some operator)) ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
           [ txt "back" ]
       ]
   in
-  Page_layout.create html message ()
+  Page_layout.create_root_layout html message language
 ;;

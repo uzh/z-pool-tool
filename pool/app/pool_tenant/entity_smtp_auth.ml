@@ -12,9 +12,10 @@ module Server = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpAuthServer)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.Language
       "smtp_auth_server"
   ;;
 end
@@ -31,9 +32,10 @@ module Port = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpPort)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.SmtpPort
       "smtp_auth_port"
   ;;
 end
@@ -50,9 +52,10 @@ module Username = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpUsername)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.SmtpUsername
       "smtp_auth_username"
   ;;
 end
@@ -69,9 +72,10 @@ module Password = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpPassword)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      show
+      PoolError.SmtpUsername
       "smtp_auth_password"
   ;;
 end
@@ -88,9 +92,10 @@ module AuthenticationMethod = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpAuthMethod)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.SmtpAuthMethod
       "smtp_auth_authentication_method"
   ;;
 end
@@ -107,9 +112,10 @@ module Protocol = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpProtocol)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.SmtpProtocol
       "smtp_auth_protocol"
   ;;
 end

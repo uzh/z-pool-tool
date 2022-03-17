@@ -1,3 +1,5 @@
+module Conformist = Pool_common.Utils.PoolConformist
+
 module UpdateLanguages : sig
   type t = Pool_common.Language.t list
 
@@ -61,7 +63,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 end
 
@@ -122,7 +124,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 end
 
@@ -153,7 +155,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 end
 
@@ -189,7 +191,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.conformist
+      |> CCResult.map_err Pool_common.Message.to_coformist_error
     ;;
   end
 
@@ -224,7 +226,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.conformist
+      |> CCResult.map_err Pool_common.Message.to_coformist_error
     ;;
   end
 end

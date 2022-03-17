@@ -11,10 +11,7 @@ module Key = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder create PoolError.Key)
-      CCList.pure
-      "key"
+    Pool_common.Utils.schema_decoder create value PoolError.Key "key"
   ;;
 end
 
@@ -30,9 +27,10 @@ module Content = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder create PoolError.Translation)
-      CCList.pure
+    Pool_common.Utils.schema_decoder
+      create
+      value
+      PoolError.Translation
       "content"
   ;;
 end

@@ -3,15 +3,18 @@ open Entity_message
 let field_to_string = function
   | Admin -> "admin"
   | ContactEmail -> "contact email address"
+  | CurrentPassword -> "current password"
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
+  | DefaultLanguage -> "default language"
   | Description -> "description"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | File -> "file"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
   | Filesize -> "filesize"
@@ -25,10 +28,12 @@ let field_to_string = function
   | Language -> "language"
   | Lastname -> "lastname"
   | LogoType -> "logo type"
+  | NewPassword -> "new password"
   | Operator -> "operator"
   | Page -> "page"
   | Participant -> "participant"
   | Password -> "password"
+  | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | RecruitmentChannel -> "recruitment channel"
   | Role -> "role"
@@ -85,22 +90,28 @@ let warning_to_string : warning -> string = function
   | Warning string -> string
 ;;
 
-let error_to_string = function
-  | Conformist err -> ConformistError.to_string err
+let rec error_to_string = function
+  | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
+  | ConformistModuleErrorType -> failwith "Do not use"
   | DecodeAction -> "Cannot decode action."
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailMalformed -> "Malformed email"
+  | HtmxVersionNotFound field ->
+    Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
   | NoOptionSelected field ->
     field_message "Please select at least one" (field_to_string field) "."
+  | NotANumber field -> Format.asprintf "Version '%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
+  | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
+  | NoValue -> "No value provided."
   | ParticipantSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | ParticipantUnconfirmed -> "Participant isn't confirmed!"
@@ -116,6 +127,7 @@ let error_to_string = function
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
+  | TenantContextNotFound -> "Tenant could not be found."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"
@@ -126,6 +138,31 @@ let error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | WriteOnlyModel -> "Write only model!"
+;;
+
+let format_submit submit field =
+  let field_opt_message f =
+    f |> CCOption.map field_to_string |> CCOption.value ~default:""
+  in
+  field_message "" submit (field_opt_message field)
+;;
+
+let control_to_string = function
+  | Accept field -> format_submit "accept" field
+  | Add field -> format_submit "add" field
+  | Back -> format_submit "back" None
+  | Choose field -> format_submit "choose" field
+  | Create field -> format_submit "create" field
+  | Decline -> format_submit "decline" None
+  | Delete field -> format_submit "delete" field
+  | Disable -> format_submit "disable" None
+  | Edit field -> format_submit "edit" field
+  | Enable -> format_submit "enable" None
+  | Login -> format_submit "login" None
+  | Save field -> format_submit "save" field
+  | SendResetLink -> format_submit "send reset link" None
+  | SignUp -> format_submit "sign up" None
+  | Update field -> format_submit "update" field
 ;;
 
 let to_string = function

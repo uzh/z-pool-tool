@@ -2,6 +2,33 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
+let user_from_session db_pool req : Sihl_user.t option Lwt.t =
+  let ctx = Pool_tenant.to_ctx db_pool in
+  Service.User.Web.user_from_session ~ctx req
+;;
+
+let find_query_lang req =
+  let open CCOption.Infix in
+  Sihl.Web.Request.query Pool_common.Message.(field_name Language) req
+  >>= fun l ->
+  l
+  |> CCString.uppercase_ascii
+  |> Pool_common.Language.of_string
+  |> CCOption.of_result
+;;
+
+let path_with_language lang path =
+  lang
+  |> CCOption.map (fun lang ->
+         Pool_common.(
+           Message.add_field_query_params
+             path
+             [ ( Message.Language
+               , lang |> Language.code |> CCString.lowercase_ascii )
+             ]))
+  |> CCOption.value ~default:path
+;;
+
 let redirect_to_with_actions path actions =
   path
   |> Sihl.Web.externalize_path
@@ -12,34 +39,44 @@ let redirect_to_with_actions path actions =
 
 let redirect_to path = redirect_to_with_actions path []
 
-let extract_happy_path_generic result msgf =
-  result
-  |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
-  |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_msg, error_path) ->
-         redirect_to_with_actions error_path [ msgf error_msg ])
+let extract_happy_path_generic req result msgf =
+  let context = Pool_context.find req in
+  match context with
+  | Ok context ->
+    let%lwt res = result context in
+    res
+    |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
+    |> CCResult.map Lwt.return
+    |> CCResult.get_lazy (fun (error_msg, error_path) ->
+           redirect_to_with_actions error_path [ msgf error_msg ])
+  | Error _ -> redirect_to "/error"
 ;;
 
-let extract_happy_path result =
-  extract_happy_path_generic result (fun err ->
+let extract_happy_path req result =
+  extract_happy_path_generic req result (fun err ->
       Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
-let extract_happy_path_with_actions result =
-  result
-  |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
-  |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-         redirect_to_with_actions
-           error_path
-           (CCList.append
-              [ Message.set
-                  ~warning:[]
-                  ~success:[]
-                  ~info:[]
-                  ~error:[ error_key ]
-              ]
-              error_actions))
+let extract_happy_path_with_actions req result =
+  let context = Pool_context.find req in
+  match context with
+  | Ok context ->
+    let%lwt res = result context in
+    res
+    |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
+    |> CCResult.map Lwt.return
+    |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
+           redirect_to_with_actions
+             error_path
+             (CCList.append
+                [ Message.set
+                    ~warning:[]
+                    ~success:[]
+                    ~info:[]
+                    ~error:[ error_key ]
+                ]
+                error_actions))
+  | Error _ -> redirect_to "/error"
 ;;
 
 (* Read urlencoded values in any order *)
@@ -159,4 +196,8 @@ let browser_language_from_req req =
   >>= CCList.head_opt
   >>= Utils.LanguageCodes.find
   >>= to_lang
+;;
+
+let externalize_path_with_lang lang path =
+  path_with_language lang path |> Sihl.Web.externalize_path
 ;;

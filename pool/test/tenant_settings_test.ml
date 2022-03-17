@@ -86,6 +86,53 @@ let check_terms_and_conditions _ () =
   Alcotest.(check bool "has terms and conditions" has_terms true) |> Lwt.return
 ;;
 
+let update_terms_and_conditions _ () =
+  let%lwt languages = Settings.find_languages database_label in
+  let terms_and_conditions_text = "Terms and conditions" in
+  let%lwt events =
+    let open Lwt_result.Infix in
+    let data =
+      CCList.map
+        (fun lang ->
+          Pool_common.Language.code lang, [ terms_and_conditions_text ])
+        languages
+    in
+    let result =
+      Cqrs_command.Settings_command.UpdateTermsAndConditions.handle
+        languages
+        data
+      |> Lwt_result.lift
+    in
+    let%lwt (_ : (unit Lwt.t, Pool_common.Message.error) result) =
+      result >|= Lwt_list.iter_s (Pool_event.handle_event database_label)
+    in
+    result
+  in
+  let expected =
+    let open CCResult.Infix in
+    let* terms_and_conditions =
+      CCResult.flatten_l
+        (CCList.map
+           (fun l ->
+             Settings.TermsAndConditions.create
+               (l |> Pool_common.Language.code)
+               terms_and_conditions_text)
+           languages)
+    in
+    Ok
+      [ Settings.TermsAndConditionsUpdated terms_and_conditions
+        |> Pool_event.settings
+      ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+  |> Lwt.return
+;;
+
 let login_after_terms_update _ () =
   let email = "one@test.com" in
   let accepted =

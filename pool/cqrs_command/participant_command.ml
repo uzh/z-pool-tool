@@ -1,3 +1,4 @@
+module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -73,7 +74,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 end
 
@@ -144,7 +145,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 
   let can pool user participant =
@@ -224,7 +225,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 
   let can pool user participant =

@@ -12,7 +12,7 @@ module Language = struct
   type t =
     | En [@name "EN"]
     | De [@name "DE"]
-  [@@deriving eq, show, yojson]
+  [@@deriving eq, show, yojson, sexp_of]
 
   let code = function
     | En -> "EN"
@@ -38,9 +38,10 @@ module Language = struct
   let label country_code = country_code |> code |> Utils.Countries.find
 
   let base_schema field_name =
-    Conformist.custom
-      (Pool_common_utils.schema_decoder of_string PoolError.Language)
-      (fun l -> [ code l ])
+    Pool_common_utils.schema_decoder
+      of_string
+      code
+      PoolError.Language
       field_name
   ;;
 

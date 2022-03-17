@@ -39,7 +39,7 @@ let prepare_email pool template_label subject email params =
 ;;
 
 module PasswordReset = struct
-  let create pool ~user =
+  let create pool language ~user =
     let email = user.Sihl_user.email in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt reset_token =
@@ -52,7 +52,13 @@ module PasswordReset = struct
     | Some token ->
       let subject = "Password reset" in
       let reset_url =
-        Format.asprintf "/reset-password/?token=%s" token
+        Pool_common.
+          [ Message.Token, token
+          ; ( Message.Language
+            , language |> Pool_common.Language.code |> CCString.lowercase_ascii
+            )
+          ]
+        |> Pool_common.Message.add_field_query_params "/reset-password/"
         |> prepend_root_directory pool
         |> Sihl.Web.externalize_path
         |> create_public_url url
@@ -105,7 +111,8 @@ module ConfirmationEmail = struct
     in
     let subject = "Email verification" in
     let validation_url =
-      Format.asprintf "/email-verified?token=%s" (token email)
+      Pool_common.[ Message.Token, token email ]
+      |> Pool_common.Message.add_field_query_params "/email-verified"
       |> Sihl.Web.externalize_path
       |> create_public_url url
     in

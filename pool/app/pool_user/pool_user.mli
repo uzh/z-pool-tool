@@ -12,7 +12,10 @@ module Password : sig
 
   val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
-  val schema : string -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  string
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module PasswordConfirmed : sig
@@ -23,7 +26,10 @@ module PasswordConfirmed : sig
   val show : t -> string
   val create : string -> t
   val to_sihl : t -> string
-  val schema : string -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  string
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Firstname : sig
@@ -35,7 +41,10 @@ module Firstname : sig
   val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
   val value : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Lastname : sig
@@ -47,7 +56,10 @@ module Lastname : sig
   val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
   val value : t -> string
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Paused : sig
@@ -58,7 +70,10 @@ module Paused : sig
   val show : t -> string
   val value : t -> bool
   val create : bool -> t
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Disabled : sig
@@ -108,7 +123,10 @@ module EmailAddress : sig
   val value : t -> string
   val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Repo : sig
