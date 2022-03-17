@@ -241,7 +241,7 @@ let show
                       language
                       terms_and_conditions
                    |> CCOption.map Settings.TermsAndConditions.Terms.value
-                   |> Option.value ~default:""))
+                   |> CCOption.value ~default:""))
             ])
         (Pool_common.Language.all ())
     in

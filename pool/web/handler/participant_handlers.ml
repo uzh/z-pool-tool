@@ -132,7 +132,7 @@ let email_verification req =
       let%lwt user = Http_utils.user_from_session tenant_db req in
       CCOption.bind user (fun user ->
           Some (General.dashboard_path tenant_db query_lang user))
-      |> Option.value
+      |> CCOption.value
            ~default:
              ("/login" |> HttpUtils.path_with_language query_lang |> Lwt.return)
     in

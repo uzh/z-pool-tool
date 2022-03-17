@@ -32,7 +32,7 @@ let index req =
              CCString.compare (I18n.Key.value k1) (I18n.Key.value k2))
       |> Lwt.return
     in
-    let csrf = Sihl.Web.Csrf.find req |> Option.get in
+    let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
     Page.Admin.I18n.list csrf translation_list message context

@@ -142,7 +142,7 @@ let rec error_to_string = function
 
 let format_submit submit field =
   let field_opt_message f =
-    f |> CCOption.map field_to_string |> Option.value ~default:""
+    f |> CCOption.map field_to_string |> CCOption.value ~default:""
   in
   field_message "" submit (field_opt_message field)
 ;;
