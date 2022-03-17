@@ -1,3 +1,4 @@
+open Sexplib.Conv
 module Common = Pool_common
 module Database = Pool_database
 module Id = Common.Id
@@ -9,7 +10,7 @@ module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
 module Title = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -25,7 +26,7 @@ module Title = struct
 end
 
 module Description = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -45,7 +46,7 @@ module Description = struct
 end
 
 module Url = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -59,7 +60,7 @@ module Url = struct
 end
 
 module Styles = struct
-  type t = File.t [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show, sexp_of]
 
   let value m = m
   let id m = m.File.id
@@ -83,7 +84,7 @@ module Styles = struct
 end
 
 module Icon = struct
-  type t = File.t [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -103,7 +104,7 @@ module Icon = struct
 end
 
 module Logos = struct
-  type t = File.t list [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show, sexp_of]
 
   let value m = m
   let create m = Ok (CCList.map Common.Id.of_string m)
@@ -117,7 +118,7 @@ module Logos = struct
 end
 
 module PartnerLogos = struct
-  type t = File.t list [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show, sexp_of]
 
   let create m = Ok (CCList.map Common.Id.of_string m)
   let value m = m
@@ -131,7 +132,7 @@ module PartnerLogos = struct
 end
 
 module Maintenance = struct
-  type t = bool [@@deriving eq, show]
+  type t = bool [@@deriving eq, show, sexp_of]
 
   let create t = t
 
@@ -155,7 +156,7 @@ module Maintenance = struct
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, show]
+  type t = bool [@@deriving eq, show, sexp_of]
 
   let create t = t
   let value m = m
@@ -196,9 +197,10 @@ type t =
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, sexp_of]
 
 module Read = struct
+  (* TODO[timhub]: is this module still in use? *)
   type t =
     { id : Id.t
     ; title : Title.t

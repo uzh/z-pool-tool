@@ -273,6 +273,8 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
+val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+
 module Write : sig
   type t =
     { id : Pool_common.Id.t

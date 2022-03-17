@@ -10,6 +10,7 @@ module Id : sig
   val create : unit -> t
   val of_string : string -> t
   val value : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module Language : sig
@@ -61,6 +62,7 @@ module CreatedAt : sig
   val show : t -> string
   val create : unit -> t
   val value : t -> Ptime.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module UpdatedAt : sig
@@ -71,6 +73,7 @@ module UpdatedAt : sig
   val show : t -> string
   val create : unit -> t
   val value : t -> Ptime.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module File : sig
@@ -121,6 +124,7 @@ module File : sig
   val id : t -> Id.t
   val size : t -> Size.t
   val path : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module Repo : sig

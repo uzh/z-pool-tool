@@ -1,7 +1,8 @@
+open Sexplib.Conv
 module PoolError = Pool_common.Message
 
 module Server = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -21,7 +22,7 @@ module Server = struct
 end
 
 module Port = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -41,7 +42,7 @@ module Port = struct
 end
 
 module Username = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -61,7 +62,7 @@ module Username = struct
 end
 
 module Password = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let show m = CCString.repeat "*" @@ CCString.length m
 
@@ -81,7 +82,7 @@ module Password = struct
 end
 
 module AuthenticationMethod = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -101,7 +102,7 @@ module AuthenticationMethod = struct
 end
 
 module Protocol = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -127,7 +128,7 @@ type t =
   ; authentication_method : AuthenticationMethod.t
   ; protocol : Protocol.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, sexp_of]
 
 module Write = struct
   type t =
