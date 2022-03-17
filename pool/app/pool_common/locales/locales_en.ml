@@ -49,11 +49,12 @@ let field_to_string = function
   | User -> "user"
 ;;
 
-let info_to_string : info -> string = function
-  | Info string -> string
+let rec info_to_string : info -> string = function
+  | InfoList infos -> list_msg_to_string info_to_string infos
+  | TryPromoteOperator -> "Try promoting the user to operator!"
 ;;
 
-let success_to_string : success -> string = function
+let rec success_to_string : success -> string = function
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
   | EmailVerified -> "Email successfully verified."
@@ -67,23 +68,29 @@ let success_to_string : success -> string = function
     "You will receive an email with a link to reset your password if an \
      account with the provided email is existing."
   | SettingsUpdated -> "Settings were updated successfully."
+  | SuccessList successes -> list_msg_to_string success_to_string successes
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
     field_message "" (field_to_string field) "was successfully updated."
 ;;
 
-let warning_to_string : warning -> string = function
-  | Warning string -> string
+let rec warning_to_string : warning -> string = function
+  | WarningList warnings -> list_msg_to_string warning_to_string warnings
 ;;
 
-let error_to_string = function
+let rec error_to_string = function
+  | AdminAndParticipantSimul -> "User is admin and participant simultaneously!"
+  | AlreadyExists field ->
+    field_message "User already" (field_to_string field) "!"
+  | CantPromote -> "Could not promote to operator!"
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Cannot decode action."
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailMalformed -> "Malformed email"
+  | ErrorList errors -> list_msg_to_string error_to_string errors
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
@@ -116,11 +123,14 @@ let error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | WriteOnlyModel -> "Write only model!"
-  | AlreadyOperator -> "User already operator!"
-  | AlreadyParticipant -> "User already participant!"
 ;;
 
-let to_string = function
+let rec to_string = function
+  | ErrorM error -> error_to_string error
+  | InfoM info -> info_to_string info
+  | MessageList msgs -> list_msg_to_string to_string msgs
   | Message string -> string
   | PageNotFoundMessage -> "The requested page could not be found."
+  | SuccessM success -> success_to_string success
+  | WarningM warning -> warning_to_string warning
 ;;

@@ -1,15 +1,7 @@
 module Message = Pool_common.Message
 module Utils = Pool_common.Utils
+open Message
 
-type t =
-  { error : Message.error list
-  ; warning : Message.warning list
-  ; success : Message.success list
-  ; info : Message.info list
-  }
-[@@deriving eq, show, yojson]
-
-let empty = { error = []; warning = []; success = []; info = [] }
 let set_success txts message = { message with success = txts }
 let set_warning txts message = { message with warning = txts }
 let set_error txts message = { message with error = txts }
@@ -41,17 +33,18 @@ let of_string str =
   | None -> None
 ;;
 
-let to_string t = yojson_of_t t |> Yojson.Safe.to_string
+let to_string t = yojson_of_product t |> Yojson.Safe.to_string
+
+(* We use alerts for all messages *)
+let write msg res = msg |> to_string |> CCFun.flip Sihl.Web.Flash.set_alert res
 
 let set ?(error = []) ?(warning = []) ?(success = []) ?(info = []) res =
   let message =
-    empty
+    empty_product
     |> set_error error
     |> set_warning warning
     |> set_success success
     |> set_info info
-    |> to_string
   in
-  (* We use alerts for all messages *)
-  Sihl.Web.Flash.set_alert message res
+  write message res
 ;;

@@ -170,7 +170,7 @@ module Utils : sig
     -> Entity_message.error
 
   val with_log_result_error
-    :  ('a -> Message.error)
+    :  ('a -> Message.t)
     -> ('b, 'a) result
     -> ('b, 'a) result
 end

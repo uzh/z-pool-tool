@@ -265,12 +265,19 @@ let detail csrf (tenant : Pool_tenant.t) message () =
            :: CCList.map
                 (fun name -> input_element `Text (Some name) "")
                 [ "email"; "password"; "firstname"; "lastname" ])
-          @ [ input_element `Checkbox (Some "promote") "true"
-            ; label
-                ~a:[ a_label_for "promote" ]
-                [ txt "Promote if admin exists" ]
-            ]
           @ [ input_element `Submit None "Create operator" ])
+      ; hr ()
+      ; form
+          ~a:
+            [ a_action
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/root/tenants/%s/promote-operator"
+                      (Id.value tenant.id)))
+            ; a_method `Post
+            ]
+          ([ csrf_element csrf (); input_element `Text (Some "email") "" ]
+          @ [ input_element `Submit None "Promote to operator" ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
           [ txt "back" ]

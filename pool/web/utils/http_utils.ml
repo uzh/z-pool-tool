@@ -13,34 +13,31 @@ let redirect_to_with_actions path actions =
 let redirect_to path = redirect_to_with_actions path []
 
 let extract_happy_path_generic result msgf =
+  let open CCResult in
   result
   |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
-  |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_msg, error_path) ->
+  |> map Lwt.return
+  |> get_lazy (fun (error_msg, error_path) ->
          redirect_to_with_actions error_path [ msgf error_msg ])
 ;;
 
 let extract_happy_path result =
-  extract_happy_path_generic result (fun err ->
-      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
+  extract_happy_path_generic result (fun msg ->
+      msg |> Message.Message.separate |> Message.write)
 ;;
 
 let extract_happy_path_with_actions result =
   result
   |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
   |> CCResult.map Lwt.return
-  |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
+  |> CCResult.get_lazy (fun (msg, error_path, error_actions) ->
          redirect_to_with_actions
            error_path
-           (CCList.append
-              [ Message.set
-                  ~warning:[]
-                  ~success:[]
-                  ~info:[]
-                  ~error:[ error_key ]
-              ]
-              error_actions))
+           ((msg |> Message.Message.separate |> Message.write) :: error_actions))
 ;;
+
+(* TODO [aerben] continue to lift every handler into t message type not error
+   message type *)
 
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =

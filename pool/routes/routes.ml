@@ -97,6 +97,7 @@ module Root = struct
     ; post "/tenants/create" Tenant.create
     ; get "/tenants/:id" Tenant.tenant_detail
     ; post "/tenants/:id/create-operator" Tenant.create_operator
+    ; post "/tenants/:id/promote-operator" Tenant.promote_to_operator
     ; post "/tenants/:id/update-detail" Tenant.Update.update_detail
     ; post "/tenants/:id/update-database" Tenant.Update.update_database
     ; post

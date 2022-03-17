@@ -66,6 +66,50 @@ let create req =
 let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
+  let find_tenant () =
+    Pool_tenant.find_full id |> Lwt_result.map_err Message.Message.errorm
+  in
+  let events tenant =
+    let open Lwt_result.Syntax in
+    let tenant_db = Pool_tenant.Write.(tenant.database.Database.label) in
+    let* email =
+      Sihl.Web.Request.urlencoded "email" req
+      ||> CCOption.to_result Common.Message.(ErrorM EmailAddressMissingOperator)
+      >|= Pool_user.EmailAddress.of_string
+    in
+    (* User is either admin or participant *)
+    let%lwt admin = Admin.find_by_email tenant_db email in
+    let%lwt participant = Participant.find_by_email tenant_db email in
+    let open CCResult.Infix in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let events =
+      Cqrs_command.Admin_command.CreateOperator.(
+        decode urlencoded >>= handle participant admin)
+    in
+    events >|= CCPair.make tenant_db |> Lwt_result.lift
+  in
+  let handle tenant_db events =
+    Lwt_list.iter_s (Pool_event.handle_event tenant_db) events |> Lwt_result.ok
+  in
+  let return_to_overview () =
+    Http_utils.redirect_to_with_actions
+      "/root/tenants"
+      [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
+  in
+  ()
+  |> find_tenant
+  >>= events
+  >>= CCFun.uncurry handle
+  |> Lwt_result.map_err (fun err ->
+         err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+  |>> return_to_overview
+  >|> HttpUtils.extract_happy_path
+;;
+
+(* TODO [aerben] extract duplicate *)
+let promote_to_operator req =
+  let open Utils.Lwt_result.Infix in
+  let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
   let find_tenant () = Pool_tenant.find_full id in
   let events tenant =
     let open Lwt_result.Syntax in
@@ -76,17 +120,13 @@ let create_operator req =
       >|= Pool_user.EmailAddress.of_string
     in
     (* User is either admin or participant *)
-    let%lwt admin = Admin.find_by_email tenant_db email in
-    let%lwt participant = Participant.find_by_email tenant_db email in
+    let* admin =
+      Admin.find_by_email tenant_db email
+      |> Lwt_result.map_err (fun e ->
+             Message.Message.(ErrorList [ e; CantPromote ]))
+    in
     let open CCResult.Infix in
-    let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req
-      ||> HttpUtils.format_request_boolean_values [ "promote" ]
-    in
-    let events =
-      Cqrs_command.Admin_command.CreateOperator.(
-        decode urlencoded >>= handle participant admin)
-    in
+    let events = Cqrs_command.Admin_command.PromoteToOperator.handle admin in
     events >|= CCPair.make tenant_db |> Lwt_result.lift
   in
   let handle tenant_db events =

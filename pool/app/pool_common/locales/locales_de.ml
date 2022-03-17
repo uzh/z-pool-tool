@@ -49,11 +49,12 @@ let field_to_string = function
   | User -> "Benutzer"
 ;;
 
-let info_to_string : info -> string = function
-  | Info string -> string
+let rec info_to_string : info -> string = function
+  | InfoList infos -> list_msg_to_string info_to_string infos
+  | TryPromoteOperator -> "Versuche den User zu Operator hochzustufen!"
 ;;
 
-let success_to_string : success -> string = function
+let rec success_to_string : success -> string = function
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | EmailVerified -> "Email erfolgreich verifiziert."
@@ -66,6 +67,7 @@ let success_to_string : success -> string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
+  | SuccessList successes -> list_msg_to_string success_to_string successes
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
@@ -73,17 +75,23 @@ let success_to_string : success -> string = function
     field_message "" (field_to_string field) "wurde erfolgreich upgedated."
 ;;
 
-let warning_to_string : warning -> string = function
-  | Warning string -> string
+let rec warning_to_string : warning -> string = function
+  | WarningList warnings -> list_msg_to_string warning_to_string warnings
 ;;
 
-let error_to_string = function
+let rec error_to_string = function
+  | AdminAndParticipantSimul ->
+    "Benutzer ist Admin und Teilnehmer gleichzeitig!"
+  | AlreadyExists field ->
+    field_message "Benuzer bereits" (field_to_string field) "!"
+  | CantPromote -> "Kann nicht zu Operator hochgestuft werden!"
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
+  | ErrorList errors -> list_msg_to_string error_to_string errors
   | Invalid field ->
     field_message "Ungültige/r" (field_to_string field) "mitgeliefert!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
@@ -129,11 +137,14 @@ let error_to_string = function
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
-  | AlreadyOperator -> "Benutzer ist bereits Operator!"
-  | AlreadyParticipant -> "Benutzer ist bereits Teilnehmer!"
 ;;
 
-let to_string = function
+let rec to_string = function
+  | ErrorM error -> error_to_string error
+  | InfoM info -> info_to_string info
+  | MessageList msgs -> list_msg_to_string to_string msgs
   | Message string -> string
   | PageNotFoundMessage -> "Die Seite konnte nicht gefunden werden."
+  | SuccessM success -> success_to_string success
+  | WarningM warning -> warning_to_string warning
 ;;
