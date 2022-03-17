@@ -99,6 +99,8 @@ let rec error_to_string = function
       ""
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
+  | Disabled field ->
+    field_message "" (field_to_string field) "ist deaktiviert."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
