@@ -84,6 +84,7 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
+  | LanguageUpdated of t * Pool_common.Language.t
   | AccountVerified of t
   | TermsAccepted of t
   | Disabled of t

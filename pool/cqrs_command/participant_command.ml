@@ -360,3 +360,59 @@ end = struct
       ]
   ;;
 end
+
+module UpdateLanguage : sig
+  type t = Pool_common.Language.t
+
+  val handle
+    :  Participant.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can
+    :  Pool_tenant.Database.Label.t
+    -> Sihl_user.t
+    -> Participant.t
+    -> bool Lwt.t
+end = struct
+  type t = Pool_common.Language.t
+
+  let command language = language
+
+  let schema =
+    Conformist.(make Field.[ Pool_common.Language.schema_i18n () ] command)
+  ;;
+
+  let handle participant language =
+    Ok
+      [ Participant.LanguageUpdated (participant, language)
+        |> Pool_event.participant
+      ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
+
+  let can pool user participant =
+    let open Utils.Lwt_result.Infix in
+    let check_permission tenant =
+      Permission.can
+        user
+        ~any_of:
+          [ Permission.Update
+              (Permission.Participant, Some (participant |> Participant.id))
+          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
+          ]
+    in
+    pool
+    |> Pool_tenant.find_by_label
+    |>> check_permission
+    |> Lwt.map (CCResult.get_or ~default:false)
+  ;;
+end
