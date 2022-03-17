@@ -51,13 +51,14 @@ let context user () =
     | Some lang -> Lwt.return lang
     | None ->
       user_language participant
-      |> Lwt.map (fun l -> l >>= is_valid)
-      |> Lwt.map
-           (value
-              ~default:
-                (CCOption.get_exn_or
-                   "Cannot determine language"
-                   (CCList.head_opt tenant_languages)))
+      |> Lwt.map (fun l ->
+             l
+             >>= is_valid
+             |> value
+                  ~default:
+                    (CCOption.get_exn_or
+                       "Cannot determine language"
+                       (CCList.head_opt tenant_languages)))
   in
   let filter handler req =
     let open Lwt_result.Syntax in
