@@ -2,6 +2,8 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
+let create_layout = Page_layout.Tenant.create_layout
+
 let detail participant message Pool_context.{ language; query_language; _ } =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
@@ -30,7 +32,7 @@ let detail participant message Pool_context.{ language; query_language; _ } =
       ]
   in
   let html = div [ content ] in
-  Page_layout.create html message language
+  create_layout html message language
 ;;
 
 let edit
@@ -150,5 +152,5 @@ let edit
           [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
       ]
   in
-  Page_layout.create html message language
+  create_layout html message language
 ;;

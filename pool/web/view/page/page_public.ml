@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component
 
+let create_layout = Page_layout.Tenant.create_layout
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
 let index tenant message Pool_context.{ language; _ } =
@@ -19,7 +20,7 @@ let index tenant message Pool_context.{ language; _ } =
              (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
       ]
   in
-  Page_layout.create html message language
+  create_layout html message language
 ;;
 
 let login csrf message Pool_context.{ language; query_language; _ } =
@@ -50,7 +51,7 @@ let login csrf message Pool_context.{ language; query_language; _ } =
           (txt_to_string Pool_common.I18n.ResetPasswordLink)
       ]
   in
-  Page_layout.create html message language
+  create_layout html message language
 ;;
 
 let request_reset_password
@@ -89,7 +90,7 @@ let request_reset_password
           ]
       ]
   in
-  Page_layout.create html message language
+  create_layout html message language
 ;;
 
 let reset_password
@@ -126,5 +127,5 @@ let reset_password
           ]
       ]
   in
-  Page_layout.create html message language
+  create_layout html message language
 ;;

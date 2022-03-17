@@ -1,7 +1,7 @@
 open Tyxml.Html
 
-let concat_messages txts styles =
-  div ~a:[ a_style styles ] [ txt (CCString.unlines txts) ]
+let concat_messages txts classnames =
+  div ~a:[ a_class classnames ] [ txt (CCString.unlines txts) ]
 ;;
 
 let match_message message classname =
@@ -12,12 +12,29 @@ let match_message message classname =
 
 let create message lang () =
   let open Http_utils.Message in
+  let notification_class = "notification" in
   match message with
   | None -> div []
   | Some message ->
-    let success = match_message (get_success message lang) "color: green;" in
-    let info = match_message (get_info message lang) "color: blue;" in
-    let warning = match_message (get_warning message lang) "color: orange;" in
-    let error = match_message (get_error message lang) "color: red;" in
+    let success =
+      match_message
+        (get_success message lang)
+        [ notification_class; "notification--success" ]
+    in
+    let info =
+      match_message
+        (get_info message lang)
+        [ notification_class; "notification--neutral" ]
+    in
+    let warning =
+      match_message
+        (get_warning message lang)
+        [ notification_class; "notification--warning" ]
+    in
+    let error =
+      match_message
+        (get_error message lang)
+        [ notification_class; "notification--failure " ]
+    in
     div [ success; info; warning; error ]
 ;;

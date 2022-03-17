@@ -293,5 +293,5 @@ let show
       ; script (Unsafe.data sortable)
       ]
   in
-  Page_layout.create html message language
+  Page_layout.Tenant.create_layout html message language
 ;;

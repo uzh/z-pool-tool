@@ -1,8 +1,9 @@
 open Tyxml.Html
 
+(* TODO[timhub]: Which layout? and how to deal with context? *)
 let note language page_title info message =
   let html = div [ h1 [ txt page_title ]; p [ txt info ] ] in
-  Page_layout.create html message language
+  Page_layout.Tenant.create_layout html message language
 ;;
 
 let error_page_not_found language () =

@@ -57,5 +57,5 @@ let list csrf translation_list message Pool_context.{ language; _ } =
       ; div ~a:[ a_class [ "stack" ] ] translations
       ]
   in
-  Page_layout.create html message language
+  Page_layout.Tenant.create_layout html message language
 ;;
