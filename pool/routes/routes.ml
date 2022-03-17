@@ -15,11 +15,22 @@ let global_middlewares =
 ;;
 
 module Public = struct
+  let global_routes =
+    choose
+      [ get "/" Handler.Public.root_redirect
+      ; get "/custom/assets/:id/:filename" Handler.Public.asset
+      ; get "/error" Handler.Public.error
+      ]
+  ;;
+
   let routes =
     Handler.Public.(
       choose
         [ choose
-            ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+            ~middlewares:
+              [ CustomMiddleware.Context.context `Participant ()
+              ; CustomMiddleware.Tenant.valid_tenant ()
+              ]
             [ get "/index" index
             ; get "/custom/assets/index.css" index_css
             ; get "/login" Login.login_get
@@ -29,11 +40,6 @@ module Public = struct
             ; post "/request-reset-password" Login.request_reset_password_post
             ; get "/reset-password" Login.reset_password_get
             ; post "/reset-password" Login.reset_password_post
-            ]
-        ; choose
-            [ get "/" Handler.Public.root_redirect
-            ; get "/custom/assets/:id/:filename" Handler.Public.asset
-            ; get "/error" Handler.Public.error
             ]
         ])
   ;;
@@ -62,7 +68,10 @@ module Participant = struct
 
   let routes =
     choose
-      ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+      ~middlewares:
+        [ CustomMiddleware.Context.context `Participant ()
+        ; CustomMiddleware.Tenant.valid_tenant ()
+        ]
       [ choose public
       ; choose
           ~middlewares:
@@ -75,6 +84,7 @@ end
 module Admin = struct
   let middlewares =
     [ CustomMiddleware.Context.context `Admin ()
+    ; CustomMiddleware.Tenant.valid_tenant ()
     ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
     ]
   ;;
@@ -147,6 +157,7 @@ let router =
     ; Participant.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
+    ; Public.global_routes
     ; get
         "/**"
         ~middlewares:[ CustomMiddleware.Context.context `Participant () ]

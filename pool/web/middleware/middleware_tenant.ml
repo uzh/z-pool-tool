@@ -1,4 +1,4 @@
-let tenant () =
+let valid_tenant () =
   let filter handler req =
     let%lwt result =
       let open Lwt_result.Syntax in
@@ -18,5 +18,5 @@ let tenant () =
     | Ok _ -> handler req
     | Error _ -> Http_utils.redirect_to "/not-found"
   in
-  Rock.Middleware.create ~name:"tenant" ~filter
+  Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;
