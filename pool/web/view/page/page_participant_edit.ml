@@ -2,9 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let create_layout = Page_layout.Tenant.create_layout
-
-let detail participant message Pool_context.{ language; query_language; _ } =
+let detail participant Pool_context.{ language; query_language; _ } =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -31,15 +29,13 @@ let detail participant message Pool_context.{ language; query_language; _ } =
           ]
       ]
   in
-  let html = div [ content ] in
-  create_layout html message language
+  div [ content ]
 ;;
 
 let edit
     csrf
     user_update_csrf
     participant
-    message
     Pool_context.{ language; query_language; _ }
   =
   let open Participant in
@@ -125,32 +121,27 @@ let edit
           ()
       ]
   in
-  let html =
-    div
-      [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
-      ; div
-          [ div
-              [ h2
-                  [ txt
-                      (text_to_string
-                         Pool_common.I18n.UserProfileDetailsSubtitle)
-                  ]
-              ; details_form
-              ]
-          ; hr ()
-          ; div
-              [ h2
-                  [ txt
-                      (text_to_string Pool_common.I18n.UserProfileLoginSubtitle)
-                  ]
-              ; email_form
-              ; password_form
-              ]
-          ]
-      ; a
-          ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-          [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
-      ]
-  in
-  create_layout html message language
+  div
+    [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
+    ; div
+        [ div
+            [ h2
+                [ txt
+                    (text_to_string Pool_common.I18n.UserProfileDetailsSubtitle)
+                ]
+            ; details_form
+            ]
+        ; hr ()
+        ; div
+            [ h2
+                [ txt (text_to_string Pool_common.I18n.UserProfileLoginSubtitle)
+                ]
+            ; email_form
+            ; password_form
+            ]
+        ]
+    ; a
+        ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
+        [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
+    ]
 ;;

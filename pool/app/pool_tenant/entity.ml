@@ -200,7 +200,6 @@ type t =
 [@@deriving eq, show, sexp_of]
 
 module Read = struct
-  (* TODO[timhub]: is this module still in use? *)
   type t =
     { id : Id.t
     ; title : Title.t

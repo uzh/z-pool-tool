@@ -1,10 +1,12 @@
 let from_root_only () =
   let filter handler req =
+    let language = Pool_common.Language.En in
     Http_utils.is_req_from_root_host req
     |> function
     | true -> handler req
     | false ->
-      Page.Utils.error_page_not_found Pool_common.Language.En ()
+      let html = Page.Utils.error_page_not_found language () in
+      Page.Layout.create_root_layout html None language
       |> Sihl.Web.Response.of_html
       |> Lwt.return
   in

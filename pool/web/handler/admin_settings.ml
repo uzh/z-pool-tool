@@ -1,8 +1,11 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let create_layout req = General.create_tenant_layout `Admin req
+
 let show req =
   let result context =
+    let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/")
     @@
     let message =
@@ -26,10 +29,9 @@ let show req =
       inactive_user_disable_after
       inactive_user_warning
       terms_and_conditions
-      message
       context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

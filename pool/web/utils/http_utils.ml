@@ -17,6 +17,14 @@ let find_query_lang req =
   |> CCOption.of_result
 ;;
 
+let find_referer_path req =
+  let open CCOption.Infix in
+  Opium.Request.header "Referer" req
+  >|= Uri.(fun ref -> ref |> of_string |> path_and_query)
+  |> CCOption.to_result Pool_common.Message.(NotFound Url)
+  |> Lwt_result.lift
+;;
+
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->

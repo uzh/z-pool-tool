@@ -53,6 +53,7 @@ module Participant = struct
     ; get "/termsandconditions" Handler.Participant.terms
     ; get "/email-verified" Handler.Participant.email_verification
     ; post "/terms-accepted/:id" Handler.Participant.terms_accept
+    ; post "/update-language" Handler.Participant.update_language
     ]
   ;;
 

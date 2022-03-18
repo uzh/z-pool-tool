@@ -23,14 +23,11 @@ let global_stylesheet =
     ()
 ;;
 
-let header title lang ?(children = []) () =
+let header title ?(children = []) () =
   header
-    ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
-    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]
-    ; a ~a:[ a_href "?language=de" ] [ txt "Switch lang" ]
-    ; div [ txt (Pool_common.Language.code lang) ]
-    ; div children
-    ]
+
+    ~a:[ a_style "text-align: right; padding: 1rem;" ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
 ;;
 
 let footer title =
@@ -40,42 +37,85 @@ let footer title =
 ;;
 
 module Tenant = struct
-  let create_layout children message lang =
-    let update_language tenant_languages =
-      form
-        ~a:
-          [ a_action (Sihl.Web.externalize_path "f/update-language")
-          ; a_method `Post
-          ]
-        [ Component.csrf_element "csrf" ()
-        ; select
-            ~a:[ a_name "language"; a_onchange "this.form.submit()" ]
-            (CCList.map
-               (fun l ->
-                 let attributes = [ a_value (Pool_common.Language.code l) ] in
-                 let attributes =
-                   if Pool_common.Language.equal l lang
-                   then CCList.cons (a_selected ()) attributes
-                   else attributes
-                 in
-                 option ~a:attributes (txt (Pool_common.Language.code l)))
-               tenant_languages)
-        ]
+  let i18n_links tenant_languages active_lang =
+    div
+      ~a:[]
+      (CCList.map
+         (fun tenant_language ->
+           let label = Pool_common.Language.code tenant_language in
+           if Pool_common.Language.equal tenant_language active_lang
+           then span [ txt label ]
+           else
+             a
+               ~a:
+                 [ a_href
+                     Pool_common.(
+                       Message.(
+                         add_field_query_params
+                           ""
+                           [ ( Language
+                             , Language.code tenant_language
+                               |> CCString.lowercase_ascii )
+                           ]))
+                 ]
+               [ txt label ])
+         tenant_languages)
+  ;;
+
+  (*** TODO[timhub]:
+
+  * disable active page
+
+  * differ between login status *)
+  let navigation layout_context language =
+    let open Pool_common.I18n in
+    let build_nav_link (url, title) =
+      let txt_to_string m =
+        Pool_common.Utils.nav_link_to_string language m |> txt
+      in
+      a ~a:[ a_href url ] [ txt_to_string title ]
     in
-    let tenant_languages = Pool_common.Language.[ De; En ] in
-    let title_text = "Pool tool" in
-    let page_title = title (txt title_text) in
+    let nav_links =
+      (match layout_context with
+      | `Participant -> [ ]
+      | `Admin ->
+        [ "/admin/dashboard", Dashboard
+        ; "/admin/settings", Settings
+        ; "/admin/i18n", I18n
+        ])
+      |> CCList.map build_nav_link
+    in
+    nav nav_links
+  ;;
+
+  let create_layout
+      layout_context
+      children
+      Pool_context.Tenant.{ tenant_languages; tenant }
+      message
+      active_lang
+    =
+    let title_text = Pool_tenant.(Title.value tenant.title) in
+    let page_title =
+      title (txt (Format.asprintf "%s - %s" title_text "Pool tool"))
+    in
     let custom_stylesheet =
       link
         ~rel:[ `Stylesheet ]
         ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
         ()
     in
-    let message = Message.create message lang () in
+    let message = Message.create message active_lang () in
     let scripts =
       script
         ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
         (txt "")
+    in
+    let header_content =
+      let navigation = navigation layout_context active_lang in
+      match layout_context with
+      | `Admin -> [ navigation ]
+      | `Participant -> [ navigation; i18n_links tenant_languages active_lang ]
     in
     let content = main [ message; children ] in
     html
@@ -83,11 +123,7 @@ module Tenant = struct
          page_title
          [ charset; viewport; custom_stylesheet; global_stylesheet; favicon ])
       (body
-         [ header
-             title_text
-             lang
-             ~children:[ update_language tenant_languages ]
-             ()
+         [ header title_text ~children:header_content ()
          ; content
          ; footer title_text
          ; scripts
@@ -106,6 +142,7 @@ let create_root_layout children message lang =
   in
   let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
-    (head page_title [ charset; viewport; favicon; global_stylesheet ])
-    (body [ header title_text lang (); content; footer title_text; scripts ])
+
+    (head page_title [ charset; viewport; global_stylesheet; favicon ])
+    (body [ header title_text (); content; footer title_text; scripts ])
 ;;

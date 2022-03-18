@@ -3,6 +3,8 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
+let create_layout req = General.create_tenant_layout `Participant req
+
 let root_redirect req =
   Http_utils.redirect_to
   @@
@@ -17,19 +19,19 @@ let index req =
   else (
     let result context =
       let open Lwt_result.Syntax in
+      let open Lwt_result.Infix in
       let query_lang = context.Pool_context.query_language in
       let error_path = Http_utils.path_with_language query_lang "/error" in
+      Lwt_result.map_err (fun err -> err, error_path)
+      @@
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
       let tenant_db = context.Pool_context.tenant_db in
-      let* tenant =
-        Pool_tenant.find_by_label tenant_db
-        |> Lwt_result.map_err (fun err -> err, error_path)
-      in
-      Page.Public.index tenant message context
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
+      let* tenant = Pool_tenant.find_by_label tenant_db in
+      Page.Public.index tenant context
+      |> create_layout req context message
+      >|= Sihl.Web.Response.of_html
     in
     result |> Http_utils.extract_happy_path req)
 ;;
@@ -65,8 +67,10 @@ let index_css req =
          (Sihl.Web.Response.of_plain_text ""))
 ;;
 
+(* TODO[timhub]: Layout? *)
 let email_confirmation_note req =
   let result context =
+    let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/")
     @@
     let language = context.Pool_context.language in
@@ -74,27 +78,27 @@ let email_confirmation_note req =
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
-    let html =
-      Common.I18n.(
-        Page.Utils.note
-          language
-          (txt_to_string EmailConfirmationTitle)
-          (txt_to_string EmailConfirmationNote))
-    in
-    message |> html |> Sihl.Web.Response.of_html |> Lwt.return_ok
+    Common.I18n.(
+      Page.Utils.note
+        (txt_to_string EmailConfirmationTitle)
+        (txt_to_string EmailConfirmationNote))
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path req
 ;;
 
 let not_found req =
   let result context =
+    let open Lwt_result.Infix in
     let query_lang = context.Pool_context.query_language in
     Lwt_result.map_err (fun err ->
         err, Http_utils.path_with_language query_lang "/error")
     @@
     let language = context.Pool_context.language in
-    let html = Page.Utils.error_page_not_found language () in
-    Sihl.Web.Response.of_html html |> Lwt.return_ok
+    Page.Utils.error_page_not_found language ()
+    |> create_layout req context None
+    >|= Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path req
 ;;
@@ -114,8 +118,10 @@ let asset req =
 ;;
 
 let error req =
-  (* TODO[timhub]: do not use context. This is the error path of the context
-     middleware *)
+  (* TODO[timhub]: How to build this page? This is the error path of the context
+     middleware
+
+     * Create separate error handles for root and tenant? *)
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* context = Pool_context.find req |> Lwt_result.lift in
@@ -133,10 +139,13 @@ let error req =
   let error_page (title, note) =
     Page.Utils.error_page_terminatory title note ()
   in
-  (match tenant_error with
-  | Ok tenant_error -> tenant_error
-  | Error _ -> root_error)
-  |> error_page
+  let html =
+    (match tenant_error with
+    | Ok tenant_error -> tenant_error
+    | Error _ -> root_error)
+    |> error_page
+  in
+  Page.Layout.create_root_layout html None Pool_common.Language.En
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
