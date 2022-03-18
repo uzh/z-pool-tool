@@ -123,7 +123,7 @@ let email_verification req =
     "/login"
     [ Message.set ~success:[ Pool_common.Message.EmailVerified ] ]
   |> Lwt_result.ok)
-  |> Lwt_result.map_err (fun msg -> msg, "/login")
+  |=> (fun msg -> msg, "/login")
   >|> HttpUtils.extract_happy_path
 ;;
 
@@ -137,8 +137,7 @@ let terms req =
     CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
   in
   let* tenant_db =
-    Middleware.Tenant.tenant_db_of_request req
-    |> Lwt_result.map_err (fun err -> err, "/")
+    Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
   in
   let* user =
     General.user_from_session tenant_db req
@@ -172,8 +171,7 @@ let show is_edit req =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
     let* tenant_db =
-      Middleware.Tenant.tenant_db_of_request req
-      |> Lwt_result.map_err (fun err -> err, "/")
+      Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
     in
     let* user =
       General.user_from_session tenant_db req
@@ -181,7 +179,7 @@ let show is_edit req =
     in
     let* participant =
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_err (fun err -> err, "/login")
+      |=> fun err -> err, "/login"
     in
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
@@ -221,8 +219,7 @@ let update req =
   let%lwt result =
     let open Utils.Lwt_result.Syntax in
     let* tenant_db =
-      Middleware.Tenant.tenant_db_of_request req
-      |> Lwt_result.map_err (fun err -> err, "/")
+      Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
     in
     let* user =
       General.user_from_session tenant_db req
@@ -230,7 +227,7 @@ let update req =
     in
     let* participant =
       Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_err (fun err -> err, "/login")
+      |=> fun err -> err, "/login"
     in
     let value = go name in
     let get_version =
@@ -277,7 +274,7 @@ let update req =
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       let* participant =
         Participant.(participant |> id |> find tenant_db)
-        |> Lwt_result.map_err (fun err -> err, "/login")
+        |=> fun err -> err, "/login"
       in
       base_input
         (Participant.version_selector participant name |> get_version)

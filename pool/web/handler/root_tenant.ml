@@ -100,8 +100,7 @@ let create_operator req =
   |> find_tenant
   >>= events
   >>= CCFun.uncurry handle
-  |> Lwt_result.map_err (fun err ->
-         err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+  |=> (fun err -> err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
   |>> return_to_overview
   >|> HttpUtils.extract_happy_path
 ;;
@@ -122,8 +121,7 @@ let promote_to_operator req =
     (* User is either admin or participant *)
     let* admin =
       Admin.find_by_email tenant_db email
-      |> Lwt_result.map_err (fun e ->
-             Message.Message.(ErrorList [ e; CantPromote ]))
+      |=> fun e -> Message.Message.(ErrorList [ e; CantPromote ])
     in
     let open CCResult.Infix in
     let events = Cqrs_command.Admin_command.PromoteToOperator.handle admin in
@@ -141,8 +139,7 @@ let promote_to_operator req =
   |> find_tenant
   >>= events
   >>= CCFun.uncurry handle
-  |> Lwt_result.map_err (fun err ->
-         err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+  |=> (fun err -> err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
   |>> return_to_overview
   >|> HttpUtils.extract_happy_path
 ;;

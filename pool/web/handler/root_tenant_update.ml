@@ -13,16 +13,18 @@ let update req command success_message =
     let%lwt multipart_encoded =
       Sihl.Web.Request.to_multipart_form_data_exn req
     in
-    let* _ =
+    let* (_ : string list) =
       File.update_files
         [ ( "styles"
           , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value )
         ; "icon", tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value
         ]
         req
+      |=> Message.Message.errorm
     in
     let* logo_files =
       File.upload_files (Pool_tenant.LogoMapping.LogoType.all ()) req
+      |=> Message.Message.errorm
     in
     let events_list urlencoded =
       let open CCResult.Infix in
@@ -48,6 +50,7 @@ let update req command success_message =
   in
   id
   |> Pool_tenant.find_full
+  |=> Message.Message.errorm
   >>= events
   |> Lwt_result.map_err (fun err -> err, redirect_path)
   |>> handle

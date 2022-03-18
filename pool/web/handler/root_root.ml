@@ -30,7 +30,7 @@ let create req =
   ()
   |> user
   >>= events
-  |> Lwt_result.map_err (fun err -> err, "/root/tenants/")
+  |=> (fun err -> err, "/root/tenants/")
   |>> handle
   |>> return_to_overview
   >|> HttpUtils.extract_happy_path
@@ -51,7 +51,7 @@ let toggle_status req =
   id
   |> Root.find
   >>= events
-  |> Lwt_result.map_err (fun err -> err, "/root/tenants/")
+  |=> (fun err -> err, "/root/tenants/")
   |>> handle
   |>> return_to_overview
   >|> HttpUtils.extract_happy_path

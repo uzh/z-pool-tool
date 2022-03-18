@@ -187,12 +187,9 @@ module EditDetails : sig
   val handle
     :  Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_common.Message.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_common.Message.t) result
   val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t =
@@ -296,7 +293,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err (fun e -> Pool_common.Message.(ErrorM (Conformist e)))
   ;;
 
   let can user (tenant : Pool_tenant.t) =
@@ -316,12 +313,9 @@ module EditDatabase : sig
   val handle
     :  Pool_tenant.Write.t
     -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+    -> (Pool_event.t list, Pool_common.Message.t) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
+  val decode : (string * string list) list -> (t, Pool_common.Message.t) result
   val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t =
@@ -347,7 +341,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err (fun e -> Pool_common.Message.(ErrorM (Conformist e)))
   ;;
 
   let can user (tenant : Pool_tenant.t) =

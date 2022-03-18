@@ -25,8 +25,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       in
       Pool_common.Id.of_string user.Sihl_user.id
       |> Participant.find pool
-      |> Lwt_result.map_err
-           (CCFun.const Pool_common.Message.(NotFound Participant))
+      |=> CCFun.const Pool_common.Message.(NotFound Participant)
       >>= is_confirmed
       >>= terms_agreed
     in

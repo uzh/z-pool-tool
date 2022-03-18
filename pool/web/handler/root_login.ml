@@ -34,7 +34,7 @@ let login_post req =
     let password = List.assoc "password" params in
     let* user =
       Service.User.login ~ctx email ~password
-      |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
+      |=> Pool_common.Message.handle_sihl_login_error
     in
     HttpUtils.redirect_to_with_actions
       root_entrypoint_path
@@ -123,9 +123,9 @@ let reset_password_post req =
         ~token
         (go "password")
         (go "password_confirmation")
-      |> Lwt_result.map_err (fun _ ->
-             ( Pool_common.Message.PasswordResetInvalidData
-             , Format.asprintf "/root/reset-password/?token=%s" token ))
+      |=> fun _ ->
+      ( Pool_common.Message.PasswordResetInvalidData
+      , Format.asprintf "/root/reset-password/?token=%s" token )
     in
     HttpUtils.redirect_to_with_actions
       root_login_path

@@ -53,7 +53,7 @@ let login_post req =
     let password = List.assoc "password" params in
     let* user =
       Service.User.login ~ctx:(to_ctx tenant_db) email ~password
-      |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
+      |=> Pool_common.Message.handle_sihl_login_error
     in
     dashboard_path tenant_db user
     >|> CCFun.flip
@@ -153,8 +153,7 @@ let reset_password_post req =
            ~token
            (go "password")
            (go "password_confirmation")
-         |> Lwt_result.map_err
-              (CCFun.const Pool_common.Message.passwordresetinvaliddata)
+         |=> CCFun.const Pool_common.Message.passwordresetinvaliddata
     in
     HttpUtils.redirect_to_with_actions
       "/login"
