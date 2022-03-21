@@ -15,11 +15,7 @@ let login_get req =
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
       let open Sihl.Web in
-      let csrf = HttpUtils.find_csrf req in
-      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Root.Login.login csrf message context
-      |> Response.of_html
-      |> Lwt_result.return
+      Page.Root.Login.login context |> Response.of_html |> Lwt_result.return
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -59,9 +55,7 @@ let request_reset_password_get req =
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
-      let csrf = HttpUtils.find_csrf req in
-      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Root.Login.request_reset_password csrf message context
+      Page.Root.Login.request_reset_password context
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -105,9 +99,7 @@ let reset_password_get req =
          |> CCOption.to_result (NotFound Field.Token)
          |> Lwt_result.lift
        in
-       let csrf = HttpUtils.find_csrf req in
-       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-       Page.Root.Login.reset_password csrf message token context
+       Page.Root.Login.reset_password token context
        |> Response.of_html
        |> Lwt_result.return
   in

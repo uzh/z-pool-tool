@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let list csrf translation_list Pool_context.{ language; _ } =
+let list translation_list Pool_context.{ language; csrf; _ } =
   let input_element = input_element language in
   let build_translations_row translation_list =
     CCList.map

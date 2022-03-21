@@ -132,7 +132,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   Page_layout.create_root_layout html message language
 ;;
 
-let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
+let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
   let input_element = Component.input_element language `Text in

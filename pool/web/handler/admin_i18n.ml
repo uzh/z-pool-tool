@@ -15,9 +15,6 @@ let index req =
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
     let sort translations =
       let update m t =
         I18nMap.update
@@ -34,11 +31,10 @@ let index req =
              CCString.compare (I18n.Key.to_string k1) (I18n.Key.to_string k2))
       |> Lwt.return
     in
-    let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
-    Page.Admin.I18n.list csrf translation_list context
-    |> create_layout req context message
+    Page.Admin.I18n.list translation_list context
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

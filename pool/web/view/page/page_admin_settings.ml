@@ -57,14 +57,13 @@ let sortable =
 ;;
 
 let show
-    csrf
     tenant_languages
     email_suffixes
     contact_email
     inactive_user_disable_after
     inactive_user_warning
     terms_and_conditions
-    Pool_context.{ language; _ }
+    Pool_context.{ language; csrf; _ }
   =
   let action_path action =
     Sihl.Web.externalize_path

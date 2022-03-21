@@ -32,11 +32,10 @@ let detail participant Pool_context.{ language; query_language; _ } =
 ;;
 
 let edit
-    csrf
     user_update_csrf
     (participant : Participant.t)
     tenant_languages
-    Pool_context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; csrf; _ }
   =
   let open Participant in
   let open Pool_common.I18n in

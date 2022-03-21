@@ -8,11 +8,8 @@ let create_layout req = General.create_tenant_layout `Participant req
 let dashboard req =
   let result context =
     let open Lwt_result.Infix in
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
     Page.Participant.dashboard context
-    |> create_layout req context message
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
     |> Lwt_result.map_err (fun err -> err, "/index")
   in
@@ -26,11 +23,6 @@ let sign_up req =
     let open Pool_common.Message in
     Lwt_result.map_err (fun err -> err, "/index")
     @@
-    let csrf = HttpUtils.find_csrf req in
-    let message =
-      Sihl.Web.Flash.find_alert req
-      |> CCFun.flip CCOption.bind Message.of_string
-    in
     let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
     let channels = Participant.RecruitmentChannel.all () in
     let email = go Field.Email in
@@ -41,7 +33,6 @@ let sign_up req =
     let language = context.Pool_context.language in
     let* terms = Settings.terms_and_conditions tenant_db language in
     Page.Participant.sign_up
-      csrf
       channels
       email
       firstname
@@ -49,7 +40,7 @@ let sign_up req =
       recruitment_channel
       terms
       context
-    |> create_layout req context message
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -177,10 +168,6 @@ let email_verification req =
 let terms req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
-  let csrf = HttpUtils.find_csrf req in
-  let message =
-    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-  in
   let result context =
     let tenant_db = context.Pool_context.tenant_db in
     Lwt_result.map_err (fun err -> err, "/login")
@@ -190,8 +177,8 @@ let terms req =
        in
        let language = context.Pool_context.language in
        let* terms = Settings.terms_and_conditions tenant_db language in
-       Page.Participant.terms csrf user.Sihl_user.id terms context
-       |> create_layout req context message
+       Page.Participant.terms user.Sihl_user.id terms context
+       |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -240,28 +227,23 @@ let show is_edit req =
            (user.Sihl_user.id |> Pool_common.Id.of_string)
          |> Lwt_result.map_err (fun err -> err)
        in
-       let message =
-         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-       in
        match is_edit with
        | false ->
          Page.Participant.detail participant context
-         |> create_layout req context message
+         |> create_layout req context
          >|= Sihl.Web.Response.of_html
        | true ->
-         let csrf = HttpUtils.find_csrf req in
          let* tenant_languages =
            Pool_context.Tenant.find req
            |> Lwt_result.lift
            >|= fun c -> c.Pool_context.Tenant.tenant_languages
          in
          Page.Participant.edit
-           csrf
            user_update_csrf
            participant
            tenant_languages
            context
-         |> create_layout req context message
+         |> create_layout req context
          >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -325,7 +307,7 @@ let update req =
       else Error (MeantimeUpdate name)
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
-    let csrf = HttpUtils.find_csrf req in
+    let csrf = context.Pool_context.csrf in
     let htmx_element participant classnames ?error () =
       let open Participant in
       let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in

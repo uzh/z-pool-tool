@@ -154,7 +154,6 @@ let format_htmx_request_boolean_values values urlencoded =
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
-let find_csrf req = Sihl.Web.Csrf.find_exn req
 
 let is_req_from_root_host req =
   req

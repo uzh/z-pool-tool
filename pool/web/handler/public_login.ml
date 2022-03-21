@@ -24,10 +24,8 @@ let login_get req =
     | Some user -> redirect_to_dashboard tenant_db user |> Lwt_result.ok
     | None ->
       let open Sihl.Web in
-      let csrf = HttpUtils.find_csrf req in
-      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.login csrf context
-      |> create_layout req context message
+      Page.Public.login context
+      |> create_layout req context
       >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -83,10 +81,8 @@ let request_reset_password_get req =
       ||> Response.redirect_to
       >|> Lwt.return_ok
     | None ->
-      let csrf = HttpUtils.find_csrf req in
-      let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.request_reset_password csrf context
-      |> create_layout req context message
+      Page.Public.request_reset_password context
+      |> create_layout req context
       >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -143,12 +139,8 @@ let reset_password_get req =
         [ Message.set ~error:[ Pool_common.Message.(NotFound Field.Token) ] ]
       |> Lwt_result.ok
     | Some token ->
-      let csrf = HttpUtils.find_csrf req in
-      let message =
-        CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-      in
-      Page.Public.reset_password csrf token context
-      |> create_layout req context message
+      Page.Public.reset_password token context
+      |> create_layout req context
       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
