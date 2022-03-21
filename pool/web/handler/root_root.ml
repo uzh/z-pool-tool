@@ -8,10 +8,11 @@ let create req =
   let user () =
     (* TODO [aerben] this is a root route, should not get tenant like this,
        instead use route param *)
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    Sihl.Web.Request.urlencoded "email" req
-    ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
-    >>= HttpUtils.validate_email_existence tenant_db
+    (let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+     Sihl.Web.Request.urlencoded "email" req
+     ||> CCOption.to_result Message.Message.EmailAddressMissingRoot
+     >>= HttpUtils.validate_email_existence tenant_db)
+    |=> Message.Message.errorm
   in
   let events () =
     let open CCResult.Infix in
@@ -54,5 +55,6 @@ let toggle_status req =
   |=> (fun err -> err, "/root/tenants/")
   |>> handle
   |>> return_to_overview
+  |=> (fun (e, p) -> Message.Message.errorm e, p)
   >|> HttpUtils.extract_happy_path
 ;;

@@ -29,7 +29,7 @@ let create req =
     let file_fields =
       [ "styles"; "icon" ] @ Pool_tenant.LogoMapping.LogoType.all ()
     in
-    let* files = File.upload_files file_fields req in
+    let* files = File.upload_files file_fields req |=> Common.Message.errorm in
     let finalize = function
       | Ok resp -> Lwt.return_ok resp
       | Error err ->
@@ -67,7 +67,7 @@ let create_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
   let find_tenant () =
-    Pool_tenant.find_full id |> Lwt_result.map_err Message.Message.errorm
+    Pool_tenant.find_full id |> Lwt_result.map_err Common.Message.errorm
   in
   let events tenant =
     let open Lwt_result.Syntax in
@@ -109,19 +109,19 @@ let create_operator req =
 let promote_to_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
-  let find_tenant () = Pool_tenant.find_full id in
+  let find_tenant () = Pool_tenant.find_full id |=> Common.Message.errorm in
   let events tenant =
     let open Lwt_result.Syntax in
     let tenant_db = Pool_tenant.Write.(tenant.database.Database.label) in
     let* email =
       Sihl.Web.Request.urlencoded "email" req
-      ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
+      ||> CCOption.to_result Common.Message.(ErrorM EmailAddressMissingOperator)
       >|= Pool_user.EmailAddress.of_string
     in
     (* User is either admin or participant *)
     let* admin =
       Admin.find_by_email tenant_db email
-      |=> fun e -> Message.Message.(ErrorList [ e; CantPromote ])
+      |=> fun e -> Common.Message.(ErrorM (ErrorList [ e; CantPromote ]))
     in
     let open CCResult.Infix in
     let events = Cqrs_command.Admin_command.PromoteToOperator.handle admin in
@@ -145,7 +145,8 @@ let promote_to_operator req =
 ;;
 
 let tenant_detail req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
+  let open Utils.Lwt_result.Syntax in
   let open Sihl.Web in
   let%lwt result =
     Lwt_result.map_err (fun err -> err, "/root/tenants")
@@ -153,7 +154,7 @@ let tenant_detail req =
     let csrf = HttpUtils.find_csrf req in
     let message = CCOption.bind (Flash.find_alert req) Message.of_string in
     let id = Router.param req "id" |> Common.Id.of_string in
-    let* tenant = Pool_tenant.find id in
+    let* tenant = Pool_tenant.find id |=> Common.Message.errorm in
     Page.Root.Tenant.detail csrf tenant message ()
     |> Response.of_html
     |> Lwt.return_ok

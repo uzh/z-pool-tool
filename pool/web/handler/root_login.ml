@@ -20,8 +20,9 @@ let login_get req =
 ;;
 
 let login_post req =
+  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun err -> err, root_login_path)
     @@
     let open Lwt_result.Syntax in
@@ -41,7 +42,10 @@ let login_post req =
       [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.fst_map Message.Message.errorm
+  |> HttpUtils.extract_happy_path
 ;;
 
 let request_reset_password_get req =

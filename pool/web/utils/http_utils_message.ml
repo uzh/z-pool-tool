@@ -29,7 +29,7 @@ let of_string str =
     | _ -> None
   in
   match json with
-  | Some json -> Some (t_of_yojson json)
+  | Some json -> Some (product_of_yojson json)
   | None -> None
 ;;
 

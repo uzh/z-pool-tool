@@ -93,6 +93,7 @@ let delete_asset req =
     in
     tenant_id
     |> Pool_tenant.find
+    |=> Message.Message.errorm
     >>= event
     |>> handle
     |>> destroy_file
