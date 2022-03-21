@@ -19,15 +19,18 @@ let index req =
       let open Lwt_result.Syntax in
       let query_lang = context.Pool_context.query_language in
       let error_path = Http_utils.path_with_language query_lang "/error" in
+      Lwt_result.map_err (fun err -> err, error_path)
+      @@
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
       let tenant_db = context.Pool_context.tenant_db in
-      let* tenant =
-        Pool_tenant.find_by_label tenant_db
-        |> Lwt_result.map_err (fun err -> err, error_path)
+      let* tenant = Pool_tenant.find_by_label tenant_db in
+      let* welcome_text =
+        I18n.(
+          find_by_key tenant_db Key.WelcomeText context.Pool_context.language)
       in
-      Page.Public.index tenant message context
+      Page.Public.index tenant message context welcome_text
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     in

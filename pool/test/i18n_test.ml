@@ -17,7 +17,7 @@ let create () =
   let expected =
     let open CCResult in
     let open I18n in
-    let* key = Key.create "confirmation_subject" in
+    let* key = Key.of_string "confirmation_subject" in
     let* language = Pool_common.Language.of_string "EN" in
     let* content = Content.create "Subject" in
     let create = { key; language; content } in
