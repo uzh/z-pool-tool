@@ -70,13 +70,14 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
     CCList.map
       (fun (name, label) -> input_element `Text (Some name) label "")
       text_fields
-    @ Component.language_select
-        Pool_common.Language.En
-        "language"
-        (Pool_common.Language.all ())
-        Message.DefaultLanguage
-        ~selected:None
-        ()
+    @ [ Component.language_select
+          Pool_common.Language.En
+          "language"
+          (Pool_common.Language.all ())
+          Message.DefaultLanguage
+          ~selected:None
+          ()
+      ]
     @ [ div
           [ label [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
@@ -178,13 +179,14 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
     (CCList.map
        (fun (name, label, value) -> input_element `Text (Some name) label value)
        detail_fields
-    @ Component.language_select
-        Pool_common.Language.En
-        "language"
-        (Pool_common.Language.all ())
-        ~selected:(Some tenant.default_language)
-        Message.DefaultLanguage
-        ())
+    @ [ Component.language_select
+          Pool_common.Language.En
+          "language"
+          (Pool_common.Language.all ())
+          ~selected:(Some tenant.default_language)
+          Message.DefaultLanguage
+          ()
+      ])
     @ [ div
           [ a
               ~a:

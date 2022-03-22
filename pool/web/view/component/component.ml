@@ -23,29 +23,47 @@ let language_select
     input_label
     ~selected
     ?(attributes = [])
+    ?(classnames = [])
+    ?error
     ()
   =
-  [ div
-      ~a:[ a_class [ "flexcolumn" ] ]
-      [ label [ txt Pool_common.(Utils.field_to_string language input_label) ]
-      ; select
-          ~a:([ a_name name ] @ attributes)
-          (CCList.map
-             (fun l ->
-               let is_selected =
-                 selected
-                 |> CCOption.map (fun selected ->
-                        if Pool_common.Language.equal selected l
-                        then [ a_selected () ]
-                        else [])
-                 |> CCOption.value ~default:[]
-               in
-               option
-                 ~a:([ a_value (Pool_common.Language.code l) ] @ is_selected)
-                 (txt (Pool_common.Language.code l)))
-             options)
-      ]
-  ]
+  let select =
+    select
+      ~a:
+        ([ a_name name ]
+        @ attributes
+        @
+        if not (CCList.is_empty classnames) then [ a_class classnames ] else []
+        )
+      (CCList.map
+         (fun l ->
+           let is_selected =
+             selected
+             |> CCOption.map (fun selected ->
+                    if Pool_common.Language.equal selected l
+                    then [ a_selected () ]
+                    else [])
+             |> CCOption.value ~default:[]
+           in
+           option
+             ~a:([ a_value (Pool_common.Language.code l) ] @ is_selected)
+             (txt (Pool_common.Language.code l)))
+         options)
+  in
+  let error =
+    match error with
+    | None -> span []
+    | Some error ->
+      span
+        ~a:[ a_class [ "error-message" ] ]
+        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  in
+  div
+    ~a:[ a_class [ "flexcolumn" ] ]
+    [ label [ txt Pool_common.(Utils.field_to_string language input_label) ]
+    ; select
+    ; error
+    ]
 ;;
 
 let csrf_attibs ?id csrf =
@@ -159,11 +177,3 @@ let hx_input_element
     ~a:[ a_class [ "flex-box"; "flex--column" ]; a_user_data "name" name ]
     field_content
 ;;
-
-(* let htmx_language_input tenant_languages = [ div ~a:[ a_user_data "name"
-   "language" ] (CCList.flatten @@ CCList.map (fun language -> let
-   language_label = Pool_common.Language.code language in let id =
-   Format.asprintf "language-code-%s" (language_label |>
-   CCString.lowercase_ascii) in [ label ~a:[ a_label_for id ] [ txt
-   language_label ] ; input ~a: [ a_input_type `Radio ; a_id id ; a_name
-   "language" ; a_value language_label ] () ]) tenant_languages) ] ;; *)

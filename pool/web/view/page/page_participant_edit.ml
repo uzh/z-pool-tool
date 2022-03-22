@@ -81,19 +81,20 @@ let edit
                , Message.paused
                , `Checkbox )
              ]
-           @ Component.language_select
-               language
-               "language"
-               tenant_languages
-               Message.DefaultLanguage
-               ~selected:participant.language
-               ~attributes:
-                 (htmx_attributes
-                    "language"
-                    participant.language_version
-                    ~action
-                    ())
-               ()
+           @ [ Component.language_select
+                 language
+                 "language"
+                 tenant_languages
+                 Message.DefaultLanguage
+                 ~selected:participant.language
+                 ~attributes:
+                   (htmx_attributes
+                      "language"
+                      participant.language_version
+                      ~action
+                      ())
+                 ()
+             ]
          ])
   in
   let email_form =

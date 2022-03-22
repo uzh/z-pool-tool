@@ -287,6 +287,11 @@ let update req =
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
     let language = context.Pool_context.language in
+    let* tenant_context =
+      Pool_context.Tenant.find req
+      |> Lwt_result.lift
+      |> Lwt_result.map_err (fun err -> err, path_with_lang "/user/edit")
+    in
     let version =
       version_raw
       |> CCInt.of_string
@@ -324,23 +329,33 @@ let update req =
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in
     let base_input version =
-      let type_of = function
-        | "paused" -> `Checkbox
-        | "firstname" | "lastname" | "language" -> `Text
-        | k ->
-          failwith
-          @@ Pool_common.Utils.error_to_string
-               language
-               Pool_common.Message.(NotHandled k)
+      let simple_input type_of =
+        Component.hx_input_element
+          type_of
+          name
+          value
+          version
+          (field_name name)
+          language
+          ~hx_post
       in
-      Component.hx_input_element
-        (type_of name)
-        name
-        value
-        version
-        (field_name name)
-        language
-        ~hx_post
+      match name with
+      | "paused" -> simple_input `Checkbox
+      | "firstname" | "lastname" -> simple_input `Text
+      | "language" ->
+        Component.language_select
+          language
+          name
+          tenant_context.Pool_context.Tenant.tenant_languages
+          (field_name name)
+          ~selected:(Pool_common.Language.of_string value |> CCResult.to_opt)
+          ~attributes:
+            (Component.htmx_attributes name version ~action:hx_post ())
+      | k ->
+        failwith
+        @@ Pool_common.Utils.error_to_string
+             language
+             Pool_common.Message.(NotHandled k)
     in
     match events with
     | Ok events ->
