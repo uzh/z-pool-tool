@@ -82,7 +82,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
   in
   div
     ~a:[ a_class ([ "flexcolumn" ] @ classnames) ]
-    [ label [ txt (field_name field) ]; input; error ]
+    [ label [ txt (field_to_string field) ]; input; error ]
 ;;
 
 (* Use this CSRF element as HTMX response in POSTs*)
