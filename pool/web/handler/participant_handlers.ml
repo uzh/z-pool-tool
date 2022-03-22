@@ -329,30 +329,41 @@ let update req =
     let csrf = HttpUtils.find_csrf req in
     let htmx_element participant classnames ?error () =
       let open Participant in
-      let input_element =
-        match name with
-        | "paused" ->
-          Htmx.Paused (participant.paused_version, participant.paused)
-        | "firstname" ->
-          Htmx.Firstname
-            (participant.firstname_version, participant |> firstname)
-        | "lastname" ->
-          Htmx.Lastname (participant.lastname_version, participant |> lastname)
-        | "language" ->
+      let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
+      let html_response input =
+        [ Htmx.create input language ~classnames ~hx_post ?error ()
+        ; csrf_element
+        ]
+        |> HttpUtils.multi_html_to_plain_text_response
+      in
+      Lwt_result.return
+      @@
+      match name with
+      | "paused" ->
+        Htmx.Paused (participant.paused_version, participant.paused)
+        |> html_response
+      | "firstname" ->
+        Htmx.Firstname (participant.firstname_version, participant |> firstname)
+        |> html_response
+      | "lastname" ->
+        Htmx.Lastname (participant.lastname_version, participant |> lastname)
+        |> html_response
+      | "language" ->
+        (match error with
+        | Some _ ->
           Htmx.Language
             ( participant.language_version
             , participant.language
             , tenant_context.Pool_context.Tenant.tenant_languages )
-        | k ->
-          failwith
-          @@ Pool_common.Utils.error_to_string
-               language
-               Pool_common.Message.(NotHandled k)
-      in
-      let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
-      [ Htmx.create input_element language ~classnames ~hx_post ?error ()
-      ; csrf_element
-      ]
+          |> html_response
+        | None ->
+          Sihl.Web.Response.of_plain_text ""
+          |> Sihl.Web.Response.add_header ("HX-Redirect", "/user/edit"))
+      | k ->
+        failwith
+        @@ Pool_common.Utils.error_to_string
+             language
+             Pool_common.Message.(NotHandled k)
     in
     match events with
     | Ok events ->
@@ -362,12 +373,7 @@ let update req =
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
       htmx_element participant [ "success" ] ()
-      |> HttpUtils.multi_html_to_plain_text_response
-      |> Lwt_result.return
-    | Error err ->
-      htmx_element participant [ "error" ] ~error:err ()
-      |> HttpUtils.multi_html_to_plain_text_response
-      |> Lwt_result.return
+    | Error err -> htmx_element participant [ "error" ] ~error:err ()
   in
   Lwt.catch
     (fun () -> result |> HttpUtils.extract_happy_path req)
