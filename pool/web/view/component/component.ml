@@ -1,6 +1,53 @@
 module HttpUtils = Http_utils
 open Tyxml.Html
 
+let htmx_attributes name version ?action () =
+  let hx_params = [ "_csrf"; "version"; "field" ] in
+  [ a_user_data "hx-swap" "outerHTML"
+  ; a_user_data "hx-params" (CCString.concat ", " (CCList.cons name hx_params))
+  ; a_user_data "hx-target" "closest div"
+  ; a_user_data
+      "hx-vals"
+      (Format.asprintf
+         {|{"version": "%i", "field": "%s"}|}
+         (version |> Pool_common.Version.value)
+         name)
+  ]
+  @ CCOption.(CCList.filter_map CCFun.id [ action >|= a_user_data "hx-post" ])
+;;
+
+let language_select
+    language
+    name
+    options
+    input_label
+    ~selected
+    ?(attributes = [])
+    ()
+  =
+  [ div
+      ~a:[ a_class [ "flexcolumn" ] ]
+      [ label [ txt Pool_common.(Utils.field_to_string language input_label) ]
+      ; select
+          ~a:([ a_name name ] @ attributes)
+          (CCList.map
+             (fun l ->
+               let is_selected =
+                 selected
+                 |> CCOption.map (fun selected ->
+                        if Pool_common.Language.equal selected l
+                        then [ a_selected () ]
+                        else [])
+                 |> CCOption.value ~default:[]
+               in
+               option
+                 ~a:([ a_value (Pool_common.Language.code l) ] @ is_selected)
+                 (txt (Pool_common.Language.code l)))
+             options)
+      ]
+  ]
+;;
+
 let csrf_attibs ?id csrf =
   let attribs = [ a_input_type `Hidden; a_name "_csrf"; a_value csrf ] in
   match id with
@@ -74,7 +121,6 @@ let hx_input_element
     input_label
     language
     ?hx_post
-    ?hx_params
     ?(classnames = [])
     ?error
     ()
@@ -86,36 +132,13 @@ let hx_input_element
       if bool_of_string_opt value |> CCOption.get_or ~default:false
       then [ a_checked () ]
       else []
-    | _ ->
-      [ a_value value
-      ; a_placeholder (field_to_string input_label)
-      ; a_class ([ "input" ] @ classnames)
-      ])
+    | _ -> [ a_value value; a_placeholder (field_to_string input_label) ])
     @ [ a_input_type input_type
       ; a_name name
-      ; a_user_data "hx-swap" "outerHTML"
+      ; a_class ([ "input" ] @ classnames)
       ]
-    @ CCList.filter_map
-        CCFun.id
-        CCOption.
-          [ (hx_params
-            >|= fun hx_params ->
-            a_user_data
-              "hx-params"
-              (CCString.concat ", "
-              (* DO NOT FORGET TO EXTEND THIS LIST IF YOU WISH TO TRANSMIT MORE
-                 META DATA *)
-              @@ [ "_csrf"; "version"; "field" ]
-              @ hx_params))
-          ; hx_post >|= a_user_data "hx-post"
-          ; Some (a_user_data "hx-target" "closest div")
-          ; Format.asprintf
-              {|{"version": "%i", "field": "%s"}|}
-              (version |> Pool_common.Version.value)
-              name
-            |> a_user_data "hx-vals"
-            |> CCOption.return
-          ]
+    @ (if not (CCList.is_empty classnames) then [ a_class classnames ] else [])
+    @ htmx_attributes name version ?action:hx_post ()
   in
   let error_message error =
     span
@@ -136,3 +159,11 @@ let hx_input_element
     ~a:[ a_class [ "flex-box"; "flex--column" ]; a_user_data "name" name ]
     field_content
 ;;
+
+(* let htmx_language_input tenant_languages = [ div ~a:[ a_user_data "name"
+   "language" ] (CCList.flatten @@ CCList.map (fun language -> let
+   language_label = Pool_common.Language.code language in let id =
+   Format.asprintf "language-code-%s" (language_label |>
+   CCString.lowercase_ascii) in [ label ~a:[ a_label_for id ] [ txt
+   language_label ] ; input ~a: [ a_input_type `Radio ; a_id id ; a_name
+   "language" ; a_value language_label ] () ]) tenant_languages) ] ;; *)

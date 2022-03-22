@@ -33,10 +33,6 @@ module Language : sig
     :  unit
     -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 
-  val schema_i18n
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
   val all : unit -> t list
   val all_codes : unit -> string list
   val field_name_of_t : t -> Message.field

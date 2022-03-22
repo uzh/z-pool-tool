@@ -145,7 +145,7 @@ let create () =
           ; "smtp_auth_protocol", [ smtp_auth_protocol ]
           ; "styles", [ styles ]
           ; "icon", [ icon ]
-          ; "default_language", [ default_language ]
+          ; "language", [ default_language ]
           ; "email", [ email ]
           ; "password", [ password ]
           ; "firstname", [ firstname ]

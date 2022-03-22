@@ -63,7 +63,7 @@ module Data = struct
     ; "icon", [ Asset.icon ]
     ; to_string TenantLogo, [ tenant_logo ]
     ; to_string PartnerLogo, [ partner_logo ]
-    ; "default_language", [ default_language ]
+    ; "language", [ default_language ]
     ; "email", [ email ]
     ; "password", [ password ]
     ; "firstname", [ firstname ]

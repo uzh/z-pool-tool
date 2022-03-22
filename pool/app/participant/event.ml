@@ -19,6 +19,7 @@ type update =
   { firstname : User.Firstname.t
   ; lastname : User.Lastname.t
   ; paused : User.Paused.t
+  ; language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
 
@@ -89,6 +90,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
+    ; language_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -172,7 +174,16 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | LanguageUpdated (participant, language) ->
-    Repo.update pool { participant with language = Some language }
+    let%lwt () =
+      Repo.update_language
+        pool
+        { participant with
+          language = Some language
+        ; language_version =
+            Pool_common.Version.increment participant.language_version
+        }
+    in
+    Lwt.return_unit
   | AccountVerified participant ->
     let%lwt _ =
       Service.User.update

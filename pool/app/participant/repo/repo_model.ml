@@ -51,7 +51,8 @@ let t =
                   , ( Version.value m.firstname_version
                     , ( Version.value m.lastname_version
                       , ( Version.value m.paused_version
-                        , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+                        , ( Version.value m.language_version
+                          , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( user
@@ -63,11 +64,13 @@ let t =
                 , ( verified
                   , ( firstname_version
                     , ( lastname_version
-                      , (paused_version, (created_at, updated_at)) ) ) ) ) ) )
-          ) ) )
+                      , ( paused_version
+                        , (language_version, (created_at, updated_at)) ) ) ) )
+                ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
+    let version_of_int = Pool_common.Version.of_int in
     Ok
       { user
       ; recruitment_channel
@@ -76,9 +79,10 @@ let t =
       ; paused = Paused.create paused
       ; disabled = Disabled.create disabled
       ; verified = Verified.create verified
-      ; firstname_version = Pool_common.Version.of_int firstname_version
-      ; lastname_version = Pool_common.Version.of_int lastname_version
-      ; paused_version = Pool_common.Version.of_int paused_version
+      ; firstname_version = version_of_int firstname_version
+      ; lastname_version = version_of_int lastname_version
+      ; paused_version = version_of_int paused_version
+      ; language_version = version_of_int language_version
       ; created_at
       ; updated_at
       }
@@ -109,7 +113,9 @@ let t =
                                  Pool_common.Repo.Version.t
                                  (tup2
                                     Pool_common.Repo.Version.t
-                                    (tup2 CreatedAt.t UpdatedAt.t))))))))))))
+                                    (tup2
+                                       Pool_common.Repo.Version.t
+                                       (tup2 CreatedAt.t UpdatedAt.t)))))))))))))
 ;;
 
 let participant =
@@ -127,7 +133,8 @@ let participant =
                   , ( Version.value m.firstname_version
                     , ( Version.value m.lastname_version
                       , ( Version.value m.paused_version
-                        , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+                        , ( Version.value m.language_version
+                          , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -159,7 +166,9 @@ let participant =
                                  Pool_common.Repo.Version.t
                                  (tup2
                                     Pool_common.Repo.Version.t
-                                    (tup2 CreatedAt.t UpdatedAt.t))))))))))))
+                                    (tup2
+                                       Pool_common.Repo.Version.t
+                                       (tup2 CreatedAt.t UpdatedAt.t)))))))))))))
 ;;
 
 module Write = struct
@@ -179,7 +188,8 @@ module Write = struct
                   , ( Verified.value m.verified
                     , ( Version.value m.firstname_version
                       , ( Version.value m.lastname_version
-                        , Version.value m.paused_version ) ) ) ) ) ) ) ) )
+                        , ( Version.value m.lastname_version
+                          , Version.value m.paused_version ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -210,6 +220,8 @@ module Write = struct
                                 Pool_common.Repo.Version.t
                                 (tup2
                                    Pool_common.Repo.Version.t
-                                   Pool_common.Repo.Version.t))))))))))
+                                   (tup2
+                                      Pool_common.Repo.Version.t
+                                      Pool_common.Repo.Version.t)))))))))))
   ;;
 end

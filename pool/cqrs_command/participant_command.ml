@@ -96,6 +96,7 @@ module UpdateDetails : sig
     { firstname : User.Firstname.t option
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
+    ; language : Pool_common.Language.t option
     }
 
   val handle
@@ -117,9 +118,12 @@ end = struct
     { firstname : User.Firstname.t option
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
+    ; language : Pool_common.Language.t option
     }
 
-  let command firstname lastname paused = { firstname; lastname; paused }
+  let command firstname lastname paused language =
+    { firstname; lastname; paused; language }
+  ;;
 
   let schema =
     Conformist.(
@@ -128,6 +132,7 @@ end = struct
           [ Conformist.optional @@ User.Firstname.schema ()
           ; Conformist.optional @@ User.Lastname.schema ()
           ; Conformist.optional @@ User.Paused.schema ()
+          ; Conformist.optional @@ Pool_common.Language.schema ()
           ]
         command)
   ;;
@@ -137,6 +142,7 @@ end = struct
       [ command.firstname |> CCOption.map (firstnameupdated participant)
       ; command.lastname |> CCOption.map (lastnameupdated participant)
       ; command.paused |> CCOption.map (pausedupdated participant)
+      ; command.language |> CCOption.map (languageupdated participant)
       ]
     |> CCList.filter_map CCFun.id
     |> CCList.map Pool_event.participant
@@ -358,61 +364,5 @@ end = struct
       [ Participant.AccountVerified participant |> Pool_event.participant
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
-  ;;
-end
-
-module UpdateLanguage : sig
-  type t = Pool_common.Language.t
-
-  val handle
-    :  Participant.t
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
-  val can
-    :  Pool_tenant.Database.Label.t
-    -> Sihl_user.t
-    -> Participant.t
-    -> bool Lwt.t
-end = struct
-  type t = Pool_common.Language.t
-
-  let command language = language
-
-  let schema =
-    Conformist.(make Field.[ Pool_common.Language.schema_i18n () ] command)
-  ;;
-
-  let handle participant language =
-    Ok
-      [ Participant.LanguageUpdated (participant, language)
-        |> Pool_event.participant
-      ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
-  ;;
-
-  let can pool user participant =
-    let open Utils.Lwt_result.Infix in
-    let check_permission tenant =
-      Permission.can
-        user
-        ~any_of:
-          [ Permission.Update
-              (Permission.Participant, Some (participant |> Participant.id))
-          ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
-          ]
-    in
-    pool
-    |> Pool_tenant.find_by_label
-    |>> check_permission
-    |> Lwt.map (CCResult.get_or ~default:false)
   ;;
 end

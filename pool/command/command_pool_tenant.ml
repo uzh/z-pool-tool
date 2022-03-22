@@ -73,7 +73,7 @@ let create_tenant_pool =
               ; "styles", [ styles ]
               ; "icon", [ icon ]
               ; "logos", [ logos ]
-              ; "default_language", [ default_language ]
+              ; "language", [ default_language ]
               ; "email", [ email ]
               ; "password", [ password ]
               ; "firstname", [ firstname ]

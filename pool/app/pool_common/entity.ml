@@ -38,16 +38,14 @@ module Language = struct
 
   let label country_code = country_code |> code |> Utils.Countries.find
 
-  let base_schema field_name =
+  let schema () =
     Pool_common_utils.schema_decoder
       of_string
       code
       PoolError.Language
-      field_name
+      "language"
   ;;
 
-  let schema () = base_schema "default_language"
-  let schema_i18n () = base_schema "language"
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 

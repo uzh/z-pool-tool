@@ -36,6 +36,7 @@ let edit
     csrf
     user_update_csrf
     participant
+    tenant_languages
     Pool_context.{ language; query_language; _ }
   =
   let open Participant in
@@ -66,7 +67,6 @@ let edit
                  label
                  language
                  ~hx_post:(externalize action)
-                 ~hx_params:[ name ]
                  ())
              [ ( "firstname"
                , participant |> firstname |> Pool_user.Firstname.value
@@ -81,6 +81,19 @@ let edit
                , Message.paused
                , `Checkbox )
              ]
+           @ Component.language_select
+               language
+               "language"
+               tenant_languages
+               Message.DefaultLanguage
+               ~selected:participant.language
+               ~attributes:
+                 (htmx_attributes
+                    "language"
+                    participant.language_version
+                    ~action
+                    ())
+               ()
          ])
   in
   let email_form =

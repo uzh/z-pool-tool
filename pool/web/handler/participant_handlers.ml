@@ -243,7 +243,17 @@ let show is_edit req =
          >|= Sihl.Web.Response.of_html
        | true ->
          let csrf = HttpUtils.find_csrf req in
-         Page.Participant.edit csrf user_update_csrf participant context
+         let* tenant_languages =
+           Pool_context.Tenant.find req
+           |> Lwt_result.lift
+           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+         in
+         Page.Participant.edit
+           csrf
+           user_update_csrf
+           participant
+           tenant_languages
+           context
          |> create_layout req context message
          >|= Sihl.Web.Response.of_html
   in
@@ -291,6 +301,7 @@ let update req =
       | "firstname" -> Message.Firstname
       | "lastname" -> Message.Lastname
       | "paused" -> Message.Paused
+      | "language" -> Message.DefaultLanguage
       | k -> failwith @@ Utils.error_to_string language Message.(NotHandled k)
     in
     let value = go name in
@@ -315,7 +326,7 @@ let update req =
     let base_input version =
       let type_of = function
         | "paused" -> `Checkbox
-        | "firstname" | "lastname" -> `Text
+        | "firstname" | "lastname" | "language" -> `Text
         | k ->
           failwith
           @@ Pool_common.Utils.error_to_string
@@ -330,7 +341,6 @@ let update req =
         (field_name name)
         language
         ~hx_post
-        ~hx_params:[ name ]
     in
     match events with
     | Ok events ->
@@ -444,53 +454,4 @@ let update_password req =
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
-;;
-
-let update_language req =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result context =
-    let open Lwt_result.Syntax in
-    let open Lwt_result.Infix in
-    Lwt_result.map_err (fun err -> err, "/error")
-    @@ let* new_language =
-         Command.UpdateLanguage.decode urlencoded |> Lwt_result.lift
-       in
-       let* redirect_path =
-         let field = Pool_common.Message.Language in
-         HttpUtils.find_referer_path req
-         >|= fun referer ->
-         let open Pool_common in
-         referer
-         |> CCFun.flip Message.remove_field_query_param field
-         |> CCFun.flip
-              Message.add_field_query_params
-              [ field, Language.code new_language |> CCString.lowercase_ascii ]
-       in
-       let tenant_db = context.Pool_context.tenant_db in
-       Logs.info (fun m -> m "redirect_path: %s" redirect_path);
-       let%lwt user = HttpUtils.user_from_session tenant_db req in
-       let test =
-         match user with
-         | Some _ -> "Some user"
-         | None -> "None user"
-       in
-       Logs.info (fun m -> m "%s" test);
-       match user with
-       | Some user ->
-         let* participant =
-           Participant.find
-             tenant_db
-             (user.Sihl_user.id |> Pool_common.Id.of_string)
-         in
-         let* events =
-           Command.UpdateLanguage.handle participant new_language
-           |> Lwt_result.lift
-         in
-         Utils.Database.with_transaction tenant_db (fun () ->
-             let%lwt () = Pool_event.handle_events tenant_db events in
-             Sihl.Web.Response.redirect_to redirect_path |> Lwt.return)
-         |> Lwt_result.ok
-       | None -> Sihl.Web.Response.redirect_to redirect_path |> Lwt.return_ok
-  in
-  result |> HttpUtils.extract_happy_path req
 ;;

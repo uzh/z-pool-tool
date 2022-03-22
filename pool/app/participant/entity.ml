@@ -46,6 +46,7 @@ type t =
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
+  ; language_version : Pool_common.Version.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -63,6 +64,7 @@ module Write = struct
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
+    ; language_version : Pool_common.Version.t
     }
   [@@deriving eq, show]
 
@@ -77,6 +79,7 @@ module Write = struct
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version
+    ; language_version = m.paused_version
     }
   ;;
 end
@@ -110,6 +113,7 @@ let version_selector p = function
   | "firstname" -> Some p.firstname_version
   | "lastname" -> Some p.lastname_version
   | "paused" -> Some p.paused_version
+  | "language" -> Some p.language_version
   | _ -> None
 ;;
 
