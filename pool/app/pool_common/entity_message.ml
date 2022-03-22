@@ -162,12 +162,6 @@ let to_coformist_error error_list =
 
 let field_name field = field |> show_field |> CCString.lowercase_ascii
 
-let remove_field_query_param path param =
-  field_name param
-  |> Uri.remove_query_param (Uri.of_string path)
-  |> Uri.to_string
-;;
-
 let add_field_query_params path params =
   CCList.map (CCPair.map_fst field_name) params
   |> Uri.add_query_params' (Uri.of_string path)
