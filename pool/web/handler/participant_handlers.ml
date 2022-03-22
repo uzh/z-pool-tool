@@ -309,7 +309,6 @@ let update req =
       | "language" -> Message.DefaultLanguage
       | k -> failwith @@ Utils.error_to_string language Message.(NotHandled k)
     in
-    let value = go name in
     let get_version =
       CCOption.get_exn_or
         (Pool_common.Utils.error_to_string
@@ -328,34 +327,32 @@ let update req =
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in
-    let base_input version =
-      let simple_input type_of =
-        Component.hx_input_element
-          type_of
-          name
-          value
-          version
-          (field_name name)
-          language
-          ~hx_post
+    let htmx_element participant classnames ?error () =
+      let open Participant in
+      let input_element =
+        match name with
+        | "paused" ->
+          Htmx.Paused (participant.paused_version, participant.paused)
+        | "firstname" ->
+          Htmx.Firstname
+            (participant.firstname_version, participant |> firstname)
+        | "lastname" ->
+          Htmx.Lastname (participant.lastname_version, participant |> lastname)
+        | "language" ->
+          Htmx.Language
+            ( participant.language_version
+            , participant.language
+            , tenant_context.Pool_context.Tenant.tenant_languages )
+        | k ->
+          failwith
+          @@ Pool_common.Utils.error_to_string
+               language
+               Pool_common.Message.(NotHandled k)
       in
-      match name with
-      | "paused" -> simple_input `Checkbox
-      | "firstname" | "lastname" -> simple_input `Text
-      | "language" ->
-        Component.language_select
-          language
-          name
-          tenant_context.Pool_context.Tenant.tenant_languages
-          (field_name name)
-          ~selected:(Pool_common.Language.of_string value |> CCResult.to_opt)
-          ~attributes:
-            (Component.htmx_attributes name version ~action:hx_post ())
-      | k ->
-        failwith
-        @@ Pool_common.Utils.error_to_string
-             language
-             Pool_common.Message.(NotHandled k)
+      let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
+      [ Htmx.create input_element language ~classnames ~hx_post ?error ()
+      ; csrf_element
+      ]
     in
     match events with
     | Ok events ->
@@ -364,18 +361,11 @@ let update req =
         Participant.(participant |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
-      [ base_input
-          (Participant.version_selector participant name |> get_version)
-          ~classnames:[ "success" ]
-          ()
-      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
-      ]
+      htmx_element participant [ "success" ] ()
       |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
     | Error err ->
-      [ base_input current_version ~classnames:[ "error" ] ~error:err ()
-      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
-      ]
+      htmx_element participant [ "error" ] ~error:err ()
       |> HttpUtils.multi_html_to_plain_text_response
       |> Lwt_result.return
   in

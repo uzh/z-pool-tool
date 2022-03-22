@@ -35,7 +35,7 @@ let detail participant Pool_context.{ language; query_language; _ } =
 let edit
     csrf
     user_update_csrf
-    participant
+    (participant : Participant.t)
     tenant_languages
     Pool_context.{ language; query_language; _ }
   =
@@ -53,48 +53,18 @@ let edit
       (CCList.flatten
          [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
-             (fun (name, value, label, _type) ->
-               hx_input_element
-                 _type
-                 name
-                 value
-                 (Participant.version_selector participant name
-                 |> CCOption.get_exn_or
-                      Pool_common.(
-                        Utils.error_to_string
-                          language
-                          (Message.HtmxVersionNotFound name)))
-                 label
-                 language
-                 ~hx_post:(externalize action)
-                 ())
-             [ ( "firstname"
-               , participant |> firstname |> Pool_user.Firstname.value
-               , Message.firstname
-               , `Text )
-             ; ( "lastname"
-               , participant |> lastname |> Pool_user.Lastname.value
-               , Message.lastname
-               , `Text )
-             ; ( "paused"
-               , participant.paused |> Pool_user.Paused.value |> string_of_bool
-               , Message.paused
-               , `Checkbox )
-             ]
-           @ [ Component.language_select
-                 language
-                 "language"
-                 tenant_languages
-                 Message.DefaultLanguage
-                 ~selected:participant.language
-                 ~attributes:
-                   (htmx_attributes
-                      "language"
-                      participant.language_version
-                      ~action
-                      ())
-                 ()
-             ]
+             (fun htmx_element ->
+               Htmx.create htmx_element language ~hx_post:action ())
+             Htmx.
+               [ Firstname
+                   (participant.firstname_version, participant |> firstname)
+               ; Lastname (participant.lastname_version, participant |> lastname)
+               ; Paused (participant.paused_version, participant.paused)
+               ; Language
+                   ( participant.language_version
+                   , participant.language
+                   , tenant_languages )
+               ]
          ])
   in
   let email_form =
