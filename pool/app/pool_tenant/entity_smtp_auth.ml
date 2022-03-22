@@ -16,7 +16,7 @@ module Server = struct
     Pool_common.Utils.schema_decoder
       create
       value
-      PoolError.Language
+      PoolError.SmtpAuthServer
       "smtp_auth_server"
   ;;
 end
