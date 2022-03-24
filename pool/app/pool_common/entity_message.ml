@@ -24,6 +24,8 @@ type field =
   | InactiveUserWarning
   | Key
   | Language
+  | LanguageDe
+  | LanguageEn
   | Lastname
   | LogoType
   | NewPassword

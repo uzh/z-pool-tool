@@ -120,7 +120,11 @@ let signup
                          Pool_common.I18n.SignUpAcceptTermsAndConditions)
                   ]
               ]
-          ; Component.submit_element language Pool_common.Message.(SignUp)
+          ; Component.submit_element
+              language
+              Pool_common.Message.(SignUp)
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in

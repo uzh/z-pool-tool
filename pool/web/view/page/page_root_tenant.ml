@@ -43,10 +43,10 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let build_root_rows root_list =
     let open Sihl.Contract.User in
     let status_toggle (status : Sihl.Contract.User.status) id =
-      let text =
+      let text, style =
         match status with
-        | Active -> Message.Disable
-        | Inactive -> Message.Enable
+        | Active -> Message.Disable, "button--warning"
+        | Inactive -> Message.Enable, "button--primary"
       in
       form
         ~a:
@@ -55,7 +55,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
           ]
-        [ submit_element language text ]
+        [ submit_element language text ~classnames:[ style ] () ]
     in
     CCList.map
       (fun root ->
@@ -119,7 +119,12 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: input_fields)
-          @ [ submit_element language Message.(Create None) ])
+          @ [ submit_element
+                language
+                Message.(Create None)
+                ~classnames:[ "button--primary" ]
+                ()
+            ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -135,7 +140,12 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
              ; "firstname", Message.Firstname
              ; "lastname", Message.Lastname
              ]
-          @ [ submit_element language Message.(Create (Some root)) ])
+          @ [ submit_element
+                language
+                Message.(Create (Some root))
+                ~classnames:[ "button--primary" ]
+                ()
+            ])
       ]
   in
   Page_layout.create_root_layout html message language
@@ -239,7 +249,11 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                    ; a_method `Post
                    ]
                  [ Component.csrf_element csrf ()
-                 ; submit_element language Message.(Delete (Some file))
+                 ; submit_element
+                     language
+                     Message.(Delete (Some file))
+                     ~classnames:[ "button--failure" ]
+                     ()
                  ]
              ])
          files)
@@ -266,7 +280,13 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
-          @ [ disabled; submit_element language Message.(Update None) ])
+          @ [ disabled
+            ; submit_element
+                language
+                Message.(Update None)
+                ~classnames:[ "button--primary" ]
+                ()
+            ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -281,7 +301,12 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
             ; a_enctype "multipart/form-data"
             ]
           ((Component.csrf_element csrf () :: database_input_fields)
-          @ [ submit_element language Message.(Update None) ])
+          @ [ submit_element
+                language
+                Message.(Update None)
+                ~classnames:[ "button--primary" ]
+                ()
+            ])
       ; hr ()
       ; form
           ~a:
@@ -300,7 +325,12 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                 ; "firstname", Message.Firstname
                 ; "lastname", Message.Lastname
                 ])
-          @ [ submit_element language Message.(Create (Some operator)) ])
+          @ [ submit_element
+                language
+                Message.(Create (Some operator))
+                ~classnames:[ "button--primary" ]
+                ()
+            ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
           [ txt "back" ]

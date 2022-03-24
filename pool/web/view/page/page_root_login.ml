@@ -15,7 +15,11 @@ let login csrf message Pool_context.{ language; _ } =
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""
           ; input_element `Password (Some "password") Message.Password ""
-          ; submit_element language Pool_common.Message.(Login)
+          ; submit_element
+              language
+              Pool_common.Message.(Login)
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ; a
           ~a:
@@ -40,7 +44,11 @@ let request_reset_password csrf message Pool_context.{ language; _ } =
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""
-          ; submit_element language Pool_common.Message.(SendResetLink)
+          ; submit_element
+              language
+              Pool_common.Message.(SendResetLink)
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in
@@ -65,7 +73,11 @@ let reset_password csrf message token Pool_context.{ language; _ } =
               (Some "password_confirmation")
               Message.PasswordConfirmation
               ""
-          ; submit_element language Pool_common.Message.(Save (Some password))
+          ; submit_element
+              language
+              Pool_common.Message.(Save (Some password))
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in

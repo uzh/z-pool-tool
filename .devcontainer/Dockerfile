@@ -1,4 +1,4 @@
-FROM node:14 AS node_base
+FROM node:16 AS node_base
 FROM hadolint/hadolint:latest-alpine AS hadolint
 FROM ocaml/opam:debian-ocaml-4.12
 

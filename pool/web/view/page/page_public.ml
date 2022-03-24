@@ -35,7 +35,11 @@ let login csrf message Pool_context.{ language; query_language; _ } =
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.EmailAddress ""
           ; input_element `Password (Some "password") Message.Password ""
-          ; submit_element language Message.Login
+          ; submit_element
+              language
+              Message.Login
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ; a
           ~a:[ a_href (externalize "/request-reset-password") ]
@@ -72,7 +76,11 @@ let request_reset_password
               (Some "email")
               Pool_common.Message.EmailAddress
               ""
-          ; submit_element language Pool_common.Message.(SendResetLink)
+          ; submit_element
+              language
+              Pool_common.Message.(SendResetLink)
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in
@@ -105,7 +113,11 @@ let reset_password
               (Some "password_confirmation")
               Message.PasswordConfirmation
               ""
-          ; submit_element language Message.(Save (Some password))
+          ; submit_element
+              language
+              Message.(Save (Some password))
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in

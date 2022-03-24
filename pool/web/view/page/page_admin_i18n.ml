@@ -17,23 +17,25 @@ let list csrf translation_list message Pool_context.{ language; _ } =
                      (translation |> I18n.id |> Pool_common.Id.value))
               in
               div
-                [ p
-                    [ txt
-                        (translation
-                        |> I18n.language
-                        |> Pool_common.Language.code)
-                    ]
-                ; form
-                    ~a:[ a_action action; a_method `Post ]
+                [ form
+                    ~a:
+                      [ a_action action
+                      ; a_method `Post
+                      ; a_class [ "flex-box"; "flex--row"; "flex--align-end" ]
+                      ]
                     [ Component.csrf_element csrf ()
                     ; input_element
                         `Text
                         (Some "content")
-                        Message.Translation
+                        (translation
+                        |> I18n.language
+                        |> Pool_common.Language.field_name_of_t)
                         (translation |> I18n.content |> I18n.Content.value)
                     ; submit_element
                         language
                         Message.(Update (Some Message.translation))
+                        ~classnames:[ "button--primary" ]
+                        ()
                     ]
                 ])
             translations
