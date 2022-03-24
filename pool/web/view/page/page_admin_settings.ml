@@ -71,7 +71,9 @@ let show
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
-  let form_attrs action = [ a_method `Post; a_action (action_path action) ] in
+  let form_attrs action =
+    [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
+  in
   let input_element = input_element language in
   let languages_html =
     let all_languages =
@@ -139,53 +141,55 @@ let show
   let email_suffixes_html =
     div
       [ h2 [ txt "Email Suffixes" ]
-      ; form
-          ~a:(form_attrs `UpdateTenantEmailSuffixes)
-          (CCList.map
-             (fun suffix ->
-               input_element
-                 `Text
-                 (Some "email_suffix")
-                 Message.EmailSuffix
-                 (suffix |> Settings.EmailSuffix.value))
-             email_suffixes
-          @ [ submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
-      ; form
-          ~a:[ a_action (action_path `CreateTenantEmailSuffix); a_method `Post ]
-          [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
-          ; submit_element
-              language
-              Message.(Add None)
-              ~classnames:[ "button--success" ]
-              ()
-          ]
-      ; hr ()
       ; div
-          (CCList.map
-             (fun suffix ->
-               form
-                 ~a:(form_attrs `DeleteTenantEmailSuffix)
-                 [ span [ txt (Settings.EmailSuffix.value suffix) ]
-                 ; input
-                     ~a:
-                       [ a_input_type `Hidden
-                       ; a_name "email_suffix"
-                       ; a_value (Settings.EmailSuffix.value suffix)
-                       ; a_readonly ()
-                       ]
-                     ()
-                 ; submit_element
-                     language
-                     Message.(Delete None)
-                     ~classnames:[ "button--failure" ]
-                     ()
-                 ])
-             email_suffixes)
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UpdateTenantEmailSuffixes)
+              (CCList.map
+                 (fun suffix ->
+                   input_element
+                     `Text
+                     (Some "email_suffix")
+                     Message.EmailSuffix
+                     (suffix |> Settings.EmailSuffix.value))
+                 email_suffixes
+              @ [ submit_element
+                    language
+                    Message.(Update None)
+                    ~classnames:[ "button--primary" ]
+                    ()
+                ])
+          ; form
+              ~a:(form_attrs `CreateTenantEmailSuffix)
+              [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
+              ; submit_element
+                  language
+                  Message.(Add None)
+                  ~classnames:[ "button--success" ]
+                  ()
+              ]
+          ; div
+              (CCList.map
+                 (fun suffix ->
+                   form
+                     ~a:(form_attrs `DeleteTenantEmailSuffix)
+                     [ span [ txt (Settings.EmailSuffix.value suffix) ]
+                     ; input
+                         ~a:
+                           [ a_input_type `Hidden
+                           ; a_name "email_suffix"
+                           ; a_value (Settings.EmailSuffix.value suffix)
+                           ; a_readonly ()
+                           ]
+                         ()
+                     ; submit_element
+                         language
+                         Message.(Delete None)
+                         ~classnames:[ "button--failure" ]
+                         ()
+                     ])
+                 email_suffixes)
+          ]
       ]
   in
   let contact_email_html =
@@ -278,11 +282,14 @@ let show
   let html =
     div
       [ h1 [ txt "Settings" ]
-      ; languages_html
-      ; email_suffixes_html
-      ; contact_email_html
-      ; inactive_user_html
-      ; terms_and_conditions_html
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ languages_html
+          ; email_suffixes_html
+          ; contact_email_html
+          ; inactive_user_html
+          ; terms_and_conditions_html
+          ]
       ; script (Unsafe.data sortable)
       ]
   in

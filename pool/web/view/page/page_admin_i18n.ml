@@ -16,27 +16,25 @@ let list csrf translation_list message Pool_context.{ language; _ } =
                      "/admin/i18n/%s"
                      (translation |> I18n.id |> Pool_common.Id.value))
               in
-              div
-                [ form
-                    ~a:
-                      [ a_action action
-                      ; a_method `Post
-                      ; a_class [ "flex-box"; "flex--row"; "flex--align-end" ]
-                      ]
-                    [ Component.csrf_element csrf ()
-                    ; input_element
-                        `Text
-                        (Some "content")
-                        (translation
-                        |> I18n.language
-                        |> Pool_common.Language.field_name_of_t)
-                        (translation |> I18n.content |> I18n.Content.value)
-                    ; submit_element
-                        language
-                        Message.(Update (Some Message.translation))
-                        ~classnames:[ "button--primary" ]
-                        ()
-                    ]
+              form
+                ~a:
+                  [ a_action action
+                  ; a_method `Post
+                  ; a_class [ "flex-box"; "flex--row"; "flex--align-end" ]
+                  ]
+                [ Component.csrf_element csrf ()
+                ; input_element
+                    `Text
+                    (Some "content")
+                    (translation
+                    |> I18n.language
+                    |> Pool_common.Language.field_name_of_t)
+                    (translation |> I18n.content |> I18n.Content.value)
+                ; submit_element
+                    language
+                    Message.(Update (Some Message.translation))
+                    ~classnames:[ "button--primary" ]
+                    ()
                 ])
             translations
         in
@@ -48,7 +46,7 @@ let list csrf translation_list message Pool_context.{ language; _ } =
                   |> CCString.replace ~which:`All ~sub:"_" ~by:" "
                   |> CCString.capitalize_ascii)
               ]
-          ; div translations_html
+          ; div ~a:[ a_class [ "stack" ] ] translations_html
           ])
       translation_list
   in
@@ -56,7 +54,7 @@ let list csrf translation_list message Pool_context.{ language; _ } =
   let html =
     div
       [ h1 [ txt Pool_common.(Utils.text_to_string Language.En I18n.I18nTitle) ]
-      ; div translations
+      ; div ~a:[ a_class [ "stack" ] ] translations
       ]
   in
   Page_layout.create html message language

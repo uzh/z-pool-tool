@@ -108,7 +108,7 @@ let create_root_layout children message lang =
       ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
       (txt "")
   in
-  let content = main [ message; children ] in
+  let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
     (head page_title [ charset; viewport; favicon; global_stylesheet ])
     (body [ header title_text lang; content; footer title_text; scripts ])

@@ -117,18 +117,22 @@ let hx_input_element
             |> CCOption.return
           ]
   in
-  let error =
-    match error with
-    | None -> span []
-    | Some error ->
-      span
-        ~a:[ a_class [ "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  let error_message error =
+    span
+      ~a:[ a_class [ "error-message" ] ]
+      [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  in
+  let field_content =
+    [ label ~a:[ a_class [ "label" ] ] [ txt (field_to_string input_label) ]
+    ; input ~a:attributes ()
+    ]
+  in
+  let field_content =
+    error
+    |> CCOption.map_or ~default:field_content (fun error ->
+           field_content @ [ error_message error ])
   in
   div
     ~a:[ a_class [ "flex-box"; "flex--column" ]; a_user_data "name" name ]
-    [ label ~a:[ a_class [ "label" ] ] [ txt (field_to_string input_label) ]
-    ; input ~a:attributes ()
-    ; error
-    ]
+    field_content
 ;;

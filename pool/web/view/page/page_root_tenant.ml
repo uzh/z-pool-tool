@@ -54,6 +54,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
               (Sihl.Web.externalize_path
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
+          ; a_class [ "stack" ]
           ]
         [ submit_element language text ~classnames:[ style ] () ]
     in
@@ -117,6 +118,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             [ a_action (Sihl.Web.externalize_path "/root/tenants/create")
             ; a_method `Post
             ; a_enctype "multipart/form-data"
+            ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: input_fields)
           @ [ submit_element
@@ -132,6 +134,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
           ~a:
             [ a_action (Sihl.Web.externalize_path "/root/root/create")
             ; a_method `Post
+            ; a_class [ "stack" ]
             ]
           (CCList.map
              (fun (name, label) -> input_element `Text (Some name) label "")
@@ -247,6 +250,7 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                              (tenant.id |> Id.value)
                              (File.id file |> Id.value)))
                    ; a_method `Post
+                   ; a_class [ "stack" ]
                    ]
                  [ Component.csrf_element csrf ()
                  ; submit_element
@@ -278,6 +282,7 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                       (Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
+            ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
           @ [ disabled
@@ -299,6 +304,7 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                       (Id.value tenant.id)))
             ; a_method `Post
             ; a_enctype "multipart/form-data"
+            ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: database_input_fields)
           @ [ submit_element
@@ -316,6 +322,7 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                       "/root/tenants/%s/create-operator"
                       (Id.value tenant.id)))
             ; a_method `Post
+            ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf ()
            :: CCList.map

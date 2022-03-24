@@ -17,6 +17,7 @@ let signup
     Http_utils.externalize_path_with_lang query_language "/signup"
   in
   let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
+  let input_element = Component.input_element language in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
   let lastname = lastname |> CCOption.value ~default:"" in
@@ -49,56 +50,26 @@ let signup
     div
       [ h1 (txt_to_string Pool_common.I18n.SignUpTitle)
       ; form
-          ~a:[ a_action submit_url; a_method `Post ]
+          ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
           [ Component.csrf_element csrf ()
+          ; input_element `Email (Some "email") Pool_common.Message.Email email
+          ; input_element
+              `Text
+              (Some "firstname")
+              Pool_common.Message.Firstname
+              firstname
+          ; input_element
+              `Text
+              (Some "lastname")
+              Pool_common.Message.Lastname
+              lastname
+          ; input_element
+              `Password
+              (Some "password")
+              Pool_common.Message.Password
+              ""
           ; div
-              [ label [ txt (field_to_string Field.Email) ]
-              ; input
-                  ~a:
-                    [ a_placeholder (field_to_string Field.Email)
-                    ; a_required ()
-                    ; a_name "email"
-                    ; a_value email
-                    ; a_input_type `Email
-                    ]
-                  ()
-              ]
-          ; div
-              [ label [ txt (field_to_string Field.Firstname) ]
-              ; input
-                  ~a:
-                    [ a_placeholder (field_to_string Field.Firstname)
-                    ; a_required ()
-                    ; a_name "firstname"
-                    ; a_value firstname
-                    ; a_input_type `Text
-                    ]
-                  ()
-              ]
-          ; div
-              [ label [ txt (field_to_string Field.Lastname) ]
-              ; input
-                  ~a:
-                    [ a_placeholder (field_to_string Field.Lastname)
-                    ; a_required ()
-                    ; a_name "lastname"
-                    ; a_value lastname
-                    ; a_input_type `Text
-                    ]
-                  ()
-              ]
-          ; div
-              [ label [ txt (field_to_string Field.Password) ]
-              ; input
-                  ~a:
-                    [ a_placeholder (field_to_string Field.Password)
-                    ; a_required ()
-                    ; a_name "password"
-                    ; a_input_type `Password
-                    ]
-                  ()
-              ]
-          ; div
+              ~a:[ a_class [ "flex-box"; "flex--column" ] ]
               [ label [ txt (field_to_string Field.RecruitmentChannel) ]
               ; select
                   ~a:[ a_required (); a_name "recruitment_channel" ]

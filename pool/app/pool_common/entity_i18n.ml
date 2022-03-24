@@ -11,5 +11,6 @@ type t =
   | SignUpTitle
   | TermsAndConditionsTitle
   | UserProfileLoginSubtitle
+  | UserProfileDetailsSubtitle
   | UserProfileTitle
   | UserProfilePausedNote

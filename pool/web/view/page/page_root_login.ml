@@ -11,6 +11,7 @@ let login csrf message Pool_context.{ language; _ } =
           ~a:
             [ a_action (Sihl.Web.externalize_path "/root/login")
             ; a_method `Post
+            ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""
@@ -41,6 +42,7 @@ let request_reset_password csrf message Pool_context.{ language; _ } =
             [ a_action
                 (Sihl.Web.externalize_path "/root/request-reset-password")
             ; a_method `Post
+            ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.Email ""

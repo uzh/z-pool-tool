@@ -31,7 +31,11 @@ let login csrf message Pool_context.{ language; query_language; _ } =
     div
       [ h1 (txt_to_string Pool_common.I18n.LoginTitle)
       ; form
-          ~a:[ a_action (externalize "/login"); a_method `Post ]
+          ~a:
+            [ a_action (externalize "/login")
+            ; a_method `Post
+            ; a_class [ "stack" ]
+            ]
           [ csrf_element csrf ()
           ; input_element `Text (Some "email") Message.EmailAddress ""
           ; input_element `Password (Some "password") Message.Password ""
@@ -69,6 +73,7 @@ let request_reset_password
                    query_language
                    "/request-reset-password")
             ; a_method `Post
+            ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
           ; input_element
