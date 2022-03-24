@@ -56,11 +56,11 @@ let favicon =
     ()
 ;;
 
-let global_stylesheets =
-  CCList.map
-    (fun href ->
-      link ~rel:[ `Stylesheet ] ~href:(Sihl.Web.externalize_path href) ())
-    [ "/assets/framework.css"; "/assets/index.css" ]
+let global_stylesheet =
+  link
+    ~rel:[ `Stylesheet ]
+    ~href:(Sihl.Web.externalize_path "/assets/index.css")
+    ()
 ;;
 
 let header title lang =
@@ -87,7 +87,7 @@ let create children message lang =
       ()
   in
   let message = Message.create message lang () in
-  let stylesheets = global_stylesheets @ [ custom_stylesheet ] in
+  let stylesheets = [ global_stylesheet; custom_stylesheet ] in
   let scripts =
     script
       ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
@@ -110,6 +110,6 @@ let create_root_layout children message lang =
   in
   let content = main [ message; children ] in
   html
-    (head page_title ([ charset; viewport; favicon ] @ global_stylesheets))
+    (head page_title [ charset; viewport; favicon; global_stylesheet ])
     (body [ header title_text lang; content; footer title_text; scripts ])
 ;;
