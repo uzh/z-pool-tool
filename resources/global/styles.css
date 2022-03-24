@@ -1,3 +1,5 @@
+@import "npm:@econ/frontend-framework/dist/main.css";
+
 :root {
   --space-base: 1rem;
 }
