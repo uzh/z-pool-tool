@@ -1,2 +1,2 @@
-import global from './global/styles.css'
-import 'htmx.org'
+import global from "./global/styles.css";
+import "htmx.org";

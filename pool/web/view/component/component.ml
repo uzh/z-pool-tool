@@ -17,7 +17,9 @@ let csrf_element_swap csrf ?id =
 
 let input_element language input_type name input_label value =
   let input_label = Pool_common.Utils.field_to_string language input_label in
-  let base_attributes = [ a_input_type input_type; a_value value ] in
+  let base_attributes =
+    [ a_input_type input_type; a_value value; a_class [ "input" ] ]
+  in
   let attributes =
     match name with
     | Some name -> base_attributes @ [ a_name name; a_placeholder input_label ]
@@ -25,14 +27,40 @@ let input_element language input_type name input_label value =
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
-  | _ -> div [ label [ txt input_label ]; input ~a:attributes () ]
+  | _ ->
+    div
+      ~a:[ a_class [ "flex-box"; "flex--column" ] ]
+      [ label ~a:[ a_class [ "label" ] ] [ txt input_label ]
+      ; input ~a:attributes ()
+      ]
 ;;
 
-let submit_element lang submit =
+let textarea_element
+    language
+    name
+    input_label
+    value
+    ?(classnames = [])
+    ?(attributes = [])
+    ()
+  =
+  let input_label = Pool_common.Utils.field_to_string language input_label in
+  let input =
+    textarea
+      ~a:([ a_name name; a_class ([ "input" ] @ classnames) ] @ attributes)
+      (txt value)
+  in
+  div
+    ~a:[ a_class [ "flex-box"; "flex--column" ] ]
+    [ label ~a:[ a_class [ "label" ] ] [ txt input_label ]; input ]
+;;
+
+let submit_element lang submit ?(classnames = []) () =
   input
     ~a:
       [ a_input_type `Submit
       ; a_value (Pool_common.Utils.control_to_string lang submit)
+      ; a_class ([ "button" ] @ classnames)
       ]
     ()
 ;;
@@ -58,12 +86,15 @@ let hx_input_element
       if bool_of_string_opt value |> CCOption.get_or ~default:false
       then [ a_checked () ]
       else []
-    | _ -> [ a_value value; a_placeholder (field_to_string input_label) ])
+    | _ ->
+      [ a_value value
+      ; a_placeholder (field_to_string input_label)
+      ; a_class ([ "input" ] @ classnames)
+      ])
     @ [ a_input_type input_type
       ; a_name name
       ; a_user_data "hx-swap" "outerHTML"
       ]
-    @ (if not (CCList.is_empty classnames) then [ a_class classnames ] else [])
     @ CCList.filter_map
         CCFun.id
         CCOption.
@@ -86,18 +117,22 @@ let hx_input_element
             |> CCOption.return
           ]
   in
-  let error =
-    match error with
-    | None -> span []
-    | Some error ->
-      span
-        ~a:[ a_class [ "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  let error_message error =
+    span
+      ~a:[ a_class [ "error-message" ] ]
+      [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  in
+  let field_content =
+    [ label ~a:[ a_class [ "label" ] ] [ txt (field_to_string input_label) ]
+    ; input ~a:attributes ()
+    ]
+  in
+  let field_content =
+    error
+    |> CCOption.map_or ~default:field_content (fun error ->
+           field_content @ [ error_message error ])
   in
   div
-    ~a:[ a_class [ "flexcolumn" ]; a_user_data "name" name ]
-    [ label [ txt (field_to_string input_label) ]
-    ; input ~a:attributes ()
-    ; error
-    ]
+    ~a:[ a_class [ "flex-box"; "flex--column" ]; a_user_data "name" name ]
+    field_content
 ;;

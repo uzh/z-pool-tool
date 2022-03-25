@@ -41,19 +41,16 @@ let edit
     Pool_context.{ language; query_language; _ }
   =
   let open Participant in
-  let id = participant |> id |> Pool_common.Id.value in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let action = externalize "/user/update" in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let input_element = input_element language in
+  let form_attrs action =
+    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
+  in
   let details_form =
+    let action = "/user/update" in
     form
-      ~a:
-        [ a_action action
-        ; a_method `Post
-        ; a_class [ "flex-wrap" ]
-        ; a_user_data "id" id
-        ]
+      ~a:(form_attrs action)
       (CCList.flatten
          [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
@@ -70,7 +67,7 @@ let edit
                           (Message.HtmxVersionNotFound name)))
                  label
                  language
-                 ~hx_post:action
+                 ~hx_post:(externalize action)
                  ~hx_params:[ name ]
                  ())
              [ ( "firstname"
@@ -90,19 +87,23 @@ let edit
   in
   let email_form =
     form
-      ~a:[ a_action (externalize "/user/update-email"); a_method `Post ]
+      ~a:(form_attrs "/user/update-email")
       [ csrf_element csrf ()
       ; input_element
           `Email
           (Some "email")
           Message.Email
           participant.user.Sihl_user.email
-      ; submit_element language Message.(Update (Some Message.email))
+      ; submit_element
+          language
+          Message.(Update (Some Message.email))
+          ~classnames:[ "button--primary" ]
+          ()
       ]
   in
   let password_form =
     form
-      ~a:[ a_action (externalize "/user/update-password"); a_method `Post ]
+      ~a:(form_attrs "/user/update-password")
       [ csrf_element csrf ()
       ; input_element
           `Password
@@ -115,19 +116,34 @@ let edit
           (Some "password_confirmation")
           Message.PasswordConfirmation
           ""
-      ; submit_element language Message.(Update (Some Message.password))
+      ; submit_element
+          language
+          Message.(Update (Some Message.password))
+          ~classnames:[ "button--primary" ]
+          ()
       ]
   in
   let html =
     div
       [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
       ; div
-          [ details_form
+          [ div
+              [ h2
+                  [ txt
+                      (text_to_string
+                         Pool_common.I18n.UserProfileDetailsSubtitle)
+                  ]
+              ; details_form
+              ]
           ; hr ()
-          ; h2
-              [ txt (text_to_string Pool_common.I18n.UserProfileLoginSubtitle) ]
-          ; email_form
-          ; password_form
+          ; div
+              [ h2
+                  [ txt
+                      (text_to_string Pool_common.I18n.UserProfileLoginSubtitle)
+                  ]
+              ; email_form
+              ; password_form
+              ]
           ]
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/user") ]

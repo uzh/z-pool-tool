@@ -26,6 +26,8 @@ let field_to_string = function
   | InactiveUserWarning -> "warn inactive user"
   | Key -> "key"
   | Language -> "language"
+  | LanguageDe -> "German"
+  | LanguageEn -> "English"
   | Lastname -> "lastname"
   | LogoType -> "logo type"
   | NewPassword -> "new password"

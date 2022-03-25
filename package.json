@@ -8,6 +8,7 @@
         "parcel": "^2.0.0"
     },
     "dependencies": {
+        "@econ/frontend-framework": "^0.10.0",
         "htmx.org": "^1.6.0"
     }
 }

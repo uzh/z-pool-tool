@@ -1,48 +1,63 @@
-input {
-    margin-right: 1rem;
-    margin-bottom: 1rem;
+@import "npm:@econ/frontend-framework/dist/main.css";
+
+:root {
+  --space-base: 1rem;
+}
+
+.site-header,
+.site-main,
+.site-footer {
+  padding: var(--space-base);
+}
+
+/* Stack */
+.stack > * + * {
+  margin-top: var(--space-base);
+}
+
+/* Forms */
+.input,
+.input[type] {
+  margin: 0;
+}
+
+* + .input,
+.input + *,
+* + .input[type],
+.input[type] + * {
+  margin-top: calc(var(--space-base) / 2);
 }
 
 @keyframes input-success {
-    from {
-        box-shadow: 0px 0px 5px 0px rgba(0, 128, 0, 1);
-    }
+  from {
+    box-shadow: 0px 0px 5px 0px var(--success-default);
+  }
 
-    to {
-        box-shadow: 0px 0px 5px 0px rgba(0, 128, 0, 0);
-    }
+  to {
+    box-shadow: 0px 0px 5px 0px rgba(0, 128, 0, 0);
+  }
 }
 
-input.success {
-    animation-name: input-success;
-    animation-duration: 2s;
+.input.success {
+  animation-name: input-success;
+  animation-duration: 2s;
 }
 
 @keyframes input-error {
-    from {
-        box-shadow: 0px 0px 5px 0px rgba(255, 0, 0, 1);
-    }
+  from {
+    box-shadow: 0px 0px 5px 0px var(--failure-default);
+  }
 
-    to {
-        box-shadow: 0px 0px 5px 0px rgba(255, 0, 0, 0);
-    }
+  to {
+    box-shadow: 0px 0px 5px 0px rgba(255, 0, 0, 0);
+  }
 }
 
 input.error {
-    animation-name: input-error;
-    animation-duration: 2s;
-}
-
-.flex-wrap {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.flexcolumn {
-    display: flex;
-    flex-direction: column;
+  animation-name: input-error;
+  animation-duration: 2s;
 }
 
 .error-message {
-    color: red;
+  color: var(--failure-default);
 }

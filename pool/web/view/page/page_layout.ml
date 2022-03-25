@@ -1,8 +1,8 @@
 open Tyxml.Html
 
 module Message = struct
-  let concat_messages txts styles =
-    div ~a:[ a_style styles ] [ txt (CCString.unlines txts) ]
+  let concat_messages txts classnames =
+    div ~a:[ a_class classnames ] [ txt (CCString.unlines txts) ]
   ;;
 
   let match_message message classname =
@@ -13,13 +13,30 @@ module Message = struct
 
   let create message lang () =
     let open Http_utils.Message in
+    let notification_class = "notification" in
     match message with
     | None -> div []
     | Some message ->
-      let success = match_message (get_success message lang) "color: green;" in
-      let info = match_message (get_info message lang) "color: blue;" in
-      let warning = match_message (get_warning message lang) "color: orange;" in
-      let error = match_message (get_error message lang) "color: red;" in
+      let success =
+        match_message
+          (get_success message lang)
+          [ notification_class; "notification--success" ]
+      in
+      let info =
+        match_message
+          (get_info message lang)
+          [ notification_class; "notification--neutral" ]
+      in
+      let warning =
+        match_message
+          (get_warning message lang)
+          [ notification_class; "notification--warning" ]
+      in
+      let error =
+        match_message
+          (get_error message lang)
+          [ notification_class; "notification--failure " ]
+      in
       div [ success; info; warning; error ]
   ;;
 end
@@ -48,14 +65,16 @@ let global_stylesheet =
 
 let header title lang =
   header
-    ~a:[ a_style "text-align: right; padding: 1rem;" ]
+    ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
     [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]
     ; div [ txt (Pool_common.Language.code lang) ]
     ]
 ;;
 
 let footer title =
-  footer ~a:[ a_style "text-align: center; padding: 1rem;" ] [ p [ txt title ] ]
+  footer
+    ~a:[ a_class [ "site-footer"; "flex-box"; "flex--row"; "flex--center" ] ]
+    [ p [ txt title ] ]
 ;;
 
 let create children message lang =
@@ -68,16 +87,15 @@ let create children message lang =
       ()
   in
   let message = Message.create message lang () in
+  let stylesheets = [ global_stylesheet; custom_stylesheet ] in
   let scripts =
     script
       ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
       (txt "")
   in
-  let content = main [ message; children ] in
+  let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
-    (head
-       page_title
-       [ charset; viewport; custom_stylesheet; global_stylesheet; favicon ])
+    (head page_title ([ charset; viewport; favicon ] @ stylesheets))
     (body [ header title_text lang; content; footer title_text; scripts ])
 ;;
 
@@ -90,8 +108,8 @@ let create_root_layout children message lang =
       ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
       (txt "")
   in
-  let content = main [ message; children ] in
+  let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
-    (head page_title [ charset; viewport; global_stylesheet; favicon ])
+    (head page_title [ charset; viewport; favicon; global_stylesheet ])
     (body [ header title_text lang; content; footer title_text; scripts ])
 ;;

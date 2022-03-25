@@ -7,9 +7,11 @@ include:
 
 .assets:
   stage: assets
-  image: node:14
+  image: node:16
   artifacts:
     paths: [public/]
+  variables:
+    - ECON_PACKAGE_REGISTRY_READ_TOKEN: ${ECON_PACKAGE_REGISTRY_READ_TOKEN}
   script:
     - yarn install
     - yarn build

@@ -13,6 +13,7 @@ let to_string = function
   | SignUpTitle -> "Sign up"
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | UserProfileLoginSubtitle -> "Login information"
+  | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileTitle -> "User Profile"
   | UserProfilePausedNote ->
     "You paused all notifications for your user! (Click 'edit' to update this \

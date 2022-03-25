@@ -32,6 +32,8 @@ let terms
           ; Component.submit_element
               language
               Pool_common.Message.(Accept (Some termsandconditions))
+              ~classnames:[ "button--primary" ]
+              ()
           ]
       ]
   in

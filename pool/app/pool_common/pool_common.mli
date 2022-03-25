@@ -38,6 +38,7 @@ module Language : sig
 
   val all : unit -> t list
   val all_codes : unit -> string list
+  val field_name_of_t : t -> Message.field
 end
 
 module Version : sig
