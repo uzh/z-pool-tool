@@ -1,21 +1,6 @@
 module HttpUtils = Http_utils
 open Tyxml.Html
 
-let htmx_attributes name version ?action () =
-  let hx_params = [ "_csrf"; "version"; "field" ] in
-  [ a_user_data "hx-swap" "outerHTML"
-  ; a_user_data "hx-params" (CCString.concat ", " (CCList.cons name hx_params))
-  ; a_user_data "hx-target" "closest div"
-  ; a_user_data
-      "hx-vals"
-      (Format.asprintf
-         {|{"version": "%i", "field": "%s"}|}
-         (version |> Pool_common.Version.value)
-         name)
-  ]
-  @ CCOption.(CCList.filter_map CCFun.id [ action >|= a_user_data "hx-post" ])
-;;
-
 let language_select
     options
     selected

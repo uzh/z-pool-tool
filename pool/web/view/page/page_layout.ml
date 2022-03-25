@@ -25,9 +25,8 @@ let global_stylesheet =
 
 let header title ?(children = []) () =
   header
-
-    ~a:[ a_style "text-align: right; padding: 1rem;" ]
-    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
+  ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
+  [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
 ;;
 
 let footer title =
@@ -117,7 +116,7 @@ module Tenant = struct
       | `Admin -> [ navigation ]
       | `Participant -> [ navigation; i18n_links tenant_languages active_lang ]
     in
-    let content = main [ message; children ] in
+    let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
     html
       (head
          page_title

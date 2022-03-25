@@ -45,7 +45,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
       ( input
           ~a:
             (base_input_attributes `Text field version
-            @ [ a_value (User.Firstname.value value) ])
+            @ [ a_value (User.Firstname.value value); a_class [ "input" ] ])
           ()
       , field )
     | Lastname (version, value) ->
@@ -53,7 +53,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
       ( input
           ~a:
             (base_input_attributes `Text field version
-            @ [ a_value (User.Lastname.value value) ])
+            @ [ a_value (User.Lastname.value value); a_class [ "input" ] ])
           ()
       , field )
     | Paused (version, value) ->
