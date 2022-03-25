@@ -63,6 +63,7 @@ USER opam
 # install oh-my-zsh
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
   && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
+  && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
   #
   # link make to devcontainer makefile
   && echo 'alias make="make -f /workspace/.devcontainer/Makefile"' >> ~/.zshrc
