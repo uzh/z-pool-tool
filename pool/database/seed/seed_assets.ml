@@ -7,7 +7,7 @@ type file =
   }
 
 let dummy_css () =
-  { id = Uuidm.create `V4 |> Uuidm.to_string
+  { id = Pool_common.Id.(() |> create |> value)
   ; filename = "dummy.css"
   ; filesize = 20
   ; mime = "text/css"
@@ -16,7 +16,7 @@ let dummy_css () =
 ;;
 
 let dummy_icon () =
-  { id = Uuidm.create `V4 |> Uuidm.to_string
+  { id = Pool_common.Id.(() |> create |> value)
   ; filename = "icon.svg"
   ; filesize = 60
   ; mime = "image/svg+xml"
@@ -41,7 +41,7 @@ let dummy_icon () =
 ;;
 
 let dummy_tenant_logo () =
-  { id = Uuidm.create `V4 |> Uuidm.to_string
+  { id = Pool_common.Id.(() |> create |> value)
   ; filename = "tenant_logo.svg"
   ; filesize = 60
   ; mime = "image/svg+xml"
@@ -801,7 +801,7 @@ let dummy_tenant_logo () =
 ;;
 
 let dummy_partner_logo () =
-  { id = Uuidm.create `V4 |> Uuidm.to_string
+  { id = Pool_common.Id.(() |> create |> value)
   ; filename = "tenant_logo.svg"
   ; filesize = 60
   ; mime = "image/svg+xml"

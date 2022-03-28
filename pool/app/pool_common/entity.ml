@@ -4,7 +4,7 @@ module PoolError = Entity_message
 module Id = struct
   type t = string [@@deriving eq, show, sexp_of]
 
-  let create () = Uuidm.create `V4 |> Uuidm.to_string
+  let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m
   let value m = m
 end
