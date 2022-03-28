@@ -25,8 +25,8 @@ let global_stylesheet =
 
 let header title ?(children = []) () =
   header
-  ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
-  [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
+    ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
 ;;
 
 let footer title =
@@ -61,11 +61,7 @@ module Tenant = struct
          tenant_languages)
   ;;
 
-  (*** TODO[timhub]:
-
-  * disable active page
-
-  * differ between login status *)
+  (* TODO[timhub]: * disable active page * differ between login status *)
   let navigation layout_context language =
     let open Pool_common.I18n in
     let build_nav_link (url, title) =
@@ -76,7 +72,7 @@ module Tenant = struct
     in
     let nav_links =
       (match layout_context with
-      | `Participant -> [ ]
+      | `Participant -> []
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/settings", Settings
@@ -96,7 +92,7 @@ module Tenant = struct
     =
     let title_text = Pool_tenant.(Title.value tenant.title) in
     let page_title =
-      title (txt (Format.asprintf "%s - %s" title_text "Pool tool"))
+      title (txt (Format.asprintf "%s - %s" title_text "Pool Tool"))
     in
     let custom_stylesheet =
       link
@@ -131,7 +127,7 @@ module Tenant = struct
 end
 
 let create_root_layout children message lang =
-  let title_text = "Pool tool" in
+  let title_text = "Pool Tool" in
   let page_title = title (txt title_text) in
   let message = Message.create message lang () in
   let scripts =
@@ -141,7 +137,6 @@ let create_root_layout children message lang =
   in
   let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
-
     (head page_title [ charset; viewport; global_stylesheet; favicon ])
     (body [ header title_text (); content; footer title_text; scripts ])
 ;;

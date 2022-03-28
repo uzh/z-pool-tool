@@ -70,22 +70,22 @@ let t =
     =
     let open Pool_user in
     let open CCResult in
-    let version_of_int = Pool_common.Version.of_int in
-    Ok
-      { user
-      ; recruitment_channel
-      ; terms_accepted_at = TermsAccepted.create terms_accepted_at
-      ; language
-      ; paused = Paused.create paused
-      ; disabled = Disabled.create disabled
-      ; verified = Verified.create verified
-      ; firstname_version = version_of_int firstname_version
-      ; lastname_version = version_of_int lastname_version
-      ; paused_version = version_of_int paused_version
-      ; language_version = version_of_int language_version
-      ; created_at
-      ; updated_at
-      }
+    Pool_common.Version.(
+      Ok
+        { user
+        ; recruitment_channel
+        ; terms_accepted_at = TermsAccepted.create terms_accepted_at
+        ; language
+        ; paused = Paused.create paused
+        ; disabled = Disabled.create disabled
+        ; verified = Verified.create verified
+        ; firstname_version = of_int firstname_version
+        ; lastname_version = of_int lastname_version
+        ; paused_version = of_int paused_version
+        ; language_version = of_int language_version
+        ; created_at
+        ; updated_at
+        })
   in
   let open Pool_user.Repo in
   let open Pool_common.Repo in
