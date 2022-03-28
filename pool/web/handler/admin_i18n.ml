@@ -1,6 +1,8 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let create_layout req = General.create_tenant_layout `Admin req
+
 module I18nMap = CCMap.Make (struct
   type t = I18n.Key.t
 
@@ -35,9 +37,9 @@ let index req =
     let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
-    Page.Admin.I18n.list csrf translation_list message context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    Page.Admin.I18n.list csrf translation_list context
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

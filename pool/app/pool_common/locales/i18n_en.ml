@@ -19,3 +19,9 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
 ;;
+
+let nav_link_to_string = function
+  | Dashboard -> "Dashboard"
+  | I18n -> "Translations"
+  | Settings -> "Settings"
+;;

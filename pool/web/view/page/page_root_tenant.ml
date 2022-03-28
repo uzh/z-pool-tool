@@ -5,22 +5,6 @@ module Message = Pool_common.Message
 
 let submit_element = Component.submit_element
 
-let system_language_select name input_label =
-  [ div
-      [ label
-          [ txt Pool_common.(Utils.field_to_string Language.En input_label) ]
-      ; select
-          ~a:[ a_name name ]
-          (CCList.map
-             (fun l ->
-               option
-                 ~a:[ a_value (Pool_common.Language.code l) ]
-                 (txt (Pool_common.Language.code l)))
-             (Pool_common.Language.all ()))
-      ]
-  ]
-;;
-
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_element = Component.input_element language in
   let build_tenant_rows tenant_list =
@@ -86,7 +70,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
     CCList.map
       (fun (name, label) -> input_element `Text (Some name) label "")
       text_fields
-    @ system_language_select "default_language" Message.DefaultLanguage
+    @ [ Component.language_select (Pool_common.Language.all ()) None () ]
     @ [ div
           [ label [ txt "styles" ]
           ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
@@ -188,7 +172,11 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
     (CCList.map
        (fun (name, label, value) -> input_element `Text (Some name) label value)
        detail_fields
-    @ system_language_select "default_language" Message.DefaultLanguage)
+    @ [ Component.language_select
+          (Pool_common.Language.all ())
+          (Some tenant.default_language)
+          ()
+      ])
     @ [ div
           [ a
               ~a:

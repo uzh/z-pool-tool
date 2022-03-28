@@ -91,7 +91,7 @@ type error =
   | Retrieve of field
   | SessionInvalid
   | SessionTenantNotFound
-  | TenantContextNotFound
+  | PoolContextNotFound
   | TerminatoryTenantError
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle

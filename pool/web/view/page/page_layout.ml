@@ -1,45 +1,5 @@
 open Tyxml.Html
-
-module Message = struct
-  let concat_messages txts classnames =
-    div ~a:[ a_class classnames ] [ txt (CCString.unlines txts) ]
-  ;;
-
-  let match_message message classname =
-    match message with
-    | [] -> div []
-    | txts -> concat_messages txts classname
-  ;;
-
-  let create message lang () =
-    let open Http_utils.Message in
-    let notification_class = "notification" in
-    match message with
-    | None -> div []
-    | Some message ->
-      let success =
-        match_message
-          (get_success message lang)
-          [ notification_class; "notification--success" ]
-      in
-      let info =
-        match_message
-          (get_info message lang)
-          [ notification_class; "notification--neutral" ]
-      in
-      let warning =
-        match_message
-          (get_warning message lang)
-          [ notification_class; "notification--warning" ]
-      in
-      let error =
-        match_message
-          (get_error message lang)
-          [ notification_class; "notification--failure " ]
-      in
-      div [ success; info; warning; error ]
-  ;;
-end
+module Message = Page_message
 
 let charset = meta ~a:[ a_charset "utf8" ] ()
 
@@ -63,12 +23,10 @@ let global_stylesheet =
     ()
 ;;
 
-let header title lang =
+let header title ?(children = []) () =
   header
     ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
-    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]
-    ; div [ txt (Pool_common.Language.code lang) ]
-    ]
+    [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
 ;;
 
 let footer title =
@@ -77,30 +35,99 @@ let footer title =
     [ p [ txt title ] ]
 ;;
 
-let create children message lang =
-  let title_text = "Pool tool" in
-  let page_title = title (txt title_text) in
-  let custom_stylesheet =
-    link
-      ~rel:[ `Stylesheet ]
-      ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
-      ()
-  in
-  let message = Message.create message lang () in
-  let stylesheets = [ global_stylesheet; custom_stylesheet ] in
-  let scripts =
-    script
-      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
-      (txt "")
-  in
-  let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
-  html
-    (head page_title ([ charset; viewport; favicon ] @ stylesheets))
-    (body [ header title_text lang; content; footer title_text; scripts ])
-;;
+module Tenant = struct
+  let i18n_links tenant_languages active_lang =
+    div
+      ~a:[]
+      (CCList.map
+         (fun tenant_language ->
+           let label = Pool_common.Language.code tenant_language in
+           if Pool_common.Language.equal tenant_language active_lang
+           then span [ txt label ]
+           else
+             a
+               ~a:
+                 [ a_href
+                     Pool_common.(
+                       Message.(
+                         add_field_query_params
+                           ""
+                           [ ( Language
+                             , Language.code tenant_language
+                               |> CCString.lowercase_ascii )
+                           ]))
+                 ]
+               [ txt label ])
+         tenant_languages)
+  ;;
+
+  (* TODO[timhub]: * disable active page * differ between login status *)
+  let navigation layout_context language =
+    let open Pool_common.I18n in
+    let build_nav_link (url, title) =
+      let txt_to_string m =
+        Pool_common.Utils.nav_link_to_string language m |> txt
+      in
+      a ~a:[ a_href url ] [ txt_to_string title ]
+    in
+    let nav_links =
+      (match layout_context with
+      | `Participant -> []
+      | `Admin ->
+        [ "/admin/dashboard", Dashboard
+        ; "/admin/settings", Settings
+        ; "/admin/i18n", I18n
+        ])
+      |> CCList.map build_nav_link
+    in
+    nav nav_links
+  ;;
+
+  let create_layout
+      layout_context
+      children
+      Pool_context.Tenant.{ tenant_languages; tenant }
+      message
+      active_lang
+    =
+    let title_text = Pool_tenant.(Title.value tenant.title) in
+    let page_title =
+      title (txt (Format.asprintf "%s - %s" title_text "Pool Tool"))
+    in
+    let custom_stylesheet =
+      link
+        ~rel:[ `Stylesheet ]
+        ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
+        ()
+    in
+    let message = Message.create message active_lang () in
+    let scripts =
+      script
+        ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+        (txt "")
+    in
+    let header_content =
+      let navigation = navigation layout_context active_lang in
+      match layout_context with
+      | `Admin -> [ navigation ]
+      | `Participant -> [ navigation; i18n_links tenant_languages active_lang ]
+    in
+    let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
+    html
+      (head
+         page_title
+         [ charset; viewport; custom_stylesheet; global_stylesheet; favicon ])
+      (body
+         [ header title_text ~children:header_content ()
+         ; content
+         ; footer title_text
+         ; scripts
+         ])
+  ;;
+end
 
 let create_root_layout children message lang =
-  let title_text = "Pool tool" in
+  let title_text = "Pool Tool" in
   let page_title = title (txt title_text) in
   let message = Message.create message lang () in
   let scripts =
@@ -110,6 +137,6 @@ let create_root_layout children message lang =
   in
   let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
-    (head page_title [ charset; viewport; favicon; global_stylesheet ])
-    (body [ header title_text lang; content; footer title_text; scripts ])
+    (head page_title [ charset; viewport; global_stylesheet; favicon ])
+    (body [ header title_text (); content; footer title_text; scripts ])
 ;;

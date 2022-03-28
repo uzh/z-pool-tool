@@ -53,4 +53,10 @@ module Utils = struct
     | Language.De -> I18n_de.to_string
     | Language.En -> I18n_en.to_string
   ;;
+
+  let nav_link_to_string lang =
+    match lang with
+    | Language.De -> I18n_de.nav_link_to_string
+    | Language.En -> I18n_en.nav_link_to_string
+  ;;
 end

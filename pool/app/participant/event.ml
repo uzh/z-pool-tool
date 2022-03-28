@@ -19,6 +19,7 @@ type update =
   { firstname : User.Firstname.t
   ; lastname : User.Lastname.t
   ; paused : User.Paused.t
+  ; language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
 
@@ -59,6 +60,7 @@ type event =
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
+  | LanguageUpdated of t * Pool_common.Language.t
   | AccountVerified of t
   | TermsAccepted of t
   | Disabled of t
@@ -88,6 +90,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
+    ; language_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -170,6 +173,17 @@ let handle_event pool : event -> unit Lwt.t =
         (lastname person)
     in
     Lwt.return_unit
+  | LanguageUpdated (participant, language) ->
+    let%lwt () =
+      Repo.update_language
+        pool
+        { participant with
+          language = Some language
+        ; language_version =
+            Pool_common.Version.increment participant.language_version
+        }
+    in
+    Lwt.return_unit
   | AccountVerified participant ->
     let%lwt _ =
       Service.User.update
@@ -202,6 +216,8 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     equal p1 p2
     && User.Password.equal old1 old2
     && User.Password.equal new1 new2
+  | LanguageUpdated (p1, l1), LanguageUpdated (p2, l2) ->
+    equal p1 p2 && Pool_common.Language.equal l1 l2
   | AccountVerified p1, AccountVerified p2 -> equal p1 p2
   | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
@@ -228,6 +244,9 @@ let pp_event formatter (event : event) : unit =
   | PasswordUpdated (person, _, password, _) ->
     person_pp person;
     User.Password.pp formatter password
+  | LanguageUpdated (p, l) ->
+    person_pp p;
+    Pool_common.Language.pp formatter l
   | AccountVerified p | TermsAccepted p | Disabled p -> person_pp p
   | UnverifiedDeleted id -> Id.pp formatter id
 ;;

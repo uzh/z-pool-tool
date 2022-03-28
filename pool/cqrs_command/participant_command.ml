@@ -96,6 +96,7 @@ module UpdateDetails : sig
     { firstname : User.Firstname.t option
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
+    ; language : Pool_common.Language.t option
     }
 
   val handle
@@ -117,9 +118,12 @@ end = struct
     { firstname : User.Firstname.t option
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
+    ; language : Pool_common.Language.t option
     }
 
-  let command firstname lastname paused = { firstname; lastname; paused }
+  let command firstname lastname paused language =
+    { firstname; lastname; paused; language }
+  ;;
 
   let schema =
     Conformist.(
@@ -128,6 +132,7 @@ end = struct
           [ Conformist.optional @@ User.Firstname.schema ()
           ; Conformist.optional @@ User.Lastname.schema ()
           ; Conformist.optional @@ User.Paused.schema ()
+          ; Conformist.optional @@ Pool_common.Language.schema ()
           ]
         command)
   ;;
@@ -137,6 +142,7 @@ end = struct
       [ command.firstname |> CCOption.map (firstnameupdated participant)
       ; command.lastname |> CCOption.map (lastnameupdated participant)
       ; command.paused |> CCOption.map (pausedupdated participant)
+      ; command.language |> CCOption.map (languageupdated participant)
       ]
     |> CCList.filter_map CCFun.id
     |> CCList.map Pool_event.participant

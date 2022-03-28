@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let to_ctx = Pool_tenant.to_ctx
+let create_layout req = General.create_tenant_layout `Participant req
 
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in
@@ -9,6 +10,7 @@ let redirect_to_dashboard tenant_db user =
 ;;
 
 let login_get req =
+  let open Lwt_result.Infix in
   let result context =
     let query_lang = context.Pool_context.query_language in
     Lwt_result.map_err (fun err ->
@@ -24,9 +26,9 @@ let login_get req =
       let open Sihl.Web in
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.login csrf message context
-      |> Response.of_html
-      |> Lwt.return_ok
+      Page.Public.login csrf context
+      |> create_layout req context message
+      >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -80,9 +82,9 @@ let request_reset_password_get req =
     | None ->
       let csrf = HttpUtils.find_csrf req in
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-      Page.Public.request_reset_password csrf message context
-      |> Response.of_html
-      |> Lwt.return_ok
+      Page.Public.request_reset_password csrf context
+      |> create_layout req context message
+      >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -120,6 +122,7 @@ let request_reset_password_post req =
 
 let reset_password_get req =
   let result context =
+    let open Lwt_result.Infix in
     let query_lang = context.Pool_context.query_language in
     let error_path =
       "/request-reset-password/" |> HttpUtils.path_with_language query_lang
@@ -140,9 +143,9 @@ let reset_password_get req =
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
       in
-      Page.Public.reset_password csrf message token context
-      |> Sihl.Web.Response.of_html
-      |> Lwt_result.return
+      Page.Public.reset_password csrf token context
+      |> create_layout req context message
+      >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

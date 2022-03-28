@@ -65,6 +65,8 @@
    (>= 0.7.0))
   (containers
    (>= 3.6))
+  (mariadb
+   (= 1.1.4))
   (caqti-driver-mariadb
    (>= 1.6.0))
   (ocamlformat

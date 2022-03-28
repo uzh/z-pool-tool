@@ -2,7 +2,7 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail participant message Pool_context.{ language; query_language; _ } =
+let detail participant Pool_context.{ language; query_language; _ } =
   let open Participant in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
@@ -29,15 +29,14 @@ let detail participant message Pool_context.{ language; query_language; _ } =
           ]
       ]
   in
-  let html = div [ content ] in
-  Page_layout.create html message language
+  div [ content ]
 ;;
 
 let edit
     csrf
     user_update_csrf
-    participant
-    message
+    (participant : Participant.t)
+    tenant_languages
     Pool_context.{ language; query_language; _ }
   =
   let open Participant in
@@ -54,35 +53,18 @@ let edit
       (CCList.flatten
          [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
-             (fun (name, value, label, _type) ->
-               hx_input_element
-                 _type
-                 name
-                 value
-                 (Participant.version_selector participant name
-                 |> CCOption.get_exn_or
-                      Pool_common.(
-                        Utils.error_to_string
-                          language
-                          (Message.HtmxVersionNotFound name)))
-                 label
-                 language
-                 ~hx_post:(externalize action)
-                 ~hx_params:[ name ]
-                 ())
-             [ ( "firstname"
-               , participant |> firstname |> Pool_user.Firstname.value
-               , Message.firstname
-               , `Text )
-             ; ( "lastname"
-               , participant |> lastname |> Pool_user.Lastname.value
-               , Message.lastname
-               , `Text )
-             ; ( "paused"
-               , participant.paused |> Pool_user.Paused.value |> string_of_bool
-               , Message.paused
-               , `Checkbox )
-             ]
+             (fun htmx_element ->
+               Htmx.create htmx_element language ~hx_post:action ())
+             Htmx.
+               [ Firstname
+                   (participant.firstname_version, participant |> firstname)
+               ; Lastname (participant.lastname_version, participant |> lastname)
+               ; Paused (participant.paused_version, participant.paused)
+               ; Language
+                   ( participant.language_version
+                   , participant.language
+                   , tenant_languages )
+               ]
          ])
   in
   let email_form =
@@ -123,32 +105,27 @@ let edit
           ()
       ]
   in
-  let html =
-    div
-      [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
-      ; div
-          [ div
-              [ h2
-                  [ txt
-                      (text_to_string
-                         Pool_common.I18n.UserProfileDetailsSubtitle)
-                  ]
-              ; details_form
-              ]
-          ; hr ()
-          ; div
-              [ h2
-                  [ txt
-                      (text_to_string Pool_common.I18n.UserProfileLoginSubtitle)
-                  ]
-              ; email_form
-              ; password_form
-              ]
-          ]
-      ; a
-          ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-          [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
-      ]
-  in
-  Page_layout.create html message language
+  div
+    [ h1 [ txt (text_to_string Pool_common.I18n.UserProfileTitle) ]
+    ; div
+        [ div
+            [ h2
+                [ txt
+                    (text_to_string Pool_common.I18n.UserProfileDetailsSubtitle)
+                ]
+            ; details_form
+            ]
+        ; hr ()
+        ; div
+            [ h2
+                [ txt (text_to_string Pool_common.I18n.UserProfileLoginSubtitle)
+                ]
+            ; email_form
+            ; password_form
+            ]
+        ]
+    ; a
+        ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
+        [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
+    ]
 ;;

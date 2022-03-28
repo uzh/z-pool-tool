@@ -185,6 +185,7 @@ let participants db_pool () =
           ; firstname_version = Pool_common.Version.create ()
           ; lastname_version = Pool_common.Version.create ()
           ; paused_version = Pool_common.Version.create ()
+          ; language_version = Pool_common.Version.create ()
           ; created_at = Ptime_clock.now ()
           ; updated_at = Ptime_clock.now ()
           }

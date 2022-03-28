@@ -3,16 +3,18 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module User = Pool_user
 
+let create_layout req = General.create_tenant_layout `Participant req
+
 let dashboard req =
   let result context =
+    let open Lwt_result.Infix in
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
-    Page.Participant.dashboard message context
-    |> Sihl.Web.Response.of_html
-    |> CCResult.return
-    |> CCResult.map_err (fun err -> err, "/index")
-    |> Lwt_result.lift
+    Page.Participant.dashboard context
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
+    |> Lwt_result.map_err (fun err -> err, "/index")
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -20,6 +22,7 @@ let dashboard req =
 let sign_up req =
   let result context =
     let open Lwt_result.Syntax in
+    let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/index")
     @@
     let csrf = HttpUtils.find_csrf req in
@@ -38,7 +41,6 @@ let sign_up req =
     let* terms = Settings.terms_and_conditions tenant_db language in
     Page.Participant.sign_up
       csrf
-      message
       channels
       email
       firstname
@@ -46,8 +48,8 @@ let sign_up req =
       recruitment_channel
       terms
       context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -177,19 +179,16 @@ let terms req =
   in
   let result context =
     let tenant_db = context.Pool_context.tenant_db in
-    let error_path = "/login" in
-    let* user =
-      Http_utils.user_from_session tenant_db req
-      ||> CCOption.to_result Pool_common.Message.(NotFound User, error_path)
-    in
-    let language = context.Pool_context.language in
-    let* terms =
-      Settings.terms_and_conditions tenant_db language
-      |> Lwt_result.map_err (fun err -> err, error_path)
-    in
-    Page.Participant.terms csrf message user.Sihl_user.id terms context
-    |> Sihl.Web.Response.of_html
-    |> Lwt.return_ok
+    Lwt_result.map_err (fun err -> err, "/login")
+    @@ let* user =
+         Http_utils.user_from_session tenant_db req
+         ||> CCOption.to_result Pool_common.Message.(NotFound User)
+       in
+       let language = context.Pool_context.language in
+       let* terms = Settings.terms_and_conditions tenant_db language in
+       Page.Participant.terms csrf user.Sihl_user.id terms context
+       |> create_layout req context message
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -223,28 +222,40 @@ let show is_edit req =
     let query_lang = context.Pool_context.query_language in
     let append_lang = HttpUtils.path_with_language query_lang in
     let tenant_db = context.Pool_context.tenant_db in
-    let* user =
-      Http_utils.user_from_session tenant_db req
-      ||> CCOption.to_result
-            Pool_common.Message.(NotFound User, append_lang "/login")
-    in
-    let* participant =
-      Participant.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_err (fun err -> err, append_lang "/login")
-    in
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    match is_edit with
-    | false ->
-      Page.Participant.detail participant message context
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
-    | true ->
-      let csrf = HttpUtils.find_csrf req in
-      Page.Participant.edit csrf user_update_csrf participant message context
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
+    Lwt_result.map_err (fun err -> err, append_lang "/login")
+    @@ let* user =
+         Http_utils.user_from_session tenant_db req
+         ||> CCOption.to_result Pool_common.Message.(NotFound User)
+       in
+       let* participant =
+         Participant.find
+           tenant_db
+           (user.Sihl_user.id |> Pool_common.Id.of_string)
+         |> Lwt_result.map_err (fun err -> err)
+       in
+       let message =
+         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+       in
+       match is_edit with
+       | false ->
+         Page.Participant.detail participant context
+         |> create_layout req context message
+         >|= Sihl.Web.Response.of_html
+       | true ->
+         let csrf = HttpUtils.find_csrf req in
+         let* tenant_languages =
+           Pool_context.Tenant.find req
+           |> Lwt_result.lift
+           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+         in
+         Page.Participant.edit
+           csrf
+           user_update_csrf
+           participant
+           tenant_languages
+           context
+         |> create_layout req context message
+         >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -276,6 +287,11 @@ let update req =
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
     let language = context.Pool_context.language in
+    let* tenant_context =
+      Pool_context.Tenant.find req
+      |> Lwt_result.lift
+      |> Lwt_result.map_err (fun err -> err, path_with_lang "/user/edit")
+    in
     let version =
       version_raw
       |> CCInt.of_string
@@ -290,9 +306,9 @@ let update req =
       | "firstname" -> Message.Firstname
       | "lastname" -> Message.Lastname
       | "paused" -> Message.Paused
+      | "language" -> Message.DefaultLanguage
       | k -> failwith @@ Utils.error_to_string language Message.(NotHandled k)
     in
-    let value = go name in
     let get_version =
       CCOption.get_exn_or
         (Pool_common.Utils.error_to_string
@@ -311,25 +327,43 @@ let update req =
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in
-    let base_input version =
-      let type_of = function
-        | "paused" -> `Checkbox
-        | "firstname" | "lastname" -> `Text
-        | k ->
-          failwith
-          @@ Pool_common.Utils.error_to_string
-               language
-               Pool_common.Message.(NotHandled k)
+    let htmx_element participant classnames ?error () =
+      let open Participant in
+      let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
+      let html_response input =
+        [ Htmx.create input language ~classnames ~hx_post ?error ()
+        ; csrf_element
+        ]
+        |> HttpUtils.multi_html_to_plain_text_response
       in
-      Component.hx_input_element
-        (type_of name)
-        name
-        value
-        version
-        (field_name name)
-        language
-        ~hx_post
-        ~hx_params:[ name ]
+      Lwt_result.return
+      @@
+      match name with
+      | "paused" ->
+        Htmx.Paused (participant.paused_version, participant.paused)
+        |> html_response
+      | "firstname" ->
+        Htmx.Firstname (participant.firstname_version, participant |> firstname)
+        |> html_response
+      | "lastname" ->
+        Htmx.Lastname (participant.lastname_version, participant |> lastname)
+        |> html_response
+      | "language" ->
+        (match error with
+        | Some _ ->
+          Htmx.Language
+            ( participant.language_version
+            , participant.language
+            , tenant_context.Pool_context.Tenant.tenant_languages )
+          |> html_response
+        | None ->
+          Sihl.Web.Response.of_plain_text ""
+          |> Sihl.Web.Response.add_header ("HX-Redirect", "/user/edit"))
+      | k ->
+        failwith
+        @@ Pool_common.Utils.error_to_string
+             language
+             Pool_common.Message.(NotHandled k)
     in
     match events with
     | Ok events ->
@@ -338,20 +372,8 @@ let update req =
         Participant.(participant |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
-      [ base_input
-          (Participant.version_selector participant name |> get_version)
-          ~classnames:[ "success" ]
-          ()
-      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
-      ]
-      |> HttpUtils.multi_html_to_plain_text_response
-      |> Lwt_result.return
-    | Error err ->
-      [ base_input current_version ~classnames:[ "error" ] ~error:err ()
-      ; Component.csrf_element_swap csrf ~id:user_update_csrf ()
-      ]
-      |> HttpUtils.multi_html_to_plain_text_response
-      |> Lwt_result.return
+      htmx_element participant [ "success" ] ()
+    | Error err -> htmx_element participant [ "error" ] ~error:err ()
   in
   Lwt.catch
     (fun () -> result |> HttpUtils.extract_happy_path req)

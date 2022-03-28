@@ -10,6 +10,7 @@ module Id : sig
   val create : unit -> t
   val of_string : string -> t
   val value : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module Language : sig
@@ -29,10 +30,6 @@ module Language : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
   val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
-
-  val schema_i18n
     :  unit
     -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 
@@ -61,6 +58,7 @@ module CreatedAt : sig
   val show : t -> string
   val create : unit -> t
   val value : t -> Ptime.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module UpdatedAt : sig
@@ -71,6 +69,7 @@ module UpdatedAt : sig
   val show : t -> string
   val create : unit -> t
   val value : t -> Ptime.t
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module File : sig
@@ -121,6 +120,7 @@ module File : sig
   val id : t -> Id.t
   val size : t -> Size.t
   val path : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
 module Repo : sig
@@ -179,6 +179,7 @@ module Utils : sig
   val field_to_string : Language.t -> Message.field -> string
   val control_to_string : Language.t -> Message.control -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
+  val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
 

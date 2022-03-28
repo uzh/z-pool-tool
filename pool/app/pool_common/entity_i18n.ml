@@ -14,3 +14,8 @@ type t =
   | UserProfileDetailsSubtitle
   | UserProfileTitle
   | UserProfilePausedNote
+
+type nav_link =
+  | Dashboard
+  | I18n
+  | Settings

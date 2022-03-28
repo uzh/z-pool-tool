@@ -64,7 +64,6 @@ let show
     inactive_user_disable_after
     inactive_user_warning
     terms_and_conditions
-    message
     Pool_context.{ language; _ }
   =
   let action_path action =
@@ -279,19 +278,16 @@ let show
             ])
       ]
   in
-  let html =
-    div
-      [ h1 [ txt "Settings" ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ languages_html
-          ; email_suffixes_html
-          ; contact_email_html
-          ; inactive_user_html
-          ; terms_and_conditions_html
-          ]
-      ; script (Unsafe.data sortable)
-      ]
-  in
-  Page_layout.create html message language
+  div
+    [ h1 [ txt "Settings" ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ languages_html
+        ; email_suffixes_html
+        ; contact_email_html
+        ; inactive_user_html
+        ; terms_and_conditions_html
+        ]
+    ; script (Unsafe.data sortable)
+    ]
 ;;

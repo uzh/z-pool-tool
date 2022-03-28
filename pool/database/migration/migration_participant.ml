@@ -38,10 +38,20 @@ let add_user_language =
     |sql}
 ;;
 
+let add_user_language_version =
+  Sihl.Database.Migration.create_step
+    ~label:"add field versioning for participant language"
+    {sql|
+     ALTER TABLE pool_participants
+     ADD COLUMN language_version bigint(20) NOT NULL DEFAULT 0 AFTER paused_version;
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
     |> add_step create_participant_table
     |> add_step add_field_versioning
-    |> add_step add_user_language)
+    |> add_step add_user_language
+    |> add_step add_user_language_version)
 ;;

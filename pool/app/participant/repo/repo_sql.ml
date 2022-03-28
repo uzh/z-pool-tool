@@ -32,6 +32,7 @@ let find_request_sql where_fragment =
         pool_participants.firstname_version,
         pool_participants.lastname_version,
         pool_participants.paused_version,
+        pool_participants.language_version,
         pool_participants.created_at,
         pool_participants.updated_at
       FROM pool_participants
@@ -111,6 +112,7 @@ let insert_request =
         firstname_version,
         lastname_version,
         paused_version,
+        language_version,
         created_at,
         updated_at
       ) VALUES (
@@ -125,33 +127,60 @@ let insert_request =
         $9,
         $10,
         $11,
-        $12
+        $12,
+        $13
       )
     |sql}
 ;;
 
 let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 
-let update_paused_request =
-  let open Pool_common.Repo in
-  {sql|
-    UPDATE pool_participants
-    SET
-      paused = $2,
-      paused_version = $3
-    WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
-  |sql}
-  |> Caqti_request.exec Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
-;;
+module Paused = struct
+  let update_request =
+    let open Pool_common.Repo in
+    {sql|
+      UPDATE pool_participants
+      SET
+        paused = $2,
+        paused_version = $3
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+    |> Caqti_request.exec
+         Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
+  ;;
 
-let update_paused pool (Entity.{ paused; paused_version; _ } as participant) =
-  Utils.Database.exec
-    (Database.Label.value pool)
-    update_paused_request
-    ( participant |> Entity.id |> Id.value
-    , paused |> Pool_user.Paused.value
-    , paused_version |> Pool_common.Version.value )
-;;
+  let update pool (Entity.{ paused; paused_version; _ } as participant) =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      update_request
+      ( participant |> Entity.id |> Id.value
+      , paused |> Pool_user.Paused.value
+      , paused_version |> Pool_common.Version.value )
+  ;;
+end
+
+module Language = struct
+  let update_request =
+    let open Pool_common.Repo in
+    {sql|
+      UPDATE pool_participants
+      SET
+        language = $2,
+        language_version = $3
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+    |sql}
+    |> Caqti_request.exec Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t)
+  ;;
+
+  let update pool (Entity.{ language; language_version; _ } as participant) =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      update_request
+      ( participant |> Entity.id |> Id.value
+      , language
+      , language_version |> Pool_common.Version.value )
+  ;;
+end
 
 let update_version_for_request field =
   let field =
@@ -187,7 +216,8 @@ let update_request =
         verified = $7,
         firstname_version = $8,
         lastname_version = $9,
-        paused_version = $10
+        paused_version = $10,
+        language_version = $11
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''));
     |sql}

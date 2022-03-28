@@ -1,7 +1,8 @@
+open Sexplib.Conv
 module PoolError = Entity_message
 
 module Id = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let create () = Uuidm.create `V4 |> Uuidm.to_string
   let of_string m = m
@@ -37,16 +38,14 @@ module Language = struct
 
   let label country_code = country_code |> code |> Utils.Countries.find
 
-  let base_schema field_name =
+  let schema () =
     Pool_common_utils.schema_decoder
       of_string
       code
       PoolError.Language
-      field_name
+      "language"
   ;;
 
-  let schema () = base_schema "default_language"
-  let schema_i18n () = base_schema "language"
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 
@@ -72,6 +71,7 @@ module CreatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
+  let sexp_of_t = Utils.Time.ptime_to_sexp
 end
 
 module UpdatedAt = struct
@@ -79,11 +79,12 @@ module UpdatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
+  let sexp_of_t = Utils.Time.ptime_to_sexp
 end
 
 module File = struct
   module Name = struct
-    type t = string [@@deriving eq, show]
+    type t = string [@@deriving eq, show, sexp_of]
 
     let create m =
       if CCString.is_empty m then Error PoolError.(Invalid Filename) else Ok m
@@ -93,7 +94,7 @@ module File = struct
   end
 
   module Size = struct
-    type t = int [@@deriving eq, show]
+    type t = int [@@deriving eq, show, sexp_of]
 
     let create m =
       let open CCInt.Infix in
@@ -112,7 +113,7 @@ module File = struct
       | Png
       | Svg
       | Webp
-    [@@deriving eq, show]
+    [@@deriving eq, show, sexp_of]
 
     let of_string = function
       | "text/css" -> Ok Css
@@ -156,7 +157,7 @@ module File = struct
     ; created_at : CreatedAt.t
     ; updated_at : UpdatedAt.t
     }
-  [@@deriving show, eq]
+  [@@deriving show, eq, sexp_of]
 
   let id m = m.id
   let size m = m.size
