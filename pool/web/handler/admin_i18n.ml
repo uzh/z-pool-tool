@@ -29,7 +29,7 @@ let index req =
       |> I18nMap.to_seq
       |> CCList.of_seq
       |> CCList.sort (fun (k1, _) (k2, _) ->
-             CCString.compare (I18n.Key.value k1) (I18n.Key.value k2))
+             CCString.compare (I18n.Key.to_string k1) (I18n.Key.to_string k2))
       |> Lwt.return
     in
     let csrf = HttpUtils.find_csrf req in

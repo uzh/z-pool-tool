@@ -38,6 +38,23 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound I18n)
   ;;
 
+  let find_by_key_request =
+    {sql|
+      WHERE i18n_key = ? AND language = ?
+    |sql}
+    |> select_from_i18n_sql
+    |> Caqti_request.find Caqti_type.(tup2 string string) RepoEntity.t
+  ;;
+
+  let find_by_key db_pool key language =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value db_pool)
+      find_by_key_request
+      (key |> Entity.Key.to_string, language |> Pool_common.Language.code)
+    >|= CCOption.to_result Pool_common.Message.(NotFound I18n)
+  ;;
+
   let find_all_request =
     ""
     |> select_from_i18n_sql
@@ -89,6 +106,7 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_by_key = Sql.find_by_key
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update = Sql.update

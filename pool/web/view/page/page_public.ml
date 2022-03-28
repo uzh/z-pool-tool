@@ -3,7 +3,7 @@ open Component
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index tenant message Pool_context.{ language; _ } =
+let index tenant message Pool_context.{ language; _ } welcome_text =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let html =
     div
@@ -17,6 +17,7 @@ let index tenant message Pool_context.{ language; _ } =
                  ~a:[ a_style "width: 200px" ]
                  ())
              (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
+      ; div [ txt (I18n.content_to_string welcome_text) ]
       ]
   in
   Page_layout.create html message language
