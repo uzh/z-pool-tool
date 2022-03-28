@@ -3,7 +3,7 @@ module Database = Pool_database
 
 let find_request_sql where_fragment =
   Format.asprintf
-    "%s\n%s;"
+    "%s\n%s"
     {sql|
       SELECT
         LOWER(CONCAT(
@@ -43,12 +43,13 @@ let find_request_sql where_fragment =
 ;;
 
 let find_request =
+  let open Caqti_request.Infix in
   find_request_sql
     {sql|
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
         AND user_users.admin = 0
     |sql}
-  |> Caqti_request.find Caqti_type.string Repo_model.t
+  |> Caqti_type.string ->! Repo_model.t
 ;;
 
 let find pool id =
@@ -61,12 +62,13 @@ let find pool id =
 ;;
 
 let find_by_email_request =
+  let open Caqti_request.Infix in
   find_request_sql
     {sql|
       WHERE user_users.email = ?
         AND user_users.admin = 0
     |sql}
-  |> Caqti_request.find Caqti_type.string Repo_model.t
+  |> Caqti_type.string ->! Repo_model.t
 ;;
 
 let find_by_email pool email =
@@ -79,13 +81,14 @@ let find_by_email pool email =
 ;;
 
 let find_confirmed_request =
+  let open Caqti_request.Infix in
   find_request_sql
     {sql|
       WHERE user_users.email = ?
         AND user_users.admin = 0
         AND user_users.confirmed = 1
     |sql}
-  |> Caqti_request.find Caqti_type.string Repo_model.t
+  |> Caqti_type.string ->! Repo_model.t
 ;;
 
 let find_confirmed pool email =
@@ -98,9 +101,8 @@ let find_confirmed pool email =
 ;;
 
 let insert_request =
-  Caqti_request.exec
-    Repo_model.participant
-    {sql|
+  let open Caqti_request.Infix in
+  {sql|
       INSERT INTO pool_participants (
         user_uuid,
         recruitment_channel,
@@ -131,22 +133,24 @@ let insert_request =
         $13
       )
     |sql}
+  |> Repo_model.participant ->. Caqti_type.unit
 ;;
 
 let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 
 module Paused = struct
   let update_request =
+    let open Caqti_request.Infix in
     let open Pool_common.Repo in
     {sql|
       UPDATE pool_participants
       SET
         paused = $2,
         paused_version = $3
-      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_request.exec
-         Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
+    |> Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
+       ->. Caqti_type.unit
   ;;
 
   let update pool (Entity.{ paused; paused_version; _ } as participant) =
@@ -161,15 +165,16 @@ end
 
 module Language = struct
   let update_request =
+    let open Caqti_request.Infix in
     let open Pool_common.Repo in
     {sql|
       UPDATE pool_participants
       SET
         language = $2,
         language_version = $3
-      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''));
+      WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_request.exec Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t)
+    |> Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t ->. unit)
   ;;
 
   let update pool (Entity.{ language; language_version; _ } as participant) =
@@ -183,15 +188,16 @@ module Language = struct
 end
 
 let update_version_for_request field =
+  let open Caqti_request.Infix in
   let field =
     match field with
     | `Firstname -> "firstname_version"
     | `Lastname -> "lastname_version"
   in
   let update = {sql| UPDATE pool_participants SET |sql} in
-  let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')); |sql} in
+  let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
   Format.asprintf "%s\n%s = $2\n%s" update field where
-  |> Caqti_request.exec Caqti_type.(Pool_common.Repo.(tup2 Id.t Version.t))
+  |> Caqti_type.(Pool_common.Repo.(tup2 Id.t Version.t)) ->. Caqti_type.unit
 ;;
 
 let update_version_for pool field (id, version) =
@@ -202,9 +208,8 @@ let update_version_for pool field (id, version) =
 ;;
 
 let update_request =
-  Caqti_request.exec
-    Repo_model.Write.t
-    {sql|
+  let open Caqti_request.Infix in
+  {sql|
       UPDATE
         pool_participants
       SET
@@ -219,8 +224,9 @@ let update_request =
         paused_version = $10,
         language_version = $11
       WHERE
-        user_uuid = UNHEX(REPLACE($1, '-', ''));
+        user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
+  |> Repo_model.Write.t ->. Caqti_type.unit
 ;;
 
 let update pool t =
@@ -231,27 +237,30 @@ let update pool t =
 ;;
 
 let delete_unverified_participant_request =
+  let open Caqti_request.Infix in
   {sql|
     DELETE FROM pool_participants
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_request.exec Caqti_type.string
+  |> Caqti_type.(string ->. unit)
 ;;
 
 let delete_unverified_user_request =
+  let open Caqti_request.Infix in
   {sql|
     DELETE FROM user_users
     WHERE uuid = UNHEX(REPLACE(?, '-', ''))
   |sql}
-  |> Caqti_request.exec Caqti_type.string
+  |> Caqti_type.(string ->. unit)
 ;;
 
 let delete_unverified_email_verifications_request =
+  let open Caqti_request.Infix in
   {sql|
     DELETE FROM pool_email_verifications
-    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL;
+    WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
-  |> Caqti_request.exec Caqti_type.string
+  |> Caqti_type.(string ->. unit)
 ;;
 
 let delete_unverified pool id =

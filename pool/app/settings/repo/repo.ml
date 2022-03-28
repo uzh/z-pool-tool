@@ -17,7 +17,8 @@ module Sql = struct
   ;;
 
   let find_request out_type =
-    select_from_settings_sql |> Caqti_request.find Caqti_type.string out_type
+    let open Caqti_request.Infix in
+    select_from_settings_sql |> Caqti_type.string ->! out_type
   ;;
 
   let find pool out_type key =
@@ -38,7 +39,10 @@ module Sql = struct
     |sql}
   ;;
 
-  let update_request = Caqti_request.exec RepoEntity.Write.t update_sql
+  let update_request =
+    let open Caqti_request.Infix in
+    update_sql |> RepoEntity.Write.t ->. Caqti_type.unit
+  ;;
 
   let update pool =
     Utils.Database.exec (Database.Label.value pool) update_request

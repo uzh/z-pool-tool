@@ -22,11 +22,12 @@ module Sql = struct
   ;;
 
   let find_request =
+    let open Caqti_request.Infix in
     {sql|
       WHERE uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_request.find Caqti_type.string RepoEntity.t
+    |> Caqti_type.string ->! RepoEntity.t
   ;;
 
   let find db_pool id =
@@ -39,11 +40,12 @@ module Sql = struct
   ;;
 
   let find_by_key_request =
+    let open Caqti_request.Infix in
     {sql|
       WHERE i18n_key = ? AND language = ?
     |sql}
     |> select_from_i18n_sql
-    |> Caqti_request.find Caqti_type.(tup2 string string) RepoEntity.t
+    |> Caqti_type.(tup2 string string) ->! RepoEntity.t
   ;;
 
   let find_by_key db_pool key language =
@@ -56,9 +58,8 @@ module Sql = struct
   ;;
 
   let find_all_request =
-    ""
-    |> select_from_i18n_sql
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.t
+    let open Caqti_request.Infix in
+    "" |> select_from_i18n_sql |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all db_pool =
@@ -77,17 +78,21 @@ module Sql = struct
         ?,
         ?,
         ?
-      );
+      )
     |sql}
   ;;
 
-  let insert_request = Caqti_request.exec RepoEntity.t insert_sql
+  let insert_request =
+    let open Caqti_request.Infix in
+    insert_sql |> RepoEntity.t ->. Caqti_type.unit
+  ;;
 
   let insert db_pool =
     Utils.Database.exec (Pool_database.Label.value db_pool) insert_request
   ;;
 
   let update_request =
+    let open Caqti_request.Infix in
     {sql|
       UPDATE pool_i18n
       SET
@@ -95,9 +100,9 @@ module Sql = struct
         language = $3,
         content = $4
       WHERE
-        uuid = UNHEX(REPLACE($1, '-', ''));
+        uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_request.exec RepoEntity.t
+    |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
   let update db_pool =
