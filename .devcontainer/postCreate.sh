@@ -11,6 +11,7 @@ opam remote add default https://opam.ocaml.org
 
 # ensure all system dependencies are installed
 opam pin add -yn sihl https://github.com/oxidizing/sihl.git
+opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
