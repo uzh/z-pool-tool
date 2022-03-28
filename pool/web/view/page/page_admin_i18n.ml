@@ -42,7 +42,7 @@ let list csrf translation_list Pool_context.{ language; _ } =
           [ h2
               [ txt
                   (key
-                  |> I18n.Key.value
+                  |> I18n.Key.to_string
                   |> CCString.replace ~which:`All ~sub:"_" ~by:" "
                   |> CCString.capitalize_ascii)
               ]

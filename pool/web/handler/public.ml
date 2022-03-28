@@ -29,7 +29,11 @@ let index req =
       in
       let tenant_db = context.Pool_context.tenant_db in
       let* tenant = Pool_tenant.find_by_label tenant_db in
-      Page.Public.index tenant context
+      let* welcome_text =
+        I18n.(
+          find_by_key tenant_db Key.WelcomeText context.Pool_context.language)
+      in
+      Page.Public.index tenant context welcome_text
       |> create_layout req context message
       >|= Sihl.Web.Response.of_html
     in
