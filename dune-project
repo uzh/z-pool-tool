@@ -65,10 +65,10 @@
    (>= 0.7.0))
   (containers
    (>= 3.6))
+  (mariadb
+   (= 1.1.4))
   (caqti-driver-mariadb
-   (and
-    (>= 1.6.0)
-    (< 1.8.0)))
+   (>= 1.6.0))
   (ocamlformat
    (>= 0.18.0))
   (ppx_deriving
