@@ -31,15 +31,15 @@ let header =
 ;;
 
 let footer () =
-  let open CCOption in
-  let title = Some "Pool Tool" in
+  let title = "Pool Tool" in
   let version =
-    Sihl.Configuration.read_string "VERSION" >|= Format.asprintf "Version %s"
+    Sihl.Configuration.read_string "VERSION"
+    |> Option.value ~default:"unknown"
+    |> Format.asprintf "Version: %s"
   in
-  let meta = CCList.filter_map CCFun.id [ title; version ] in
   footer
     ~a:[ a_style "text-align: center; padding: 1rem;" ]
-    [ p [ txt @@ CCString.concat " | " meta ] ]
+    [ p [ txt @@ CCString.concat " | " [ title; version ] ] ]
 ;;
 
 let create children message ?(lang = Pool_common.Language.En) () =

@@ -88,7 +88,12 @@ let equal_any_person one two =
 
 let pp_any_person f (Any m) = pp f m
 
-let user : type person_function. person_function t -> Sihl_user.t = function
+let person : type p. p t -> person = function
+  | Assistant p | Experimenter p | LocationManager p | Recruiter p | Operator p
+    -> p
+;;
+
+let user : type p. p t -> Sihl_user.t = function
   | Assistant { user; _ }
   | Experimenter { user; _ }
   | LocationManager { user; _ }

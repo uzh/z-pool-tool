@@ -92,7 +92,7 @@ let create_operator req =
   in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
-      "/root/tenants"
+      (Format.asprintf "/root/tenants/%s" (Common.Id.value id))
       [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
   in
   ()
@@ -129,8 +129,8 @@ let promote_to_operator req =
   in
   let return_to_overview () =
     Http_utils.redirect_to_with_actions
-      "/root/tenants"
-      [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
+      (Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+      [ Message.set ~success:[ Pool_common.Message.(Updated Operator) ] ]
   in
   ()
   |> find_tenant

@@ -173,6 +173,8 @@ let terms_accept req =
     let* events =
       Command.AcceptTermsAndConditions.handle participant |> Lwt_result.lift
     in
+    (* TODO [aerben] "Assert_failure
+       lib-driver/caqti_driver_mariadb.ml:233:8" *)
     let%lwt () = Pool_event.handle_events tenant_db events in
     HttpUtils.redirect_to "/dashboard" |> Lwt_result.ok
   in

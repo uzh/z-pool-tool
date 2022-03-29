@@ -91,11 +91,13 @@ type any_person = Entity.any_person = Any : 'a t -> any_person
 
 val equal_any_person : any_person -> any_person -> bool
 val pp_any_person : Format.formatter -> any_person -> unit
-val user : 'person_function t -> Sihl_user.t
+val person : 'p t -> person
+val user : 'p t -> Sihl_user.t
 
 module Duplicate = Entity.Duplicate
 
 val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
+val update : Pool_database.Label.t -> 'a t -> unit Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t

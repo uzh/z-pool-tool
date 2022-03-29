@@ -67,7 +67,7 @@ type event =
 let handle_person_event pool : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
-    let%lwt _ =
+    let%lwt (_ : (unit, string) result) =
       set_password
         pool
         person
@@ -75,7 +75,14 @@ let handle_person_event pool : 'a person_event -> unit Lwt.t = function
         (confirmed |> User.PasswordConfirmed.to_sihl)
     in
     Lwt.return_unit
-  | RoleUpdated _ -> Utils.todo ()
+  | RoleUpdated (person, role) ->
+    let person = Entity.person person in
+    (match role with
+    | Assistant -> Repo.update pool @@ Entity.Assistant person
+    | Experimenter -> Repo.update pool @@ Entity.Experimenter person
+    | Recruiter -> Repo.update pool @@ Entity.Recruiter person
+    | LocationManager -> Repo.update pool @@ Entity.LocationManager person
+    | Operator -> Repo.update pool @@ Entity.Operator person)
   | Disabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
 ;;

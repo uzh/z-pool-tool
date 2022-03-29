@@ -82,7 +82,7 @@ let rec warning_to_string : warning -> string = function
 let rec error_to_string = function
   | AdminAndParticipantSimul -> "User is admin and participant simultaneously!"
   | AlreadyExists field ->
-    field_message "User already" (field_to_string field) "!"
+    Format.asprintf "User already %s!" (field_to_string field)
   | CantPromote -> "Could not promote to operator!"
   | Conformist err -> ConformistError.to_string err
   | DecodeAction -> "Cannot decode action."
