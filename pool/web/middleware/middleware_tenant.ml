@@ -10,13 +10,9 @@ let tenant_db_of_request req
     |> CCOption.to_result Pool_common.Message.(NotFound Host)
     |> Lwt_result.lift
   in
-  (* TODO [aerben] why not direct sql here? *)
-  let%lwt selections = Pool_tenant.Selection.find_all () in
-  CCList.assoc_opt
-    ~eq:(fun m k -> CCString.prefix ~pre:m k)
-    host
-    (selections
-    |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
+  let%lwt selection = Pool_tenant.Selection.find_prefixed host in
+  selection
+  |> CCOption.map Pool_tenant.Selection.label
   |> CCOption.to_result Pool_common.Message.(NotFound TenantPool)
   |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
   |> Lwt_result.lift

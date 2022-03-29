@@ -104,7 +104,6 @@ let create_operator req =
   >|> HttpUtils.extract_happy_path
 ;;
 
-(* TODO [aerben] extract duplicate *)
 let promote_to_operator req =
   let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
@@ -117,7 +116,6 @@ let promote_to_operator req =
       ||> CCOption.to_result Common.Message.(EmailAddressMissingOperator)
       >|= Pool_user.EmailAddress.of_string
     in
-    (* User is either admin or participant *)
     let* admin =
       Admin.find_by_email tenant_db email
       |=> fun e -> Common.Message.(ErrorList [ e; CantPromote ])
@@ -165,5 +163,3 @@ let tenant_detail req =
   |=> CCPair.map_fst Common.Message.errorm
   >|> HttpUtils.extract_happy_path
 ;;
-(* TODO [aerben] move errorm ALWAYS TO END except for create operator*)
-(* TODO [aerben] make Common.Message vs Common.Message consistent*)

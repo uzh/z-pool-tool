@@ -1,6 +1,8 @@
 include Entity
 include Event
 
+(* TODO make sure repo functions return typed values, then don't have to use _
+   escape hatch *)
 let[@warning "-4"] find_languages pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_languages pool

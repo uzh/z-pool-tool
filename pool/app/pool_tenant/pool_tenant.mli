@@ -314,7 +314,7 @@ module Selection : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : Url.t -> Database.Label.t -> t
-  val find_all : unit -> t list Lwt.t
+  val find_prefixed : string -> t option Lwt.t
   val url : t -> string
   val label : t -> Database.Label.t
 end

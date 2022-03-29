@@ -21,8 +21,7 @@ let hx_input_element
     input_type
     name
     value
-    (* TODO [aerben] Do we generally want HTMX input fields to be versioned? *)
-      version
+    version
     ?hx_post
     ?hx_params
     ?(classnames = [])

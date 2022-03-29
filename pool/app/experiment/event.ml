@@ -38,7 +38,7 @@ let handle_event pool : event -> unit Lwt.t = function
     -> Permission.divest (Admin.user user) (Role.operator experiment.id)
 ;;
 
-let[@warning "-4"] equal_event event1 event2 =
+let equal_event event1 event2 =
   match event1, event2 with
   | ExperimentAdded one, ExperimentAdded two -> equal_create one two
   | ( ExperimentEdited (experiment_one, update_one)
@@ -51,7 +51,14 @@ let[@warning "-4"] equal_event event1 event2 =
     && CCString.equal
          (Admin.user user_one).Sihl_user.id
          (Admin.user user_two).Sihl_user.id
-  | _ -> false
+  | ( ( ExperimentAdded _
+      | ExperimentEdited _
+      | ExperimentDestroyed _
+      | ExperimenterAssigned _
+      | ExperimenterDivested _
+      | AssistantAssigned _
+      | AssistantDivested _ )
+    , _ ) -> false
 ;;
 
 let pp_event formatter event =

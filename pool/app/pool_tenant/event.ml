@@ -89,7 +89,7 @@ let handle_event _ : event -> unit Lwt.t = function
     Lwt.return_unit
 ;;
 
-let[@warning "-4"] equal_event event1 event2 =
+let equal_event event1 event2 =
   match event1, event2 with
   | Created tenant_one, Created tenant_two -> Write.equal tenant_one tenant_two
   | LogosUploaded logo_mappings_one, LogosUploaded logo_mappings_two ->
@@ -107,7 +107,15 @@ let[@warning "-4"] equal_event event1 event2 =
   | Destroyed one, Destroyed two -> Id.equal one two
   | ActivateMaintenance one, ActivateMaintenance two
   | DeactivateMaintenance one, DeactivateMaintenance two -> Write.equal one two
-  | _ -> false
+  | ( ( Created _
+      | LogosUploaded _
+      | LogoDeleted _
+      | DetailsEdited _
+      | DatabaseEdited _
+      | Destroyed _
+      | ActivateMaintenance _
+      | DeactivateMaintenance _ )
+    , _ ) -> false
 ;;
 
 let pp_event formatter event =

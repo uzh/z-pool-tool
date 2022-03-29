@@ -25,7 +25,7 @@ type handle_list_tenants = unit -> t list Lwt.t
 module Selection = struct
   include Selection
 
-  let find_all = Repo.find_selectable Database.root
+  let find_prefixed = Repo.find_selectable Database.root
 end
 
 (* Logo mappings *)

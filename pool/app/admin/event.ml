@@ -67,8 +67,6 @@ type event =
 let handle_person_event pool : 'a person_event -> unit Lwt.t = function
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
-    (* TODO [aerben] this can fail, why is it not caught? *)
-    (* TODO [aerben] use update_password? *)
     let%lwt _ =
       set_password
         pool
@@ -121,8 +119,6 @@ let handle_event pool = function
   | OperatorEvents event -> handle_person_event pool event
 ;;
 
-(* TODO [aerben] do this everywhere where warning -4 suppressed, also rename
-   args to make sense*)
 let equal_person_event event1 event2 =
   match event1, event2 with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
@@ -132,7 +128,6 @@ let equal_person_event event1 event2 =
   | RoleUpdated (p1, a1), RoleUpdated (p2, a2) ->
     equal p1 p2 && equal_role a1 a2
   | Disabled p1, Disabled p2 | Verified p1, Verified p2 -> equal p1 p2
-  (* Match the rest for exhaustiveness *)
   | ( ( DetailsUpdated _
       | PasswordUpdated _
       | RoleUpdated _
@@ -141,7 +136,7 @@ let equal_person_event event1 event2 =
     , _ ) -> false
 ;;
 
-let pp_person_event formatter (event : 'a person_event) : unit =
+let pp_person_event formatter event =
   let person_pp = pp formatter in
   match event with
   | DetailsUpdated (m, updated) ->
@@ -156,7 +151,7 @@ let pp_person_event formatter (event : 'a person_event) : unit =
   | Disabled m | Verified m -> person_pp m
 ;;
 
-let[@warning "-4"] equal_event event1 event2 : bool =
+let equal_event event1 event2 =
   match event1, event2 with
   | Created (role1, m), Created (role2, p) ->
     equal_role role1 role2 && equal_create m p
@@ -165,7 +160,13 @@ let[@warning "-4"] equal_event event1 event2 : bool =
   | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
   | RecruiterEvents m, RecruiterEvents p -> equal_person_event m p
   | OperatorEvents m, OperatorEvents p -> equal_person_event m p
-  | _ -> false
+  | ( ( Created _
+      | AssistantEvents _
+      | ExperimenterEvents _
+      | LocationManagerEvents _
+      | RecruiterEvents _
+      | OperatorEvents _ )
+    , _ ) -> false
 ;;
 
 let pp_event formatter event =

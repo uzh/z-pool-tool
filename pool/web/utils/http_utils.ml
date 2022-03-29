@@ -36,9 +36,6 @@ let extract_happy_path_with_actions result =
            ((msg |> Message.Message.separate |> Message.write) :: error_actions))
 ;;
 
-(* TODO [aerben] continue to lift every handler into t message type not error
-   message type *)
-
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =
   keys

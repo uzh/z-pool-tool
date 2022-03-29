@@ -293,12 +293,16 @@ module Sql = struct
         url,
         database_label
       FROM pool_tenant
+      WHERE url LIKE CONCAT(?, '%')
     |sql}
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.Selection.t
+    |> Caqti_request.find Caqti_type.string RepoEntity.Selection.t
   ;;
 
-  let find_selectable pool =
-    Utils.Database.collect (Database.Label.value pool) find_selectable_request
+  let find_selectable pool host =
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_selectable_request
+      host
   ;;
 end
 

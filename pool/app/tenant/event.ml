@@ -17,7 +17,7 @@ let handle_event _ : event -> unit Lwt.t = function
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 
-let[@warning "-4"] equal_event event1 event2 =
+let equal_event event1 event2 =
   match event1, event2 with
   | ( OperatorAssigned (tenant_id_one, user_one)
     , OperatorAssigned (tenant_id_two, user_two) )
@@ -27,7 +27,8 @@ let[@warning "-4"] equal_event event1 event2 =
     && CCString.equal
          (Admin.user user_one).Sihl_user.id
          (Admin.user user_two).Sihl_user.id
-  | _ -> false
+  | (OperatorAssigned _ | OperatorDivested _ | StatusReportGenerated _), _ ->
+    false
 ;;
 
 let pp_event formatter event =

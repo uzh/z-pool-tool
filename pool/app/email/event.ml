@@ -66,7 +66,7 @@ let handle_event pool : event -> unit Lwt.t =
     Lwt.return_unit
 ;;
 
-let[@warning "-4"] equal_event (one : event) (two : event) : bool =
+let equal_event one two =
   match one, two with
   | Created (a1, f1, l1), Created (a2, f2, l2) ->
     User.EmailAddress.equal a1 a2
@@ -84,7 +84,8 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     && User.Firstname.equal f1 f2
     && User.Lastname.equal l1 l2
   | EmailVerified m, EmailVerified p -> equal m p
-  | _ -> false
+  | (Created _ | UpdatedUnverified _ | UpdatedVerified _ | EmailVerified _), _
+    -> false
 ;;
 
 let pp_event formatter (event : event) : unit =

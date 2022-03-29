@@ -139,8 +139,7 @@ let handle_event pool : event -> unit Lwt.t =
     let new_password_confirmation =
       confirmed |> User.PasswordConfirmed.to_sihl
     in
-    (* TODO [aerben] this can fail, why is it not caught? *)
-    let%lwt _ =
+    let%lwt (_ : (Sihl_user.t, string) result) =
       Service.User.update_password
         ~ctx
         ~old_password
@@ -193,7 +192,7 @@ let handle_event pool : event -> unit Lwt.t =
   | Verified _ -> Utils.todo ()
 ;;
 
-let[@warning "-4"] equal_event (one : event) (two : event) : bool =
+let equal_event one two : bool =
   match one, two with
   | Created m, Created p -> equal_create m p
   | FirstnameUpdated (p1, one), FirstnameUpdated (p2, two) ->
@@ -211,10 +210,21 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
   | Disabled p1, Disabled p2 -> equal p1 p2
   | Verified p1, Verified p2 -> equal p1 p2
-  | _ -> false
+  | ( ( Created _
+      | FirstnameUpdated _
+      | LastnameUpdated _
+      | PausedUpdated _
+      | EmailUpdated _
+      | PasswordUpdated _
+      | EmailUnconfirmed _
+      | EmailConfirmed _
+      | TermsAccepted _
+      | Disabled _
+      | Verified _ )
+    , _ ) -> false
 ;;
 
-let pp_event formatter (event : event) : unit =
+let pp_event formatter event =
   let person_pp = pp formatter in
   match event with
   | Created m -> pp_create formatter m
