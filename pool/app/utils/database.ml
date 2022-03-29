@@ -25,31 +25,41 @@ let raise_caqti_error =
 ;;
 
 let find db_pool request input =
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", db_pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.find request input |> Lwt.map raise_caqti_error)
 ;;
 
 let find_opt db_pool request input =
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", db_pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.find_opt request input |> Lwt.map raise_caqti_error)
 ;;
 
 let collect db_pool request input =
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", db_pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.collect_list request input |> Lwt.map raise_caqti_error)
 ;;
 
 let exec db_pool request input =
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", db_pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Connection.exec request input |> Lwt.map raise_caqti_error)
 ;;
 
 let transaction pool commands =
-  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s
         (fun (request, input) -> Connection.exec request input)
@@ -61,7 +71,9 @@ let transaction pool commands =
 
 let transaction_find_opt pool commands query =
   let ( >> ) = CCFun.const in
-  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s
         (fun (request, input) -> Connection.exec request input)
@@ -73,7 +85,9 @@ let transaction_find_opt pool commands query =
 
 let transaction_collect pool commands query =
   let ( >> ) = CCFun.const in
-  Sihl.Database.query ~ctx:[ "pool", pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       Lwt_list.map_s
         (fun (request, input) -> Connection.exec request input)
@@ -84,12 +98,15 @@ let transaction_collect pool commands query =
 ;;
 
 let set_fk_check_request =
-  Caqti_request.exec Caqti_type.bool "SET FOREIGN_KEY_CHECKS = ?;"
+  let open Caqti_request.Infix in
+  "SET FOREIGN_KEY_CHECKS = ?" |> Caqti_type.(bool ->. unit)
 ;;
 
 let with_disabled_fk_check db_pool f =
   let open Lwt.Syntax in
-  Sihl.Database.query ~ctx:[ "pool", db_pool ] (fun connection ->
+  Sihl.Database.query
+    ~ctx:[ "pool", db_pool ]
+    (fun connection ->
       let module Connection = (val connection : Caqti_lwt.CONNECTION) in
       let* () =
         Connection.exec set_fk_check_request false |> Lwt.map raise_caqti_error
@@ -101,24 +118,21 @@ let with_disabled_fk_check db_pool f =
 ;;
 
 let table_names_request =
-  Caqti_request.collect
-    ~oneshot:true
-    Caqti_type.unit
-    Caqti_type.string
-    {sql|
-      SELECT TABLE_NAME
-      FROM INFORMATION_SCHEMA.`TABLES`
-      WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state','email_templates');
-    |sql}
+  let open Caqti_request.Infix in
+  {sql|
+    SELECT TABLE_NAME
+    FROM INFORMATION_SCHEMA.`TABLES`
+    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state','email_templates')
+  |sql}
+  |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;
 
 let clean_requests db_pool =
+  let open Caqti_request.Infix in
   let open Lwt.Infix in
   let truncate_table table =
     Logs.debug (fun m -> m "Truncate table '%s' from pool '%s'" table db_pool);
-    Caqti_request.exec
-      Caqti_type.unit
-      (Format.asprintf "TRUNCATE TABLE %s" table)
+    Format.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
   in
   () |> collect db_pool table_names_request >|= List.map truncate_table
 ;;

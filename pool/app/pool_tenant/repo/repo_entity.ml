@@ -21,8 +21,9 @@ module Url = struct
   let t = Caqti_type.string
 
   let find_url_request =
+    let open Caqti_request.Infix in
     {sql| SELECT url FROM pool_tenant WHERE database_label = ? |sql}
-    |> Caqti_request.find Database.Repo.Label.t t
+    |> Database.Repo.Label.t ->! t
   ;;
 
   let of_pool pool =

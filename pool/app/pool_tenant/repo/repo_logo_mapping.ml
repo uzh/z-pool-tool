@@ -105,8 +105,9 @@ module Sql = struct
   ;;
 
   let find_request =
+    let open Caqti_request.Infix in
     select_from_tenant_logo_mappings_sql where_fragment
-    |> Caqti_request.find Caqti_type.string t
+    |> Caqti_type.string ->! t
   ;;
 
   let find pool tenant_id =
@@ -114,14 +115,14 @@ module Sql = struct
   ;;
 
   let find_all_request =
-    ""
-    |> select_from_tenant_logo_mappings_sql
-    |> Caqti_request.find Caqti_type.unit t
+    let open Caqti_request.Infix in
+    "" |> select_from_tenant_logo_mappings_sql |> Caqti_type.unit ->! t
   ;;
 
   let find_all pool = Utils.Database.collect pool find_all_request
 
   let insert_request =
+    let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_tenant_logo_mappings (
         uuid,
@@ -133,20 +134,21 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         UNHEX(REPLACE(?, '-', '')),
         ?
-      );
+      )
     |sql}
-    |> Caqti_request.exec Write.t
+    |> Write.t ->. Caqti_type.unit
   ;;
 
   let insert pool = Utils.Database.exec pool insert_request
 
   let delete_request =
+    let open Caqti_request.Infix in
     {sql|
       DELETE FROM pool_tenant_logo_mappings
       WHERE tenant_uuid = UNHEX(REPLACE(?, '-', ''))
-      AND asset_uuid = UNHEX(REPLACE(?, '-', ''));
+      AND asset_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_request.exec Caqti_type.(tup2 string string)
+    |> Caqti_type.(tup2 string string ->. unit)
   ;;
 
   let delete pool tenant_id asset_id =
