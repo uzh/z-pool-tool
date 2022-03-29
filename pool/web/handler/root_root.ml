@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Common = Pool_common
 module Database = Pool_database
 
 let create req =
@@ -8,11 +9,10 @@ let create req =
   let user () =
     (* TODO [aerben] this is a root route, should not get tenant like this,
        instead use route param *)
-    (let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-     Sihl.Web.Request.urlencoded "email" req
-     ||> CCOption.to_result Message.Message.EmailAddressMissingRoot
-     >>= HttpUtils.validate_email_existence tenant_db)
-    |=> Message.Message.errorm
+    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    Sihl.Web.Request.urlencoded "email" req
+    ||> CCOption.to_result Common.Message.EmailAddressMissingRoot
+    >>= HttpUtils.validate_email_existence tenant_db
   in
   let events () =
     let open CCResult.Infix in
@@ -34,6 +34,7 @@ let create req =
   |=> (fun err -> err, "/root/tenants/")
   |>> handle
   |>> return_to_overview
+  |=> CCPair.map_fst Common.Message.errorm
   >|> HttpUtils.extract_happy_path
 ;;
 
@@ -55,6 +56,6 @@ let toggle_status req =
   |=> (fun err -> err, "/root/tenants/")
   |>> handle
   |>> return_to_overview
-  |=> (fun (e, p) -> Message.Message.errorm e, p)
+  |=> CCPair.map_fst Common.Message.errorm
   >|> HttpUtils.extract_happy_path
 ;;

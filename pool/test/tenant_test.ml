@@ -356,8 +356,8 @@ let create_operator () =
     in
     Alcotest.(
       check
-        (result (list Test_utils.event) Test_utils.error)
+        (result (list Test_utils.event) Test_utils.message)
         "succeeds"
-        expected
+        (expected |> CCResult.map_err Common.Message.errorm)
         events)
 ;;

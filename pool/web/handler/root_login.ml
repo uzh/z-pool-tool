@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Common = Pool_common
 module Database = Pool_database
 
 let ctx = Pool_tenant.(to_ctx Database.root)
@@ -44,8 +45,8 @@ let login_post req =
   in
   ()
   |> result
-  |=> CCPair.fst_map Message.Message.errorm
-  |> HttpUtils.extract_happy_path
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let request_reset_password_get req =
@@ -107,8 +108,9 @@ let reset_password_get req =
 ;;
 
 let reset_password_post req =
+  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result () =
     let open Lwt_result.Syntax in
     let* params =
       HttpUtils.urlencoded_to_params
@@ -136,7 +138,10 @@ let reset_password_post req =
       [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
     |> Lwt_result.ok
   in
-  HttpUtils.extract_happy_path result
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let logout _ =

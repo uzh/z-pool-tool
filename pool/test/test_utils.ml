@@ -9,6 +9,8 @@ let error =
   Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
 ;;
 
+let message = Alcotest.testable Pool_common.Message.pp Pool_common.Message.equal
+
 (* Helper functions *)
 
 let setup_test () =

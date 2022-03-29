@@ -4,10 +4,11 @@ module Common = Pool_common
 module Database = Pool_database
 
 let index req =
+  let open Utils.Lwt_result.Infix in
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let%lwt result =
+    let result () =
       let open Lwt_result.Syntax in
       let message =
         CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
@@ -18,9 +19,10 @@ let index req =
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
     in
-    result
-    |> CCResult.map_err (fun err -> err, "/error")
-    |> Http_utils.extract_happy_path)
+    ()
+    |> result
+    |=> (fun err -> Common.Message.errorm err, "/error")
+    >|> Http_utils.extract_happy_path)
 ;;
 
 let index_css req =

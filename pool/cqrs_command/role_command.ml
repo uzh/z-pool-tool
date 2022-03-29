@@ -1,7 +1,7 @@
 module Create : sig
   type t = { name : string }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.t) result
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = { name : string }

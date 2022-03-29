@@ -20,7 +20,12 @@ let with_log_error ?(level = Logs.Error) err =
 
 let with_log_result_error fcn =
   CCResult.map_err (fun err ->
-      let _ = Entity_message.((separate err).error) |> fcn |> with_log_error in
+      let (_ : Entity_message.error list) =
+        err
+        |> fcn
+        |> fun e ->
+        Entity_message.((separate e).error) |> CCList.map with_log_error
+      in
       err)
 ;;
 

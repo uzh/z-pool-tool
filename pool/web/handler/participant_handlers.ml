@@ -1,6 +1,7 @@
 module Command = Cqrs_command.Participant_command
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Common = Pool_common
 module User = Pool_user
 
 let dashboard req =
@@ -13,8 +14,9 @@ let dashboard req =
 ;;
 
 let sign_up req =
+  let open Utils.Lwt_result.Infix in
   let error_path = "/" in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
@@ -44,7 +46,10 @@ let sign_up req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let sign_up_create req =
@@ -91,7 +96,9 @@ let sign_up_create req =
   in
   result
   |> CCResult.map_err (fun msg ->
-         msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
+         ( Common.Message.errorm msg
+         , "/signup"
+         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
   |> HttpUtils.extract_happy_path_with_actions
 ;;
 
@@ -123,35 +130,41 @@ let email_verification req =
     "/login"
     [ Message.set ~success:[ Pool_common.Message.EmailVerified ] ]
   |> Lwt_result.ok)
-  |=> (fun msg -> msg, "/login")
+  |=> (fun msg -> Common.Message.errorm msg, "/login")
   >|> HttpUtils.extract_happy_path
 ;;
 
 let terms req =
-  CCFun.flip Lwt.bind HttpUtils.extract_happy_path
-  @@
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
-  let csrf = HttpUtils.find_csrf req in
-  let message =
-    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+  let result () =
+    let open Utils.Lwt_result.Infix in
+    let open Lwt_result.Syntax in
+    let csrf = HttpUtils.find_csrf req in
+    let message =
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+    in
+    let* tenant_db =
+      Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
+    in
+    let* user =
+      General.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
+    in
+    let%lwt terms = Settings.find_terms_and_conditions tenant_db in
+    Page.Participant.terms csrf message user.Sihl_user.id terms ()
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return_ok
   in
-  let* tenant_db =
-    Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
-  in
-  let* user =
-    General.user_from_session tenant_db req
-    ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
-  in
-  let%lwt terms = Settings.find_terms_and_conditions tenant_db in
-  Page.Participant.terms csrf message user.Sihl_user.id terms ()
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return_ok
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let terms_accept req =
+  let open Utils.Lwt_result.Infix in
   let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun msg -> msg, "/login")
     @@
     let open Lwt_result.Syntax in
@@ -163,12 +176,15 @@ let terms_accept req =
     let%lwt () = Pool_event.handle_events tenant_db events in
     HttpUtils.redirect_to "/dashboard" |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let show is_edit req =
-  let%lwt result =
-    let open Utils.Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
+  let result () =
     let open Lwt_result.Syntax in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
@@ -195,7 +211,10 @@ let show is_edit req =
       |> Sihl.Web.Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let details = show false
@@ -216,7 +235,7 @@ let update req =
     |> CCOption.get_exn_or
        @@ Format.asprintf "Version '%s' not a number" version_raw
   in
-  let%lwt result =
+  let result () =
     let open Utils.Lwt_result.Syntax in
     let* tenant_db =
       Middleware.Tenant.tenant_db_of_request req |=> fun err -> err, "/"
@@ -287,7 +306,10 @@ let update req =
       |> HttpUtils.html_to_plain_text_response
       |> Lwt_result.return
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let update_email req =
@@ -332,7 +354,9 @@ let update_email req =
   in
   result
   |> CCResult.map_err (fun msg ->
-         msg, "/user/edit", [ HttpUtils.urlencoded_to_flash urlencoded ])
+         ( Common.Message.errorm msg
+         , "/user/edit"
+         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
   |> HttpUtils.extract_happy_path_with_actions
 ;;
 
@@ -362,6 +386,8 @@ let update_password req =
   in
   result
   |> CCResult.map_err (fun msg ->
-         msg, "/user/edit", [ HttpUtils.urlencoded_to_flash urlencoded ])
+         ( Common.Message.errorm msg
+         , "/user/edit"
+         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
   |> HttpUtils.extract_happy_path_with_actions
 ;;

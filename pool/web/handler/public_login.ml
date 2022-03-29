@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Common = Pool_common
 
 let to_ctx = Pool_tenant.to_ctx
 
@@ -17,7 +18,8 @@ let redirect_to_dashboard tenant_db user =
 ;;
 
 let login_get req =
-  let%lwt result =
+  let open Utils.Lwt_result.Infix in
+  let result () =
     Lwt_result.map_err (fun err -> err, "/")
     @@
     let open Lwt_result.Syntax in
@@ -33,12 +35,16 @@ let login_get req =
       let message = CCOption.bind (Flash.find_alert req) Message.of_string in
       Page.Public.login csrf message () |> Response.of_html |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let login_post req =
+  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun err -> err, "/login")
     @@
     let open Lwt_result.Syntax in
@@ -61,11 +67,15 @@ let login_post req =
           [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let request_reset_password_get req =
-  let%lwt result =
+  let open Utils.Lwt_result.Infix in
+  let result () =
     Lwt_result.map_err (fun err -> err, "/")
     @@
     let open Lwt_result.Syntax in
@@ -86,7 +96,10 @@ let request_reset_password_get req =
       |> Response.of_html
       |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let request_reset_password_post req =
@@ -131,8 +144,9 @@ let reset_password_get req =
 ;;
 
 let reset_password_post req =
+  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let%lwt result =
+  let result () =
     let open Lwt_result.Syntax in
     let* params =
       HttpUtils.urlencoded_to_params
@@ -160,7 +174,10 @@ let reset_password_post req =
       [ Message.set ~success:[ Pool_common.Message.PasswordReset ] ]
     |> Lwt_result.ok
   in
-  HttpUtils.extract_happy_path result
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let logout _ =

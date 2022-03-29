@@ -103,7 +103,7 @@ end
 module PromoteToOperator : sig
   val handle
     :  Admin.any_person
-    -> (Pool_event.t list, Pool_common.Message.t) result
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> bool Lwt.t
 end = struct
@@ -117,8 +117,7 @@ end = struct
     | Any (Experimenter _ as p) -> event (fun m -> ExperimenterEvents m) p
     | Any (LocationManager _ as p) -> event (fun m -> LocationManagerEvents m) p
     | Any (Recruiter _ as p) -> event (fun m -> RecruiterEvents m) p
-    | Any (Operator _) ->
-      Error Pool_common.Message.(ErrorM (AlreadyExists Operator))
+    | Any (Operator _) -> Error Pool_common.Message.(AlreadyExists Operator)
   ;;
 
   let can user =

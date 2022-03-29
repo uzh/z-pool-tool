@@ -20,11 +20,9 @@ let update req command success_message =
         ; "icon", tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value
         ]
         req
-      |=> Message.Message.errorm
     in
     let* logo_files =
       File.upload_files (Pool_tenant.LogoMapping.LogoType.all ()) req
-      |=> Message.Message.errorm
     in
     let events_list urlencoded =
       let open CCResult.Infix in
@@ -50,11 +48,11 @@ let update req command success_message =
   in
   id
   |> Pool_tenant.find_full
-  |=> Message.Message.errorm
   >>= events
-  |> Lwt_result.map_err (fun err -> err, redirect_path)
+  |=> (fun err -> err, redirect_path)
   |>> handle
   |>> return_to_overview
+  |=> CCPair.map_fst Common.Message.errorm
   >|> HttpUtils.extract_happy_path
 ;;
 
@@ -67,13 +65,14 @@ let update_database req =
 ;;
 
 let delete_asset req =
+  let open Utils.Lwt_result.Infix in
   let open Sihl.Web in
   let asset_id = Router.param req "asset_id" |> Common.Id.of_string in
   let tenant_id = Router.param req "tenant_id" |> Common.Id.of_string in
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
@@ -93,11 +92,13 @@ let delete_asset req =
     in
     tenant_id
     |> Pool_tenant.find
-    |=> Message.Message.errorm
     >>= event
     |>> handle
     |>> destroy_file
     |>> return_to_tenant
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;

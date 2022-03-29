@@ -1,8 +1,10 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Common = Pool_common
 
 let show req =
-  let%lwt result =
+  let open Utils.Lwt_result.Infix in
+  let result () =
     Lwt_result.map_err (fun err -> err, "/")
     @@
     let open Lwt_result.Syntax in
@@ -32,7 +34,10 @@ let show req =
     |> Sihl.Web.Response.of_html
     |> Lwt.return_ok
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;
 
 let update_settings req =
@@ -40,7 +45,7 @@ let update_settings req =
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
   let redirect_path = "/admin/settings" in
-  let%lwt result =
+  let result () =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Lwt_result.Syntax in
@@ -92,5 +97,8 @@ let update_settings req =
     in
     () |> events |>> handle |>> return_to_settings
   in
-  result |> HttpUtils.extract_happy_path
+  ()
+  |> result
+  |=> CCPair.map_fst Common.Message.errorm
+  >|> HttpUtils.extract_happy_path
 ;;

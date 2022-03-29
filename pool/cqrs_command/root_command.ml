@@ -13,9 +13,12 @@ module Create : sig
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:(string -> (unit, string) result)
     -> t
-    -> (Pool_event.t list, Pool_common.Message.t) result
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Pool_common.Message.t) result
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -43,13 +46,9 @@ end = struct
 
   let handle ?allowed_email_suffixes ?password_policy command =
     let open CCResult in
-    let* () =
-      User.Password.validate ?password_policy command.password
-      |> map_err Pool_common.Message.errorm
-    in
+    let* () = User.Password.validate ?password_policy command.password in
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
-      |> map_err Pool_common.Message.errorm
     in
     let admin : Root.create =
       Root.
@@ -64,7 +63,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err (fun e -> Pool_common.Message.(ErrorM (Conformist e)))
+    |> CCResult.map_err (fun e -> Pool_common.Message.(Conformist e))
   ;;
 
   let can user _ =
