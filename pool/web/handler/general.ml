@@ -9,7 +9,8 @@ let dashboard_path tenant_db user =
 let create_tenant_layout
     layout_context
     req
-    Pool_context.{ language; message; _ }
+    ?active_navigation
+    Pool_context.{ language; query_language; message; _ }
     children
   =
   let open Lwt_result.Syntax in
@@ -20,5 +21,7 @@ let create_tenant_layout
     tenant_context
     message
     language
+    query_language
+    active_navigation
   |> Lwt_result.return
 ;;

@@ -35,6 +35,22 @@ let footer title =
     [ p [ txt title ] ]
 ;;
 
+let build_nav_link (url, title) language query_language active_navigation =
+  let txt_to_string m =
+    Pool_common.Utils.nav_link_to_string language m |> txt
+  in
+  let nav_link =
+    a
+      ~a:[ a_href (Http_utils.externalize_path_with_lang query_language url) ]
+      [ txt_to_string title ]
+  in
+  active_navigation
+  |> CCOption.map_or ~default:nav_link (fun active ->
+         if CCString.equal active url
+         then span [ txt_to_string title ]
+         else nav_link)
+;;
+
 module Tenant = struct
   let i18n_links tenant_languages active_lang =
     div
@@ -61,24 +77,19 @@ module Tenant = struct
          tenant_languages)
   ;;
 
-  (* TODO[timhub]: * disable active page * differ between login status *)
-  let navigation layout_context language =
-    let open Pool_common.I18n in
-    let build_nav_link (url, title) =
-      let txt_to_string m =
-        Pool_common.Utils.nav_link_to_string language m |> txt
-      in
-      a ~a:[ a_href url ] [ txt_to_string title ]
-    in
+  (* TODO[timhub]: * differ between login status *)
+  let navigation layout_context language query_language active_navigation =
     let nav_links =
+      let open Pool_common.I18n in
       (match layout_context with
-      | `Participant -> []
+      | `Participant -> [ "/user", Profile ]
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
-      |> CCList.map build_nav_link
+      |> CCList.map (fun item ->
+             build_nav_link item language query_language active_navigation)
     in
     nav nav_links
   ;;
@@ -89,6 +100,8 @@ module Tenant = struct
       Pool_context.Tenant.{ tenant_languages; tenant }
       message
       active_lang
+      query_language
+      active_navigation
     =
     let title_text = Pool_tenant.(Title.value tenant.title) in
     let page_title =
@@ -107,9 +120,13 @@ module Tenant = struct
         (txt "")
     in
     let header_content =
-      let navigation = navigation layout_context active_lang in
+      let navigation =
+        navigation layout_context active_lang query_language active_navigation
+      in
+      (fun html -> [ div ~a:[ a_class [ "flex-box"; "flex--row" ] ] html ])
+      @@
       match layout_context with
-      | `Admin -> [ navigation ]
+      | `Admin -> [ div [ navigation ] ]
       | `Participant -> [ navigation; i18n_links tenant_languages active_lang ]
     in
     let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
@@ -126,7 +143,17 @@ module Tenant = struct
   ;;
 end
 
-let create_root_layout children message lang =
+let create_root_layout children message lang ?active_navigation () =
+  (* TODO[timhub]: * differ between login status *)
+  let navigation =
+    let nav_links =
+      let open Pool_common.I18n in
+      [ "/root/tenants", Tenants ]
+      |> CCList.map (fun item ->
+             build_nav_link item Pool_common.Language.En None active_navigation)
+    in
+    nav nav_links
+  in
   let title_text = "Pool Tool" in
   let page_title = title (txt title_text) in
   let message = Message.create message lang () in
@@ -138,5 +165,10 @@ let create_root_layout children message lang =
   let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
   html
     (head page_title [ charset; viewport; global_stylesheet; favicon ])
-    (body [ header title_text (); content; footer title_text; scripts ])
+    (body
+       [ header title_text ~children:[ navigation ] ()
+       ; content
+       ; footer title_text
+       ; scripts
+       ])
 ;;

@@ -23,5 +23,7 @@ let to_string = function
 let nav_link_to_string = function
   | Dashboard -> "Dashboard"
   | I18n -> "Übersetzungen"
+  | Profile -> "Profil"
   | Settings -> "Einstellungen"
+  | Tenants -> "Tenants"
 ;;

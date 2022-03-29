@@ -18,4 +18,6 @@ type t =
 type nav_link =
   | Dashboard
   | I18n
+  | Profile
   | Settings
+  | Tenants

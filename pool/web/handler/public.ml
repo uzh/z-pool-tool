@@ -124,7 +124,7 @@ let error req =
     ( Common.Message.TerminatoryTenantErrorTitle
     , Common.Message.TerminatoryTenantError )
     |> error_page
-    |> General.create_tenant_layout `Participant req context None
+    |> General.create_tenant_layout `Participant req context
   in
   (match tenant_error with
   | Ok tenant_error -> tenant_error
@@ -133,7 +133,7 @@ let error req =
     , Common.Message.TerminatoryRootError )
     |> error_page
     |> fun html ->
-    Page.Layout.create_root_layout html None Pool_common.Language.En)
+    Page.Layout.create_root_layout html None Pool_common.Language.En ())
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

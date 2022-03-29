@@ -6,7 +6,7 @@ let from_root_only () =
     | true -> handler req
     | false ->
       let html = Page.Utils.error_page_not_found language () in
-      Page.Layout.create_root_layout html None language
+      Page.Layout.create_root_layout html None language ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return
   in
