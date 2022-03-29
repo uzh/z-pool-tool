@@ -68,7 +68,6 @@ let index_css req =
          (Sihl.Web.Response.of_plain_text ""))
 ;;
 
-(* TODO[timhub]: Layout? *)
 let email_confirmation_note req =
   let result context =
     let open Lwt_result.Infix in
@@ -114,34 +113,27 @@ let asset req =
 ;;
 
 let error req =
-  (* TODO[timhub]: How to build this page? This is the error path of the context
-     middleware
-
-     * Create separate error handles for root and tenant? *)
+  let error_page (title, note) =
+    Page.Utils.error_page_terminatory title note ()
+  in
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* context = Pool_context.find req |> Lwt_result.lift in
     let tenant_db = context.Pool_context.tenant_db in
     let* _ = Pool_tenant.find_by_label tenant_db in
-    Ok
-      ( Common.Message.TerminatoryTenantErrorTitle
-      , Common.Message.TerminatoryTenantError )
-    |> Lwt.return
+    ( Common.Message.TerminatoryTenantErrorTitle
+    , Common.Message.TerminatoryTenantError )
+    |> error_page
+    |> General.create_tenant_layout `Participant req context None
   in
-  let root_error =
+  (match tenant_error with
+  | Ok tenant_error -> tenant_error
+  | Error _ ->
     ( Common.Message.TerminatoryRootErrorTitle
     , Common.Message.TerminatoryRootError )
-  in
-  let error_page (title, note) =
-    Page.Utils.error_page_terminatory title note ()
-  in
-  let html =
-    (match tenant_error with
-    | Ok tenant_error -> tenant_error
-    | Error _ -> root_error)
     |> error_page
-  in
-  Page.Layout.create_root_layout html None Pool_common.Language.En
+    |> fun html ->
+    Page.Layout.create_root_layout html None Pool_common.Language.En)
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
