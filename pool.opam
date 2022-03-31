@@ -27,7 +27,8 @@ depends: [
   "logs" {>= "0.7.0"}
   "containers" {>= "3.6"}
   "mariadb" {= "1.1.4"}
-  "caqti-driver-mariadb" {>= "1.6.0"}
+  "caqti-driver-mariadb" {>= "1.8.0"}
+  "caqti" {>= "1.8.0"}
   "ocamlformat" {>= "0.18.0"}
   "ppx_deriving" {>= "5.2.1"}
   "ppx_yojson_conv" {>= "0.14.0"}
