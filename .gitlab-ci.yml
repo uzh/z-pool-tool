@@ -76,6 +76,11 @@ variables:
   SMTP_START_TLS: "true"
   SMTP_USERNAME: ecserv
   VERSION: ${CI_COMMIT_TAG} # set to "latest" in docker tasks by default
+  # all needed for exception notifier
+  CI_JOB_TOKEN: ${ECON_CI_JOB_TOKEN}
+  CI_API_V4_URL: ${ECON_CI_API_V4_URL}
+  CI_PROJECT_ID: ${ECON_CI_PROJECT_ID}
+  CI_PROJECT_NAME: ${ECON_CI_PROJECT_NAME}
 
 stages:
   - test
