@@ -14,7 +14,7 @@ let create_participant_table =
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
       UNIQUE KEY `unique_uuid` (`user_uuid`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;
 
@@ -25,7 +25,7 @@ let add_field_versioning =
      ALTER TABLE pool_participants
      ADD COLUMN firstname_version bigint(20) NOT NULL DEFAULT 0 AFTER verified,
      ADD COLUMN lastname_version bigint(20) NOT NULL DEFAULT 0 AFTER firstname_version,
-     ADD COLUMN paused_version bigint(20) NOT NULL DEFAULT 0 AFTER lastname_version;
+     ADD COLUMN paused_version bigint(20) NOT NULL DEFAULT 0 AFTER lastname_version
     |sql}
 ;;
 
@@ -34,7 +34,7 @@ let add_user_language =
     ~label:"add field versioning for participants"
     {sql|
      ALTER TABLE pool_participants
-     ADD COLUMN language varchar(128) AFTER terms_accepted_at;
+     ADD COLUMN language varchar(128) AFTER terms_accepted_at
     |sql}
 ;;
 
@@ -43,7 +43,7 @@ let add_user_language_version =
     ~label:"add field versioning for participant language"
     {sql|
      ALTER TABLE pool_participants
-     ADD COLUMN language_version bigint(20) NOT NULL DEFAULT 0 AFTER paused_version;
+     ADD COLUMN language_version bigint(20) NOT NULL DEFAULT 0 AFTER paused_version
     |sql}
 ;;
 
