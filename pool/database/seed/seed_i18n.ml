@@ -84,40 +84,23 @@ let i18n db_pool () =
     ]
   in
   let%lwt () =
-    Lwt_list.iter_s
-      (fun (key, data) ->
-        let%lwt result =
-          let open Utils.Lwt_result.Infix in
-          let run_command () =
-            Lwt_result.lift
-            @@
-            let open CCResult.Infix in
-            CCList.map
-              (fun (language, content) ->
-                Cqrs_command.I18n_command.Create.decode
-                  [ "key", [ key ]
-                  ; "language", [ language ]
-                  ; "content", [ content ]
-                  ]
-                >>= Cqrs_command.I18n_command.Create.handle)
-              data
-            |> CCList.all_ok
-            >|= CCList.flatten
-          in
-          let run_events events =
-            let%lwt _ =
-              Lwt_list.map_s (Pool_event.handle_event db_pool) events
-            in
-            Lwt.return_ok ()
-          in
-          () |> run_command >>= run_events
-        in
-        match result with
-        | Ok _ -> Lwt.return_unit
-        | Error err ->
-          print_endline (Pool_common.Message.show_error err);
-          Lwt.return_unit)
+    let open CCResult.Infix in
+    let all_ok_flatten m = m |> CCList.all_ok >|= CCList.flatten in
+    CCList.map
+      (fun (key, data) : (Pool_event.t list, Pool_common.Message.error) result ->
+        let open Cqrs_command.I18n_command.Create in
+        CCList.map
+          (fun (language, content) ->
+            [ "key", [ key ]; "language", [ language ]; "content", [ content ] ]
+            |> decode
+            >>= handle)
+          data
+        |> all_ok_flatten)
       data
+    |> all_ok_flatten
+    |> function
+    | Ok events -> Lwt_list.iter_s (Pool_event.handle_event db_pool) events
+    | Error err -> failwith Pool_common.(Utils.error_to_string Language.En err)
   in
   Lwt.return_unit
 ;;
