@@ -130,6 +130,7 @@ compile-and-test:
 
     # pin custom libraries hosted on the UZH gitlab
     - opam pin add -yn canary https://github.com/chrismamo1/canary.git
+    - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
 
     # pin payout and install system dependencies
     - opam pin add -yn pool .
