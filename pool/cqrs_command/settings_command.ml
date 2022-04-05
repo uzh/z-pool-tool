@@ -286,3 +286,69 @@ end = struct
 
   let can = Utils.todo
 end
+
+module RestoreDefault : sig
+  type t = Pool_tenant.t
+
+  val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Pool_tenant.t
+
+  module Default = struct
+    open Settings
+
+    let languages = Pool_common.Language.[ En; De ]
+
+    let email_suffix =
+      CCList.map
+        (fun m -> m |> EmailSuffix.create |> CCResult.get_exn)
+        [ "econ.uzh.ch"; "uzh.ch" ]
+    ;;
+
+    let contact_email =
+      ContactEmail.create "pool@econ.uzh.ch" |> CCResult.get_exn
+    ;;
+
+    let inactive_user_disable_after =
+      InactiveUser.DisableAfter.create "5" |> CCResult.get_exn
+    ;;
+
+    let inactive_user_warning =
+      InactiveUser.Warning.create "7" |> CCResult.get_exn
+    ;;
+
+    let terms_and_conditions =
+      [ "EN", "Please update the terms and conditions in the tenant settings!"
+      ; ( "DE"
+        , "Die Nutzungsbedingungen können in den Tenant Einstellungen \
+           angepasst werden." )
+      ]
+      |> CCList.map (fun (language, text) ->
+             TermsAndConditions.create language text |> CCResult.get_exn)
+    ;;
+  end
+
+  let handle () =
+    let open Default in
+    Ok
+      [ Settings.DefaultRestored
+          ( languages
+          , email_suffix
+          , contact_email
+          , inactive_user_disable_after
+          , inactive_user_warning
+          , terms_and_conditions )
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let can user command =
+    Permission.can
+      user
+      ~any_of:
+        [ Permission.Destroy
+            (Permission.Tenant, Some (command |> Pool_tenant.id))
+        ]
+  ;;
+end

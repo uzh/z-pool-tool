@@ -112,6 +112,13 @@ type event =
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | TermsAndConditionsUpdated of TermsAndConditions.t list
+  | DefaultRestored of
+      Pool_common.Language.t list
+      * EmailSuffix.t list
+      * ContactEmail.t
+      * InactiveUser.DisableAfter.t
+      * InactiveUser.Warning.t
+      * TermsAndConditions.t list
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

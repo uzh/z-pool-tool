@@ -47,6 +47,43 @@ module Sql = struct
   let update pool =
     Utils.Database.exec (Database.Label.value pool) update_request
   ;;
+
+  let insert_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_system_settings (
+        uuid,
+        settings_key,
+        value,
+        created_at,
+        updated_at
+      ) VALUES (
+        UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
+        ?,
+        ?
+      )
+    |sql}
+    |> Caqti_type.(tup2 Pool_common.Repo.Id.t RepoEntity.t ->. unit)
+  ;;
+
+  let insert pool =
+    Utils.Database.exec (Database.Label.value pool) insert_request
+  ;;
+
+  let delete_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_system_settings
+      WHERE settings_key = ?
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let delete pool =
+    Utils.Database.exec (Database.Label.value pool) delete_request
+  ;;
 end
 
 let find_languages pool = Sql.find pool RepoEntity.t Entity.Languages
@@ -66,3 +103,17 @@ let find_terms_and_conditions pool =
 ;;
 
 let update pool value = Sql.update pool Entity.Write.{ value }
+
+let insert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
+  Sql.insert
+    pool
+    ( id |> Pool_common.Id.value
+    , { Entity.value
+      ; created_at = Pool_common.CreatedAt.create ()
+      ; updated_at = Pool_common.UpdatedAt.create ()
+      } )
+;;
+
+let delete pool key =
+  Sql.delete pool (key |> Entity.yojson_of_setting_key |> Yojson.Safe.to_string)
+;;

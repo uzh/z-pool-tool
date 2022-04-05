@@ -199,6 +199,8 @@ type t =
   }
 [@@deriving eq, show, sexp_of]
 
+let id { id; _ } = id
+
 module Read = struct
   type t =
     { id : Id.t
