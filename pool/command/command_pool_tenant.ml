@@ -19,11 +19,11 @@ let create_tenant_pool =
         <smtp_auth_username>                : string
         <smtp_auth_password>                : string
         <smtp_auth_authentication_method>   : string
-        <smtp_auth_protocol>                : 'STARTTLS' | 'SSL/TLS'
+        <smtp_auth_protocol>                : 'STARTTLS' | 'SSL/TLS'
         <styles>                            : string
         <icon>                              : string
         <logos>                             : string
-        <default_language>                  : 'DE' | 'EN'
+        <default_language>                  : 'DE' | 'EN'
         <operator_email>                    : string
         <operator_password>                 : string
         <operator_firstname>                : string
