@@ -197,4 +197,6 @@ module Utils : sig
     :  ('a -> Message.error)
     -> ('b, 'a) result
     -> ('b, 'a) result
+
+  val get_or_failwith : ('a, Message.error) result -> 'a
 end
