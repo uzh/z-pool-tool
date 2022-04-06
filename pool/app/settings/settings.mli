@@ -73,6 +73,15 @@ module TermsAndConditions : sig
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
+module Default : sig
+  val languages : Pool_common.Language.t list
+  val email_suffix : EmailSuffix.t list
+  val contact_email : ContactEmail.t
+  val inactive_user_disable_after : InactiveUser.DisableAfter.t
+  val inactive_user_warning : InactiveUser.Warning.t
+  val terms_and_conditions : TermsAndConditions.t list
+end
+
 module Value : sig
   type t
 end

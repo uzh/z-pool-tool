@@ -1,5 +1,6 @@
 include Entity
 include Event
+module Default = Default
 
 let[@warning "-4"] find_languages pool =
   let open Utils.Lwt_result.Infix in

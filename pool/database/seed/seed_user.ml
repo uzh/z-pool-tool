@@ -1,11 +1,7 @@
 module User = Pool_user
 module Id = Pool_common.Id
 
-let get_or_failwith_pool_error m =
-  m
-  |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-  |> CCResult.get_or_failwith
-;;
+let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let admins db_pool () =
   let data =
@@ -146,19 +142,12 @@ let participants db_pool () =
             email
         in
         let%lwt () =
-          let address =
-            User.EmailAddress.create email |> get_or_failwith_pool_error
-          in
-          let firstname =
-            User.Firstname.create given_name |> get_or_failwith_pool_error
-          in
-          let lastname =
-            User.Lastname.create name |> get_or_failwith_pool_error
-          in
+          let address = User.EmailAddress.create email |> get_or_failwith in
+          let firstname = User.Firstname.create given_name |> get_or_failwith in
+          let lastname = User.Lastname.create name |> get_or_failwith in
           let%lwt () =
             Email.Created (address, user_id, firstname, lastname)
-            |> Pool_event.email_address
-            |> Pool_event.handle_event db_pool
+            |> Email.handle_event db_pool
           in
           if CCOption.is_some verified
           then (
@@ -167,11 +156,9 @@ let participants db_pool () =
             in
             let%lwt unverified =
               Email.find_unverified_by_user db_pool user_id
-              |> Lwt.map get_or_failwith_pool_error
+              |> Lwt.map get_or_failwith
             in
-            Email.EmailVerified unverified
-            |> Pool_event.email_address
-            |> Pool_event.handle_event db_pool)
+            Email.(EmailVerified unverified |> handle_event db_pool))
           else Lwt.return_unit
         in
         Participant.

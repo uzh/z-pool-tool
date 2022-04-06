@@ -73,7 +73,7 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
 ;;
 
-let[@warning "-4"] equal_event event1 event2 =
+let equal_event event1 event2 =
   match event1, event2 with
   | LanguagesUpdated one, LanguagesUpdated two ->
     Value.equal_tenant_languages one two
@@ -95,7 +95,14 @@ let[@warning "-4"] equal_event event1 event2 =
     && Value.equal_inactive_user_disable_after one_d two_d
     && Value.equal_inactive_user_warning one_e two_e
     && Value.equal_terms_and_conditions one_f two_f
-  | _ -> false
+  | ( ( LanguagesUpdated _
+      | EmailSuffixesUpdated _
+      | ContactEmailUpdated _
+      | InactiveUserDisableAfterUpdated _
+      | InactiveUserWarningUpdated _
+      | TermsAndConditionsUpdated _
+      | DefaultRestored _ )
+    , _ ) -> false
 ;;
 
 let pp_event formatter event =

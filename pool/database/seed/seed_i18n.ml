@@ -1,3 +1,7 @@
+module Language = Pool_common.Language
+
+let get_or_failwith = Pool_common.Utils.get_or_failwith
+
 let i18n db_pool () =
   let data : (string * (string * string) list) list =
     [ ( "confirmation_subject"
@@ -84,23 +88,18 @@ let i18n db_pool () =
     ]
   in
   let%lwt () =
-    let open CCResult.Infix in
-    let all_ok_flatten m = m |> CCList.all_ok >|= CCList.flatten in
     CCList.map
-      (fun (key, data) : (Pool_event.t list, Pool_common.Message.error) result ->
-        let open Cqrs_command.I18n_command.Create in
+      (fun (key, data) ->
+        let key = key |> I18n.Key.of_string |> get_or_failwith in
         CCList.map
           (fun (language, content) ->
-            [ "key", [ key ]; "language", [ language ]; "content", [ content ] ]
-            |> decode
-            >>= handle)
-          data
-        |> all_ok_flatten)
+            let language = language |> Language.of_string |> get_or_failwith in
+            let content = content |> I18n.Content.create |> get_or_failwith in
+            I18n.Created { I18n.key; language; content })
+          data)
       data
-    |> all_ok_flatten
-    |> function
-    | Ok events -> Lwt_list.iter_s (Pool_event.handle_event db_pool) events
-    | Error err -> failwith Pool_common.(Utils.error_to_string Language.En err)
+    |> CCList.flatten
+    |> Lwt_list.iter_s (I18n.handle_event db_pool)
   in
   Lwt.return_unit
 ;;

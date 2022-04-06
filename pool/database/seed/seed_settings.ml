@@ -1,7 +1,11 @@
 let create pool () =
-  ()
-  |> Cqrs_command.Settings_command.RestoreDefault.handle
-  |> function
-  | Ok events -> Lwt_list.iter_s (Pool_event.handle_event pool) events
-  | Error err -> failwith Pool_common.(Utils.error_to_string Language.En err)
+  let open Settings.Default in
+  Settings.DefaultRestored
+    ( languages
+    , email_suffix
+    , contact_email
+    , inactive_user_disable_after
+    , inactive_user_warning
+    , terms_and_conditions )
+  |> Settings.handle_event pool
 ;;

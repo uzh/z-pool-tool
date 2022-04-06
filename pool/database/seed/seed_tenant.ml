@@ -1,12 +1,7 @@
 module Assets = Seed_assets
 module File = Pool_common.File
 
-let print_error = function
-  | Ok _ -> Lwt.return_unit
-  | Error err ->
-    print_endline err;
-    Lwt.return_unit
-;;
+let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let create () =
   let styles = Assets.dummy_css () in
@@ -29,12 +24,6 @@ let create () =
         let%lwt _ = Service.Storage.upload_base64 stored_file base64 in
         Lwt.return_unit)
       [ styles; icon; tenant_logo; partner_logo ]
-  in
-  let logos =
-    let open Pool_tenant.LogoMapping.LogoType in
-    [ to_string TenantLogo, [ tenant_logo.Assets.id ]
-    ; to_string PartnerLogo, [ partner_logo.Assets.id ]
-    ]
   in
   let data =
     if Sihl.Configuration.is_test ()
@@ -63,11 +52,7 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "EN"
-        , "operator@econ.uzh.ch"
-        , "adminadmin"
-        , "Test"
-        , "Operator" )
+        , "EN" )
       ])
     else
       [ ( "Econ uzh"
@@ -83,11 +68,7 @@ let create () =
         , "STARTTLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "EN"
-        , "operator@econ.uzh.ch"
-        , "adminadmin"
-        , "DJ"
-        , "Ötzi" )
+        , "EN" )
       ; ( "ZHAW"
         , "description"
         , "pool.zhaw.ch"
@@ -101,11 +82,7 @@ let create () =
         , "SSL/TLS"
         , styles.Assets.id
         , icon.Assets.id
-        , "DE"
-        , "operator@zhaw.ch"
-        , "adminadmin"
-        , "Woofy"
-        , "Woofer" )
+        , "DE" )
       ]
   in
   let%lwt () =
@@ -123,41 +100,44 @@ let create () =
            , smtp_auth_protocol
            , styles
            , icon
-           , default_language
-           , email
-           , password
-           , firstname
-           , lastname ) ->
-        let open CCResult.Infix in
-        let open Cqrs_command.Pool_tenant_command.Create in
-        logos
-        @ [ "title", [ title ]
-          ; "description", [ description ]
-          ; "url", [ url ]
-          ; "database_url", [ database_url ]
-          ; "database_label", [ database_label ]
-          ; "smtp_auth_server", [ smtp_auth_server ]
-          ; "smtp_auth_port", [ smtp_auth_port ]
-          ; "smtp_auth_username", [ smtp_auth_username ]
-          ; "smtp_auth_password", [ smtp_auth_password ]
-          ; ( "smtp_auth_authentication_method"
-            , [ smtp_auth_authentication_method ] )
-          ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-          ; "styles", [ styles ]
-          ; "icon", [ icon ]
-          ; "language", [ default_language ]
-          ; "email", [ email ]
-          ; "password", [ password ]
-          ; "firstname", [ firstname ]
-          ; "lastname", [ lastname ]
+           , default_language ) ->
+        let tenant =
+          Pool_tenant.(
+            Write.create
+              (Title.create title |> get_or_failwith)
+              (Description.create description |> get_or_failwith)
+              (Url.create url |> get_or_failwith)
+              (Pool_tenant.Database.create database_url database_label
+              |> get_or_failwith)
+              SmtpAuth.(
+                Write.create
+                  (Server.create smtp_auth_server |> get_or_failwith)
+                  (Port.create smtp_auth_port |> get_or_failwith)
+                  (Username.create smtp_auth_username |> get_or_failwith)
+                  (Password.create smtp_auth_password |> get_or_failwith)
+                  (AuthenticationMethod.create smtp_auth_authentication_method
+                  |> get_or_failwith)
+                  (Protocol.create smtp_auth_protocol |> get_or_failwith)
+                |> get_or_failwith)
+              (Styles.Write.create styles |> get_or_failwith)
+              (Icon.Write.create icon |> get_or_failwith)
+              (Pool_common.Language.of_string default_language
+              |> get_or_failwith))
+        in
+        let logo_mappings =
+          let open Pool_tenant.LogoMapping in
+          [ LogoType.TenantLogo, tenant_logo.Assets.id
+          ; LogoType.PartnerLogo, partner_logo.Assets.id
           ]
-        |> decode
-        >>= handle
-        |> function
-        | Ok events ->
-          Lwt_list.iter_s (Pool_event.handle_event Pool_database.root) events
-        | Error err ->
-          failwith Pool_common.(Utils.error_to_string Language.En err))
+          |> CCList.map (fun (logo_type, asset_id) ->
+                 { Write.id = Pool_common.Id.create ()
+                 ; tenant_id = tenant.Pool_tenant.Write.id
+                 ; asset_id = Pool_common.Id.of_string asset_id
+                 ; logo_type
+                 })
+        in
+        [ Pool_tenant.Created tenant; Pool_tenant.LogosUploaded logo_mappings ]
+        |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))
       data
   in
   Lwt.return_unit
