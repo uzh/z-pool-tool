@@ -295,42 +295,8 @@ module RestoreDefault : sig
 end = struct
   type t = Pool_tenant.t
 
-  module Default = struct
-    open Settings
-
-    let languages = Pool_common.Language.[ En; De ]
-
-    let email_suffix =
-      CCList.map
-        (fun m -> m |> EmailSuffix.create |> CCResult.get_exn)
-        [ "econ.uzh.ch"; "uzh.ch" ]
-    ;;
-
-    let contact_email =
-      ContactEmail.create "pool@econ.uzh.ch" |> CCResult.get_exn
-    ;;
-
-    let inactive_user_disable_after =
-      InactiveUser.DisableAfter.create "5" |> CCResult.get_exn
-    ;;
-
-    let inactive_user_warning =
-      InactiveUser.Warning.create "7" |> CCResult.get_exn
-    ;;
-
-    let terms_and_conditions =
-      [ "EN", "Please update the terms and conditions in the tenant settings!"
-      ; ( "DE"
-        , "Die Nutzungsbedingungen können in den Tenant Einstellungen \
-           angepasst werden." )
-      ]
-      |> CCList.map (fun (language, text) ->
-             TermsAndConditions.create language text |> CCResult.get_exn)
-    ;;
-  end
-
   let handle () =
-    let open Default in
+    let open Settings.Default in
     Ok
       [ Settings.DefaultRestored
           ( languages
