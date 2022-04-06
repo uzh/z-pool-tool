@@ -147,7 +147,8 @@ let[@warning "-4"] create_tenant () =
       , created_at
       , updated_at
       , (logo_id, logo_asset_id)
-      , (partner_logo_id, partner_logo_asset_id) )
+      , (partner_logo_id, partner_logo_asset_id)
+      , database_label )
     =
     (* Read Ids and timestamps to create an equal event list *)
     events
@@ -157,6 +158,7 @@ let[@warning "-4"] create_tenant () =
           Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
       ; Pool_event.PoolTenant
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
+      ; Pool_event.Database (Database.Migrated database_label)
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
@@ -165,20 +167,18 @@ let[@warning "-4"] create_tenant () =
       , created_at
       , updated_at
       , tenant_logo |> read_ids
-      , partner_logo |> read_ids )
+      , partner_logo |> read_ids
+      , database_label )
     | _ -> failwith "Tenant create events don't match in test."
   in
   let expected =
-    let open Pool_tenant in
     let open CCResult in
     let* title = title |> Pool_tenant.Title.create in
     let* description = description |> Pool_tenant.Description.create in
     let* url = url |> Pool_tenant.Url.create in
-    let* database =
-      let open Pool_database in
-      let* url = database_url |> Url.create in
-      let* label = database_label |> Label.create in
-      Ok { url; label }
+    let* (database : Pool_database.t) =
+      let* url = database_url |> Pool_tenant.Database.Url.create in
+      Ok Pool_database.{ url; label = database_label }
     in
     let* smtp_auth =
       let open Pool_tenant.SmtpAuth in
@@ -205,8 +205,8 @@ let[@warning "-4"] create_tenant () =
         ; smtp_auth
         ; styles
         ; icon
-        ; maintenance = Maintenance.create false
-        ; disabled = Disabled.create false
+        ; maintenance = Pool_tenant.Maintenance.create false
+        ; disabled = Pool_tenant.Disabled.create false
         ; default_language
         ; created_at
         ; updated_at
@@ -229,6 +229,7 @@ let[@warning "-4"] create_tenant () =
     Ok
       [ Pool_tenant.Created create |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
+      ; Database.Migrated database_label |> Pool_event.database
       ]
   in
   Alcotest.(
