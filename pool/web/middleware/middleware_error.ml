@@ -43,7 +43,8 @@ let reporter =
       let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
       (match res with
       | Ok iid ->
-        Logs.info (fun m -> m "Successfully reported error to gitlab.");
+        Logs.info (fun m ->
+            m "Successfully reported error to gitlab as issue %d." iid);
         Lwt.return_ok iid
       | Error err ->
         Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
