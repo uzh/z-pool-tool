@@ -123,13 +123,16 @@ end = struct
   ;;
 
   let handle (command : t) =
+    let database =
+      Pool_database.
+        { url = command.database_url; label = command.database_label }
+    in
     let tenant =
       Pool_tenant.Write.create
         command.title
         command.description
         command.url
-        Pool_database.
-          { url = command.database_url; label = command.database_label }
+        database
         Pool_tenant.SmtpAuth.Write.
           { server = command.smtp_auth_server
           ; port = command.smtp_auth_port
@@ -154,6 +157,7 @@ end = struct
     Ok
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
+      ; Database.Added database |> Pool_event.database
       ; Database.Migrated command.database_label |> Pool_event.database
       ]
   ;;

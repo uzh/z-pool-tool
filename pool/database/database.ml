@@ -90,9 +90,14 @@ module Tenant = struct
   ;;
 end
 
-type event = Migrated of Pool_database.Label.t
+type event =
+  | Added of Pool_database.t
+  | Migrated of Pool_database.Label.t
 
 let handle_event _ : event -> unit Lwt.t = function
+  | Added pool ->
+    Pool_database.add_pool pool;
+    Lwt.return_unit
   | Migrated label ->
     let%lwt () =
       match Pool_database.Label.equal Pool_database.root label with
@@ -104,11 +109,14 @@ let handle_event _ : event -> unit Lwt.t = function
 
 let equal_event event1 event2 =
   match event1, event2 with
+  | Added one, Added two -> Pool_database.equal one two
   | Migrated label1, Migrated label2 -> Pool_database.Label.equal label1 label2
+  | (Added _ | Migrated _), _ -> false
 ;;
 
 let pp_event formatter event =
   match event with
+  | Added m -> Pool_database.pp formatter m
   | Migrated m -> Pool_database.Label.pp formatter m
 ;;
 
