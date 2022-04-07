@@ -1,69 +1,80 @@
+let pp m fmt _ = Format.pp_print_string fmt m
+
 type field =
-  | Admin
-  | ContactEmail
-  | CurrentPassword
-  | Database
-  | DatabaseLabel
-  | DatabaseUrl
-  | DefaultLanguage
-  | Description
-  | Email
-  | EmailAddress
-  | EmailSuffix
-  | EmailAddressUnverified
-  | EmailAddressVerified
-  | File
-  | FileMimeType
-  | Filename
-  | Filesize
-  | Firstname
-  | Host
-  | I18n
-  | Icon
-  | InactiveUserDisableAfter
-  | InactiveUserWarning
-  | Key
-  | Language
-  | LanguageDe
-  | LanguageEn
-  | Lastname
-  | LogoType
-  | NewPassword
-  | Operator
-  | Page
-  | Participant
-  | Password
-  | PasswordConfirmation
-  | Paused
-  | RecruitmentChannel
-  | Role
-  | Root
-  | Setting
-  | SmtpAuthMethod
-  | SmtpAuthServer
-  | SmtpPassword
-  | SmtpPort
-  | SmtpProtocol
-  | SmtpReadModel
-  | SmtpWriteModel
-  | SmtpUsername
-  | Styles
-  | Tenant
-  | TenantDisabledFlag
-  | TenantLogos
-  | TenantMaintenanceFlag
-  | TenantPool
-  | TermsAndConditions
-  | TimeSpan
-  | Title
-  | Translation
-  | Token
-  | Url
-  | User
+  | Admin [@name "admin"]
+  | ContactEmail [@name "contact_email"] [@printer pp "contact_email"]
+  | CurrentPassword [@name "current_password"] [@printer pp "current_password"]
+  | Database [@name "database"]
+  | DatabaseLabel [@name "database_label"] [@printer pp "database_label"]
+  | DatabaseUrl [@name "database_url"] [@printer pp "database_url"]
+  | DefaultLanguage [@name "default_language"] [@printer pp "default_language"]
+  | Description [@name "description"]
+  | Email [@name "email"]
+  | EmailAddress [@name "email_address"] [@printer pp "email_address"]
+  | EmailSuffix [@name "email_suffix"] [@printer pp "email_suffix"]
+  | EmailAddressUnverified [@name "email_address_unverified"]
+      [@printer pp "email_address_unverified"]
+  | EmailAddressVerified [@name "email_address_verified"]
+      [@printer pp "email_address_verified"]
+  | File [@name "file"]
+  | FileMimeType [@name "file_mime_type"] [@printer pp "file_mime_type"]
+  | Filename [@name "filename"]
+  | Filesize [@name "filesize"]
+  | Firstname [@name "firstname"]
+  | Host [@name "host"]
+  | I18n [@name "i18n"]
+  | Icon [@name "icon"]
+  | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
+      [@printer pp "inactive_user_disable_after"]
+  | InactiveUserWarning [@name "inactive_user_warning"]
+      [@printer pp "inactive_user_warning"]
+  | Key [@name "key"]
+  | Language [@name "language"]
+  | LanguageDe [@name "language_de"] [@printer pp "language_de"]
+  | LanguageEn [@name "language_en"] [@printer pp "language_en"]
+  | Lastname [@name "lastname"]
+  | LogoType [@name "logotype"]
+  | NewPassword [@name "new_password"] [@printer pp "new_password"]
+  | Operator [@name "operator"]
+  | Page [@name "page"]
+  | Participant [@name "participant"]
+  | PartnerLogos [@name "partner_logos"] [@printer pp "partner_logos"]
+  | Password [@name "password"]
+  | PasswordConfirmation [@name "password_confirmation"]
+      [@printer pp "password_confirmation"]
+  | Paused [@name "paused"]
+  | RecruitmentChannel [@name "recruitment_channel"]
+      [@printer pp "recruitment_channel"]
+  | Role [@name "role"]
+  | Root [@name "root"]
+  | Setting [@name "setting"]
+  | SmtpAuthMethod [@name "smtp_auth_method"] [@printer pp "smtp_auth_method"]
+  | SmtpAuthServer [@name "smtp_auth_server"] [@printer pp "smtp_auth_server"]
+  | SmtpPassword [@name "smtp_password"] [@printer pp "smtp_password"]
+  | SmtpPort [@name "smtp_port"] [@printer pp "smtp_port"]
+  | SmtpProtocol [@name "smtp_protocol"] [@printer pp "smtp_protocol"]
+  | SmtpReadModel [@name "smtp_read_model"] [@printer pp "smtp_read_model"]
+  | SmtpWriteModel [@name "smtp_write_model"] [@printer pp "smtp_write_model"]
+  | SmtpUsername [@name "smtp_username"] [@printer pp "smtp_username"]
+  | Styles [@name "styles"]
+  | Tenant [@name "tenant"]
+  | TenantDisabledFlag [@name "tenant_disabled_flag"]
+      [@printer pp "tenant_disabled_flag"]
+  | TenantLogos [@name "tenant_logos"] [@printer pp "tenant_logos"]
+  | TenantMaintenanceFlag [@name "tenant_maintenance_flag"]
+      [@printer pp "tenant_maintenance_flag"]
+  | TenantPool [@name "tenant_pool"] [@printer pp "tenant_pool"]
+  | TermsAndConditions [@name "termsandconditions"]
+  | TimeSpan [@name "timespan"]
+  | Title [@name "title"]
+  | Translation [@name "translation"]
+  | Token [@name "token"]
+  | Url [@name "url"]
+  | User [@name "user"]
 [@@deriving eq, show { with_path = false }, yojson, variants]
 
 type error =
-  | Conformist of error list
+  | Conformist of (field * error) list
   | ConformistModuleErrorType
   | DecodeAction
   | Decode of field
@@ -156,8 +167,13 @@ type control =
   | Update of field option
 [@@deriving eq, show, yojson, variants]
 
+let read_to_field m =
+  m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> field_of_yojson
+;;
+
 let to_coformist_error error_list =
-  CCList.map (fun (_, _, msg) -> msg) error_list |> conformist
+  CCList.map (fun (name, _, msg) -> name |> read_to_field, msg) error_list
+  |> conformist
 ;;
 
 let field_name field = field |> show_field |> CCString.lowercase_ascii

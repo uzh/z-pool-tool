@@ -7,6 +7,23 @@ let submit_element = Component.submit_element
 
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_element = Component.input_element language in
+  let input_element_file ?(allow_multiple = false) field =
+    let field_label =
+      Pool_common.Utils.field_to_string language field
+      |> CCString.capitalize_ascii
+    in
+    let field_name = Message.field_name field in
+    div
+      [ label [ txt field_label ]
+      ; input
+          ~a:
+            [ a_input_type `File
+            ; a_name field_name
+            ; (if allow_multiple then a_multiple () else a_value "")
+            ]
+          ()
+      ]
+  in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
     CCList.map
@@ -52,46 +69,30 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
   let text_fields =
-    let open Message in
-    [ "title", Title
-    ; "description", Description
-    ; "url", Url
-    ; "database_url", DatabaseUrl
-    ; "database_label", DatabaseLabel
-    ; "smtp_auth_server", SmtpAuthServer
-    ; "smtp_auth_port", SmtpPort
-    ; "smtp_auth_username", SmtpUsername
-    ; "smtp_auth_password", SmtpPassword
-    ; "smtp_auth_authentication_method", SmtpAuthMethod
-    ; "smtp_auth_protocol", SmtpProtocol
-    ]
+    Message.
+      [ Title
+      ; Description
+      ; Url
+      ; DatabaseUrl
+      ; DatabaseLabel
+      ; SmtpAuthServer
+      ; SmtpPort
+      ; SmtpUsername
+      ; SmtpPassword
+      ; SmtpAuthMethod
+      ; SmtpProtocol
+      ]
   in
   let input_fields =
+    let open Message in
     CCList.map
-      (fun (name, label) -> input_element `Text (Some name) label "")
+      (fun label -> input_element `Text (Some (label |> field_name)) label "")
       text_fields
     @ [ Component.language_select (Pool_common.Language.all ()) None () ]
-    @ [ div
-          [ label [ txt "styles" ]
-          ; input ~a:[ a_input_type `File; a_name "styles"; a_value "" ] ()
-          ]
-      ; div
-          [ label [ txt "icon" ]
-          ; input ~a:[ a_input_type `File; a_name "icon"; a_value "" ] ()
-          ]
-      ; div
-          [ label [ txt "Add tenant logos" ]
-          ; input
-              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
-              ()
-          ]
-      ; div
-          [ label [ txt "Add partner logos" ]
-          ; input
-              ~a:[ a_input_type `File; a_name "partner_logo"; a_multiple () ]
-              ()
-          ]
-      ]
+    @ CCList.map input_element_file [ Styles; Icon ]
+    @ CCList.map
+        (input_element_file ~allow_multiple:true)
+        [ TenantLogos; PartnerLogos ]
   in
   let html =
     div

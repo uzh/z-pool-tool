@@ -34,6 +34,7 @@ let field_to_string = function
   | Operator -> "Operator"
   | Page -> "Seite"
   | Participant -> "Teilnehmer"
+  | PartnerLogos -> "Partner logos"
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
@@ -93,7 +94,15 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
-  | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
+  | Conformist errs ->
+    CCList.map
+      (fun (field, err) ->
+        Format.asprintf
+          "%s: %s"
+          (field_to_string field |> CCString.capitalize_ascii)
+          (error_to_string err))
+      errs
+    |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | Decode field ->

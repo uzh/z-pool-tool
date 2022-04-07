@@ -23,8 +23,8 @@ module Password = struct
     Format.fprintf formatter "%s" m
   ;;
 
-  let schema name =
-    Pool_common.Utils.schema_decoder create show PoolError.Password name
+  let schema ?(field = PoolError.Password) () =
+    Pool_common.Utils.schema_decoder create show field
   ;;
 end
 
@@ -39,12 +39,8 @@ module PasswordConfirmed = struct
     m |> show |> Format.fprintf formatter "%s"
   ;;
 
-  let schema name =
-    Pool_common.Utils.schema_decoder
-      (fun m -> Ok (create m))
-      show
-      PoolError.Password
-      name
+  let schema ?(field = PoolError.PasswordConfirmation) () =
+    Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
   ;;
 end
 
@@ -103,7 +99,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Password "email"
+    Pool_common.Utils.schema_decoder create show PoolError.Password
   ;;
 end
 
@@ -120,11 +116,7 @@ module Firstname = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Firstname
-      "firstname"
+    Pool_common.Utils.schema_decoder create value PoolError.Firstname
   ;;
 end
 
@@ -141,7 +133,7 @@ module Lastname = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Lastname "lastname"
+    Pool_common.Utils.schema_decoder create value PoolError.Lastname
   ;;
 end
 
@@ -160,7 +152,6 @@ module Paused = struct
         |> CCResult.pure)
       string_of_bool
       PoolError.Paused
-      "paused"
   ;;
 end
 

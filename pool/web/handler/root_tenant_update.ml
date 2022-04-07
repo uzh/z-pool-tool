@@ -27,7 +27,10 @@ let update req command success_message =
           req
       in
       let* logo_files =
-        File.upload_files (Pool_tenant.LogoMapping.LogoType.all ()) req
+        File.upload_files
+          (Pool_tenant.LogoMapping.LogoType.all_field_names
+          |> CCList.map Pool_common.Message.field_name)
+          req
       in
       let events_list urlencoded =
         let open CCResult.Infix in

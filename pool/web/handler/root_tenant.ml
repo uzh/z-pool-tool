@@ -29,7 +29,9 @@ let create req =
         Sihl.Web.Request.to_multipart_form_data_exn req
       in
       let file_fields =
-        [ "styles"; "icon" ] @ Pool_tenant.LogoMapping.LogoType.all ()
+        let open Pool_common.Message in
+        [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_field_names
+        |> CCList.map field_name
       in
       let* files = File.upload_files file_fields req in
       let finalize = function

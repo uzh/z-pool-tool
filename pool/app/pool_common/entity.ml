@@ -39,11 +39,7 @@ module Language = struct
   let label country_code = country_code |> code |> Utils.Countries.find
 
   let schema () =
-    Pool_common_utils.schema_decoder
-      of_string
-      code
-      PoolError.Language
-      "language"
+    Pool_common_utils.schema_decoder of_string code PoolError.Language
   ;;
 
   let all () = [ En; De ]

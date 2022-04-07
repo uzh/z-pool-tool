@@ -12,11 +12,7 @@ module Url = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Language
-      "database_url"
+    Pool_common.Utils.schema_decoder create value PoolError.DatabaseUrl
   ;;
 end
 
@@ -35,11 +31,7 @@ module Label = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.DatabaseLabel
-      "database_label"
+    Pool_common.Utils.schema_decoder create value PoolError.DatabaseLabel
   ;;
 end
 

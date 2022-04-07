@@ -20,9 +20,7 @@ module Title = struct
     else Ok title
   ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Title "title"
-  ;;
+  let schema () = Pool_common.Utils.schema_decoder create value PoolError.Title
 end
 
 module Description = struct
@@ -37,11 +35,7 @@ module Description = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Description
-      "description"
+    Pool_common.Utils.schema_decoder create value PoolError.Description
   ;;
 end
 
@@ -54,9 +48,7 @@ module Url = struct
     if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
   ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Url "url"
-  ;;
+  let schema () = Pool_common.Utils.schema_decoder create value PoolError.Url
 end
 
 module Styles = struct
@@ -78,7 +70,7 @@ module Styles = struct
     ;;
 
     let schema () =
-      Pool_common.Utils.schema_decoder create value PoolError.Styles "styles"
+      Pool_common.Utils.schema_decoder create value PoolError.Styles
     ;;
   end
 end
@@ -97,9 +89,7 @@ module Icon = struct
       if CCString.is_empty icon then Error PoolError.(Invalid Icon) else Ok icon
     ;;
 
-    let schema () =
-      Pool_common.Utils.schema_decoder create value PoolError.Icon "icon"
-    ;;
+    let schema () = Pool_common.Utils.schema_decoder create value PoolError.Icon
   end
 end
 
@@ -113,7 +103,7 @@ module Logos = struct
     Pool_common.Utils.schema_list_decoder
       create
       (CCList.map Common.Id.value)
-      "tenant_logo"
+      PoolError.TenantLogos
   ;;
 end
 
@@ -127,7 +117,7 @@ module PartnerLogos = struct
     Pool_common.Utils.schema_list_decoder
       create
       (fun l -> l |> CCList.map Common.Id.value)
-      "partner_logo"
+      PoolError.PartnerLogos
   ;;
 end
 
@@ -151,7 +141,6 @@ module Maintenance = struct
       (fun m -> Ok (of_string m))
       stringify
       PoolError.TenantMaintenanceFlag
-      "maintenance"
   ;;
 end
 
@@ -176,7 +165,6 @@ module Disabled = struct
       (fun m -> Ok (of_string m))
       stringify
       PoolError.TenantDisabledFlag
-      "disabled"
   ;;
 end
 

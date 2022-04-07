@@ -84,7 +84,7 @@ module Key = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder of_string to_string PoolError.Key "key"
+    Pool_common.Utils.schema_decoder of_string to_string PoolError.Key
   ;;
 end
 
@@ -100,11 +100,7 @@ module Content = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Translation
-      "content"
+    Pool_common.Utils.schema_decoder create value PoolError.Translation
   ;;
 end
 

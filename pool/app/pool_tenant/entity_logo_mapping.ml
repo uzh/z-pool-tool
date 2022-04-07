@@ -18,7 +18,16 @@ module LogoType = struct
     | TenantLogo -> "tenant_logo"
   ;;
 
-  let all () = [ PartnerLogo; TenantLogo ] |> CCList.map to_string
+  let all = [ PartnerLogo; TenantLogo ]
+
+  let field_name_of_t =
+    let open Pool_common.Message in
+    function
+    | TenantLogo -> TenantLogos
+    | PartnerLogo -> PartnerLogos
+  ;;
+
+  let all_field_names = CCList.map field_name_of_t all
 end
 
 type mapping =

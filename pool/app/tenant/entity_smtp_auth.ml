@@ -12,11 +12,7 @@ module Server = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpAuthServer
-      "smtp_auth_server"
+    Pool_common.Utils.schema_decoder create value PoolError.SmtpAuthServer
   ;;
 end
 
@@ -32,11 +28,7 @@ module Port = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpPort
-      "smtp_auth_port"
+    Pool_common.Utils.schema_decoder create value PoolError.SmtpPort
   ;;
 end
 
@@ -52,11 +44,7 @@ module Username = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpUsername
-      "smtp_auth_username"
+    Pool_common.Utils.schema_decoder create value PoolError.SmtpUsername
   ;;
 end
 
@@ -72,11 +60,7 @@ module Password = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      show
-      PoolError.SmtpPassword
-      "smtp_auth_password"
+    Pool_common.Utils.schema_decoder create show PoolError.SmtpPassword
   ;;
 end
 
@@ -92,11 +76,7 @@ module AuthenticationMethod = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpAuthMethod
-      "smtp_auth_authentication_method"
+    Pool_common.Utils.schema_decoder create value PoolError.SmtpAuthMethod
   ;;
 end
 
@@ -112,11 +92,7 @@ module Protocol = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpProtocol
-      "smtp_auth_protocol"
+    Pool_common.Utils.schema_decoder create value PoolError.SmtpProtocol
   ;;
 end
 

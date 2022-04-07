@@ -25,11 +25,7 @@ module ContactEmail = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      Message.EmailAddress
-      "contact_email"
+    Pool_common.Utils.schema_decoder create value Message.EmailAddress
   ;;
 end
 
@@ -45,11 +41,7 @@ module EmailSuffix = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      Message.EmailSuffix
-      "email_suffix"
+    Pool_common.Utils.schema_decoder create value Message.EmailSuffix
   ;;
 end
 
@@ -74,7 +66,6 @@ module InactiveUser = struct
         create
         CCInt.to_string
         Message.InactiveUserDisableAfter
-        "inactive_user_disable_after"
     ;;
   end
 
@@ -98,7 +89,6 @@ module InactiveUser = struct
         create
         CCInt.to_string
         Message.InactiveUserWarning
-        "inactive_user_warning"
     ;;
   end
 end

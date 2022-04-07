@@ -28,7 +28,6 @@ module RecruitmentChannel = struct
       of_string
       to_string
       Pool_common.Message.RecruitmentChannel
-      "recruitment_channel"
   ;;
 
   let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]
