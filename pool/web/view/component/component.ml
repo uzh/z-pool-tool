@@ -37,7 +37,10 @@ let csrf_attibs ?id csrf =
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
 let input_element language input_type name input_label value =
-  let input_label = Pool_common.Utils.field_to_string language input_label in
+  let input_label =
+    Pool_common.Utils.field_to_string language input_label
+    |> CCString.capitalize_ascii
+  in
   let base_attributes =
     [ a_input_type input_type; a_value value; a_class [ "input" ] ]
   in
