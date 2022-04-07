@@ -296,17 +296,7 @@ end = struct
   type t = Pool_tenant.t
 
   let handle () =
-    let open Settings.Default in
-    Ok
-      [ Settings.DefaultRestored
-          ( languages
-          , email_suffix
-          , contact_email
-          , inactive_user_disable_after
-          , inactive_user_warning
-          , terms_and_conditions )
-        |> Pool_event.settings
-      ]
+    Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
   ;;
 
   let can user command =

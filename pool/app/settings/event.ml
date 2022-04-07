@@ -1,4 +1,5 @@
 open Entity
+open Default
 
 type event =
   | LanguagesUpdated of Pool_common.Language.t list
@@ -7,13 +8,7 @@ type event =
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | TermsAndConditionsUpdated of TermsAndConditions.t list
-  | DefaultRestored of
-      Value.tenant_languages
-      * Value.tenant_email_suffixes
-      * Value.tenant_contact_email
-      * Value.inactive_user_disable_after
-      * Value.inactive_user_warning
-      * Value.terms_and_conditions
+  | DefaultRestored of default
 
 let handle_event pool : event -> unit Lwt.t = function
   | LanguagesUpdated languages ->
@@ -43,12 +38,13 @@ let handle_event pool : event -> unit Lwt.t = function
     in
     Lwt.return_unit
   | DefaultRestored
-      ( tenant_languages
-      , tenant_email_suffixes
-      , tenant_contact_email
-      , inactive_user_disable_after
-      , inactive_user_warning
-      , terms_and_conditions ) ->
+      { tenant_languages
+      ; tenant_email_suffixes
+      ; tenant_contact_email
+      ; inactive_user_disable_after
+      ; inactive_user_warning
+      ; terms_and_conditions
+      } ->
     let%lwt () =
       [ Languages
       ; EmailSuffixes
@@ -60,14 +56,14 @@ let handle_event pool : event -> unit Lwt.t = function
       |> Lwt_list.iter_s (Repo.delete pool)
     in
     let%lwt () =
-      let open Value in
-      [ TenantLanguages tenant_languages
-      ; TenantEmailSuffixes tenant_email_suffixes
-      ; TenantContactEmail tenant_contact_email
-      ; InactiveUserDisableAfter inactive_user_disable_after
-      ; InactiveUserWarning inactive_user_warning
-      ; TermsAndConditions terms_and_conditions
-      ]
+      Value.
+        [ TenantLanguages tenant_languages
+        ; TenantEmailSuffixes tenant_email_suffixes
+        ; TenantContactEmail tenant_contact_email
+        ; InactiveUserDisableAfter inactive_user_disable_after
+        ; InactiveUserWarning inactive_user_warning
+        ; TermsAndConditions terms_and_conditions
+        ]
       |> Lwt_list.iter_s (Repo.insert pool)
     in
     Lwt.return_unit
@@ -87,8 +83,22 @@ let equal_event event1 event2 =
     Value.equal_inactive_user_warning one two
   | TermsAndConditionsUpdated one, TermsAndConditionsUpdated two ->
     Value.equal_terms_and_conditions one two
-  | ( DefaultRestored (one_a, one_b, one_c, one_d, one_e, one_f)
-    , DefaultRestored (two_a, two_b, two_c, two_d, two_e, two_f) ) ->
+  | ( DefaultRestored
+        { tenant_languages = one_a
+        ; tenant_email_suffixes = one_b
+        ; tenant_contact_email = one_c
+        ; inactive_user_disable_after = one_d
+        ; inactive_user_warning = one_e
+        ; terms_and_conditions = one_f
+        }
+    , DefaultRestored
+        { tenant_languages = two_a
+        ; tenant_email_suffixes = two_b
+        ; tenant_contact_email = two_c
+        ; inactive_user_disable_after = two_d
+        ; inactive_user_warning = two_e
+        ; terms_and_conditions = two_f
+        } ) ->
     Value.equal_tenant_languages one_a two_a
     && Value.equal_tenant_email_suffixes one_b two_b
     && Value.equal_tenant_contact_email one_c two_c
@@ -114,7 +124,14 @@ let pp_event formatter event =
     Value.pp_inactive_user_disable_after formatter m
   | InactiveUserWarningUpdated m -> Value.pp_inactive_user_warning formatter m
   | TermsAndConditionsUpdated m -> Value.pp_terms_and_conditions formatter m
-  | DefaultRestored (a, b, c, d, e, f) ->
+  | DefaultRestored
+      { tenant_languages = a
+      ; tenant_email_suffixes = b
+      ; tenant_contact_email = c
+      ; inactive_user_disable_after = d
+      ; inactive_user_warning = e
+      ; terms_and_conditions = f
+      } ->
     Value.pp_tenant_languages formatter a;
     Value.pp_tenant_email_suffixes formatter b;
     Value.pp_tenant_contact_email formatter c;
