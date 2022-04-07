@@ -163,3 +163,24 @@ let login_after_terms_update _ () =
              expected
              accepted))
 ;;
+
+let read_env_vars _ () =
+  let varnames =
+    [ "CI_JOB_TOKEN"; "CI_API_V4_URL"; "CI_PROJECT_ID"; "CI_PROJECT_NAME" ]
+  in
+  let expected =
+    CCList.(
+      map CCOption.some varnames
+      |> map (CCOption.to_result "test is broken if you can see this"))
+  in
+  let actual =
+    CCList.map
+      (fun nam ->
+        Sys.getenv_opt nam
+        |> CCOption.map (fun _value -> nam)
+        |> CCOption.to_result (Format.asprintf "Cannot find variable %s" nam))
+      varnames
+  in
+  Alcotest.(check (list (result string string)) "succeeds" expected actual)
+  |> Lwt.return
+;;
