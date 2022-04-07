@@ -28,8 +28,8 @@ RUN apt-get update \
 # TODO: check if still requred, Shil requires this only for sihl-email through sendgrid
 # WTF: https://github.com/mirage/ocaml-cohttp/issues/675
 # This is also important for `canary` to run properly
-RUN sudo bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' && \
-  sudo bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
+RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' && \
+  bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
 ENV SIHL_ENV production
 ENV LOG_LEVEL info
