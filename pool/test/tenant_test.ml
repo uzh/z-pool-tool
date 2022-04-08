@@ -47,28 +47,29 @@ module Data = struct
   let lastname = "Ötzi"
 
   let urlencoded =
-    let open Pool_tenant.LogoMapping.LogoType in
-    [ "title", [ title ]
-    ; "description", [ description ]
-    ; "url", [ url ]
-    ; "database_url", [ database_url ]
-    ; "database_label", [ database_label ]
-    ; "smtp_auth_server", [ smtp_auth_server ]
-    ; "smtp_auth_port", [ smtp_auth_port ]
-    ; "smtp_auth_username", [ smtp_auth_username ]
-    ; "smtp_auth_password", [ smtp_auth_password ]
-    ; "smtp_auth_authentication_method", [ smtp_auth_authentication_method ]
-    ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-    ; "styles", [ Asset.styles ]
-    ; "icon", [ Asset.icon ]
-    ; to_string TenantLogo, [ tenant_logo ]
-    ; to_string PartnerLogo, [ partner_logo ]
-    ; "language", [ default_language ]
-    ; "email", [ email ]
-    ; "password", [ password ]
-    ; "firstname", [ firstname ]
-    ; "lastname", [ lastname ]
+    let open Pool_common in
+    [ Message.Title, [ title ]
+    ; Message.Description, [ description ]
+    ; Message.Url, [ url ]
+    ; Message.DatabaseUrl, [ database_url ]
+    ; Message.DatabaseLabel, [ database_label ]
+    ; Message.SmtpAuthServer, [ smtp_auth_server ]
+    ; Message.SmtpPort, [ smtp_auth_port ]
+    ; Message.SmtpUsername, [ smtp_auth_username ]
+    ; Message.SmtpPassword, [ smtp_auth_password ]
+    ; Message.SmtpAuthMethod, [ smtp_auth_authentication_method ]
+    ; Message.SmtpProtocol, [ smtp_auth_protocol ]
+    ; Message.Styles, [ Asset.styles ]
+    ; Message.Icon, [ Asset.icon ]
+    ; Message.TenantLogos, [ tenant_logo ]
+    ; Message.PartnerLogos, [ partner_logo ]
+    ; Message.Language, [ default_language ]
+    ; Message.Email, [ email ]
+    ; Message.Password, [ password ]
+    ; Message.Firstname, [ firstname ]
+    ; Message.Lastname, [ lastname ]
     ]
+    |> List.map (fun (m, k) -> m |> Message.field_name, k)
   ;;
 
   let tenant =
@@ -158,6 +159,7 @@ let[@warning "-4"] create_tenant () =
           Pool_tenant.(Created Write.{ id; created_at; updated_at; _ })
       ; Pool_event.PoolTenant
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
+      ; Pool_event.Database (Database.Added _)
       ; Pool_event.Database (Database.Migrated database_label)
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
@@ -229,6 +231,7 @@ let[@warning "-4"] create_tenant () =
     Ok
       [ Pool_tenant.Created create |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
+      ; Database.Added database |> Pool_event.database
       ; Database.Migrated database_label |> Pool_event.database
       ]
   in
@@ -249,7 +252,8 @@ let[@warning "-4"] update_tenant_details () =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
-      |> HttpUtils.format_request_boolean_values [ "disabled" ]
+      |> HttpUtils.format_request_boolean_values
+           [ Pool_common.Message.(TenantDisabledFlag |> field_name) ]
       |> decode
       >>= handle tenant
     in
@@ -305,7 +309,10 @@ let update_tenant_database () =
     let events =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDatabase in
-      [ "database_url", [ database_url ]; "database_label", [ database_label ] ]
+      Pool_common.Message.
+        [ DatabaseUrl |> field_name, [ database_url ]
+        ; DatabaseLabel |> field_name, [ database_label ]
+        ]
       |> decode
       >>= handle tenant
     in

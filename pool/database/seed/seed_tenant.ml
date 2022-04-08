@@ -30,7 +30,8 @@ let create () =
     then (
       let password =
         Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
-        |> CCOption.get_exn_or "MYSQL_ROOT_PASSWORD undefined"
+        |> CCOption.map (Format.asprintf ":%s")
+        |> CCOption.get_or ~default:""
       in
       let database =
         Sihl.Configuration.read_string "MYSQL_DATABASE"
@@ -40,7 +41,7 @@ let create () =
         , "description"
         , "test.pool.econ.uzh.ch"
         , Format.asprintf
-            "mariadb://root:%s@database-tenant:3306/%s"
+            "mariadb://root%s@database-tenant:3306/%s"
             password
             database
         , "econ-test"

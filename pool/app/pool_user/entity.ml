@@ -97,10 +97,7 @@ module EmailAddress = struct
   let value m = m
   let create email = email |> remove_whitespaces |> validate_characters
   let of_string m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Password
-  ;;
+  let schema () = Pool_common.Utils.schema_decoder create show PoolError.Email
 end
 
 module Firstname = struct

@@ -61,7 +61,7 @@ module Password = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.SmtpUsername
+    Pool_common.Utils.schema_decoder create show PoolError.SmtpPassword
   ;;
 end
 
