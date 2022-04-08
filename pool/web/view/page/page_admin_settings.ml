@@ -255,7 +255,7 @@ let show
           Component.textarea_element
             language
             (Pool_common.Language.code sys_language)
-            (Pool_common.Language.field_name_of_t sys_language)
+            (Pool_common.Language.field_of_t sys_language)
             (CCList.assoc_opt
                ~eq:Pool_common.Language.equal
                language

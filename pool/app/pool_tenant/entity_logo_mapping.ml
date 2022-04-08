@@ -20,14 +20,14 @@ module LogoType = struct
 
   let all = [ PartnerLogo; TenantLogo ]
 
-  let field_name_of_t =
+  let field_of_t =
     let open Pool_common.Message in
     function
     | TenantLogo -> TenantLogos
     | PartnerLogo -> PartnerLogos
   ;;
 
-  let all_field_names = CCList.map field_name_of_t all
+  let all_fields = CCList.map field_of_t all
 end
 
 type mapping =

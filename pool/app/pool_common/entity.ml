@@ -45,7 +45,7 @@ module Language = struct
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 
-  let field_name_of_t =
+  let field_of_t =
     let open Entity_message in
     function
     | En -> LanguageEn

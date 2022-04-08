@@ -28,8 +28,8 @@ let update req command success_message =
       in
       let* logo_files =
         File.upload_files
-          (Pool_tenant.LogoMapping.LogoType.all_field_names
           |> CCList.map Pool_common.Message.field_name)
+          (Pool_tenant.LogoMapping.LogoType.all_fields
           req
       in
       let events_list urlencoded =

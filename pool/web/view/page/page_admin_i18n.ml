@@ -28,7 +28,7 @@ let list csrf translation_list Pool_context.{ language; _ } =
                     (Some "content")
                     (translation
                     |> I18n.language
-                    |> Pool_common.Language.field_name_of_t)
+                    |> Pool_common.Language.field_of_t)
                     (translation |> I18n.content |> I18n.Content.value)
                 ; submit_element
                     language
