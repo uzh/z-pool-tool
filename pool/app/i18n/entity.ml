@@ -24,7 +24,15 @@ module Key = struct
     | SessionFinishText
     | WelcomeText
     | PasswordPolicyText
-  [@@deriving eq, show]
+  [@@deriving eq, show, enum]
+
+  let all : t list =
+    let range a b = 0 :: List.init (b - a) (( + ) 1) in
+    range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
+  ;;
 
   let to_string = function
     | ConfirmationSubject -> "confirmation_subject"
@@ -116,6 +124,7 @@ let create key language content =
   { id = Common.Id.create (); key; language; content }
 ;;
 
+let compare (one : t) (two : t) = CCString.compare (one |> show) (two |> show)
 let id m = m.id
 let key m = m.key
 let language m = m.language

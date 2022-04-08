@@ -159,6 +159,8 @@ end = struct
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
       ; Database.Added database |> Pool_event.database
       ; Database.Migrated command.database_label |> Pool_event.database
+      ; Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ]
   ;;
 

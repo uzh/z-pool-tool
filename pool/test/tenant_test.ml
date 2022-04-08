@@ -161,6 +161,8 @@ let[@warning "-4"] create_tenant () =
           (Pool_tenant.LogosUploaded [ partner_logo; tenant_logo ])
       ; Pool_event.Database (Database.Added _)
       ; Pool_event.Database (Database.Migrated database_label)
+      ; Pool_event.Settings (Settings.DefaultRestored _)
+      ; Pool_event.I18n (I18n.DefaultRestored _)
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
@@ -233,6 +235,8 @@ let[@warning "-4"] create_tenant () =
       ; Pool_tenant.LogosUploaded logos |> Pool_event.pool_tenant
       ; Database.Added database |> Pool_event.database
       ; Database.Migrated database_label |> Pool_event.database
+      ; Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ]
   in
   Alcotest.(
