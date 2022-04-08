@@ -36,6 +36,8 @@ let reporter =
         let formatter = Format.formatter_of_buffer buffer in
         Format.pp_print_string formatter "```\n";
         Opium.Request.pp_hum formatter req;
+        Format.pp_print_string formatter "\n```\n\nTrace:\n\n```\n";
+        Format.pp_print_string formatter backtrace;
         Format.pp_print_string formatter "\n```";
         Format.pp_print_flush formatter ();
         Buffer.contents buffer
