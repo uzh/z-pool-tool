@@ -78,7 +78,7 @@
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (= 0.14.2))
+   (= v0.14.2))
   canary
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
