@@ -8,7 +8,7 @@ let language_select
     ?(attributes = [])
     ()
   =
-  let name = Pool_common.Message.field_name field in
+  let name = Pool_common.Message.show_field field in
   select
     ~a:([ a_name name ] @ attributes)
     (CCList.map

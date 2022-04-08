@@ -12,11 +12,11 @@ let sign_up_not_allowed_suffix () =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
            Pool_common.Message.
-             [ Email |> field_name, [ "john@bluewin.com" ]
-             ; Password |> field_name, [ "password" ]
-             ; Firstname |> field_name, [ "Jane" ]
-             ; Lastname |> field_name, [ "Doe" ]
-             ; ( RecruitmentChannel |> field_name
+             [ Email |> show_field, [ "john@bluewin.com" ]
+             ; Password |> show_field, [ "password" ]
+             ; Firstname |> show_field, [ "Jane" ]
+             ; Lastname |> show_field, [ "Doe" ]
+             ; ( RecruitmentChannel |> show_field
                , [ Participant.RecruitmentChannel.Friend
                    |> Participant.RecruitmentChannel.to_string
                  ] )
@@ -45,11 +45,11 @@ let sign_up () =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
            Pool_common.Message.
-             [ Email |> field_name, [ "john@gmail.com" ]
-             ; Password |> field_name, [ "password" ]
-             ; Firstname |> field_name, [ "Jane" ]
-             ; Lastname |> field_name, [ "Doe" ]
-             ; ( RecruitmentChannel |> field_name
+             [ Email |> show_field, [ "john@gmail.com" ]
+             ; Password |> show_field, [ "password" ]
+             ; Firstname |> show_field, [ "Jane" ]
+             ; Lastname |> show_field, [ "Doe" ]
+             ; ( RecruitmentChannel |> show_field
                , [ Participant.RecruitmentChannel.Friend
                    |> Participant.RecruitmentChannel.to_string
                  ] )

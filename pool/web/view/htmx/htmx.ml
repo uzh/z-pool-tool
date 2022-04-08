@@ -12,7 +12,7 @@ type t =
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 
 let hx_attributes field version ?action () =
-  let name = Pool_common.Message.(field_name field) in
+  let name = Pool_common.Message.(show_field field) in
   [ a_user_data "hx-swap" "outerHTML"
   ; a_user_data
       "hx-params"
@@ -30,10 +30,10 @@ let hx_attributes field version ?action () =
 
 let create m language ?(classnames = []) ?hx_post ?error () =
   let field_to_string = Pool_common.Utils.field_to_string language in
-  let field_name = Pool_common.Message.field_name in
+  let show_field = Pool_common.Message.show_field in
   let base_input_attributes input_type field version =
     [ a_input_type input_type
-    ; a_name (field_name field)
+    ; a_name (show_field field)
     ; a_placeholder (field_to_string field)
     ]
     @ hx_attributes field version ?action:hx_post ()

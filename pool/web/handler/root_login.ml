@@ -99,7 +99,7 @@ let reset_password_get req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, "/root/request-reset-password/")
     @@ let* token =
-         Request.query Pool_common.Message.(field_name Token) req
+         Request.query Pool_common.Message.(show_field Token) req
          |> CCOption.to_result Pool_common.Message.(NotFound Token)
          |> Lwt_result.lift
        in
@@ -119,7 +119,7 @@ let reset_password_post req =
     let* params =
       HttpUtils.urlencoded_to_params
         urlencoded
-        [ Pool_common.Message.(field_name Token)
+        [ Pool_common.Message.(show_field Token)
         ; "password"
         ; "password_confirmation"
         ]
@@ -129,7 +129,7 @@ let reset_password_post req =
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
-    let token = go Pool_common.Message.(field_name Token) in
+    let token = go Pool_common.Message.(show_field Token) in
     let* () =
       Service.PasswordReset.reset_password
         ~ctx

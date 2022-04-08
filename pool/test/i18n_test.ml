@@ -8,9 +8,9 @@ let create () =
   let events =
     let open CCResult.Infix in
     Pool_common.Message.
-      [ Key |> field_name, [ "confirmation_subject" ]
-      ; Language |> field_name, [ "EN" ]
-      ; Translation |> field_name, [ "Subject" ]
+      [ Key |> show_field, [ "confirmation_subject" ]
+      ; Language |> show_field, [ "EN" ]
+      ; Translation |> show_field, [ "Subject" ]
       ]
     |> I18nCommand.Create.decode
     >>= I18nCommand.Create.handle

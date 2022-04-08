@@ -30,8 +30,8 @@ let create req =
       in
       let file_fields =
         let open Pool_common.Message in
-        |> CCList.map field_name
         [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
+        |> CCList.map show_field
       in
       let* files = File.upload_files file_fields req in
       let finalize = function

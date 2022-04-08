@@ -12,13 +12,12 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
       Pool_common.Utils.field_to_string language field
       |> CCString.capitalize_ascii
     in
-    let field_name = Message.field_name field in
     div
       [ label [ txt field_label ]
       ; input
           ~a:
             [ a_input_type `File
-            ; a_name field_name
+            ; a_name (Message.show_field field)
             ; (if allow_multiple then a_multiple () else a_value "")
             ]
           ()
@@ -86,7 +85,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_fields =
     let open Message in
     CCList.map
-      (fun label -> input_element `Text (Some (label |> field_name)) label "")
+      (fun label -> input_element `Text (Some (label |> show_field)) label "")
       text_fields
     @ [ Component.language_select (Pool_common.Language.all ()) None () ]
     @ CCList.map input_element_file [ Styles; Icon ]

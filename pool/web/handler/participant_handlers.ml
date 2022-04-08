@@ -139,7 +139,7 @@ let email_verification req =
              ("/login" |> HttpUtils.path_with_language query_lang |> Lwt.return)
     in
     (let* token =
-       Sihl.Web.Request.query Pool_common.Message.(field_name Token) req
+       Sihl.Web.Request.query Pool_common.Message.(show_field Token) req
        |> CCOption.map Email.Token.create
        |> CCOption.to_result Pool_common.Message.(NotFound Token)
        |> Lwt_result.lift
@@ -300,7 +300,7 @@ let update req =
               language
               Pool_common.Message.(NotANumber name))
     in
-    let field_name =
+    let show_field =
       let open Pool_common in
       function
       | "firstname" -> Message.Firstname
@@ -323,7 +323,7 @@ let update req =
       let open Cqrs_command.Participant_command.UpdateDetails in
       if Pool_common.Version.value current_version <= version
       then urlencoded |> decode >>= handle participant
-      else Error (Pool_common.Message.MeantimeUpdate (field_name name))
+      else Error (Pool_common.Message.MeantimeUpdate (show_field name))
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let csrf = HttpUtils.find_csrf req in

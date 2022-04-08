@@ -69,7 +69,7 @@ module Data = struct
     ; Message.Firstname, [ firstname ]
     ; Message.Lastname, [ lastname ]
     ]
-    |> List.map (fun (m, k) -> m |> Message.field_name, k)
+    |> List.map (fun (m, k) -> m |> Message.show_field, k)
   ;;
 
   let tenant =
@@ -253,7 +253,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values
-           [ Pool_common.Message.(TenantDisabledFlag |> field_name) ]
+           [ Pool_common.Message.(TenantDisabledFlag |> show_field) ]
       |> decode
       >>= handle tenant
     in
@@ -310,8 +310,8 @@ let update_tenant_database () =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDatabase in
       Pool_common.Message.
-        [ DatabaseUrl |> field_name, [ database_url ]
-        ; DatabaseLabel |> field_name, [ database_label ]
+        [ DatabaseUrl |> show_field, [ database_url ]
+        ; DatabaseLabel |> show_field, [ database_label ]
         ]
       |> decode
       >>= handle tenant

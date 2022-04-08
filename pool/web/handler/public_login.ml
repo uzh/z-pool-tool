@@ -130,7 +130,7 @@ let reset_password_get req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let token =
-      Sihl.Web.Request.query Pool_common.Message.(field_name Token) req
+      Sihl.Web.Request.query Pool_common.Message.(show_field Token) req
     in
     match token with
     | None ->
@@ -158,7 +158,7 @@ let reset_password_post req =
     let* params =
       HttpUtils.urlencoded_to_params
         urlencoded
-        [ Pool_common.Message.(field_name Token)
+        [ Pool_common.Message.(show_field Token)
         ; "password"
         ; "password_confirmation"
         ]
@@ -168,7 +168,7 @@ let reset_password_post req =
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in
-    let token = go Pool_common.Message.(field_name Token) in
+    let token = go Pool_common.Message.(show_field Token) in
     let* () =
       Lwt_result.map_err (fun err ->
           ( err
