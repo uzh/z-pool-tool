@@ -257,7 +257,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values
-           [ Common.Message.Field.(Disabled |> show) ]
+           [ Common.Message.Field.(TenantDisabledFlag |> show) ]
       |> decode
       >>= handle tenant
     in

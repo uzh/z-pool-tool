@@ -44,7 +44,7 @@ let update req command success_message =
       in
       logo_files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
-      |> HttpUtils.format_request_boolean_values [ Disabled |> show ]
+      |> HttpUtils.format_request_boolean_values [ TenantDisabledFlag |> show ]
       |> events_list
       |> Lwt_result.lift
     in
