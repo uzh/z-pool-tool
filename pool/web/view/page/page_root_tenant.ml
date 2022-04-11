@@ -6,7 +6,7 @@ module Message = Pool_common.Message
 let submit_element = Component.submit_element
 
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
-  let input_element = Component.input_element language in
+  let input_element = Component.input_element language `Text |> CCFun.flip in
   let input_element_file ?(allow_multiple = false) field =
     let field_label =
       Pool_common.Utils.field_to_string language field
@@ -17,7 +17,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
       ; input
           ~a:
             [ a_input_type `File
-            ; a_name (Message.show_field field)
+            ; a_name Message.Field.(field |> show)
             ; (if allow_multiple then a_multiple () else a_value "")
             ]
           ()
@@ -68,7 +68,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
   let text_fields =
-    Message.
+    Message.Field.
       [ Title
       ; Description
       ; Url
@@ -84,14 +84,12 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   in
   let input_fields =
     let open Message in
-    CCList.map
-      (fun label -> input_element `Text (Some (label |> show_field)) label "")
-      text_fields
+    CCList.map (input_element "") text_fields
     @ [ Component.language_select (Pool_common.Language.all ()) None () ]
-    @ CCList.map input_element_file [ Styles; Icon ]
+    @ CCList.map input_element_file [ Field.Styles; Field.Icon ]
     @ CCList.map
         (input_element_file ~allow_multiple:true)
-        [ TenantLogos; PartnerLogos ]
+        [ Field.TenantLogos; Field.PartnerLogos ]
   in
   let html =
     div
@@ -121,15 +119,11 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ; a_class [ "stack" ]
             ]
           (CCList.map
-             (fun (name, label) -> input_element `Text (Some name) label "")
-             [ "email", Message.Email
-             ; "password", Message.Password
-             ; "firstname", Message.Firstname
-             ; "lastname", Message.Lastname
-             ]
+             (input_element "")
+             Message.Field.[ Email; Password; Firstname; Lastname ]
           @ [ submit_element
                 language
-                Message.(Create (Some root))
+                Message.(Create (Some Field.root))
                 ~classnames:[ "button--primary" ]
                 ()
             ])
@@ -141,82 +135,78 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
 let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
-  let input_element = Component.input_element language in
+  let input_element = Component.input_element language `Text in
+  let input_element_file ?(allow_multiple = false) ?file_href field =
+    let field_label =
+      Pool_common.Utils.field_to_string language field
+      |> CCString.capitalize_ascii
+    in
+    div
+      [ (match allow_multiple, file_href with
+        | false, Some file_href -> a ~a:[ a_href file_href ] [ txt field_label ]
+        | _, _ -> label [ txt field_label ])
+      ; input
+          ~a:
+            ([ a_input_type `File; a_name Message.Field.(field |> show) ]
+            @ if allow_multiple then [ a_multiple () ] else [])
+          ()
+      ]
+  in
   let detail_fields =
-    [ "title", Message.Title, Title.value tenant.title
-    ; "description", Message.Description, Description.value tenant.description
-    ; "url", Message.Url, Pool_tenant.Url.value tenant.url
-    ; ( "smtp_auth_server"
-      , Message.SmtpAuthServer
-      , Server.value tenant.smtp_auth.server )
-    ; "smtp_auth_port", Message.SmtpPort, Port.value tenant.smtp_auth.port
-    ; ( "smtp_auth_username"
-      , Message.SmtpUsername
-      , Username.value tenant.smtp_auth.username )
-    ; ( "smtp_auth_authentication_method"
-      , Message.SmtpAuthMethod
-      , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
-    ; ( "smtp_auth_protocol"
-      , Message.SmtpProtocol
-      , Protocol.value tenant.smtp_auth.protocol )
-    ]
+    Message.
+      [ Field.Title, Title.value tenant.title
+      ; Field.Description, Description.value tenant.description
+      ; Field.Url, Pool_tenant.Url.value tenant.url
+      ; Field.SmtpAuthServer, Server.value tenant.smtp_auth.server
+      ; Field.SmtpPort, Port.value tenant.smtp_auth.port
+      ; Field.SmtpUsername, Username.value tenant.smtp_auth.username
+      ; ( Field.SmtpAuthMethod
+        , AuthenticationMethod.value tenant.smtp_auth.authentication_method )
+      ; Field.SmtpProtocol, Protocol.value tenant.smtp_auth.protocol
+      ]
   in
   let database_fields =
-    [ "database_url", Message.DatabaseUrl, ""
-    ; ( "database_label"
-      , Message.DatabaseLabel
-      , Pool_database.Label.value tenant.database_label )
-    ]
+    Message.
+      [ Field.DatabaseUrl, ""
+      ; Field.DatabaseLabel, Pool_database.Label.value tenant.database_label
+      ]
   in
   let detail_input_fields =
-    (CCList.map
-       (fun (name, label, value) -> input_element `Text (Some name) label value)
-       detail_fields
+    (CCList.map (CCFun.uncurry input_element) detail_fields
     @ [ Component.language_select
           (Pool_common.Language.all ())
           (Some tenant.default_language)
           ()
       ])
-    @ [ div
-          [ a
-              ~a:
-                [ a_href (File.path (tenant.styles |> Pool_tenant.Styles.value))
-                ]
-              [ txt "styles" ]
-          ; input ~a:[ a_input_type `File; a_name "styles" ] ()
-          ]
-      ; div
-          [ a
-              ~a:[ a_href (File.path (tenant.icon |> Pool_tenant.Icon.value)) ]
-              [ txt "icon" ]
-          ; input ~a:[ a_input_type `File; a_name "icon" ] ()
-          ]
-      ; div
-          [ label [ txt "Add tenant logos" ]
-          ; input
-              ~a:[ a_input_type `File; a_name "tenant_logo"; a_multiple () ]
-              ()
-          ]
-      ; div
-          [ label [ txt "Add partner logos" ]
-          ; input
-              ~a:[ a_input_type `File; a_name "partner_logo"; a_multiple () ]
-              ()
-          ]
+    @ [ input_element_file
+          ~file_href:(File.path (tenant.styles |> Pool_tenant.Styles.value))
+          Message.Field.Styles
+      ; input_element_file
+          ~file_href:(File.path (tenant.icon |> Pool_tenant.Icon.value))
+          Message.Field.Icon
+      ; input_element_file ~allow_multiple:true Message.Field.TenantLogos
+      ; input_element_file ~allow_multiple:true Message.Field.PartnerLogos
       ]
   in
   let database_input_fields =
-    CCList.map
-      (fun (name, label, value) -> input_element `Text (Some name) label value)
-      database_fields
+    CCList.map (CCFun.uncurry input_element) database_fields
   in
   let disabled =
+    let label_text =
+      Pool_common.Utils.field_to_string language Message.Field.Disabled
+      |> CCString.capitalize_ascii
+    in
     let attributes =
       match tenant.disabled |> Pool_tenant.Disabled.value with
-      | true -> [ a_input_type `Checkbox; a_name "disabled"; a_checked () ]
-      | false -> [ a_input_type `Checkbox; a_name "disabled" ]
+      | true ->
+        [ a_input_type `Checkbox
+        ; a_name Message.Field.(Disabled |> show)
+        ; a_checked ()
+        ]
+      | false ->
+        [ a_input_type `Checkbox; a_name Message.Field.(Disabled |> show) ]
     in
-    div [ label [ txt "Disabled" ]; input ~a:attributes () ]
+    div [ label [ txt label_text ]; input ~a:attributes () ]
   in
   let delete_img_form files =
     div
@@ -243,7 +233,7 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
                  [ Component.csrf_element csrf ()
                  ; submit_element
                      language
-                     Message.(Delete (Some file))
+                     Message.(Delete (Some Field.file))
                      ~classnames:[ "button--failure" ]
                      ()
                  ]
@@ -251,10 +241,15 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
          files)
   in
   let delete_file_forms =
+    let label_text m =
+      m
+      |> Pool_common.Utils.field_to_string language
+      |> CCString.capitalize_ascii
+    in
     div
-      [ h3 [ txt "Tenant Logos" ]
+      [ h3 [ Message.Field.TenantLogos |> label_text |> txt ]
       ; delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
-      ; h3 [ txt "Partner Logos" ]
+      ; h3 [ Message.Field.PartnerLogos |> label_text |> txt ]
       ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
       ]
   in
@@ -314,15 +309,11 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
             ]
           ((Component.csrf_element csrf ()
            :: CCList.map
-                (fun (name, label) -> input_element `Text (Some name) label "")
-                [ "email", Message.Email
-                ; "password", Message.Password
-                ; "firstname", Message.Firstname
-                ; "lastname", Message.Lastname
-                ])
+                (CCFun.flip input_element "")
+                Message.Field.[ Email; Password; Firstname; Lastname ])
           @ [ submit_element
                 language
-                Message.(Create (Some operator))
+                Message.(Create (Some Field.operator))
                 ~classnames:[ "button--primary" ]
                 ()
             ])

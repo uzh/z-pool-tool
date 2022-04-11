@@ -8,7 +8,7 @@ let context user () =
     let* host =
       req
       |> Sihl.Web.Request.header "host"
-      |> CCOption.to_result Pool_common.Message.(NotFound Host)
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Host)
       |> Lwt_result.lift
     in
     let%lwt selections = Pool_tenant.Selection.find_all () in
@@ -17,7 +17,7 @@ let context user () =
       host
       (selections
       |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
-    |> CCOption.to_result Pool_common.Message.(NotFound TenantPool)
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.TenantPool)
     |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
     |> Lwt_result.lift
   in
@@ -36,7 +36,7 @@ let context user () =
       | None ->
         let%lwt lang =
           Http_utils.user_from_session tenant_db req
-          ||> CCOption.to_result Pool_common.Message.(NotFound User)
+          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
           >>= fun user ->
           Participant.find
             tenant_db

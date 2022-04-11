@@ -16,11 +16,11 @@ module Title = struct
 
   let create title =
     if CCString.is_empty title
-    then Error PoolError.(Invalid Title)
+    then Error PoolError.(Invalid Field.Title)
     else Ok title
   ;;
 
-  let schema () = Pool_common.Utils.schema_decoder create value PoolError.Title
+  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Title
 end
 
 module Description = struct
@@ -30,12 +30,12 @@ module Description = struct
 
   let create description =
     if CCString.is_empty description
-    then Error PoolError.(Invalid Description)
+    then Error PoolError.(Invalid Field.Description)
     else Ok description
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Description
+    Common.Utils.schema_decoder create value PoolError.Field.Description
   ;;
 end
 
@@ -45,10 +45,12 @@ module Url = struct
   let value m = m
 
   let create url =
-    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
+    if CCString.is_empty url
+    then Error PoolError.(Invalid Field.Url)
+    else Ok url
   ;;
 
-  let schema () = Pool_common.Utils.schema_decoder create value PoolError.Url
+  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Url
 end
 
 module Styles = struct
@@ -65,12 +67,12 @@ module Styles = struct
 
     let create styles =
       if CCString.is_empty styles
-      then Error PoolError.(Invalid Styles)
+      then Error PoolError.(Invalid Field.Styles)
       else Ok styles
     ;;
 
     let schema () =
-      Pool_common.Utils.schema_decoder create value PoolError.Styles
+      Common.Utils.schema_decoder create value PoolError.Field.Styles
     ;;
   end
 end
@@ -86,10 +88,14 @@ module Icon = struct
     let value m = m
 
     let create icon =
-      if CCString.is_empty icon then Error PoolError.(Invalid Icon) else Ok icon
+      if CCString.is_empty icon
+      then Error PoolError.(Invalid Field.Icon)
+      else Ok icon
     ;;
 
-    let schema () = Pool_common.Utils.schema_decoder create value PoolError.Icon
+    let schema () =
+      Common.Utils.schema_decoder create value PoolError.Field.Icon
+    ;;
   end
 end
 
@@ -100,10 +106,10 @@ module Logos = struct
   let create m = Ok (CCList.map Common.Id.of_string m)
 
   let schema () =
-    Pool_common.Utils.schema_list_decoder
+    Common.Utils.schema_list_decoder
       create
       (CCList.map Common.Id.value)
-      PoolError.TenantLogos
+      PoolError.Field.TenantLogos
   ;;
 end
 
@@ -114,10 +120,10 @@ module PartnerLogos = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_list_decoder
+    Common.Utils.schema_list_decoder
       create
       (fun l -> l |> CCList.map Common.Id.value)
-      PoolError.PartnerLogos
+      PoolError.Field.PartnerLogos
   ;;
 end
 
@@ -137,10 +143,10 @@ module Maintenance = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
+    Common.Utils.schema_decoder
       (fun m -> Ok (of_string m))
       stringify
-      PoolError.TenantMaintenanceFlag
+      PoolError.Field.TenantMaintenanceFlag
   ;;
 end
 
@@ -161,10 +167,10 @@ module Disabled = struct
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
+    Common.Utils.schema_decoder
       (fun m -> Ok (of_string m))
       stringify
-      PoolError.TenantDisabledFlag
+      PoolError.Field.TenantDisabledFlag
   ;;
 end
 

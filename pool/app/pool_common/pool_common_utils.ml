@@ -51,7 +51,7 @@ let schema_decoder create_fcn encode_fnc field =
   PoolConformist.custom
     (decoder create_fcn field)
     (fun l -> l |> encode_fnc |> CCList.pure)
-    Entity_message.(field |> show_field)
+    Entity_message.Field.(field |> show)
 ;;
 
 let list_decoder create_fcn l = create_fcn l
@@ -60,5 +60,5 @@ let schema_list_decoder create_fcn encode_fnc field =
   PoolConformist.custom
     (list_decoder create_fcn)
     (fun l -> l |> encode_fnc)
-    Entity_message.(field |> show_field)
+    Entity_message.Field.(field |> show)
 ;;

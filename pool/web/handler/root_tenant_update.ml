@@ -7,7 +7,8 @@ module Database = Pool_database
 let update req command success_message =
   let result _ =
     let open Utils.Lwt_result.Infix in
-    let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
+    let open Common.Message.Field in
+    let id = Sihl.Web.Router.param req (Id |> show) |> Common.Id.of_string in
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)
     in
@@ -18,18 +19,17 @@ let update req command success_message =
       in
       let* _ =
         File.update_files
-          [ ( "styles"
+          [ ( Styles |> show
             , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
             )
-          ; ( "icon"
+          ; ( Icon |> show
             , tenant.Pool_tenant.Write.icon |> Pool_tenant.Icon.Write.value )
           ]
           req
       in
       let* logo_files =
         File.upload_files
-          (Pool_tenant.LogoMapping.LogoType.all_fields
-          |> CCList.map Pool_common.Message.show_field)
+          (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in
       let events_list urlencoded =
@@ -44,7 +44,7 @@ let update req command success_message =
       in
       logo_files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
-      |> HttpUtils.format_request_boolean_values [ "disabled" ]
+      |> HttpUtils.format_request_boolean_values [ Disabled |> show ]
       |> events_list
       |> Lwt_result.lift
     in
@@ -74,8 +74,10 @@ let update_database req =
 
 let delete_asset req =
   let open Sihl.Web in
-  let asset_id = Router.param req "asset_id" |> Common.Id.of_string in
-  let tenant_id = Router.param req "tenant_id" |> Common.Id.of_string in
+  let open Common.Message in
+  let go m = m |> Router.param req |> Common.Id.of_string in
+  let asset_id = go Field.(AssetId |> show) in
+  let tenant_id = go Field.(TenantId |> show) in
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
@@ -95,7 +97,7 @@ let delete_asset req =
     let return_to_tenant () =
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.FileDeleted ] ]
+        [ Message.set ~success:[ FileDeleted ] ]
     in
     tenant_id
     |> Pool_tenant.find

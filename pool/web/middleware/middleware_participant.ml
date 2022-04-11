@@ -9,7 +9,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       let pool = context.Pool_context.tenant_db in
       let* user =
         Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
-        ||> CCOption.to_result Pool_common.Message.(NotFound User)
+        ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
       in
       let is_confirmed participant =
         Lwt_result.lift
@@ -27,14 +27,14 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       Pool_common.Id.of_string user.Sihl_user.id
       |> Participant.find pool
       |> Lwt_result.map_err
-           (CCFun.const Pool_common.Message.(NotFound Participant))
+           (CCFun.const Pool_common.Message.(NotFound Field.Participant))
       >>= is_confirmed
       >>= terms_agreed
     in
     match confirmed_and_terms_agreed with
     | Ok _ -> handler req
-    | Error Pool_common.Message.(NotFound User)
-    | Error Pool_common.Message.(NotFound Participant) ->
+    | Error Pool_common.Message.(NotFound Field.User)
+    | Error Pool_common.Message.(NotFound Field.Participant) ->
       Http_utils.redirect_to_with_actions
         "/login"
         [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]

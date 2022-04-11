@@ -29,9 +29,9 @@ let create req =
         Sihl.Web.Request.to_multipart_form_data_exn req
       in
       let file_fields =
-        let open Pool_common.Message in
+        let open Pool_common.Message.Field in
         [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
-        |> CCList.map show_field
+        |> CCList.map show
       in
       let* files = File.upload_files file_fields req in
       let finalize = function
@@ -60,7 +60,7 @@ let create req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
-        [ Message.set ~success:[ Common.Message.(Created Tenant) ] ]
+        [ Message.set ~success:[ Common.Message.(Created Field.Tenant) ] ]
     in
     () |> events |>> handle |>> return_to_overview
   in
@@ -70,11 +70,14 @@ let create req =
 let create_operator req =
   let result context =
     let open Utils.Lwt_result.Infix in
-    let id = Sihl.Web.Router.param req "id" |> Common.Id.of_string in
+    let open Common.Message in
+    let id =
+      Sihl.Web.Router.param req Field.(Id |> show) |> Common.Id.of_string
+    in
     let pool = context.Pool_context.tenant_db in
     let user () =
-      Sihl.Web.Request.urlencoded "email" req
-      ||> CCOption.to_result Common.Message.EmailAddressMissingOperator
+      Sihl.Web.Request.urlencoded Field.(Email |> show) req
+      ||> CCOption.to_result EmailAddressMissingOperator
       >>= HttpUtils.validate_email_existance pool
     in
     let find_tenant () = Pool_tenant.find_full id in
@@ -90,7 +93,7 @@ let create_operator req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
-        [ Message.set ~success:[ Pool_common.Message.(Created Operator) ] ]
+        [ Message.set ~success:[ Created Field.Operator ] ]
     in
     ()
     |> user
@@ -112,7 +115,9 @@ let tenant_detail req =
     @@
     let csrf = HttpUtils.find_csrf req in
     let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-    let id = Router.param req "id" |> Common.Id.of_string in
+    let id =
+      Router.param req Common.Message.Field.(Id |> show) |> Common.Id.of_string
+    in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail csrf tenant message context
     |> Response.of_html

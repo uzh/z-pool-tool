@@ -58,7 +58,7 @@ let find pool id =
     (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
 ;;
 
 let find_by_email_request =
@@ -77,7 +77,7 @@ let find_by_email pool email =
     (Database.Label.value pool)
     find_by_email_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
 ;;
 
 let find_confirmed_request =
@@ -97,7 +97,7 @@ let find_confirmed pool email =
     (Database.Label.value pool)
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
 ;;
 
 let insert_request =

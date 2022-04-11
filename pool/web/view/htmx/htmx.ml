@@ -12,7 +12,7 @@ type t =
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 
 let hx_attributes field version ?action () =
-  let name = Pool_common.Message.(show_field field) in
+  let name = Pool_common.Message.Field.(field |> show) in
   [ a_user_data "hx-swap" "outerHTML"
   ; a_user_data
       "hx-params"
@@ -29,11 +29,11 @@ let hx_attributes field version ?action () =
 ;;
 
 let create m language ?(classnames = []) ?hx_post ?error () =
-  let field_to_string = Pool_common.Utils.field_to_string language in
-  let show_field = Pool_common.Message.show_field in
+  let open Pool_common in
+  let field_to_string = Utils.field_to_string language in
   let base_input_attributes input_type field version =
     [ a_input_type input_type
-    ; a_name (show_field field)
+    ; a_name Message.Field.(field |> show)
     ; a_placeholder (field_to_string field)
     ]
     @ hx_attributes field version ?action:hx_post ()
@@ -41,7 +41,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
   let input, field =
     match m with
     | Firstname (version, value) ->
-      let field = Pool_common.Message.Firstname in
+      let field = Message.Field.Firstname in
       ( input
           ~a:
             (base_input_attributes `Text field version
@@ -49,7 +49,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
           ()
       , field )
     | Lastname (version, value) ->
-      let field = Pool_common.Message.Lastname in
+      let field = Message.Field.Lastname in
       ( input
           ~a:
             (base_input_attributes `Text field version
@@ -57,14 +57,14 @@ let create m language ?(classnames = []) ?hx_post ?error () =
           ()
       , field )
     | Paused (version, value) ->
-      let field = Pool_common.Message.Paused in
+      let field = Message.Field.Paused in
       let is_checked =
         if value |> User.Paused.value then [ a_checked () ] else []
       in
       ( input ~a:(base_input_attributes `Checkbox field version @ is_checked) ()
       , field )
     | Language (version, value, tenant_languages) ->
-      let field = Pool_common.Message.Language in
+      let field = Message.Field.Language in
       ( Component.language_select
           tenant_languages
           value

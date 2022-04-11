@@ -10,10 +10,10 @@ module Label = struct
         ~encode:pure
         ~decode:(fun m ->
           map_err (fun _ ->
-              Pool_common.(
-                Utils.error_to_string
-                  Pool_common.Language.En
-                  (Message.Decode Message.DatabaseLabel)))
+              let open Pool_common in
+              Utils.error_to_string
+                Language.En
+                Message.(Decode Field.DatabaseLabel))
           @@ create m)
         string)
   ;;
@@ -30,10 +30,8 @@ let t =
   let encode m = Ok (m.url, m.label) in
   let decode (url, label) =
     map_err (fun _ ->
-        Pool_common.(
-          Utils.error_to_string
-            Pool_common.Language.En
-            (Message.Decode Message.Database)))
+        let open Pool_common in
+        Utils.error_to_string Language.En Message.(Decode Field.Database))
     @@ let* url = Url.create url in
        let* label = Label.create label in
        Ok { url; label }

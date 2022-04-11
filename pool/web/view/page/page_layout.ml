@@ -52,7 +52,7 @@ module Tenant = struct
                        Message.(
                          add_field_query_params
                            ""
-                           [ ( Language
+                           [ ( Field.Language
                              , Language.code tenant_language
                                |> CCString.lowercase_ascii )
                            ]))

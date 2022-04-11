@@ -206,11 +206,12 @@ end = struct
   ;;
 
   let schema =
+    let open Pool_common.Message.Field in
     Conformist.(
       make
         Field.
-          [ User.Password.schema ~field:Pool_common.Message.CurrentPassword ()
-          ; User.Password.schema ~field:Pool_common.Message.NewPassword ()
+          [ User.Password.schema ~field:CurrentPassword ()
+          ; User.Password.schema ~field:NewPassword ()
           ; User.PasswordConfirmed.schema ()
           ]
         command)

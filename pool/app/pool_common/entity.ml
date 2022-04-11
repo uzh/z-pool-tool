@@ -23,7 +23,7 @@ module Language = struct
   let of_string = function
     | "EN" -> Ok En
     | "DE" -> Ok De
-    | _ -> Error PoolError.(Invalid Language)
+    | _ -> Error PoolError.(Invalid Field.Language)
   ;;
 
   let t =
@@ -39,14 +39,14 @@ module Language = struct
   let label country_code = country_code |> code |> Utils.Countries.find
 
   let schema () =
-    Pool_common_utils.schema_decoder of_string code PoolError.Language
+    Pool_common_utils.schema_decoder of_string code PoolError.Field.Language
   ;;
 
   let all () = [ En; De ]
   let all_codes () = [ En; De ] |> CCList.map code
 
   let field_of_t =
-    let open Entity_message in
+    let open Entity_message.Field in
     function
     | En -> LanguageEn
     | De -> LanguageDe
@@ -83,7 +83,9 @@ module File = struct
     type t = string [@@deriving eq, show, sexp_of]
 
     let create m =
-      if CCString.is_empty m then Error PoolError.(Invalid Filename) else Ok m
+      if CCString.is_empty m
+      then Error PoolError.(Invalid Field.Filename)
+      else Ok m
     ;;
 
     let value m = m
@@ -94,7 +96,7 @@ module File = struct
 
     let create m =
       let open CCInt.Infix in
-      if m >= CCInt.zero then Ok m else Error PoolError.(Invalid Filesize)
+      if m >= CCInt.zero then Ok m else Error PoolError.(Invalid Field.Filesize)
     ;;
 
     let value m = m
@@ -119,7 +121,7 @@ module File = struct
       | "image/png" -> Ok Png
       | "image/svg+xml" -> Ok Svg
       | "image/webp" -> Ok Webp
-      | _ -> Error PoolError.(Invalid FileMimeType)
+      | _ -> Error PoolError.(Invalid Field.FileMimeType)
     ;;
 
     let to_string = function
@@ -141,7 +143,7 @@ module File = struct
       | ".png" -> Ok Png
       | ".svg" -> Ok Svg
       | ".webp" -> Ok Webp
-      | _ -> Error PoolError.(Invalid FileMimeType)
+      | _ -> Error PoolError.(Invalid Field.FileMimeType)
     ;;
   end
 

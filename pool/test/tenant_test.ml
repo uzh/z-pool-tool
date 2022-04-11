@@ -47,29 +47,29 @@ module Data = struct
   let lastname = "Ötzi"
 
   let urlencoded =
-    let open Pool_common in
-    [ Message.Title, [ title ]
-    ; Message.Description, [ description ]
-    ; Message.Url, [ url ]
-    ; Message.DatabaseUrl, [ database_url ]
-    ; Message.DatabaseLabel, [ database_label ]
-    ; Message.SmtpAuthServer, [ smtp_auth_server ]
-    ; Message.SmtpPort, [ smtp_auth_port ]
-    ; Message.SmtpUsername, [ smtp_auth_username ]
-    ; Message.SmtpPassword, [ smtp_auth_password ]
-    ; Message.SmtpAuthMethod, [ smtp_auth_authentication_method ]
-    ; Message.SmtpProtocol, [ smtp_auth_protocol ]
-    ; Message.Styles, [ Asset.styles ]
-    ; Message.Icon, [ Asset.icon ]
-    ; Message.TenantLogos, [ tenant_logo ]
-    ; Message.PartnerLogos, [ partner_logo ]
-    ; Message.Language, [ default_language ]
-    ; Message.Email, [ email ]
-    ; Message.Password, [ password ]
-    ; Message.Firstname, [ firstname ]
-    ; Message.Lastname, [ lastname ]
+    let open Common.Message in
+    [ Field.Title, [ title ]
+    ; Field.Description, [ description ]
+    ; Field.Url, [ url ]
+    ; Field.DatabaseUrl, [ database_url ]
+    ; Field.DatabaseLabel, [ database_label ]
+    ; Field.SmtpAuthServer, [ smtp_auth_server ]
+    ; Field.SmtpPort, [ smtp_auth_port ]
+    ; Field.SmtpUsername, [ smtp_auth_username ]
+    ; Field.SmtpPassword, [ smtp_auth_password ]
+    ; Field.SmtpAuthMethod, [ smtp_auth_authentication_method ]
+    ; Field.SmtpProtocol, [ smtp_auth_protocol ]
+    ; Field.Styles, [ Asset.styles ]
+    ; Field.Icon, [ Asset.icon ]
+    ; Field.TenantLogos, [ tenant_logo ]
+    ; Field.PartnerLogos, [ partner_logo ]
+    ; Field.Language, [ default_language ]
+    ; Field.Email, [ email ]
+    ; Field.Password, [ password ]
+    ; Field.Firstname, [ firstname ]
+    ; Field.Lastname, [ lastname ]
     ]
-    |> List.map (fun (m, k) -> m |> Message.show_field, k)
+    |> List.map (fun (m, k) -> m |> Field.show, k)
   ;;
 
   let tenant =
@@ -129,7 +129,7 @@ let create_smtp_auth () =
     let* protocol = "http" |> Protocol.create in
     Ok { server; port; username; authentication_method; protocol }
   in
-  let expected = Error Common.Message.(Invalid SmtpProtocol) in
+  let expected = Error Common.Message.(Invalid Field.SmtpProtocol) in
   Alcotest.(
     check
       (result Test_utils.tenant_smtp_auth Test_utils.error)
@@ -257,7 +257,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values
-           [ Pool_common.Message.(TenantDisabledFlag |> show_field) ]
+           [ Common.Message.Field.(TenantDisabledFlag |> show) ]
       |> decode
       >>= handle tenant
     in
@@ -313,9 +313,9 @@ let update_tenant_database () =
     let events =
       let open CCResult.Infix in
       let open Pool_tenant_command.EditDatabase in
-      Pool_common.Message.
-        [ DatabaseUrl |> show_field, [ database_url ]
-        ; DatabaseLabel |> show_field, [ database_label ]
+      Common.Message.Field.
+        [ DatabaseUrl |> show, [ database_url ]
+        ; DatabaseLabel |> show, [ database_label ]
         ]
       |> decode
       >>= handle tenant

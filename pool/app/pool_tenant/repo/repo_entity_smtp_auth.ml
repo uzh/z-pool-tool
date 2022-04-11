@@ -45,10 +45,8 @@ let t =
   let decode (server, (port, (username, (authentication_method, protocol)))) =
     let open CCResult in
     map_err (fun _ ->
-        Pool_common.(
-          Utils.error_to_string
-            Pool_common.Language.En
-            (Message.Decode Message.SmtpReadModel)))
+        let open Pool_common in
+        Utils.error_to_string Language.En Message.(Decode Field.SmtpReadModel))
     @@ let* server = Server.create server in
        let* port = Port.create port in
        let* username = Username.create username in
@@ -86,10 +84,10 @@ module Write = struct
       =
       let open CCResult in
       map_err (fun _ ->
-          Pool_common.(
-            Utils.error_to_string
-              Pool_common.Language.En
-              (Message.Decode Message.SmtpWriteModel)))
+          let open Pool_common in
+          Utils.error_to_string
+            Language.En
+            Message.(Decode Field.SmtpWriteModel))
       @@ let* server = Server.create server in
          let* port = Port.create port in
          let* username = Username.create username in

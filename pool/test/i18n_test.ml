@@ -7,10 +7,10 @@ let database_label = Test_utils.Data.database_label
 let create () =
   let events =
     let open CCResult.Infix in
-    Pool_common.Message.
-      [ Key |> show_field, [ "confirmation_subject" ]
-      ; Language |> show_field, [ "EN" ]
-      ; Translation |> show_field, [ "Subject" ]
+    Pool_common.Message.Field.
+      [ Key |> show, [ "confirmation_subject" ]
+      ; Language |> show, [ "EN" ]
+      ; Translation |> show, [ "Subject" ]
       ]
     |> I18nCommand.Create.decode
     >>= I18nCommand.Create.handle

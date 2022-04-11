@@ -239,7 +239,7 @@ module LogoMapping : sig
     val of_string : string -> (t, Pool_common.Message.error) result
     val to_string : t -> string
     val all : t list
-    val all_fields : Pool_common.Message.field list
+    val all_fields : Pool_common.Message.Field.t list
   end
 
   module Write : sig

@@ -35,7 +35,7 @@ module Language : sig
 
   val all : unit -> t list
   val all_codes : unit -> string list
-  val field_of_t : t -> Message.field
+  val field_of_t : t -> Message.Field.t
 end
 
 module Version : sig
@@ -161,13 +161,13 @@ module Utils : sig
   val schema_decoder
     :  (string -> ('b, Message.error) result)
     -> ('b -> string)
-    -> Entity_message.field
+    -> Entity_message.Field.t
     -> (Message.error, 'b) PoolConformist.Field.t
 
   val schema_list_decoder
     :  (string list -> ('a, Entity_message.error) result)
     -> ('a -> string list)
-    -> Entity_message.field
+    -> Entity_message.Field.t
     -> ('b, 'a) PoolConformist.Field.t
 
   val to_string : Language.t -> Message.t -> string
@@ -175,7 +175,7 @@ module Utils : sig
   val success_to_string : Language.t -> Message.success -> string
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
-  val field_to_string : Language.t -> Message.field -> string
+  val field_to_string : Language.t -> Message.Field.t -> string
   val control_to_string : Language.t -> Message.control -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string

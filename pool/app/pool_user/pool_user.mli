@@ -14,7 +14,7 @@ module Password : sig
   val to_sihl : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.field
+    :  ?field:Pool_common.Message.Field.t
     -> unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
@@ -29,7 +29,7 @@ module PasswordConfirmed : sig
   val to_sihl : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.field
+    :  ?field:Pool_common.Message.Field.t
     -> unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end

@@ -15,7 +15,7 @@ end = struct
   let handle terms command =
     let open CCResult in
     match CCList.length command > 0 with
-    | false -> Error Pool_common.Message.(NoOptionSelected Language)
+    | false -> Error Pool_common.Message.(NoOptionSelected Field.Language)
     | true ->
       let open CCResult.Infix in
       let terms = CCList.map Settings.TermsAndConditions.value terms in

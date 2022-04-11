@@ -34,8 +34,8 @@ let login csrf Pool_context.{ language; query_language; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element `Text (Some "email") Message.EmailAddress ""
-        ; input_element `Password (Some "password") Message.Password ""
+        ; input_element `Text Message.Field.Email ""
+        ; input_element `Password Message.Field.Password ""
         ; submit_element
             language
             Message.Login
@@ -65,10 +65,10 @@ let request_reset_password csrf Pool_context.{ language; query_language; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element `Text (Some "email") Pool_common.Message.EmailAddress ""
+        ; input_element `Text Pool_common.Message.Field.Email ""
         ; submit_element
             language
-            Pool_common.Message.(SendResetLink)
+            Pool_common.Message.SendResetLink
             ~classnames:[ "button--primary" ]
             ()
         ]
@@ -80,23 +80,16 @@ let reset_password csrf token Pool_context.{ language; query_language; _ } =
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let input_element = input_element language in
   div
-    [ h1
-        [ txt
-            Pool_common.(Utils.text_to_string language I18n.ResetPasswordTitle)
-        ]
+    [ h1 [ txt (Utils.text_to_string language I18n.ResetPasswordTitle) ]
     ; form
         ~a:[ a_action (externalize "/reset-password"); a_method `Post ]
         [ csrf_element csrf ()
-        ; input_element `Hidden (Some "token") Message.Token token
-        ; input_element `Password (Some "password") Message.Password ""
-        ; input_element
-            `Password
-            (Some "password_confirmation")
-            Message.PasswordConfirmation
-            ""
+        ; input_element `Hidden Message.Field.Token token
+        ; input_element `Password Message.Field.Password ""
+        ; input_element `Password Message.Field.PasswordConfirmation ""
         ; submit_element
             language
-            Message.(Save (Some password))
+            Message.(Save (Some Field.password))
             ~classnames:[ "button--primary" ]
             ()
         ]

@@ -20,12 +20,12 @@ module ContactEmail = struct
   (* TODO: email address validation *)
   let create email =
     if CCString.length email <= 0
-    then Error Message.(Invalid EmailAddress)
+    then Error Message.(Invalid Field.EmailAddress)
     else Ok email
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder create value Message.EmailAddress
+    Pool_common.Utils.schema_decoder create value Message.Field.EmailAddress
   ;;
 end
 
@@ -36,12 +36,12 @@ module EmailSuffix = struct
 
   let create suffix =
     if CCString.length suffix <= 0
-    then Error Pool_common.Message.(Invalid EmailSuffix)
+    then Error Pool_common.Message.(Invalid Field.EmailSuffix)
     else Ok suffix
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder create value Message.EmailSuffix
+    Pool_common.Utils.schema_decoder create value Message.Field.EmailSuffix
   ;;
 end
 
@@ -53,7 +53,7 @@ module InactiveUser = struct
       let open CCResult.Infix in
       week
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.TimeSpan)
       >>= fun week ->
       if week < 0 then Error Pool_common.Message.TimeSpanPositive else Ok week
     ;;
@@ -65,7 +65,7 @@ module InactiveUser = struct
       Pool_common.Utils.schema_decoder
         create
         CCInt.to_string
-        Message.InactiveUserDisableAfter
+        Message.Field.InactiveUserDisableAfter
     ;;
   end
 
@@ -74,11 +74,11 @@ module InactiveUser = struct
 
     let create day =
       let open CCResult.Infix in
+      let open Pool_common.Message in
       day
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
-      >>= fun day ->
-      if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
+      |> CCOption.to_result (Invalid Field.TimeSpan)
+      >>= fun day -> if day < 0 then Error TimeSpanPositive else Ok day
     ;;
 
     let value m = m
@@ -88,7 +88,7 @@ module InactiveUser = struct
       Pool_common.Utils.schema_decoder
         create
         CCInt.to_string
-        Message.InactiveUserWarning
+        Message.Field.InactiveUserWarning
     ;;
   end
 end
@@ -100,7 +100,7 @@ module TermsAndConditions = struct
     let create terms =
       if CCString.length terms > 0
       then Ok terms
-      else Error Pool_common.Message.(Invalid TermsAndConditions)
+      else Error Pool_common.Message.(Invalid Field.TermsAndConditions)
     ;;
 
     let value m = m

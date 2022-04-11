@@ -134,6 +134,7 @@ let update_terms_and_conditions _ () =
 ;;
 
 let login_after_terms_update _ () =
+  let open Pool_common.Message in
   let email = "one@test.com" in
   let accepted =
     let open Utils.Lwt_result.Infix in
@@ -148,15 +149,13 @@ let login_after_terms_update _ () =
       in
       match accepted with
       | true -> Lwt.return_ok participant
-      | false ->
-        Lwt.return_error Pool_common.Message.(TermsAndConditionsNotAccepted)
+      | false -> Lwt.return_error TermsAndConditionsNotAccepted
     in
     participant
-    |> Lwt_result.map_err
-         (CCFun.const Pool_common.Message.(NotFound Participant))
+    |> Lwt_result.map_err (CCFun.const (NotFound Field.Participant))
     >>= terms_agreed
   in
-  let expected = Error Pool_common.Message.(TermsAndConditionsNotAccepted) in
+  let expected = Error TermsAndConditionsNotAccepted in
   accepted
   |> Lwt.map (fun accepted ->
          Alcotest.(

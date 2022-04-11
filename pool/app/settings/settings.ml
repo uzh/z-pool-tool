@@ -11,7 +11,7 @@ let[@warning "-4"] find_languages pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve Language) |> Utils.error_to_string Language.En)
+      Message.(Retrieve Field.Language) |> Utils.error_to_string Language.En)
     |> failwith
 ;;
 
@@ -24,7 +24,7 @@ let[@warning "-4"] find_email_suffixes pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve EmailSuffix) |> Utils.error_to_string Language.En)
+      Message.(Retrieve Field.EmailSuffix) |> Utils.error_to_string Language.En)
     |> failwith
 ;;
 
@@ -37,7 +37,7 @@ let[@warning "-4"] find_contact_email pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve ContactEmail) |> Utils.error_to_string Language.En)
+      Message.(Retrieve Field.ContactEmail) |> Utils.error_to_string Language.En)
     |> failwith
 ;;
 
@@ -50,7 +50,7 @@ let[@warning "-4"] find_inactive_user_disable_after pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve InactiveUserDisableAfter)
+      Message.(Retrieve Field.InactiveUserDisableAfter)
       |> Utils.error_to_string Language.En)
     |> failwith
 ;;
@@ -64,7 +64,7 @@ let[@warning "-4"] find_inactive_user_warning pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve InactiveUserWarning)
+      Message.(Retrieve Field.InactiveUserWarning)
       |> Utils.error_to_string Language.En)
     |> failwith
 ;;
@@ -78,7 +78,8 @@ let[@warning "-4"] find_terms_and_conditions pool =
   | _ ->
     (* Due to Repo function, this state cannot be reached. *)
     Pool_common.(
-      Message.(Retrieve TermsAndConditions) |> Utils.error_to_string Language.En)
+      Message.(Retrieve Field.TermsAndConditions)
+      |> Utils.error_to_string Language.En)
     |> failwith
 ;;
 
@@ -91,12 +92,12 @@ let default_language pool =
   let open Lwt.Infix in
   find_languages pool
   >|= CCList.head_opt
-  >|= CCOption.to_result Pool_common.Message.(Retrieve Language)
+  >|= CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
 ;;
 
 let terms_and_conditions pool language =
   let%lwt terms = find_terms_and_conditions pool in
   CCList.assoc_opt ~eq:Pool_common.Language.equal language terms
-  |> CCOption.to_result Pool_common.Message.(Retrieve TermsAndConditions)
+  |> CCOption.to_result Pool_common.Message.(Retrieve Field.TermsAndConditions)
   |> Lwt_result.lift
 ;;

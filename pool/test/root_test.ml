@@ -12,11 +12,11 @@ let create_root () =
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
-         Pool_common.
-           [ Message.(Email |> show_field), [ email ]
-           ; Message.(Password |> show_field), [ password ]
-           ; Message.(Firstname |> show_field), [ firstname ]
-           ; Message.(Lastname |> show_field), [ lastname ]
+         Pool_common.Message.
+           [ Field.(Email |> show), [ email ]
+           ; Field.(Password |> show), [ password ]
+           ; Field.(Firstname |> show), [ firstname ]
+           ; Field.(Lastname |> show), [ lastname ]
            ]
   in
   let events = Root_command.Create.handle command in
@@ -44,11 +44,11 @@ let create_root_with_invalid_password () =
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
-         Pool_common.
-           [ Message.(Email |> show_field), [ email ]
-           ; Message.(Password |> show_field), [ password ]
-           ; Message.(Firstname |> show_field), [ firstname ]
-           ; Message.(Lastname |> show_field), [ lastname ]
+         Pool_common.Message.
+           [ Field.(Email |> show), [ email ]
+           ; Field.(Password |> show), [ password ]
+           ; Field.(Firstname |> show), [ firstname ]
+           ; Field.(Lastname |> show), [ lastname ]
            ]
   in
   let events = Root_command.Create.handle command in

@@ -38,7 +38,7 @@ let handle_event pool : event -> unit Lwt.t =
     |> Service.User.find_opt ~ctx
     >>= function
     | None ->
-      let error = PoolError.(NotFound User) |> PoolError.show_error in
+      let error = PoolError.(NotFound Field.User |> show_error) in
       Logs.err (fun m -> m "Cannot create verification email: %s" error);
       failwith error
     | Some user ->

@@ -1,7 +1,10 @@
 open Entity_message
 
-let field_to_string = function
+let field_to_string =
+  let open Field in
+  function
   | Admin -> "admin"
+  | AssetId -> "asset identifier"
   | ContactEmail -> "contact email address"
   | CurrentPassword -> "current password"
   | Database -> "database"
@@ -9,6 +12,7 @@ let field_to_string = function
   | DatabaseUrl -> "database url"
   | DefaultLanguage -> "default language"
   | Description -> "description"
+  | Disabled -> "disabled"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
@@ -22,6 +26,7 @@ let field_to_string = function
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
+  | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
   | Key -> "key"
@@ -53,9 +58,11 @@ let field_to_string = function
   | Styles -> "styles"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
+  | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
   | TenantPool -> "Tenant pool"
+  | TermsAccepted -> "terms accepted"
   | TermsAndConditions -> "terms and conditions"
   | TimeSpan -> "time span"
   | Title -> "title"
@@ -63,6 +70,7 @@ let field_to_string = function
   | Translation -> "translation"
   | Url -> "url"
   | User -> "user"
+  | Version -> "version"
 ;;
 
 let info_to_string : info -> string = function

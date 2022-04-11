@@ -11,12 +11,12 @@ let sign_up_not_allowed_suffix () =
     let command =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
-           Pool_common.Message.
-             [ Email |> show_field, [ "john@bluewin.com" ]
-             ; Password |> show_field, [ "password" ]
-             ; Firstname |> show_field, [ "Jane" ]
-             ; Lastname |> show_field, [ "Doe" ]
-             ; ( RecruitmentChannel |> show_field
+           Pool_common.Message.Field.
+             [ Email |> show, [ "john@bluewin.com" ]
+             ; Password |> show, [ "password" ]
+             ; Firstname |> show, [ "Jane" ]
+             ; Lastname |> show, [ "Doe" ]
+             ; ( RecruitmentChannel |> show
                , [ Participant.RecruitmentChannel.Friend
                    |> Participant.RecruitmentChannel.to_string
                  ] )
@@ -24,7 +24,7 @@ let sign_up_not_allowed_suffix () =
     in
     Participant_command.SignUp.handle None command ~allowed_email_suffixes
   in
-  let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
+  let expected = Error Pool_common.Message.(Invalid Field.EmailSuffix) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -44,12 +44,12 @@ let sign_up () =
     let command =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
-           Pool_common.Message.
-             [ Email |> show_field, [ "john@gmail.com" ]
-             ; Password |> show_field, [ "password" ]
-             ; Firstname |> show_field, [ "Jane" ]
-             ; Lastname |> show_field, [ "Doe" ]
-             ; ( RecruitmentChannel |> show_field
+           Pool_common.Message.Field.
+             [ Email |> show, [ "john@gmail.com" ]
+             ; Password |> show, [ "password" ]
+             ; Firstname |> show, [ "Jane" ]
+             ; Lastname |> show, [ "Doe" ]
+             ; ( RecruitmentChannel |> show
                , [ Participant.RecruitmentChannel.Friend
                    |> Participant.RecruitmentChannel.to_string
                  ] )
