@@ -9,9 +9,7 @@ module Password = struct
 
   let validate ?(password_policy = default_password_policy) password =
     let open CCResult in
-    let* () =
-      password_policy password |> map_err Pool_common.Message.passwordpolicy
-    in
+    let* () = password_policy password |> map_err PoolError.passwordpolicy in
     Ok ()
   ;;
 
@@ -23,8 +21,8 @@ module Password = struct
     Format.fprintf formatter "%s" m
   ;;
 
-  let schema name =
-    Pool_common.Utils.schema_decoder create show PoolError.Password name
+  let schema ?(field = PoolError.Field.Password) () =
+    Pool_common.Utils.schema_decoder create show field
   ;;
 end
 
@@ -39,12 +37,8 @@ module PasswordConfirmed = struct
     m |> show |> Format.fprintf formatter "%s"
   ;;
 
-  let schema name =
-    Pool_common.Utils.schema_decoder
-      (fun m -> Ok (create m))
-      show
-      PoolError.Password
-      name
+  let schema ?(field = PoolError.Field.PasswordConfirmation) () =
+    Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
   ;;
 end
 
@@ -67,7 +61,7 @@ module EmailAddress = struct
     in
     if Re.execp regex email
     then Ok email
-    else Error PoolError.(Invalid EmailAddress)
+    else Error PoolError.(Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
@@ -94,7 +88,7 @@ module EmailAddress = struct
              suffix
              allowed_email_suffixes
         then Ok ()
-        else Error PoolError.(Invalid EmailSuffix))
+        else Error PoolError.(Invalid Field.EmailSuffix))
   ;;
 
   let validate = validate_suffix
@@ -103,7 +97,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Password "email"
+    Pool_common.Utils.schema_decoder create show PoolError.Field.Email
   ;;
 end
 
@@ -112,7 +106,7 @@ module Firstname = struct
 
   let create m =
     if CCString.is_empty m
-    then Error Pool_common.Message.(Invalid Firstname)
+    then Error PoolError.(Invalid Field.Firstname)
     else Ok m
   ;;
 
@@ -120,11 +114,7 @@ module Firstname = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Firstname
-      "firstname"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.Firstname
   ;;
 end
 
@@ -133,7 +123,7 @@ module Lastname = struct
 
   let create m =
     if CCString.is_empty m
-    then Error Pool_common.Message.(Invalid Lastname)
+    then Error PoolError.(Invalid Field.Lastname)
     else Ok m
   ;;
 
@@ -141,7 +131,7 @@ module Lastname = struct
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Lastname "lastname"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.Lastname
   ;;
 end
 
@@ -159,8 +149,7 @@ module Paused = struct
         |> CCOption.get_or ~default:false
         |> CCResult.pure)
       string_of_bool
-      PoolError.Paused
-      "paused"
+      PoolError.Field.Paused
   ;;
 end
 

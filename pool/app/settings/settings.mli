@@ -73,6 +73,17 @@ module TermsAndConditions : sig
   val value : t -> Pool_common.Language.t * Terms.t
 end
 
+type default =
+  { tenant_languages : Pool_common.Language.t list
+  ; tenant_email_suffixes : EmailSuffix.t list
+  ; tenant_contact_email : ContactEmail.t
+  ; inactive_user_disable_after : InactiveUser.DisableAfter.t
+  ; inactive_user_warning : InactiveUser.Warning.t
+  ; terms_and_conditions : TermsAndConditions.t list
+  }
+
+val default_values : default
+
 module Value : sig
   type t
 end
@@ -112,6 +123,7 @@ type event =
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
   | TermsAndConditionsUpdated of TermsAndConditions.t list
+  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

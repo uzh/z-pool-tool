@@ -47,18 +47,18 @@ let decoder create_fcn field l =
     Error (Entity_message.Undefined field |> with_log_error ~level:Logs.Info)
 ;;
 
-let schema_decoder create_fcn encode_fnc field field_string =
+let schema_decoder create_fcn encode_fnc field =
   PoolConformist.custom
     (decoder create_fcn field)
     (fun l -> l |> encode_fnc |> CCList.pure)
-    field_string
+    Entity_message.Field.(field |> show)
 ;;
 
 let list_decoder create_fcn l = create_fcn l
 
-let schema_list_decoder create_fcn encode_fnc field_string =
+let schema_list_decoder create_fcn encode_fnc field =
   PoolConformist.custom
     (list_decoder create_fcn)
     (fun l -> l |> encode_fnc)
-    field_string
+    Entity_message.Field.(field |> show)
 ;;

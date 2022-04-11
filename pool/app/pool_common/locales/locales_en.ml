@@ -1,7 +1,10 @@
 open Entity_message
 
-let field_to_string = function
+let field_to_string =
+  let open Field in
+  function
   | Admin -> "admin"
+  | AssetId -> "asset identifier"
   | ContactEmail -> "contact email address"
   | CurrentPassword -> "current password"
   | Database -> "database"
@@ -9,6 +12,7 @@ let field_to_string = function
   | DatabaseUrl -> "database url"
   | DefaultLanguage -> "default language"
   | Description -> "description"
+  | Disabled -> "disabled"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
@@ -22,6 +26,7 @@ let field_to_string = function
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
+  | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
   | Key -> "key"
@@ -34,6 +39,7 @@ let field_to_string = function
   | Operator -> "operator"
   | Page -> "page"
   | Participant -> "participant"
+  | PartnerLogos -> "partner logos"
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
@@ -52,9 +58,11 @@ let field_to_string = function
   | Styles -> "styles"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
+  | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
   | TenantPool -> "Tenant pool"
+  | TermsAccepted -> "terms accepted"
   | TermsAndConditions -> "terms and conditions"
   | TimeSpan -> "time span"
   | Title -> "title"
@@ -62,6 +70,7 @@ let field_to_string = function
   | Translation -> "translation"
   | Url -> "url"
   | User -> "user"
+  | Version -> "version"
 ;;
 
 let info_to_string : info -> string = function
@@ -93,7 +102,15 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
-  | Conformist errs -> CCList.map error_to_string errs |> CCString.concat "\n"
+  | Conformist errs ->
+    CCList.map
+      (fun (field, err) ->
+        Format.asprintf
+          "%s: %s"
+          (field_to_string field |> CCString.capitalize_ascii)
+          (error_to_string err))
+      errs
+    |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
   | DecodeAction -> "Cannot decode action."
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""

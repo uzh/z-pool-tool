@@ -5,18 +5,14 @@ module Url = struct
 
   let create url =
     if CCString.is_empty url
-    then Error PoolError.(Invalid DatabaseUrl)
+    then Error PoolError.(Invalid Field.DatabaseUrl)
     else Ok url
   ;;
 
   let value m = m
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Language
-      "database_url"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.DatabaseUrl
   ;;
 end
 
@@ -30,16 +26,12 @@ module Label = struct
 
   let create label =
     if CCString.is_empty label || String.contains label ' '
-    then Error PoolError.(Invalid DatabaseLabel)
+    then Error PoolError.(Invalid Field.DatabaseLabel)
     else Ok label
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.DatabaseLabel
-      "database_label"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.DatabaseLabel
   ;;
 end
 

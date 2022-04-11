@@ -39,7 +39,7 @@ end = struct
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.schema "password"
+          ; User.Password.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ; Participant.RecruitmentChannel.schema ()
@@ -206,12 +206,13 @@ end = struct
   ;;
 
   let schema =
+    let open Pool_common.Message.Field in
     Conformist.(
       make
         Field.
-          [ User.Password.schema "current_password"
-          ; User.Password.schema "new_password"
-          ; User.PasswordConfirmed.schema "password_confirmation"
+          [ User.Password.schema ~field:CurrentPassword ()
+          ; User.Password.schema ~field:NewPassword ()
+          ; User.PasswordConfirmed.schema ()
           ]
         command)
   ;;

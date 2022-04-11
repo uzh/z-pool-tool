@@ -10,6 +10,6 @@ let find id =
       (id |> Pool_common.Id.value)
   in
   user
-  |> CCOption.to_result Pool_common.Message.(NotFound User)
+  |> CCOption.to_result Pool_common.Message.(NotFound Field.User)
   |> Lwt_result.lift
 ;;

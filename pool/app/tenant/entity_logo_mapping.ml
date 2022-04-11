@@ -10,7 +10,7 @@ module LogoType = struct
   let of_string = function
     | "partner_logo" -> Ok PartnerLogo
     | "tenant_logo" -> Ok TenantLogo
-    | _ -> Error Pool_common.Message.(Invalid LogoType)
+    | _ -> Error Pool_common.Message.(Invalid Field.LogoType)
   ;;
 
   let to_string = function

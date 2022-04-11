@@ -48,7 +48,7 @@ depends: [
   "conf-libssl" {= "3"}
   "conf-mariadb" {= "2"}
   "conf-pkg-config" {= "2"}
-  "conformist" {= "0.8.0"}
+  "conformist" {= "0.8.1"}
   "containers" {= "3.7"}
   "cppo" {= "1.6.8"}
   "cpuid" {= "0.1.2"}
@@ -117,12 +117,12 @@ depends: [
   "ocaml-version" {= "3.4.0"}
   "ocamlbuild" {= "0.14.1"}
   "ocamlfind" {= "1.9.3"}
-  "ocamlformat" {= "0.20.1"}
+  "ocamlformat" {= "0.20.0"}
   "ocb-stubblr" {= "0.1.1-1"}
   "ocp-indent" {= "1.8.1"}
   "ocplib-endian" {= "1.2"}
   "octavius" {= "1.2.2"}
-  "odoc-parser" {= "1.0.0"}
+  "odoc-parser" {= "0.9.0"}
   "opium" {= "0.20.0"}
   "parsexp" {= "v0.14.2"}
   "pbkdf" {= "1.2.0"}
@@ -207,6 +207,7 @@ pin-depends: [
   ["sihl-cache.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
   ["canary.0.0.1" "git+https://github.com/chrismamo1/canary.git"]
   ["sihl.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
+  ["conformist.0.8.1" "git+https://github.com/oxidizing/conformist.git"]
   [
     "ocaml-base-compiler.4.12.1"
     "https://github.com/ocaml/ocaml/archive/4.12.1.tar.gz"

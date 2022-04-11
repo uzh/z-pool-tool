@@ -9,9 +9,9 @@
   admin
   utils
   email
-  cqrs_command
+  i18n
   conformist)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 
 (include_subdirs unqualified)

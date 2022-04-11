@@ -15,7 +15,7 @@ end = struct
   let handle terms command =
     let open CCResult in
     match CCList.length command > 0 with
-    | false -> Error Pool_common.Message.(NoOptionSelected Language)
+    | false -> Error Pool_common.Message.(NoOptionSelected Field.Language)
     | true ->
       let open CCResult.Infix in
       let terms = CCList.map Settings.TermsAndConditions.value terms in
@@ -285,4 +285,26 @@ end = struct
   ;;
 
   let can = Utils.todo
+end
+
+module RestoreDefault : sig
+  type t = Pool_tenant.t
+
+  val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Pool_tenant.t
+
+  let handle () =
+    Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
+  ;;
+
+  let can user command =
+    Permission.can
+      user
+      ~any_of:
+        [ Permission.Destroy
+            (Permission.Tenant, Some (command |> Pool_tenant.id))
+        ]
+  ;;
 end

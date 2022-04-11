@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   database-root:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     environment:
       # default user is "root"
@@ -11,7 +11,7 @@ services:
       - 3306:3306
 
   database-tenant:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     environment:
       # default user is "root"

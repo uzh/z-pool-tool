@@ -24,7 +24,14 @@ module Key = struct
     | SessionFinishText
     | WelcomeText
     | PasswordPolicyText
-  [@@deriving eq, show]
+  [@@deriving eq, show, enum]
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
+  ;;
 
   let to_string = function
     | ConfirmationSubject -> "confirmation_subject"
@@ -80,11 +87,11 @@ module Key = struct
     | "session_finish_text" -> Ok SessionFinishText
     | "welcome_text" -> Ok WelcomeText
     | "password_policy_text" -> Ok PasswordPolicyText
-    | _ -> Error Pool_common.Message.(Invalid Key)
+    | _ -> Error PoolError.(Invalid Field.Key)
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder of_string to_string PoolError.Key "key"
+    Common.Utils.schema_decoder of_string to_string PoolError.Field.Key
   ;;
 end
 
@@ -95,23 +102,19 @@ module Content = struct
 
   let create content =
     if CCString.is_empty content
-    then Error PoolError.(Invalid Translation)
+    then Error PoolError.(Invalid Field.Translation)
     else Ok content
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.Translation
-      "content"
+    Common.Utils.schema_decoder create value PoolError.Field.Translation
   ;;
 end
 
 type t =
   { id : Common.Id.t
   ; key : Key.t
-  ; language : Pool_common.Language.t
+  ; language : Common.Language.t
   ; content : Content.t
   }
 [@@deriving eq, show]
@@ -120,6 +123,7 @@ let create key language content =
   { id = Common.Id.create (); key; language; content }
 ;;
 
+let compare (one : t) (two : t) = CCString.compare (one |> show) (two |> show)
 let id m = m.id
 let key m = m.key
 let language m = m.language

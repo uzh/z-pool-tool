@@ -4,6 +4,7 @@
   sihl
   pool_event
   permission
+  database
   role
   i18n
   settings

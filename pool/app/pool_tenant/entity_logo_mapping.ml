@@ -10,7 +10,7 @@ module LogoType = struct
   let of_string = function
     | "partner_logo" -> Ok PartnerLogo
     | "tenant_logo" -> Ok TenantLogo
-    | _ -> Error Pool_common.Message.(Invalid LogoType)
+    | _ -> Error Pool_common.Message.(Invalid Field.LogoType)
   ;;
 
   let to_string = function
@@ -18,7 +18,16 @@ module LogoType = struct
     | TenantLogo -> "tenant_logo"
   ;;
 
-  let all () = [ PartnerLogo; TenantLogo ] |> CCList.map to_string
+  let all = [ PartnerLogo; TenantLogo ]
+
+  let field_of_t =
+    let open Pool_common.Message.Field in
+    function
+    | TenantLogo -> TenantLogos
+    | PartnerLogo -> PartnerLogos
+  ;;
+
+  let all_fields = CCList.map field_of_t all
 end
 
 type mapping =

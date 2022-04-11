@@ -59,4 +59,10 @@ module Utils = struct
     | Language.De -> I18n_de.nav_link_to_string
     | Language.En -> I18n_en.nav_link_to_string
   ;;
+
+  let get_or_failwith m =
+    m
+    |> CCResult.map_err (error_to_string Language.En)
+    |> CCResult.get_or_failwith
+  ;;
 end

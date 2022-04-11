@@ -181,7 +181,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_full_request =
@@ -196,7 +196,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_full_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
@@ -213,7 +213,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_by_label_request
       (Database.Label.value label)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_all_request =

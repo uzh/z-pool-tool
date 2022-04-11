@@ -7,16 +7,12 @@ module Server = struct
 
   let create server =
     if CCString.is_empty server
-    then Error PoolError.(Invalid SmtpAuthServer)
+    then Error PoolError.(Invalid Field.SmtpAuthServer)
     else Ok server
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpAuthServer
-      "smtp_auth_server"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthServer
   ;;
 end
 
@@ -27,16 +23,12 @@ module Port = struct
 
   let create port =
     if CCString.is_empty port && CCInt.of_string port |> CCOption.is_none
-    then Error PoolError.(Invalid SmtpPort)
+    then Error PoolError.(Invalid Field.SmtpPort)
     else Ok port
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpPort
-      "smtp_auth_port"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpPort
   ;;
 end
 
@@ -47,16 +39,12 @@ module Username = struct
 
   let create username =
     if CCString.is_empty username
-    then Error PoolError.(Invalid SmtpUsername)
+    then Error PoolError.(Invalid Field.SmtpUsername)
     else Ok username
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpUsername
-      "smtp_auth_username"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpUsername
   ;;
 end
 
@@ -67,16 +55,12 @@ module Password = struct
 
   let create password =
     if CCString.is_empty password
-    then Error PoolError.(Invalid SmtpPassword)
+    then Error PoolError.(Invalid Field.SmtpPassword)
     else Ok password
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      show
-      PoolError.SmtpPassword
-      "smtp_auth_password"
+    Pool_common.Utils.schema_decoder create show PoolError.Field.SmtpPassword
   ;;
 end
 
@@ -87,16 +71,12 @@ module AuthenticationMethod = struct
 
   let create authentication_method =
     if CCString.is_empty authentication_method
-    then Error PoolError.(Invalid SmtpAuthMethod)
+    then Error PoolError.(Invalid Field.SmtpAuthMethod)
     else Ok authentication_method
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpAuthMethod
-      "smtp_auth_authentication_method"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthMethod
   ;;
 end
 
@@ -108,15 +88,11 @@ module Protocol = struct
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
     then Ok protocol
-    else Error PoolError.(Invalid SmtpProtocol)
+    else Error PoolError.(Invalid Field.SmtpProtocol)
   ;;
 
   let schema () =
-    Pool_common.Utils.schema_decoder
-      create
-      value
-      PoolError.SmtpProtocol
-      "smtp_auth_protocol"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpProtocol
   ;;
 end
 

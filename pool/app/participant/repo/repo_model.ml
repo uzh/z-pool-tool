@@ -24,10 +24,8 @@ module Language = struct
         ~encode:(fun m -> m |> CCOption.map code |> pure)
         ~decode:(fun m ->
           map_err (fun _ ->
-              Pool_common.(
-                Utils.error_to_string
-                  Pool_common.Language.En
-                  (Message.Decode Message.Language)))
+              let open Pool_common in
+              Utils.error_to_string Language.En Message.(Decode Field.Language))
           @@
           match m with
           | None -> Ok None

@@ -13,7 +13,7 @@ module RecruitmentChannel = struct
     | "online" -> Ok Online
     | "lecture" -> Ok Lecture
     | "mailing" -> Ok Mailing
-    | _ -> Error Pool_common.Message.(Invalid RecruitmentChannel)
+    | _ -> Error Pool_common.Message.(Invalid Field.RecruitmentChannel)
   ;;
 
   let to_string = function
@@ -27,8 +27,7 @@ module RecruitmentChannel = struct
     Pool_common.Utils.schema_decoder
       of_string
       to_string
-      Pool_common.Message.RecruitmentChannel
-      "recruitment_channel"
+      Pool_common.Message.Field.RecruitmentChannel
   ;;
 
   let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]

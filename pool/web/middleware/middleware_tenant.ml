@@ -14,7 +14,7 @@ let valid_tenant () =
       match Pool_tenant.(Disabled.value tenant.disabled) with
       | false ->
         Lwt.return_ok (Pool_context.Tenant.create tenant tenant_languages)
-      | true -> Lwt.return_error Pool_common.Message.(Disabled Tenant)
+      | true -> Lwt.return_error Pool_common.Message.(Disabled Field.Tenant)
     in
     match result with
     | Ok context -> context |> Pool_context.Tenant.set req |> handler

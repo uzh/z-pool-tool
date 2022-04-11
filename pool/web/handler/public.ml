@@ -109,7 +109,7 @@ let not_found req =
 
 let asset req =
   let open Sihl.Contract.Storage in
-  let asset_id = Sihl.Web.Router.param req "id" in
+  let asset_id = Sihl.Web.Router.param req Common.Message.Field.(Id |> show) in
   let%lwt file =
     Service.Storage.find ~ctx:(Pool_tenant.to_ctx Database.root) asset_id
   in

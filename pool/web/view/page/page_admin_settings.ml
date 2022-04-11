@@ -148,8 +148,7 @@ let show
                  (fun suffix ->
                    input_element
                      `Text
-                     (Some "email_suffix")
-                     Message.EmailSuffix
+                     Message.Field.EmailSuffix
                      (suffix |> Settings.EmailSuffix.value))
                  email_suffixes
               @ [ submit_element
@@ -160,7 +159,7 @@ let show
                 ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
-              [ input_element `Text (Some "email_suffix") Message.EmailSuffix ""
+              [ input_element `Text Message.Field.EmailSuffix ""
               ; submit_element
                   language
                   Message.(Add None)
@@ -198,8 +197,7 @@ let show
           ~a:(form_attrs `UpdateTenantContactEmail)
           [ input_element
               `Text
-              (Some "contact_email")
-              Message.ContactEmail
+              Message.Field.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
           ; submit_element
               language
@@ -218,8 +216,7 @@ let show
           [ p [ txt "Disable user after (weeks)" ]
           ; input_element
               `Number
-              (Some "inactive_user_disable_after")
-              Message.InactiveUserDisableAfter
+              Message.Field.InactiveUserDisableAfter
               (inactive_user_disable_after
               |> DisableAfter.value
               |> CCInt.to_string)
@@ -234,8 +231,7 @@ let show
           [ p [ txt "Send warning before disabling (days)" ]
           ; input_element
               `Number
-              (Some "inactive_user_warning")
-              Message.InactiveUserWarning
+              Message.Field.InactiveUserWarning
               (inactive_user_warning |> Warning.value |> CCInt.to_string)
           ; submit_element
               language
@@ -255,7 +251,7 @@ let show
           Component.textarea_element
             language
             (Pool_common.Language.code sys_language)
-            (Pool_common.Language.field_name_of_t sys_language)
+            (Pool_common.Language.field_of_t sys_language)
             (CCList.assoc_opt
                ~eq:Pool_common.Language.equal
                language

@@ -25,10 +25,10 @@ let unverified_t =
   in
   let decode (address, (user, (token, (created_at, updated_at)))) =
     map_err (fun _ ->
-        Pool_common.(
-          Utils.error_to_string
-            Pool_common.Language.En
-            (Message.Decode Message.EmailAddressUnverified)))
+        let open Pool_common in
+        Utils.error_to_string
+          Language.En
+          Message.(Decode Field.EmailAddressUnverified))
     @@ let* address = address |> User.EmailAddress.create in
        let token = token |> Token.create in
        Ok (Unverified { address; user; token; created_at; updated_at })
@@ -58,10 +58,10 @@ let verified_t =
   in
   let decode (address, (user, (verified_at, (created_at, updated_at)))) =
     map_err (fun _ ->
-        Pool_common.(
-          Utils.error_to_string
-            Pool_common.Language.En
-            (Message.Decode Message.EmailAddressVerified)))
+        let open Pool_common in
+        Utils.error_to_string
+          Language.En
+          Message.(Decode Field.EmailAddressVerified))
     @@ let* address = address |> User.EmailAddress.create in
        let verified_at = verified_at |> VerifiedAt.create in
        Ok (Verified { address; user; verified_at; created_at; updated_at })

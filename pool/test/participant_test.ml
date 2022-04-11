@@ -11,19 +11,20 @@ let sign_up_not_allowed_suffix () =
     let command =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
-           [ "email", [ "john@bluewin.com" ]
-           ; "password", [ "password" ]
-           ; "firstname", [ "Jane" ]
-           ; "lastname", [ "Doe" ]
-           ; ( "recruitment_channel"
-             , [ Participant.RecruitmentChannel.Friend
-                 |> Participant.RecruitmentChannel.to_string
-               ] )
-           ]
+           Pool_common.Message.Field.
+             [ Email |> show, [ "john@bluewin.com" ]
+             ; Password |> show, [ "password" ]
+             ; Firstname |> show, [ "Jane" ]
+             ; Lastname |> show, [ "Doe" ]
+             ; ( RecruitmentChannel |> show
+               , [ Participant.RecruitmentChannel.Friend
+                   |> Participant.RecruitmentChannel.to_string
+                 ] )
+             ]
     in
     Participant_command.SignUp.handle None command ~allowed_email_suffixes
   in
-  let expected = Error Pool_common.Message.(Invalid EmailSuffix) in
+  let expected = Error Pool_common.Message.(Invalid Field.EmailSuffix) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
@@ -43,15 +44,16 @@ let sign_up () =
     let command =
       CCResult.get_exn
       @@ Participant_command.SignUp.decode
-           [ "email", [ "john@gmail.com" ]
-           ; "password", [ "password" ]
-           ; "firstname", [ "Jane" ]
-           ; "lastname", [ "Doe" ]
-           ; ( "recruitment_channel"
-             , [ Participant.RecruitmentChannel.Friend
-                 |> Participant.RecruitmentChannel.to_string
-               ] )
-           ]
+           Pool_common.Message.Field.
+             [ Email |> show, [ "john@gmail.com" ]
+             ; Password |> show, [ "password" ]
+             ; Firstname |> show, [ "Jane" ]
+             ; Lastname |> show, [ "Doe" ]
+             ; ( RecruitmentChannel |> show
+               , [ Participant.RecruitmentChannel.Friend
+                   |> Participant.RecruitmentChannel.to_string
+                 ] )
+             ]
     in
     Participant_command.SignUp.handle
       (Some Pool_common.Language.En)

@@ -25,6 +25,7 @@ module Key : sig
   val to_string : t -> string
   val equal : t -> t -> bool
   val of_string : string -> (t, Pool_common.Message.error) result
+  val all : t list
 
   val schema
     :  unit
@@ -60,10 +61,12 @@ val key : t -> Key.t
 val language : t -> Pool_common.Language.t
 val content : t -> Content.t
 val content_to_string : t -> string
+val default_values : t list
 
 type event =
   | Created of create
   | Updated of t * edit
+  | DefaultRestored of t list
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

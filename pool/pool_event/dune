@@ -6,6 +6,7 @@
   admin
   root
   pool_user
+  database
   email
   participant
   pool_tenant

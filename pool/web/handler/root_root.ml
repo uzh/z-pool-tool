@@ -5,10 +5,11 @@ module Database = Pool_database
 let create req =
   let result context =
     let open Utils.Lwt_result.Infix in
+    let open Pool_common.Message in
     let user () =
       let tenant_db = context.Pool_context.tenant_db in
-      Sihl.Web.Request.urlencoded "email" req
-      ||> CCOption.to_result Pool_common.Message.EmailAddressMissingRoot
+      Sihl.Web.Request.urlencoded Field.(Email |> show) req
+      ||> CCOption.to_result EmailAddressMissingRoot
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let events () =
@@ -23,7 +24,7 @@ let create req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
-        [ Message.set ~success:[ Pool_common.Message.(Created Root) ] ]
+        [ Message.set ~success:[ Created Field.Root ] ]
     in
     ()
     |> user
@@ -39,7 +40,10 @@ let toggle_status req =
   let open Utils.Lwt_result.Infix in
   let result context =
     let tenant_db = context.Pool_context.tenant_db in
-    let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
+    let id =
+      Pool_common.(
+        Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
+    in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift
     in
@@ -47,7 +51,7 @@ let toggle_status req =
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
-        [ Message.set ~success:[ Pool_common.Message.(Updated Root) ] ]
+        [ Message.set ~success:[ Pool_common.Message.(Updated Field.Root) ] ]
     in
     id
     |> Root.find

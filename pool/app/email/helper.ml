@@ -53,8 +53,8 @@ module PasswordReset = struct
       let subject = "Password reset" in
       let reset_url =
         Pool_common.
-          [ Message.Token, token
-          ; ( Message.Language
+          [ Message.Field.Token, token
+          ; ( Message.Field.Language
             , language |> Pool_common.Language.code |> CCString.lowercase_ascii
             )
           ]
@@ -111,7 +111,7 @@ module ConfirmationEmail = struct
     in
     let subject = "Email verification" in
     let validation_url =
-      Pool_common.[ Message.Token, token email ]
+      Pool_common.[ Message.Field.Token, token email ]
       |> Pool_common.Message.add_field_query_params "/email-verified"
       |> Sihl.Web.externalize_path
       |> create_public_url url

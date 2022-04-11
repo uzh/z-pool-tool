@@ -46,7 +46,7 @@ let index req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let id = Sihl.Web.Router.param req "id" in
+  let id = Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show) in
   let redirect_path = Format.asprintf "/admin/i18n" in
   let result context =
     Lwt_result.map_err (fun err -> err, redirect_path)
@@ -67,7 +67,7 @@ let update req =
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ Pool_common.Message.(Updated I18n) ] ]
+        [ Message.set ~success:[ Pool_common.Message.(Updated Field.I18n) ] ]
     in
     () |> property >>= events |>> handle
   in

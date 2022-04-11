@@ -9,7 +9,7 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
 
 let find_query_lang req =
   let open CCOption.Infix in
-  Sihl.Web.Request.query Pool_common.Message.(field_name Language) req
+  Sihl.Web.Request.query Pool_common.Message.Field.(Language |> show) req
   >>= fun l ->
   l
   |> CCString.uppercase_ascii
@@ -20,12 +20,12 @@ let find_query_lang req =
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
-         Pool_common.(
-           Message.add_field_query_params
-             path
-             [ ( Message.Language
-               , lang |> Language.code |> CCString.lowercase_ascii )
-             ]))
+         let open Pool_common in
+         Message.add_field_query_params
+           path
+           [ ( Message.Field.Language
+             , lang |> Language.code |> CCString.lowercase_ascii )
+           ])
   |> CCOption.value ~default:path
 ;;
 

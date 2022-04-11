@@ -4,11 +4,12 @@ open Tyxml.Html
 let language_select
     options
     selected
-    ?(field = Pool_common.Message.Language)
+    ?(field = Pool_common.Message.Field.Language)
     ?(attributes = [])
     ()
   =
-  let name = Pool_common.Message.field_name field in
+  let open Pool_common in
+  let name = Message.Field.show field in
   select
     ~a:([ a_name name ] @ attributes)
     (CCList.map
@@ -16,14 +17,12 @@ let language_select
          let is_selected =
            selected
            |> CCOption.map (fun selected ->
-                  if Pool_common.Language.equal selected l
-                  then [ a_selected () ]
-                  else [])
+                  if Language.equal selected l then [ a_selected () ] else [])
            |> CCOption.value ~default:[]
          in
          option
-           ~a:([ a_value (Pool_common.Language.code l) ] @ is_selected)
-           (txt (Pool_common.Language.code l)))
+           ~a:([ a_value (Language.code l) ] @ is_selected)
+           (txt (Language.code l)))
        options)
 ;;
 
@@ -36,15 +35,18 @@ let csrf_attibs ?id csrf =
 
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
-let input_element language input_type name input_label value =
-  let input_label = Pool_common.Utils.field_to_string language input_label in
+let input_element language input_type name value =
+  let input_label =
+    Pool_common.Utils.field_to_string language name |> CCString.capitalize_ascii
+  in
   let base_attributes =
     [ a_input_type input_type; a_value value; a_class [ "input" ] ]
   in
   let attributes =
-    match name with
-    | Some name -> base_attributes @ [ a_name name; a_placeholder input_label ]
-    | None -> base_attributes
+    base_attributes
+    @ [ a_name (name |> Pool_common.Message.Field.show)
+      ; a_placeholder input_label
+      ]
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()

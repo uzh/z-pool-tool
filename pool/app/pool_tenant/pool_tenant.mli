@@ -238,7 +238,8 @@ module LogoMapping : sig
 
     val of_string : string -> (t, Pool_common.Message.error) result
     val to_string : t -> string
-    val all : unit -> string list
+    val all : t list
+    val all_fields : Pool_common.Message.Field.t list
   end
 
   module Write : sig
@@ -273,6 +274,7 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
+val id : t -> Pool_common.Id.t
 val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
 module Write : sig

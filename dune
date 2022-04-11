@@ -3,4 +3,4 @@
   (flags
    (:standard -w +A-42-44-45-48-66 -warn-error +A-3))))
 
-(data_only_dirs node_modules .devcontainer)
+(data_only_dirs node_modules .devcontainer .git)

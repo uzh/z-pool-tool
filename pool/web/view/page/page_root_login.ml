@@ -14,11 +14,11 @@ let login csrf message Pool_context.{ language; _ } =
             ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") Message.Email ""
-          ; input_element `Password (Some "password") Message.Password ""
+          ; input_element `Text Message.Field.Email ""
+          ; input_element `Password Message.Field.Password ""
           ; submit_element
               language
-              Pool_common.Message.(Login)
+              Message.Login
               ~classnames:[ "button--primary" ]
               ()
           ]
@@ -45,10 +45,10 @@ let request_reset_password csrf message Pool_context.{ language; _ } =
             ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
-          ; input_element `Text (Some "email") Message.Email ""
+          ; input_element `Text Message.Field.Email ""
           ; submit_element
               language
-              Pool_common.Message.(SendResetLink)
+              Message.SendResetLink
               ~classnames:[ "button--primary" ]
               ()
           ]
@@ -68,16 +68,12 @@ let reset_password csrf message token Pool_context.{ language; _ } =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Hidden (Some "token") Message.Token token
-          ; input_element `Password (Some "password") Message.Password ""
-          ; input_element
-              `Password
-              (Some "password_confirmation")
-              Message.PasswordConfirmation
-              ""
+          ; input_element `Hidden Message.Field.Token token
+          ; input_element `Password Message.Field.Password ""
+          ; input_element `Password Message.Field.PasswordConfirmation ""
           ; submit_element
               language
-              Pool_common.Message.(Save (Some password))
+              Message.(Save (Some Field.password))
               ~classnames:[ "button--primary" ]
               ()
           ]

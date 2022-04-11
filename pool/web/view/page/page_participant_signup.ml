@@ -1,4 +1,4 @@
-module Field = Pool_common.Message
+module Field = Pool_common.Message.Field
 
 let signup
     csrf
@@ -49,22 +49,10 @@ let signup
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         [ Component.csrf_element csrf ()
-        ; input_element `Email (Some "email") Pool_common.Message.Email email
-        ; input_element
-            `Text
-            (Some "firstname")
-            Pool_common.Message.Firstname
-            firstname
-        ; input_element
-            `Text
-            (Some "lastname")
-            Pool_common.Message.Lastname
-            lastname
-        ; input_element
-            `Password
-            (Some "password")
-            Pool_common.Message.Password
-            ""
+        ; input_element `Email Field.Email email
+        ; input_element `Text Field.Firstname firstname
+        ; input_element `Text Field.Lastname lastname
+        ; input_element `Password Field.Password ""
         ; div
             ~a:[ a_class [ "flex-box"; "flex--column" ] ]
             [ label [ txt (field_to_string Field.RecruitmentChannel) ]
@@ -90,7 +78,7 @@ let signup
             ]
         ; Component.submit_element
             language
-            Pool_common.Message.(SignUp)
+            Pool_common.Message.SignUp
             ~classnames:[ "button--primary" ]
             ()
         ]

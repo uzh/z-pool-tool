@@ -30,13 +30,13 @@ module Sql = struct
     |> Caqti_type.string ->! RepoEntity.t
   ;;
 
-  let find db_pool id =
+  let find pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      (Pool_database.Label.value db_pool)
+      (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound I18n)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 
   let find_by_key_request =
@@ -48,13 +48,13 @@ module Sql = struct
     |> Caqti_type.(tup2 string string) ->! RepoEntity.t
   ;;
 
-  let find_by_key db_pool key language =
+  let find_by_key pool key language =
     let open Lwt.Infix in
     Utils.Database.find_opt
-      (Pool_database.Label.value db_pool)
+      (Pool_database.Label.value pool)
       find_by_key_request
       (key |> Entity.Key.to_string, language |> Pool_common.Language.code)
-    >|= CCOption.to_result Pool_common.Message.(NotFound I18n)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 
   let find_all_request =
@@ -62,8 +62,8 @@ module Sql = struct
     "" |> select_from_i18n_sql |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
-  let find_all db_pool =
-    Utils.Database.collect (Pool_database.Label.value db_pool) find_all_request
+  let find_all pool =
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
   ;;
 
   let insert_sql =
@@ -87,8 +87,8 @@ module Sql = struct
     insert_sql |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let insert db_pool =
-    Utils.Database.exec (Pool_database.Label.value db_pool) insert_request
+  let insert pool =
+    Utils.Database.exec (Pool_database.Label.value pool) insert_request
   ;;
 
   let update_request =
@@ -105,8 +105,21 @@ module Sql = struct
     |> RepoEntity.t ->. Caqti_type.unit
   ;;
 
-  let update db_pool =
-    Utils.Database.exec (Pool_database.Label.value db_pool) update_request
+  let update pool =
+    Utils.Database.exec (Pool_database.Label.value pool) update_request
+  ;;
+
+  let delete_by_key_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_i18n
+      WHERE i18n_key = ?
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let delete_by_key pool =
+    Utils.Database.exec (Pool_database.Label.value pool) delete_by_key_request
   ;;
 end
 
@@ -115,3 +128,7 @@ let find_by_key = Sql.find_by_key
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update = Sql.update
+
+let delete_by_key pool key =
+  key |> Entity.Key.to_string |> Sql.delete_by_key pool
+;;

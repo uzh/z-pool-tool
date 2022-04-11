@@ -30,7 +30,7 @@
   (ocaml
    (>= 4.12.0))
   (conformist
-   (>= 0.6.0))
+   (>= 0.8.1))
   (sihl
    (and
     (>= 3.0.3)
@@ -78,7 +78,7 @@
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (= 0.14.2))
+   (= v0.14.2))
   canary
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
