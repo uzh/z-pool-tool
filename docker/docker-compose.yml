@@ -16,6 +16,10 @@ services:
       - SMTP_START_TLS
       - SMTP_USERNAME
       - VERSION
+      - CI_JOB_TOKEN
+      - CI_API_V4_URL
+      - CI_PROJECT_ID
+      - CI_PROJECT_NAME
     deploy:
       mode: replicated
       replicas: 1

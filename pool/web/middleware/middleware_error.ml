@@ -36,6 +36,8 @@ let reporter =
         let formatter = Format.formatter_of_buffer buffer in
         Format.pp_print_string formatter "```\n";
         Opium.Request.pp_hum formatter req;
+        Format.pp_print_string formatter "\n```\n\nTrace:\n\n```\n";
+        Format.pp_print_string formatter backtrace;
         Format.pp_print_string formatter "\n```";
         Format.pp_print_flush formatter ();
         Buffer.contents buffer
@@ -43,7 +45,8 @@ let reporter =
       let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
       (match res with
       | Ok iid ->
-        Logs.info (fun m -> m "Successfully reported error to gitlab.");
+        Logs.info (fun m ->
+            m "Successfully reported error to gitlab as issue %d." iid);
         Lwt.return_ok iid
       | Error err ->
         Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
