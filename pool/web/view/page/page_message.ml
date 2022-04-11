@@ -1,9 +1,7 @@
 open Tyxml.Html
 
 let concat_messages txts classnames =
-  div
-    ~a:[ a_class classnames; a_style "white-space: pre-wrap;" ]
-    [ txt (CCString.unlines txts) ]
+  div ~a:[ a_class classnames ] [ txt (CCString.unlines txts) ]
 ;;
 
 let match_message message classname =

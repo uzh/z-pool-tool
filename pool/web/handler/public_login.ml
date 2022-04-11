@@ -44,7 +44,8 @@ let login_post req =
     @@
     let open Utils.Lwt_result.Infix in
     let* params =
-      CCList.map Field.show Field.[ Email; Password ]
+      Field.[ Email; Password ]
+      |> CCList.map Field.show
       |> HttpUtils.urlencoded_to_params urlencoded
       |> CCOption.to_result LoginProvideDetails
       |> Lwt_result.lift

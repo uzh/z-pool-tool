@@ -69,7 +69,7 @@ module Data = struct
     ; Field.Firstname, [ firstname ]
     ; Field.Lastname, [ lastname ]
     ]
-    |> List.map (fun (m, k) -> m |> Field.show, k)
+    |> CCList.map (CCPair.map_fst Field.show)
   ;;
 
   let tenant =
@@ -257,7 +257,7 @@ let[@warning "-4"] update_tenant_details () =
       let open Pool_tenant_command.EditDetails in
       Data.urlencoded
       |> HttpUtils.format_request_boolean_values
-           [ Common.Message.Field.(TenantDisabledFlag |> show) ]
+           [ Common.Message.Field.(Disabled |> show) ]
       |> decode
       >>= handle tenant
     in

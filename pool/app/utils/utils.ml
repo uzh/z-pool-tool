@@ -16,7 +16,6 @@ module Lwt_result = struct
     let ( |>> ) = Lwt_result.bind_lwt
     let ( >|> ) = Lwt.bind
     let ( ||> ) m k = Lwt.map k m
-    let ( |=> ) m k = Lwt_result.map_err k m
   end
 end
 

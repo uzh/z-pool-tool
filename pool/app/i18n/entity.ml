@@ -27,8 +27,7 @@ module Key = struct
   [@@deriving eq, show, enum]
 
   let all : t list =
-    let range a b = 0 :: List.init (b - a) (( + ) 1) in
-    range min max
+    CCList.range min max
     |> CCList.map of_enum
     |> CCList.all_some
     |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"

@@ -78,7 +78,7 @@ module Field = struct
         [@printer field_name "tenant_maintenance_flag"]
     | TenantPool [@name "tenant_pool"] [@printer field_name "tenant_pool"]
     | TermsAccepted [@name "terms_accepted"]
-        [@printer field_name "_terms_accepted"]
+        [@printer field_name "terms_accepted"]
     | TermsAndConditions [@name "terms_and_conditions"]
         [@printer field_name "terms_and_conditions"]
     | TimeSpan [@name "timespan"] [@printer field_name "timespan"]

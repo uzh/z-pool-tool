@@ -93,6 +93,7 @@ end
 type event =
   | Added of Pool_database.t
   | Migrated of Pool_database.Label.t
+[@@deriving eq, show]
 
 let handle_event _ : event -> unit Lwt.t = function
   | Added pool ->
@@ -105,19 +106,6 @@ let handle_event _ : event -> unit Lwt.t = function
       | false -> Migration.Tenant.run [ label ] ()
     in
     Lwt.return_unit
-;;
-
-let equal_event event1 event2 =
-  match event1, event2 with
-  | Added one, Added two -> Pool_database.equal one two
-  | Migrated label1, Migrated label2 -> Pool_database.Label.equal label1 label2
-  | (Added _ | Migrated _), _ -> false
-;;
-
-let pp_event formatter event =
-  match event with
-  | Added m -> Pool_database.pp formatter m
-  | Migrated m -> Pool_database.Label.pp formatter m
 ;;
 
 let start () =
