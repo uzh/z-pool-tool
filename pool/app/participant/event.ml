@@ -65,7 +65,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Id.t
-[@@deriving variants]
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
   let ctx = Pool_tenant.to_ctx pool in
@@ -199,54 +199,4 @@ let handle_event pool : event -> unit Lwt.t =
       { participant with terms_accepted_at = User.TermsAccepted.create_now () }
   | Disabled _ -> Utils.todo ()
   | UnverifiedDeleted id -> Repo.delete_unverified pool id
-;;
-
-let[@warning "-4"] equal_event (one : event) (two : event) : bool =
-  match one, two with
-  | Created m, Created p -> equal_create m p
-  | FirstnameUpdated (p1, one), FirstnameUpdated (p2, two) ->
-    equal p1 p2 && User.Firstname.equal one two
-  | LastnameUpdated (p1, one), LastnameUpdated (p2, two) ->
-    equal p1 p2 && User.Lastname.equal one two
-  | PausedUpdated (p1, one), PausedUpdated (p2, two) ->
-    equal p1 p2 && User.Paused.equal one two
-  | EmailUpdated (p1, e1), EmailUpdated (p2, e2) ->
-    equal p1 p2 && Pool_user.EmailAddress.equal e1 e2
-  | PasswordUpdated (p1, old1, new1, _), PasswordUpdated (p2, old2, new2, _) ->
-    equal p1 p2
-    && User.Password.equal old1 old2
-    && User.Password.equal new1 new2
-  | LanguageUpdated (p1, l1), LanguageUpdated (p2, l2) ->
-    equal p1 p2 && Pool_common.Language.equal l1 l2
-  | AccountVerified p1, AccountVerified p2 -> equal p1 p2
-  | TermsAccepted p1, TermsAccepted p2 -> equal p1 p2
-  | Disabled p1, Disabled p2 -> equal p1 p2
-  | UnverifiedDeleted id1, UnverifiedDeleted id2 -> Id.equal id1 id2
-  | _ -> false
-;;
-
-let pp_event formatter (event : event) : unit =
-  let person_pp = pp formatter in
-  match event with
-  | Created m -> pp_create formatter m
-  | FirstnameUpdated (p, m) ->
-    person_pp p;
-    User.Firstname.pp formatter m
-  | LastnameUpdated (p, m) ->
-    person_pp p;
-    User.Lastname.pp formatter m
-  | PausedUpdated (p, m) ->
-    person_pp p;
-    User.Paused.pp formatter m
-  | EmailUpdated (p, m) ->
-    person_pp p;
-    Pool_user.EmailAddress.pp formatter m
-  | PasswordUpdated (person, _, password, _) ->
-    person_pp person;
-    User.Password.pp formatter password
-  | LanguageUpdated (p, l) ->
-    person_pp p;
-    Pool_common.Language.pp formatter l
-  | AccountVerified p | TermsAccepted p | Disabled p -> person_pp p
-  | UnverifiedDeleted id -> Id.pp formatter id
 ;;

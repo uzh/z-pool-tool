@@ -14,6 +14,7 @@ type event =
   | Created of create
   | Disabled of t
   | Enabled of t
+[@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
   let ctx = Pool_tenant.to_ctx pool in
@@ -42,19 +43,4 @@ let handle_event pool : event -> unit Lwt.t =
       |> Service.User.update ~ctx
     in
     Lwt.return_unit
-;;
-
-let[@warning "-4"] equal_event event1 event2 : bool =
-  let open Sihl.Contract.User in
-  match event1, event2 with
-  | Created one, Created two -> equal_create one two
-  | Disabled r1, Disabled r2 | Enabled r1, Enabled r2 ->
-    CCString.equal r1.id r2.id
-  | _ -> false
-;;
-
-let pp_event formatter event =
-  match event with
-  | Created create -> pp_create formatter create
-  | Disabled m | Enabled m -> Sihl_user.pp formatter m
 ;;

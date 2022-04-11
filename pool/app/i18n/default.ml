@@ -1,6 +1,6 @@
 open Entity
 
-type default = t list
+type default = t list [@@deriving eq, show]
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 

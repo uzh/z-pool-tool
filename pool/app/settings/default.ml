@@ -8,6 +8,7 @@ type default =
   ; inactive_user_warning : Value.inactive_user_warning
   ; terms_and_conditions : Value.terms_and_conditions
   }
+[@@deriving eq, show]
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let tenant_languages = Pool_common.Language.[ En; De ]
