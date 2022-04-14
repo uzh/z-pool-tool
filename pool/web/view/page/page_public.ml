@@ -11,11 +11,14 @@ let index tenant message () =
           (CCList.map
              (fun logo ->
                img
-                 ~src:(Pool_common.File.path logo)
+                 ~src:
+                   (Pool_common.File.path logo)
+                   (* TODO add alt text to all images! *)
                  ~alt:""
                  ~a:[ a_style "width: 200px" ]
                  ())
-             (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
+             (Pool_tenant.Logos.value tenant.Pool_tenant.logos
+             @ Pool_tenant.PartnerLogos.value tenant.Pool_tenant.partner_logos))
       ]
   in
   Page_layout.create html message ()

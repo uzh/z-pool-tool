@@ -204,7 +204,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logo : PartnerLogos.t
+  ; partner_logos : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Common.Language.t
@@ -275,16 +275,4 @@ module Write = struct
     ; updated_at = UpdatedAt.create ()
     }
   ;;
-end
-
-module Selection = struct
-  type t =
-    { url : Url.t
-    ; database_label : Database.Label.t
-    }
-  [@@deriving eq, show]
-
-  let create url database_label = { url; database_label }
-  let url ({ url; _ } : t) = url |> Url.value
-  let label ({ database_label; _ } : t) = database_label
 end

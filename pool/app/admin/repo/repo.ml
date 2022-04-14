@@ -104,7 +104,6 @@ module Sql = struct
   ;;
 
   let find_by_email_request =
-    (* TODO [aerben] should be confirmed? *)
     {sql|
       WHERE user_users.email = ?
     |sql}

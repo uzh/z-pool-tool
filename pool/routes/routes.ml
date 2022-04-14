@@ -27,6 +27,7 @@ module Public = struct
       ; get "/reset-password" Login.reset_password_get
       ; post "/reset-password" Login.reset_password_post
       ; get "/custom/assets/:id/:filename" asset
+      ; get "/custom/assets/favicon" favicon
       ; get "/error" error
       ]
   ;;

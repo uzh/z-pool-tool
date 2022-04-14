@@ -91,7 +91,7 @@ let handle_event pool : event -> unit Lwt.t =
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
   | FirstnameUpdated (participant, firstname) ->
-    let%lwt _ =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx
         ~given_name:(firstname |> User.Firstname.value)
@@ -103,7 +103,7 @@ let handle_event pool : event -> unit Lwt.t =
       ( id participant
       , Pool_common.Version.increment participant.firstname_version )
   | LastnameUpdated (participant, lastname) ->
-    let%lwt _ =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx
         ~name:(lastname |> User.Lastname.value)
@@ -126,7 +126,7 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | EmailUpdated (participant, email) ->
-    let%lwt _ =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx
         ~email:(Pool_user.EmailAddress.value email)
@@ -166,14 +166,14 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Lwt.return_unit
   | EmailUnconfirmed participant ->
-    let%lwt _ =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx
         Sihl_user.{ participant.user with confirmed = false }
     in
     Lwt.return_unit
   | EmailConfirmed participant ->
-    let%lwt _ =
+    let%lwt (_ : Sihl_user.t) =
       Service.User.update
         ~ctx
         Sihl_user.{ participant.user with confirmed = true }

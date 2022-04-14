@@ -242,18 +242,3 @@ module Write = struct
                                             Common.Repo.UpdatedAt.t)))))))))))))
   ;;
 end
-
-module Selection = struct
-  open Entity.Selection
-
-  let t =
-    let encode m = Ok (Url.value m.Selection.url, m.database_label) in
-    let decode (url, database_label) =
-      let open CCResult in
-      map_err (fun _ -> "decode tenant selection")
-      @@ let* url = Url.create url in
-         Ok { url; database_label }
-    in
-    Caqti_type.(custom ~encode ~decode (tup2 Url.t Database.Repo.Label.t))
-  ;;
-end

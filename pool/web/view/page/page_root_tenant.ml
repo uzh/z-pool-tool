@@ -38,7 +38,7 @@ let list csrf tenant_list root_list message () =
                  (Format.asprintf "/root/root/%s/toggle-status" id))
           ; a_method `Post
           ]
-        [ input_element `Submit None text ]
+        [ csrf_element csrf (); input_element `Submit None text ]
     in
     CCList.map
       (fun root ->
@@ -218,7 +218,7 @@ let detail csrf (tenant : Pool_tenant.t) message () =
       [ h3 [ txt "Tenant Logos" ]
       ; delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
       ; h3 [ txt "Partner Logos" ]
-      ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
+      ; delete_img_form (tenant.partner_logos |> Pool_tenant.PartnerLogos.value)
       ]
   in
   let html =

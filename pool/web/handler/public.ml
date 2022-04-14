@@ -83,11 +83,35 @@ let asset req =
   |> Lwt.return
 ;;
 
+let favicon req =
+  let open Utils.Lwt_result.Infix in
+  let result () =
+    let open Sihl.Contract.Storage in
+    let open Lwt_result.Syntax in
+    let* tenant = Middleware.Tenant.tenant_of_request req in
+    let icon = Pool_tenant.(Icon.value tenant.icon) in
+    let asset_id = Common.(Id.value icon.File.id) in
+    let%lwt file =
+      Service.Storage.find ~ctx:(Pool_tenant.to_ctx Database.root) asset_id
+    in
+    let%lwt content = Service.Storage.download_data_base64 file in
+    let mime = file.file.mime in
+    let content = content |> Base64.decode_exn in
+    Sihl.Web.Response.of_plain_text content
+    |> Sihl.Web.Response.set_content_type mime
+    |> Lwt_result.return
+  in
+  ()
+  |> result
+  |=> (fun err -> Common.Message.errorm err, "/error")
+  >|> Http_utils.extract_happy_path
+;;
+
 let error req =
   let%lwt tenant_error =
     let open Lwt_result.Syntax in
     let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* _ = Pool_tenant.find_by_label tenant_db in
+    let* (_ : Pool_tenant.t) = Pool_tenant.find_by_label tenant_db in
     Ok
       ( Common.Message.TerminatoryTenantErrorTitle
       , Common.Message.TerminatoryTenantError )

@@ -133,7 +133,7 @@ let reset_password_get req =
   match token with
   | None ->
     HttpUtils.redirect_to_with_actions
-      "/request-reset-password/"
+      "/request-reset-password"
       [ Message.set ~error:[ Pool_common.Message.(NotFound Token) ] ]
   | Some token ->
     let csrf = HttpUtils.find_csrf req in
@@ -153,7 +153,7 @@ let reset_password_post req =
         urlencoded
         [ "token"; "password"; "password_confirmation" ]
       |> CCOption.to_result
-           (Pool_common.Message.PasswordResetInvalidData, "/reset-password/")
+           (Pool_common.Message.PasswordResetInvalidData, "/reset-password")
       |> Lwt_result.lift
     in
     let go = CCFun.flip List.assoc params in

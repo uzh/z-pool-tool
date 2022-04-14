@@ -121,10 +121,6 @@ let rec error_to_string = function
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
-  | SessionTenantNotFound ->
-    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
-     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator \
-     kontaktieren."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->

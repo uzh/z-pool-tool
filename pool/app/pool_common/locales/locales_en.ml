@@ -111,9 +111,6 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionInvalid -> "Invalid session, please login."
-  | SessionTenantNotFound ->
-    "Something on our side went wrong, please try again later or on multi \
-     occurrences please contact the Administrator."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"

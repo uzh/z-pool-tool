@@ -212,6 +212,20 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
   ;;
 
+  let find_by_url_prefix_request =
+    select_from_tenants_sql {sql| WHERE url LIKE CONCAT(?, '%') |sql} false
+    |> Caqti_request.find Caqti_type.string RepoEntity.t
+  ;;
+
+  let find_by_url_prefix pool host =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_by_url_prefix_request
+      host
+    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+  ;;
+
   let find_all_request =
     select_from_tenants_sql "" false
     |> Caqti_request.collect Caqti_type.unit RepoEntity.t
@@ -286,28 +300,10 @@ module Sql = struct
   let insert pool =
     Utils.Database.exec (Database.Label.value pool) insert_request
   ;;
-
-  let find_selectable_request =
-    {sql|
-      SELECT
-        url,
-        database_label
-      FROM pool_tenant
-      WHERE url LIKE CONCAT(?, '%')
-    |sql}
-    |> Caqti_request.find Caqti_type.string RepoEntity.Selection.t
-  ;;
-
-  let find_selectable pool host =
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_selectable_request
-      host
-  ;;
 end
 
 let set_logos tenant logos =
-  let tenant_logos, partner_logo =
+  let tenant_logos, partner_logos =
     let open LogoMapping.LogoType in
     CCList.partition_filter_map
       (fun l ->
@@ -327,7 +323,7 @@ let set_logos tenant logos =
     ; styles = tenant.styles
     ; icon = tenant.icon
     ; logos = tenant_logos
-    ; partner_logo
+    ; partner_logos
     ; maintenance = tenant.maintenance
     ; disabled = tenant.disabled
     ; default_language = tenant.default_language
@@ -343,9 +339,17 @@ let find pool id =
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
+(* TODO why does this do 2 queries? *)
 let find_by_label pool label =
   let open Lwt_result.Syntax in
   let* tenant = Sql.find_by_label pool label in
+  let%lwt logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
+  set_logos tenant logos |> Lwt.return_ok
+;;
+
+let find_by_url_prefix pool host =
+  let open Lwt_result.Syntax in
+  let* tenant = Sql.find_by_url_prefix pool host in
   let%lwt logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
@@ -363,7 +367,6 @@ let find_all pool () =
 ;;
 
 let find_databases = Sql.find_databases
-let find_selectable = Sql.find_selectable
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Utils.todo

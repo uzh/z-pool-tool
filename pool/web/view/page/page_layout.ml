@@ -56,6 +56,12 @@ let create children message ?(lang = Pool_common.Language.En) () =
       ~href:(Sihl.Web.externalize_path "/custom/assets/index.css")
       ()
   in
+  let favicon =
+    link
+      ~rel:[ `Icon ]
+      ~href:(Sihl.Web.externalize_path "/custom/assets/favicon")
+      ()
+  in
   let global_stylesheet =
     link
       ~rel:[ `Stylesheet ]
@@ -72,6 +78,6 @@ let create children message ?(lang = Pool_common.Language.En) () =
   html
     (head
        page_title
-       [ charset; viewport; custom_stylesheet; global_stylesheet ])
+       [ charset; viewport; custom_stylesheet; favicon; global_stylesheet ])
     (body [ header; content; footer (); scripts ])
 ;;

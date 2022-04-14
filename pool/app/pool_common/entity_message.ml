@@ -82,7 +82,6 @@ type error =
   | RequestRequiredFields
   | Retrieve of field
   | SessionInvalid
-  | SessionTenantNotFound
   | TerminatoryTenantError
   | TerminatoryRootError
   | TerminatoryTenantErrorTitle

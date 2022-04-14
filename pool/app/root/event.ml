@@ -29,14 +29,14 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Permission.assign user Role.root
   | Disabled root ->
-    let%lwt _ =
+    let%lwt (_ : t) =
       Sihl_user.
         { root with status = Inactive; updated_at = Common.UpdatedAt.create () }
       |> Service.User.update ~ctx
     in
     Lwt.return_unit
   | Enabled root ->
-    let%lwt _ =
+    let%lwt (_ : t) =
       Sihl_user.
         { root with status = Active; updated_at = Common.UpdatedAt.create () }
       |> Service.User.update ~ctx

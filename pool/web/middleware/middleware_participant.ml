@@ -16,8 +16,6 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
           | true -> Ok participant
           | false -> Error Pool_common.Message.ParticipantUnconfirmed)
       in
-      (* TODO [aerben] causes infinite redirect after login *)
-      (* TODO [aerben] either this or unconfirmed *)
       let terms_agreed participant =
         let%lwt accepted = Participant.has_terms_accepted pool participant in
         match accepted with

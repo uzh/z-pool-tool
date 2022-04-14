@@ -45,7 +45,6 @@ end = struct
 
   let handle ?allowed_email_suffixes ?password_policy participant admin command =
     let open CCResult in
-    (* TODO [aerben] why this not in schema decoding? *)
     let* () =
       User.Password.validate ?password_policy command.password
       |> map_err Pool_common.Message.errorm

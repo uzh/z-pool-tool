@@ -140,7 +140,7 @@ let[@warning "-41"] participants db_pool () =
           in
           if CCOption.is_some verified
           then (
-            let%lwt _ =
+            let%lwt (_ : Sihl_user.t) =
               Service.User.update ~ctx Sihl_user.{ user with confirmed = true }
             in
             let%lwt unverified =

@@ -55,7 +55,9 @@ let save_files allow_list req =
         Hashtbl.add assocs name filename;
         write file)
   in
-  let%lwt _ = Sihl.Web.Request.to_multipart_form_data_exn ~callback req in
+  let%lwt (_ : (string * string) list) =
+    Sihl.Web.Request.to_multipart_form_data_exn ~callback req
+  in
   CCList.map
     (fun (name, filename) -> name, Filename.concat import_dir filename)
     (Hashtbl.fold (fun k v acc -> (k, v) :: acc) assocs [])
@@ -93,7 +95,9 @@ let file_to_storage_add filename =
       }
   in
   let base64 = Base64.encode_exn data in
-  let%lwt _ = Service.Storage.upload_base64 file base64 in
+  let%lwt (_ : Sihl_storage.stored) =
+    Service.Storage.upload_base64 file base64
+  in
   let%lwt () = remove_imported_file filename in
   file.Sihl_storage.id |> Lwt.return_ok
 ;;
@@ -137,7 +141,9 @@ let update_files files req =
           |> set_mime_stored (File.Mime.to_string mime)
         in
         let base64 = Base64.encode_exn data in
-        let%lwt _ = Service.Storage.update_base64 updated_file base64 in
+        let%lwt (_ : Sihl_storage.stored) =
+          Service.Storage.update_base64 updated_file base64
+        in
         let%lwt () = remove_imported_file filename in
         Lwt.return_some (Ok id)
       | Error err -> Lwt.return_some (Error err))

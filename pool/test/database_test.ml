@@ -29,7 +29,9 @@ let check_root_database _ () =
   let ctx =
     Database.Root.label |> Pool_database.Label.of_string |> Pool_tenant.to_ctx
   in
-  let _ = Sihl.Database.fetch_pool ~ctx () in
+  let (_ : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t) =
+    Sihl.Database.fetch_pool ~ctx ()
+  in
   Lwt.return_unit
 ;;
 
@@ -47,6 +49,8 @@ let check_tenant_database _ () =
   let ctx =
     Data.database_label |> Pool_database.Label.of_string |> Pool_tenant.to_ctx
   in
-  let _ = Sihl.Database.fetch_pool ~ctx () in
+  let (_ : (Caqti_lwt.connection, Caqti_error.t) Caqti_lwt.Pool.t) =
+    Sihl.Database.fetch_pool ~ctx ()
+  in
   Lwt.return_unit
 ;;

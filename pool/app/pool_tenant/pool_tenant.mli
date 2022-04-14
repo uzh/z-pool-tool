@@ -215,7 +215,7 @@ type t =
   ; styles : Styles.t
   ; icon : Icon.t
   ; logos : Logos.t
-  ; partner_logo : PartnerLogos.t
+  ; partner_logos : PartnerLogos.t
   ; maintenance : Maintenance.t
   ; disabled : Disabled.t
   ; default_language : Pool_common.Language.t
@@ -297,24 +297,10 @@ val find_by_label
   :  Database.Label.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_by_url_prefix : string -> (t, Pool_common.Message.error) result Lwt.t
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
 val find_styles
   :  Database.Label.t
   -> (Styles.t, Pool_common.Message.error) result Lwt.t
-
-type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
-type handle_list_tenants = unit -> t list Lwt.t
-
-module Selection : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Url.t -> Database.Label.t -> t
-  val find_prefixed : string -> t option Lwt.t
-  val url : t -> string
-  val label : t -> Database.Label.t
-end
