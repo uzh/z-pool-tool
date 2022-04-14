@@ -88,12 +88,28 @@ let email_confirmation_note req =
 let not_found req =
   let result context =
     let open Lwt_result.Infix in
-    Lwt_result.map_err (fun err -> err, "/error")
-    @@
+    let open Lwt_result.Syntax in
+    let query_lang = context.Pool_context.query_language in
     let language = context.Pool_context.language in
-    Page.Utils.error_page_not_found language ()
-    |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    let html = Page.Utils.error_page_not_found language () in
+    match Http_utils.is_req_from_root_host req with
+    | true ->
+      Page.Layout.create_root_layout html None language ()
+      |> Sihl.Web.Response.of_html
+      |> Lwt_result.return
+    | false ->
+      Lwt_result.map_err (fun err ->
+          err, Http_utils.path_with_language query_lang "/error")
+      @@
+      let tenant_db = context.Pool_context.tenant_db in
+      let* tenant = Pool_tenant.find_by_label tenant_db in
+      let%lwt tenant_languages = Settings.find_languages tenant_db in
+      let req =
+        Pool_context.Tenant.set
+          req
+          (Pool_context.Tenant.create tenant tenant_languages)
+      in
+      html |> create_layout req context >|= Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path req
 ;;
