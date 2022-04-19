@@ -85,6 +85,7 @@ type event =
       * Pool_user.Lastname.t
   | Updated of Pool_user.EmailAddress.t * Sihl_user.t
   | EmailVerified of unverified t
+  | DefaultRestored of Pool_database.Label.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

@@ -27,6 +27,7 @@ type event =
       * User.Lastname.t
   | Updated of User.EmailAddress.t * Sihl_user.t
   | EmailVerified of unverified t
+  | DefaultRestored of Pool_database.Label.t
 
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
@@ -64,6 +65,19 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () = deactivate_token pool token in
     let%lwt () = Repo.verify pool @@ verify email in
     Lwt.return_unit
+  | DefaultRestored pool ->
+    Lwt_list.iter_s
+      (fun { Default.label; language; text; html } ->
+        let%lwt _ =
+          Service.EmailTemplate.create
+            ~ctx:(Pool_tenant.to_ctx pool)
+            ~label
+            ~language
+            ~html
+            text
+        in
+        Lwt.return_unit)
+      Default.default_values
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
@@ -77,6 +91,8 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     User.EmailAddress.equal a1 a2
     && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
   | EmailVerified m, EmailVerified p -> equal m p
+  | DefaultRestored one, DefaultRestored two ->
+    Pool_database.Label.equal one two
   | _ -> false
 ;;
 
@@ -92,4 +108,5 @@ let pp_event formatter (event : event) : unit =
     pp_address m;
     Sihl_user.pp formatter u
   | EmailVerified m -> pp formatter m
+  | DefaultRestored m -> Pool_database.Label.pp formatter m
 ;;
