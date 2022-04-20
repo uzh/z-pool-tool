@@ -47,11 +47,24 @@ let add_user_language_version =
     |sql}
 ;;
 
+let add_user_email_verified_counts =
+  Sihl.Database.Migration.create_step
+    ~label:
+      "add field for email verification, participation inclusive show up count"
+    {sql|
+     ALTER TABLE pool_participants
+     ADD COLUMN email_verified timestamp NULL AFTER verified,
+     ADD COLUMN participation_count SMALLINT(3) UNSIGNED NOT NULL AFTER email_verified,
+     ADD COLUMN participation_show_up_count SMALLINT(3) UNSIGNED NOT NULL AFTER participation_count
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
     |> add_step create_participant_table
     |> add_step add_field_versioning
     |> add_step add_user_language
-    |> add_step add_user_language_version)
+    |> add_step add_user_language_version
+    |> add_step add_user_email_verified_counts)
 ;;
