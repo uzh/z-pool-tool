@@ -33,6 +33,22 @@ module RecruitmentChannel = struct
   let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]
 end
 
+module ParticipationCount = struct
+  type t = int [@@deriving eq, show]
+
+  let value m = m
+  let init = 0
+  let of_int m = m
+end
+
+module ParticipationShowUpCount = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+end
+
 type t =
   { user : Sihl_user.t
         [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
@@ -42,6 +58,9 @@ type t =
   ; paused : Common.Paused.t
   ; disabled : Common.Disabled.t
   ; verified : Common.Verified.t
+  ; email_verified : Common.EmailVerified.t
+  ; participation_count : ParticipationCount.t
+  ; participation_show_up_count : ParticipationShowUpCount.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t

@@ -35,10 +35,12 @@ let field_to_string =
   | LanguageEn -> "English"
   | Lastname -> "lastname"
   | LogoType -> "logo type"
+  | MaxParticipants -> "maximum participants"
   | NewPassword -> "new password"
   | Operator -> "operator"
   | Page -> "page"
   | Participant -> "participant"
+  | ParticipantsNeeded -> "minimum participants needed"
   | PartnerLogos -> "partner logos"
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
@@ -123,6 +125,8 @@ let rec error_to_string = function
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
+  | ParticipantAmountNegative ->
+    "The number of participants has to be positive!"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
   | NoOptionSelected field ->

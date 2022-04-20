@@ -1,5 +1,4 @@
 module Id = Pool_common.Id
-module Location = Entity_location
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -47,8 +46,28 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
+  ; filter : string
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
+  }
+[@@deriving eq, show]
+
+type public =
+  { id : Id.t
+  ; description : Description.t
+  ; sessions : Session.t list
+  }
+[@@deriving eq, show]
+
+type session =
+  { experiment : t
+  ; sessions : Session.t list
+  }
+[@@deriving eq, show]
+
+type invitation =
+  { experiment : t
+  ; invitation : Invitation.t list
   }
 [@@deriving eq, show]
 
@@ -56,6 +75,7 @@ let create ?id title description () =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
+  ; filter = "*"
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }

@@ -34,6 +34,18 @@ module Language = struct
   ;;
 end
 
+module ParticipationCount = struct
+  include ParticipationCount
+
+  let t = Caqti_type.int
+end
+
+module ParticipationShowUpCount = struct
+  include ParticipationShowUpCount
+
+  let t = Caqti_type.int
+end
+
 let t =
   let encode m =
     let open Pool_user in
@@ -46,11 +58,16 @@ let t =
             , ( Paused.value m.paused
               , ( Disabled.value m.disabled
                 , ( Verified.value m.verified
-                  , ( Version.value m.firstname_version
-                    , ( Version.value m.lastname_version
-                      , ( Version.value m.paused_version
-                        , ( Version.value m.language_version
-                          , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) ) )
+                  , ( EmailVerified.value m.email_verified
+                    , ( ParticipationCount.value m.participation_count
+                      , ( ParticipationShowUpCount.value
+                            m.participation_show_up_count
+                        , ( Version.value m.firstname_version
+                          , ( Version.value m.lastname_version
+                            , ( Version.value m.paused_version
+                              , ( Version.value m.language_version
+                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
+                ) ) ) ) ) )
   in
   let decode
       ( user
@@ -60,11 +77,14 @@ let t =
             , ( paused
               , ( disabled
                 , ( verified
-                  , ( firstname_version
-                    , ( lastname_version
-                      , ( paused_version
-                        , (language_version, (created_at, updated_at)) ) ) ) )
-                ) ) ) ) ) )
+                  , ( email_verified
+                    , ( participation_count
+                      , ( participation_show_up_count
+                        , ( firstname_version
+                          , ( lastname_version
+                            , ( paused_version
+                              , (language_version, (created_at, updated_at)) )
+                            ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
@@ -77,6 +97,10 @@ let t =
         ; paused = Paused.create paused
         ; disabled = Disabled.create disabled
         ; verified = Verified.create verified
+        ; email_verified = EmailVerified.create email_verified
+        ; participation_count = ParticipationCount.of_int participation_count
+        ; participation_show_up_count =
+            ParticipationShowUpCount.of_int participation_show_up_count
         ; firstname_version = of_int firstname_version
         ; lastname_version = of_int lastname_version
         ; paused_version = of_int paused_version
@@ -106,14 +130,20 @@ let t =
                         (tup2
                            Verified.t
                            (tup2
-                              Pool_common.Repo.Version.t
+                              EmailVerified.t
                               (tup2
-                                 Pool_common.Repo.Version.t
+                                 ParticipationCount.t
                                  (tup2
-                                    Pool_common.Repo.Version.t
+                                    ParticipationShowUpCount.t
                                     (tup2
                                        Pool_common.Repo.Version.t
-                                       (tup2 CreatedAt.t UpdatedAt.t)))))))))))))
+                                       (tup2
+                                          Pool_common.Repo.Version.t
+                                          (tup2
+                                             Pool_common.Repo.Version.t
+                                             (tup2
+                                                Pool_common.Repo.Version.t
+                                                (tup2 CreatedAt.t UpdatedAt.t))))))))))))))))
 ;;
 
 let participant =
@@ -128,11 +158,16 @@ let participant =
             , ( Paused.value m.paused
               , ( Disabled.value m.disabled
                 , ( Verified.value m.verified
-                  , ( Version.value m.firstname_version
-                    , ( Version.value m.lastname_version
-                      , ( Version.value m.paused_version
-                        , ( Version.value m.language_version
-                          , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) ) )
+                  , ( EmailVerified.value m.email_verified
+                    , ( ParticipationCount.value m.participation_count
+                      , ( ParticipationShowUpCount.value
+                            m.participation_show_up_count
+                        , ( Version.value m.firstname_version
+                          , ( Version.value m.lastname_version
+                            , ( Version.value m.paused_version
+                              , ( Version.value m.language_version
+                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
+                ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -159,14 +194,20 @@ let participant =
                         (tup2
                            Verified.t
                            (tup2
-                              Pool_common.Repo.Version.t
+                              EmailVerified.t
                               (tup2
-                                 Pool_common.Repo.Version.t
+                                 ParticipationCount.t
                                  (tup2
-                                    Pool_common.Repo.Version.t
+                                    ParticipationShowUpCount.t
                                     (tup2
                                        Pool_common.Repo.Version.t
-                                       (tup2 CreatedAt.t UpdatedAt.t)))))))))))))
+                                       (tup2
+                                          Pool_common.Repo.Version.t
+                                          (tup2
+                                             Pool_common.Repo.Version.t
+                                             (tup2
+                                                Pool_common.Repo.Version.t
+                                                (tup2 CreatedAt.t UpdatedAt.t))))))))))))))))
 ;;
 
 module Write = struct

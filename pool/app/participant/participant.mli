@@ -14,6 +14,18 @@ module RecruitmentChannel : sig
   val all : unit -> string list
 end
 
+module ParticipationCount : sig
+  type t
+
+  val init : t
+end
+
+module ParticipationShowUpCount : sig
+  type t
+
+  val init : t
+end
+
 type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t
@@ -22,6 +34,9 @@ type t =
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t
+  ; email_verified : Pool_user.EmailVerified.t
+  ; participation_count : ParticipationCount.t
+  ; participation_show_up_count : ParticipationShowUpCount.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t

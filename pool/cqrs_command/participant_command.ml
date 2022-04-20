@@ -96,7 +96,7 @@ end = struct
   ;;
 end
 
-module UpdateDetails : sig
+module Update : sig
   type t =
     { firstname : User.Firstname.t option
     ; lastname : User.Lastname.t option
@@ -361,7 +361,7 @@ end = struct
   ;;
 end
 
-module VerifyAccount : sig
+module VerifyEmail : sig
   type t = { email : Email.unverified Email.t }
 
   val handle
@@ -372,9 +372,18 @@ end = struct
   type t = { email : Email.unverified Email.t }
 
   let handle command participant =
+    (* TODO use email_verified here*)
     Ok
       [ Participant.AccountVerified participant |> Pool_event.participant
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
+end
+
+module Verify = struct
+  (* TODO Verify the participant itself with ID/Pass *)
+end
+
+module ToggleDisable = struct
+  (* TODO Toggle disable command*)
 end

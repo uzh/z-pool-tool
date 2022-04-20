@@ -1,22 +1,23 @@
 (library
  (name cqrs_command)
  (libraries
-  sihl
-  pool_event
-  permission
-  database
-  role
-  i18n
-  settings
-  participant
   admin
-  root
+  conformist
+  database
   email
-  pool_user
-  pool_common
-  pool_tenant
-  tenant
   experiment
-  conformist)
+  i18n
+  participant
+  permission
+  pool_common
+  pool_event
+  pool_location
+  pool_tenant
+  pool_user
+  role
+  root
+  settings
+  sihl
+  tenant)
  (preprocess
   (pps lwt_ppx)))

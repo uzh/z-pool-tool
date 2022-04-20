@@ -1,7 +1,7 @@
 open Experiment
 module Id = Pool_common.Id
 
-module AddExperiment : sig
+module Create : sig
   type t =
     { title : Experiment.Title.t
     ; description : Experiment.Description.t
@@ -30,46 +30,23 @@ end = struct
   ;;
 end
 
-module EditExperiment : sig
+module Update : sig end = struct end
+
+module Delete : sig
   type t =
     { experiment_id : Id.t
-    ; room : Experiment.Location.Room.t
-    ; building : Experiment.Location.Building.t
-    ; street : Experiment.Location.Street.t
-    ; zip : Experiment.Location.Zip.t
-    ; city : Experiment.Location.City.t
+    ; session_count : int
     }
-
-  val handle : t -> Experiment.t -> (Pool_event.t list, string) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
-end = struct
-  type t =
-    { experiment_id : Id.t
-    ; room : Experiment.Location.Room.t
-    ; building : Experiment.Location.Building.t
-    ; street : Experiment.Location.Street.t
-    ; zip : Experiment.Location.Zip.t
-    ; city : Experiment.Location.City.t
-    }
-
-  let handle = Utils.todo
-
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Experiment, Some command.experiment_id)
-        ]
-  ;;
-end
-
-module DestroyExperiment : sig
-  type t = { experiment_id : Id.t }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { experiment_id : Id.t }
+  (* Only when no sessions added *)
+
+  type t =
+    { experiment_id : Id.t
+    ; session_count : int
+    }
 
   let handle = Utils.todo
 
@@ -80,6 +57,10 @@ end = struct
         [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
+end
+
+module UpdateFilter : sig end = struct
+  (* Update 'match_filter' flag in currently existing participations *)
 end
 
 module AddExperimenter : sig
