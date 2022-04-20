@@ -29,6 +29,9 @@ let find_request_sql where_fragment =
         pool_participants.paused,
         pool_participants.disabled,
         pool_participants.verified,
+        pool_participants.email_verified,
+        pool_participants.participation_count,
+        pool_participants.participation_show_up_count,
         pool_participants.firstname_version,
         pool_participants.lastname_version,
         pool_participants.paused_version,
@@ -111,6 +114,9 @@ let insert_request =
         paused,
         disabled,
         verified,
+        email_verified,
+        participation_count,
+        participation_show_up_count,
         firstname_version,
         lastname_version,
         paused_version,
@@ -130,7 +136,10 @@ let insert_request =
         $10,
         $11,
         $12,
-        $13
+        $13,
+        $14,
+        $15,
+        $16
       )
     |sql}
   |> Repo_model.participant ->. Caqti_type.unit
@@ -219,10 +228,13 @@ let update_request =
         paused = $5,
         disabled = $6,
         verified = $7,
-        firstname_version = $8,
-        lastname_version = $9,
-        paused_version = $10,
-        language_version = $11
+        email_verified = $8,
+        participation_count = $9,
+        participation_show_up_count = $10,
+        firstname_version = $11,
+        lastname_version = $12,
+        paused_version = $13,
+        language_version = $14
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
