@@ -160,7 +160,7 @@ let email_verification req =
      let* events =
        match participant.Participant.user.Sihl.Contract.User.confirmed with
        | false ->
-         Command.VerifyAccount.(handle { email } participant) |> Lwt_result.lift
+         Command.VerifyEmail.(handle { email } participant) |> Lwt_result.lift
        | true ->
          Command.UpdateEmail.(handle participant email) |> Lwt_result.lift
      in
@@ -319,7 +319,7 @@ let update req =
     in
     let events =
       let open CCResult.Infix in
-      let open Cqrs_command.Participant_command.UpdateDetails in
+      let open Cqrs_command.Participant_command.Update in
       if Pool_common.Version.value current_version <= version
       then urlencoded |> decode >>= handle participant
       else Error (MeantimeUpdate name)

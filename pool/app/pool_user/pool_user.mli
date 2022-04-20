@@ -131,6 +131,17 @@ module EmailAddress : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module EmailVerified : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : Ptime.t option -> t
+  val create_now : unit -> t
+  val value : t -> Ptime.t option
+end
+
 module Repo : sig
   module Paused : sig
     val t : bool Caqti_type.t
@@ -145,6 +156,10 @@ module Repo : sig
   end
 
   module Verified : sig
+    val t : Ptime.t option Caqti_type.t
+  end
+
+  module EmailVerified : sig
     val t : Ptime.t option Caqti_type.t
   end
 

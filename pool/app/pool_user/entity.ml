@@ -175,3 +175,11 @@ module Verified = struct
   let create_now () = Some (Ptime_clock.now ())
   let value m = m
 end
+
+module EmailVerified = struct
+  type t = Ptime.t option [@@deriving eq, show]
+
+  let create m = m
+  let create_now () = Some (Ptime_clock.now ())
+  let value m = m
+end

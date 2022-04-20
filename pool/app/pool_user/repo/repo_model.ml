@@ -30,6 +30,12 @@ module EmailAddress = struct
   let t = Caqti_type.(string)
 end
 
+module EmailVerified = struct
+  include EmailVerified
+
+  let t = Caqti_type.(option ptime)
+end
+
 module User = struct
   let status =
     let encode m = m |> Sihl_user.status_to_string |> CCResult.pure in

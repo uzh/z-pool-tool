@@ -35,10 +35,12 @@ let field_to_string =
   | LanguageEn -> "Englisch"
   | Lastname -> "Nachname"
   | LogoType -> "Logo Typ"
+  | MaxParticipants -> "Maximum an Teilnehmern"
   | NewPassword -> "Neues Passwort"
   | Operator -> "Operator"
   | Page -> "Seite"
   | Participant -> "Teilnehmer"
+  | ParticipantsNeeded -> "Minimum an benötigten Teilnehmern"
   | PartnerLogos -> "Partner logos"
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
@@ -128,6 +130,7 @@ let rec error_to_string = function
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | ParticipantAmountNegative -> "Die Anzahl Teilnehmenden muss positiv sein."
   | MeantimeUpdate field ->
     field_message
       ""

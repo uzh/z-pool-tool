@@ -42,10 +42,14 @@ module Field = struct
     | LanguageEn [@name "language_en"] [@printer field_name "language_en"]
     | Lastname [@name "lastname"] [@printer field_name "lastname"]
     | LogoType [@name "logo_type"] [@printer field_name "logo_type"]
+    | MaxParticipants [@name "max_participants"]
+        [@printer field_name "max_participants"]
     | NewPassword [@name "new_password"] [@printer field_name "new_password"]
     | Operator [@name "operator"] [@printer field_name "operator"]
     | Page [@name "page"] [@printer field_name "page"]
     | Participant [@name "participant"] [@printer field_name "participant"]
+    | ParticipantsNeeded [@name "participants_needed"]
+        [@printer field_name "participants_needed"]
     | PartnerLogos [@name "partner_logos"] [@printer field_name "partner_logos"]
     | Password [@name "password"] [@printer field_name "password"]
     | PasswordConfirmation [@name "password_confirmation"]
@@ -110,6 +114,7 @@ type error =
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | LoginProvideDetails
+  | ParticipantAmountNegative
   | MeantimeUpdate of Field.t
   | NoOptionSelected of Field.t
   | NotANumber of string

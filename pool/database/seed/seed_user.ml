@@ -168,7 +168,10 @@ let participants db_pool () =
           ; language
           ; paused = User.Paused.create paused
           ; disabled = User.Disabled.create disabled
-          ; verified = User.Verified.create verified
+          ; verified = User.Verified.create None
+          ; email_verified = User.EmailVerified.create verified
+          ; participation_count = ParticipationCount.init
+          ; participation_show_up_count = ParticipationShowUpCount.init
           ; firstname_version = Pool_common.Version.create ()
           ; lastname_version = Pool_common.Version.create ()
           ; paused_version = Pool_common.Version.create ()
