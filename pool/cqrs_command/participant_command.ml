@@ -361,18 +361,19 @@ end = struct
   type t = { email : Email.unverified Email.t }
 
   let handle command participant =
-    (* TODO use email_verified here*)
     Ok
-      [ Participant.AccountVerified participant |> Pool_event.participant
+      [ Participant.EmailVerified participant |> Pool_event.participant
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
 end
 
 module Verify = struct
+  (* TODO issue #90 step 2 *)
   (* TODO Verify the participant itself with ID/Pass *)
 end
 
 module ToggleDisable = struct
+  (* TODO issue #90 step 2 *)
   (* TODO Toggle disable command*)
 end

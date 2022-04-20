@@ -32,7 +32,9 @@ let sign_up req =
       |> CCFun.flip CCOption.bind Message.of_string
     in
     let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
-    let channels = Participant.RecruitmentChannel.all () in
+    let channels =
+      Participant.RecruitmentChannel.(all |> CCList.map to_string)
+    in
     let email = go Field.Email in
     let firstname = go Field.Firstname in
     let lastname = go Field.Lastname in

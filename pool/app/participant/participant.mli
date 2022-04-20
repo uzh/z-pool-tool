@@ -5,13 +5,12 @@ module RecruitmentChannel : sig
     | Lecture
     | Mailing
 
-  val to_string : t -> string
-
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 
-  val all : unit -> string list
+  val to_string : t -> string
+  val all : t list
 end
 
 module ParticipationCount : sig
@@ -103,7 +102,8 @@ type event =
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
   | LanguageUpdated of t * Pool_common.Language.t
-  | AccountVerified of t
+  | Verified of t
+  | EmailVerified of t
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Pool_common.Id.t
