@@ -1,5 +1,7 @@
 (library
  (name participation)
- (libraries sihl tenant participant pool_common)
+ (libraries participant pool_common pool_database sihl tenant)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+
+(include_subdirs unqualified)
