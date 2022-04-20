@@ -65,7 +65,8 @@ type event =
       * User.PasswordConfirmed.t
       * Pool_common.Language.t
   | LanguageUpdated of t * Pool_common.Language.t
-  | AccountVerified of t
+  | Verified of t
+  | EmailVerified of t
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Id.t
@@ -192,7 +193,11 @@ let handle_event pool : event -> unit Lwt.t =
         }
     in
     Lwt.return_unit
-  | AccountVerified participant ->
+  | Verified participant ->
+    Repo.update
+      pool
+      { participant with verified = Pool_user.Verified.create_now () }
+  | EmailVerified participant ->
     let%lwt _ =
       Service.User.update
         ~ctx
@@ -200,7 +205,9 @@ let handle_event pool : event -> unit Lwt.t =
     in
     Repo.update
       pool
-      { participant with verified = Pool_user.Verified.create_now () }
+      { participant with
+        email_verified = Pool_user.EmailVerified.create_now ()
+      }
   | TermsAccepted participant ->
     Repo.update
       pool

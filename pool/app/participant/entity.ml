@@ -6,14 +6,13 @@ module RecruitmentChannel = struct
     | Online
     | Lecture
     | Mailing
-  [@@deriving eq, show]
+  [@@deriving eq, show, enum]
 
-  let of_string = function
-    | "friend" -> Ok Friend
-    | "online" -> Ok Online
-    | "lecture" -> Ok Lecture
-    | "mailing" -> Ok Mailing
-    | _ -> Error Pool_common.Message.(Invalid Field.RecruitmentChannel)
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
   ;;
 
   let to_string = function
@@ -23,21 +22,25 @@ module RecruitmentChannel = struct
     | Mailing -> "mailing"
   ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      of_string
-      to_string
-      Pool_common.Message.Field.RecruitmentChannel
+  let of_string = function
+    | "friend" -> Ok Friend
+    | "online" -> Ok Online
+    | "lecture" -> Ok Lecture
+    | "mailing" -> Ok Mailing
+    | _ -> Error Pool_common.Message.(Invalid Field.RecruitmentChannel)
   ;;
 
-  let all () = CCList.map to_string [ Friend; Online; Lecture; Mailing ]
+  let schema () =
+    Pool_common.(
+      Utils.schema_decoder of_string to_string Message.Field.RecruitmentChannel)
+  ;;
 end
 
 module ParticipationCount = struct
   type t = int [@@deriving eq, show]
 
-  let value m = m
   let init = 0
+  let value m = m
   let of_int m = m
 end
 
