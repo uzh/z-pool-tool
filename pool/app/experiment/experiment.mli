@@ -6,7 +6,12 @@ module Title : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
+  val create : string -> (t, Pool_common.Message.error) result
+  val value : t -> string
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Description : sig
@@ -15,17 +20,12 @@ module Description : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> (t, string) result
-end
+  val create : string -> (t, Pool_common.Message.error) result
+  val value : t -> string
 
-module ExperimentDate : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : Ptime.date -> (t, string) result
-  val value : t -> Ptime.t
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 type t =
@@ -40,7 +40,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val create : ?id:Id.t -> Title.t -> Description.t -> unit -> t
+val create : ?id:Id.t -> Title.t -> Description.t -> t
 
 type create =
   { title : Title.t
@@ -55,9 +55,9 @@ val pp_update : Format.formatter -> Event.update -> unit
 val show_update : Event.update -> string
 
 type event =
-  | ExperimentAdded of create
-  | ExperimentEdited of t * Event.update
-  | ExperimentDestroyed of t
+  | Created of create
+  | Updated of t * Event.update
+  | Destroyed of t
   | ExperimenterAssigned of t * Admin__Entity.experimenter Admin__Entity.t
   | ExperimenterDivested of t * Admin__Entity.experimenter Admin__Entity.t
   | AssistantAssigned of t * Admin__Entity.assistant Admin__Entity.t
@@ -66,6 +66,7 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 type add = t -> t Lwt.t
 type update = t -> t Lwt.t

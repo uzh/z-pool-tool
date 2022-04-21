@@ -48,11 +48,16 @@ let create_participant () =
 ;;
 
 let create_experiment () =
+  let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
   Experiment.
     { id = Pool_common.Id.create ()
-    ; title = Title.create "An Experiment" |> CCResult.get_or_failwith
+    ; title =
+        Title.create "An Experiment"
+        |> CCResult.map_err show_error
+        |> CCResult.get_or_failwith
     ; description =
         Description.create "A description for everyone"
+        |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "*"
     ; created_at = Ptime_clock.now ()

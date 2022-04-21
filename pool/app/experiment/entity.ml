@@ -1,4 +1,5 @@
 module Id = Pool_common.Id
+module Common = Pool_common
 
 module Title = struct
   type t = string [@@deriving eq, show]
@@ -6,8 +7,12 @@ module Title = struct
   let value m = m
 
   let create title =
-    if CCString.is_empty title then Error "Invalid title!" else Ok title
+    if CCString.is_empty title
+    then Error Common.Message.(Invalid Field.Title)
+    else Ok title
   ;;
+
+  let schema () = Common.(Utils.schema_decoder create value Message.Field.Title)
 end
 
 module Description = struct
@@ -17,29 +22,13 @@ module Description = struct
 
   let create description =
     if CCString.is_empty description
-    then Error "Invalid description!"
+    then Error Pool_common.Message.(Invalid Field.Description)
     else Ok description
   ;;
-end
 
-module ExperimentDate = struct
-  type t = Ptime.t [@@deriving eq, show]
-
-  let create date =
-    let open CCResult.Infix in
-    let experiment_date =
-      date |> Ptime.of_date |> CCOption.to_result "Invalid experiment date"
-    in
-    let now = () |> Ptime_clock.now in
-    let compare experiment_date =
-      match Ptime.is_earlier experiment_date ~than:now with
-      | true -> Error "Experiment Date cannot be in the past"
-      | false -> Ok experiment_date
-    in
-    experiment_date >>= compare
+  let schema () =
+    Common.(Utils.schema_decoder create value Message.Field.Description)
   ;;
-
-  let value m = m
 end
 
 type t =
@@ -71,7 +60,7 @@ type invitation =
   }
 [@@deriving eq, show]
 
-let create ?id title description () =
+let create ?id title description =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description

@@ -13,24 +13,24 @@ type update =
 [@@deriving eq, show]
 
 type event =
-  | ExperimentAdded of create
-  | ExperimentEdited of t * update
-  | ExperimentDestroyed of t
+  | Created of create
+  | Updated of t * update
+  | Destroyed of t
   | ExperimenterAssigned of t * Admin.experimenter Admin.t
   | ExperimenterDivested of t * Admin.experimenter Admin.t
   | AssistantAssigned of t * Admin.assistant Admin.t
   | AssistantDivested of t * Admin.assistant Admin.t
 
 let handle_event pool : event -> unit Lwt.t = function
-  | ExperimentAdded create_t ->
+  | Created create_t ->
     create create_t.title create_t.description |> Repo.insert pool
-  | ExperimentEdited (experiment, update_t) ->
+  | Updated (experiment, update_t) ->
     { experiment with
       title = update_t.title
     ; description = update_t.description
     }
     |> Repo.update pool
-  | ExperimentDestroyed experiment -> Repo.destroy pool experiment
+  | Destroyed experiment -> Repo.destroy pool experiment
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     Permission.divest (Admin.user user) (Role.operator experiment.id)
@@ -40,11 +40,10 @@ let handle_event pool : event -> unit Lwt.t = function
 
 let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
-  | ExperimentAdded one, ExperimentAdded two -> equal_create one two
-  | ( ExperimentEdited (experiment_one, update_one)
-    , ExperimentEdited (experiment_two, update_two) ) ->
-    equal experiment_one experiment_two && equal_update update_one update_two
-  | ExperimentDestroyed one, ExperimentDestroyed two -> equal one two
+  | Created one, Created two -> equal_create one two
+  | Updated (experiment_one, update_one), Updated (experiment_two, update_two)
+    -> equal experiment_one experiment_two && equal_update update_one update_two
+  | Destroyed one, Destroyed two -> equal one two
   | ( ExperimenterAssigned (experiment_one, user_one)
     , ExperimenterDivested (experiment_two, user_two) ) ->
     equal experiment_one experiment_two
@@ -56,11 +55,11 @@ let[@warning "-4"] equal_event event1 event2 =
 
 let pp_event formatter event =
   match event with
-  | ExperimentAdded m -> pp_create formatter m
-  | ExperimentEdited (experiment, update) ->
+  | Created m -> pp_create formatter m
+  | Updated (experiment, update) ->
     pp formatter experiment;
     pp_update formatter update
-  | ExperimentDestroyed m -> pp formatter m
+  | Destroyed m -> pp formatter m
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     pp formatter experiment;

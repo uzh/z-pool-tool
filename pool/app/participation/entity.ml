@@ -50,7 +50,7 @@ module CanceledAt = struct
   let init = None
   let create_now () = Some (Ptime_clock.now ())
   let value m = m
-  let sexp_of_t = Utils.Time.ptime_to_sexp
+  let sexp_of_t = Pool_common.Utils.Time.ptime_to_sexp
 end
 
 type t =

@@ -157,6 +157,7 @@ end
 
 module Utils : sig
   module PoolConformist = Pool_common_utils.PoolConformist
+  module Time = Utils_time
 
   val schema_decoder
     :  (string -> ('b, Message.error) result)

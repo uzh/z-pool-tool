@@ -1,15 +1,16 @@
 (library
  (name page)
  (libraries
-  tyxml
-  sihl
-  service
-  http_utils
-  participant
   component
+  experiment
   htmx
-  pool_tenant
-  tenant
-  root
+  http_utils
   i18n
+  participant
+  pool_tenant
+  root
+  service
+  sihl
+  tenant
+  tyxml
   utils))
