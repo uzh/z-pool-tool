@@ -2,17 +2,18 @@
  ; Cannot just be named as "event" because there is an existing stdlib module
  (name pool_event)
  (libraries
-  sihl
   admin
-  root
-  pool_user
   database
   email
-  participant
-  pool_tenant
-  tenant
   experiment
+  i18n
+  participant
+  participation
+  pool_tenant
+  pool_user
+  root
   settings
-  i18n)
+  sihl
+  tenant)
  (preprocess
   (pps ppx_deriving.show ppx_deriving.eq)))

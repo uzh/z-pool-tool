@@ -17,6 +17,7 @@
   role
   root
   settings
+  session
   sihl
   tenant)
  (preprocess

@@ -1,5 +1,8 @@
 module RepoEntity = Repo_entity
 
+let of_entity = RepoEntity.of_entity
+let to_entity = RepoEntity.to_entity
+
 module Sql = struct
   let select_sql =
     {sql|
@@ -43,7 +46,7 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let find_by_experiment_request =
+  let find_by_session_request =
     let open Caqti_request.Infix in
     {sql|
       WHERE
@@ -53,10 +56,10 @@ module Sql = struct
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_experiment pool id =
+  let find_by_session pool id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_by_experiment_request
+      find_by_session_request
       (Pool_common.Id.value id)
   ;;
 
@@ -132,27 +135,44 @@ end
 
 let find pool id =
   let open Utils.Lwt_result.Syntax in
+  (* TODO Implement as transaction *)
   let* participation = Sql.find pool id in
   let* participant =
     Participant.find pool participation.RepoEntity.participant_id
   in
-  RepoEntity.to_entity participation participant |> Lwt.return_ok
+  to_entity participation participant |> Lwt.return_ok
 ;;
 
-let find_by_experiment pool id =
+let find_by_session pool id =
   let open Lwt.Infix in
-  Sql.find_by_experiment pool id
+  (* TODO Implement as transaction *)
+  Sql.find_by_session pool id
   >>= Lwt_list.map_s (fun participation ->
           let open Utils.Lwt_result.Infix in
           Participant.find pool participation.RepoEntity.participant_id
-          >|= RepoEntity.to_entity participation)
+          >|= to_entity participation)
   |> Lwt.map CCList.all_ok
 ;;
 
 let find_by_participant pool participant =
   let open Lwt.Infix in
+  (* TODO Implement as transaction *)
   participant
   |> Participant.id
   |> Sql.find_by_participant pool
-  >|= CCList.map (CCFun.flip RepoEntity.to_entity participant)
+  (* TODO Load participand from db *)
+  >|= CCList.map (CCFun.flip to_entity participant)
+;;
+
+let insert pool session_id model =
+  model |> of_entity session_id |> Sql.insert pool
+;;
+
+let update pool model =
+  let open Utils.Lwt_result.Syntax in
+  let* participation = model.Entity.id |> Sql.find pool in
+  model
+  |> of_entity participation.RepoEntity.session_id
+  |> Sql.update pool
+  |> Lwt_result.ok
 ;;
