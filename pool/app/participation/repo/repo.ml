@@ -8,22 +8,38 @@ module Sql = struct
     {sql|
       SELECT
         LOWER(CONCAT(
-          SUBSTR(HEX(uuid), 1, 8), '-',
-          SUBSTR(HEX(uuid), 9, 4), '-',
-          SUBSTR(HEX(uuid), 13, 4), '-',
-          SUBSTR(HEX(uuid), 17, 4), '-',
-          SUBSTR(HEX(uuid), 21)
+          SUBSTR(HEX(pool_participations.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_participations.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_participations.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_participations.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_participations.uuid), 21)
         )),
-        session_id,
-        participant_id,
-        show_up,
-        participated,
-        matches_filter,
-        chanceled_at,
-        created_at,
-        updated_at
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_sessions.uuid), 21)
+        )),
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_participants.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_participants.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_participants.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_participants.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_participants.uuid), 21)
+        )),
+        pool_participations.show_up,
+        pool_participations.participated,
+        pool_participations.matches_filter,
+        pool_participations.chanceled_at,
+        pool_participations.created_at,
+        pool_participations.updated_at
       FROM
         pool_participations
+      LEFT JOIN pool_sessions
+        ON pool_participations.session_id = pool_sessions.id
+      LEFT JOIN pool_participants
+        ON pool_participations.session_id = pool_participants.id
     |sql}
   ;;
 
@@ -50,7 +66,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        session_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
