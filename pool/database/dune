@@ -1,16 +1,17 @@
 (library
  (name database)
  (libraries
-  sihl
-  service
-  participant
-  tenant
-  pool_user
   admin
-  utils
+  conformist
   email
+  experiment
   i18n
-  conformist)
+  participant
+  pool_user
+  service
+  sihl
+  tenant
+  utils)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 
