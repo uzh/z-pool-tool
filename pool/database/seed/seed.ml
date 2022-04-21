@@ -15,6 +15,8 @@ module Tenant = struct
         let%lwt () = Seed_emails.tenant pool () in
         let%lwt () = Seed_user.admins pool () in
         let%lwt () = Seed_user.participants pool () in
+        let%lwt () = Seed_i18n.i18n pool () in
+        let%lwt () = Seed_experiment.experiments pool () in
         Lwt.return_unit)
       db_pools
   ;;
