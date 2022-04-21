@@ -78,10 +78,54 @@ module Sql = struct
       (id |> Pool_common.Id.value)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
+
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_experiments
+      SET
+        title = $2,
+        description = $3,
+        filter = $4,
+        created_at = $5,
+        updated_at = $6
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Repo_entity.t ->. Caqti_type.unit
+  ;;
+
+  let format_update (t : Entity.t) =
+    let open Entity in
+    ( t.id |> Pool_common.Id.value
+    , t.title |> Title.value
+    , t.description |> Description.value
+    , t.filter )
+  ;;
+
+  let update pool =
+    Utils.Database.exec (Database.Label.value pool) update_request
+  ;;
+
+  let destroy_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_experiments
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  ;;
+
+  let destroy pool id =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      destroy_request
+      (id |> Pool_common.Id.value)
+  ;;
 end
 
 let find = Sql.find
 let find_all = Sql.find_all
 let insert = Sql.insert
-let update _ = Utils.todo
-let destroy _ = Utils.todo
+let update = Sql.update
+let destroy = Sql.destroy

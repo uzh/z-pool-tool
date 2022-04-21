@@ -50,14 +50,11 @@ type create =
 val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
-val equal_update : Event.update -> Event.update -> bool
-val pp_update : Format.formatter -> Event.update -> unit
-val show_update : Event.update -> string
 
 type event =
   | Created of create
-  | Updated of t * Event.update
-  | Destroyed of t
+  | Updated of t * create
+  | Destroyed of Pool_common.Id.t
   | ExperimenterAssigned of t * Admin__Entity.experimenter Admin__Entity.t
   | ExperimenterDivested of t * Admin__Entity.experimenter Admin__Entity.t
   | AssistantAssigned of t * Admin__Entity.assistant Admin__Entity.t
@@ -74,9 +71,12 @@ val find
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
-type add = t -> t Lwt.t
-type update = t -> t Lwt.t
-type destroy = t -> t Lwt.t
+val session_count
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (int, Pool_common.Message.error) Lwt_result.t
 
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Participant.t list Lwt.t
+val title : t -> string
+val description : t -> string

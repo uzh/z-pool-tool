@@ -129,6 +129,8 @@ let rec error_to_string = function
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailMalformed -> "Malformed email"
+  | ExperimenSessionCountNotZero ->
+    "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"

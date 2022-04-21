@@ -2,6 +2,11 @@ open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
 module Id = Pool_common.Id
 
+let default_schema command =
+  Pool_common.Utils.PoolConformist.(
+    make Field.[ Title.schema (); Description.schema () ] command)
+;;
+
 module Create : sig
   type t = create
 
@@ -17,18 +22,13 @@ end = struct
 
   let command title description = { title; description }
 
-  let schema =
-    Pool_common.Utils.PoolConformist.(
-      make Field.[ Title.schema (); Description.schema () ] command)
-  ;;
-
   let handle (command : t) =
     let t = { title = command.title; description = command.description } in
     Ok [ Experiment.Created t |> Pool_event.experiment ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate (default_schema command) data
     |> CCResult.map_err Pool_common.Message.to_coformist_error
   ;;
 
@@ -37,7 +37,35 @@ end = struct
   ;;
 end
 
-module Update : sig end = struct end
+module Update : sig
+  type t = create
+
+  val handle : Experiment.t -> t -> (Pool_event.t list, 'a) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = create
+
+  let command title description = { title; description }
+
+  let handle experiment (command : t) =
+    let update = { title = command.title; description = command.description } in
+    Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate (default_schema command) data
+    |> CCResult.map_err Pool_common.Message.to_coformist_error
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
+  ;;
+end
 
 module Delete : sig
   type t =
@@ -55,7 +83,12 @@ end = struct
     ; session_count : int
     }
 
-  let handle = Utils.todo
+  let handle { experiment_id; session_count } =
+    match session_count > 0 with
+    | true -> Error Pool_common.Message.ExperimenSessionCountNotZero
+    | false ->
+      Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
+  ;;
 
   let can user command =
     Permission.can

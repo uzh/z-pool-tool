@@ -69,3 +69,6 @@ let create ?id title description =
   ; updated_at = Ptime_clock.now ()
   }
 ;;
+
+let title (m : t) = Title.value m.title
+let description (m : t) = Description.value m.description

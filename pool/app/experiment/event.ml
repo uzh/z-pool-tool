@@ -6,16 +6,10 @@ type create =
   }
 [@@deriving eq, show]
 
-type update =
-  { title : Title.t
-  ; description : Description.t
-  }
-[@@deriving eq, show]
-
 type event =
   | Created of create
-  | Updated of t * update
-  | Destroyed of t
+  | Updated of t * create
+  | Destroyed of Common.Id.t
   | ExperimenterAssigned of t * Admin.experimenter Admin.t
   | ExperimenterDivested of t * Admin.experimenter Admin.t
   | AssistantAssigned of t * Admin.assistant Admin.t
@@ -28,9 +22,11 @@ let handle_event pool : event -> unit Lwt.t = function
     { experiment with
       title = update_t.title
     ; description = update_t.description
+    ; updated_at =
+        Ptime_clock.now () (* TODO [timhub]: How to use SQL timestamp update? *)
     }
     |> Repo.update pool
-  | Destroyed experiment -> Repo.destroy pool experiment
+  | Destroyed experiment_id -> Repo.destroy pool experiment_id
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     Permission.divest (Admin.user user) (Role.operator experiment.id)
@@ -42,8 +38,8 @@ let[@warning "-4"] equal_event event1 event2 =
   match event1, event2 with
   | Created one, Created two -> equal_create one two
   | Updated (experiment_one, update_one), Updated (experiment_two, update_two)
-    -> equal experiment_one experiment_two && equal_update update_one update_two
-  | Destroyed one, Destroyed two -> equal one two
+    -> equal experiment_one experiment_two && equal_create update_one update_two
+  | Destroyed one, Destroyed two -> Id.equal one two
   | ( ExperimenterAssigned (experiment_one, user_one)
     , ExperimenterDivested (experiment_two, user_two) ) ->
     equal experiment_one experiment_two
@@ -58,8 +54,8 @@ let pp_event formatter event =
   | Created m -> pp_create formatter m
   | Updated (experiment, update) ->
     pp formatter experiment;
-    pp_update formatter update
-  | Destroyed m -> pp formatter m
+    pp_create formatter update
+  | Destroyed m -> Id.pp formatter m
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     pp formatter experiment;

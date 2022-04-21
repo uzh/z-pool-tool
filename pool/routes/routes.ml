@@ -100,7 +100,10 @@ module Admin = struct
       ; get "/experiments" Handler.Admin.Experiments.index
       ; get "/experiments/new" Handler.Admin.Experiments.new_form
       ; post "/experiments" Handler.Admin.Experiments.create
-      ; get "/experiments/:id" Handler.Admin.Experiments.detail
+      ; get "/experiments/:id" Handler.Admin.Experiments.show
+      ; get "/experiments/:id/edit" Handler.Admin.Experiments.edit
+      ; post "/experiments/:id" Handler.Admin.Experiments.update
+      ; post "/experiments/:id/delete" Handler.Admin.Experiments.delete
       ]
   ;;
 end
