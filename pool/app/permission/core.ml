@@ -8,6 +8,7 @@ type thing =
   | Experiment
   | Experiment_session
   | Participant
+  | Participation
 [@@deriving eq, show]
 
 type permission =

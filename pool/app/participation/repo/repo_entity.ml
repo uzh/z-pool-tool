@@ -47,7 +47,7 @@ let to_entity (m : t) (participant : Participant.t) : Entity.t =
     }
 ;;
 
-let of_entity (m : Entity.t) session_id : t =
+let of_entity (session_id : Pool_common.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; session_id
   ; participant_id = Participant.id m.Entity.participant

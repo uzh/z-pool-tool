@@ -58,7 +58,7 @@ type t =
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; participant_count : ParticipantAmount.t
-  ; canceled_at : Ptime.t
+  ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }

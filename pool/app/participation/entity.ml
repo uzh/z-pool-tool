@@ -3,6 +3,18 @@ module ShowUp = struct
 
   let create m = m
   let value m = m
+  let init = false
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Pool_common.Message.Field.ShowUp
+  ;;
 end
 
 module Participated = struct
@@ -10,6 +22,18 @@ module Participated = struct
 
   let create m = m
   let value m = m
+  let init = false
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Pool_common.Message.Field.Participated
+  ;;
 end
 
 module MatchesFilter = struct
@@ -17,6 +41,7 @@ module MatchesFilter = struct
 
   let create m = m
   let value m = m
+  let init = false
 end
 
 module CanceledAt = struct
