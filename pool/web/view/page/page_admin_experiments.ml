@@ -67,12 +67,12 @@ let form ?experiment csrf Pool_context.{ language; _ } =
             language
             `Text
             Pool_common.Message.Field.Title
-            (value title)
+            (value title_value)
         ; input_element
             language
             `Text
             Pool_common.Message.Field.Description
-            (value description)
+            (value description_value)
         ; submit_element
             language
             Message.(
