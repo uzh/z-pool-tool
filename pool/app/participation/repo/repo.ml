@@ -125,11 +125,24 @@ module Sql = struct
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
-    |> RepoEntity.t ->. Caqti_type.unit
+    |> Caqti_type.(
+         tup2 string (tup2 bool (tup2 bool (tup2 bool (option ptime)))) ->. unit)
   ;;
 
-  let update pool t =
-    Utils.Database.exec (Pool_database.Label.value pool) update_request t
+  let format_update m =
+    Entity.(
+      ( m.id |> Pool_common.Id.value
+      , ( m.show_up |> ShowUp.value
+        , ( m.participated |> Participated.value
+          , ( m.matches_filter |> MatchesFilter.value
+            , m.canceled_at |> CanceledAt.value ) ) ) ))
+  ;;
+
+  let update pool m =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      update_request
+      (format_update m)
   ;;
 end
 
@@ -160,19 +173,17 @@ let find_by_participant pool participant =
   participant
   |> Participant.id
   |> Sql.find_by_participant pool
-  (* TODO Load participand from db *)
-  >|= CCList.map (CCFun.flip to_entity participant)
+  >>= Lwt_list.map_s (fun participation ->
+          let open Utils.Lwt_result.Infix in
+          (* Reload participant from DB, does not allow already made updates of
+             the provided participant record *)
+          Participant.find pool participation.RepoEntity.participant_id
+          >|= to_entity participation)
+  |> Lwt.map CCList.all_ok
 ;;
 
 let insert pool session_id model =
   model |> of_entity session_id |> Sql.insert pool
 ;;
 
-let update pool model =
-  let open Utils.Lwt_result.Syntax in
-  let* participation = model.Entity.id |> Sql.find pool in
-  model
-  |> of_entity participation.RepoEntity.session_id
-  |> Sql.update pool
-  |> Lwt_result.ok
-;;
+let update = Sql.update
