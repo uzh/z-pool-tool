@@ -10,6 +10,8 @@ let field_to_string =
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
+  | Date -> "date"
+  | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | Description -> "description"
   | Disabled -> "disabled"
@@ -18,6 +20,7 @@ let field_to_string =
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | Experiment -> "experiment"
   | File -> "file"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
@@ -70,6 +73,7 @@ let field_to_string =
   | TenantPool -> "Tenant pool"
   | TermsAccepted -> "terms accepted"
   | TermsAndConditions -> "terms and conditions"
+  | Time -> "time"
   | TimeSpan -> "time span"
   | Title -> "title"
   | Token -> "token"
@@ -187,6 +191,7 @@ let control_to_string = function
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Login -> format_submit "login" None
+  | More -> "more"
   | Save field -> format_submit "save" field
   | SendResetLink -> format_submit "send reset link" None
   | SignUp -> format_submit "sign up" None

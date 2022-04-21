@@ -13,6 +13,8 @@ module Field = struct
     | DatabaseLabel [@name "database_label"]
         [@printer field_name "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer field_name "database_url"]
+    | Date [@name "date"] [@printer field_name "date"]
+    | DateTime [@name "date_time"] [@printer field_name "date_time"]
     | DefaultLanguage [@name "default_language"]
         [@printer field_name "default_language"]
     | Description [@name "description"] [@printer field_name "description"]
@@ -24,6 +26,7 @@ module Field = struct
         [@printer field_name "email_address_unverified"]
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer field_name "email_address_verified"]
+    | Experiment [@name "experiment"] [@printer field_name "experiment"]
     | File [@name "file"] [@printer field_name "file"]
     | FileMimeType [@name "file_mime_type"]
         [@printer field_name "file_mime_type"]
@@ -92,6 +95,7 @@ module Field = struct
         [@printer field_name "terms_accepted"]
     | TermsAndConditions [@name "terms_and_conditions"]
         [@printer field_name "terms_and_conditions"]
+    | Time [@name "time"] [@printer field_name "time"]
     | TimeSpan [@name "timespan"] [@printer field_name "timespan"]
     | Title [@name "title"] [@printer field_name "title"]
     | Translation [@name "translation"] [@printer field_name "translation"]
@@ -198,6 +202,7 @@ type control =
   | Edit of Field.t option
   | Enable
   | Login
+  | More
   | Save of Field.t option
   | SendResetLink
   | SignUp

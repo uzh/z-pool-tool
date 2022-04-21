@@ -5,6 +5,7 @@ module Repo = Repo
 
 module Utils = struct
   include Pool_common_utils
+  module Time = Utils_time
 
   let to_string = function
     | Language.De -> Locales_de.to_string

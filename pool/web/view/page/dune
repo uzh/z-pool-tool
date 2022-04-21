@@ -2,6 +2,7 @@
  (name page)
  (libraries
   component
+  experiment
   htmx
   http_utils
   i18n
