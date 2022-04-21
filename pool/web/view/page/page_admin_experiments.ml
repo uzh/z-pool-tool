@@ -9,7 +9,13 @@ let index experiment_list Pool_context.{ language; _ } =
       ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
       [ span [ txt (Title.value experiment.title) ]
       ; a
-          ~a:[ a_href "#" ]
+          ~a:
+            [ a_href
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/admin/experiments/%s"
+                      (experiment.id |> Pool_common.Id.value)))
+            ]
           [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
       ]
   in
@@ -55,5 +61,14 @@ let new_form csrf Pool_context.{ language; _ } =
             ~classnames:[ "button--success" ]
             ()
         ]
+    ]
+;;
+
+let detail (experiment : Experiment.t) _ =
+  let open Experiment in
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ h1 [ txt (experiment.title |> Title.value) ]
+    ; p [ txt (experiment.description |> Description.value) ]
     ]
 ;;

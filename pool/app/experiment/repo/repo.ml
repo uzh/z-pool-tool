@@ -60,9 +60,27 @@ module Sql = struct
   let find_all pool =
     Utils.Database.collect (Pool_database.Label.value pool) find_all_request
   ;;
+
+  let find_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_experiments_sql
+    |> Caqti_type.string ->! Repo_entity.t
+  ;;
+
+  let find pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_request
+      (id |> Pool_common.Id.value)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ;;
 end
 
-let find _ = Utils.todo
+let find = Sql.find
 let find_all = Sql.find_all
 let insert = Sql.insert
 let update _ = Utils.todo

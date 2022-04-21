@@ -66,3 +66,26 @@ let create req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+let detail req =
+  let open Utils.Lwt_result.Infix in
+  let error_path = "/admin/experiments" in
+  let result context =
+    Lwt_result.map_err (fun err -> err, error_path)
+    @@
+    let open Lwt_result.Syntax in
+    let message =
+      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+    in
+    let tenant_db = context.Pool_context.tenant_db in
+    let id =
+      Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
+      |> Pool_common.Id.of_string
+    in
+    let* experiment = Experiment.find tenant_db id in
+    Page.Admin.Experiments.detail experiment context
+    |> create_layout req context message
+    >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
