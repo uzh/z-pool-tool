@@ -38,7 +38,17 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let new_form csrf Pool_context.{ language; _ } =
+let form ?experiment csrf Pool_context.{ language; _ } =
+  let open Experiment in
+  let action =
+    match experiment with
+    | None -> "/admin/experiments"
+    | Some experiment ->
+      Format.asprintf
+        "/admin/experiments/%s"
+        (experiment.id |> Pool_common.Id.value)
+  in
+  let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   div
     ~a:[ a_class [ "stack" ] ]
     [ h1
@@ -49,26 +59,89 @@ let new_form csrf Pool_context.{ language; _ } =
     ; form
         ~a:
           [ a_method `Post
-          ; a_action (Sihl.Web.externalize_path "/admin/experiments")
+          ; a_action (Sihl.Web.externalize_path action)
           ; a_class [ "stack" ]
           ]
         [ Component.csrf_element csrf ()
-        ; input_element language `Text Pool_common.Message.Field.Title ""
-        ; input_element language `Text Pool_common.Message.Field.Description ""
+        ; input_element
+            language
+            `Text
+            Pool_common.Message.Field.Title
+            (value title)
+        ; input_element
+            language
+            `Text
+            Pool_common.Message.Field.Description
+            (value description)
         ; submit_element
             language
-            Message.(Create (Some Field.Experiment))
+            Message.(
+              let field = Some Field.Experiment in
+              match experiment with
+              | None -> Create field
+              | Some _ -> Update field)
             ~classnames:[ "button--success" ]
             ()
         ]
     ]
 ;;
 
-let detail (experiment : Experiment.t) _ =
+let detail experiment session_count Pool_context.{ language; _ } =
+  let delete_form =
+    match session_count > 0 with
+    | true ->
+      div
+        [ submit_element
+            language
+            Message.(Delete (Some Field.Experiment))
+            ~classnames:[ "button--neutral" ]
+            ()
+        ; p
+            [ small
+                [ txt
+                    Pool_common.(
+                      Message.ExperimenSessionCountNotZero
+                      |> Utils.error_to_string language)
+                ]
+            ]
+        ]
+    | false ->
+      Tyxml.Html.form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Sihl.Web.externalize_path
+                 (Format.asprintf
+                    "/admin/experiments/%s/delete"
+                    (experiment.Experiment.id |> Pool_common.Id.value)))
+          ]
+        [ submit_element
+            language
+            Message.(Delete (Some Field.Experiment))
+            ~classnames:[ "button--failure" ]
+            ()
+        ]
+  in
   let open Experiment in
   div
     ~a:[ a_class [ "stack" ] ]
     [ h1 [ txt (experiment.title |> Title.value) ]
     ; p [ txt (experiment.description |> Description.value) ]
+    ; p
+        [ a
+            ~a:
+              [ a_href
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/admin/experiments/%s/edit"
+                        (experiment.id |> Pool_common.Id.value)))
+              ]
+            [ txt
+                Pool_common.(
+                  Message.(Edit (Some Field.Experiment))
+                  |> Utils.control_to_string language)
+            ]
+        ]
+    ; delete_form
     ]
 ;;

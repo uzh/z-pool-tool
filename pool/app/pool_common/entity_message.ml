@@ -122,6 +122,7 @@ type error =
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailMalformed
+  | ExperimenSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | LoginProvideDetails
