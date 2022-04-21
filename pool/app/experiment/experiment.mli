@@ -78,5 +78,5 @@ val session_count
 
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Participant.t list Lwt.t
-val title : t -> string
-val description : t -> string
+val title_value : t -> string
+val description_value : t -> string

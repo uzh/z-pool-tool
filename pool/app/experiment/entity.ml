@@ -70,5 +70,5 @@ let create ?id title description =
   }
 ;;
 
-let title (m : t) = Title.value m.title
-let description (m : t) = Description.value m.description
+let title_value (m : t) = Title.value m.title
+let description_value (m : t) = Description.value m.description
