@@ -66,6 +66,12 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+
+val find
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 type add = t -> t Lwt.t
