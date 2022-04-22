@@ -146,7 +146,8 @@ let participants db_pool () =
           let firstname = User.Firstname.create given_name |> get_or_failwith in
           let lastname = User.Lastname.create name |> get_or_failwith in
           let%lwt () =
-            Email.Created (address, user_id, firstname, lastname)
+            Email.Created
+              (address, user_id, firstname, lastname, Pool_common.Language.En)
             |> Email.handle_event db_pool
           in
           if CCOption.is_some verified

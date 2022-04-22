@@ -36,9 +36,9 @@ let set_password
   >|= ignore
 ;;
 
-let send_password_changed_email pool email firstname lastname =
+let send_password_changed_email pool language email firstname lastname =
   let open Lwt.Infix in
-  Email.Helper.PasswordChange.create pool email firstname lastname
+  Email.Helper.PasswordChange.create pool language email firstname lastname
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
@@ -59,7 +59,11 @@ type event =
   | PausedUpdated of t * User.Paused.t
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
-      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
+      t
+      * User.Password.t
+      * User.Password.t
+      * User.PasswordConfirmed.t
+      * Pool_common.Language.t
   | LanguageUpdated of t * Pool_common.Language.t
   | AccountVerified of t
   | TermsAccepted of t
@@ -139,7 +143,7 @@ let handle_event pool : event -> unit Lwt.t =
         participant.user
     in
     Lwt.return_unit
-  | PasswordUpdated (person, old_password, new_password, confirmed) ->
+  | PasswordUpdated (person, old_password, new_password, confirmed, language) ->
     let old_password = old_password |> User.Password.to_sihl in
     let new_password = new_password |> User.Password.to_sihl in
     let new_password_confirmation =
@@ -168,6 +172,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () =
       send_password_changed_email
         pool
+        language
         email
         (firstname person)
         (lastname person)
