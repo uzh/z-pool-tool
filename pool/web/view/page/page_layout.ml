@@ -85,6 +85,7 @@ module Tenant = struct
       | `Participant -> [ "/user", Profile ]
       | `Admin ->
         [ "/admin/dashboard", Dashboard
+        ; "/admin/experiments", Experiments
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
