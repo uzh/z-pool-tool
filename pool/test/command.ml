@@ -52,5 +52,7 @@ let () =
             `Quick
             Participation_test.set_attendance
         ] )
+    ; ( "invitation"
+      , [ test_case "create invitation" `Quick Invitation_test.create ] )
     ]
 ;;

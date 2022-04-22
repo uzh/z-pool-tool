@@ -7,8 +7,11 @@
   caqti-driver-mariadb
   cqrs_command
   database
+  experiment
   http_utils
+  invitation
   participant
+  participation
   pool_event
   pool_tenant
   pool_database

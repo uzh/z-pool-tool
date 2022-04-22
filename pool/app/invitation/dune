@@ -2,4 +2,6 @@
  (name invitation)
  (libraries sihl sihl-email tenant participant pool_common)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+
+(include_subdirs unqualified)

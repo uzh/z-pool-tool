@@ -85,6 +85,7 @@ module Tenant = struct
       ; Migration_settings.migration ()
       ; Migration_i18n.migration ()
       ; Migration_participation.migration ()
+      ; Migration_invitation.migration ()
       ]
   ;;
 

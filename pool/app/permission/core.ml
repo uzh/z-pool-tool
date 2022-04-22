@@ -1,14 +1,15 @@
 module Id = Pool_common.Id
 
 type thing =
+  | Experiment
+  | Experiment_session
+  | Invitation
+  | Location
+  | Participant
+  | Participation
   | System
   | Tenant
   | Tenant_recruiting
-  | Location
-  | Experiment
-  | Experiment_session
-  | Participant
-  | Participation
 [@@deriving eq, show]
 
 type permission =
