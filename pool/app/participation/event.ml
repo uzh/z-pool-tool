@@ -15,7 +15,7 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Canceled participation ->
-    let%lwt _ =
+    let%lwt () =
       { participation with canceled_at = CanceledAt.create_now () }
       |> Repo.update pool
     in
@@ -23,9 +23,9 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created { participant; session_id } ->
     participant |> create |> Repo.insert pool session_id
   | Participated (participation, participated) ->
-    let%lwt _ = { participation with participated } |> Repo.update pool in
+    let%lwt () = { participation with participated } |> Repo.update pool in
     Lwt.return_unit
   | ShowedUp (participation, show_up) ->
-    let%lwt _ = { participation with show_up } |> Repo.update pool in
+    let%lwt () = { participation with show_up } |> Repo.update pool in
     Lwt.return_unit
 ;;
