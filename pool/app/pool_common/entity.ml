@@ -67,7 +67,7 @@ module CreatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
-  let sexp_of_t = Utils.Time.ptime_to_sexp
+  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module UpdatedAt = struct
@@ -75,7 +75,7 @@ module UpdatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
-  let sexp_of_t = Utils.Time.ptime_to_sexp
+  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module File = struct

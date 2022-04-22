@@ -10,6 +10,8 @@ let field_to_string =
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
+  | Date -> "date"
+  | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | Description -> "description"
   | Disabled -> "disabled"
@@ -18,6 +20,7 @@ let field_to_string =
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | Experiment -> "experiment"
   | File -> "file"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
@@ -70,6 +73,7 @@ let field_to_string =
   | TenantPool -> "Tenant pool"
   | TermsAccepted -> "terms accepted"
   | TermsAndConditions -> "terms and conditions"
+  | Time -> "time"
   | TimeSpan -> "time span"
   | Title -> "title"
   | Token -> "token"
@@ -125,6 +129,8 @@ let rec error_to_string = function
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailMalformed -> "Malformed email"
+  | ExperimenSessionCountNotZero ->
+    "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
@@ -187,6 +193,7 @@ let control_to_string = function
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Login -> format_submit "login" None
+  | More -> "more"
   | Save field -> format_submit "save" field
   | SendResetLink -> format_submit "send reset link" None
   | SignUp -> format_submit "sign up" None

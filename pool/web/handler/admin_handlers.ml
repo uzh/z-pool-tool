@@ -1,6 +1,7 @@
 module I18n = Admin_i18n
 module Message = Http_utils.Message
 module Settings = Admin_settings
+module Experiments = Admin_experiments
 
 let create_layout req = General.create_tenant_layout `Admin req
 

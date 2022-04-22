@@ -2,6 +2,8 @@ type t =
   | DashboardTitle
   | EmailConfirmationNote
   | EmailConfirmationTitle
+  | ExperimentNewTitle
+  | ExperimentListTitle
   | HomeTitle
   | I18nTitle
   | LoginTitle
@@ -17,5 +19,6 @@ type t =
 
 type nav_link =
   | Dashboard
+  | Experiments
   | I18n
   | Settings

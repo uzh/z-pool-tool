@@ -54,5 +54,17 @@ let () =
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create ] )
+    ; ( "experiment"
+      , [ test_case "create experiment" `Quick Experiment_test.create
+        ; test_case
+            "create experiment without title"
+            `Quick
+            Experiment_test.create_without_title
+        ; test_case "upate experiment" `Quick Experiment_test.update
+        ; test_case
+            "delete experiment with sessions"
+            `Quick
+            Experiment_test.delete_with_sessions
+        ] )
     ]
 ;;

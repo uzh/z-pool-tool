@@ -97,6 +97,13 @@ module Admin = struct
       ; post "/settings/:action" Handler.Admin.Settings.update_settings
       ; get "/i18n" Handler.Admin.I18n.index
       ; post "/i18n/:id" Handler.Admin.I18n.update
+      ; get "/experiments" Handler.Admin.Experiments.index
+      ; get "/experiments/new" Handler.Admin.Experiments.new_form
+      ; post "/experiments" Handler.Admin.Experiments.create
+      ; get "/experiments/:id" Handler.Admin.Experiments.show
+      ; get "/experiments/:id/edit" Handler.Admin.Experiments.edit
+      ; post "/experiments/:id" Handler.Admin.Experiments.update
+      ; post "/experiments/:id/delete" Handler.Admin.Experiments.delete
       ]
   ;;
 end

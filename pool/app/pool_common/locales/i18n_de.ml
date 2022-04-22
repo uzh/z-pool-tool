@@ -5,6 +5,8 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
+  | ExperimentNewTitle -> "Neues Experiment erstellen"
+  | ExperimentListTitle -> "Experimente"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
   | LoginTitle -> "Anmelden"
@@ -22,6 +24,7 @@ let to_string = function
 
 let nav_link_to_string = function
   | Dashboard -> "Dashboard"
+  | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
   | Settings -> "Einstellungen"
 ;;
