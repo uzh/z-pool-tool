@@ -55,3 +55,19 @@ let t =
                   string
                   (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t))))))
 ;;
+
+module Write = struct
+  let t =
+    let encode (m : t) =
+      Ok
+        ( Id.value m.id
+        , (Title.value m.title, (Description.value m.description, m.filter)) )
+    in
+    let decode _ = failwith "Write only model" in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 RepoId.t (tup2 Title.t (tup2 Description.t string))))
+  ;;
+end

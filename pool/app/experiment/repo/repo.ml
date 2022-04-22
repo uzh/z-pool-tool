@@ -7,13 +7,9 @@ module Sql = struct
         uuid,
         title,
         description,
-        filter,
-        created_at,
-        updated_at
+        filter
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
         ?,
         ?,
         ?
@@ -23,7 +19,7 @@ module Sql = struct
 
   let insert_request =
     let open Caqti_request.Infix in
-    insert_sql |> Repo_entity.t ->. Caqti_type.unit
+    insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
   let insert pool =
@@ -86,13 +82,11 @@ module Sql = struct
       SET
         title = $2,
         description = $3,
-        filter = $4,
-        created_at = $5,
-        updated_at = $6
+        filter = $4
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Repo_entity.t ->. Caqti_type.unit
+    |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
   let format_update (t : Entity.t) =
