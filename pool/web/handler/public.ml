@@ -89,9 +89,7 @@ let email_confirmation_note req =
 let not_found req =
   let result context =
     let open Lwt_result.Infix in
-    let query_lang = context.Pool_context.query_language in
-    Lwt_result.map_err (fun err ->
-        err, Http_utils.path_with_language query_lang "/error")
+    Lwt_result.map_err (fun err -> err, "/error")
     @@
     let language = context.Pool_context.language in
     Page.Utils.error_page_not_found language ()
