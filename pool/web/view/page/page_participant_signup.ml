@@ -1,14 +1,13 @@
 module Field = Pool_common.Message.Field
 
 let signup
-    csrf
     channels
     email
     firstname
     lastname
     recruitment_channel
     terms
-    Pool_context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; csrf; _ }
   =
   let open Tyxml.Html in
   let field_to_string = Pool_common.Utils.field_to_string language in

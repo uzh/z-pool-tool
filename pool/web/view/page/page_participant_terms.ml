@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let terms csrf user_id terms Pool_context.{ language; query_language; _ } =
+let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
   let open Pool_common in
   let externalize = Http_utils.externalize_path_with_lang query_language in
   let submit_url =

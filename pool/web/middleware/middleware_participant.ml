@@ -31,26 +31,33 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       >>= is_confirmed
       >>= terms_agreed
     in
+    let query_lang =
+      Pool_context.find req
+      |> CCResult.to_opt
+      |> CCFun.flip CCOption.bind (fun context ->
+             context.Pool_context.query_language)
+    in
     match confirmed_and_terms_agreed with
     | Ok _ -> handler req
     | Error Pool_common.Message.(NotFound Field.User)
     | Error Pool_common.Message.(NotFound Field.Participant) ->
       Http_utils.redirect_to_with_actions
-        "/login"
+        (Http_utils.path_with_language query_lang "/login")
         [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
         ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
         ]
     | Error Pool_common.Message.(TermsAndConditionsNotAccepted) ->
       Http_utils.redirect_to_with_actions
-        "/termsandconditions"
+        (Http_utils.path_with_language query_lang "/termsandconditions")
         [ Message.set
             ~error:[ Pool_common.Message.(TermsAndConditionsNotAccepted) ]
         ]
     | Error Pool_common.Message.ParticipantUnconfirmed ->
-      Http_utils.redirect_to "/email-confirmation"
+      Http_utils.redirect_to
+        (Http_utils.path_with_language query_lang "/email-confirmation")
     | _ ->
       Http_utils.redirect_to_with_actions
-        "/login"
+        (Http_utils.path_with_language query_lang "/login")
         [ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ]
   in
   Rock.Middleware.create ~name:"participant.confirmed" ~filter

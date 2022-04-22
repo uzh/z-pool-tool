@@ -2,12 +2,16 @@ type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; tenant_db : Pool_tenant.Database.Label.t
+  ; message : Pool_common.Message.Collection.t option
+  ; csrf : string
   }
 
 val create
   :  Pool_common.Language.t option
      * Pool_common.Language.t
      * Pool_tenant.Database.Label.t
+     * Pool_common.Message.Collection.t option
+     * string
   -> t
 
 val find : Rock.Request.t -> (t, Pool_common.Message.error) result

@@ -1,3 +1,5 @@
+open Sexplib.Conv
+
 module Field = struct
   let field_name m fmt _ = Format.pp_print_string fmt m
 
@@ -88,7 +90,7 @@ module Field = struct
     | Url [@name "url"] [@printer field_name "url"]
     | User [@name "user"] [@printer field_name "user"]
     | Version [@name "version"] [@printer field_name "version"]
-  [@@deriving eq, show { with_path = false }, yojson, variants]
+  [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -138,9 +140,10 @@ type error =
   | TokenAlreadyUsed
   | Undefined of Field.t
   | WriteOnlyModel
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
-type warning = Warning of string [@@deriving eq, show, yojson, variants]
+type warning = Warning of string
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 type success =
   | Created of Field.t
@@ -154,14 +157,14 @@ type success =
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
-type info = Info of string [@@deriving eq, show, yojson, variants]
+type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string
   | PageNotFoundMessage
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 let field_message prefix field suffix =
   Format.asprintf "%s %s %s" prefix field suffix
@@ -189,7 +192,7 @@ type control =
   | SendResetLink
   | SignUp
   | Update of Field.t option
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 let to_coformist_error error_list =
   CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
@@ -201,3 +204,31 @@ let add_field_query_params path params =
   |> Uri.add_query_params' (Uri.of_string path)
   |> Uri.to_string
 ;;
+
+module Collection = struct
+  type t =
+    { error : error list
+    ; warning : warning list
+    ; success : success list
+    ; info : info list
+    }
+  [@@deriving eq, show, yojson, sexp_of]
+
+  let empty = { error = []; warning = []; success = []; info = [] }
+  let set_success txts message = { message with success = txts }
+  let set_warning txts message = { message with warning = txts }
+  let set_error txts message = { message with error = txts }
+  let set_info txts message = { message with info = txts }
+
+  let of_string str =
+    let json =
+      try Some (Yojson.Safe.from_string str) with
+      | _ -> None
+    in
+    match json with
+    | Some json -> Some (t_of_yojson json)
+    | None -> None
+  ;;
+
+  let to_string t = yojson_of_t t |> Yojson.Safe.to_string
+end
