@@ -162,24 +162,23 @@ module Sql = struct
   ;;
 end
 
+let participant_to_participation pool participation =
+  let open Utils.Lwt_result.Infix in
+  Participant.find pool participation.RepoEntity.participant_id
+  >|= to_entity participation
+;;
+
 let find pool id =
-  let open Utils.Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  let* participation = Sql.find pool id in
-  let* participant =
-    Participant.find pool participation.RepoEntity.participant_id
-  in
-  to_entity participation participant |> Lwt.return_ok
+  Sql.find pool id >>= participant_to_participation pool
 ;;
 
 let find_by_session pool id =
   let open Lwt.Infix in
   (* TODO Implement as transaction *)
   Sql.find_by_session pool id
-  >>= Lwt_list.map_s (fun participation ->
-          let open Utils.Lwt_result.Infix in
-          Participant.find pool participation.RepoEntity.participant_id
-          >|= to_entity participation)
+  >>= Lwt_list.map_s (participant_to_participation pool)
   |> Lwt.map CCList.all_ok
 ;;
 
@@ -189,12 +188,9 @@ let find_by_participant pool participant =
   participant
   |> Participant.id
   |> Sql.find_by_participant pool
-  >>= Lwt_list.map_s (fun participation ->
-          let open Utils.Lwt_result.Infix in
-          (* Reload participant from DB, does not allow already made updates of
-             the provided participant record *)
-          Participant.find pool participation.RepoEntity.participant_id
-          >|= to_entity participation)
+  (* Reload participant from DB, does not allow already made updates of the
+     provided participant record *)
+  >>= Lwt_list.map_s (participant_to_participation pool)
   |> Lwt.map CCList.all_ok
 ;;
 
