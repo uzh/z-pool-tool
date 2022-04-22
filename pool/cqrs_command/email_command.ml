@@ -2,7 +2,7 @@ module RestoreDefault : sig
   type t = Pool_tenant.t
 
   val handle
-    :  Pool_database.Label.t
+    :  Email.default
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -10,8 +10,8 @@ module RestoreDefault : sig
 end = struct
   type t = Pool_tenant.t
 
-  let handle pool () =
-    Ok [ Email.(DefaultRestored pool) |> Pool_event.email_address ]
+  let handle default () =
+    Ok [ Email.(DefaultRestored default) |> Pool_event.email_address ]
   ;;
 
   let can user command =

@@ -4,8 +4,9 @@ type email_template =
   ; text : string
   ; html : string
   }
+[@@deriving eq, show]
 
-type default = email_template list
+type default = email_template list [@@deriving eq, show]
 
 let password_reset =
   let html =
@@ -257,6 +258,8 @@ Pool Tool
   { label = "signup_verification"; language = "EN"; text; html }
 ;;
 
-let default_values =
+let default_values_root = [ password_reset ]
+
+let default_values_tenant =
   [ password_reset; email_verification; change_password; signup_verification ]
 ;;

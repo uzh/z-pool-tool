@@ -77,6 +77,11 @@ val delete_unverified_by_user
   -> Pool_common.Id.t
   -> unit Lwt.t
 
+type default
+
+val default_values_root : default
+val default_values_tenant : default
+
 type event =
   | Created of
       Pool_user.EmailAddress.t
@@ -85,7 +90,7 @@ type event =
       * Pool_user.Lastname.t
   | Updated of Pool_user.EmailAddress.t * Sihl_user.t
   | EmailVerified of unverified t
-  | DefaultRestored of Pool_database.Label.t
+  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
