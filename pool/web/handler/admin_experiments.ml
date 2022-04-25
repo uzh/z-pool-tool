@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Invitations = Admin_experiments_invitations
 
 let create_layout req = General.create_tenant_layout `Admin req
 

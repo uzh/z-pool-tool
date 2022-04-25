@@ -64,7 +64,7 @@ let create ?id title description =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
-  ; filter = "*"
+  ; filter = "1=1"
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }

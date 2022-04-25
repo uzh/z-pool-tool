@@ -1,4 +1,6 @@
 let find = Repo_sql.find
+let find_multiple = Repo_sql.find_multiple
+let find_filtered = Repo_sql.find_filtered
 let find_by_email = Repo_sql.find_by_email
 let insert = Repo_sql.insert
 let update = Repo_sql.update

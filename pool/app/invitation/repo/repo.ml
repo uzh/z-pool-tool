@@ -22,20 +22,20 @@ module Sql = struct
           SUBSTR(HEX(pool_experiments.uuid), 21)
         )),
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_participants.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_participants.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_participants.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_participants.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_participants.uuid), 21)
+          SUBSTR(HEX(pool_participants.user_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_participants.user_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_participants.user_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_participants.user_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_participants.user_uuid), 21)
         )),
         pool_invitations.created_at,
         pool_invitations.updated_at
       FROM
         pool_invitations
-      LEFT JOIN pool_participants
-        ON pool_invitations.session_id = pool_participants.id
+        LEFT JOIN pool_participants
+        ON pool_invitations.participant_id = pool_participants.id
       LEFT JOIN pool_experiments
-        ON pool_invitations.session_id = pool_experiments.id
+        ON pool_invitations.experiment_id = pool_experiments.id
     |sql}
   ;;
 
@@ -62,7 +62,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -79,7 +79,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        participant_id = (SELECT id FROM pool_participants WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        participant_id = (SELECT id FROM pool_participants WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -135,7 +135,7 @@ module Sql = struct
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_participants WHERE pool_participants.uuid = UNHEX(REPLACE($3, '-', ''))),
+        (SELECT id FROM pool_participants WHERE pool_participants.user_uuid = UNHEX(REPLACE($3, '-', ''))),
         $4,
         $5
       )
