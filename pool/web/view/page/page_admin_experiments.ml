@@ -2,6 +2,26 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
+(* TODO [timhub]: create global nav component, when MR is merged *)
+let subnav language id =
+  let open Pool_common in
+  I18n.[ Invitations, "/invitations" ]
+  |> CCList.map (fun (label, url) ->
+         li
+           [ a
+               ~a:
+                 [ a_href
+                     (Sihl.Web.externalize_path
+                        (Format.asprintf
+                           "/admin/experiments/%s/%s"
+                           (Id.value id)
+                           url))
+                 ]
+               [ txt (Utils.nav_link_to_string language label) ]
+           ])
+  |> ul
+;;
+
 let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.t) =
     let open Experiment in
@@ -126,6 +146,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
   div
     ~a:[ a_class [ "stack" ] ]
     [ h1 [ txt (experiment.title |> Title.value) ]
+    ; subnav language experiment.id
     ; p [ txt (experiment.description |> Description.value) ]
     ; p
         [ a
@@ -143,5 +164,25 @@ let detail experiment session_count Pool_context.{ language; _ } =
             ]
         ]
     ; delete_form
+    ]
+;;
+
+let invitations
+    experiment
+    invitation_list
+    filtered_participants
+    Pool_context.{ language; _ }
+  =
+  div
+    [ subnav language experiment.Experiment.id
+    ; h2
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
+        ]
+    ; Page_admin_invitations.Partials.list invitation_list
+    ; Page_admin_invitations.Partials.send_invitation
+        experiment
+        language
+        filtered_participants
     ]
 ;;

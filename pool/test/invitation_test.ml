@@ -58,7 +58,7 @@ let create_experiment () =
         Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; filter = "*"
+    ; filter = "1=1"
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

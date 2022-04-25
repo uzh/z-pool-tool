@@ -1,5 +1,6 @@
 module Id = Pool_common.Id
 module Database = Pool_database
+module Dynparam = Utils.Database.Dynparam
 
 let find_request_sql where_fragment =
   Format.asprintf
@@ -101,6 +102,46 @@ let find_confirmed pool email =
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Subject)
+;;
+
+let find_filtered_request filter =
+  let open Caqti_request.Infix in
+  Format.asprintf {sql| WHERE %s |sql} filter
+  |> find_request_sql
+  |> Caqti_type.unit ->* Repo_model.t
+;;
+
+let find_filtered pool filter =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    (find_filtered_request filter)
+;;
+
+let find_multiple_request ids =
+  Format.asprintf
+    {sql|
+    WHERE user_uuid IN ( %s )
+    AND user_users.admin = 0
+   |sql}
+    (CCList.mapi
+       (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+       ids
+    |> CCString.concat ",")
+  |> find_request_sql
+;;
+
+let find_multiple pool ids =
+  let open Caqti_request.Infix in
+  let dyn =
+    CCList.fold_left
+      (fun dyn id ->
+        dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+      Dynparam.empty
+      ids
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request = find_multiple_request ids |> pt ->* Repo_model.t in
+  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
 let insert_request =

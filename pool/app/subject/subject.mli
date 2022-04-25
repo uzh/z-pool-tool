@@ -58,6 +58,13 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_multiple
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t list
+  -> t list Lwt.t
+
+val find_filtered : Pool_database.Label.t -> string -> unit -> t list Lwt.t
+
 val find_by_email
   :  Pool_database.Label.t
   -> Pool_user.EmailAddress.t
