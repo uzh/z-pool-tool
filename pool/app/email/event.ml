@@ -78,6 +78,7 @@ let handle_event pool : event -> unit Lwt.t =
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->
+        let%lwt () = Repo.delete_email_template pool label language in
         let%lwt _ =
           Service.EmailTemplate.create
             ~ctx:(Pool_tenant.to_ctx pool)

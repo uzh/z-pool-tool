@@ -41,9 +41,11 @@ let combine_html language html_title content =
     (email_body content)
 ;;
 
-let html_to_string =
-  Format.asprintf
-    "%s\n%a"
-    {|<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">|}
-    (Tyxml.Html.pp ())
+let html_to_string html =
+  Format.asprintf "%a" (Tyxml.Html.pp ~indent:true ()) html
+  |> CCString.replace
+       ~which:`Left
+       ~sub:"<!DOCTYPE html>"
+       ~by:
+         {|<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">|}
 ;;
