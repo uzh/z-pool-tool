@@ -1,6 +1,15 @@
+module ResentAt = struct
+  type t = Ptime.t [@@deriving eq, show]
+
+  let create = Ptime_clock.now
+  let value m = m
+  let sexp_of_t = Pool_common.Utils.Time.ptime_to_sexp
+end
+
 type t =
   { id : Pool_common.Id.t
   ; subject : Subject.t
+  ; resent_at : ResentAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -9,6 +18,7 @@ type t =
 let create ?(id = Pool_common.Id.create ()) subject =
   { id
   ; subject
+  ; resent_at = None
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

@@ -19,11 +19,7 @@ end = struct
         ; subject = command.subject
         }
     in
-    Ok
-      [ Invitation.Created create |> Pool_event.invitation
-        (* TODO Add invitation email event *)
-        (* TODO Add invitation notification history entry *)
-      ]
+    Ok [ Invitation.Created create |> Pool_event.invitation ]
   ;;
 
   let can user command =
@@ -45,7 +41,9 @@ module Resend : sig
 end = struct
   type t = Invitation.t
 
-  let handle (_ : t) = Ok []
+  let handle invitation =
+    Ok [ Invitation.Resent invitation |> Pool_event.invitation ]
+  ;;
 
   let can user experiment invitation =
     Permission.can

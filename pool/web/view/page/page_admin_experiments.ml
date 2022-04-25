@@ -168,6 +168,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
 ;;
 
 let invitations
+    csrf
     experiment
     invitation_list
     filtered_participants
@@ -179,8 +180,13 @@ let invitations
         [ txt
             Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
         ]
-    ; Page_admin_invitations.Partials.list invitation_list
+    ; Page_admin_invitations.Partials.list
+        csrf
+        language
+        experiment
+        invitation_list
     ; Page_admin_invitations.Partials.send_invitation
+        csrf
         experiment
         language
         filtered_participants

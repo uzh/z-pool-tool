@@ -139,12 +139,4 @@ module Helper : sig
       -> TemplateLabel.t
       -> Sihl_email.t Lwt.t
   end
-
-  module Invitation : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_user.EmailAddress.t
-      -> string
-      -> Sihl_email.t Lwt.t
-  end
 end

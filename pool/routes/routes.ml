@@ -94,6 +94,7 @@ module Admin = struct
       let invitations =
         [ get "" Handler.Admin.Experiments.Invitations.index
         ; post "" Handler.Admin.Experiments.Invitations.create
+        ; post "/:id/resend" Handler.Admin.Experiments.Invitations.resend
         ]
       in
       [ get "" Handler.Admin.Experiments.index

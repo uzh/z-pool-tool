@@ -7,6 +7,7 @@ module Field = struct
     | Admin [@name "admin"] [@printer field_name "admin"]
     | AssetId [@name "asset_id"] [@printer field_name "asset_id"]
     | ContactEmail [@name "contact_email"] [@printer field_name "contact_email"]
+    | CreatedAt [@name "created_at"] [@printer field_name "created_at"]
     | CurrentPassword [@name "current_password"]
         [@printer field_name "current_password"]
     | Database [@name "database"] [@printer field_name "database"]
@@ -69,7 +70,7 @@ module Field = struct
     | Paused [@name "paused"] [@printer field_name "paused"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer field_name "recruitment_channel"]
-    | Request [@name "request"] [@printer field_name "request"]
+    | ResentAt [@name "resent_at"] [@printer field_name "resent_at"]
     | Role [@name "role"] [@printer field_name "role"]
     | Root [@name "root"] [@printer field_name "root"]
     | Setting [@name "setting"] [@printer field_name "setting"]
@@ -211,6 +212,7 @@ type control =
   | Enable
   | Login
   | More
+  | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
