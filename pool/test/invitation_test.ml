@@ -65,6 +65,17 @@ let create_experiment () =
     }
 ;;
 
+let create_invitation () =
+  let participant = create_participant () in
+  Invitation.
+    { id = Pool_common.Id.create ()
+    ; participant
+    ; resent_at = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;
+
 let create () =
   let experiment = create_experiment () in
   let participant = create_participant () in
@@ -78,6 +89,15 @@ let create () =
           Created { experiment_id = experiment.Experiment.id; participant })
         |> Pool_event.invitation
       ]
+  in
+  check_result expected events
+;;
+
+let resend () =
+  let invitation = create_invitation () in
+  let events = InvitationCommand.Resend.handle invitation in
+  let expected =
+    Ok [ Invitation.(Resent invitation) |> Pool_event.invitation ]
   in
   check_result expected events
 ;;

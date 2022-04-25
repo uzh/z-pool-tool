@@ -106,7 +106,14 @@ let find_confirmed pool email =
 
 let find_filtered_request filter =
   let open Caqti_request.Infix in
-  Format.asprintf {sql| WHERE %s |sql} filter
+  Format.asprintf
+    {sql|
+    WHERE
+      %s
+      AND user_users.admin = 0
+      AND user_users.confirmed = 1
+    |sql}
+    filter
   |> find_request_sql
   |> Caqti_type.unit ->* Repo_model.t
 ;;

@@ -6,6 +6,7 @@ let field_to_string =
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
   | ContactEmail -> "Kontakt Email Adresse"
+  | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
@@ -54,7 +55,7 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
-  | Request -> "Anfrage"
+  | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Root -> "Root"
   | Setting -> "Einstellung"
@@ -226,6 +227,7 @@ let control_to_string = function
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
   | Save field -> format_submit "speichern" field
+  | Resend field -> format_submit "erneut senden" field
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | SignUp -> format_submit "registrieren" None

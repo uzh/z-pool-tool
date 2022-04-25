@@ -28,6 +28,7 @@ module Sql = struct
           SUBSTR(HEX(pool_participants.user_uuid), 17, 4), '-',
           SUBSTR(HEX(pool_participants.user_uuid), 21)
         )),
+        pool_invitations.resent_at,
         pool_invitations.created_at,
         pool_invitations.updated_at
       FROM
@@ -130,6 +131,7 @@ module Sql = struct
         uuid,
         experiment_id,
         participant_id,
+        resent_at,
         created_at,
         updated_at
       ) VALUES (
@@ -137,7 +139,8 @@ module Sql = struct
         (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))),
         (SELECT id FROM pool_participants WHERE pool_participants.user_uuid = UNHEX(REPLACE($3, '-', ''))),
         $4,
-        $5
+        $5,
+        $6
       )
     |sql}
     |> RepoEntity.t ->. Caqti_type.unit
@@ -145,6 +148,21 @@ module Sql = struct
 
   let insert pool =
     Utils.Database.exec (Pool_database.Label.value pool) insert_request
+  ;;
+
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_invitations
+      SET
+        resent_at = $2
+      WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> RepoEntity.Update.t ->. Caqti_type.unit
+  ;;
+
+  let update pool =
+    Utils.Database.exec (Pool_database.Label.value pool) update_request
   ;;
 end
 
@@ -185,3 +203,5 @@ let find_experiment_id_of_invitation = Sql.find_experiment_id_of_invitation
 let insert pool session_id model =
   model |> of_entity session_id |> Sql.insert pool
 ;;
+
+let update = Sql.update

@@ -1,6 +1,16 @@
+module ResentAt : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val create : unit -> t
+  val value : t -> Ptime.t
+end
+
 type t =
   { id : Pool_common.Id.t
   ; participant : Participant.t
+  ; resent_at : ResentAt.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -42,7 +52,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Entity.t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_experiment
   :  Pool_database.Label.t

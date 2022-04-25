@@ -18,6 +18,7 @@ let index req =
     let message =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
+    let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment.find tenant_db id in
     let* invitations = Invitation.find_by_experiment tenant_db id in
@@ -25,6 +26,7 @@ let index req =
       Participant.find_filtered tenant_db experiment.Experiment.filter ()
     in
     Page.Admin.Experiments.invitations
+      csrf
       experiment
       invitations
       filtered_participants
@@ -48,37 +50,23 @@ let create req =
   let result context =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
-    @@ let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    @@ let%lwt participant_ids =
+         let open Lwt.Infix in
+         Sihl.Web.Request.urlencoded_list "participants[]" req
+         >|= CCList.map Pool_common.Id.of_string
+       in
        let tenant_db = context.Pool_context.tenant_db in
        let* experiment = Experiment.find tenant_db experiment_id in
-       let* participant_ids =
-         let open CCResult.Infix in
-         urlencoded
-         |> CCList.map (fun (_, values) ->
-                values
-                |> CCList.head_opt
-                |> CCResult.of_opt
-                |> CCResult.map_err (fun _ ->
-                       Pool_common.Message.(Invalid Field.Request))
-                >|= Pool_common.Id.of_string)
-         |> CCResult.flatten_l
-         |> Lwt_result.lift
-       in
-       (* TODO[timhub]: Check if all participants were found *)
        let* participants =
          let find_missing participants =
            let retrieved_ids = CCList.map Participant.id participants in
-           let missing =
-             CCList.fold_left
-               (fun missing id ->
-                 match CCList.mem ~eq:Pool_common.Id.equal id retrieved_ids with
-                 | true -> missing
-                 | false -> CCList.cons id missing)
-               []
-               participant_ids
-           in
-           Logs.info (fun m -> m "mising length: %i" (CCList.length missing));
-           missing
+           CCList.fold_left
+             (fun missing id ->
+               match CCList.mem ~eq:Pool_common.Id.equal id retrieved_ids with
+               | true -> missing
+               | false -> CCList.cons id missing)
+             []
+             participant_ids
          in
          let%lwt participants =
            Participant.find_multiple tenant_db participant_ids
@@ -115,6 +103,41 @@ let create req =
        |> Lwt_result.lift
        >|= CCList.flatten
        |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let resend req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id =
+    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+  in
+  let redirect_path =
+    Format.asprintf
+      "/admin/experiments/%s/invitations"
+      (Pool_common.Id.value experiment_id)
+  in
+  let result context =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@
+    let tenant_db = context.Pool_context.tenant_db in
+    let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
+    let* invitation = Invitation.find tenant_db id in
+    let events =
+      Cqrs_command.Invitation_command.Resend.handle invitation |> Lwt.return
+    in
+    let handle events =
+      let%lwt (_ : unit list) =
+        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

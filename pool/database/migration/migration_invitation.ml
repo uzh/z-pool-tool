@@ -7,6 +7,7 @@ let create_invitation_table =
         `uuid` binary(16) NOT NULL,
         `experiment_id` bigint(20) NOT NULL,
         `participant_id` bigint(20) NOT NULL,
+        `resent_at` timestamp NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
