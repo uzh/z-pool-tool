@@ -14,8 +14,8 @@ let index req =
       CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
     in
     let tenant_db = context.Pool_context.tenant_db in
-    let%lwt expermient_list = Experiment.find_all tenant_db () in
-    Page.Admin.Experiments.index expermient_list context
+    let%lwt experiment_list = Experiment.find_all tenant_db () in
+    Page.Admin.Experiments.index experiment_list context
     |> create_layout req context message
     >|= Sihl.Web.Response.of_html
   in
