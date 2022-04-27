@@ -6,13 +6,11 @@ let invitations pool () =
     Lwt_list.map_s
       (fun experiment ->
         let%lwt filtered_participants =
-          Participant.find_filtered pool experiment.Experiment.filter ()
+          Subject.find_filtered pool experiment.Experiment.filter ()
         in
         let n = Random.int (List.length filtered_participants) in
-        let participant = CCList.nth filtered_participants n in
-        let invitation =
-          Invitation.{ participant; experiment_id = experiment.Experiment.id }
-        in
+        let subject = CCList.nth filtered_participants n in
+        let invitation = Invitation.{ subject; experiment } in
         Invitation.Created invitation |> Lwt.return)
       experiments
   in

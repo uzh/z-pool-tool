@@ -176,3 +176,33 @@ Wenn du dies nicht beantragt hast, kannst du diese E-Mail ignorieren oder mit un
   in
   { label; language; text; html }
 ;;
+
+let invitation =
+  let label = TemplateLabel.Invitation in
+  let language = Pool_common.Language.De in
+  let html =
+    let open Tyxml.Html in
+    [ salutation
+    ; p [ txt "Gerne laden wir Sie zu folgendem Experiment ein:" ]
+    ; p [ txt "{experimentDescription}" ]
+    ; p [ txt "Das Experiment wird an folgenden Daten durchgeführt:" ]
+    ; p [ txt "Sessions......" ]
+    ; complimentary_close
+    ]
+    |> combine_html language "Einladung zur Studienteilnahme"
+    |> html_to_string
+  in
+  let text =
+    {|
+    Gerne laden wir Sie zu folgendem Experiment ein:
+
+    {experimentDescription}
+
+    Das Experiment wird an folgenden Daten durchgeführt:
+
+    Sessions......
+    |}
+    |> add_salutation_to_text
+  in
+  { label; language; text; html }
+;;

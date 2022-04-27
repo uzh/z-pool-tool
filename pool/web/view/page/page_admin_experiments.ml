@@ -168,11 +168,10 @@ let detail experiment session_count Pool_context.{ language; _ } =
 ;;
 
 let invitations
-    csrf
     experiment
     invitation_list
     filtered_participants
-    Pool_context.{ language; _ }
+    (Pool_context.{ language; _ } as context)
   =
   div
     [ subnav language experiment.Experiment.id
@@ -180,15 +179,10 @@ let invitations
         [ txt
             Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
         ]
-    ; Page_admin_invitations.Partials.list
-        csrf
-        language
-        experiment
-        invitation_list
+    ; Page_admin_invitations.Partials.list context experiment invitation_list
     ; Page_admin_invitations.Partials.send_invitation
-        csrf
+        context
         experiment
-        language
         filtered_participants
     ]
 ;;

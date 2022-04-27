@@ -8,6 +8,7 @@ module TemplateLabel = struct
   type t =
     | EmailVerification [@name "email_verification"]
         [@printer field_name "email_verification"]
+    | Invitation [@name "invitation"] [@printer field_name "invitation"]
     | PasswordChange [@name "password_change"]
         [@printer field_name "password_change"]
     | PasswordReset [@name "password_reset"]

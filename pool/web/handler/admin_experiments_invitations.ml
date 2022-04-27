@@ -15,23 +15,18 @@ let index req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, error_path)
     @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment.find tenant_db id in
     let* invitations = Invitation.find_by_experiment tenant_db id in
-    let%lwt filtered_participants =
-      Participant.find_filtered tenant_db experiment.Experiment.filter ()
+    let%lwt filtered_subjects =
+      Subject.find_filtered tenant_db experiment.Experiment.filter ()
     in
     Page.Admin.Experiments.invitations
-      csrf
       experiment
       invitations
-      filtered_participants
+      filtered_subjects
       context
-    |> create_layout req context message
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -59,7 +54,7 @@ let create req =
        let* experiment = Experiment.find tenant_db experiment_id in
        let* participants =
          let find_missing participants =
-           let retrieved_ids = CCList.map Participant.id participants in
+           let retrieved_ids = CCList.map Subject.id participants in
            CCList.fold_left
              (fun missing id ->
                match CCList.mem ~eq:Pool_common.Id.equal id retrieved_ids with
@@ -69,7 +64,7 @@ let create req =
              participant_ids
          in
          let%lwt participants =
-           Participant.find_multiple tenant_db participant_ids
+           Subject.find_multiple tenant_db participant_ids
          in
          Lwt_result.lift
          @@
@@ -82,9 +77,9 @@ let create req =
            Error Pool_common.Message.(NotFoundList (Field.Participants, ids))
        in
        let%lwt events =
-         let event participant =
+         let event subject =
            Cqrs_command.Invitation_command.Create.(
-             handle { experiment; participant } |> Lwt_result.lift)
+             handle { experiment; subject } |> Lwt_result.lift)
          in
          Lwt_list.map_s event participants
        in
@@ -124,8 +119,11 @@ let resend req =
     let tenant_db = context.Pool_context.tenant_db in
     let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let* invitation = Invitation.find tenant_db id in
+    let* experiment = Experiment.find tenant_db experiment_id in
     let events =
-      Cqrs_command.Invitation_command.Resend.handle invitation |> Lwt.return
+      Cqrs_command.Invitation_command.Resend.handle
+        Invitation.{ invitation; experiment }
+      |> Lwt.return
     in
     let handle events =
       let%lwt (_ : unit list) =

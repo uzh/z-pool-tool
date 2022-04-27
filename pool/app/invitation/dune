@@ -1,6 +1,6 @@
 (library
  (name invitation)
- (libraries pool_common sihl sihl-email subject tenant)
+ (libraries experiment sihl sihl-email tenant subject pool_common)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

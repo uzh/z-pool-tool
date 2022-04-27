@@ -15,13 +15,13 @@ let form_action ?path id =
 ;;
 
 module Partials = struct
-  let list csrf language experiment invitation_list =
+  let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let html_body =
       CCList.map
         (fun (invitation : Invitation.t) ->
           let open Invitation in
           tr
-            [ td [ invitation.participant |> Participant.fullname |> txt ]
+            [ td [ invitation.subject |> Subject.fullname |> txt ]
             ; td
                 [ invitation.resent_at
                   |> CCOption.map_or ~default:"" (fun reset_at ->
@@ -78,7 +78,11 @@ module Partials = struct
     table ~thead html_body
   ;;
 
-  let send_invitation csrf experiment language filtered_participants =
+  let send_invitation
+      Pool_context.{ csrf; language; _ }
+      experiment
+      filtered_participants
+    =
     div
       [ h3
           [ txt
@@ -91,10 +95,8 @@ module Partials = struct
           ; div
               ~a:[ a_class [ "stack" ] ]
               (CCList.map
-                 (fun (participant : Participant.t) ->
-                   let id =
-                     Participant.id participant |> Pool_common.Id.value
-                   in
+                 (fun (subject : Subject.t) ->
+                   let id = Subject.id subject |> Pool_common.Id.value in
                    div
                      ~a:[ a_class [ "is-box"; "flex--row" ] ]
                      [ input
@@ -107,7 +109,7 @@ module Partials = struct
                          ()
                      ; label
                          ~a:[ a_label_for id ]
-                         [ txt (Participant.fullname participant) ]
+                         [ txt (Subject.fullname subject) ]
                      ])
                  filtered_participants)
           ; submit_element

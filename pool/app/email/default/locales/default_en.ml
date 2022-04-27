@@ -172,3 +172,33 @@ If this action wasn`t performed by you, please ignore this email or reply to let
   in
   { label; language; text; html }
 ;;
+
+let invitation =
+  let label = TemplateLabel.Invitation in
+  let language = Pool_common.Language.En in
+  let html =
+    let open Tyxml.Html in
+    [ salutation
+    ; p [ txt "We would like to invite you to the following experiment:" ]
+    ; p [ txt "{experimentDescription}" ]
+    ; p [ txt "The experiment is performed on the following dates:" ]
+    ; p [ txt "Sessions......" ]
+    ; complimentary_close
+    ]
+    |> combine_html language "Invitation to participate in a study"
+    |> html_to_string
+  in
+  let text =
+    {|
+    We would like to invite you to the following experiment:
+
+    {experimentDescription}
+
+    The experiment is performed on the following dates:
+
+    Sessions......
+    |}
+    |> add_salutation_to_text
+  in
+  { label; language; text; html }
+;;
