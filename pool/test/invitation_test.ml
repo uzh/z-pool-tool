@@ -85,8 +85,7 @@ let create () =
   in
   let expected =
     Ok
-      [ Invitation.(
-          Created { experiment_id = experiment.Experiment.id; participant })
+      [ Invitation.(Created { experiment; participant })
         |> Pool_event.invitation
       ]
   in
@@ -95,9 +94,9 @@ let create () =
 
 let resend () =
   let invitation = create_invitation () in
-  let events = InvitationCommand.Resend.handle invitation in
-  let expected =
-    Ok [ Invitation.(Resent invitation) |> Pool_event.invitation ]
-  in
+  let experiment = create_experiment () in
+  let resent = Invitation.{ invitation; experiment } in
+  let events = InvitationCommand.Resend.handle resent in
+  let expected = Ok [ Invitation.(Resent resent) |> Pool_event.invitation ] in
   check_result expected events
 ;;

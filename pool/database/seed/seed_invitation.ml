@@ -10,9 +10,7 @@ let invitations pool () =
         in
         let n = Random.int (List.length filtered_participants) in
         let participant = CCList.nth filtered_participants n in
-        let invitation =
-          Invitation.{ participant; experiment_id = experiment.Experiment.id }
-        in
+        let invitation = Invitation.{ participant; experiment } in
         Invitation.Created invitation |> Lwt.return)
       experiments
   in

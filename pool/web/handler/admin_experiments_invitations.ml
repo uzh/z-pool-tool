@@ -124,8 +124,11 @@ let resend req =
     let tenant_db = context.Pool_context.tenant_db in
     let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let* invitation = Invitation.find tenant_db id in
+    let* experiment = Experiment.find tenant_db experiment_id in
     let events =
-      Cqrs_command.Invitation_command.Resend.handle invitation |> Lwt.return
+      Cqrs_command.Invitation_command.Resend.handle
+        Invitation.{ invitation; experiment }
+      |> Lwt.return
     in
     let handle events =
       let%lwt (_ : unit list) =

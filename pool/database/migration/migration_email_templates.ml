@@ -187,7 +187,6 @@ Pool Tool
 |}
 ;;
 
-(* TODO [timhub]: Add correct email text *)
 let email_template_experiment_invitation =
   Sihl.Database.Migration.create_step
     ~label:"email template experiment invitation"
@@ -197,8 +196,9 @@ VALUES
   (UNHEX(REPLACE('8fd6e45e-5a72-42d4-a300-18276a82cdc1','-','')),
   'experiment_invitation',
   'Dear {name},
+We invite you to participate in a scientific study.
 
-Text tbd
+{experiment_description}
 
 Yours sincerely,
 Pool Tool',
@@ -219,9 +219,12 @@ Pool Tool',
         <p>Logo</p>
     </section>
     <section style="padding-top: 1em; color: #383838;">
-<h4>Dear {username},</h4>
+<h4>Dear {name},</h4>
 <p>
-Text tbd
+We invite you to participate in a scientific study.
+</p>
+<p>
+{experiment_description}
 </p>
 <p>
 Yours sincerely,

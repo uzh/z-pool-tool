@@ -1,6 +1,6 @@
 (library
  (name experiment)
- (libraries sihl tenant session invitation pool_common)
+ (libraries sihl tenant session pool_common)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 

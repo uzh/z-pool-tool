@@ -6,6 +6,7 @@
   htmx
   http_utils
   i18n
+  invitation
   participant
   pool_tenant
   root

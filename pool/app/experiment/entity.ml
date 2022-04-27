@@ -48,18 +48,6 @@ type public =
   }
 [@@deriving eq, show]
 
-type session =
-  { experiment : t
-  ; sessions : Session.t list
-  }
-[@@deriving eq, show]
-
-type invitation =
-  { experiment : t
-  ; invitation : Invitation.t list
-  }
-[@@deriving eq, show]
-
 let create ?id title description =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title

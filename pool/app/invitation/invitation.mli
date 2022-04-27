@@ -32,8 +32,13 @@ val equal_notification_history
 val pp_notification_history : Format.formatter -> notification_history -> unit
 
 type create =
-  { experiment_id : Pool_common.Id.t
+  { experiment : Experiment.t
   ; participant : Participant.t
+  }
+
+type resent =
+  { invitation : t
+  ; experiment : Experiment.t
   }
 
 val equal_create : create -> create -> bool
@@ -42,7 +47,7 @@ val show_create : create -> string
 
 type event =
   | Created of create
-  | Resent of t
+  | Resent of resent
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

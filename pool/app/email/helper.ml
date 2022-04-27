@@ -133,13 +133,13 @@ module ConfirmationEmail = struct
 end
 
 module Invitation = struct
-  let create db_pool email name =
+  let create db_pool email name experiment_description =
     let subject = "Experiment Invitation" in
     prepare_email
       db_pool
       "experiment_invitation"
       subject
       (email |> Pool_user.EmailAddress.value)
-      [ "name", name ]
+      [ "name", name; "experiment_description", experiment_description ]
   ;;
 end

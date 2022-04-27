@@ -123,6 +123,7 @@ module Helper : sig
       :  Pool_database.Label.t
       -> Pool_user.EmailAddress.t
       -> string
+      -> string
       -> Sihl_email.t Lwt.t
   end
 end

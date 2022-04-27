@@ -5,6 +5,7 @@
   conformist
   email
   experiment
+  invitation
   i18n
   participant
   pool_user
