@@ -25,7 +25,7 @@ let show req =
       inactive_user_warning
       terms_and_conditions
       context
-    |> create_layout req context
+    |> create_layout req ~active_navigation:"/admin/settings" context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

@@ -34,7 +34,7 @@ let index req =
     let tenant_db = context.Pool_context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
     Page.Admin.I18n.list translation_list context
-    |> create_layout req context
+    |> create_layout req ~active_navigation:"/admin/i18n" context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

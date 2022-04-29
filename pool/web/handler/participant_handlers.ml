@@ -9,7 +9,7 @@ let dashboard req =
   let result context =
     let open Lwt_result.Infix in
     Page.Participant.dashboard context
-    |> create_layout req context
+    |> create_layout req ~active_navigation:"/dashboard" context
     >|= Sihl.Web.Response.of_html
     |> Lwt_result.map_err (fun err -> err, "/index")
   in
@@ -40,7 +40,7 @@ let sign_up req =
       recruitment_channel
       terms
       context
-    |> create_layout req context
+    |> create_layout req ~active_navigation:"/signup" context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -223,7 +223,7 @@ let show is_edit req =
        match is_edit with
        | false ->
          Page.Participant.detail participant context
-         |> create_layout req context
+         |> create_layout req ~active_navigation:"/user" context
          >|= Sihl.Web.Response.of_html
        | true ->
          let* tenant_languages =
@@ -236,7 +236,7 @@ let show is_edit req =
            participant
            tenant_languages
            context
-         |> create_layout req context
+         |> create_layout req ~active_navigation:"/user/edit" context
          >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

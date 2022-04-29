@@ -29,7 +29,12 @@ let login Pool_context.{ language; csrf; message; _ } =
           [ txt "Reset password" ]
       ]
   in
-  Page_layout.create_root_layout html message language
+  Page_layout.create_root_layout
+    html
+    message
+    language
+    ~active_navigation:"/root/login"
+    ()
 ;;
 
 let request_reset_password Pool_context.{ language; csrf; message; _ } =
@@ -54,7 +59,12 @@ let request_reset_password Pool_context.{ language; csrf; message; _ } =
           ]
       ]
   in
-  Page_layout.create_root_layout html message language
+  Page_layout.create_root_layout
+    html
+    message
+    language
+    ~active_navigation:"/root/request-reset-password"
+    ()
 ;;
 
 let reset_password token Pool_context.{ language; csrf; message; _ } =
@@ -79,5 +89,10 @@ let reset_password token Pool_context.{ language; csrf; message; _ } =
           ]
       ]
   in
-  Page_layout.create_root_layout html message language
+  Page_layout.create_root_layout
+    html
+    message
+    language
+    ~active_navigation:"/root/reset-password"
+    ()
 ;;

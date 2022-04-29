@@ -23,7 +23,7 @@ let login_get req =
     | None ->
       let open Sihl.Web in
       Page.Public.login context
-      |> create_layout req context
+      |> create_layout req ~active_navigation:"/login" context
       >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -75,7 +75,7 @@ let request_reset_password_get req =
       >|> Lwt.return_ok
     | None ->
       Page.Public.request_reset_password context
-      |> create_layout req context
+      |> create_layout req ~active_navigation:"/request-reset-password" context
       >|= Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -130,7 +130,7 @@ let reset_password_get req =
       |> Lwt_result.ok
     | Some token ->
       Page.Public.reset_password token context
-      |> create_layout req context
+      |> create_layout req ~active_navigation:"/reset-password" context
       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

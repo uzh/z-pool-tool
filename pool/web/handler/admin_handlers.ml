@@ -9,7 +9,7 @@ let dashboard req =
     let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/error")
     @@ (Page.Admin.dashboard context
-       |> create_layout req context
+       |> create_layout req ~active_navigation:"/admin/dashboard" context
        >|= Sihl.Web.Response.of_html)
   in
   result |> Http_utils.extract_happy_path req
