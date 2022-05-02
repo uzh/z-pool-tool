@@ -20,15 +20,16 @@ let index req =
     in
     let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
-    let* experiment = Experiment.find tenant_db id in
-    let* invitations = Invitation.find_by_experiment tenant_db id in
+    let* experiment_invitations =
+      Experiment_type.find_invitations tenant_db id
+    in
+    let experiment = experiment_invitations.Experiment_type.experiment in
     let%lwt filtered_participants =
       Participant.find_filtered tenant_db experiment.Experiment.filter ()
     in
     Page.Admin.Experiments.invitations
       csrf
-      experiment
-      invitations
+      experiment_invitations
       filtered_participants
       context
     |> create_layout req context message

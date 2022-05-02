@@ -169,11 +169,11 @@ let detail experiment session_count Pool_context.{ language; _ } =
 
 let invitations
     csrf
-    experiment
-    invitation_list
+    (experiment_invitations : Experiment_type.invitations)
     filtered_participants
     Pool_context.{ language; _ }
   =
+  let experiment = experiment_invitations.Experiment_type.experiment in
   div
     [ subnav language experiment.Experiment.id
     ; h2
@@ -184,7 +184,7 @@ let invitations
         csrf
         language
         experiment
-        invitation_list
+        experiment_invitations.Experiment_type.invitations
     ; Page_admin_invitations.Partials.send_invitation
         csrf
         experiment
