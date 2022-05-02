@@ -18,7 +18,7 @@ let sign_up_not_allowed_suffix () =
              ; Lastname |> show, [ "Doe" ]
              ; ( RecruitmentChannel |> show
                , [ Subject.RecruitmentChannel.Friend
-                   |> Subject.RecruitmentChannel.to_string
+                   |> Subject.RecruitmentChannel.show
                  ] )
              ]
     in
@@ -51,7 +51,7 @@ let sign_up () =
              ; Lastname |> show, [ "Doe" ]
              ; ( RecruitmentChannel |> show
                , [ Subject.RecruitmentChannel.Friend
-                   |> Subject.RecruitmentChannel.to_string
+                   |> Subject.RecruitmentChannel.show
                  ] )
              ]
     in

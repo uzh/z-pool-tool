@@ -66,6 +66,8 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Id.t
+  | ParticipationIncreased of t
+  | ShowUpIncreased of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -200,6 +202,22 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update
       pool
       { subject with terms_accepted_at = User.TermsAccepted.create_now () }
-  | Disabled _ -> Utils.todo ()
+  | Disabled subject ->
+    Repo.update pool { subject with disabled = User.Disabled.create true }
   | UnverifiedDeleted id -> Repo.delete_unverified pool id
+  | ParticipationIncreased subject ->
+    Repo.update
+      pool
+      { subject with
+        participation_count =
+          subject.participation_count |> ParticipationCount.increment
+      }
+  | ShowUpIncreased subject ->
+    Repo.update
+      pool
+      { subject with
+        participation_show_up_count =
+          subject.participation_show_up_count
+          |> ParticipationShowUpCount.increment
+      }
 ;;
