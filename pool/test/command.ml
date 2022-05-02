@@ -4,12 +4,12 @@ let () =
   let open Alcotest in
   run
     "cqrs commands"
-    [ ( "participant"
+    [ ( "subject"
       , [ test_case
             "sign up not allowed suffix"
             `Quick
-            Participant_test.sign_up_not_allowed_suffix
-        ; test_case "sign up" `Quick Participant_test.sign_up_not_allowed_suffix
+            Subject_test.sign_up_not_allowed_suffix
+        ; test_case "sign up" `Quick Subject_test.sign_up_not_allowed_suffix
         ] )
     ; ( "tenant"
       , [ test_case

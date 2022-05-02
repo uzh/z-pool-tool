@@ -1,7 +1,7 @@
 open Entity
 
 type create =
-  { participant : Participant.t
+  { participant : Subject.t
   ; session_id : Pool_common.Id.t
   }
 [@@deriving eq, show]

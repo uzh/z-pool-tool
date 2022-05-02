@@ -65,6 +65,7 @@ let field_to_string =
   | SmtpWriteModel -> "smtp write model"
   | SmtpUsername -> "smtp username"
   | Styles -> "styles"
+  | Subject -> "subject"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
   | TenantId -> "tenant identifier"
@@ -146,9 +147,9 @@ let rec error_to_string = function
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NoValue -> "No value provided."
-  | ParticipantSignupInvalidEmail ->
+  | SubjectSignupInvalidEmail ->
     "Please provide a valid and unused email address."
-  | ParticipantUnconfirmed -> "Participant isn't confirmed!"
+  | SubjectUnconfirmed -> "Participant isn't confirmed!"
   | PasswordPolicy msg ->
     Format.asprintf "Password doesn't match the required policy! %s" msg
   | PasswordResetInvalidData -> "Invalid token or password provided"

@@ -1,7 +1,7 @@
 module Create : sig
   type t =
     { experiment : Experiment.t
-    ; participant : Participant.t
+    ; subject : Subject.t
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
@@ -9,14 +9,14 @@ module Create : sig
 end = struct
   type t =
     { experiment : Experiment.t
-    ; participant : Participant.t
+    ; subject : Subject.t
     }
 
   let handle (command : t) =
     let create =
       Invitation.
         { experiment_id = command.experiment.Experiment.id
-        ; participant = command.participant
+        ; subject = command.subject
         }
     in
     Ok

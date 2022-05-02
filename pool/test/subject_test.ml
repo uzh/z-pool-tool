@@ -1,4 +1,4 @@
-module Participant_command = Cqrs_command.Participant_command
+module Subject_command = Cqrs_command.Subject_command
 
 let sign_up_not_allowed_suffix () =
   let events =
@@ -10,19 +10,19 @@ let sign_up_not_allowed_suffix () =
     in
     let command =
       CCResult.get_exn
-      @@ Participant_command.SignUp.decode
+      @@ Subject_command.SignUp.decode
            Pool_common.Message.Field.
              [ Email |> show, [ "john@bluewin.com" ]
              ; Password |> show, [ "password" ]
              ; Firstname |> show, [ "Jane" ]
              ; Lastname |> show, [ "Doe" ]
              ; ( RecruitmentChannel |> show
-               , [ Participant.RecruitmentChannel.Friend
-                   |> Participant.RecruitmentChannel.to_string
+               , [ Subject.RecruitmentChannel.Friend
+                   |> Subject.RecruitmentChannel.to_string
                  ] )
              ]
     in
-    Participant_command.SignUp.handle None command ~allowed_email_suffixes
+    Subject_command.SignUp.handle None command ~allowed_email_suffixes
   in
   let expected = Error Pool_common.Message.(Invalid Field.EmailSuffix) in
   Alcotest.(
@@ -43,19 +43,19 @@ let sign_up () =
     in
     let command =
       CCResult.get_exn
-      @@ Participant_command.SignUp.decode
+      @@ Subject_command.SignUp.decode
            Pool_common.Message.Field.
              [ Email |> show, [ "john@gmail.com" ]
              ; Password |> show, [ "password" ]
              ; Firstname |> show, [ "Jane" ]
              ; Lastname |> show, [ "Doe" ]
              ; ( RecruitmentChannel |> show
-               , [ Participant.RecruitmentChannel.Friend
-                   |> Participant.RecruitmentChannel.to_string
+               , [ Subject.RecruitmentChannel.Friend
+                   |> Subject.RecruitmentChannel.to_string
                  ] )
              ]
     in
-    Participant_command.SignUp.handle
+    Subject_command.SignUp.handle
       (Some Pool_common.Language.En)
       command
       ~allowed_email_suffixes

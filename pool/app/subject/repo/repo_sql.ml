@@ -23,24 +23,24 @@ let find_request_sql where_fragment =
         user_users.confirmed,
         user_users.created_at,
         user_users.updated_at,
-        pool_participants.recruitment_channel,
-        pool_participants.terms_accepted_at,
-        pool_participants.language,
-        pool_participants.paused,
-        pool_participants.disabled,
-        pool_participants.verified,
-        pool_participants.email_verified,
-        pool_participants.participation_count,
-        pool_participants.participation_show_up_count,
-        pool_participants.firstname_version,
-        pool_participants.lastname_version,
-        pool_participants.paused_version,
-        pool_participants.language_version,
-        pool_participants.created_at,
-        pool_participants.updated_at
-      FROM pool_participants
+        pool_subjects.recruitment_channel,
+        pool_subjects.terms_accepted_at,
+        pool_subjects.language,
+        pool_subjects.paused,
+        pool_subjects.disabled,
+        pool_subjects.verified,
+        pool_subjects.email_verified,
+        pool_subjects.participation_count,
+        pool_subjects.participation_show_up_count,
+        pool_subjects.firstname_version,
+        pool_subjects.lastname_version,
+        pool_subjects.paused_version,
+        pool_subjects.language_version,
+        pool_subjects.created_at,
+        pool_subjects.updated_at
+      FROM pool_subjects
         LEFT JOIN user_users
-        ON pool_participants.user_uuid = user_users.uuid
+        ON pool_subjects.user_uuid = user_users.uuid
     |sql}
     where_fragment
 ;;
@@ -61,7 +61,7 @@ let find pool id =
     (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Subject)
 ;;
 
 let find_by_email_request =
@@ -80,7 +80,7 @@ let find_by_email pool email =
     (Database.Label.value pool)
     find_by_email_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Subject)
 ;;
 
 let find_confirmed_request =
@@ -100,13 +100,13 @@ let find_confirmed pool email =
     (Database.Label.value pool)
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Participant)
+  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Subject)
 ;;
 
 let insert_request =
   let open Caqti_request.Infix in
   {sql|
-      INSERT INTO pool_participants (
+      INSERT INTO pool_subjects (
         user_uuid,
         recruitment_channel,
         terms_accepted_at,
@@ -142,7 +142,7 @@ let insert_request =
         $16
       )
     |sql}
-  |> Repo_model.participant ->. Caqti_type.unit
+  |> Repo_model.subject ->. Caqti_type.unit
 ;;
 
 let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
@@ -152,7 +152,7 @@ module Paused = struct
     let open Caqti_request.Infix in
     let open Pool_common.Repo in
     {sql|
-      UPDATE pool_participants
+      UPDATE pool_subjects
       SET
         paused = $2,
         paused_version = $3
@@ -162,11 +162,11 @@ module Paused = struct
        ->. Caqti_type.unit
   ;;
 
-  let update pool (Entity.{ paused; paused_version; _ } as participant) =
+  let update pool (Entity.{ paused; paused_version; _ } as subject) =
     Utils.Database.exec
       (Database.Label.value pool)
       update_request
-      ( participant |> Entity.id |> Id.value
+      ( subject |> Entity.id |> Id.value
       , paused |> Pool_user.Paused.value
       , paused_version |> Pool_common.Version.value )
   ;;
@@ -177,7 +177,7 @@ module Language = struct
     let open Caqti_request.Infix in
     let open Pool_common.Repo in
     {sql|
-      UPDATE pool_participants
+      UPDATE pool_subjects
       SET
         language = $2,
         language_version = $3
@@ -186,11 +186,11 @@ module Language = struct
     |> Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t ->. unit)
   ;;
 
-  let update pool (Entity.{ language; language_version; _ } as participant) =
+  let update pool (Entity.{ language; language_version; _ } as subject) =
     Utils.Database.exec
       (Database.Label.value pool)
       update_request
-      ( participant |> Entity.id |> Id.value
+      ( subject |> Entity.id |> Id.value
       , language
       , language_version |> Pool_common.Version.value )
   ;;
@@ -203,7 +203,7 @@ let update_version_for_request field =
     | `Firstname -> "firstname_version"
     | `Lastname -> "lastname_version"
   in
-  let update = {sql| UPDATE pool_participants SET |sql} in
+  let update = {sql| UPDATE pool_subjects SET |sql} in
   let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
   Format.asprintf "%s\n%s = $2\n%s" update field where
   |> Caqti_type.(Pool_common.Repo.(tup2 Id.t Version.t)) ->. Caqti_type.unit
@@ -220,7 +220,7 @@ let update_request =
   let open Caqti_request.Infix in
   {sql|
       UPDATE
-        pool_participants
+        pool_subjects
       SET
         recruitment_channel = $2,
         terms_accepted_at = $3,
@@ -248,10 +248,10 @@ let update pool t =
     (Entity.Write.create t)
 ;;
 
-let delete_unverified_participant_request =
+let delete_unverified_subject_request =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM pool_participants
+    DELETE FROM pool_subjects
     WHERE user_uuid = UNHEX(REPLACE(?, '-', '')) AND verified IS NULL
   |sql}
   |> Caqti_type.(string ->. unit)
@@ -284,5 +284,5 @@ let delete_unverified pool id =
   in
   let%lwt _ = exec delete_unverified_user_request in
   let%lwt _ = exec delete_unverified_email_verifications_request in
-  exec delete_unverified_participant_request
+  exec delete_unverified_subject_request
 ;;

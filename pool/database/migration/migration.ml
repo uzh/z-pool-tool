@@ -81,7 +81,7 @@ module Tenant = struct
   let steps =
     extend_migrations
       [ Migration_person.migration ()
-      ; Migration_participant.migration ()
+      ; Migration_subject.migration ()
       ; Migration_email.migration ()
       ; Migration_email_templates.migration_tenant ()
       ; Migration_settings.migration ()

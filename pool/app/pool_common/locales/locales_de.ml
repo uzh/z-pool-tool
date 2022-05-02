@@ -65,6 +65,7 @@ let field_to_string =
   | SmtpWriteModel -> "Smtp write model"
   | SmtpUsername -> "Smtp Benutzername"
   | Styles -> "Styles"
+  | Subject -> "Proband"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert Flag"
   | TenantId -> "Tenant Identifier"
@@ -157,9 +158,9 @@ let rec error_to_string = function
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NoValue -> "Kein Wert angegeben"
-  | ParticipantSignupInvalidEmail ->
+  | SubjectSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
-  | ParticipantUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
+  | SubjectUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | PasswordPolicy msg ->
     Format.asprintf
       "Passwort stimmt nicht mit der benötigten Policy überein! %s"

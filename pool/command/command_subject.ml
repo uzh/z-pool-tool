@@ -1,14 +1,14 @@
 let sign_up =
   Sihl.Command.make
-    ~name:"participant.signup"
-    ~description:"New participant signup"
+    ~name:"subject.signup"
+    ~description:"New subject signup"
     ~help:
       "<Pool_database> <email> <password> <firstname> <lastname> \
        <recruitment_channel> <terms_excepted>"
     (fun args ->
       let return = Lwt.return_some () in
       let help_text =
-        {|Provide all fields to sign up a new participant:
+        {|Provide all fields to sign up a new subject:
     <Pool_database>       : string
     <email>               : string
     <password>            : string
@@ -18,7 +18,7 @@ let sign_up =
     <language>            : string of 'DE', 'EN'
     <terms_accepted>      : string 'accept' everything else is treated as declined
 
-Example: sihl participant.signup econ-uzh example@mail.com securePassword Max Muster online
+Example: sihl subject.signup econ-uzh example@mail.com securePassword Max Muster online
 
 Note: Make sure 'accept' is added as final argument, otherwise signup fails.
           |}
@@ -48,14 +48,14 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
             let language =
               Pool_common.Language.of_string language |> CCResult.to_opt
             in
-            Cqrs_command.Participant_command.SignUp.decode
+            Cqrs_command.Subject_command.SignUp.decode
               [ "email", [ email ]
               ; "password", [ password ]
               ; "firstname", [ firstname ]
               ; "lastname", [ lastname ]
               ; "recruitment_channel", [ recruitment_channel ]
               ]
-            >>= Cqrs_command.Participant_command.SignUp.handle language
+            >>= Cqrs_command.Subject_command.SignUp.handle language
             |> Lwt_result.lift
           in
           match events with

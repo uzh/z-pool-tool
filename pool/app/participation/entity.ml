@@ -55,7 +55,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; participant : Participant.t
+  ; participant : Subject.t
   ; show_up : ShowUp.t
   ; participated : Participated.t
   ; matches_filter : MatchesFilter.t

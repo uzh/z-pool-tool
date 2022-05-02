@@ -1,14 +1,14 @@
 type t =
   { id : Pool_common.Id.t
-  ; participant : Participant.t
+  ; subject : Subject.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) participant =
+let create ?(id = Pool_common.Id.create ()) subject =
   { id
-  ; participant
+  ; subject
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

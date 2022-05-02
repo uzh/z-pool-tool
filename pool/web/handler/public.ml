@@ -3,7 +3,7 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
-let create_layout req = General.create_tenant_layout `Participant req
+let create_layout req = General.create_tenant_layout `Subject req
 
 let root_redirect req =
   Http_utils.redirect_to

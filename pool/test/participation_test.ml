@@ -1,4 +1,4 @@
-module ParticipantCommand = Cqrs_command.Participant_command
+module ParticipantCommand = Cqrs_command.Subject_command
 module ParticipationCommand = Cqrs_command.Participation_command
 module Field = Pool_common.Message.Field
 
@@ -12,7 +12,7 @@ let check_result expected generated =
 ;;
 
 let create_participant () =
-  Participant.
+  Subject.
     { user =
         Sihl_user.
           { id = Pool_common.Id.(create () |> value)

@@ -81,6 +81,7 @@ module Field = struct
         [@printer field_name "smtp_write_model"]
     | SmtpUsername [@name "smtp_username"] [@printer field_name "smtp_username"]
     | Styles [@name "styles"] [@printer field_name "styles"]
+    | Subject [@name "subject"] [@printer field_name "subject"]
     | Tenant [@name "tenant"] [@printer field_name "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer field_name "tenant_disabled_flag"]
@@ -132,8 +133,8 @@ type error =
   | NotFound of Field.t
   | NotHandled of string
   | NoValue
-  | ParticipantSignupInvalidEmail
-  | ParticipantUnconfirmed
+  | SubjectSignupInvalidEmail
+  | SubjectUnconfirmed
   | PasswordPolicy of string
   | PasswordResetInvalidData
   | PasswordResetFailMessage

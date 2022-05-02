@@ -138,21 +138,19 @@ let login_after_terms_update _ () =
   let email = "one@test.com" in
   let accepted =
     let open Utils.Lwt_result.Infix in
-    let participant =
-      Participant.find_by_email
+    let subject =
+      Subject.find_by_email
         database_label
         (email |> Pool_user.EmailAddress.of_string)
     in
-    let terms_agreed participant =
-      let%lwt accepted =
-        Participant.has_terms_accepted database_label participant
-      in
+    let terms_agreed subject =
+      let%lwt accepted = Subject.has_terms_accepted database_label subject in
       match accepted with
-      | true -> Lwt.return_ok participant
+      | true -> Lwt.return_ok subject
       | false -> Lwt.return_error TermsAndConditionsNotAccepted
     in
-    participant
-    |> Lwt_result.map_err (CCFun.const (NotFound Field.Participant))
+    subject
+    |> Lwt_result.map_err (CCFun.const (NotFound Field.Subject))
     >>= terms_agreed
   in
   let expected = Error TermsAndConditionsNotAccepted in
@@ -160,7 +158,7 @@ let login_after_terms_update _ () =
   |> Lwt.map (fun accepted ->
          Alcotest.(
            check
-             (result Test_utils.participant Test_utils.error)
+             (result Test_utils.subject Test_utils.error)
              "succeeds"
              expected
              accepted))
