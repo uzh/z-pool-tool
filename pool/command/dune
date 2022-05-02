@@ -1,13 +1,13 @@
 (library
  (name command)
  (libraries
-  sihl
-  service
-  utils
-  database
   cqrs_command
-  settings
+  database
   pool_event
-  tenant)
+  service
+  settings
+  sihl
+  tenant
+  utils)
  (preprocess
   (pps lwt_ppx)))

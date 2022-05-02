@@ -16,9 +16,10 @@
   pool_user
   role
   root
-  settings
   session
+  settings
   sihl
+  subject
   tenant)
  (preprocess
   (pps lwt_ppx)))
