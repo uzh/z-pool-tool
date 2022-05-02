@@ -14,13 +14,13 @@ module RecruitmentChannel : sig
   val all : t list
 end
 
-module ParticipationCount : sig
+module NumberOfInvitations : sig
   type t
 
   val init : t
 end
 
-module ParticipationShowUpCount : sig
+module NumberOfAssignments : sig
   type t
 
   val init : t
@@ -35,8 +35,8 @@ type t =
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t
   ; email_verified : Pool_user.EmailVerified.t
-  ; participation_count : ParticipationCount.t
-  ; participation_show_up_count : ParticipationShowUpCount.t
+  ; num_invitations : NumberOfInvitations.t
+  ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
