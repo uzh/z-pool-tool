@@ -34,7 +34,7 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
-let to_entity (m : t) (participant : Participant.t) : Entity.t =
+let to_entity (m : t) (participant : Subject.t) : Entity.t =
   Entity.
     { id = m.id
     ; participant
@@ -50,7 +50,7 @@ let to_entity (m : t) (participant : Participant.t) : Entity.t =
 let of_entity (session_id : Pool_common.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; session_id
-  ; participant_id = Participant.id m.Entity.participant
+  ; participant_id = Subject.id m.Entity.participant
   ; show_up = m.Entity.show_up
   ; participated = m.Entity.participated
   ; matches_filter = m.Entity.matches_filter

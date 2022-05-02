@@ -13,7 +13,7 @@ let error =
   Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
 ;;
 
-let participant = Alcotest.testable Participant.pp Participant.equal
+let subject = Alcotest.testable Subject.pp Subject.equal
 
 (* Helper functions *)
 

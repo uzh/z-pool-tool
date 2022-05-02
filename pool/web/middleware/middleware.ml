@@ -1,5 +1,5 @@
 module Admin = Middleware_admin
-module Participant = Middleware_participant
+module Subject = Middleware_subject
 module Root = Middleware_root
 module Context = Middleware_context
 module Tenant = Middleware_tenant

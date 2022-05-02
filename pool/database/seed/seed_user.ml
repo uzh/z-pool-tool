@@ -39,13 +39,13 @@ let admins db_pool () =
     data
 ;;
 
-let participants db_pool () =
+let subjects db_pool () =
   let users =
     [ ( Id.create ()
       , "Hansruedi"
       , "Rüdisüli"
       , "one@test.com"
-      , Participant.RecruitmentChannel.Friend
+      , Subject.RecruitmentChannel.Friend
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , false
@@ -55,7 +55,7 @@ let participants db_pool () =
       , "Jane"
       , "Doe"
       , "two@test.com"
-      , Participant.RecruitmentChannel.Online
+      , Subject.RecruitmentChannel.Online
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , false
@@ -65,7 +65,7 @@ let participants db_pool () =
       , "John"
       , "Dorrian"
       , "three@mail.com"
-      , Participant.RecruitmentChannel.Lecture
+      , Subject.RecruitmentChannel.Lecture
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , true
@@ -75,7 +75,7 @@ let participants db_pool () =
       , "Kevin"
       , "McCallistor"
       , "four@mail.com"
-      , Participant.RecruitmentChannel.Mailing
+      , Subject.RecruitmentChannel.Mailing
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , true
@@ -85,7 +85,7 @@ let participants db_pool () =
       , "Hello"
       , "Kitty"
       , "five@mail.com"
-      , Participant.RecruitmentChannel.Online
+      , Subject.RecruitmentChannel.Online
       , None
       , Some (Ptime_clock.now ())
       , true
@@ -95,7 +95,7 @@ let participants db_pool () =
       , "Dr."
       , "Murphy"
       , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , Subject.RecruitmentChannel.Friend
       , None
       , Some (Ptime_clock.now ())
       , true
@@ -105,7 +105,7 @@ let participants db_pool () =
       , "Mr."
       , "Do not accept terms"
       , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , Subject.RecruitmentChannel.Friend
       , Some Pool_common.Language.En
       , None
       , true
@@ -162,7 +162,7 @@ let participants db_pool () =
             Email.(EmailVerified unverified |> handle_event db_pool))
           else Lwt.return_unit
         in
-        Participant.
+        Subject.
           { user
           ; recruitment_channel
           ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
@@ -180,9 +180,9 @@ let participants db_pool () =
           ; created_at = Ptime_clock.now ()
           ; updated_at = Ptime_clock.now ()
           }
-        |> Participant.insert db_pool
+        |> Subject.insert db_pool
       | Some _ ->
-        Logs.debug (fun m -> m "%s" "Participant already exists");
+        Logs.debug (fun m -> m "%s" "Subject already exists");
         Lwt.return_unit)
     users
 ;;

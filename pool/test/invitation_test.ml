@@ -1,4 +1,3 @@
-module ParticipantCommand = Cqrs_command.Participant_command
 module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_common.Message.Field
 
@@ -11,8 +10,8 @@ let check_result expected generated =
       generated)
 ;;
 
-let create_participant () =
-  Participant.
+let create_subject () =
+  Subject.
     { user =
         Sihl_user.
           { id = Pool_common.Id.(create () |> value)
@@ -67,15 +66,15 @@ let create_experiment () =
 
 let create () =
   let experiment = create_experiment () in
-  let participant = create_participant () in
+  let subject = create_subject () in
   let events =
-    let command = InvitationCommand.Create.{ experiment; participant } in
+    let command = InvitationCommand.Create.{ experiment; subject } in
     InvitationCommand.Create.handle command
   in
   let expected =
     Ok
       [ Invitation.(
-          Created { experiment_id = experiment.Experiment.id; participant })
+          Created { experiment_id = experiment.Experiment.id; subject })
         |> Pool_event.invitation
       ]
   in

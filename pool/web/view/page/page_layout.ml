@@ -82,7 +82,7 @@ module Tenant = struct
     let nav_links =
       let open Pool_common.I18n in
       (match layout_context with
-      | `Participant -> [ "/user", Profile ]
+      | `Subject -> []
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments
@@ -127,8 +127,8 @@ module Tenant = struct
       (fun html -> [ div ~a:[ a_class [ "flex-box"; "flex--row" ] ] html ])
       @@
       match layout_context with
-      | `Admin -> [ div [ navigation ] ]
-      | `Participant -> [ navigation; i18n_links tenant_languages active_lang ]
+      | `Admin -> [ navigation ]
+      | `Subject -> [ navigation; i18n_links tenant_languages active_lang ]
     in
     let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
     html

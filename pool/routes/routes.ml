@@ -28,7 +28,7 @@ module Public = struct
       choose
         [ choose
             ~middlewares:
-              [ CustomMiddleware.Context.context `Participant ()
+              [ CustomMiddleware.Context.context `Subject ()
               ; CustomMiddleware.Tenant.valid_tenant ()
               ]
             [ get "/index" index
@@ -45,37 +45,37 @@ module Public = struct
   ;;
 end
 
-module Participant = struct
+module Subject = struct
   let public =
-    [ get "/signup" Handler.Participant.sign_up
-    ; post "/signup" Handler.Participant.sign_up_create
+    [ get "/signup" Handler.Subject.sign_up
+    ; post "/signup" Handler.Subject.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
-    ; get "/termsandconditions" Handler.Participant.terms
-    ; get "/email-verified" Handler.Participant.email_verification
-    ; post "/terms-accepted/:id" Handler.Participant.terms_accept
+    ; get "/termsandconditions" Handler.Subject.terms
+    ; get "/email-verified" Handler.Subject.email_verification
+    ; post "/terms-accepted/:id" Handler.Subject.terms_accept
     ]
   ;;
 
   let locked_routes =
-    [ get "/dashboard" Handler.Participant.dashboard
-    ; get "/user" Handler.Participant.details
-    ; get "/user/edit" Handler.Participant.edit
-    ; post "/user/update" Handler.Participant.update
-    ; post "/user/update-email" Handler.Participant.update_email
-    ; post "/user/update-password" Handler.Participant.update_password
+    [ get "/dashboard" Handler.Subject.dashboard
+    ; get "/user" Handler.Subject.details
+    ; get "/user/edit" Handler.Subject.edit
+    ; post "/user/update" Handler.Subject.update
+    ; post "/user/update-email" Handler.Subject.update_email
+    ; post "/user/update-password" Handler.Subject.update_password
     ]
   ;;
 
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Context.context `Participant ()
+        [ CustomMiddleware.Context.context `Subject ()
         ; CustomMiddleware.Tenant.valid_tenant ()
         ]
       [ choose public
       ; choose
           ~middlewares:
-            [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
+            [ CustomMiddleware.Subject.confirmed_and_terms_agreed () ]
           locked_routes
       ]
   ;;
@@ -161,13 +161,13 @@ end
 let router =
   choose
     [ Public.routes
-    ; Participant.routes
+    ; Subject.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+        ~middlewares:[ CustomMiddleware.Context.context `Subject () ]
         Handler.Public.not_found
     ]
 ;;

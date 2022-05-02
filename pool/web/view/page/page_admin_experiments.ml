@@ -38,7 +38,7 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let form ?experiment csrf Pool_context.{ language; _ } =
+let form ?experiment Pool_context.{ language; csrf; _ } =
   let open Experiment in
   let action =
     match experiment with

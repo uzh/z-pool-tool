@@ -3,7 +3,7 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
-let create_layout req = General.create_tenant_layout `Participant req
+let create_layout req = General.create_tenant_layout `Subject req
 
 let root_redirect req =
   Http_utils.redirect_to
@@ -140,7 +140,7 @@ let error req =
     ( Common.Message.TerminatoryTenantErrorTitle
     , Common.Message.TerminatoryTenantError )
     |> error_page
-    |> General.create_tenant_layout `Participant req context
+    |> General.create_tenant_layout `Subject req context
   in
   (match tenant_error with
   | Ok tenant_error -> tenant_error

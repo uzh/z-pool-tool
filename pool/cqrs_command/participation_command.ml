@@ -2,7 +2,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 module Create : sig
   type t =
-    { participant : Participant.t
+    { participant : Subject.t
     ; session : Session.t
     }
 
@@ -10,7 +10,7 @@ module Create : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { participant : Participant.t
+    { participant : Subject.t
     ; session : Session.t
     }
 

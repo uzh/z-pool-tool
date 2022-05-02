@@ -77,6 +77,6 @@ val session_count
   -> (int, Pool_common.Message.error) Lwt_result.t
 
 val possible_participant_count : t -> int Lwt.t
-val possible_participants : t -> Participant.t list Lwt.t
+val possible_participants : t -> Subject.t list Lwt.t
 val title_value : t -> string
 val description_value : t -> string

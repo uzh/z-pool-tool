@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let to_ctx = Pool_tenant.to_ctx
-let create_layout req = General.create_tenant_layout `Participant req
+let create_layout req = General.create_tenant_layout `Subject req
 
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in
@@ -95,12 +95,12 @@ let request_reset_password_post req =
     in
     let tenant_db = context.Pool_context.tenant_db in
     let ctx = to_ctx tenant_db in
-    let* participant = Participant.find_by_email tenant_db email in
+    let* subject = Subject.find_by_email tenant_db email in
     let language = context.Pool_context.language in
     Email.Helper.PasswordReset.create
       tenant_db
       language
-      ~user:participant.Participant.user
+      ~user:subject.Subject.user
     >|= Service.Email.send ~ctx
   in
   match result with
