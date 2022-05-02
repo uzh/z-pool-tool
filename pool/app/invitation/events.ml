@@ -17,7 +17,7 @@ let send_invitation_email pool (subject : Subject.t) (experiment : Experiment.t)
     mail_subject
     (email |> Pool_user.EmailAddress.value)
     [ "name", name
-    ; ( "experiment_description"
+    ; ( "experimentDescription"
       , experiment.Experiment.description |> Experiment.Description.value )
     ]
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
