@@ -6,11 +6,11 @@
   htmx
   http_utils
   i18n
-  participant
   pool_tenant
   root
   service
   sihl
+  subject
   tenant
   tyxml
   utils))

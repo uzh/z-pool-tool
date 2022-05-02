@@ -10,12 +10,12 @@
   experiment
   http_utils
   invitation
-  participant
   participation
+  pool_database
   pool_event
   pool_tenant
-  pool_database
+  subject
   tenant
   utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))

@@ -1,6 +1,6 @@
 (library
  ; Cannot just be named as "location" because there is a module location
  (name pool_location)
- (libraries sihl tenant pool_common)
+ (libraries pool_common sihl tenant)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps ppx_deriving.eq ppx_deriving.show)))

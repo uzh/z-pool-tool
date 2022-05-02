@@ -1,3 +1,3 @@
 (library
  (name htmx)
- (libraries tyxml sihl service http_utils component))
+ (libraries component http_utils service sihl tyxml))

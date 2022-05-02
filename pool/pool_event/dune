@@ -16,4 +16,4 @@
   sihl
   tenant)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps ppx_deriving.eq ppx_deriving.show)))

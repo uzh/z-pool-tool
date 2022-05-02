@@ -1,15 +1,15 @@
 (library
  (name pool_user)
  (libraries
-  sihl
-  service
-  pool_common
-  utils
-  settings
   conformist
   containers
-  ptime)
+  pool_common
+  ptime
+  service
+  settings
+  sihl
+  utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq ppx_variants_conv)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))
 
 (include_subdirs unqualified)
