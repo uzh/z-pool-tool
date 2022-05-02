@@ -95,8 +95,8 @@ let handle_event pool : event -> unit Lwt.t =
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
     ; email_verified = User.EmailVerified.create None
-    ; participation_count = ParticipationCount.init
-    ; participation_show_up_count = ParticipationShowUpCount.init
+    ; num_invitations = NumberOfInvitations.init
+    ; num_assignments = NumberOfAssignments.init
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
@@ -214,15 +214,14 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update
       pool
       { subject with
-        participation_count =
-          subject.participation_count |> ParticipationCount.increment
+        num_invitations =
+          subject.num_invitations |> NumberOfInvitations.increment
       }
   | ShowUpIncreased subject ->
     Repo.update
       pool
       { subject with
-        participation_show_up_count =
-          subject.participation_show_up_count
-          |> ParticipationShowUpCount.increment
+        num_assignments =
+          subject.num_assignments |> NumberOfAssignments.increment
       }
 ;;

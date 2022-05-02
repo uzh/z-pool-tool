@@ -35,8 +35,8 @@ let create_subject () =
     ; verified = Pool_user.Verified.create None
     ; email_verified =
         Pool_user.EmailVerified.create (Some (Ptime_clock.now ()))
-    ; participation_count = ParticipationCount.init
-    ; participation_show_up_count = ParticipationShowUpCount.init
+    ; num_invitations = NumberOfInvitations.init
+    ; num_assignments = NumberOfAssignments.init
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()

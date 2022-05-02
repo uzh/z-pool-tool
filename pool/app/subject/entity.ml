@@ -33,7 +33,7 @@ module RecruitmentChannel = struct
   ;;
 end
 
-module ParticipationCount = struct
+module NumberOfInvitations = struct
   type t = int [@@deriving eq, show]
 
   let init = 0
@@ -42,7 +42,7 @@ module ParticipationCount = struct
   let increment m = m + 1
 end
 
-module ParticipationShowUpCount = struct
+module NumberOfAssignments = struct
   type t = int [@@deriving eq, show]
 
   let init = 0
@@ -61,8 +61,8 @@ type t =
   ; disabled : Common.Disabled.t
   ; verified : Common.Verified.t
   ; email_verified : Common.EmailVerified.t
-  ; participation_count : ParticipationCount.t
-  ; participation_show_up_count : ParticipationShowUpCount.t
+  ; num_invitations : NumberOfInvitations.t
+  ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
@@ -82,8 +82,8 @@ module Write = struct
     ; disabled : Common.Disabled.t
     ; verified : Common.Verified.t
     ; email_verified : Common.EmailVerified.t
-    ; participation_count : ParticipationCount.t
-    ; participation_show_up_count : ParticipationShowUpCount.t
+    ; num_invitations : NumberOfInvitations.t
+    ; num_assignments : NumberOfAssignments.t
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
@@ -100,8 +100,8 @@ module Write = struct
     ; disabled = m.disabled
     ; verified = m.verified
     ; email_verified = m.email_verified
-    ; participation_count = m.participation_count
-    ; participation_show_up_count = m.participation_show_up_count
+    ; num_invitations = m.num_invitations
+    ; num_assignments = m.num_assignments
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version

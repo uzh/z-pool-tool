@@ -54,8 +54,8 @@ let add_user_email_verified_counts =
     {sql|
      ALTER TABLE pool_participants
      ADD COLUMN email_verified timestamp NULL AFTER verified,
-     ADD COLUMN participation_count SMALLINT(3) UNSIGNED NOT NULL AFTER email_verified,
-     ADD COLUMN participation_show_up_count SMALLINT(3) UNSIGNED NOT NULL AFTER participation_count
+     ADD COLUMN num_invitations SMALLINT(3) UNSIGNED NOT NULL AFTER email_verified,
+     ADD COLUMN num_assignments SMALLINT(3) UNSIGNED NOT NULL AFTER num_invitations
     |sql}
 ;;
 

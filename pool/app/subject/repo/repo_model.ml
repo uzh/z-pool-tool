@@ -33,14 +33,14 @@ module Language = struct
   ;;
 end
 
-module ParticipationCount = struct
-  include ParticipationCount
+module NumberOfInvitations = struct
+  include NumberOfInvitations
 
   let t = Caqti_type.int
 end
 
-module ParticipationShowUpCount = struct
-  include ParticipationShowUpCount
+module NumberOfAssignments = struct
+  include NumberOfAssignments
 
   let t = Caqti_type.int
 end
@@ -58,9 +58,8 @@ let t =
               , ( Disabled.value m.disabled
                 , ( Verified.value m.verified
                   , ( EmailVerified.value m.email_verified
-                    , ( ParticipationCount.value m.participation_count
-                      , ( ParticipationShowUpCount.value
-                            m.participation_show_up_count
+                    , ( NumberOfInvitations.value m.num_invitations
+                      , ( NumberOfAssignments.value m.num_assignments
                         , ( Version.value m.firstname_version
                           , ( Version.value m.lastname_version
                             , ( Version.value m.paused_version
@@ -77,8 +76,8 @@ let t =
               , ( disabled
                 , ( verified
                   , ( email_verified
-                    , ( participation_count
-                      , ( participation_show_up_count
+                    , ( num_invitations
+                      , ( num_assignments
                         , ( firstname_version
                           , ( lastname_version
                             , ( paused_version
@@ -97,9 +96,8 @@ let t =
         ; disabled = Disabled.create disabled
         ; verified = Verified.create verified
         ; email_verified = EmailVerified.create email_verified
-        ; participation_count = ParticipationCount.of_int participation_count
-        ; participation_show_up_count =
-            ParticipationShowUpCount.of_int participation_show_up_count
+        ; num_invitations = NumberOfInvitations.of_int num_invitations
+        ; num_assignments = NumberOfAssignments.of_int num_assignments
         ; firstname_version = of_int firstname_version
         ; lastname_version = of_int lastname_version
         ; paused_version = of_int paused_version
@@ -131,9 +129,9 @@ let t =
                            (tup2
                               EmailVerified.t
                               (tup2
-                                 ParticipationCount.t
+                                 NumberOfInvitations.t
                                  (tup2
-                                    ParticipationShowUpCount.t
+                                    NumberOfAssignments.t
                                     (tup2
                                        Pool_common.Repo.Version.t
                                        (tup2
@@ -158,9 +156,8 @@ let subject =
               , ( Disabled.value m.disabled
                 , ( Verified.value m.verified
                   , ( EmailVerified.value m.email_verified
-                    , ( ParticipationCount.value m.participation_count
-                      , ( ParticipationShowUpCount.value
-                            m.participation_show_up_count
+                    , ( NumberOfInvitations.value m.num_invitations
+                      , ( NumberOfAssignments.value m.num_assignments
                         , ( Version.value m.firstname_version
                           , ( Version.value m.lastname_version
                             , ( Version.value m.paused_version
@@ -195,9 +192,9 @@ let subject =
                            (tup2
                               EmailVerified.t
                               (tup2
-                                 ParticipationCount.t
+                                 NumberOfInvitations.t
                                  (tup2
-                                    ParticipationShowUpCount.t
+                                    NumberOfAssignments.t
                                     (tup2
                                        Pool_common.Repo.Version.t
                                        (tup2
@@ -225,9 +222,8 @@ module Write = struct
                 , ( Disabled.value m.disabled
                   , ( Verified.value m.verified
                     , ( EmailVerified.value m.email_verified
-                      , ( ParticipationCount.value m.participation_count
-                        , ( ParticipationShowUpCount.value
-                              m.participation_show_up_count
+                      , ( NumberOfInvitations.value m.num_invitations
+                        , ( NumberOfAssignments.value m.num_assignments
                           , ( Version.value m.firstname_version
                             , ( Version.value m.lastname_version
                               , ( Version.value m.lastname_version
@@ -262,9 +258,9 @@ module Write = struct
                              (tup2
                                 EmailVerified.t
                                 (tup2
-                                   ParticipationCount.t
+                                   NumberOfInvitations.t
                                    (tup2
-                                      ParticipationShowUpCount.t
+                                      NumberOfAssignments.t
                                       (tup2
                                          Pool_common.Repo.Version.t
                                          (tup2
