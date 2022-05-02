@@ -4,10 +4,13 @@ module RecruitmentChannel = struct
   let name m fmt _ = Format.pp_print_string fmt m
 
   type t =
-    | Friend [@name "friend"]
-    | Online [@name "online"]
-    | Lecture [@name "lecture"]
-    | Mailing [@name "mailing"]
+    | Friend [@name "friend"] [@printer name "friend"]
+    | Online [@name "online"] [@printer name "online"]
+    | Lecture [@name "lecture"] [@printer name "lecture"]
+    | Mailing [@name "mailing"] [@printer name "mailing"]
+  (* @name: used by yojson as key *)
+  (* @printer: used by show as key/string (removing @printer would change to
+     Field as written -> Capital case) *)
   [@@deriving eq, show { with_path = false }, enum, yojson]
 
   let read m =
