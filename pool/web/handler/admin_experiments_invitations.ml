@@ -16,14 +16,15 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
-    let* experiment = Experiment.find tenant_db id in
-    let* invitations = Invitation.find_by_experiment tenant_db id in
+    let* experiment_invitations =
+      Experiment_type.find_invitations tenant_db id
+    in
+    let experiment = experiment_invitations.Experiment_type.experiment in
     let%lwt filtered_subjects =
       Subject.find_filtered tenant_db experiment.Experiment.filter ()
     in
     Page.Admin.Experiments.invitations
-      experiment
-      invitations
+      experiment_invitations
       filtered_subjects
       context
     |> create_layout req context

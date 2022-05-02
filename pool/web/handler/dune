@@ -3,6 +3,7 @@
  (libraries
   cqrs_command
   email
+  experiment_type
   http_utils
   middleware
   page

@@ -168,18 +168,21 @@ let detail experiment session_count Pool_context.{ language; _ } =
 ;;
 
 let invitations
-    experiment
-    invitation_list
+    (experiment_invitations : Experiment_type.invitations)
     filtered_participants
     (Pool_context.{ language; _ } as context)
   =
+  let experiment = experiment_invitations.Experiment_type.experiment in
   div
     [ subnav language experiment.Experiment.id
     ; h2
         [ txt
             Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
         ]
-    ; Page_admin_invitations.Partials.list context experiment invitation_list
+    ; Page_admin_invitations.Partials.list
+        context
+        experiment
+        experiment_invitations.Experiment_type.invitations
     ; Page_admin_invitations.Partials.send_invitation
         context
         experiment

@@ -3,6 +3,7 @@
  (libraries
   component
   experiment
+  experiment_type
   htmx
   http_utils
   i18n

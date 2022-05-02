@@ -1,6 +1,6 @@
 (library
- (name experiment)
- (libraries pool_common sihl subject tenant)
+ (name experiment_type)
+ (libraries sihl experiment invitation session)
  (preprocess
   (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
 
