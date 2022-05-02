@@ -131,15 +131,3 @@ module ConfirmationEmail = struct
     | `EmailUpdate -> "email_verification"
   ;;
 end
-
-module Invitation = struct
-  let create db_pool email name experiment_description =
-    let subject = "Experiment Invitation" in
-    prepare_email
-      db_pool
-      "experiment_invitation"
-      subject
-      (email |> Pool_user.EmailAddress.value)
-      [ "name", name; "experiment_description", experiment_description ]
-  ;;
-end
