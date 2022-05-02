@@ -50,7 +50,7 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , false
       , false
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Jane"
       , "Doe"
@@ -60,7 +60,7 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , false
       , false
-      , None )
+      , false )
     ; ( Id.create ()
       , "John"
       , "Dorrian"
@@ -70,7 +70,7 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , true
       , false
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Kevin"
       , "McCallistor"
@@ -80,7 +80,7 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , true
       , false
-      , None )
+      , false )
     ; ( Id.create ()
       , "Hello"
       , "Kitty"
@@ -90,7 +90,7 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , true
       , true
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Dr."
       , "Murphy"
@@ -100,89 +100,83 @@ let subjects db_pool () =
       , Some (Ptime_clock.now ())
       , true
       , true
-      , None )
+      , false )
     ; ( Id.create ()
       , "Mr."
       , "Do not accept terms"
-      , "six@mail.com"
+      , "seven@mail.com"
       , Subject.RecruitmentChannel.Friend
       , Some Pool_common.Language.En
       , None
       , true
       , true
-      , None )
+      , false )
     ]
   in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"user"
   in
-  Lwt_list.iter_s
-    (fun ( user_id
-         , given_name
-         , name
-         , email
-         , recruitment_channel
-         , language
-         , terms_accepted_at
-         , paused
-         , disabled
-         , verified ) ->
-      let ctx = Pool_tenant.to_ctx db_pool in
-      let%lwt user = Service.User.find_by_email_opt ~ctx email in
-      match user with
-      | None ->
-        let%lwt user =
-          Service.User.create_user
-            ~ctx
-            ~id:(user_id |> Pool_common.Id.value)
-            ~name
-            ~given_name
-            ~password
-            email
-        in
-        let%lwt () =
-          let address = User.EmailAddress.create email |> get_or_failwith in
-          let firstname = User.Firstname.create given_name |> get_or_failwith in
-          let lastname = User.Lastname.create name |> get_or_failwith in
-          let%lwt () =
-            Email.Created
-              (address, user_id, firstname, lastname, Pool_common.Language.En)
-            |> Email.handle_event db_pool
-          in
-          if CCOption.is_some verified
-          then (
-            let%lwt _ =
-              Service.User.update ~ctx Sihl_user.{ user with confirmed = true }
-            in
-            let%lwt unverified =
-              Email.find_unverified_by_user db_pool user_id
-              |> Lwt.map get_or_failwith
-            in
-            Email.(EmailVerified unverified |> handle_event db_pool))
-          else Lwt.return_unit
-        in
-        Subject.
-          { user
-          ; recruitment_channel
-          ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
-          ; language
-          ; paused = User.Paused.create paused
-          ; disabled = User.Disabled.create disabled
-          ; verified = User.Verified.create None
-          ; email_verified = User.EmailVerified.create verified
-          ; participation_count = ParticipationCount.init
-          ; participation_show_up_count = ParticipationShowUpCount.init
-          ; firstname_version = Pool_common.Version.create ()
-          ; lastname_version = Pool_common.Version.create ()
-          ; paused_version = Pool_common.Version.create ()
-          ; language_version = Pool_common.Version.create ()
-          ; created_at = Ptime_clock.now ()
-          ; updated_at = Ptime_clock.now ()
-          }
-        |> Subject.insert db_pool
-      | Some _ ->
-        Logs.debug (fun m -> m "%s" "Subject already exists");
-        Lwt.return_unit)
+  let%lwt () =
+    let open Lwt.Infix in
+    Lwt_list.fold_left_s
+      (fun subjects
+           ( user_id
+           , firstname
+           , lastname
+           , email
+           , recruitment_channel
+           , language
+           , terms_accepted_at
+           , _
+           , _
+           , _ ) ->
+        let ctx = Pool_tenant.to_ctx db_pool in
+        let%lwt user = Service.User.find_by_email_opt ~ctx email in
+        match user with
+        | None ->
+          [ Subject.Created
+              { Subject.user_id
+              ; email = email |> User.EmailAddress.of_string
+              ; password =
+                  password
+                  |> User.Password.create
+                  |> Pool_common.Utils.get_or_failwith
+              ; firstname = firstname |> User.Firstname.of_string
+              ; lastname = lastname |> User.Lastname.of_string
+              ; recruitment_channel
+              ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
+              ; language
+              }
+          ]
+          @ subjects
+          |> Lwt.return
+        | Some { Sihl_user.id; _ } ->
+          Logs.debug (fun m ->
+              m
+                "Subject already exists (%s): %s"
+                (db_pool |> Pool_database.Label.value)
+                id);
+          subjects |> Lwt.return)
+      []
+      users
+    >>= Lwt_list.iter_s (Subject.handle_event db_pool)
+  in
+  let open Lwt.Infix in
+  Lwt_list.fold_left_s
+    (fun subjects (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
+      let%lwt subject = Subject.find db_pool user_id in
+      match subject with
+      | Ok subject ->
+        [ Subject.PausedUpdated (subject, paused |> User.Paused.create) ]
+        @ (if disabled then [ Subject.Disabled subject ] else [])
+        @ (if verified then [ Subject.Verified subject ] else [])
+        @ subjects
+        |> Lwt.return
+      | Error err ->
+        let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
+        subjects |> Lwt.return)
+    []
     users
+  >>= Lwt_list.iter_s (Subject.handle_event db_pool)
 ;;

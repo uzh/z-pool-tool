@@ -24,7 +24,7 @@ let sign_up req =
     Lwt_result.map_err (fun err -> err, "/index")
     @@
     let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
-    let channels = Subject.RecruitmentChannel.(all |> CCList.map to_string) in
+    let channels = Subject.RecruitmentChannel.(all |> CCList.map show) in
     let email = go Field.Email in
     let firstname = go Field.Firstname in
     let lastname = go Field.Lastname in

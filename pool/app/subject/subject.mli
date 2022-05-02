@@ -9,7 +9,8 @@ module RecruitmentChannel : sig
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 
-  val to_string : t -> string
+  val show : t -> string
+  val read : string -> t
   val all : t list
 end
 
@@ -50,8 +51,6 @@ val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
 val version_selector : t -> string -> Pool_common.Version.t option
-val login : 'a -> email:'b -> password:'c -> 'd
-val insert : Pool_database.Label.t -> t -> unit Lwt.t
 val show : t -> string
 
 val find
@@ -69,7 +68,6 @@ val find_by_user
   -> Sihl_user.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_duplicates : 'a -> 'b
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =
@@ -108,6 +106,8 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Pool_common.Id.t
+  | ParticipationIncreased of t
+  | ShowUpIncreased of t
 
 val created : create -> event
 val firstnameupdated : t -> Pool_user.Firstname.t -> event

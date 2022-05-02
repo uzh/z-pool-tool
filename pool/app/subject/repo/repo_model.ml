@@ -7,9 +7,8 @@ module RecruitmentChannel = struct
     let open CCResult in
     Caqti_type.(
       custom
-        ~encode:(fun m -> m |> to_string |> pure)
-        ~decode:(fun m ->
-          map_err (fun _ -> "decode recruitment channel") @@ of_string m)
+        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
+        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
         string)
   ;;
 end
@@ -225,10 +224,15 @@ module Write = struct
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
                   , ( Verified.value m.verified
-                    , ( Version.value m.firstname_version
-                      , ( Version.value m.lastname_version
-                        , ( Version.value m.lastname_version
-                          , Version.value m.paused_version ) ) ) ) ) ) ) ) ) )
+                    , ( EmailVerified.value m.email_verified
+                      , ( ParticipationCount.value m.participation_count
+                        , ( ParticipationShowUpCount.value
+                              m.participation_show_up_count
+                          , ( Version.value m.firstname_version
+                            , ( Version.value m.lastname_version
+                              , ( Version.value m.lastname_version
+                                , Version.value m.paused_version ) ) ) ) ) ) )
+                  ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -256,11 +260,17 @@ module Write = struct
                           (tup2
                              Verified.t
                              (tup2
-                                Pool_common.Repo.Version.t
+                                EmailVerified.t
                                 (tup2
-                                   Pool_common.Repo.Version.t
+                                   ParticipationCount.t
                                    (tup2
-                                      Pool_common.Repo.Version.t
-                                      Pool_common.Repo.Version.t)))))))))))
+                                      ParticipationShowUpCount.t
+                                      (tup2
+                                         Pool_common.Repo.Version.t
+                                         (tup2
+                                            Pool_common.Repo.Version.t
+                                            (tup2
+                                               Pool_common.Repo.Version.t
+                                               Pool_common.Repo.Version.t))))))))))))))
   ;;
 end

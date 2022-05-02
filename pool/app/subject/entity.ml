@@ -1,12 +1,18 @@
 module Common = Pool_user
 
 module RecruitmentChannel = struct
+  let name m fmt _ = Format.pp_print_string fmt m
+
   type t =
-    | Friend
-    | Online
-    | Lecture
-    | Mailing
-  [@@deriving eq, show, enum]
+    | Friend [@name "friend"]
+    | Online [@name "online"]
+    | Lecture [@name "lecture"]
+    | Mailing [@name "mailing"]
+  [@@deriving eq, show { with_path = false }, enum, yojson]
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
 
   let all : t list =
     CCList.range min max
@@ -15,24 +21,12 @@ module RecruitmentChannel = struct
     |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
   ;;
 
-  let to_string = function
-    | Friend -> "friend"
-    | Online -> "online"
-    | Lecture -> "lecture"
-    | Mailing -> "mailing"
-  ;;
-
-  let of_string = function
-    | "friend" -> Ok Friend
-    | "online" -> Ok Online
-    | "lecture" -> Ok Lecture
-    | "mailing" -> Ok Mailing
-    | _ -> Error Pool_common.Message.(Invalid Field.RecruitmentChannel)
-  ;;
-
   let schema () =
     Pool_common.(
-      Utils.schema_decoder of_string to_string Message.Field.RecruitmentChannel)
+      Utils.schema_decoder
+        (fun m -> m |> read |> CCResult.pure)
+        show
+        Message.Field.RecruitmentChannel)
   ;;
 end
 
@@ -42,6 +36,7 @@ module ParticipationCount = struct
   let init = 0
   let value m = m
   let of_int m = m
+  let increment m = m + 1
 end
 
 module ParticipationShowUpCount = struct
@@ -50,6 +45,7 @@ module ParticipationShowUpCount = struct
   let init = 0
   let value m = m
   let of_int m = m
+  let increment m = m + 1
 end
 
 type t =
@@ -82,6 +78,9 @@ module Write = struct
     ; paused : Common.Paused.t
     ; disabled : Common.Disabled.t
     ; verified : Common.Verified.t
+    ; email_verified : Common.EmailVerified.t
+    ; participation_count : ParticipationCount.t
+    ; participation_show_up_count : ParticipationShowUpCount.t
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
@@ -97,6 +96,9 @@ module Write = struct
     ; paused = m.paused
     ; disabled = m.disabled
     ; verified = m.verified
+    ; email_verified = m.email_verified
+    ; participation_count = m.participation_count
+    ; participation_show_up_count = m.participation_show_up_count
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version
@@ -137,12 +139,3 @@ let version_selector p = function
   | "language" -> Some p.language_version
   | _ -> None
 ;;
-
-module Duplicate = struct
-  type t =
-    { first : t
-    ; second : t
-    ; ignored_at : Ptime.t option
-    }
-  [@@deriving eq, show]
-end
