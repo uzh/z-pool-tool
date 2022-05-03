@@ -9,6 +9,8 @@ let to_string = function
   | ExperimentListTitle -> "Experimente"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
+  | InvitationListTitle -> "Einladungen"
+  | InvitationNewTitle -> "Einladung senden"
   | LoginTitle -> "Anmelden"
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
@@ -26,5 +28,6 @@ let nav_link_to_string = function
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
+  | Invitations -> "Einladungen"
   | Settings -> "Einstellungen"
 ;;

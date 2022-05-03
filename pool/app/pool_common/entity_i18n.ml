@@ -6,6 +6,8 @@ type t =
   | ExperimentListTitle
   | HomeTitle
   | I18nTitle
+  | InvitationListTitle
+  | InvitationNewTitle
   | LoginTitle
   | ResetPasswordLink
   | ResetPasswordTitle
@@ -21,4 +23,5 @@ type nav_link =
   | Dashboard
   | Experiments
   | I18n
+  | Invitations
   | Settings

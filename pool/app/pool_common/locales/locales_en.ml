@@ -6,6 +6,7 @@ let field_to_string =
   | Admin -> "admin"
   | AssetId -> "asset identifier"
   | ContactEmail -> "contact email address"
+  | CreatedAt -> "Created at"
   | CurrentPassword -> "current password"
   | Database -> "database"
   | DatabaseLabel -> "database label"
@@ -32,6 +33,8 @@ let field_to_string =
   | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
+  | Invitation -> "Invitation"
+  | Invitations -> "Invitations"
   | Key -> "key"
   | Language -> "language"
   | LanguageDe -> "German"
@@ -45,6 +48,7 @@ let field_to_string =
   | Overbook -> "overbook"
   | Page -> "page"
   | Participant -> "participant"
+  | Participants -> "participants"
   | ParticipantCount -> "number of participants"
   | Participated -> "participated"
   | PartnerLogos -> "partner logos"
@@ -52,6 +56,7 @@ let field_to_string =
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | RecruitmentChannel -> "recruitment channel"
+  | ResentAt -> "Resent at"
   | Role -> "role"
   | Root -> "root"
   | Setting -> "setting"
@@ -100,6 +105,8 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an \
      account with the provided email is existing."
+  | SentList field ->
+    field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
@@ -144,6 +151,11 @@ let rec error_to_string = function
   | NotANumber field -> Format.asprintf "Version '%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
+  | NotFoundList (field, items) ->
+    field_message
+      "Following"
+      (field_to_string field)
+      (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NoValue -> "No value provided."
   | ParticipantSignupInvalidEmail ->
@@ -194,7 +206,9 @@ let control_to_string = function
   | Enable -> format_submit "enable" None
   | Login -> format_submit "login" None
   | More -> "more"
+  | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
+  | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
   | SignUp -> format_submit "sign up" None
   | Update field -> format_submit "update" field

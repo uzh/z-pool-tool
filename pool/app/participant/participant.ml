@@ -3,6 +3,8 @@ include Event
 
 let login _ ~email:_ ~password:_ = Utils.todo ()
 let find = Repo.find
+let find_multiple = Repo.find_multiple
+let find_filtered = Repo.find_filtered
 let find_by_email = Repo.find_by_email
 let insert = Repo.insert
 

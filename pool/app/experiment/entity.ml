@@ -41,30 +41,11 @@ type t =
   }
 [@@deriving eq, show]
 
-type public =
-  { id : Id.t
-  ; description : Description.t
-  ; sessions : Session.t list
-  }
-[@@deriving eq, show]
-
-type session =
-  { experiment : t
-  ; sessions : Session.t list
-  }
-[@@deriving eq, show]
-
-type invitation =
-  { experiment : t
-  ; invitation : Invitation.t list
-  }
-[@@deriving eq, show]
-
 let create ?id title description =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
-  ; filter = "*"
+  ; filter = "1=1"
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }

@@ -4,7 +4,7 @@ module Common = Pool_common
 module Data = struct
   let title = "New experiment"
   let description = "Description"
-  let filter = "*"
+  let filter = "1=1"
 
   let experiment =
     let open CCResult in

@@ -9,6 +9,8 @@
 
    let date_time_format = Format.asprintf "%s %s" date_format time_format *)
 
+let tz_offset_s ?(hours = 2) () = 3600 * hours
+
 let validate_date_ints (year, month, day) =
   let valid i min max = i >= min && i <= max in
   match valid year 1000 9999 && valid month 1 12 && valid day 1 31 with
@@ -57,7 +59,7 @@ let formatted_date date =
 ;;
 
 let formatted_time time =
-  let (h, m, s), _ = time in
+  let _, ((h, m, s), _) = time in
   Format.asprintf "%s:%s:%s" (decimal h) (decimal m) (decimal s)
 ;;
 
@@ -65,7 +67,7 @@ let formatted_date_time (date : Ptime.t) =
   Format.asprintf
     "%s %s"
     (formatted_date (Ptime.to_date date))
-    (formatted_time (Ptime.to_date_time date))
+    (formatted_time (Ptime.to_date_time ~tz_offset_s:(tz_offset_s ()) date))
 ;;
 
 let ptime_to_sexp p =

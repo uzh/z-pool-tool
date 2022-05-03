@@ -187,12 +187,70 @@ Pool Tool
 |}
 ;;
 
+let email_template_experiment_invitation =
+  Sihl.Database.Migration.create_step
+    ~label:"email template experiment invitation"
+    {|
+INSERT INTO email_templates(uuid, label, content_text, content_html)
+VALUES
+  (UNHEX(REPLACE('8fd6e45e-5a72-42d4-a300-18276a82cdc1','-','')),
+  'experiment_invitation',
+  'Dear {name},
+We invite you to participate in a scientific study.
+
+{experiment_description}
+
+Yours sincerely,
+Pool Tool',
+  '
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title></title>
+  <style type="text/css">
+  </style>
+</head>
+<body style="margin:0; padding:0;">
+  <div style="margin: 1em 1em 1em 1em; max-width: 50em;">
+    <section style="margin-bottom: 1em;">
+        <p>Logo</p>
+    </section>
+    <section style="padding-top: 1em; color: #383838;">
+<h4>Dear {name},</h4>
+<p>
+We invite you to participate in a scientific study.
+</p>
+<p>
+{experiment_description}
+</p>
+<p>
+Yours sincerely,
+<br/>
+Pool Tool
+</p>
+    </section>
+    <footer style="margin-top: 4em;">
+      <center>
+        <small>Copyright</small>
+      </center>
+    </footer>
+  </div>
+</body>
+</html>
+')
+|}
+;;
+
 let migration_tenant () =
   Sihl.Database.Migration.(
     empty "email_templates"
     |> add_step email_template_password_reset
     |> add_step email_verification
-    |> add_step email_template_change_password)
+    |> add_step email_template_change_password
+    |> add_step email_template_experiment_invitation)
 ;;
 
 let migration_root () =
