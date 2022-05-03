@@ -2,7 +2,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 module Create : sig
   type t =
-    { participant : Participant.t
+    { subject : Subject.t
     ; session : Session.t
     }
 
@@ -10,16 +10,14 @@ module Create : sig
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
-    { participant : Participant.t
+    { subject : Subject.t
     ; session : Session.t
     }
 
   let handle (command : t) =
     let create =
       Participation.
-        { participant = command.participant
-        ; session_id = command.session.Session.id
-        }
+        { subject = command.subject; session_id = command.session.Session.id }
     in
     Ok [ Participation.Created create |> Pool_event.participation ]
   ;;

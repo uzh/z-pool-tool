@@ -8,6 +8,7 @@ type thing =
   | Participant
   | Participation
   | System
+  | Subject
   | Tenant
   | Tenant_recruiting
 [@@deriving eq, show]

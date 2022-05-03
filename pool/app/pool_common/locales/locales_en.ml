@@ -48,8 +48,8 @@ let field_to_string =
   | Overbook -> "overbook"
   | Page -> "page"
   | Participant -> "participant"
-  | Participants -> "participants"
   | ParticipantCount -> "number of participants"
+  | Participants -> "participants"
   | Participated -> "participated"
   | PartnerLogos -> "partner logos"
   | Password -> "password"
@@ -67,9 +67,11 @@ let field_to_string =
   | SmtpPort -> "smtp port"
   | SmtpProtocol -> "smtp protocol"
   | SmtpReadModel -> "smtp read model"
-  | SmtpWriteModel -> "smtp write model"
   | SmtpUsername -> "smtp username"
+  | SmtpWriteModel -> "smtp write model"
   | Styles -> "styles"
+  | Subject -> "subject"
+  | Subjects -> "subjects"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
   | TenantId -> "tenant identifier"
@@ -158,9 +160,9 @@ let rec error_to_string = function
       (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NoValue -> "No value provided."
-  | ParticipantSignupInvalidEmail ->
+  | SubjectSignupInvalidEmail ->
     "Please provide a valid and unused email address."
-  | ParticipantUnconfirmed -> "Participant isn't confirmed!"
+  | SubjectUnconfirmed -> "Participant isn't confirmed!"
   | PasswordPolicy msg ->
     Format.asprintf "Password doesn't match the required policy! %s" msg
   | PasswordResetInvalidData -> "Invalid token or password provided"

@@ -31,10 +31,10 @@ let field_to_string =
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
   | Id -> "ID"
-  | Invitation -> "Einladung"
-  | Invitations -> "Einladungen"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Invitation -> "Einladung"
+  | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
   | Language -> "Sprache"
   | LanguageDe -> "Deutsch"
@@ -66,9 +66,11 @@ let field_to_string =
   | SmtpPort -> "Smtp Port"
   | SmtpProtocol -> "Smtp Protokoll"
   | SmtpReadModel -> "Smtp read model"
-  | SmtpWriteModel -> "Smtp write model"
   | SmtpUsername -> "Smtp Benutzername"
+  | SmtpWriteModel -> "Smtp write model"
   | Styles -> "Styles"
+  | Subject -> "Proband"
+  | Subjects -> "Probanden"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert Flag"
   | TenantId -> "Tenant Identifier"
@@ -170,9 +172,9 @@ let rec error_to_string = function
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NoValue -> "Kein Wert angegeben"
-  | ParticipantSignupInvalidEmail ->
+  | SubjectSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
-  | ParticipantUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
+  | SubjectUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | PasswordPolicy msg ->
     Format.asprintf
       "Passwort stimmt nicht mit der benötigten Policy überein! %s"

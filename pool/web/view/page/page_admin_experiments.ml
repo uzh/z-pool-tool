@@ -170,7 +170,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
 let invitations
     csrf
     (experiment_invitations : Experiment_type.invitations)
-    filtered_participants
+    filtered_subjects
     Pool_context.{ language; _ }
   =
   let experiment = experiment_invitations.Experiment_type.experiment in
@@ -189,6 +189,6 @@ let invitations
         csrf
         experiment
         language
-        filtered_participants
+        filtered_subjects
     ]
 ;;

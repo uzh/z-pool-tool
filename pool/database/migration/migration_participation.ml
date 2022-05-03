@@ -19,7 +19,18 @@ let create_participation_table =
     |sql}
 ;;
 
+let rename_participant_to_subject =
+  Sihl.Database.Migration.create_step
+    ~label:"rename participation id to subject id"
+    {sql|
+      ALTER TABLE pool_participations
+        RENAME COLUMN participant_id TO subject_id
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "participation" |> add_step create_participation_table)
+    empty "participation"
+    |> add_step create_participation_table
+    |> add_step rename_participant_to_subject)
 ;;

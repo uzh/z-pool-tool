@@ -7,9 +7,9 @@
   http_utils
   middleware
   page
-  participant
   pool_common
   service
-  sihl)
+  sihl
+  subject)
  (preprocess
   (pps lwt_ppx)))

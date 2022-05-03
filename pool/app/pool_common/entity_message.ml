@@ -20,11 +20,11 @@ module Field = struct
     | Disabled [@name "disabled"] [@printer field_name "disabled"]
     | Email [@name "email"] [@printer field_name "email"]
     | EmailAddress [@name "email_address"] [@printer field_name "email_address"]
-    | EmailSuffix [@name "email_suffix"] [@printer field_name "email_suffix"]
     | EmailAddressUnverified [@name "email_address_unverified"]
         [@printer field_name "email_address_unverified"]
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer field_name "email_address_verified"]
+    | EmailSuffix [@name "email_suffix"] [@printer field_name "email_suffix"]
     | Experiment [@name "experiment"] [@printer field_name "experiment"]
     | File [@name "file"] [@printer field_name "file"]
     | FileMimeType [@name "file_mime_type"]
@@ -57,9 +57,9 @@ module Field = struct
     | Overbook [@name "overbook"] [@printer field_name "overbook"]
     | Page [@name "page"] [@printer field_name "page"]
     | Participant [@name "participant"] [@printer field_name "participant"]
-    | Participants [@name "participants"] [@printer field_name "participants"]
     | ParticipantCount [@name "participant_count"]
         [@printer field_name "participant_count"]
+    | Participants [@name "participants"] [@printer field_name "participants"]
     | Participated [@name "participated"] [@printer field_name "participated"]
     | PartnerLogos [@name "partner_logos"] [@printer field_name "partner_logos"]
     | Password [@name "password"] [@printer field_name "password"]
@@ -82,10 +82,12 @@ module Field = struct
     | SmtpProtocol [@name "smtp_protocol"] [@printer field_name "smtp_protocol"]
     | SmtpReadModel [@name "smtp_read_model"]
         [@printer field_name "smtp_read_model"]
+    | SmtpUsername [@name "smtp_username"] [@printer field_name "smtp_username"]
     | SmtpWriteModel [@name "smtp_write_model"]
         [@printer field_name "smtp_write_model"]
-    | SmtpUsername [@name "smtp_username"] [@printer field_name "smtp_username"]
     | Styles [@name "styles"] [@printer field_name "styles"]
+    | Subject [@name "subject"] [@printer field_name "subject"]
+    | Subjects [@name "subjects"] [@printer field_name "subjects"]
     | Tenant [@name "tenant"] [@printer field_name "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer field_name "tenant_disabled_flag"]
@@ -101,8 +103,8 @@ module Field = struct
     | Time [@name "time"] [@printer field_name "time"]
     | TimeSpan [@name "timespan"] [@printer field_name "timespan"]
     | Title [@name "title"] [@printer field_name "title"]
-    | Translation [@name "translation"] [@printer field_name "translation"]
     | Token [@name "token"] [@printer field_name "token"]
+    | Translation [@name "translation"] [@printer field_name "translation"]
     | Url [@name "url"] [@printer field_name "url"]
     | User [@name "user"] [@printer field_name "user"]
     | Version [@name "version"] [@printer field_name "version"]
@@ -113,6 +115,7 @@ module Field = struct
   ;;
 
   let url_key m = m |> show |> Format.asprintf ":%s"
+  let array_key m = m |> show |> Format.asprintf "%s[]"
 end
 
 type error =
@@ -138,8 +141,8 @@ type error =
   | NotFoundList of Field.t * string list
   | NotHandled of string
   | NoValue
-  | ParticipantSignupInvalidEmail
-  | ParticipantUnconfirmed
+  | SubjectSignupInvalidEmail
+  | SubjectUnconfirmed
   | PasswordPolicy of string
   | PasswordResetInvalidData
   | PasswordResetFailMessage

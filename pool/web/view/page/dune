@@ -8,11 +8,11 @@
   http_utils
   i18n
   invitation
-  participant
   pool_tenant
   root
   service
   sihl
+  subject
   tenant
   tyxml
   utils))

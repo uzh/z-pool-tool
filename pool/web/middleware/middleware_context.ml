@@ -21,7 +21,7 @@ let context user () =
     |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
     |> Lwt_result.lift
   in
-  let language_from_request ?participant req tenant_db =
+  let language_from_request ?subject req tenant_db =
     let open CCOption in
     let%lwt tenant_languages = Settings.find_languages tenant_db in
     let is_valid lang =
@@ -32,16 +32,14 @@ let context user () =
     let user_language =
       let open Utils.Lwt_result.Infix in
       function
-      | Some (p : Participant.t) -> p.Participant.language |> Lwt.return
+      | Some (p : Subject.t) -> p.Subject.language |> Lwt.return
       | None ->
         let%lwt lang =
           Http_utils.user_from_session tenant_db req
           ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
           >>= fun user ->
-          Participant.find
-            tenant_db
-            (user.Sihl_user.id |> Pool_common.Id.of_string)
-          >|= fun p -> p.Participant.language
+          Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+          >|= fun p -> p.Subject.language
         in
         CCResult.get_or lang ~default:None |> Lwt.return
     in
@@ -50,7 +48,7 @@ let context user () =
     |> function
     | Some lang -> Lwt.return lang
     | None ->
-      user_language participant
+      user_language subject
       |> Lwt.map (fun l ->
              l
              >>= is_valid
@@ -72,7 +70,7 @@ let context user () =
       | `Admin ->
         let* tenant_db = tenant_db_of_request req in
         Lwt_result.return (None, Pool_common.Language.En, tenant_db)
-      | `Participant ->
+      | `Subject ->
         let* tenant_db = tenant_db_of_request req in
         let%lwt language = language_from_request req tenant_db in
         Lwt_result.return (query_lang, language, tenant_db))

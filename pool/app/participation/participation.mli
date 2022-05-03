@@ -35,7 +35,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; participant : Participant.t
+  ; subject : Subject.t
   ; show_up : ShowUp.t
   ; participated : Participated.t
   ; matches_filter : MatchesFilter.t
@@ -53,7 +53,7 @@ val find
   -> (Entity.t, Pool_common.Message.error) result Lwt.t
 
 type create =
-  { participant : Participant.t
+  { subject : Subject.t
   ; session_id : Pool_common.Id.t
   }
 

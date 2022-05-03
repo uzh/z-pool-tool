@@ -7,13 +7,13 @@
   email
   experiment
   i18n
-  participant
   participation
   pool_tenant
   pool_user
   root
   settings
   sihl
+  subject
   tenant)
  (preprocess
-  (pps ppx_deriving.show ppx_deriving.eq)))
+  (pps ppx_deriving.eq ppx_deriving.show)))

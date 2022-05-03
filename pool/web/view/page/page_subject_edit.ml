@@ -2,18 +2,18 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let detail participant Pool_context.{ language; query_language; _ } =
-  let open Participant in
+let detail subject Pool_context.{ language; query_language; _ } =
+  let open Subject in
   let open Pool_common.I18n in
   let text_to_string = Pool_common.Utils.text_to_string language in
   let content =
     div
       [ div
           ([ h1 [ txt (text_to_string UserProfileTitle) ]
-           ; p [ participant |> fullname |> Format.asprintf "Name: %s" |> txt ]
+           ; p [ subject |> fullname |> Format.asprintf "Name: %s" |> txt ]
            ]
           @
-          if participant.paused |> Pool_user.Paused.value
+          if subject.paused |> Pool_user.Paused.value
           then [ p [ txt (text_to_string UserProfilePausedNote) ] ]
           else [])
       ; a
@@ -34,11 +34,11 @@ let detail participant Pool_context.{ language; query_language; _ } =
 let edit
     csrf
     user_update_csrf
-    (participant : Participant.t)
+    (subject : Subject.t)
     tenant_languages
     Pool_context.{ language; query_language; _ }
   =
-  let open Participant in
+  let open Subject in
   let open Pool_common.I18n in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let text_to_string = Pool_common.Utils.text_to_string language in
@@ -56,14 +56,11 @@ let edit
              (fun htmx_element ->
                Htmx.create htmx_element language ~hx_post:action ())
              Htmx.
-               [ Firstname
-                   (participant.firstname_version, participant |> firstname)
-               ; Lastname (participant.lastname_version, participant |> lastname)
-               ; Paused (participant.paused_version, participant.paused)
+               [ Firstname (subject.firstname_version, subject |> firstname)
+               ; Lastname (subject.lastname_version, subject |> lastname)
+               ; Paused (subject.paused_version, subject.paused)
                ; Language
-                   ( participant.language_version
-                   , participant.language
-                   , tenant_languages )
+                   (subject.language_version, subject.language, tenant_languages)
                ]
          ])
   in
@@ -71,10 +68,7 @@ let edit
     form
       ~a:(form_attrs "/user/update-email")
       [ csrf_element csrf ()
-      ; input_element
-          `Email
-          Message.Field.Email
-          participant.user.Sihl_user.email
+      ; input_element `Email Message.Field.Email subject.user.Sihl_user.email
       ; submit_element
           language
           Message.(Update (Some Field.Email))

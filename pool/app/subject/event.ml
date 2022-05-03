@@ -42,10 +42,10 @@ let send_password_changed_email pool email firstname lastname =
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
-let has_terms_accepted pool (participant : t) =
+let has_terms_accepted pool (subject : t) =
   let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
-    participant.terms_accepted_at |> User.TermsAccepted.value
+    subject.terms_accepted_at |> User.TermsAccepted.value
   in
   CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
   |> CCOption.get_or ~default:false
@@ -66,31 +66,33 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of Id.t
+  | ParticipationIncreased of t
+  | ShowUpIncreased of t
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
   let ctx = Pool_tenant.to_ctx pool in
   function
-  | Created participant ->
+  | Created subject ->
     let%lwt user =
       Service.User.create_user
         ~ctx
-        ~id:(participant.user_id |> Id.value)
-        ~name:(participant.lastname |> User.Lastname.value)
-        ~given_name:(participant.firstname |> User.Firstname.value)
-        ~password:(participant.password |> User.Password.to_sihl)
-      @@ User.EmailAddress.value participant.email
+        ~id:(subject.user_id |> Id.value)
+        ~name:(subject.lastname |> User.Lastname.value)
+        ~given_name:(subject.firstname |> User.Firstname.value)
+        ~password:(subject.password |> User.Password.to_sihl)
+      @@ User.EmailAddress.value subject.email
     in
     { user
-    ; recruitment_channel = participant.recruitment_channel
-    ; terms_accepted_at = participant.terms_accepted_at
-    ; language = participant.language
+    ; recruitment_channel = subject.recruitment_channel
+    ; terms_accepted_at = subject.terms_accepted_at
+    ; language = subject.language
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
     ; email_verified = User.EmailVerified.create None
-    ; participation_count = ParticipationCount.init
-    ; participation_show_up_count = ParticipationShowUpCount.init
+    ; num_invitations = NumberOfInvitations.init
+    ; num_assignments = NumberOfAssignments.init
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
@@ -100,47 +102,44 @@ let handle_event pool : event -> unit Lwt.t =
     }
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
-  | FirstnameUpdated (participant, firstname) ->
+  | FirstnameUpdated (subject, firstname) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~given_name:(firstname |> User.Firstname.value)
-        participant.user
+        subject.user
     in
     Repo.update_version_for
       pool
       `Firstname
-      ( id participant
-      , Pool_common.Version.increment participant.firstname_version )
-  | LastnameUpdated (participant, lastname) ->
+      (id subject, Pool_common.Version.increment subject.firstname_version)
+  | LastnameUpdated (subject, lastname) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~name:(lastname |> User.Lastname.value)
-        participant.user
+        subject.user
     in
     Repo.update_version_for
       pool
       `Lastname
-      ( id participant
-      , Pool_common.Version.increment participant.lastname_version )
-  | PausedUpdated (participant, paused) ->
+      (id subject, Pool_common.Version.increment subject.lastname_version)
+  | PausedUpdated (subject, paused) ->
     let%lwt () =
       Repo.update_paused
         pool
-        { participant with
+        { subject with
           paused
-        ; paused_version =
-            Pool_common.Version.increment participant.paused_version
+        ; paused_version = Pool_common.Version.increment subject.paused_version
         }
     in
     Lwt.return_unit
-  | EmailUpdated (participant, email) ->
+  | EmailUpdated (subject, email) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~email:(Pool_user.EmailAddress.value email)
-        participant.user
+        subject.user
     in
     Lwt.return_unit
   | PasswordUpdated (person, old_password, new_password, confirmed) ->
@@ -177,36 +176,47 @@ let handle_event pool : event -> unit Lwt.t =
         (lastname person)
     in
     Lwt.return_unit
-  | LanguageUpdated (participant, language) ->
+  | LanguageUpdated (subject, language) ->
     let%lwt () =
       Repo.update_language
         pool
-        { participant with
+        { subject with
           language = Some language
         ; language_version =
-            Pool_common.Version.increment participant.language_version
+            Pool_common.Version.increment subject.language_version
         }
     in
     Lwt.return_unit
-  | Verified participant ->
+  | Verified subject ->
     Repo.update
       pool
-      { participant with verified = Pool_user.Verified.create_now () }
-  | EmailVerified participant ->
+      { subject with verified = Pool_user.Verified.create_now () }
+  | EmailVerified subject ->
     let%lwt _ =
-      Service.User.update
-        ~ctx
-        Sihl_user.{ participant.user with confirmed = true }
+      Service.User.update ~ctx Sihl_user.{ subject.user with confirmed = true }
     in
     Repo.update
       pool
-      { participant with
-        email_verified = Pool_user.EmailVerified.create_now ()
-      }
-  | TermsAccepted participant ->
+      { subject with email_verified = Pool_user.EmailVerified.create_now () }
+  | TermsAccepted subject ->
     Repo.update
       pool
-      { participant with terms_accepted_at = User.TermsAccepted.create_now () }
-  | Disabled _ -> Utils.todo ()
+      { subject with terms_accepted_at = User.TermsAccepted.create_now () }
+  | Disabled subject ->
+    Repo.update pool { subject with disabled = User.Disabled.create true }
   | UnverifiedDeleted id -> Repo.delete_unverified pool id
+  | ParticipationIncreased subject ->
+    Repo.update
+      pool
+      { subject with
+        num_invitations =
+          subject.num_invitations |> NumberOfInvitations.increment
+      }
+  | ShowUpIncreased subject ->
+    Repo.update
+      pool
+      { subject with
+        num_assignments =
+          subject.num_assignments |> NumberOfAssignments.increment
+      }
 ;;

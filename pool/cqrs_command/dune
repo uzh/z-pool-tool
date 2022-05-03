@@ -7,7 +7,6 @@
   email
   experiment
   i18n
-  participant
   permission
   pool_common
   pool_event
@@ -16,9 +15,10 @@
   pool_user
   role
   root
-  settings
   session
+  settings
   sihl
+  subject
   tenant)
  (preprocess
   (pps lwt_ppx)))
