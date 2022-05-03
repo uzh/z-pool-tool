@@ -114,12 +114,8 @@ val pp_event : Format.formatter -> event -> unit
 module Helper : sig
   val prepare_email
     :  Pool_database.Label.t
-<<<<<<< HEAD
     -> Pool_common.Language.t
     -> TemplateLabel.t
-=======
-    -> string
->>>>>>> 4cc0a5a (move finvitation email creation function to event)
     -> string
     -> string
     -> (string * string) list

@@ -21,6 +21,11 @@ let signup_verification = function
   | En -> Default_en.signup_verification
 ;;
 
+let invitation = function
+  | De -> Default_de.invitation
+  | En -> Default_en.invitation
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -28,6 +33,11 @@ let ( @@@ ) constructors =
 let default_values_root = [ password_reset ] @@@ [ En; De ]
 
 let default_values_tenant =
-  [ email_verification; password_change; password_reset; signup_verification ]
+  [ email_verification
+  ; password_change
+  ; password_reset
+  ; signup_verification
+  ; invitation
+  ]
   @@@ [ En; De ]
 ;;

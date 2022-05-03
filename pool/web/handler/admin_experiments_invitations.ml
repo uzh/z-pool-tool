@@ -6,7 +6,9 @@ let create_layout req = General.create_tenant_layout `Admin req
 let index req =
   let open Utils.Lwt_result.Infix in
   let id =
-    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+    Pool_common.Message.Field.(Experiment |> show)
+    |> Sihl.Web.Router.param req
+    |> Pool_common.Id.of_string
   in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
@@ -36,7 +38,9 @@ let index req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+    Pool_common.Message.Field.(Experiment |> show)
+    |> Sihl.Web.Router.param req
+    |> Pool_common.Id.of_string
   in
   let redirect_path =
     Format.asprintf
