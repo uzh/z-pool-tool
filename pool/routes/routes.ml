@@ -99,12 +99,17 @@ module Admin = struct
       in
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form
-      ; post "/" Handler.Admin.Experiments.create
+      ; post "" Handler.Admin.Experiments.create
       ; get "/:id" Handler.Admin.Experiments.show
       ; get "/:id/edit" Handler.Admin.Experiments.edit
       ; post "/:id" Handler.Admin.Experiments.update
       ; post "/:id/delete" Handler.Admin.Experiments.delete
-      ; choose ~scope:"/:experiment_id/invitations" invitations
+      ; choose
+          ~scope:
+            (Format.asprintf
+               "/%s/invitations"
+               Pool_common.Message.Field.(Experiment |> url_key))
+          invitations
       ]
     in
     choose

@@ -110,7 +110,9 @@ let create req =
 let resend req =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+    Pool_common.Message.Field.(Experiment |> show)
+    |> Sihl.Web.Router.param req
+    |> Pool_common.Id.of_string
   in
   let redirect_path =
     Format.asprintf

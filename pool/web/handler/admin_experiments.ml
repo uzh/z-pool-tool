@@ -32,6 +32,7 @@ let new_form req =
 ;;
 
 let create req =
+  Logs.info (fun m -> m "%s" "adsfasdfasf");
   let open Utils.Lwt_result.Infix in
   let result context =
     Lwt_result.map_err (fun err -> err, "/admin/experiments/new")
@@ -50,7 +51,7 @@ let create req =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
       in
       Http_utils.redirect_to_with_actions
-        "/admin/experiments"
+        "/admin/experiments/"
         [ Message.set
             ~success:[ Pool_common.Message.(Created Field.Experiment) ]
         ]
