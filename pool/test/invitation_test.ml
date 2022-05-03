@@ -58,9 +58,20 @@ let create_experiment () =
         Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; filter = "*"
+    ; filter = "1=1"
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
+    }
+;;
+
+let create_invitation () =
+  let subject = create_subject () in
+  Invitation.
+    { id = Pool_common.Id.create ()
+    ; subject
+    ; resent_at = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
     }
 ;;
 
@@ -72,11 +83,16 @@ let create () =
     InvitationCommand.Create.handle command
   in
   let expected =
-    Ok
-      [ Invitation.(
-          Created { experiment_id = experiment.Experiment.id; subject })
-        |> Pool_event.invitation
-      ]
+    Ok [ Invitation.(Created { experiment; subject }) |> Pool_event.invitation ]
   in
+  check_result expected events
+;;
+
+let resend () =
+  let invitation = create_invitation () in
+  let experiment = create_experiment () in
+  let resent = Invitation.{ invitation; experiment } in
+  let events = InvitationCommand.Resend.handle resent in
+  let expected = Ok [ Invitation.(Resent resent) |> Pool_event.invitation ] in
   check_result expected events
 ;;

@@ -91,6 +91,14 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
 module Helper : sig
+  val prepare_email
+    :  Pool_database.Label.t
+    -> string
+    -> string
+    -> string
+    -> (string * string) list
+    -> Sihl_email.t Lwt.t
+
   module PasswordReset : sig
     val create
       :  Pool_database.Label.t

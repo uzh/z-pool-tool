@@ -13,17 +13,10 @@ end = struct
     }
 
   let handle (command : t) =
-    let create =
-      Invitation.
-        { experiment_id = command.experiment.Experiment.id
-        ; subject = command.subject
-        }
+    let (create : Invitation.create) =
+      Invitation.{ experiment = command.experiment; subject = command.subject }
     in
-    Ok
-      [ Invitation.Created create |> Pool_event.invitation
-        (* TODO Add invitation email event *)
-        (* TODO Add invitation notification history entry *)
-      ]
+    Ok [ Invitation.Created create |> Pool_event.invitation ]
   ;;
 
   let can user command =
@@ -38,16 +31,15 @@ end = struct
 end
 
 module Resend : sig
-  type t = Invitation.t
+  val handle
+    :  Invitation.resent
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> Experiment.t -> t -> bool Lwt.t
+  val can : Sihl_user.t -> Invitation.resent -> bool Lwt.t
 end = struct
-  type t = Invitation.t
+  let handle t = Ok [ Invitation.Resent t |> Pool_event.invitation ]
 
-  let handle (_ : t) = Ok []
-
-  let can user experiment invitation =
+  let can user Invitation.{ experiment; invitation } =
     Permission.can
       user
       ~any_of:

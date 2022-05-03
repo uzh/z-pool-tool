@@ -1,7 +1,7 @@
 open Entity
 
 type create =
-  { participant : Subject.t
+  { subject : Subject.t
   ; session_id : Pool_common.Id.t
   }
 [@@deriving eq, show]
@@ -20,8 +20,8 @@ let handle_event pool : event -> unit Lwt.t = function
       |> Repo.update pool
     in
     Lwt.return_unit
-  | Created { participant; session_id } ->
-    participant |> create |> Repo.insert pool session_id
+  | Created { subject; session_id } ->
+    subject |> create |> Repo.insert pool session_id
   | Participated (participation, participated) ->
     let%lwt () = { participation with participated } |> Repo.update pool in
     Lwt.return_unit

@@ -1,4 +1,4 @@
-module ParticipantCommand = Cqrs_command.Subject_command
+module SubjectCommand = Cqrs_command.Subject_command
 module ParticipationCommand = Cqrs_command.Participation_command
 module Field = Pool_common.Message.Field
 
@@ -11,7 +11,7 @@ let check_result expected generated =
       generated)
 ;;
 
-let create_participant () =
+let create_subject () =
   Subject.
     { user =
         Sihl_user.
@@ -77,7 +77,7 @@ let create_session () =
 let create_participation () =
   Participation.
     { id = Pool_common.Id.create ()
-    ; participant = create_participant ()
+    ; subject = create_subject ()
     ; show_up = ShowUp.init
     ; participated = Participated.init
     ; matches_filter = MatchesFilter.init
@@ -89,14 +89,14 @@ let create_participation () =
 
 let create () =
   let session = create_session () in
-  let participant = create_participant () in
+  let subject = create_subject () in
   let events =
-    let command = ParticipationCommand.Create.{ participant; session } in
+    let command = ParticipationCommand.Create.{ subject; session } in
     ParticipationCommand.Create.handle command
   in
   let expected =
     Ok
-      [ Participation.(Created { participant; session_id = session.Session.id })
+      [ Participation.(Created { subject; session_id = session.Session.id })
         |> Pool_event.participation
       ]
   in
