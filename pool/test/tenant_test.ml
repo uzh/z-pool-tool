@@ -163,6 +163,7 @@ let[@warning "-4"] create_tenant () =
       ; Pool_event.Database (Database.Migrated database_label)
       ; Pool_event.Settings (Settings.DefaultRestored _)
       ; Pool_event.I18n (I18n.DefaultRestored _)
+      ; Pool_event.EmailAddress (Email.DefaultRestored _)
       ] ->
       let read_ids Pool_tenant.LogoMapping.Write.{ id; asset_id; _ } =
         id, asset_id
@@ -237,6 +238,8 @@ let[@warning "-4"] create_tenant () =
       ; Database.Migrated database_label |> Pool_event.database
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
+      ; Email.(DefaultRestored default_values_tenant)
+        |> Pool_event.email_address
       ]
   in
   Alcotest.(

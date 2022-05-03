@@ -14,11 +14,12 @@ let prepend_root_directory pool url =
   | false -> url
 ;;
 
-let prepare_email pool template_label subject email params =
+let prepare_email pool language label subject email params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
       ~ctx:(Pool_tenant.to_ctx pool)
-      template_label
+      ~language:(Pool_common.Language.code language)
+      (TemplateLabel.show label)
   in
   match template, Sihl.Configuration.read_string "SMTP_SENDER" with
   | _, None -> failwith "SMTP_SENDER not found in configuration"
@@ -69,7 +70,8 @@ module PasswordReset = struct
       let name = user.Sihl_user.name |> CCOption.value ~default:"" in
       prepare_email
         pool
-        "password_reset"
+        language
+        TemplateLabel.PasswordReset
         subject
         email
         [ "resetUrl", reset_url
@@ -80,7 +82,7 @@ module PasswordReset = struct
 end
 
 module PasswordChange = struct
-  let create db_pool email firstname lastname =
+  let create pool language email firstname lastname =
     let name =
       Format.asprintf
         "%s %s"
@@ -89,8 +91,9 @@ module PasswordChange = struct
     in
     let subject = "Password has been changed" in
     prepare_email
-      db_pool
-      "password_change"
+      pool
+      language
+      TemplateLabel.PasswordChange
       subject
       (address email |> Pool_user.EmailAddress.value)
       [ "name", name ]
@@ -98,7 +101,7 @@ module PasswordChange = struct
 end
 
 module ConfirmationEmail = struct
-  let create pool email firstname lastname event =
+  let create pool language email firstname lastname label =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let name =
       CCString.concat
@@ -116,18 +119,12 @@ module ConfirmationEmail = struct
       |> Sihl.Web.externalize_path
       |> create_public_url url
     in
-    let create_email template =
-      prepare_email
-        pool
-        template
-        subject
-        (address email |> Pool_user.EmailAddress.value)
-        [ "verificationUrl", validation_url; "name", name ]
-    in
-    create_email
-    @@
-    match event with
-    | `SignUp -> "signup_verification"
-    | `EmailUpdate -> "email_verification"
+    prepare_email
+      pool
+      language
+      label
+      subject
+      (address email |> Pool_user.EmailAddress.value)
+      [ "verificationUrl", validation_url; "name", name ]
   ;;
 end

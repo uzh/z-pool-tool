@@ -67,7 +67,12 @@ end = struct
     Ok
       [ Participant.Created participant |> Pool_event.participant
       ; Email.Created
-          (command.email, user_id, command.firstname, command.lastname)
+          ( command.email
+          , user_id
+          , command.firstname
+          , command.lastname
+          , default_language |> CCOption.get_or ~default:Pool_common.Language.En
+          )
         |> Pool_event.email_address
       ]
   ;;
@@ -225,7 +230,9 @@ end = struct
           ( participant
           , command.current_password
           , command.new_password
-          , command.password_confirmation )
+          , command.password_confirmation
+          , participant.Participant.language
+            |> CCOption.get_or ~default:Pool_common.Language.En )
         |> Pool_event.participant
       ]
   ;;
@@ -274,7 +281,11 @@ end = struct
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
-      [ Email.Updated (email, participant.Participant.user)
+      [ Email.Updated
+          ( email
+          , participant.Participant.user
+          , participant.Participant.language
+            |> CCOption.get_or ~default:Pool_common.Language.En )
         |> Pool_event.email_address
       ]
   ;;
