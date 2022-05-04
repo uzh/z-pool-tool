@@ -270,3 +270,51 @@ module Write = struct
                                                Pool_common.Repo.Version.t))))))))))))))
   ;;
 end
+
+module List = struct
+  open Entity.List
+
+  let t =
+    let encode (m : t) =
+      let open Pool_user in
+      Ok
+        ( m.user
+        , ( m.language
+          , ( Paused.value m.paused
+            , ( Verified.value m.verified
+              , ( NumberOfInvitations.value m.num_invitations
+                , NumberOfAssignments.value m.num_assignments ) ) ) ) )
+    in
+    let decode
+        ( user
+        , (language, (paused, (verified, (num_invitations, num_assignments))))
+        )
+      =
+      let open Pool_user in
+      let open CCResult in
+      Ok
+        Entity.List.
+          { user
+          ; language
+          ; paused = Paused.create paused
+          ; verified = Verified.create verified
+          ; num_invitations = NumberOfInvitations.of_int num_invitations
+          ; num_assignments = NumberOfAssignments.of_int num_assignments
+          }
+    in
+    let open Pool_user.Repo in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Pool_user.Repo.user_caqti
+           (tup2
+              Language.t
+              (tup2
+                 Paused.t
+                 (tup2
+                    Verified.t
+                    (tup2 NumberOfInvitations.t NumberOfAssignments.t))))))
+  ;;
+end

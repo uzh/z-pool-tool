@@ -1,3 +1,4 @@
+module WaitingList = Subject_experiment_waiting_list
 module HttpUtils = Http_utils
 
 let create_layout = Subject_general.create_layout

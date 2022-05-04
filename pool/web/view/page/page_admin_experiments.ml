@@ -5,7 +5,7 @@ module Message = Pool_common.Message
 (* TODO [timhub]: create global nav component, when MR is merged *)
 let subnav language id =
   let open Pool_common in
-  I18n.[ Invitations, "/invitations" ]
+  I18n.[ Invitations, "/invitations"; WaitingList, "/waiting-list" ]
   |> CCList.map (fun (label, url) ->
          li
            [ a
@@ -187,5 +187,46 @@ let invitations
         context
         experiment
         filtered_subjects
+    ]
+;;
+
+let waiting_list waiting_list Pool_context.{ language; _ } =
+  let open Waiting_list.ListByExperiment in
+  let waiting_list_entries =
+    CCList.map
+      (fun entry ->
+        div
+          ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
+          [ div [ txt (Subject.List.fullname entry.subject) ]
+          ; div
+              [ txt
+                  (Subject.List.email_address entry.subject
+                  |> Pool_user.EmailAddress.value)
+              ]
+          ; div
+              [ a
+                  ~a:
+                    [ a_href
+                        (Sihl.Web.externalize_path
+                           (Format.asprintf
+                              "/admin/experiments/waiting-list/%s"
+                              (entry.id |> Pool_common.Id.value)))
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Message.More |> Utils.control_to_string language)
+                  ]
+              ]
+          ])
+      waiting_list.waiting_list_entries
+    |> div ~a:[ a_class [ "stack" ] ]
+  in
+  div
+    [ h1
+        [ txt
+            Pool_common.(
+              Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+        ]
+    ; waiting_list_entries
     ]
 ;;

@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component
 
 let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment_type.public) =
@@ -29,7 +30,31 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let show (experiment : Experiment_type.public) _ =
+let show experiment Pool_context.{ language; _ } =
   let open Experiment_type in
-  div [ txt (Experiment.Description.value experiment.description) ]
+  div
+    [ div [ txt (Experiment.Description.value experiment.description) ]
+    ; div
+        [ h2
+            [ txt
+                Pool_common.(
+                  Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+            ]
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/experiments/%s/waiting-list/"
+                        (experiment.Experiment_type.id |> Pool_common.Id.value)))
+              ]
+            [ submit_element
+                language
+                Pool_common.Message.(AddToWaitingList)
+                ~classnames:[ "button--success" ]
+                ()
+            ]
+        ]
+    ]
 ;;

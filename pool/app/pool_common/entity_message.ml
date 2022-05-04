@@ -110,6 +110,7 @@ module Field = struct
     | Url [@name "url"] [@printer field_name "url"]
     | User [@name "user"] [@printer field_name "user"]
     | Version [@name "version"] [@printer field_name "version"]
+    | WaitingList [@name "waiting_list"] [@printer field_name "waiting_list"]
   [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
   let read m =
@@ -172,6 +173,7 @@ type warning = Warning of string
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 type success =
+  | AddedToWaitingList
   | Created of Field.t
   | EmailVerified
   | EmailConfirmationMessage
@@ -179,6 +181,7 @@ type success =
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | RemovedFromWaitingList
   | SentList of Field.t
   | SettingsUpdated
   | TenantUpdateDatabase
@@ -206,6 +209,7 @@ let handle_sihl_login_error = function
 type control =
   | Accept of Field.t option
   | Add of Field.t option
+  | AddToWaitingList
   | Back
   | Choose of Field.t option
   | Create of Field.t option
@@ -217,6 +221,7 @@ type control =
   | Login
   | More
   | Resend of Field.t option
+  | RemoveFromWaitingList
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink

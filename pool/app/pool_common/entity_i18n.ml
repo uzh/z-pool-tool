@@ -4,6 +4,7 @@ type t =
   | EmailConfirmationTitle
   | ExperimentNewTitle
   | ExperimentListTitle
+  | ExperimentWaitingListTitle
   | HomeTitle
   | I18nTitle
   | InvitationListTitle
@@ -27,3 +28,4 @@ type nav_link =
   | Invitations
   | Settings
   | Tenants
+  | WaitingList

@@ -7,6 +7,7 @@ let to_string = function
   | EmailConfirmationTitle -> "Email confirmation"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
+  | ExperimentWaitingListTitle -> "Waiting list"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | InvitationListTitle -> "Invitations"
@@ -32,4 +33,5 @@ let nav_link_to_string = function
   | Invitations -> "Invitations"
   | Settings -> "Settings"
   | Tenants -> "Tenants"
+  | WaitingList -> "Waiting list"
 ;;

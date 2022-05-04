@@ -62,8 +62,15 @@ module Subject = struct
 
   let locked_routes =
     let experiments =
+      let waiting_list = [ post "" Experiment.WaitingList.create ] in
       [ get "" Experiment.index
       ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
+      ; choose
+          ~scope:
+            (Format.asprintf
+               "/%s/waiting-list"
+               Pool_common.Message.Field.(Experiment |> url_key))
+          waiting_list
       ]
     in
     [ get "/dashboard" Handler.Subject.dashboard
@@ -100,12 +107,21 @@ module Admin = struct
   ;;
 
   let routes =
+    let build_scope subdir =
+      Format.asprintf
+        "/%s/%s"
+        Pool_common.Message.Field.(Experiment |> url_key)
+        subdir
+    in
     let experiments =
       let invitations =
         [ get "" Handler.Admin.Experiments.Invitations.index
         ; post "" Handler.Admin.Experiments.Invitations.create
         ; post "/:id/resend" Handler.Admin.Experiments.Invitations.resend
         ]
+      in
+      let waiting_list =
+        [ get "" Handler.Admin.Experiments.WaitingList.index ]
       in
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form
@@ -114,12 +130,8 @@ module Admin = struct
       ; get "/:id/edit" Handler.Admin.Experiments.edit
       ; post "/:id" Handler.Admin.Experiments.update
       ; post "/:id/delete" Handler.Admin.Experiments.delete
-      ; choose
-          ~scope:
-            (Format.asprintf
-               "/%s/invitations"
-               Pool_common.Message.Field.(Experiment |> url_key))
-          invitations
+      ; choose ~scope:(build_scope "invitations") invitations
+      ; choose ~scope:(build_scope "waiting-list") waiting_list
       ]
     in
     choose

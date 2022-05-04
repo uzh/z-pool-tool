@@ -51,9 +51,10 @@ module NumberOfAssignments = struct
   let increment m = m + 1
 end
 
+let sihl_user_equal m k = CCString.equal m.Sihl_user.id k.Sihl_user.id
+
 type t =
-  { user : Sihl_user.t
-        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
+  { user : Sihl_user.t [@equal sihl_user_equal]
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Common.TermsAccepted.t
   ; language : Pool_common.Language.t option
@@ -112,27 +113,30 @@ end
 
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
 
-let firstname m =
-  m.user.Sihl_user.given_name
+let sihl_user_firstname (m : Sihl_user.t) =
+  m.Sihl_user.given_name
   |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no firstname" m.user.Sihl_user.id)
+       (Format.asprintf "User '%s' has no firstname" m.Sihl_user.id)
   |> Common.Firstname.of_string
 ;;
 
-let lastname m =
-  m.user.Sihl_user.name
+let sihl_user_lastname (m : Sihl_user.t) =
+  m.Sihl_user.name
   |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no lastname" m.user.Sihl_user.id)
+       (Format.asprintf "User '%s' has no lastname" m.Sihl_user.id)
   |> Common.Lastname.of_string
 ;;
 
-let fullname m =
+let sihl_user_full_name m =
   Format.asprintf
     "%s %s"
-    (m |> firstname |> Common.Firstname.value)
-    (m |> lastname |> Common.Lastname.value)
+    (m |> sihl_user_firstname |> Common.Firstname.value)
+    (m |> sihl_user_lastname |> Common.Lastname.value)
 ;;
 
+let fullname m = m.user |> sihl_user_full_name
+let firstname m = m.user |> sihl_user_firstname
+let lastname m = m.user |> sihl_user_lastname
 let email_address m = m.user.Sihl_user.email |> Common.EmailAddress.of_string
 
 let version_selector p = function
@@ -142,3 +146,21 @@ let version_selector p = function
   | "language" -> Some p.language_version
   | _ -> None
 ;;
+
+module List = struct
+  type t =
+    { user : Sihl_user.t [@equal sihl_user_equal]
+    ; language : Pool_common.Language.t option
+    ; paused : Common.Paused.t
+    ; verified : Common.Verified.t
+    ; num_invitations : NumberOfInvitations.t
+    ; num_assignments : NumberOfAssignments.t
+    }
+  [@@deriving eq, show]
+
+  let fullname (m : t) = m.user |> sihl_user_full_name
+
+  let email_address (m : t) =
+    m.user.Sihl_user.email |> Common.EmailAddress.of_string
+  ;;
+end
