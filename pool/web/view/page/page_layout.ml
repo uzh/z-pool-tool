@@ -82,7 +82,7 @@ module Tenant = struct
     let nav_links =
       let open Pool_common.I18n in
       (match layout_context with
-      | `Subject -> []
+      | `Subject -> [ "/experiments", Experiments ]
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments

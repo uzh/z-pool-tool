@@ -46,23 +46,33 @@ module Public = struct
 end
 
 module Subject = struct
+  module SignUp = Handler.Subject.SignUp
+  module UserProfile = Handler.Subject.UserProfile
+  module Experiment = Handler.Subject.Experiment
+
   let public =
-    [ get "/signup" Handler.Subject.sign_up
-    ; post "/signup" Handler.Subject.sign_up_create
+    [ get "/signup" SignUp.sign_up
+    ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
-    ; get "/termsandconditions" Handler.Subject.terms
-    ; get "/email-verified" Handler.Subject.email_verification
-    ; post "/terms-accepted/:id" Handler.Subject.terms_accept
+    ; get "/termsandconditions" SignUp.terms
+    ; get "/email-verified" SignUp.email_verification
+    ; post "/terms-accepted/:id" SignUp.terms_accept
     ]
   ;;
 
   let locked_routes =
+    let experiments =
+      [ get "" Experiment.index
+      ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
+      ]
+    in
     [ get "/dashboard" Handler.Subject.dashboard
-    ; get "/user" Handler.Subject.details
-    ; get "/user/edit" Handler.Subject.edit
-    ; post "/user/update" Handler.Subject.update
-    ; post "/user/update-email" Handler.Subject.update_email
-    ; post "/user/update-password" Handler.Subject.update_password
+    ; get "/user" UserProfile.details
+    ; get "/user/edit" UserProfile.edit
+    ; post "/user/update" UserProfile.update
+    ; post "/user/update-email" UserProfile.update_email
+    ; post "/user/update-password" UserProfile.update_password
+    ; choose ~scope:"/experiments" experiments
     ]
   ;;
 

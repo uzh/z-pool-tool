@@ -1,3 +1,4 @@
+module Experiment = Page_subject_experiment
 open Tyxml.Html
 
 let dashboard Pool_context.{ language; _ } =

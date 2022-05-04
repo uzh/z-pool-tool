@@ -1,21 +1,7 @@
-type public =
-  { id : Pool_common.Id.t
-  ; description : Experiment.Description.t
-  ; sessions : Session.t list
-  }
-[@@deriving eq, show]
+include Entity
 
-type sessions =
-  { experiment : Experiment.t
-  ; sessions : Session.t list
-  }
-[@@deriving eq, show]
-
-type invitations =
-  { experiment : Experiment.t
-  ; invitations : Invitation.t list
-  }
-[@@deriving eq, show]
+let find_public = Repo.find_public
+let find_all_public = Repo.find_all_public
 
 let find_invitations pool id =
   let open Lwt_result.Syntax in
