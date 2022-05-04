@@ -5,11 +5,13 @@ type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; tenant_db : Pool_database.Label.t
+  ; message : PoolError.Collection.t option
+  ; csrf : string
   }
 [@@deriving sexp_of]
 
-let create (query_language, language, tenant_db) =
-  { query_language; language; tenant_db }
+let create (query_language, language, tenant_db, message, csrf) =
+  { query_language; language; tenant_db; message; csrf }
 ;;
 
 let find_context key req =

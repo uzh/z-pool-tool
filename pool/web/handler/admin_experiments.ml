@@ -10,13 +10,10 @@ let index req =
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
     let tenant_db = context.Pool_context.tenant_db in
-    let%lwt experiment_list = Experiment.find_all tenant_db () in
-    Page.Admin.Experiments.index experiment_list context
-    |> create_layout req context message
+    let%lwt expermient_list = Experiment.find_all tenant_db () in
+    Page.Admin.Experiments.index expermient_list context
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -27,14 +24,9 @@ let new_form req =
   let error_path = "/admin/experiments" in
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
-    @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    let csrf = HttpUtils.find_csrf req in
-    Page.Admin.Experiments.form csrf context
-    |> create_layout req context message
-    >|= Sihl.Web.Response.of_html
+    @@ (Page.Admin.Experiments.form context
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html)
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -75,9 +67,6 @@ let detail edit req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
     let tenant_db = context.Pool_context.tenant_db in
     let id =
       Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
@@ -89,10 +78,8 @@ let detail edit req =
       let* session_count = Experiment.session_count tenant_db id in
       Page.Admin.Experiments.detail experiment session_count context
       |> Lwt.return_ok
-    | true ->
-      let csrf = HttpUtils.find_csrf req in
-      Page.Admin.Experiments.form ~experiment csrf context |> Lwt.return_ok)
-    >>= create_layout req context message
+    | true -> Page.Admin.Experiments.form ~experiment context |> Lwt.return_ok)
+    >>= create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

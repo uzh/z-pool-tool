@@ -8,10 +8,6 @@ let show req =
     let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/")
     @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    let csrf = HttpUtils.find_csrf req in
     let db = context.Pool_context.tenant_db in
     let%lwt languages = Settings.find_languages db in
     let%lwt email_suffixes = Settings.find_email_suffixes db in
@@ -22,7 +18,6 @@ let show req =
     let%lwt inactive_user_warning = Settings.find_inactive_user_warning db in
     let%lwt terms_and_conditions = Settings.find_terms_and_conditions db in
     Page.Admin.Settings.show
-      csrf
       languages
       email_suffixes
       contact_email
@@ -30,7 +25,7 @@ let show req =
       inactive_user_warning
       terms_and_conditions
       context
-    |> create_layout req context message
+    |> create_layout req ~active_navigation:"/admin/settings" context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

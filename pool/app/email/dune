@@ -2,6 +2,11 @@
  (name email)
  (libraries pool_common pool_database pool_tenant pool_user service utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))
+  (pps
+   lwt_ppx
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_variants_conv
+   ppx_yojson_conv)))
 
 (include_subdirs unqualified)

@@ -15,7 +15,7 @@ let form_action ?path id =
 ;;
 
 module Partials = struct
-  let list csrf language experiment invitation_list =
+  let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let html_body =
       CCList.map
         (fun (invitation : Invitation.t) ->
@@ -78,7 +78,11 @@ module Partials = struct
     table ~thead html_body
   ;;
 
-  let send_invitation csrf experiment language filtered_subjects =
+  let send_invitation
+      Pool_context.{ csrf; language; _ }
+      experiment
+      filtered_subjects
+    =
     div
       [ h3
           [ txt

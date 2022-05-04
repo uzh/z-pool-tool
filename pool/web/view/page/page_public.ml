@@ -20,7 +20,7 @@ let index tenant Pool_context.{ language; _ } welcome_text =
     ]
 ;;
 
-let login csrf Pool_context.{ language; query_language; _ } =
+let login Pool_context.{ language; query_language; csrf; _ } =
   let txt_to_string = txt_to_string language in
   let input_element = input_element language in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
@@ -48,7 +48,7 @@ let login csrf Pool_context.{ language; query_language; _ } =
     ]
 ;;
 
-let request_reset_password csrf Pool_context.{ language; query_language; _ } =
+let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
   let input_element = input_element language in
   div
     [ h1
@@ -75,7 +75,7 @@ let request_reset_password csrf Pool_context.{ language; query_language; _ } =
     ]
 ;;
 
-let reset_password csrf token Pool_context.{ language; query_language; _ } =
+let reset_password token Pool_context.{ language; query_language; csrf; _ } =
   let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let input_element = input_element language in

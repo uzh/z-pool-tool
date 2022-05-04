@@ -9,13 +9,9 @@ let dashboard req =
   let result context =
     let open Lwt_result.Infix in
     Lwt_result.map_err (fun err -> err, "/error")
-    @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    Page.Admin.dashboard context
-    |> create_layout req context message
-    >|= Sihl.Web.Response.of_html
+    @@ (Page.Admin.dashboard context
+       |> create_layout req ~active_navigation:"/admin/dashboard" context
+       >|= Sihl.Web.Response.of_html)
   in
   result |> Http_utils.extract_happy_path req
 ;;

@@ -60,21 +60,28 @@ let context user () =
   in
   let filter handler req =
     let open Lwt_result.Syntax in
-    let open Lwt_result.Infix in
     let query_lang = Http_utils.find_query_lang req in
-    (* TODO[timhub]: How to deal with root url? *)
+    let csrf = Sihl.Web.Csrf.find_exn req in
+    let message =
+      CCOption.bind
+        (Sihl.Web.Flash.find_alert req)
+        Pool_common.Message.Collection.of_string
+    in
     let%lwt context =
-      (match user with
-      | `Root ->
-        Lwt_result.return (None, Pool_common.Language.En, Pool_database.root)
-      | `Admin ->
-        let* tenant_db = tenant_db_of_request req in
-        Lwt_result.return (None, Pool_common.Language.En, tenant_db)
-      | `Subject ->
-        let* tenant_db = tenant_db_of_request req in
-        let%lwt language = language_from_request req tenant_db in
-        Lwt_result.return (query_lang, language, tenant_db))
-      >|= Pool_context.create
+      let* query_lang, langauge, tenant_db =
+        match user with
+        | `Root ->
+          Lwt_result.return (None, Pool_common.Language.En, Pool_database.root)
+        | `Admin ->
+          let* tenant_db = tenant_db_of_request req in
+          Lwt_result.return (None, Pool_common.Language.En, tenant_db)
+        | `Subject ->
+          let* tenant_db = tenant_db_of_request req in
+          let%lwt language = language_from_request req tenant_db in
+          Lwt_result.return (query_lang, language, tenant_db)
+      in
+      Lwt_result.return
+        (Pool_context.create (query_lang, langauge, tenant_db, message, csrf))
     in
     match context with
     | Ok context -> context |> Pool_context.set req |> handler

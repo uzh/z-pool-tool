@@ -66,7 +66,6 @@ module Root = struct
     extend_migrations
       [ Migration_tenant.migration ()
       ; Migration_tenant_logo_mappings.migration ()
-      ; Migration_email_templates.migration_root ()
       ]
   ;;
 
@@ -82,10 +81,8 @@ module Tenant = struct
     extend_migrations
       [ Migration_person.migration ()
       ; Migration_subject.migration ()
-      ; Migration_email.migration ()
-      ; Migration_email_templates.migration_tenant ()
+      ; Migration_email_address.migration ()
       ; Migration_settings.migration ()
-      ; Migration_email_templates.migration_signup ()
       ; Migration_i18n.migration ()
       ; Migration_participation.migration ()
       ; Migration_invitation.migration ()

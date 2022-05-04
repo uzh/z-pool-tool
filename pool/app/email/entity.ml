@@ -2,6 +2,26 @@ module PoolError = Pool_common.Message
 module Database = Pool_database
 module User = Pool_user
 
+module TemplateLabel = struct
+  let field_name m fmt _ = Format.pp_print_string fmt m
+
+  type t =
+    | EmailVerification [@name "email_verification"]
+        [@printer field_name "email_verification"]
+    | Invitation [@name "invitation"] [@printer field_name "invitation"]
+    | PasswordChange [@name "password_change"]
+        [@printer field_name "password_change"]
+    | PasswordReset [@name "password_reset"]
+        [@printer field_name "password_reset"]
+    | SignUpVerification [@name "signup_verification"]
+        [@printer field_name "signup_verification"]
+  [@@deriving eq, show { with_path = false }, yojson, variants]
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
+end
+
 module Token = struct
   type t = string [@@deriving eq, show]
 

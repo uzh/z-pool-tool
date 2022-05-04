@@ -58,7 +58,7 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let form ?experiment csrf Pool_context.{ language; _ } =
+let form ?experiment Pool_context.{ language; csrf; _ } =
   let open Experiment in
   let action =
     match experiment with
@@ -168,10 +168,9 @@ let detail experiment session_count Pool_context.{ language; _ } =
 ;;
 
 let invitations
-    csrf
     (experiment_invitations : Experiment_type.invitations)
     filtered_subjects
-    Pool_context.{ language; _ }
+    (Pool_context.{ language; _ } as context)
   =
   let experiment = experiment_invitations.Experiment_type.experiment in
   div
@@ -181,14 +180,12 @@ let invitations
             Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
         ]
     ; Page_admin_invitations.Partials.list
-        csrf
-        language
+        context
         experiment
         experiment_invitations.Experiment_type.invitations
     ; Page_admin_invitations.Partials.send_invitation
-        csrf
+        context
         experiment
-        language
         filtered_subjects
     ]
 ;;

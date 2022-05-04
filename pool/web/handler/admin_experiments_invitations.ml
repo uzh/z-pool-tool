@@ -6,7 +6,9 @@ let create_layout req = General.create_tenant_layout `Admin req
 let index req =
   let open Utils.Lwt_result.Infix in
   let id =
-    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+    Pool_common.Message.Field.(Experiment |> show)
+    |> Sihl.Web.Router.param req
+    |> Pool_common.Id.of_string
   in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
@@ -15,10 +17,6 @@ let index req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, error_path)
     @@
-    let message =
-      CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-    in
-    let csrf = HttpUtils.find_csrf req in
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment_invitations =
       Experiment_type.find_invitations tenant_db id
@@ -28,11 +26,10 @@ let index req =
       Subject.find_filtered tenant_db experiment.Experiment.filter ()
     in
     Page.Admin.Experiments.invitations
-      csrf
       experiment_invitations
       filtered_subjects
       context
-    |> create_layout req context message
+    |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -41,7 +38,9 @@ let index req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    Sihl.Web.Router.param req "experiment_id" |> Pool_common.Id.of_string
+    Pool_common.Message.Field.(Experiment |> show)
+    |> Sihl.Web.Router.param req
+    |> Pool_common.Id.of_string
   in
   let redirect_path =
     Format.asprintf

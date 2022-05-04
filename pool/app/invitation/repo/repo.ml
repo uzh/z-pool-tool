@@ -33,7 +33,7 @@ module Sql = struct
         pool_invitations.updated_at
       FROM
         pool_invitations
-        LEFT JOIN pool_subjects
+      LEFT JOIN pool_subjects
         ON pool_invitations.subject_id = pool_subjects.id
       LEFT JOIN pool_experiments
         ON pool_invitations.experiment_id = pool_experiments.id
@@ -80,7 +80,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
+        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))),
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
