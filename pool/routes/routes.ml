@@ -99,7 +99,7 @@ module Admin = struct
       in
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form
-      ; post "/" Handler.Admin.Experiments.create
+      ; post "" Handler.Admin.Experiments.create
       ; get "/:id" Handler.Admin.Experiments.show
       ; get "/:id/edit" Handler.Admin.Experiments.edit
       ; post "/:id" Handler.Admin.Experiments.update

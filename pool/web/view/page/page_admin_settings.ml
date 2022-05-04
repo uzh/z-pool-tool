@@ -57,14 +57,13 @@ let sortable =
 ;;
 
 let show
-    csrf
     tenant_languages
     email_suffixes
     contact_email
     inactive_user_disable_after
     inactive_user_warning
     terms_and_conditions
-    Pool_context.{ language; _ }
+    Pool_context.{ language; csrf; _ }
   =
   let action_path action =
     Sihl.Web.externalize_path
@@ -254,7 +253,7 @@ let show
             (Pool_common.Language.field_of_t sys_language)
             (CCList.assoc_opt
                ~eq:Pool_common.Language.equal
-               language
+               sys_language
                terms_and_conditions
             |> CCOption.map Settings.TermsAndConditions.Terms.value
             |> CCOption.value ~default:"")

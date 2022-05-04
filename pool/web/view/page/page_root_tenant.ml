@@ -129,10 +129,15 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ])
       ]
   in
-  Page_layout.create_root_layout html message language
+  Page_layout.create_root_layout
+    html
+    message
+    language
+    ~active_navigation:"/root/tenants"
+    ()
 ;;
 
-let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
+let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
   let input_element = Component.input_element language `Text in
@@ -322,5 +327,5 @@ let detail csrf (tenant : Pool_tenant.t) message Pool_context.{ language; _ } =
           [ txt "back" ]
       ]
   in
-  Page_layout.create_root_layout html message language
+  Page_layout.create_root_layout html message language ()
 ;;

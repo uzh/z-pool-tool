@@ -32,11 +32,10 @@ let detail subject Pool_context.{ language; query_language; _ } =
 ;;
 
 let edit
-    csrf
     user_update_csrf
     (subject : Subject.t)
     tenant_languages
-    Pool_context.{ language; query_language; _ }
+    Pool_context.{ language; query_language; csrf; _ }
   =
   let open Subject in
   let open Pool_common.I18n in

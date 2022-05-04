@@ -6,13 +6,18 @@ let send_invitation_email pool (subject : Subject.t) (experiment : Experiment.t)
   let mail_subject = "Experiment Invitation" in
   let email = Subject.email_address subject in
   let name = Subject.fullname subject in
+  (* TODO:[timhub] pass context or language to event *)
+  let language =
+    subject.Subject.language |> CCOption.value ~default:Pool_common.Language.En
+  in
   Email.Helper.prepare_email
     pool
-    "experiment_invitation"
+    language
+    Email.TemplateLabel.Invitation
     mail_subject
     (email |> Pool_user.EmailAddress.value)
     [ "name", name
-    ; ( "experiment_description"
+    ; ( "experimentDescription"
       , experiment.Experiment.description |> Experiment.Description.value )
     ]
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)

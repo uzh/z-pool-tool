@@ -28,6 +28,8 @@ let nav_link_to_string = function
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
+  | Profile -> "Profil"
   | Invitations -> "Einladungen"
   | Settings -> "Einstellungen"
+  | Tenants -> "Tenants"
 ;;

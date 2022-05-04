@@ -23,5 +23,7 @@ type nav_link =
   | Dashboard
   | Experiments
   | I18n
+  | Profile
   | Invitations
   | Settings
+  | Tenants

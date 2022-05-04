@@ -48,7 +48,9 @@ let extract_happy_path_generic req result msgf =
     |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
-           redirect_to_with_actions error_path [ msgf error_msg ])
+           redirect_to_with_actions
+             (path_with_language context.Pool_context.query_language error_path)
+             [ msgf error_msg ])
   | Error _ -> redirect_to "/error"
 ;;
 
@@ -67,7 +69,7 @@ let extract_happy_path_with_actions req result =
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
            redirect_to_with_actions
-             error_path
+             (path_with_language context.Pool_context.query_language error_path)
              (CCList.append
                 [ Message.set
                     ~warning:[]
@@ -154,7 +156,6 @@ let format_htmx_request_boolean_values values urlencoded =
 ;;
 
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
-let find_csrf req = Sihl.Web.Csrf.find_exn req
 
 let is_req_from_root_host req =
   req
