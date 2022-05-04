@@ -11,7 +11,7 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@ let%lwt expermient_list = Experiment.find_all tenant_db () in
        Page.Admin.Experiments.index expermient_list context
-       |> create_layout req context
+       |> create_layout ~active_navigation:"/admin/experiments" req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
