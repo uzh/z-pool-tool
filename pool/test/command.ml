@@ -109,5 +109,9 @@ let () =
             `Quick
             Experiment_test.delete_with_sessions
         ] )
+    ; ( "waiting list"
+      , [ test_case "sign up" `Quick Waiting_list_test.create
+        ; test_case "sign off" `Quick Waiting_list_test.delete
+        ] )
     ]
 ;;
