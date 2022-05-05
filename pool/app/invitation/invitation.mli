@@ -45,9 +45,12 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
-type event =
+type event_type =
   | Created of create
   | Resent of resent
+[@@deriving eq, show]
+
+type event = event_type * Pool_common.Language.t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

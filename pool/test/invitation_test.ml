@@ -83,10 +83,13 @@ let create () =
   let subject = create_subject () in
   let events =
     let command = InvitationCommand.Create.{ experiment; subject } in
-    InvitationCommand.Create.handle command
+    InvitationCommand.Create.handle command Pool_common.Language.En
   in
   let expected =
-    Ok [ Invitation.(Created { experiment; subject }) |> Pool_event.invitation ]
+    Ok
+      [ Invitation.(Created { experiment; subject }, Pool_common.Language.En)
+        |> Pool_event.invitation
+      ]
   in
   check_result expected events
 ;;
@@ -95,7 +98,12 @@ let resend () =
   let invitation = create_invitation () in
   let experiment = create_experiment () in
   let resent = Invitation.{ invitation; experiment } in
-  let events = InvitationCommand.Resend.handle resent in
-  let expected = Ok [ Invitation.(Resent resent) |> Pool_event.invitation ] in
+  let events = InvitationCommand.Resend.handle resent Pool_common.Language.En in
+  let expected =
+    Ok
+      [ Invitation.(Resent resent, Pool_common.Language.En)
+        |> Pool_event.invitation
+      ]
+  in
   check_result expected events
 ;;

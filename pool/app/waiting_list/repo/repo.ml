@@ -58,7 +58,6 @@ module Sql = struct
   ;;
 
   let user_is_enlisted_request =
-    (* TODO[timhub]: How to deal with uuid vs Id *)
     let open Caqti_request.Infix in
     {sql|
       WHERE
