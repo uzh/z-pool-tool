@@ -160,13 +160,33 @@ module Sql = struct
     |> Caqti_type.(tup3 string string string ->. unit)
   ;;
 
-  let insert pool (m : Entity.t) =
+  let insert pool m =
     let caqti =
-      ( m.Entity.id |> Pool_common.Id.value
-      , m.Entity.subject |> Subject.id |> Pool_common.Id.value
-      , m.Entity.experiment.Experiment.id |> Pool_common.Id.value )
+      ( m.RepoEntity.id |> Pool_common.Id.value
+      , m.RepoEntity.subject_id |> Pool_common.Id.value
+      , m.RepoEntity.experiment_id |> Pool_common.Id.value )
     in
     Utils.Database.exec (Pool_database.Label.value pool) insert_request caqti
+  ;;
+
+  let delete_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_waiting_list
+      WHERE
+        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+      AND
+        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
+    |sql}
+    |> Caqti_type.(tup2 string string ->. unit)
+  ;;
+
+  let delete pool subject experiment =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      delete_request
+      ( Subject.id subject |> Pool_common.Id.value
+      , experiment.Experiment_type.id |> Pool_common.Id.value )
   ;;
 end
 
@@ -191,3 +211,4 @@ let find_by_experiment pool id =
 ;;
 
 let insert = Sql.insert
+let delete = Sql.delete

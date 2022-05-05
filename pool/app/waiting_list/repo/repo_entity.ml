@@ -6,6 +6,15 @@ type t =
   ; updated_at : Pool_common.UpdatedAt.t
   }
 
+let create ?(id = Pool_common.Id.create ()) subject_id experiment_id =
+  { id
+  ; subject_id
+  ; experiment_id
+  ; created_at = Pool_common.CreatedAt.create ()
+  ; updated_at = Pool_common.UpdatedAt.create ()
+  }
+;;
+
 let to_entity (m : t) subject experiment =
   Entity.
     { id = m.id

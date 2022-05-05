@@ -62,7 +62,11 @@ module Subject = struct
 
   let locked_routes =
     let experiments =
-      let waiting_list = [ post "" Experiment.WaitingList.create ] in
+      let waiting_list =
+        [ post "" Experiment.WaitingList.create
+        ; post "/remove" Experiment.WaitingList.delete
+        ]
+      in
       [ get "" Experiment.index
       ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
       ; choose

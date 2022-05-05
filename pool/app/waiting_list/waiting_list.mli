@@ -11,7 +11,7 @@ val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> Subject.t -> Experiment.t -> t
 
 type create =
-  { experiment : Experiment.t
+  { experiment : Experiment_type.public
   ; subject : Subject.t
   }
 
@@ -19,7 +19,9 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
-type event = Created of create
+type event =
+  | Created of create
+  | Deleted of create
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
