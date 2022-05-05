@@ -30,8 +30,16 @@ let show req =
       Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
       |> Pool_common.Id.of_string
     in
+    let* subject =
+      Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+      >>= Subject.find_by_user tenant_db
+    in
     let* experiment = Experiment_type.find_public tenant_db id in
-    Page.Subject.Experiment.show experiment context
+    let%lwt user_is_enlisted =
+      Waiting_list.user_is_enlisted tenant_db subject experiment
+    in
+    Page.Subject.Experiment.show experiment user_is_enlisted context
     |> Lwt.return_ok
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html

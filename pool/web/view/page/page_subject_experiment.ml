@@ -30,8 +30,21 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let show experiment Pool_context.{ language; _ } =
+let show experiment user_is_enlisted Pool_context.{ language; _ } =
   let open Experiment_type in
+  let form_action =
+    Format.asprintf
+      "/experiments/%s/waiting-list/"
+      (experiment.Experiment_type.id |> Pool_common.Id.value)
+    |> (fun url ->
+         if user_is_enlisted then Format.asprintf "%s/remove" url else url)
+    |> Sihl.Web.externalize_path
+  in
+  let form_control, submit_class =
+    match user_is_enlisted with
+    | true -> Pool_common.Message.(RemoveFromWaitingList), "button-error"
+    | false -> Pool_common.Message.(AddToWaitingList), "button--success"
+  in
   div
     [ div [ txt (Experiment.Description.value experiment.description) ]
     ; div
@@ -41,18 +54,11 @@ let show experiment Pool_context.{ language; _ } =
                   Utils.text_to_string language I18n.ExperimentWaitingListTitle)
             ]
         ; form
-            ~a:
-              [ a_method `Post
-              ; a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/experiments/%s/waiting-list/"
-                        (experiment.Experiment_type.id |> Pool_common.Id.value)))
-              ]
+            ~a:[ a_method `Post; a_action form_action ]
             [ submit_element
                 language
-                Pool_common.Message.(AddToWaitingList)
-                ~classnames:[ "button--success" ]
+                form_control
+                ~classnames:[ submit_class ]
                 ()
             ]
         ]

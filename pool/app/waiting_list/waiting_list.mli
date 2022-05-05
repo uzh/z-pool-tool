@@ -49,6 +49,12 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) Lwt_result.t
 
+val user_is_enlisted
+  :  Pool_database.Label.t
+  -> Subject.t
+  -> Experiment_type.public
+  -> bool Lwt.t
+
 val find_by_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t

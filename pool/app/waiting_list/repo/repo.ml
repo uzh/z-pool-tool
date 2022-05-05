@@ -5,20 +5,36 @@ module Sql = struct
   let select_sql where_fragment =
     let select_from =
       {sql|
-        SELECT
-          LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
-          )),
-          subject_id,
-          experiment_id,
-          created_at,
-          updated_at
-        FROM pool_waiting_list
-      |sql}
+          SELECT
+            LOWER(CONCAT(
+              SUBSTR(HEX(pool_waiting_list.uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_waiting_list.uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_waiting_list.uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_waiting_list.uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_waiting_list.uuid), 21)
+            )),
+            LOWER(CONCAT(
+              SUBSTR(HEX(pool_subjects.user_uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_subjects.user_uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_subjects.user_uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_subjects.user_uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_subjects.user_uuid), 21)
+            )),
+            LOWER(CONCAT(
+              SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 21)
+            )),
+            pool_waiting_list.created_at,
+            pool_waiting_list.updated_at
+          FROM pool_waiting_list
+          LEFT JOIN pool_subjects
+            ON pool_waiting_list.subject_id = pool_subjects.id
+          LEFT JOIN pool_experiments
+            ON pool_waiting_list.experiment_id = pool_experiments.id
+        |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
   ;;
@@ -39,6 +55,31 @@ module Sql = struct
       find_request
       (id |> Pool_common.Id.value)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+  ;;
+
+  let user_is_enlisted_request =
+    (* TODO[timhub]: How to deal with uuid vs Id *)
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+      AND
+        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
+    |sql}
+    |> select_sql
+    |> Caqti_type.(tup2 string string) ->! RepoEntity.t
+  ;;
+
+  let user_is_enlisted pool subject experiment =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      user_is_enlisted_request
+      ( subject |> Subject.id |> Pool_common.Id.value
+      , experiment.Experiment_type.id |> Pool_common.Id.value )
+    >|= function
+    | None -> false
+    | Some _ -> true
   ;;
 
   let find_multiple_sql where_fragment =
@@ -138,6 +179,8 @@ let find pool id =
   let* subject = Subject.find pool waiting_list.RepoEntity.subject_id in
   RepoEntity.to_entity waiting_list subject experiment |> Lwt.return_ok
 ;;
+
+let user_is_enlisted = Sql.user_is_enlisted
 
 let find_by_experiment pool id =
   let open Lwt_result.Syntax in
