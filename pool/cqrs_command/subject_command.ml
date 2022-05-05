@@ -13,7 +13,9 @@ module SignUp : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) result)
+    -> ?password_policy:(string -> (unit, Pool_common.Message.error) result)
+    -> ?user_id:Id.t
+    -> ?terms_accepted_at:User.TermsAccepted.t
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -47,11 +49,17 @@ end = struct
         command)
   ;;
 
-  let handle ?allowed_email_suffixes ?password_policy default_language command =
+  let handle
+      ?allowed_email_suffixes
+      ?password_policy
+      ?(user_id = Id.create ())
+      ?(terms_accepted_at = User.TermsAccepted.create_now ())
+      default_language
+      command
+    =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
-    let user_id = Id.create () in
     let subject =
       Subject.
         { user_id
@@ -60,7 +68,7 @@ end = struct
         ; firstname = command.firstname
         ; lastname = command.lastname
         ; recruitment_channel = command.recruitment_channel
-        ; terms_accepted_at = User.TermsAccepted.create_now ()
+        ; terms_accepted_at
         ; language = default_language
         }
     in
@@ -89,7 +97,9 @@ module DeleteUnverified : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   let handle subject =
-    Ok [ Subject.UnverifiedDeleted (Subject.id subject) |> Pool_event.subject ]
+    if subject.Subject.email_verified |> User.EmailVerified.is_some
+    then Error Pool_common.Message.EmailDeleteAlreadyVerified
+    else Ok [ Subject.UnverifiedDeleted subject |> Pool_event.subject ]
   ;;
 end
 
@@ -181,7 +191,7 @@ module UpdatePassword : sig
     }
 
   val handle
-    :  ?password_policy:(string -> (unit, string) result)
+    :  ?password_policy:(string -> (unit, Pool_common.Message.error) result)
     -> Subject.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -220,7 +230,12 @@ end = struct
 
   let handle ?password_policy subject command =
     let open CCResult in
-    let* () = User.Password.validate ?password_policy command.new_password in
+    let* () =
+      User.Password.validate
+        ?password_policy
+        ~password_confirmed:command.password_confirmation
+        command.new_password
+    in
     Ok
       [ Subject.PasswordUpdated
           ( subject
@@ -358,13 +373,13 @@ module VerifyEmail : sig
   type t = { email : Email.unverified Email.t }
 
   val handle
-    :  t
-    -> Subject.t
+    :  Subject.t
+    -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = { email : Email.unverified Email.t }
 
-  let handle command subject =
+  let handle subject command =
     Ok
       [ Subject.EmailVerified subject |> Pool_event.subject
       ; Email.EmailVerified command.email |> Pool_event.email_address

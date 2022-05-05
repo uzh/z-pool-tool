@@ -146,7 +146,7 @@ let email_verification req =
      let* events =
        match subject.Subject.user.Sihl.Contract.User.confirmed with
        | false ->
-         Command.VerifyEmail.(handle { email } subject) |> Lwt_result.lift
+         Command.VerifyEmail.(handle subject { email }) |> Lwt_result.lift
        | true -> Command.UpdateEmail.(handle subject email) |> Lwt_result.lift
      in
      let%lwt () = Pool_event.handle_events tenant_db events in

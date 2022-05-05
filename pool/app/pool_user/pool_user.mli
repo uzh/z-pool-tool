@@ -1,16 +1,10 @@
-module Password : sig
+module PasswordConfirmed : sig
   type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-
-  val validate
-    :  ?password_policy:(string -> (unit, string) result)
-    -> t
-    -> (unit, Pool_common.Message.error) result
-
-  val create : string -> (t, Pool_common.Message.error) result
+  val create : string -> t
   val to_sihl : t -> string
 
   val schema
@@ -19,13 +13,20 @@ module Password : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
-module PasswordConfirmed : sig
+module Password : sig
   type t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : string -> t
+
+  val validate
+    :  ?password_policy:(string -> (unit, Pool_common.Message.error) result)
+    -> ?password_confirmed:PasswordConfirmed.t
+    -> t
+    -> (unit, Pool_common.Message.error) result
+
+  val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
 
   val schema
@@ -140,6 +141,7 @@ module EmailVerified : sig
   val create : Ptime.t option -> t
   val create_now : unit -> t
   val value : t -> Ptime.t option
+  val is_some : t -> bool
 end
 
 module Repo : sig

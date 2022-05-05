@@ -69,7 +69,7 @@ type event =
   | EmailVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | UnverifiedDeleted of Id.t
+  | UnverifiedDeleted of t
   | ParticipationIncreased of t
   | ShowUpIncreased of t
 [@@deriving eq, show, variants]
@@ -155,6 +155,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt _ =
       Service.User.update_password
         ~ctx
+        ~password_policy:(CCFun.const (CCResult.pure ()))
         ~old_password
         ~new_password
         ~new_password_confirmation
@@ -209,7 +210,8 @@ let handle_event pool : event -> unit Lwt.t =
       { subject with terms_accepted_at = User.TermsAccepted.create_now () }
   | Disabled subject ->
     Repo.update pool { subject with disabled = User.Disabled.create true }
-  | UnverifiedDeleted id -> Repo.delete_unverified pool id
+  | UnverifiedDeleted subject ->
+    subject |> Entity.id |> Repo.delete_unverified pool
   | ParticipationIncreased subject ->
     Repo.update
       pool

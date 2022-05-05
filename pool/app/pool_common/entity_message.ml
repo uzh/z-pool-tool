@@ -129,6 +129,7 @@ type error =
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
+  | EmailDeleteAlreadyVerified
   | EmailMalformed
   | ExperimenSessionCountNotZero
   | HtmxVersionNotFound of string
@@ -146,6 +147,7 @@ type error =
   | SubjectSignupInvalidEmail
   | SubjectUnconfirmed
   | PasswordPolicy of string
+  | PasswordConfirmationDoesNotMatch
   | PasswordResetInvalidData
   | PasswordResetFailMessage
   | RequestRequiredFields
