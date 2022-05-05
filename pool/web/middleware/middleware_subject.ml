@@ -34,8 +34,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
     let query_lang =
       Pool_context.find req
       |> CCResult.to_opt
-      |> CCFun.flip CCOption.bind (fun context ->
-             context.Pool_context.query_language)
+      |> CCFun.flip CCOption.bind (fun { Pool_context.query_language; _ } ->
+             query_language)
     in
     match confirmed_and_terms_agreed with
     | Ok _ -> handler req

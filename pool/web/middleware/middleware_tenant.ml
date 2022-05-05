@@ -6,7 +6,7 @@ let valid_tenant () =
         let open CCResult.Infix in
         req
         |> Pool_context.find
-        >|= (fun context -> context.Pool_context.tenant_db)
+        >|= (fun { Pool_context.tenant_db; _ } -> tenant_db)
         |> Lwt_result.lift
       in
       let* tenant = Pool_tenant.find_by_label tenant_db in

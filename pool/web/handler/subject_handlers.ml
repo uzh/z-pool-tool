@@ -17,7 +17,7 @@ let dashboard req =
 ;;
 
 let sign_up req =
-  let result context =
+  let result ({ Pool_context.tenant_db; language; _ } as context) =
     let open Lwt_result.Syntax in
     let open Lwt_result.Infix in
     let open Pool_common.Message in
@@ -29,8 +29,6 @@ let sign_up req =
     let firstname = go Field.Firstname in
     let lastname = go Field.Lastname in
     let recruitment_channel = go Field.RecruitmentChannel in
-    let tenant_db = context.Pool_context.tenant_db in
-    let language = context.Pool_context.language in
     let* terms = Settings.terms_and_conditions tenant_db language in
     Page.Subject.sign_up
       channels
@@ -54,7 +52,7 @@ let sign_up_create req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result context =
+  let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun msg ->
         msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -65,7 +63,6 @@ let sign_up_create req =
          |> Utils.Bool.to_result TermsAndConditionsNotAccepted
          |> Lwt_result.lift
        in
-       let tenant_db = context.Pool_context.tenant_db in
        let* remove_subject_event =
          let find_subject email =
            email
@@ -99,12 +96,11 @@ let sign_up_create req =
          >>= (fun e -> Ok (remove_subject_event @ e))
          |> Lwt_result.lift
        in
-       let query_lang = context.Pool_context.query_language in
        Utils.Database.with_transaction tenant_db (fun () ->
            let%lwt () = Pool_event.handle_events tenant_db events in
            HttpUtils.(
              redirect_to_with_actions
-               (path_with_language query_lang "/email-confirmation")
+               (path_with_language query_language "/email-confirmation")
                [ Message.set
                    ~success:[ Pool_common.Message.EmailConfirmationMessage ]
                ]))
@@ -115,10 +111,9 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let result context =
+  let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     let open Pool_common.Message in
-    let tenant_db = context.Pool_context.tenant_db in
     let%lwt redirect_path =
       let%lwt user = Http_utils.user_from_session tenant_db req in
       CCOption.bind user (fun user ->
@@ -152,7 +147,7 @@ let email_verification req =
      let%lwt () = Pool_event.handle_events tenant_db events in
      HttpUtils.(
        redirect_to_with_actions
-         (path_with_language context.Pool_context.query_language redirect_path)
+         (path_with_language query_language redirect_path)
          [ Message.set ~success:[ EmailVerified ] ])
      |> Lwt_result.ok)
     |> Lwt_result.map_err (fun msg -> msg, redirect_path)
@@ -163,14 +158,12 @@ let email_verification req =
 let terms req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
-  let result context =
-    let tenant_db = context.Pool_context.tenant_db in
+  let result ({ Pool_context.tenant_db; language; _ } as context) =
     Lwt_result.map_err (fun err -> err, "/login")
     @@ let* user =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
        in
-       let language = context.Pool_context.language in
        let* terms = Settings.terms_and_conditions tenant_db language in
        Page.Subject.terms user.Sihl_user.id terms context
        |> create_layout req context
@@ -180,8 +173,7 @@ let terms req =
 ;;
 
 let terms_accept req =
-  let result context =
-    let query_lang = context.Pool_context.query_language in
+  let result { Pool_context.tenant_db; query_language; _ } =
     Lwt_result.map_err (fun msg -> msg, "/login")
     @@
     let open Lwt_result.Syntax in
@@ -189,13 +181,12 @@ let terms_accept req =
       Pool_common.(
         Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
     in
-    let tenant_db = context.Pool_context.tenant_db in
     let* subject = Subject.find tenant_db id in
     let* events =
       Command.AcceptTermsAndConditions.handle subject |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
-    HttpUtils.(redirect_to (path_with_language query_lang "/dashboard"))
+    HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
@@ -204,10 +195,9 @@ let terms_accept req =
 let user_update_csrf = "_user_update_csrf"
 
 let show is_edit req =
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
-    let tenant_db = context.Pool_context.tenant_db in
     Lwt_result.map_err (fun err -> err, "/login")
     @@ let* user =
          Http_utils.user_from_session tenant_db req
@@ -245,14 +235,12 @@ let update req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
-  let result context =
-    let query_lang = context.Pool_context.query_language in
-    let path_with_lang = HttpUtils.path_with_language query_lang in
+  let result { Pool_context.csrf; tenant_db; language; query_language; _ } =
+    let path_with_lang = HttpUtils.path_with_language query_language in
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
     let version_raw = go "version" in
     let name = go "field" |> Field.read in
     let open Utils.Lwt_result.Syntax in
-    let tenant_db = context.Pool_context.tenant_db in
     let* user =
       Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result (NotFound Field.User, path_with_lang "/login")
@@ -261,8 +249,7 @@ let update req =
       Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
-    let language = context.Pool_context.language in
-    let* tenant_context =
+    let* { Pool_context.Tenant.tenant_languages; _ } =
       Pool_context.Tenant.find req
       |> Lwt_result.lift
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/user/edit")
@@ -292,7 +279,6 @@ let update req =
       else Error (MeantimeUpdate name)
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
-    let csrf = context.Pool_context.csrf in
     let htmx_element subject classnames ?error () =
       let open Subject in
       let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
@@ -317,9 +303,7 @@ let update req =
         (match error with
         | Some _ ->
           Htmx.Language
-            ( subject.language_version
-            , subject.language
-            , tenant_context.Pool_context.Tenant.tenant_languages )
+            (subject.language_version, subject.language, tenant_languages)
           |> html_response
         | None ->
           Sihl.Web.Response.of_plain_text ""
@@ -353,42 +337,39 @@ let update_email req =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result context =
+  let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
-    let query_lang = context.Pool_context.query_language in
     Lwt_result.map_err (fun msg ->
         HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
-    @@
-    let tenant_db = context.Pool_context.tenant_db in
-    let* subject =
-      Http_utils.user_from_session tenant_db req
-      ||> CCOption.to_result (NotFound Field.User)
-      >>= fun user ->
-      Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-    in
-    let%lwt allowed_email_suffixes =
-      let open Utils.Lwt_result.Infix in
-      Settings.find_email_suffixes tenant_db
-      ||> fun suffixes ->
-      if CCList.is_empty suffixes then None else Some suffixes
-    in
-    let* new_email =
-      Pool_user.EmailAddress.create
-        (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded
-        |> CCList.hd)
-      |> Lwt_result.lift
-    in
-    let* events =
-      Command.RequestEmailValidation.(
-        handle ?allowed_email_suffixes subject new_email |> Lwt_result.lift)
-    in
-    Utils.Database.with_transaction tenant_db (fun () ->
-        let%lwt () = Pool_event.handle_events tenant_db events in
-        HttpUtils.(
-          redirect_to_with_actions
-            (path_with_language query_lang "/email-confirmation")
-            [ Message.set ~success:[ EmailConfirmationMessage ] ]))
-    |> Lwt_result.ok
+    @@ let* subject =
+         Http_utils.user_from_session tenant_db req
+         ||> CCOption.to_result (NotFound Field.User)
+         >>= fun user ->
+         Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+       in
+       let%lwt allowed_email_suffixes =
+         let open Utils.Lwt_result.Infix in
+         Settings.find_email_suffixes tenant_db
+         ||> fun suffixes ->
+         if CCList.is_empty suffixes then None else Some suffixes
+       in
+       let* new_email =
+         Pool_user.EmailAddress.create
+           (CCList.assoc ~eq:CCString.equal Field.(Email |> show) urlencoded
+           |> CCList.hd)
+         |> Lwt_result.lift
+       in
+       let* events =
+         Command.RequestEmailValidation.(
+           handle ?allowed_email_suffixes subject new_email |> Lwt_result.lift)
+       in
+       Utils.Database.with_transaction tenant_db (fun () ->
+           let%lwt () = Pool_event.handle_events tenant_db events in
+           HttpUtils.(
+             redirect_to_with_actions
+               (path_with_language query_language "/email-confirmation")
+               [ Message.set ~success:[ EmailConfirmationMessage ] ]))
+       |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
@@ -396,10 +377,8 @@ let update_email req =
 let update_password req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result context =
+  let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
-    let query_lang = context.Pool_context.query_language in
-    let tenant_db = context.Pool_context.tenant_db in
     Lwt_result.map_err (fun msg ->
         HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
     @@ let* subject =
@@ -417,7 +396,7 @@ let update_password req =
            let%lwt () = Pool_event.handle_events tenant_db events in
            HttpUtils.(
              redirect_to_with_actions
-               (path_with_language query_lang "/user/edit")
+               (path_with_language query_language "/user/edit")
                [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in
