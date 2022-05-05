@@ -194,13 +194,13 @@ let invitation =
   in
   let text =
     {|
-    Gerne laden wir Sie zu folgendem Experiment ein:
+Gerne laden wir Sie zu folgendem Experiment ein:
 
-    {experimentDescription}
+{experimentDescription}
 
-    Das Experiment wird an folgenden Daten durchgeführt:
+Das Experiment wird an folgenden Daten durchgeführt:
 
-    Sessions......
+Sessions......
     |}
     |> add_salutation_to_text
   in
