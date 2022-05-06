@@ -53,6 +53,27 @@ end
 
 let sihl_user_equal m k = CCString.equal m.Sihl_user.id k.Sihl_user.id
 
+let sihl_user_firstname m =
+  m.Sihl_user.given_name
+  |> CCOption.get_exn_or
+       (Format.asprintf "User '%s' has no firstname" m.Sihl_user.id)
+  |> Common.Firstname.of_string
+;;
+
+let sihl_user_lastname m =
+  m.Sihl_user.name
+  |> CCOption.get_exn_or
+       (Format.asprintf "User '%s' has no lastname" m.Sihl_user.id)
+  |> Common.Lastname.of_string
+;;
+
+let sihl_user_full_name m =
+  Format.asprintf
+    "%s %s"
+    (m |> sihl_user_firstname |> Common.Firstname.value)
+    (m |> sihl_user_lastname |> Common.Lastname.value)
+;;
+
 type t =
   { user : Sihl_user.t [@equal sihl_user_equal]
   ; recruitment_channel : RecruitmentChannel.t
@@ -112,28 +133,6 @@ module Write = struct
 end
 
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
-
-let sihl_user_firstname (m : Sihl_user.t) =
-  m.Sihl_user.given_name
-  |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no firstname" m.Sihl_user.id)
-  |> Common.Firstname.of_string
-;;
-
-let sihl_user_lastname (m : Sihl_user.t) =
-  m.Sihl_user.name
-  |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no lastname" m.Sihl_user.id)
-  |> Common.Lastname.of_string
-;;
-
-let sihl_user_full_name m =
-  Format.asprintf
-    "%s %s"
-    (m |> sihl_user_firstname |> Common.Firstname.value)
-    (m |> sihl_user_lastname |> Common.Lastname.value)
-;;
-
 let fullname m = m.user |> sihl_user_full_name
 let firstname m = m.user |> sihl_user_firstname
 let lastname m = m.user |> sihl_user_lastname
