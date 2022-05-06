@@ -5,14 +5,15 @@
   conformist
   email
   experiment
-  invitation
   i18n
+  invitation
   pool_user
   service
   sihl
   subject
   tenant
-  utils)
+  utils
+  waiting_list)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

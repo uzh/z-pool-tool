@@ -1,5 +1,3 @@
-let get_or_failwith = Pool_common.Utils.get_or_failwith
-
 let invitations pool () =
   let%lwt experiments = Experiment.find_all pool () in
   let%lwt events =
