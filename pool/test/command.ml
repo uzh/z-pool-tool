@@ -26,13 +26,17 @@ let () =
         ; test_case "update user" `Quick Subject_test.update_full
         ; test_case "update password" `Quick Subject_test.update_password
         ; test_case
-            "update password with wrong confirmation"
+            "update password with wrong current password"
             `Quick
-            Subject_test.update_password_wrong_confirmation
+            Subject_test.update_password_wrong_current_password
         ; test_case
             "update to short password according to policy"
             `Quick
             Subject_test.update_password_wrong_policy
+        ; test_case
+            "update password with wrong confirmation"
+            `Quick
+            Subject_test.update_password_wrong_confirmation
         ; test_case
             "request validation for new email address"
             `Quick

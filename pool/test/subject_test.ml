@@ -277,24 +277,21 @@ let update_password () =
   check_result expected events
 ;;
 
-let update_password_wrong_confirmation () =
-  let ((_, password, _, _, _, _) as subject_info) =
-    "john@gmail.com" |> subject_info
-  in
-  let subject = subject_info |> create_subject true in
-  let new_password = "testing" in
-  let confirmed_password = "something else" in
+let update_password_wrong_current_password () =
+  let subject = "john@gmail.com" |> subject_info |> create_subject true in
+  let current_password = "something else" in
+  let new_password = "short" in
   let events =
     Subject_command.UpdatePassword.(
-      [ Field.(CurrentPassword |> show), [ password ]
+      [ Field.(CurrentPassword |> show), [ current_password ]
       ; Field.(NewPassword |> show), [ new_password ]
-      ; Field.(PasswordConfirmation |> show), [ confirmed_password ]
+      ; Field.(PasswordConfirmation |> show), [ new_password ]
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) subject)
+      |> handle subject)
   in
-  let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
+  let expected = Error Message.(Invalid Field.CurrentPassword) in
   check_result expected events
 ;;
 
@@ -317,6 +314,27 @@ let update_password_wrong_policy () =
   let expected =
     Error Message.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
   in
+  check_result expected events
+;;
+
+let update_password_wrong_confirmation () =
+  let ((_, password, _, _, _, _) as subject_info) =
+    "john@gmail.com" |> subject_info
+  in
+  let subject = subject_info |> create_subject true in
+  let new_password = "testing" in
+  let confirmed_password = "something else" in
+  let events =
+    Subject_command.UpdatePassword.(
+      [ Field.(CurrentPassword |> show), [ password ]
+      ; Field.(NewPassword |> show), [ new_password ]
+      ; Field.(PasswordConfirmation |> show), [ confirmed_password ]
+      ]
+      |> decode
+      |> Pool_common.Utils.get_or_failwith
+      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) subject)
+  in
+  let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
   check_result expected events
 ;;
 

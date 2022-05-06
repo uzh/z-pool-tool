@@ -44,7 +44,7 @@ module Password = struct
   ;;
 
   let validate_current_password
-      ?(field = PoolError.Field.Password)
+      ?(field = PoolError.Field.CurrentPassword)
       user
       password
     =
