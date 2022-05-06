@@ -19,13 +19,6 @@ module Password : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-
-  val validate
-    :  ?password_policy:(string -> (unit, Pool_common.Message.error) result)
-    -> ?password_confirmed:PasswordConfirmed.t
-    -> t
-    -> (unit, Pool_common.Message.error) result
-
   val create : string -> (t, Pool_common.Message.error) result
   val to_sihl : t -> string
 
@@ -33,6 +26,22 @@ module Password : sig
     :  ?field:Pool_common.Message.Field.t
     -> unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
+  val validate
+    :  ?password_policy:(t -> (unit, Pool_common.Message.error) result)
+    -> t
+    -> (unit, Pool_common.Message.error) result
+
+  val validate_current_password
+    :  ?field:Pool_common.Message.Field.t
+    -> Sihl_user.t
+    -> t
+    -> (unit, Pool_common.Message.error) result
+
+  val validate_password_confirmation
+    :  t
+    -> PasswordConfirmed.t
+    -> (unit, Pool_common.Message.error) result
 end
 
 module Firstname : sig

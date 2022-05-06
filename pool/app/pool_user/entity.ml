@@ -19,34 +19,6 @@ end
 module Password = struct
   type t = string [@@deriving eq]
 
-  let default_password_policy p =
-    if CCString.length p < 8
-    then
-      Error
-        PoolError.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
-    else Ok ()
-  ;;
-
-  let validate_password_confirmation new_password password_confirmation =
-    if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
-    then Ok ()
-    else Error PoolError.PasswordConfirmationDoesNotMatch
-  ;;
-
-  let validate
-      ?(password_policy = default_password_policy)
-      ?password_confirmed
-      password
-    =
-    let confirm () =
-      match password_confirmed with
-      | None -> Ok ()
-      | Some password_confirmed ->
-        validate_password_confirmation password password_confirmed
-    in
-    CCResult.(password |> password_policy >>= confirm)
-  ;;
-
   let create password = Ok password
   let to_sihl m = m
   let show m = CCString.repeat "*" @@ CCString.length m
@@ -57,6 +29,34 @@ module Password = struct
 
   let schema ?(field = PoolError.Field.Password) () =
     Pool_common.Utils.schema_decoder create show field
+  ;;
+
+  let default_password_policy p =
+    if CCString.length p < 8
+    then
+      Error
+        PoolError.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
+    else Ok ()
+  ;;
+
+  let validate ?(password_policy = default_password_policy) password =
+    password |> password_policy
+  ;;
+
+  let validate_current_password
+      ?(field = PoolError.Field.Password)
+      user
+      password
+    =
+    if Sihl_user.matches_password (password |> to_sihl) user
+    then Ok ()
+    else Error PoolError.(Invalid field)
+  ;;
+
+  let validate_password_confirmation new_password password_confirmation =
+    if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
+    then Ok ()
+    else Error PoolError.PasswordConfirmationDoesNotMatch
   ;;
 end
 

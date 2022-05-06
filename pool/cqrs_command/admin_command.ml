@@ -12,7 +12,8 @@ module CreateOperator : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, Pool_common.Message.error) result)
+    -> ?password_policy:
+         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result

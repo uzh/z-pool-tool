@@ -13,7 +13,8 @@ module SignUp : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, Pool_common.Message.error) result)
+    -> ?password_policy:
+         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t
     -> Pool_common.Language.t option
@@ -191,7 +192,8 @@ module UpdatePassword : sig
     }
 
   val handle
-    :  ?password_policy:(string -> (unit, Pool_common.Message.error) result)
+    :  ?password_policy:
+         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> Subject.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -231,10 +233,15 @@ end = struct
   let handle ?password_policy subject command =
     let open CCResult in
     let* () =
-      User.Password.validate
-        ?password_policy
-        ~password_confirmed:command.password_confirmation
+      User.Password.validate_current_password
+        subject.Subject.user
+        command.current_password
+    in
+    let* () = User.Password.validate ?password_policy command.new_password in
+    let* () =
+      User.Password.validate_password_confirmation
         command.new_password
+        command.password_confirmation
     in
     Ok
       [ Subject.PasswordUpdated
