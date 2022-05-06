@@ -36,9 +36,14 @@ let set_password
   >|= ignore
 ;;
 
-let send_password_changed_email pool language email firstname lastname =
+let send_password_changed_email pool language person =
   let open Lwt.Infix in
-  Email.Helper.PasswordChange.create pool language email firstname lastname
+  Email.Helper.PasswordChange.create
+    pool
+    language
+    (email_address person)
+    (firstname person)
+    (lastname person)
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
@@ -161,26 +166,7 @@ let handle_event pool : event -> unit Lwt.t =
         ~new_password_confirmation
         person.user
     in
-    let%lwt email =
-      let open Lwt.Infix in
-      Email.find_verified_by_user
-        pool
-        (person.user.Sihl.Contract.User.id |> Id.of_string)
-      >|= function
-      | Ok email -> email
-      | Error err ->
-        Logs.err (fun m ->
-            m "%s" Pool_common.(Utils.error_to_string Language.En err));
-        failwith ""
-    in
-    let%lwt () =
-      send_password_changed_email
-        pool
-        language
-        email
-        (firstname person)
-        (lastname person)
-    in
+    let%lwt () = send_password_changed_email pool language person in
     Lwt.return_unit
   | LanguageUpdated (subject, language) ->
     let%lwt () =
