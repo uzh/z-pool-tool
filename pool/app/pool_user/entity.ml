@@ -40,6 +40,7 @@ module Password = struct
   ;;
 
   let validate ?(password_policy = default_password_policy) password =
+    (* TODO: Consider checking against old password *)
     password |> password_policy
   ;;
 

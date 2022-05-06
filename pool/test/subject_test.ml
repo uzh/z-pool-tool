@@ -50,7 +50,8 @@ let create_subject verified subject_info =
         ; username = None
         ; name = Some lastname
         ; given_name = Some firstname
-        ; password
+        ; password =
+            password |> Sihl_user.Hashing.hash |> CCResult.get_or_failwith
         ; status =
             Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
         ; admin = false
