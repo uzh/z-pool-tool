@@ -190,13 +190,13 @@ let invitation =
   in
   let text =
     {|
-    We would like to invite you to the following experiment:
+We would like to invite you to the following experiment:
 
-    {experimentDescription}
+{experimentDescription}
 
-    The experiment is performed on the following dates:
+The experiment is performed on the following dates:
 
-    Sessions......
+Sessions......
     |}
     |> add_salutation_to_text
   in

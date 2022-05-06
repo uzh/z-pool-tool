@@ -112,7 +112,7 @@ type event =
   | EmailVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | UnverifiedDeleted of Pool_common.Id.t
+  | UnverifiedDeleted of t
   | ParticipationIncreased of t
   | ShowUpIncreased of t
 

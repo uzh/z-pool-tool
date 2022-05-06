@@ -42,14 +42,14 @@ let redirect_to path = redirect_to_with_actions path []
 let extract_happy_path_generic req result msgf =
   let context = Pool_context.find req in
   match context with
-  | Ok context ->
+  | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
     |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
            redirect_to_with_actions
-             (path_with_language context.Pool_context.query_language error_path)
+             (path_with_language query_language error_path)
              [ msgf error_msg ])
   | Error _ -> redirect_to "/error"
 ;;
@@ -62,14 +62,14 @@ let extract_happy_path req result =
 let extract_happy_path_with_actions req result =
   let context = Pool_context.find req in
   match context with
-  | Ok context ->
+  | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
     |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
            redirect_to_with_actions
-             (path_with_language context.Pool_context.query_language error_path)
+             (path_with_language query_language error_path)
              (CCList.append
                 [ Message.set
                     ~warning:[]

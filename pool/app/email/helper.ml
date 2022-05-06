@@ -95,7 +95,7 @@ module PasswordChange = struct
       language
       TemplateLabel.PasswordChange
       subject
-      (address email |> Pool_user.EmailAddress.value)
+      (email |> Pool_user.EmailAddress.value)
       [ "name", name ]
   ;;
 end

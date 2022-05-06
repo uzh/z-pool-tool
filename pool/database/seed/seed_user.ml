@@ -168,14 +168,9 @@ let subjects db_pool () =
       let%lwt subject = Subject.find db_pool user_id in
       match subject with
       | Ok subject ->
-        let%lwt _ =
-          Service.User.update
-            ~ctx:(Pool_tenant.to_ctx db_pool)
-            Sihl_user.{ subject.Subject.user with confirmed = true }
-        in
         [ Subject.PausedUpdated (subject, paused |> User.Paused.create) ]
         @ (if disabled then [ Subject.Disabled subject ] else [])
-        @ (if verified then [ Subject.Verified subject ] else [])
+        @ (if verified then [ Subject.EmailVerified subject ] else [])
         @ subjects
         |> Lwt.return
       | Error err ->

@@ -9,7 +9,48 @@ let () =
             "sign up not allowed suffix"
             `Quick
             Subject_test.sign_up_not_allowed_suffix
-        ; test_case "sign up" `Quick Subject_test.sign_up_not_allowed_suffix
+        ; test_case "sign up" `Quick Subject_test.sign_up
+        ; test_case
+            "delete with unverified email"
+            `Quick
+            Subject_test.delete_unverified
+        ; test_case
+            "try delete with verified email"
+            `Quick
+            Subject_test.delete_verified
+        ; test_case
+            "update language of user"
+            `Quick
+            Subject_test.update_language
+        ; test_case "update if user is paused" `Quick Subject_test.update_paused
+        ; test_case "update user" `Quick Subject_test.update_full
+        ; test_case "update password" `Quick Subject_test.update_password
+        ; test_case
+            "update password with wrong current password"
+            `Quick
+            Subject_test.update_password_wrong_current_password
+        ; test_case
+            "update to short password according to policy"
+            `Quick
+            Subject_test.update_password_wrong_policy
+        ; test_case
+            "update password with wrong confirmation"
+            `Quick
+            Subject_test.update_password_wrong_confirmation
+        ; test_case
+            "request validation for new email address"
+            `Quick
+            Subject_test.request_email_validation
+        ; test_case
+            "request validation for wrong email suffix"
+            `Quick
+            Subject_test.request_email_validation_wrong_suffix
+        ; test_case "update email" `Quick Subject_test.update_email
+        ; test_case "verify email" `Quick Subject_test.verify_email
+        ; test_case
+            "accept terms and condition"
+            `Quick
+            Subject_test.accept_terms_and_conditions
         ] )
     ; ( "tenant"
       , [ test_case

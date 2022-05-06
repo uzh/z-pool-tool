@@ -13,24 +13,22 @@ let index req =
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
   in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, error_path)
-    @@
-    let tenant_db = context.Pool_context.tenant_db in
-    let* experiment_invitations =
-      Experiment_type.find_invitations tenant_db id
-    in
-    let experiment = experiment_invitations.Experiment_type.experiment in
-    let%lwt filtered_subjects =
-      Subject.find_filtered tenant_db experiment.Experiment.filter ()
-    in
-    Page.Admin.Experiments.invitations
-      experiment_invitations
-      filtered_subjects
-      context
-    |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    @@ let* experiment_invitations =
+         Experiment_type.find_invitations tenant_db id
+       in
+       let experiment = experiment_invitations.Experiment_type.experiment in
+       let%lwt filtered_subjects =
+         Subject.find_filtered tenant_db experiment.Experiment.filter ()
+       in
+       Page.Admin.Experiments.invitations
+         experiment_invitations
+         filtered_subjects
+         context
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -47,7 +45,7 @@ let create req =
       "/admin/experiments/%s/invitations"
       (Pool_common.Id.value experiment_id)
   in
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@ let%lwt subject_ids =
@@ -57,7 +55,6 @@ let create req =
            req
          >|= CCList.map Pool_common.Id.of_string
        in
-       let tenant_db = context.Pool_context.tenant_db in
        let* experiment = Experiment.find tenant_db experiment_id in
        let* subjects =
          let find_missing subjects =
@@ -118,11 +115,10 @@ let resend req =
       "/admin/experiments/%s/invitations"
       (Pool_common.Id.value experiment_id)
   in
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
-    let tenant_db = context.Pool_context.tenant_db in
     let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let* invitation = Invitation.find tenant_db id in
     let* experiment = Experiment.find tenant_db experiment_id in

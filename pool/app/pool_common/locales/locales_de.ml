@@ -141,6 +141,8 @@ let rec error_to_string = function
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
+  | EmailDeleteAlreadyVerified ->
+    "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
   | ExperimenSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht \
@@ -175,6 +177,8 @@ let rec error_to_string = function
   | SubjectSignupInvalidEmail ->
     "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
   | SubjectUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
+  | PasswordConfirmationDoesNotMatch ->
+    "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy msg ->
     Format.asprintf
       "Passwort stimmt nicht mit der benötigten Policy überein! %s"

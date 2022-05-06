@@ -19,7 +19,10 @@ let create_subject () =
           ; username = None
           ; name = None
           ; given_name = None
-          ; password = "somepassword"
+          ; password =
+              "somepassword"
+              |> Sihl_user.Hashing.hash
+              |> CCResult.get_or_failwith
           ; status =
               Sihl_user.status_of_string "active" |> CCResult.get_or_failwith
           ; admin = false

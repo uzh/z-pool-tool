@@ -36,9 +36,14 @@ let set_password
   >|= ignore
 ;;
 
-let send_password_changed_email pool language email firstname lastname =
+let send_password_changed_email pool language person =
   let open Lwt.Infix in
-  Email.Helper.PasswordChange.create pool language email firstname lastname
+  Email.Helper.PasswordChange.create
+    pool
+    language
+    (email_address person)
+    (firstname person)
+    (lastname person)
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
@@ -69,7 +74,7 @@ type event =
   | EmailVerified of t
   | TermsAccepted of t
   | Disabled of t
-  | UnverifiedDeleted of Id.t
+  | UnverifiedDeleted of t
   | ParticipationIncreased of t
   | ShowUpIncreased of t
 [@@deriving eq, show, variants]
@@ -155,31 +160,13 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt _ =
       Service.User.update_password
         ~ctx
+        ~password_policy:(CCFun.const (CCResult.pure ()))
         ~old_password
         ~new_password
         ~new_password_confirmation
         person.user
     in
-    let%lwt email =
-      let open Lwt.Infix in
-      Email.find_verified_by_user
-        pool
-        (person.user.Sihl.Contract.User.id |> Id.of_string)
-      >|= function
-      | Ok email -> email
-      | Error err ->
-        Logs.err (fun m ->
-            m "%s" Pool_common.(Utils.error_to_string Language.En err));
-        failwith ""
-    in
-    let%lwt () =
-      send_password_changed_email
-        pool
-        language
-        email
-        (firstname person)
-        (lastname person)
-    in
+    let%lwt () = send_password_changed_email pool language person in
     Lwt.return_unit
   | LanguageUpdated (subject, language) ->
     let%lwt () =
@@ -209,7 +196,8 @@ let handle_event pool : event -> unit Lwt.t =
       { subject with terms_accepted_at = User.TermsAccepted.create_now () }
   | Disabled subject ->
     Repo.update pool { subject with disabled = User.Disabled.create true }
-  | UnverifiedDeleted id -> Repo.delete_unverified pool id
+  | UnverifiedDeleted subject ->
+    subject |> Entity.id |> Repo.delete_unverified pool
   | ParticipationIncreased subject ->
     Repo.update
       pool

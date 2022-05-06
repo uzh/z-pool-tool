@@ -137,6 +137,8 @@ let rec error_to_string = function
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
+  | EmailDeleteAlreadyVerified ->
+    "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
   | ExperimenSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
@@ -163,6 +165,7 @@ let rec error_to_string = function
   | SubjectSignupInvalidEmail ->
     "Please provide a valid and unused email address."
   | SubjectUnconfirmed -> "Participant isn't confirmed!"
+  | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy msg ->
     Format.asprintf "Password doesn't match the required policy! %s" msg
   | PasswordResetInvalidData -> "Invalid token or password provided"

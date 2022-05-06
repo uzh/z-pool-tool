@@ -8,12 +8,11 @@ let require_admin ~login_path_f =
     let context = Pool_context.find req in
     match context with
     | Error _ -> fail_action
-    | Ok context ->
-      let db_pool = context.Pool_context.tenant_db in
-      Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx db_pool) req
+    | Ok { Pool_context.tenant_db; _ } ->
+      Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
       >|> (function
       | Some user ->
-        Admin.user_is_admin db_pool user
+        Admin.user_is_admin tenant_db user
         >|> (function
         | false -> fail_action
         | true -> handler req)

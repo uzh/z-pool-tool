@@ -133,7 +133,7 @@ module Helper : sig
     val create
       :  Pool_database.Label.t
       -> Pool_common.Language.t
-      -> verified t
+      -> Pool_user.EmailAddress.t
       -> Pool_user.Firstname.t
       -> Pool_user.Lastname.t
       -> Sihl_email.t Lwt.t
