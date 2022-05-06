@@ -127,7 +127,7 @@ val pp_event : Format.formatter -> event -> unit
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
-module List : sig
+module Preview : sig
   type t =
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
@@ -144,7 +144,7 @@ module List : sig
 end
 
 module Repo : sig
-  module List : sig
-    val t : List.t Caqti_type.t
+  module Preview : sig
+    val t : Preview.t Caqti_type.t
   end
 end

@@ -57,7 +57,7 @@ let t =
 ;;
 
 module Experiment = struct
-  open Entity.ListByExperiment
+  open Entity.ExperimentList
 
   let t =
     let encode (m : waiting_list_entry) =
@@ -74,7 +74,7 @@ module Experiment = struct
         (tup2
            Pool_common.Repo.Id.t
            (tup2
-              Subject.Repo.List.t
+              Subject.Repo.Preview.t
               (tup2 Pool_common.Repo.CreatedAt.t Pool_common.Repo.UpdatedAt.t))))
   ;;
 end

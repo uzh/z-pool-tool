@@ -271,8 +271,8 @@ module Write = struct
   ;;
 end
 
-module List = struct
-  open Entity.List
+module Preview = struct
+  open Entity.Preview
 
   let t =
     let encode (m : t) =
@@ -293,7 +293,7 @@ module List = struct
       let open Pool_user in
       let open CCResult in
       Ok
-        Entity.List.
+        Entity.Preview.
           { user
           ; language
           ; paused = Paused.create paused

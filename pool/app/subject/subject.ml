@@ -13,5 +13,5 @@ let find_by_user pool (user : Sihl_user.t) =
 let has_terms_accepted = Event.has_terms_accepted
 
 module Repo = struct
-  module List = Repo_model.List
+  module Preview = Repo_model.Preview
 end

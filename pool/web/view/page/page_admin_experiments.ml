@@ -191,16 +191,16 @@ let invitations
 ;;
 
 let waiting_list waiting_list Pool_context.{ language; _ } =
-  let open Waiting_list.ListByExperiment in
+  let open Waiting_list.ExperimentList in
   let waiting_list_entries =
     CCList.map
       (fun entry ->
         div
           ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
-          [ div [ txt (Subject.List.fullname entry.subject) ]
+          [ div [ txt (Subject.Preview.fullname entry.subject) ]
           ; div
               [ txt
-                  (Subject.List.email_address entry.subject
+                  (Subject.Preview.email_address entry.subject
                   |> Pool_user.EmailAddress.value)
               ]
           ; div

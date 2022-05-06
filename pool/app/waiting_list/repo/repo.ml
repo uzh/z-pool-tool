@@ -205,7 +205,7 @@ let find_by_experiment pool id =
   let open Lwt_result.Syntax in
   let%lwt entries = Sql.find_by_experiment pool id in
   let* experiment = Experiment.find pool id in
-  Entity.ListByExperiment.{ waiting_list_entries = entries; experiment }
+  Entity.ExperimentList.{ waiting_list_entries = entries; experiment }
   |> Lwt.return_ok
 ;;
 

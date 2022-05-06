@@ -16,10 +16,10 @@ let create ?(id = Pool_common.Id.create ()) subject experiment =
   }
 ;;
 
-module ListByExperiment = struct
+module ExperimentList = struct
   type waiting_list_entry =
     { id : Pool_common.Id.t
-    ; subject : Subject.List.t
+    ; subject : Subject.Preview.t
     ; created_at : Pool_common.CreatedAt.t
     ; updated_at : Pool_common.UpdatedAt.t
     }

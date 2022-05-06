@@ -147,7 +147,7 @@ let version_selector p = function
   | _ -> None
 ;;
 
-module List = struct
+module Preview = struct
   type t =
     { user : Sihl_user.t [@equal sihl_user_equal]
     ; language : Pool_common.Language.t option

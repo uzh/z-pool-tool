@@ -28,10 +28,10 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 
-module ListByExperiment : sig
+module ExperimentList : sig
   type waiting_list_entry =
     { id : Pool_common.Id.t
-    ; subject : Subject.List.t
+    ; subject : Subject.Preview.t
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
@@ -60,4 +60,4 @@ val user_is_enlisted
 val find_by_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (ListByExperiment.t, Pool_common.Message.error) Lwt_result.t
+  -> (ExperimentList.t, Pool_common.Message.error) Lwt_result.t
