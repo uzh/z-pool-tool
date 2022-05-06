@@ -4,14 +4,14 @@ let send_invitation_email
     pool
     (subject : Subject.t)
     (experiment : Experiment.t)
-    context_language
+    default_language
   =
   let open Lwt.Infix in
   let mail_subject = "Experiment Invitation" in
   let email = Subject.email_address subject in
   let name = Subject.fullname subject in
   let language =
-    subject.Subject.language |> CCOption.value ~default:context_language
+    subject.Subject.language |> CCOption.value ~default:default_language
   in
   Email.Helper.prepare_email
     pool
