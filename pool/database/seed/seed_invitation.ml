@@ -1,5 +1,3 @@
-let get_or_failwith = Pool_common.Utils.get_or_failwith
-
 let invitations pool () =
   let%lwt experiments = Experiment.find_all pool () in
   let%lwt events =
@@ -11,7 +9,7 @@ let invitations pool () =
         let n = Random.int (CCList.length filtered_subjects) in
         let subject = CCList.nth filtered_subjects n in
         let invitation = Invitation.{ subject; experiment } in
-        Invitation.Created invitation |> Lwt.return)
+        (Invitation.Created invitation, Pool_common.Language.En) |> Lwt.return)
       experiments
   in
   let%lwt () = Lwt_list.iter_s (Invitation.handle_event pool) events in

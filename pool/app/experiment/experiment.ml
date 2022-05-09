@@ -8,3 +8,7 @@ let find_all = Repo.find_all
 let session_count _ _ = Lwt_result.return 0
 let possible_participant_count _ = Lwt.return 0
 let possible_participants _ = Lwt.return []
+
+module Repo = struct
+  module Description = Repo_entity.Description
+end

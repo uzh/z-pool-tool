@@ -4,7 +4,11 @@ module Create : sig
     ; subject : Subject.t
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  t
+    -> Pool_common.Language.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -12,11 +16,11 @@ end = struct
     ; subject : Subject.t
     }
 
-  let handle (command : t) =
+  let handle (command : t) language =
     let (create : Invitation.create) =
       Invitation.{ experiment = command.experiment; subject = command.subject }
     in
-    Ok [ Invitation.Created create |> Pool_event.invitation ]
+    Ok [ (Invitation.Created create, language) |> Pool_event.invitation ]
   ;;
 
   let can user command =
@@ -33,11 +37,14 @@ end
 module Resend : sig
   val handle
     :  Invitation.resent
+    -> Pool_common.Language.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> Invitation.resent -> bool Lwt.t
 end = struct
-  let handle t = Ok [ Invitation.Resent t |> Pool_event.invitation ]
+  let handle t language =
+    Ok [ (Invitation.Resent t, language) |> Pool_event.invitation ]
+  ;;
 
   let can user Invitation.{ experiment; invitation } =
     Permission.can

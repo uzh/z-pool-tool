@@ -1,5 +1,30 @@
 module Common = Pool_user
 
+module Sihl_user = struct
+  include Sihl_user
+
+  let equal m k = CCString.equal m.id k.id
+
+  let firstname m =
+    m.given_name
+    |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" m.id)
+    |> Common.Firstname.of_string
+  ;;
+
+  let lastname m =
+    m.name
+    |> CCOption.get_exn_or (Format.asprintf "User '%s' has no lastname" m.id)
+    |> Common.Lastname.of_string
+  ;;
+
+  let full_name m =
+    Format.asprintf
+      "%s %s"
+      (m |> firstname |> Common.Firstname.value)
+      (m |> lastname |> Common.Lastname.value)
+  ;;
+end
+
 module RecruitmentChannel = struct
   let name m fmt _ = Format.pp_print_string fmt m
 
@@ -53,7 +78,6 @@ end
 
 type t =
   { user : Sihl_user.t
-        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Common.TermsAccepted.t
   ; language : Pool_common.Language.t option
@@ -111,28 +135,9 @@ module Write = struct
 end
 
 let id m = m.user.Sihl_user.id |> Pool_common.Id.of_string
-
-let firstname m =
-  m.user.Sihl_user.given_name
-  |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no firstname" m.user.Sihl_user.id)
-  |> Common.Firstname.of_string
-;;
-
-let lastname m =
-  m.user.Sihl_user.name
-  |> CCOption.get_exn_or
-       (Format.asprintf "User '%s' has no lastname" m.user.Sihl_user.id)
-  |> Common.Lastname.of_string
-;;
-
-let fullname m =
-  Format.asprintf
-    "%s %s"
-    (m |> firstname |> Common.Firstname.value)
-    (m |> lastname |> Common.Lastname.value)
-;;
-
+let fullname m = m.user |> Sihl_user.full_name
+let firstname m = m.user |> Sihl_user.firstname
+let lastname m = m.user |> Sihl_user.lastname
 let email_address m = m.user.Sihl_user.email |> Common.EmailAddress.of_string
 
 let version_selector p = function
@@ -142,3 +147,21 @@ let version_selector p = function
   | "language" -> Some p.language_version
   | _ -> None
 ;;
+
+module Preview = struct
+  type t =
+    { user : Sihl_user.t
+    ; language : Pool_common.Language.t option
+    ; paused : Common.Paused.t
+    ; verified : Common.Verified.t
+    ; num_invitations : NumberOfInvitations.t
+    ; num_assignments : NumberOfAssignments.t
+    }
+  [@@deriving eq, show]
+
+  let fullname (m : t) = m.user |> Sihl_user.full_name
+
+  let email_address (m : t) =
+    m.user.Sihl_user.email |> Common.EmailAddress.of_string
+  ;;
+end

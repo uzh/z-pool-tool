@@ -10,6 +10,7 @@
   pool_common
   service
   sihl
-  subject)
+  subject
+  waiting_list)
  (preprocess
   (pps lwt_ppx)))

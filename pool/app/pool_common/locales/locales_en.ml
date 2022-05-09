@@ -88,6 +88,7 @@ let field_to_string =
   | Url -> "url"
   | User -> "user"
   | Version -> "version"
+  | WaitingList -> "waiting list"
 ;;
 
 let info_to_string : info -> string = function
@@ -95,6 +96,7 @@ let info_to_string : info -> string = function
 ;;
 
 let success_to_string : success -> string = function
+  | AddedToWaitingList -> "You were added to the waiting list."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
   | EmailVerified -> "Email successfully verified."
@@ -107,6 +109,7 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an \
      account with the provided email is existing."
+  | RemovedFromWaitingList -> "You were removed from the waiting list."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
@@ -201,6 +204,7 @@ let format_submit submit field =
 let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
+  | AddToWaitingList -> "Sign up for the waiting list"
   | Back -> format_submit "back" None
   | Choose field -> format_submit "choose" field
   | Create field -> format_submit "create" field
@@ -212,6 +216,7 @@ let control_to_string = function
   | Login -> format_submit "login" None
   | More -> "more"
   | Resend field -> format_submit "resend" field
+  | RemoveFromWaitingList -> "Remove from waiting list"
   | Save field -> format_submit "save" field
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None

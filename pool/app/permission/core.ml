@@ -11,6 +11,7 @@ type thing =
   | Subject
   | Tenant
   | Tenant_recruiting
+  | Waiting_list
 [@@deriving eq, show]
 
 type permission =

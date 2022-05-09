@@ -78,10 +78,11 @@ let create req =
            |> fun ids ->
            Error Pool_common.Message.(NotFoundList (Field.Subjects, ids))
        in
+       let* default_language = Settings.default_language tenant_db in
        let%lwt events =
          let event subject =
            Cqrs_command.Invitation_command.Create.(
-             handle { experiment; subject } |> Lwt_result.lift)
+             handle { experiment; subject } default_language |> Lwt_result.lift)
          in
          Lwt_list.map_s event subjects
        in
@@ -122,9 +123,11 @@ let resend req =
     let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
     let* invitation = Invitation.find tenant_db id in
     let* experiment = Experiment.find tenant_db experiment_id in
+    let* default_language = Settings.default_language tenant_db in
     let events =
       Cqrs_command.Invitation_command.Resend.handle
         Invitation.{ invitation; experiment }
+        default_language
       |> Lwt.return
     in
     let handle events =

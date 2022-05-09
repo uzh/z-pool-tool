@@ -126,3 +126,25 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
+
+module Preview : sig
+  type t =
+    { user : Sihl_user.t
+    ; language : Pool_common.Language.t option
+    ; paused : Pool_user.Paused.t
+    ; verified : Pool_user.Verified.t
+    ; num_invitations : NumberOfInvitations.t
+    ; num_assignments : NumberOfAssignments.t
+    }
+
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+  val fullname : t -> string
+  val email_address : t -> Pool_user.EmailAddress.t
+end
+
+module Repo : sig
+  module Preview : sig
+    val t : Preview.t Caqti_type.t
+  end
+end

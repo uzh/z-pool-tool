@@ -1,14 +1,17 @@
 open Entity
 
-let send_invitation_email pool (subject : Subject.t) (experiment : Experiment.t)
+let send_invitation_email
+    pool
+    (subject : Subject.t)
+    (experiment : Experiment.t)
+    default_language
   =
   let open Lwt.Infix in
   let mail_subject = "Experiment Invitation" in
   let email = Subject.email_address subject in
   let name = Subject.fullname subject in
-  (* TODO:[timhub] pass context or language to event *)
   let language =
-    subject.Subject.language |> CCOption.value ~default:Pool_common.Language.En
+    subject.Subject.language |> CCOption.value ~default:default_language
   in
   Email.Helper.prepare_email
     pool
@@ -35,18 +38,21 @@ type resent =
   }
 [@@deriving eq, show]
 
-type event =
+type event_type =
   | Created of create
   | Resent of resent
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t = function
+type event = event_type * Pool_common.Language.t [@@deriving eq, show]
+
+let handle_event pool (event, language) =
+  match event with
   | Created { experiment; subject } ->
     let%lwt () = create subject |> Repo.insert pool experiment.Experiment.id in
-    send_invitation_email pool subject experiment
+    send_invitation_email pool subject experiment language
   | Resent { invitation; experiment } ->
     let%lwt () =
       Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
     in
-    send_invitation_email pool invitation.subject experiment
+    send_invitation_email pool invitation.subject experiment language
 ;;

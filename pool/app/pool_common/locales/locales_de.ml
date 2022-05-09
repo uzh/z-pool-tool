@@ -87,6 +87,7 @@ let field_to_string =
   | Url -> "Url"
   | User -> "Benutzer"
   | Version -> "Version"
+  | WaitingList -> "Warteliste"
 ;;
 
 let info_to_string : info -> string = function
@@ -94,6 +95,7 @@ let info_to_string : info -> string = function
 ;;
 
 let success_to_string : success -> string = function
+  | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | EmailVerified -> "Email erfolgreich verifiziert."
@@ -105,6 +107,7 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+  | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -222,6 +225,7 @@ let format_submit submit field =
 let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
+  | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
   | Back -> format_submit "zurück" None
   | Choose field -> format_submit "wählen" field
   | Create field -> format_submit "erstellen" field
@@ -234,6 +238,7 @@ let control_to_string = function
   | More -> "mehr"
   | Save field -> format_submit "speichern" field
   | Resend field -> format_submit "erneut senden" field
+  | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | SignUp -> format_submit "registrieren" None

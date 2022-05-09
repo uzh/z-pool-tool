@@ -12,6 +12,7 @@ type t =
   | Settings of Settings.event
   | Subject of Subject.event
   | Tenant of Tenant.event
+  | WaitingList of Waiting_list.event
 [@@deriving eq, show]
 
 let admin events = Admin events
@@ -26,6 +27,7 @@ let root events = Root events
 let settings events = Settings events
 let subject events = Subject events
 let tenant events = Tenant events
+let waiting_list events = WaitingList events
 
 let handle_event pool event =
   match event with
@@ -41,6 +43,7 @@ let handle_event pool event =
   | Settings event -> Settings.handle_event pool event
   | Subject event -> Subject.handle_event pool event
   | Tenant event -> Tenant.handle_event pool event
+  | WaitingList event -> Waiting_list.handle_event pool event
 ;;
 
 let handle_events pool = Lwt_list.iter_s (handle_event pool)

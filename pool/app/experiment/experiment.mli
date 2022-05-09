@@ -80,3 +80,9 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Subject.t list Lwt.t
 val title_value : t -> string
 val description_value : t -> string
+
+module Repo : sig
+  module Description : sig
+    val t : string Caqti_type.t
+  end
+end
