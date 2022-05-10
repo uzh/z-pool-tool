@@ -1,5 +1,5 @@
 module ContactCommand = Cqrs_command.Contact_command
-module ParticipationCommand = Cqrs_command.Participation_command
+module AssignmentCommand = Cqrs_command.Assignment_command
 module Field = Pool_common.Message.Field
 
 let check_result expected generated =
@@ -72,8 +72,8 @@ let create_session () =
     }
 ;;
 
-let create_participation () =
-  Participation.
+let create_assignment () =
+  Assignment.
     { id = Pool_common.Id.create ()
     ; contact = create_contact ()
     ; show_up = ShowUp.init
@@ -89,49 +89,49 @@ let create () =
   let session = create_session () in
   let contact = create_contact () in
   let events =
-    let command = ParticipationCommand.Create.{ contact; session } in
-    ParticipationCommand.Create.handle command
+    let command = AssignmentCommand.Create.{ contact; session } in
+    AssignmentCommand.Create.handle command
   in
   let expected =
     Ok
-      [ Participation.(Created { contact; session_id = session.Session.id })
-        |> Pool_event.participation
+      [ Assignment.(Created { contact; session_id = session.Session.id })
+        |> Pool_event.assignment
       ]
   in
   check_result expected events
 ;;
 
 let canceled () =
-  let participation = create_participation () in
-  let events = ParticipationCommand.Cancel.handle participation in
+  let assignment = create_assignment () in
+  let events = AssignmentCommand.Cancel.handle assignment in
   let expected =
-    Ok [ Participation.Canceled participation |> Pool_event.participation ]
+    Ok [ Assignment.Canceled assignment |> Pool_event.assignment ]
   in
   check_result expected events
 ;;
 
 let set_attendance () =
-  let participation = create_participation () in
+  let assignment = create_assignment () in
   let show_up = "true" in
   let participated = "false" in
   let events =
     let attendance =
       Pool_common.Utils.get_or_failwith
-      @@ ParticipationCommand.SetAttendance.decode
+      @@ AssignmentCommand.SetAttendance.decode
            [ Field.(ShowUp |> show), show_up |> CCList.pure
            ; Field.(Participated |> show), participated |> CCList.pure
            ]
     in
-    ParticipationCommand.SetAttendance.handle participation attendance
+    AssignmentCommand.SetAttendance.handle assignment attendance
   in
   let expected =
-    let open Participation in
+    let open Assignment in
     Ok
-      [ ShowedUp (participation, show_up |> bool_of_string |> ShowUp.create)
-        |> Pool_event.participation
+      [ ShowedUp (assignment, show_up |> bool_of_string |> ShowUp.create)
+        |> Pool_event.assignment
       ; Participated
-          (participation, participated |> bool_of_string |> Participated.create)
-        |> Pool_event.participation
+          (assignment, participated |> bool_of_string |> Participated.create)
+        |> Pool_event.assignment
       ]
   in
   check_result expected events

@@ -18,7 +18,7 @@ let create_invitation_table =
 
 let rename_participant_to_subject =
   Sihl.Database.Migration.create_step
-    ~label:"rename participation id to subject id"
+    ~label:"rename participant id to subject id"
     {sql|
       ALTER TABLE pool_invitations
         RENAME COLUMN participant_id TO subject_id

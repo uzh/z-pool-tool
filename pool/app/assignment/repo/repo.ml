@@ -8,11 +8,11 @@ module Sql = struct
     {sql|
       SELECT
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_participations.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_participations.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_participations.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_participations.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_participations.uuid), 21)
+          SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 21)
         )),
         LOWER(CONCAT(
           SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
@@ -28,18 +28,18 @@ module Sql = struct
           SUBSTR(HEX(pool_contacts.uuid), 17, 4), '-',
           SUBSTR(HEX(pool_contacts.uuid), 21)
         )),
-        pool_participations.show_up,
-        pool_participations.participated,
-        pool_participations.matches_filter,
-        pool_participations.chanceled_at,
-        pool_participations.created_at,
-        pool_participations.updated_at
+        pool_assignments.show_up,
+        pool_assignments.participated,
+        pool_assignments.matches_filter,
+        pool_assignments.chanceled_at,
+        pool_assignments.created_at,
+        pool_assignments.updated_at
       FROM
-        pool_participations
+        pool_assignments
       LEFT JOIN pool_sessions
-        ON pool_participations.session_id = pool_sessions.id
+        ON pool_assignments.session_id = pool_sessions.id
       LEFT JOIN pool_contacts
-        ON pool_participations.session_id = pool_contacts.id
+        ON pool_assignments.session_id = pool_contacts.id
     |sql}
   ;;
 
@@ -99,7 +99,7 @@ module Sql = struct
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
-      INSERT INTO pool_participations (
+      INSERT INTO pool_assignments (
         uuid,
         session_id,
         contact_id,
@@ -132,7 +132,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
         UPDATE
-          pool_participations
+          pool_assignments
         SET
           show_up = $4,
           participated = $5,
@@ -162,23 +162,22 @@ module Sql = struct
   ;;
 end
 
-let contact_to_participation pool participation =
+let contact_to_assignment pool assignment =
   let open Utils.Lwt_result.Infix in
-  Contact.find pool participation.RepoEntity.contact_id
-  >|= to_entity participation
+  Contact.find pool assignment.RepoEntity.contact_id >|= to_entity assignment
 ;;
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  Sql.find pool id >>= contact_to_participation pool
+  Sql.find pool id >>= contact_to_assignment pool
 ;;
 
 let find_by_session pool id =
   let open Lwt.Infix in
   (* TODO Implement as transaction *)
   Sql.find_by_session pool id
-  >>= Lwt_list.map_s (contact_to_participation pool)
+  >>= Lwt_list.map_s (contact_to_assignment pool)
   |> Lwt.map CCList.all_ok
 ;;
 
@@ -190,7 +189,7 @@ let find_by_contact pool contact =
   |> Sql.find_by_contact pool
   (* Reload contact from DB, does not allow already made updates of the provided
      contact record *)
-  >>= Lwt_list.map_s (contact_to_participation pool)
+  >>= Lwt_list.map_s (contact_to_assignment pool)
   |> Lwt.map CCList.all_ok
 ;;
 

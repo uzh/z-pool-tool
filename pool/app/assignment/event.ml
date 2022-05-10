@@ -14,18 +14,18 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Canceled participation ->
+  | Canceled assignment ->
     let%lwt () =
-      { participation with canceled_at = CanceledAt.create_now () }
+      { assignment with canceled_at = CanceledAt.create_now () }
       |> Repo.update pool
     in
     Lwt.return_unit
   | Created { contact; session_id } ->
     contact |> create |> Repo.insert pool session_id
-  | Participated (participation, participated) ->
-    let%lwt () = { participation with participated } |> Repo.update pool in
+  | Participated (assignment, participated) ->
+    let%lwt () = { assignment with participated } |> Repo.update pool in
     Lwt.return_unit
-  | ShowedUp (participation, show_up) ->
-    let%lwt () = { participation with show_up } |> Repo.update pool in
+  | ShowedUp (assignment, show_up) ->
+    let%lwt () = { assignment with show_up } |> Repo.update pool in
     Lwt.return_unit
 ;;

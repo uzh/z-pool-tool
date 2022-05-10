@@ -10,7 +10,7 @@ let default_values =
       ; "DE", "Bestätigung zur Sessionanmeldung"
       ] )
   ; ( "confirmation_text"
-    , [ "EN", "We hereby confirm the mandatory participation."
+    , [ "EN", "We hereby confirm the mandatory assignment."
       ; "DE", "Hiermit bestätigen wir verbindlich Experiment-Teilnahme."
       ] )
   ; ( "confirmation_without_self_registration_contact"
@@ -36,7 +36,7 @@ let default_values =
       ] )
   ; "greetings_text", [ "EN", "Greetings Text "; "DE", "Begrüssungstext" ]
   ; ( "import_invitation_contact"
-    , [ "EN", "Experiment participation"; "DE", "Experimentteilnahme" ] )
+    , [ "EN", "Experiment assignment"; "DE", "Experimentteilnahme" ] )
   ; ( "import_invitation_text"
     , [ ( "EN"
         , "We have updated our management software for organizing experiments. \

@@ -134,9 +134,9 @@ let create
   }
 ;;
 
-type participations =
+type assignments =
   { session : t
-  ; participations : Participation.t list
+  ; assignments : Assignment.t list
   }
 
 type notification_log =

@@ -1,5 +1,5 @@
 (library
  (name session)
- (libraries containers participation pool_common ptime service sihl utils)
+ (libraries assignment containers pool_common ptime service sihl utils)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))

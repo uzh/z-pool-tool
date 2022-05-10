@@ -1,14 +1,14 @@
 module Id = Pool_common.Id
 
 type thing =
+  | Assignment
+  | Contact
   | Experiment
   | Experiment_session
   | Invitation
   | Location
   | Participant
-  | Participation
   | System
-  | Contact
   | Tenant
   | Tenant_recruiting
   | Waiting_list

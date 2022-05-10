@@ -21,7 +21,7 @@ let create_participation_table =
 
 let rename_participant_to_subject =
   Sihl.Database.Migration.create_step
-    ~label:"rename participation id to subject id"
+    ~label:"rename participant id to subject id"
     {sql|
       ALTER TABLE pool_participations
         RENAME COLUMN participant_id TO subject_id
@@ -37,10 +37,20 @@ let rename_subject_to_contact =
     |sql}
 ;;
 
+let rename_table_to_assignments =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subject id to contact id"
+    {sql|
+      ALTER TABLE pool_participations
+        RENAME pool_assignments
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participation"
     |> add_step create_participation_table
     |> add_step rename_participant_to_subject
-    |> add_step rename_subject_to_contact)
+    |> add_step rename_subject_to_contact
+    |> add_step rename_table_to_assignments)
 ;;

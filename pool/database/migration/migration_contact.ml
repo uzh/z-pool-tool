@@ -50,7 +50,7 @@ let add_user_language_version =
 let add_user_email_verified_counts =
   Sihl.Database.Migration.create_step
     ~label:
-      "add field for email verification, participation inclusive show up count"
+      "add field for email verification, assignment inclusive show up count"
     {sql|
      ALTER TABLE pool_participants
      ADD COLUMN email_verified timestamp NULL AFTER verified,

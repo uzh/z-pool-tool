@@ -75,7 +75,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | ParticipationIncreased of t
+  | AssignmentIncreased of t
   | ShowUpIncreased of t
 [@@deriving eq, show, variants]
 
@@ -198,7 +198,7 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
-  | ParticipationIncreased contact ->
+  | AssignmentIncreased contact ->
     Repo.update
       pool
       { contact with

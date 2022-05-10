@@ -16,49 +16,48 @@ end = struct
 
   let handle (command : t) =
     let create =
-      Participation.
+      Assignment.
         { contact = command.contact; session_id = command.session.Session.id }
     in
-    Ok [ Participation.Created create |> Pool_event.participation ]
+    Ok [ Assignment.Created create |> Pool_event.assignment ]
   ;;
 
   let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Participation ]
+    Permission.can user ~any_of:[ Permission.Create Permission.Assignment ]
   ;;
 end
 
 module Cancel : sig
-  type t = Participation.t
+  type t = Assignment.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = Participation.t
+  type t = Assignment.t
 
   let handle (command : t)
       : (Pool_event.t list, Pool_common.Message.error) result
     =
-    Ok [ Participation.Canceled command |> Pool_event.participation ]
+    Ok [ Assignment.Canceled command |> Pool_event.assignment ]
   ;;
 
   let can user command =
     Permission.can
       user
       ~any_of:
-        [ Permission.Update
-            (Permission.Participation, Some command.Participation.id)
+        [ Permission.Update (Permission.Assignment, Some command.Assignment.id)
         ]
   ;;
 end
 
 module SetAttendance : sig
   type t =
-    { show_up : Participation.ShowUp.t
-    ; participated : Participation.Participated.t
+    { show_up : Assignment.ShowUp.t
+    ; participated : Assignment.Participated.t
     }
 
   val handle
-    :  Participation.t
+    :  Assignment.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -66,33 +65,30 @@ module SetAttendance : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Participation.t -> bool Lwt.t
+  val can : Sihl_user.t -> Assignment.t -> bool Lwt.t
 end = struct
   type t =
-    { show_up : Participation.ShowUp.t
-    ; participated : Participation.Participated.t
+    { show_up : Assignment.ShowUp.t
+    ; participated : Assignment.Participated.t
     }
 
-  let command (show_up : Participation.ShowUp.t) participated =
+  let command (show_up : Assignment.ShowUp.t) participated =
     { show_up; participated }
   ;;
 
   let schema =
     Conformist.(
       make
-        Field.
-          [ Participation.ShowUp.schema ()
-          ; Participation.Participated.schema ()
-          ]
+        Field.[ Assignment.ShowUp.schema (); Assignment.Participated.schema () ]
         command)
   ;;
 
-  let handle participation (command : t) =
+  let handle assignment (command : t) =
     Ok
-      [ Participation.ShowedUp (participation, command.show_up)
-        |> Pool_event.participation
-      ; Participation.Participated (participation, command.participated)
-        |> Pool_event.participation
+      [ Assignment.ShowedUp (assignment, command.show_up)
+        |> Pool_event.assignment
+      ; Assignment.Participated (assignment, command.participated)
+        |> Pool_event.assignment
       ]
   ;;
 
@@ -101,12 +97,12 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user participation =
+  let can user assignment =
     Permission.can
       user
       ~any_of:
         [ Permission.Update
-            (Permission.Participation, Some participation.Participation.id)
+            (Permission.Assignment, Some assignment.Assignment.id)
         ]
   ;;
 end

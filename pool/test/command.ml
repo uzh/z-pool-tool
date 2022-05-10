@@ -82,16 +82,16 @@ let () =
             `Quick
             I18n_test.update_terms_and_conditions
         ] )
-    ; ( "participation"
-      , [ test_case "create participation" `Quick Participation_test.create
+    ; ( "assignment"
+      , [ test_case "create assignment" `Quick Assignment_test.create
         ; test_case
-            "mark participation as canceled"
+            "mark assignment as canceled"
             `Quick
-            Participation_test.canceled
+            Assignment_test.canceled
         ; test_case
-            "set attendance on participation"
+            "set attendance on assignment"
             `Quick
-            Participation_test.set_attendance
+            Assignment_test.set_attendance
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

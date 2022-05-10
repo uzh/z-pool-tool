@@ -3,12 +3,12 @@
  (name pool_event)
  (libraries
   admin
+  assignment
   contact
   database
   email
   experiment
   i18n
-  participation
   pool_tenant
   pool_user
   root

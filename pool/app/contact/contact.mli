@@ -113,7 +113,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | ParticipationIncreased of t
+  | AssignmentIncreased of t
   | ShowUpIncreased of t
 
 val created : create -> event

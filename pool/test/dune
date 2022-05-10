@@ -4,6 +4,7 @@
   admin
   alcotest
   alcotest-lwt
+  assignment
   caqti-driver-mariadb
   contact
   cqrs_command
@@ -11,7 +12,6 @@
   experiment
   http_utils
   invitation
-  participation
   pool_database
   pool_event
   pool_tenant

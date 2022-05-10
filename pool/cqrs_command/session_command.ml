@@ -142,7 +142,7 @@ end = struct
   type t = { session : Session.t }
 
   let handle session =
-    (* TODO [aerben] only when no participations added *)
+    (* TODO [aerben] only when no assignments added *)
     Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 

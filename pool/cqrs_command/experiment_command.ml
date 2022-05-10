@@ -100,7 +100,7 @@ end = struct
 end
 
 module UpdateFilter : sig end = struct
-  (* Update 'match_filter' flag in currently existing participations *)
+  (* Update 'match_filter' flag in currently existing assignments *)
 end
 
 module AddExperimenter : sig
