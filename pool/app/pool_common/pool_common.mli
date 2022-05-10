@@ -199,4 +199,7 @@ module Utils : sig
     -> ('b, 'a) result
 
   val get_or_failwith : ('a, Message.error) result -> 'a
+  val parse_time : string -> (Ptime.t, Message.error) result
+  val parse_time_span : string -> (Ptime.Span.t, Message.error) result
+  val print_time_span : Ptime.Span.t -> string
 end

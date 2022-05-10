@@ -1,4 +1,4 @@
-let invitations pool () =
+let invitations pool =
   let%lwt experiments = Experiment.find_all pool () in
   let%lwt events =
     Lwt_list.map_s

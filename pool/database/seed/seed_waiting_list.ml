@@ -1,4 +1,4 @@
-let waiting_list pool () =
+let waiting_list pool =
   let%lwt experiments = Experiment.find_all pool () in
   let to_public_experiment (experiment : Experiment.t) =
     Experiment_type.

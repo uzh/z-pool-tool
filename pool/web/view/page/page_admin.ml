@@ -1,6 +1,7 @@
-module I18n = Page_admin_i18n
 open Tyxml.Html
+module I18n = Page_admin_i18n
 module Settings = Page_admin_settings
+module Session = Page_admin_session
 module Experiments = Page_admin_experiments
 
 let dashboard Pool_context.{ language; _ } =

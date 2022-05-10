@@ -65,7 +65,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user _ =

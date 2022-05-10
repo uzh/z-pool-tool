@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
+  | CanceledAt -> "Abgesagt am"
   | ContactEmail -> "Kontakt Email Adresse"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
@@ -16,6 +17,7 @@ let field_to_string =
   | DefaultLanguage -> "Standard Sprache"
   | Description -> "Beschreibung"
   | Disabled -> "Gesperrt"
+  | Duration -> "Dauer"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
   | EmailAddressUnverified -> "Unverifizierte Email Adresse"
@@ -58,6 +60,7 @@ let field_to_string =
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Root -> "Root"
+  | Session -> "Session"
   | Setting -> "Einstellung"
   | ShowUp -> "Anwesend"
   | SmtpAuthMethod -> "Smtp Authentifizierungsmethode"
@@ -68,6 +71,7 @@ let field_to_string =
   | SmtpReadModel -> "Smtp read model"
   | SmtpUsername -> "Smtp Benutzername"
   | SmtpWriteModel -> "Smtp write model"
+  | Start -> "Start"
   | Styles -> "Styles"
   | Subject -> "Proband"
   | Subjects -> "Probanden"
@@ -96,8 +100,12 @@ let info_to_string : info -> string = function
 
 let success_to_string : success -> string = function
   | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
+  | Canceled field ->
+    field_message "" (field_to_string field) "wurde erfolgreich abgesagt."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
+  | Deleted field ->
+    field_message "" (field_to_string field) "wurde erfolgreich gelöscht."
   | EmailVerified -> "Email erfolgreich verifiziert."
   | EmailConfirmationMessage ->
     "Eine Email wurde an deine Email Adresse zur verifizierung gesendet."
@@ -147,22 +155,24 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
-  | ExperimenSessionCountNotZero ->
+  | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht \
      werden."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
-  | ParticipantAmountNegative -> "Die Anzahl Teilnehmenden muss positiv sein."
   | MeantimeUpdate field ->
     field_message
       ""
       (field_to_string field)
       "wurde in der Zwischenzeit bearbeitet!"
+  | NegativeAmount -> "Hat negative Anzahl!"
   | NoOptionSelected field ->
     field_message "Bitte mindestens eine" (field_to_string field) "auswählen."
-  | NotANumber field -> Format.asprintf "Version '%s' ist keine Nummer." field
+  | NotADatetime (time, err) ->
+    Format.asprintf "%s: '%s' ist kein valides Datum." err time
+  | NotANumber field -> Format.asprintf "'%s' ist keine Nummer." field
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
   | NotFound field ->
@@ -198,6 +208,11 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator \
      kontaktieren."
+  | Smaller (field1, field2) ->
+    Format.asprintf
+      "%s kleiner als %s"
+      (field_to_string field1)
+      (field_to_string field2)
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
@@ -207,6 +222,7 @@ let rec error_to_string = function
     "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
+  | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
@@ -227,6 +243,7 @@ let control_to_string = function
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
   | Back -> format_submit "zurück" None
+  | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field
   | Create field -> format_submit "erstellen" field
   | Delete field -> format_submit "löschen" field

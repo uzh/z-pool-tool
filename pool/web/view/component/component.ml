@@ -35,18 +35,32 @@ let csrf_attibs ?id csrf =
 
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
-let input_element language input_type name value =
+(* TODO [aerben] add way to provide additional attributes (min for numbers,
+   required) *)
+(* TODO [aerben] make this value arg optional *)
+let input_element ?info language input_type name value =
   let input_label =
-    Pool_common.Utils.field_to_string language name |> CCString.capitalize_ascii
+    Pool_common.Utils.field_to_string language name
+    |> CCString.capitalize_ascii
+    |> fun n ->
+    match info with
+    | Some info -> Format.asprintf "%s (%s)" n info
+    | None -> Format.asprintf "%s" n
+  in
+  let additional_classes =
+    match input_type with
+    | `Datetime -> [ "datepicker" ]
+    | `Time -> [ "spanpicker" ]
+    | _ -> []
   in
   let base_attributes =
-    [ a_input_type input_type; a_value value; a_class [ "input" ] ]
+    [ a_input_type input_type
+    ; a_value value
+    ; a_class @@ [ "input" ] @ additional_classes
+    ]
   in
   let attributes =
-    base_attributes
-    @ [ a_name (name |> Pool_common.Message.Field.show)
-      ; a_placeholder input_label
-      ]
+    base_attributes @ [ a_name (name |> Pool_common.Message.Field.show) ]
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
@@ -56,6 +70,22 @@ let input_element language input_type name value =
       [ label ~a:[ a_class [ "label" ] ] [ txt input_label ]
       ; input ~a:attributes ()
       ]
+;;
+
+(* Use the value from flash as the value, if no value is in flash use a default
+   value *)
+let input_element_persistent
+    ?info
+    ?default
+    language
+    input_type
+    name
+    flash_fetcher
+  =
+  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
+  let open CCOption in
+  let value = old_value <+> default |> get_or ~default:"" in
+  input_element ?info language input_type name value
 ;;
 
 let textarea_element

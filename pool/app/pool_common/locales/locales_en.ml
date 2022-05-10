@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AssetId -> "asset identifier"
+  | CanceledAt -> "canceled at"
   | ContactEmail -> "contact email address"
   | CreatedAt -> "Created at"
   | CurrentPassword -> "current password"
@@ -16,6 +17,7 @@ let field_to_string =
   | DefaultLanguage -> "default language"
   | Description -> "description"
   | Disabled -> "disabled"
+  | Duration -> "duration"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
@@ -59,6 +61,7 @@ let field_to_string =
   | ResentAt -> "Resent at"
   | Role -> "role"
   | Root -> "root"
+  | Session -> "session"
   | Setting -> "setting"
   | ShowUp -> "show up"
   | SmtpAuthMethod -> "smtp authentication method"
@@ -69,6 +72,7 @@ let field_to_string =
   | SmtpReadModel -> "smtp read model"
   | SmtpUsername -> "smtp username"
   | SmtpWriteModel -> "smtp write model"
+  | Start -> "start"
   | Styles -> "styles"
   | Subject -> "subject"
   | Subjects -> "subjects"
@@ -97,8 +101,12 @@ let info_to_string : info -> string = function
 
 let success_to_string : success -> string = function
   | AddedToWaitingList -> "You were added to the waiting list."
+  | Canceled field ->
+    field_message "" (field_to_string field) "was successfully canceled."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
+  | Deleted field ->
+    field_message "" (field_to_string field) "was successfully deleted."
   | EmailVerified -> "Email successfully verified."
   | EmailConfirmationMessage ->
     "Successfully created. An email has been sent to your email address for \
@@ -143,19 +151,20 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
-  | ExperimenSessionCountNotZero ->
+  | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | LoginProvideDetails -> "Please provide email and password"
-  | ParticipantAmountNegative ->
-    "The number of participants has to be positive!"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
+  | NegativeAmount -> "Has negative amount!"
   | NoOptionSelected field ->
     field_message "Please select at least one" (field_to_string field) "."
-  | NotANumber field -> Format.asprintf "Version '%s' is not a number." field
+  | NotADatetime (time, err) ->
+    Format.asprintf "%s: '%s' is not a valid date or time." err time
+  | NotANumber field -> Format.asprintf "'%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotFoundList (field, items) ->
@@ -181,12 +190,18 @@ let rec error_to_string = function
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi \
      occurrences please contact the Administrator."
+  | Smaller (field1, field2) ->
+    Format.asprintf
+      "%s smaller than %s"
+      (field_to_string field1)
+      (field_to_string field2)
   | PoolContextNotFound -> "Context could not be found."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
+  | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenInvalidFormat -> "Invalid Token Format!"
   | TokenAlreadyUsed -> "The token was already used."
@@ -206,6 +221,7 @@ let control_to_string = function
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
   | Back -> format_submit "back" None
+  | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None

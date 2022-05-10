@@ -97,15 +97,11 @@ let urlencoded_to_params urlencoded keys =
   |> CCList.all_some
 ;;
 
-let request_to_params req keys () =
-  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  urlencoded_to_params urlencoded keys
-  |> CCOption.to_result Pool_common.Message.RequestRequiredFields
-  |> Lwt_result.lift
-;;
-
 let urlencoded_to_flash urlencoded =
-  Sihl.Web.Flash.set (urlencoded |> CCList.map (fun (m, k) -> m, CCList.hd k))
+  Sihl.Web.Flash.set
+    (urlencoded
+    |> CCList.map (fun (m, k) ->
+           m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
 (* TODO[timhub]: hide information, at least on public site *)

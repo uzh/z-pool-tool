@@ -23,7 +23,7 @@ let global_stylesheet =
     ()
 ;;
 
-let header title ?(children = []) () =
+let header ?(children = []) title =
   header
     ~a:[ a_class [ "site-header"; "flex-box"; "flex--row"; "flex--between" ] ]
     [ h1 ~a:[ a_style "margin: 0;" ] [ txt title ]; div children ]
@@ -33,6 +33,51 @@ let footer title =
   footer
     ~a:[ a_class [ "site-footer"; "flex-box"; "flex--row"; "flex--center" ] ]
     [ p [ txt title ] ]
+;;
+
+(* TODO [aerben] maybe extract? *)
+let datepicker lang =
+  lang
+  |> Pool_common.Language.code
+  |> CCString.lowercase_ascii
+  |> Format.asprintf
+       (* TODO [aerben] add locale first day of week *)
+       {js|
+function initDatepicker() {
+    document.querySelectorAll('.datepicker').forEach(e => {
+        flatpickr(e, {
+            locale: "%s",
+            altInput: true,
+            altFormat: "d.m.Y H:i",
+            minDate: new Date(),
+            enableTime: true,
+            dateFormat: "Z"
+        })
+    });
+    document.querySelectorAll('.spanpicker').forEach(e => {
+        flatpickr(e, {
+            enableTime: true,
+            noCalendar: true,
+            altFormat: "H:i",
+            dateFormat: "i",
+            time_24hr: true
+        })
+    });
+}
+       |js}
+;;
+
+let onload =
+  {js|
+    window.onload = function () {
+      initDatepicker();
+    }
+  |js}
+;;
+
+let other_scripts lang =
+  let scripts = CCString.concat "\n" [ datepicker lang; onload ] in
+  script (Unsafe.data scripts)
 ;;
 
 let build_nav_link (url, title) language query_language active_navigation =
@@ -136,10 +181,11 @@ module Tenant = struct
          page_title
          [ charset; viewport; custom_stylesheet; global_stylesheet; favicon ])
       (body
-         [ header title_text ~children:header_content ()
+         [ header title_text ~children:header_content
          ; content
          ; footer title_text
          ; scripts
+         ; other_scripts Pool_common.Language.En
          ])
   ;;
 end
@@ -167,9 +213,10 @@ let create_root_layout children message lang ?active_navigation () =
   html
     (head page_title [ charset; viewport; global_stylesheet; favicon ])
     (body
-       [ header title_text ~children:[ navigation ] ()
+       [ header title_text ~children:[ navigation ]
        ; content
        ; footer title_text
        ; scripts
+       ; other_scripts lang
        ])
 ;;

@@ -1,6 +1,7 @@
 open Sexplib.Conv
 module PoolError = Entity_message
 
+(* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
   type t = string [@@deriving eq, show, sexp_of]
 

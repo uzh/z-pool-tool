@@ -9,6 +9,7 @@ type t =
   | Participation of Participation.event
   | PoolTenant of Pool_tenant.event
   | Root of Root.event
+  | Session of Session.event
   | Settings of Settings.event
   | Subject of Subject.event
   | Tenant of Tenant.event
@@ -24,6 +25,7 @@ let invitation events = Invitation events
 let participation events = Participation events
 let pool_tenant events = PoolTenant events
 let root events = Root events
+let session events = Session events
 let settings events = Settings events
 let subject events = Subject events
 let tenant events = Tenant events
@@ -40,6 +42,7 @@ let handle_event pool event =
   | Participation event -> Participation.handle_event pool event
   | PoolTenant event -> Pool_tenant.handle_event pool event
   | Root event -> Root.handle_event pool event
+  | Session event -> Session.handle_event pool event
   | Settings event -> Settings.handle_event pool event
   | Subject event -> Subject.handle_event pool event
   | Tenant event -> Tenant.handle_event pool event

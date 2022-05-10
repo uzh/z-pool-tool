@@ -104,7 +104,7 @@ let delete_with_sessions () =
     ExperimentCommand.Delete.(
       handle { experiment_id = experiment.Experiment.id; session_count })
   in
-  let expected = Error Pool_common.Message.ExperimenSessionCountNotZero in
+  let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)
