@@ -22,19 +22,19 @@ module Sql = struct
           SUBSTR(HEX(pool_experiments.uuid), 21)
         )),
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_subjects.user_uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_subjects.user_uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_subjects.user_uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_subjects.user_uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_subjects.user_uuid), 21)
+          SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 21)
         )),
         pool_invitations.resent_at,
         pool_invitations.created_at,
         pool_invitations.updated_at
       FROM
         pool_invitations
-      LEFT JOIN pool_subjects
-        ON pool_invitations.subject_id = pool_subjects.id
+      LEFT JOIN pool_contacts
+        ON pool_invitations.contact_id = pool_contacts.id
       LEFT JOIN pool_experiments
         ON pool_invitations.experiment_id = pool_experiments.id
     |sql}
@@ -76,20 +76,20 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
-  let find_by_subject_request =
+  let find_by_contact_request =
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))),
+        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))),
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_subject pool id =
+  let find_by_contact pool id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_by_subject_request
+      find_by_contact_request
       (Pool_common.Id.value id)
   ;;
 
@@ -130,14 +130,14 @@ module Sql = struct
       INSERT INTO pool_invitations (
         uuid,
         experiment_id,
-        subject_id,
+        contact_id,
         resent_at,
         created_at,
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_subjects WHERE pool_subjects.user_uuid = UNHEX(REPLACE($3, '-', ''))),
+        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($3, '-', ''))),
         $4,
         $5,
         $6
@@ -166,34 +166,34 @@ module Sql = struct
   ;;
 end
 
-let subject_to_invitation pool invitation =
+let contact_to_invitation pool invitation =
   let open Utils.Lwt_result.Infix in
-  Subject.find pool invitation.RepoEntity.subject_id >|= to_entity invitation
+  Contact.find pool invitation.RepoEntity.contact_id >|= to_entity invitation
 ;;
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  Sql.find pool id >>= subject_to_invitation pool
+  Sql.find pool id >>= contact_to_invitation pool
 ;;
 
 let find_by_experiment pool id =
   let open Lwt.Infix in
   (* TODO Implement as transaction *)
   Sql.find_by_experiment pool id
-  >>= Lwt_list.map_s (subject_to_invitation pool)
+  >>= Lwt_list.map_s (contact_to_invitation pool)
   |> Lwt.map CCList.all_ok
 ;;
 
-let find_by_subject pool subject =
+let find_by_contact pool contact =
   let open Lwt.Infix in
   (* TODO Implement as transaction *)
-  subject
-  |> Subject.id
-  |> Sql.find_by_subject pool
-  (* Reload subject from DB, does not allow already made updates of the provided
-     subject record *)
-  >>= Lwt_list.map_s (subject_to_invitation pool)
+  contact
+  |> Contact.id
+  |> Sql.find_by_contact pool
+  (* Reload contact from DB, does not allow already made updates of the provided
+     contact record *)
+  >>= Lwt_list.map_s (contact_to_invitation pool)
   |> Lwt.map CCList.all_ok
 ;;
 

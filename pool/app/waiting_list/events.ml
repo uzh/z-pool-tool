@@ -1,6 +1,6 @@
 type create =
   { experiment : Experiment_type.public
-  ; subject : Subject.t
+  ; contact : Contact.t
   }
 [@@deriving eq, show]
 
@@ -10,8 +10,8 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Created { experiment; subject } ->
-    Repo_entity.create (Subject.id subject) experiment.Experiment_type.id
+  | Created { experiment; contact } ->
+    Repo_entity.create (Contact.id contact) experiment.Experiment_type.id
     |> Repo.insert pool
-  | Deleted { experiment; subject } -> Repo.delete pool subject experiment
+  | Deleted { experiment; contact } -> Repo.delete pool contact experiment
 ;;

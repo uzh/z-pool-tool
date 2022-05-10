@@ -28,7 +28,7 @@ module Public = struct
       choose
         [ choose
             ~middlewares:
-              [ CustomMiddleware.Context.context `Subject ()
+              [ CustomMiddleware.Context.context `Contact ()
               ; CustomMiddleware.Tenant.valid_tenant ()
               ]
             [ get "/index" index
@@ -45,10 +45,10 @@ module Public = struct
   ;;
 end
 
-module Subject = struct
-  module SignUp = Handler.Subject.SignUp
-  module UserProfile = Handler.Subject.UserProfile
-  module Experiment = Handler.Subject.Experiment
+module Contact = struct
+  module SignUp = Handler.Contact.SignUp
+  module UserProfile = Handler.Contact.UserProfile
+  module Experiment = Handler.Contact.Experiment
 
   let public =
     [ get "/signup" SignUp.sign_up
@@ -77,7 +77,7 @@ module Subject = struct
           waiting_list
       ]
     in
-    [ get "/dashboard" Handler.Subject.dashboard
+    [ get "/dashboard" Handler.Contact.dashboard
     ; get "/user" UserProfile.details
     ; get "/user/edit" UserProfile.edit
     ; post "/user/update" UserProfile.update
@@ -90,13 +90,13 @@ module Subject = struct
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Context.context `Subject ()
+        [ CustomMiddleware.Context.context `Contact ()
         ; CustomMiddleware.Tenant.valid_tenant ()
         ]
       [ choose public
       ; choose
           ~middlewares:
-            [ CustomMiddleware.Subject.confirmed_and_terms_agreed () ]
+            [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
           locked_routes
       ]
   ;;
@@ -218,13 +218,13 @@ end
 let router =
   choose
     [ Public.routes
-    ; Subject.routes
+    ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Context.context `Subject () ]
+        ~middlewares:[ CustomMiddleware.Context.context `Contact () ]
         Handler.Public.not_found
     ]
 ;;

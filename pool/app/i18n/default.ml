@@ -5,7 +5,7 @@ type default = t list [@@deriving eq, show]
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let default_values =
-  [ ( "confirmation_subject"
+  [ ( "confirmation_contact"
     , [ "EN", "Sessionenrollment confirmation"
       ; "DE", "Bestätigung zur Sessionanmeldung"
       ] )
@@ -13,7 +13,7 @@ let default_values =
     , [ "EN", "We hereby confirm the mandatory participation."
       ; "DE", "Hiermit bestätigen wir verbindlich Experiment-Teilnahme."
       ] )
-  ; ( "confirmation_without_self_registration_subject"
+  ; ( "confirmation_without_self_registration_contact"
     , [ "EN", "Your expression of interest to the experiment."
       ; "DE", "Ihre Interessensbekundung zum Experiment."
       ] )
@@ -26,7 +26,7 @@ let default_values =
            werden Sie in Kürze kontaktieren." )
       ] )
   ; "credits_text", [ "EN", "<h2>Credits</h2>"; "DE", "<h2>Impressum</h2>" ]
-  ; ( "experiment_finish_subject"
+  ; ( "experiment_finish_contact"
     , [ "EN", "Session statements incomplete."
       ; "DE", "Sessionabschluss unvollständig"
       ] )
@@ -35,7 +35,7 @@ let default_values =
       ; "DE", "Bitte vervollständigen Sie noch die Teilnahmedaten."
       ] )
   ; "greetings_text", [ "EN", "Greetings Text "; "DE", "Begrüssungstext" ]
-  ; ( "import_invitation_subject"
+  ; ( "import_invitation_contact"
     , [ "EN", "Experiment participation"; "DE", "Experimentteilnahme" ] )
   ; ( "import_invitation_text"
     , [ ( "EN"
@@ -45,14 +45,14 @@ let default_values =
         , "Wir haben unsere Verwaltungssoftware zur Organisation von \
            Experimenten aktualisiert. Bitte aktivieren Sie Ihren Account." )
       ] )
-  ; ( "invitation_subject"
+  ; ( "invitation_contact"
     , [ "EN", "Experiment invitation"; "DE", "Einladung zur Studienteilnahme" ]
     )
   ; ( "invitation_text"
     , [ "EN", "We would like to invite you to an upcoming experiment."
       ; "DE", "Wir möchten Sie zu einem bevorstehenden Experiment einladen."
       ] )
-  ; ( "invitation_without_self_registration_subject"
+  ; ( "invitation_without_self_registration_contact"
     , [ "EN", "Invitation to an experiment"
       ; "DE", "Einladung zu einem Experiment"
       ] )
@@ -64,7 +64,7 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
-  ; ( "reminder_subject"
+  ; ( "reminder_contact"
     , [ "EN", "Reminder: Experiment-Session"
       ; "DE", "Erinnerung: Experiment-Session"
       ] )
@@ -72,7 +72,7 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
-  ; ( "session_finish_subject"
+  ; ( "session_finish_contact"
     , [ "EN", "Session statements incomplete."
       ; "DE", "Sessionabschluss unvollständig"
       ] )

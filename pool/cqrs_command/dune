@@ -3,6 +3,7 @@
  (libraries
   admin
   conformist
+  contact
   database
   email
   experiment
@@ -18,7 +19,6 @@
   session
   settings
   sihl
-  subject
   tenant)
  (preprocess
   (pps lwt_ppx)))

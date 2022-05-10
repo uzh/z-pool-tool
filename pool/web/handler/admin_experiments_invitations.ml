@@ -20,12 +20,12 @@ let index req =
          Experiment_type.find_invitations tenant_db id
        in
        let experiment = experiment_invitations.Experiment_type.experiment in
-       let%lwt filtered_subjects =
-         Subject.find_filtered tenant_db experiment.Experiment.filter ()
+       let%lwt filtered_contacts =
+         Contact.find_filtered tenant_db experiment.Experiment.filter ()
        in
        Page.Admin.Experiments.invitations
          experiment_invitations
-         filtered_subjects
+         filtered_contacts
          context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
@@ -48,43 +48,43 @@ let create req =
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
-    @@ let%lwt subject_ids =
+    @@ let%lwt contact_ids =
          let open Lwt.Infix in
          Sihl.Web.Request.urlencoded_list
-           Pool_common.Message.Field.(Subjects |> array_key)
+           Pool_common.Message.Field.(Contacts |> array_key)
            req
          >|= CCList.map Pool_common.Id.of_string
        in
        let* experiment = Experiment.find tenant_db experiment_id in
-       let* subjects =
-         let find_missing subjects =
-           let retrieved_ids = CCList.map Subject.id subjects in
+       let* contacts =
+         let find_missing contacts =
+           let retrieved_ids = CCList.map Contact.id contacts in
            CCList.fold_left
              (fun missing id ->
                match CCList.mem ~eq:Pool_common.Id.equal id retrieved_ids with
                | true -> missing
                | false -> CCList.cons id missing)
              []
-             subject_ids
+             contact_ids
          in
-         let%lwt subjects = Subject.find_multiple tenant_db subject_ids in
+         let%lwt contacts = Contact.find_multiple tenant_db contact_ids in
          Lwt_result.lift
          @@
-         match CCList.length subject_ids == CCList.length subjects with
-         | true -> Ok subjects
+         match CCList.length contact_ids == CCList.length contacts with
+         | true -> Ok contacts
          | false ->
-           find_missing subjects
+           find_missing contacts
            |> CCList.map Pool_common.Id.value
            |> fun ids ->
-           Error Pool_common.Message.(NotFoundList (Field.Subjects, ids))
+           Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
        in
        let* default_language = Settings.default_language tenant_db in
        let%lwt events =
-         let event subject =
+         let event contact =
            Cqrs_command.Invitation_command.Create.(
-             handle { experiment; subject } default_language |> Lwt_result.lift)
+             handle { experiment; contact } default_language |> Lwt_result.lift)
          in
-         Lwt_list.map_s event subjects
+         Lwt_list.map_s event contacts
        in
        let handle events =
          let%lwt (_ : unit list) =

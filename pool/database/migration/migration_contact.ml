@@ -68,6 +68,15 @@ let rename_participants_to_subjects_table =
     |sql}
 ;;
 
+let rename_subjects_to_contacts_table =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subjects to contacts table"
+    {sql|
+      ALTER TABLE pool_subjects
+        RENAME pool_contacts
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -76,5 +85,6 @@ let migration () =
     |> add_step add_user_language
     |> add_step add_user_language_version
     |> add_step add_user_email_verified_counts
-    |> add_step rename_participants_to_subjects_table)
+    |> add_step rename_participants_to_subjects_table
+    |> add_step rename_subjects_to_contacts_table)
 ;;

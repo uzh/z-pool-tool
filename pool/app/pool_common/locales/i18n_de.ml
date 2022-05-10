@@ -5,8 +5,8 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
-  | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentListTitle -> "Experimente"
+  | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
@@ -20,20 +20,20 @@ let to_string = function
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
-  | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
-  | UserProfileTitle -> "Benutzerprofil"
+  | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
+  | UserProfileTitle -> "Benutzerprofil"
 ;;
 
 let nav_link_to_string = function
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
-  | Profile -> "Profil"
   | Invitations -> "Einladungen"
+  | Profile -> "Profil"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
   | Tenants -> "Tenants"

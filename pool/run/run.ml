@@ -7,7 +7,7 @@ let commands =
   ; Seed.tenant_data
   ; Seed.tenant_data_clean
   ; Tenant_pool.create_tenant_pool
-  ; Subject.sign_up
+  ; Contact.sign_up
   ]
 ;;
 

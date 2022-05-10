@@ -5,6 +5,7 @@
   alcotest
   alcotest-lwt
   caqti-driver-mariadb
+  contact
   cqrs_command
   database
   experiment
@@ -14,7 +15,6 @@
   pool_database
   pool_event
   pool_tenant
-  subject
   tenant
   utils
   waiting_list)

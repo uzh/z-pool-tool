@@ -1,6 +1,6 @@
 type t =
   { id : Pool_common.Id.t
-  ; subject : Subject.t
+  ; contact : Contact.t
   ; experiment : Experiment.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
@@ -8,11 +8,11 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : ?id:Pool_common.Id.t -> Subject.t -> Experiment.t -> t
+val create : ?id:Pool_common.Id.t -> Contact.t -> Experiment.t -> t
 
 type create =
   { experiment : Experiment_type.public
-  ; subject : Subject.t
+  ; contact : Contact.t
   }
 
 val equal_create : create -> create -> bool
@@ -31,7 +31,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 module ExperimentList : sig
   type waiting_list_entry =
     { id : Pool_common.Id.t
-    ; subject : Subject.Preview.t
+    ; contact : Contact.Preview.t
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
@@ -53,7 +53,7 @@ val find
 
 val user_is_enlisted
   :  Pool_database.Label.t
-  -> Subject.t
+  -> Contact.t
   -> Experiment_type.public
   -> bool Lwt.t
 

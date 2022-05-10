@@ -1,14 +1,14 @@
 let sign_up =
   Sihl.Command.make
-    ~name:"subject.signup"
-    ~description:"New subject signup"
+    ~name:"contact.signup"
+    ~description:"New contact signup"
     ~help:
       "<Pool_database> <email> <password> <firstname> <lastname> \
        <recruitment_channel> <terms_excepted>"
     (fun args ->
       let return = Lwt.return_some () in
       let help_text =
-        {|Provide all fields to sign up a new subject:
+        {|Provide all fields to sign up a new contact:
     <Pool_database>       : string
     <email>               : string
     <password>            : string
@@ -18,7 +18,7 @@ let sign_up =
     <language>            : string of 'DE', 'EN'
     <terms_accepted>      : string 'accept' everything else is treated as declined
 
-Example: sihl subject.signup econ-uzh example@mail.com securePassword Max Muster online
+Example: sihl contact.signup econ-uzh example@mail.com securePassword Max Muster online
 
 Note: Make sure 'accept' is added as final argument, otherwise signup fails.
           |}
@@ -45,17 +45,18 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         then (
           let%lwt events =
             let open CCResult.Infix in
+            let open Cqrs_command.Contact_command.SignUp in
             let language =
               Pool_common.Language.of_string language |> CCResult.to_opt
             in
-            Cqrs_command.Subject_command.SignUp.decode
-              [ "email", [ email ]
-              ; "password", [ password ]
-              ; "firstname", [ firstname ]
-              ; "lastname", [ lastname ]
-              ; "recruitment_channel", [ recruitment_channel ]
-              ]
-            >>= Cqrs_command.Subject_command.SignUp.handle language
+            [ "email", [ email ]
+            ; "password", [ password ]
+            ; "firstname", [ firstname ]
+            ; "lastname", [ lastname ]
+            ; "recruitment_channel", [ recruitment_channel ]
+            ]
+            |> decode
+            >>= handle language
             |> Lwt_result.lift
           in
           match events with

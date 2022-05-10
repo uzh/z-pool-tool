@@ -1,6 +1,6 @@
 (library
  (name waiting_list)
- (libraries experiment experiment_type pool_common sihl sihl-email subject)
+ (libraries contact experiment experiment_type pool_common sihl sihl-email)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

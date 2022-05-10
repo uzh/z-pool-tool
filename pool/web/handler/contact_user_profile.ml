@@ -1,7 +1,7 @@
-module Command = Cqrs_command.Subject_command
+module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
 
-let create_layout = Subject_general.create_layout
+let create_layout = Contact_general.create_layout
 let user_update_csrf = "_user_update_csrf"
 
 let show is_edit req =
@@ -13,13 +13,13 @@ let show is_edit req =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
        in
-       let* subject =
-         Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+       let* contact =
+         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
          |> Lwt_result.map_err (fun err -> err)
        in
        match is_edit with
        | false ->
-         Page.Subject.detail subject context
+         Page.Contact.detail contact context
          |> create_layout req context
          >|= Sihl.Web.Response.of_html
        | true ->
@@ -28,7 +28,7 @@ let show is_edit req =
            |> Lwt_result.lift
            >|= fun c -> c.Pool_context.Tenant.tenant_languages
          in
-         Page.Subject.edit user_update_csrf subject tenant_languages context
+         Page.Contact.edit user_update_csrf contact tenant_languages context
          |> create_layout req ~active_navigation:"/user/edit" context
          >|= Sihl.Web.Response.of_html
   in
@@ -55,8 +55,8 @@ let update req =
       Http_utils.user_from_session tenant_db req
       ||> CCOption.to_result (NotFound Field.User, path_with_lang "/login")
     in
-    let* subject =
-      Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+    let* contact =
+      Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
       |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
     in
     let* { Pool_context.Tenant.tenant_languages; _ } =
@@ -79,18 +79,18 @@ let update req =
            (NotHandled Field.(name |> show)))
     in
     let current_version =
-      Subject.version_selector subject Field.(name |> show) |> get_version
+      Contact.version_selector contact Field.(name |> show) |> get_version
     in
     let events =
       let open CCResult.Infix in
-      let open Cqrs_command.Subject_command.Update in
+      let open Cqrs_command.Contact_command.Update in
       if Pool_common.Version.value current_version <= version
-      then urlencoded |> decode >>= handle subject
+      then urlencoded |> decode >>= handle contact
       else Error (MeantimeUpdate name)
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
-    let htmx_element subject classnames ?error () =
-      let open Subject in
+    let htmx_element contact classnames ?error () =
+      let open Contact in
       let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
       let html_response input =
         [ Htmx.create input language ~classnames ~hx_post ?error ()
@@ -102,18 +102,18 @@ let update req =
       @@
       match[@warning "-4"] name with
       | Field.Paused ->
-        Htmx.Paused (subject.paused_version, subject.paused) |> html_response
+        Htmx.Paused (contact.paused_version, contact.paused) |> html_response
       | Field.Firstname ->
-        Htmx.Firstname (subject.firstname_version, subject |> firstname)
+        Htmx.Firstname (contact.firstname_version, contact |> firstname)
         |> html_response
       | Field.Lastname ->
-        Htmx.Lastname (subject.lastname_version, subject |> lastname)
+        Htmx.Lastname (contact.lastname_version, contact |> lastname)
         |> html_response
       | Field.Language ->
         (match error with
         | Some _ ->
           Htmx.Language
-            (subject.language_version, subject.language, tenant_languages)
+            (contact.language_version, contact.language, tenant_languages)
           |> html_response
         | None ->
           Sihl.Web.Response.of_plain_text ""
@@ -127,12 +127,12 @@ let update req =
     match events with
     | Ok events ->
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
-      let* subject =
-        Subject.(subject |> id |> find tenant_db)
+      let* contact =
+        Contact.(contact |> id |> find tenant_db)
         |> Lwt_result.map_err (fun err -> err, "/login")
       in
-      htmx_element subject [ "success" ] ()
-    | Error err -> htmx_element subject [ "error" ] ~error:err ()
+      htmx_element contact [ "success" ] ()
+    | Error err -> htmx_element contact [ "error" ] ~error:err ()
   in
   Lwt.catch
     (fun () -> result |> HttpUtils.extract_happy_path req)
@@ -151,11 +151,11 @@ let update_email req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun msg ->
         HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
-    @@ let* subject =
+    @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result (NotFound Field.User)
          >>= fun user ->
-         Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
        in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
@@ -171,7 +171,7 @@ let update_email req =
        in
        let* events =
          Command.RequestEmailValidation.(
-           handle ?allowed_email_suffixes subject new_email |> Lwt_result.lift)
+           handle ?allowed_email_suffixes contact new_email |> Lwt_result.lift)
        in
        Utils.Database.with_transaction tenant_db (fun () ->
            let%lwt () = Pool_event.handle_events tenant_db events in
@@ -191,15 +191,15 @@ let update_password req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun msg ->
         HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
-    @@ let* subject =
+    @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
          >>= fun user ->
-         Subject.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
        in
        let* events =
          let open CCResult.Infix in
-         Command.UpdatePassword.(decode urlencoded >>= handle subject)
+         Command.UpdatePassword.(decode urlencoded >>= handle contact)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->

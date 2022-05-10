@@ -6,7 +6,7 @@ type role =
 let root =
   Permission.
     [ Manage (Participant, None)
-    ; Manage (Subject, None)
+    ; Manage (Contact, None)
     ; Manage (Tenant, None)
     ; Manage (Tenant_recruiting, None)
     ; Manage (Location, None)
@@ -37,10 +37,10 @@ let assistant experiment_id =
     ]
 ;;
 
-let subject user_id =
+let contact user_id =
   Permission.
-    [ Create Subject
-    ; Read (Subject, Some user_id)
-    ; Update (Subject, Some user_id)
+    [ Create Contact
+    ; Read (Contact, Some user_id)
+    ; Update (Contact, Some user_id)
     ]
 ;;

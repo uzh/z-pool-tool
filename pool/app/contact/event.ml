@@ -47,10 +47,10 @@ let send_password_changed_email pool language person =
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
-let has_terms_accepted pool (subject : t) =
+let has_terms_accepted pool (contact : t) =
   let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
-    subject.terms_accepted_at |> User.TermsAccepted.value
+    contact.terms_accepted_at |> User.TermsAccepted.value
   in
   CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
   |> CCOption.get_or ~default:false
@@ -82,20 +82,20 @@ type event =
 let handle_event pool : event -> unit Lwt.t =
   let ctx = Pool_tenant.to_ctx pool in
   function
-  | Created subject ->
+  | Created contact ->
     let%lwt user =
       Service.User.create_user
         ~ctx
-        ~id:(subject.user_id |> Id.value)
-        ~name:(subject.lastname |> User.Lastname.value)
-        ~given_name:(subject.firstname |> User.Firstname.value)
-        ~password:(subject.password |> User.Password.to_sihl)
-      @@ User.EmailAddress.value subject.email
+        ~id:(contact.user_id |> Id.value)
+        ~name:(contact.lastname |> User.Lastname.value)
+        ~given_name:(contact.firstname |> User.Firstname.value)
+        ~password:(contact.password |> User.Password.to_sihl)
+      @@ User.EmailAddress.value contact.email
     in
     { user
-    ; recruitment_channel = subject.recruitment_channel
-    ; terms_accepted_at = subject.terms_accepted_at
-    ; language = subject.language
+    ; recruitment_channel = contact.recruitment_channel
+    ; terms_accepted_at = contact.terms_accepted_at
+    ; language = contact.language
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
@@ -111,44 +111,44 @@ let handle_event pool : event -> unit Lwt.t =
     }
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
-  | FirstnameUpdated (subject, firstname) ->
+  | FirstnameUpdated (contact, firstname) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~given_name:(firstname |> User.Firstname.value)
-        subject.user
+        contact.user
     in
     Repo.update_version_for
       pool
       `Firstname
-      (id subject, Pool_common.Version.increment subject.firstname_version)
-  | LastnameUpdated (subject, lastname) ->
+      (id contact, Pool_common.Version.increment contact.firstname_version)
+  | LastnameUpdated (contact, lastname) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~name:(lastname |> User.Lastname.value)
-        subject.user
+        contact.user
     in
     Repo.update_version_for
       pool
       `Lastname
-      (id subject, Pool_common.Version.increment subject.lastname_version)
-  | PausedUpdated (subject, paused) ->
+      (id contact, Pool_common.Version.increment contact.lastname_version)
+  | PausedUpdated (contact, paused) ->
     let%lwt () =
       Repo.update_paused
         pool
-        { subject with
+        { contact with
           paused
-        ; paused_version = Pool_common.Version.increment subject.paused_version
+        ; paused_version = Pool_common.Version.increment contact.paused_version
         }
     in
     Lwt.return_unit
-  | EmailUpdated (subject, email) ->
+  | EmailUpdated (contact, email) ->
     let%lwt _ =
       Service.User.update
         ~ctx
         ~email:(Pool_user.EmailAddress.value email)
-        subject.user
+        contact.user
     in
     Lwt.return_unit
   | PasswordUpdated (person, old_password, new_password, confirmed, language) ->
@@ -168,48 +168,48 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let%lwt () = send_password_changed_email pool language person in
     Lwt.return_unit
-  | LanguageUpdated (subject, language) ->
+  | LanguageUpdated (contact, language) ->
     let%lwt () =
       Repo.update_language
         pool
-        { subject with
+        { contact with
           language = Some language
         ; language_version =
-            Pool_common.Version.increment subject.language_version
+            Pool_common.Version.increment contact.language_version
         }
     in
     Lwt.return_unit
-  | Verified subject ->
+  | Verified contact ->
     Repo.update
       pool
-      { subject with verified = Pool_user.Verified.create_now () }
-  | EmailVerified subject ->
+      { contact with verified = Pool_user.Verified.create_now () }
+  | EmailVerified contact ->
     let%lwt _ =
-      Service.User.update ~ctx Sihl_user.{ subject.user with confirmed = true }
+      Service.User.update ~ctx Sihl_user.{ contact.user with confirmed = true }
     in
     Repo.update
       pool
-      { subject with email_verified = Pool_user.EmailVerified.create_now () }
-  | TermsAccepted subject ->
+      { contact with email_verified = Pool_user.EmailVerified.create_now () }
+  | TermsAccepted contact ->
     Repo.update
       pool
-      { subject with terms_accepted_at = User.TermsAccepted.create_now () }
-  | Disabled subject ->
-    Repo.update pool { subject with disabled = User.Disabled.create true }
-  | UnverifiedDeleted subject ->
-    subject |> Entity.id |> Repo.delete_unverified pool
-  | ParticipationIncreased subject ->
+      { contact with terms_accepted_at = User.TermsAccepted.create_now () }
+  | Disabled contact ->
+    Repo.update pool { contact with disabled = User.Disabled.create true }
+  | UnverifiedDeleted contact ->
+    contact |> Entity.id |> Repo.delete_unverified pool
+  | ParticipationIncreased contact ->
     Repo.update
       pool
-      { subject with
+      { contact with
         num_invitations =
-          subject.num_invitations |> NumberOfInvitations.increment
+          contact.num_invitations |> NumberOfInvitations.increment
       }
-  | ShowUpIncreased subject ->
+  | ShowUpIncreased contact ->
     Repo.update
       pool
-      { subject with
+      { contact with
         num_assignments =
-          subject.num_assignments |> NumberOfAssignments.increment
+          contact.num_assignments |> NumberOfAssignments.increment
       }
 ;;

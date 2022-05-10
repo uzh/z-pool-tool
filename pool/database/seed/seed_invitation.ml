@@ -3,12 +3,12 @@ let invitations pool =
   let%lwt events =
     Lwt_list.map_s
       (fun experiment ->
-        let%lwt filtered_subjects =
-          Subject.find_filtered pool experiment.Experiment.filter ()
+        let%lwt filtered_contacts =
+          Contact.find_filtered pool experiment.Experiment.filter ()
         in
-        let n = Random.int (CCList.length filtered_subjects) in
-        let subject = CCList.nth filtered_subjects n in
-        let invitation = Invitation.{ subject; experiment } in
+        let n = Random.int (CCList.length filtered_contacts) in
+        let contact = CCList.nth filtered_contacts n in
+        let invitation = Invitation.{ contact; experiment } in
         (Invitation.Created invitation, Pool_common.Language.En) |> Lwt.return)
       experiments
   in

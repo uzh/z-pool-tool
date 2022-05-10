@@ -8,16 +8,16 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; subject : Subject.t
+  ; contact : Contact.t
   ; resent_at : ResentAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) subject =
+let create ?(id = Pool_common.Id.create ()) contact =
   { id
-  ; subject
+  ; contact
   ; resent_at = None
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()

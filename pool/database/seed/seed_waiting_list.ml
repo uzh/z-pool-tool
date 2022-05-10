@@ -10,13 +10,13 @@ let waiting_list pool =
   let%lwt events =
     Lwt_list.map_s
       (fun experiment ->
-        let%lwt filtered_subjects =
-          Subject.find_filtered pool experiment.Experiment.filter ()
+        let%lwt filtered_contacts =
+          Contact.find_filtered pool experiment.Experiment.filter ()
         in
-        let n = Random.int (CCList.length filtered_subjects) in
-        let subject = CCList.nth filtered_subjects n in
+        let n = Random.int (CCList.length filtered_contacts) in
+        let contact = CCList.nth filtered_contacts n in
         let experiment = to_public_experiment experiment in
-        let waiting_list = Waiting_list.{ subject; experiment } in
+        let waiting_list = Waiting_list.{ contact; experiment } in
         Waiting_list.Created waiting_list |> Lwt.return)
       experiments
   in

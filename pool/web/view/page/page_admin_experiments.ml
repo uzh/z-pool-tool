@@ -173,7 +173,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
 
 let invitations
     (experiment_invitations : Experiment_type.invitations)
-    filtered_subjects
+    filtered_contacts
     (Pool_context.{ language; _ } as context)
   =
   let experiment = experiment_invitations.Experiment_type.experiment in
@@ -190,7 +190,7 @@ let invitations
     ; Page_admin_invitations.Partials.send_invitation
         context
         experiment
-        filtered_subjects
+        filtered_contacts
     ]
 ;;
 
@@ -201,10 +201,10 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
       (fun entry ->
         div
           ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
-          [ div [ txt (Subject.Preview.fullname entry.subject) ]
+          [ div [ txt (Contact.Preview.fullname entry.contact) ]
           ; div
               [ txt
-                  (Subject.Preview.email_address entry.subject
+                  (Contact.Preview.email_address entry.contact
                   |> Pool_user.EmailAddress.value)
               ]
           ; div

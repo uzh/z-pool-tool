@@ -1,26 +1,26 @@
 module Key : sig
   type t =
-    | ConfirmationSubject
+    | ConfirmationContact
     | ConfirmationText
-    | ConfirmationWithoutSelfRegistrationSubject
+    | ConfirmationWithoutSelfRegistrationContact
     | ConfirmationWithoutSelfRegistrationText
     | CreditsText
-    | ExperimentFinishSubject
+    | ExperimentFinishContact
     | ExperimentFinishText
     | GreetingsText
-    | ImportInvitationSubject
+    | ImportInvitationContact
     | ImportInvitationText
-    | InvitationSubject
+    | InvitationContact
     | InvitationText
-    | InvitationWithoutSelfRegistrationSubject
+    | InvitationWithoutSelfRegistrationContact
     | InvitationWithoutSelfRegistrationText
+    | PasswordPolicyText
+    | ReminderContact
     | ReminderSmsText
-    | ReminderSubject
     | ReminderText
-    | SessionFinishSubject
+    | SessionFinishContact
     | SessionFinishText
     | WelcomeText
-    | PasswordPolicyText
 
   val to_string : t -> string
   val equal : t -> t -> bool

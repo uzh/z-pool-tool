@@ -21,7 +21,7 @@ module Partials = struct
         (fun (invitation : Invitation.t) ->
           let open Invitation in
           tr
-            [ td [ invitation.subject |> Subject.fullname |> txt ]
+            [ td [ invitation.contact |> Contact.fullname |> txt ]
             ; td
                 [ invitation.resent_at
                   |> CCOption.map_or ~default:"" (fun reset_at ->
@@ -70,7 +70,7 @@ module Partials = struct
                        Pool_common.Utils.field_to_string language field))
             ])
         Pool_common.Message.Field.
-          [ Some subject; Some ResentAt; Some CreatedAt; None ]
+          [ Some contact; Some ResentAt; Some CreatedAt; None ]
       |> tr
       |> CCList.pure
       |> thead
@@ -81,7 +81,7 @@ module Partials = struct
   let send_invitation
       Pool_context.{ csrf; language; _ }
       experiment
-      filtered_subjects
+      filtered_contacts
     =
     div
       [ h3
@@ -95,23 +95,23 @@ module Partials = struct
           ; div
               ~a:[ a_class [ "stack" ] ]
               (CCList.map
-                 (fun (subject : Subject.t) ->
-                   let id = Subject.id subject |> Pool_common.Id.value in
+                 (fun (contact : Contact.t) ->
+                   let id = Contact.id contact |> Pool_common.Id.value in
                    div
                      ~a:[ a_class [ "is-box"; "flex--row" ] ]
                      [ input
                          ~a:
                            [ a_input_type `Checkbox
-                           ; a_name "subjects[]"
+                           ; a_name "contacts[]"
                            ; a_id id
                            ; a_value id
                            ]
                          ()
                      ; label
                          ~a:[ a_label_for id ]
-                         [ txt (Subject.fullname subject) ]
+                         [ txt (Contact.fullname contact) ]
                      ])
-                 filtered_subjects)
+                 filtered_contacts)
           ; submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))

@@ -6,7 +6,9 @@ let field_to_string =
   | Admin -> "admin"
   | AssetId -> "asset identifier"
   | CanceledAt -> "canceled at"
+  | Contact -> "contact"
   | ContactEmail -> "contact email address"
+  | Contacts -> "contacts"
   | CreatedAt -> "Created at"
   | CurrentPassword -> "current password"
   | Database -> "database"
@@ -74,8 +76,6 @@ let field_to_string =
   | SmtpWriteModel -> "smtp write model"
   | Start -> "start"
   | Styles -> "styles"
-  | Subject -> "subject"
-  | Subjects -> "subjects"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled flag"
   | TenantId -> "tenant identifier"
@@ -107,15 +107,15 @@ let success_to_string : success -> string = function
     field_message "" (field_to_string field) "was successfully created."
   | Deleted field ->
     field_message "" (field_to_string field) "was successfully deleted."
-  | EmailVerified -> "Email successfully verified."
   | EmailConfirmationMessage ->
-    "Successfully created. An email has been sent to your email address for \
+    "Successfully created. An email has been sent to your email address for  \
      verification."
+  | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
   | PasswordChanged -> "Password successfully changed."
   | PasswordReset -> "Password reset, you can now log in."
   | PasswordResetSuccessMessage ->
-    "You will receive an email with a link to reset your password if an \
+    "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
   | SentList field ->
@@ -142,8 +142,11 @@ let rec error_to_string = function
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
-  | DecodeAction -> "Cannot decode action."
+  | ContactSignupInvalidEmail ->
+    "Please provide a valid and unused email address."
+  | ContactUnconfirmed -> "Participant isn't confirmed!"
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
+  | DecodeAction -> "Cannot decode action."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingOperator -> "Please provide operator email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
@@ -174,28 +177,25 @@ let rec error_to_string = function
       (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NoValue -> "No value provided."
-  | SubjectSignupInvalidEmail ->
-    "Please provide a valid and unused email address."
-  | SubjectUnconfirmed -> "Participant isn't confirmed!"
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy msg ->
     Format.asprintf "Password doesn't match the required policy! %s" msg
-  | PasswordResetInvalidData -> "Invalid token or password provided"
   | PasswordResetFailMessage ->
-    "You will receive an email with a link to reset your password if an \
+    "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
+  | PasswordResetInvalidData -> "Invalid token or password provided"
+  | PoolContextNotFound -> "Context could not be found."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionInvalid -> "Invalid session, please login."
   | SessionTenantNotFound ->
-    "Something on our side went wrong, please try again later or on multi \
+    "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s smaller than %s"
       (field_to_string field1)
       (field_to_string field2)
-  | PoolContextNotFound -> "Context could not be found."
   | TerminatoryTenantError | TerminatoryRootError -> "Please try again later."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
     "An error occurred"
@@ -203,8 +203,8 @@ let rec error_to_string = function
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
-  | TokenInvalidFormat -> "Invalid Token Format!"
   | TokenAlreadyUsed -> "The token was already used."
+  | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
   | WriteOnlyModel -> "Write only model!"
 ;;
@@ -231,8 +231,8 @@ let control_to_string = function
   | Enable -> format_submit "enable" None
   | Login -> format_submit "login" None
   | More -> "more"
-  | Resend field -> format_submit "resend" field
   | RemoveFromWaitingList -> "Remove from waiting list"
+  | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None

@@ -127,7 +127,7 @@ module Tenant = struct
     let nav_links =
       let open Pool_common.I18n in
       (match layout_context with
-      | `Subject -> [ "/experiments", Experiments ]
+      | `Contact -> [ "/experiments", Experiments ]
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments
@@ -173,7 +173,7 @@ module Tenant = struct
       @@
       match layout_context with
       | `Admin -> [ navigation ]
-      | `Subject -> [ navigation; i18n_links tenant_languages active_lang ]
+      | `Contact -> [ navigation; i18n_links tenant_languages active_lang ]
     in
     let content = main ~a:[ a_class [ "site-main" ] ] [ message; children ] in
     html

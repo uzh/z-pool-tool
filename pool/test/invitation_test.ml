@@ -11,10 +11,10 @@ let check_result expected generated =
 ;;
 
 let create_invitation () =
-  let subject = Test_utils.create_subject () in
+  let contact = Test_utils.create_contact () in
   Invitation.
     { id = Pool_common.Id.create ()
-    ; subject
+    ; contact
     ; resent_at = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
@@ -23,14 +23,14 @@ let create_invitation () =
 
 let create () =
   let experiment = Test_utils.create_experiment () in
-  let subject = Test_utils.create_subject () in
+  let contact = Test_utils.create_contact () in
   let events =
-    let command = InvitationCommand.Create.{ experiment; subject } in
+    let command = InvitationCommand.Create.{ experiment; contact } in
     InvitationCommand.Create.handle command Pool_common.Language.En
   in
   let expected =
     Ok
-      [ Invitation.(Created { experiment; subject }, Pool_common.Language.En)
+      [ Invitation.(Created { experiment; contact }, Pool_common.Language.En)
         |> Pool_event.invitation
       ]
   in

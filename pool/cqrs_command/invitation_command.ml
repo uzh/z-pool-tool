@@ -1,7 +1,7 @@
 module Create : sig
   type t =
     { experiment : Experiment.t
-    ; subject : Subject.t
+    ; contact : Contact.t
     }
 
   val handle
@@ -13,12 +13,12 @@ module Create : sig
 end = struct
   type t =
     { experiment : Experiment.t
-    ; subject : Subject.t
+    ; contact : Contact.t
     }
 
   let handle (command : t) language =
     let (create : Invitation.create) =
-      Invitation.{ experiment = command.experiment; subject = command.subject }
+      Invitation.{ experiment = command.experiment; contact = command.contact }
     in
     Ok [ (Invitation.Created create, language) |> Pool_event.invitation ]
   ;;

@@ -8,7 +8,7 @@ module SignUp : sig
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Subject.RecruitmentChannel.t
+    ; recruitment_channel : Contact.RecruitmentChannel.t
     }
 
   val handle
@@ -30,7 +30,7 @@ end = struct
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Subject.RecruitmentChannel.t
+    ; recruitment_channel : Contact.RecruitmentChannel.t
     }
 
   let command email password firstname lastname recruitment_channel =
@@ -45,7 +45,7 @@ end = struct
           ; User.Password.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
-          ; Subject.RecruitmentChannel.schema ()
+          ; Contact.RecruitmentChannel.schema ()
           ]
         command)
   ;;
@@ -61,8 +61,8 @@ end = struct
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
-    let subject =
-      Subject.
+    let contact =
+      Contact.
         { user_id
         ; email = command.email
         ; password = command.password
@@ -74,7 +74,7 @@ end = struct
         }
     in
     Ok
-      [ Subject.Created subject |> Pool_event.subject
+      [ Contact.Created contact |> Pool_event.contact
       ; Email.Created
           ( command.email
           , user_id
@@ -94,13 +94,13 @@ end
 
 module DeleteUnverified : sig
   val handle
-    :  Subject.t
+    :  Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  let handle subject =
-    if subject.Subject.email_verified |> User.EmailVerified.is_some
+  let handle contact =
+    if contact.Contact.email_verified |> User.EmailVerified.is_some
     then Error Pool_common.Message.EmailDeleteAlreadyVerified
-    else Ok [ Subject.UnverifiedDeleted subject |> Pool_event.subject ]
+    else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
   ;;
 end
 
@@ -113,7 +113,7 @@ module Update : sig
     }
 
   val handle
-    :  Subject.t
+    :  Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -124,7 +124,7 @@ module Update : sig
   val can
     :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
-    -> Subject.t
+    -> Contact.t
     -> bool Lwt.t
 end = struct
   type t =
@@ -150,15 +150,15 @@ end = struct
         command)
   ;;
 
-  let handle subject (command : t) =
-    Subject.
-      [ command.firstname |> CCOption.map (firstnameupdated subject)
-      ; command.lastname |> CCOption.map (lastnameupdated subject)
-      ; command.paused |> CCOption.map (pausedupdated subject)
-      ; command.language |> CCOption.map (languageupdated subject)
+  let handle contact (command : t) =
+    Contact.
+      [ command.firstname |> CCOption.map (firstnameupdated contact)
+      ; command.lastname |> CCOption.map (lastnameupdated contact)
+      ; command.paused |> CCOption.map (pausedupdated contact)
+      ; command.language |> CCOption.map (languageupdated contact)
       ]
     |> CCList.filter_map CCFun.id
-    |> CCList.map Pool_event.subject
+    |> CCList.map Pool_event.contact
     |> CCResult.pure
   ;;
 
@@ -167,13 +167,13 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can pool user subject =
+  let can pool user contact =
     let open Utils.Lwt_result.Infix in
     let check_permission tenant =
       Permission.can
         user
         ~any_of:
-          [ Permission.Update (Permission.Subject, Some (subject |> Subject.id))
+          [ Permission.Update (Permission.Contact, Some (contact |> Contact.id))
           ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
@@ -194,7 +194,7 @@ module UpdatePassword : sig
   val handle
     :  ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
-    -> Subject.t
+    -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -205,7 +205,7 @@ module UpdatePassword : sig
   val can
     :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
-    -> Subject.t
+    -> Contact.t
     -> bool Lwt.t
 end = struct
   type t =
@@ -230,11 +230,11 @@ end = struct
         command)
   ;;
 
-  let handle ?password_policy subject command =
+  let handle ?password_policy contact command =
     let open CCResult in
     let* () =
       User.Password.validate_current_password
-        subject.Subject.user
+        contact.Contact.user
         command.current_password
     in
     let* () = User.Password.validate ?password_policy command.new_password in
@@ -244,14 +244,14 @@ end = struct
         command.password_confirmation
     in
     Ok
-      [ Subject.PasswordUpdated
-          ( subject
+      [ Contact.PasswordUpdated
+          ( contact
           , command.current_password
           , command.new_password
           , command.password_confirmation
-          , subject.Subject.language
+          , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.subject
+        |> Pool_event.contact
       ]
   ;;
 
@@ -260,13 +260,13 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can pool user subject =
+  let can pool user contact =
     let open Utils.Lwt_result.Infix in
     let check_permission tenant =
       Permission.can
         user
         ~any_of:
-          [ Permission.Update (Permission.Subject, Some (subject |> Subject.id))
+          [ Permission.Update (Permission.Contact, Some (contact |> Contact.id))
           ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
@@ -282,38 +282,38 @@ module RequestEmailValidation : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> Subject.t
+    -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can
     :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
-    -> Subject.t
+    -> Contact.t
     -> bool Lwt.t
 end = struct
   type t = Pool_user.EmailAddress.t
 
-  let handle ?allowed_email_suffixes subject email =
+  let handle ?allowed_email_suffixes contact email =
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
       [ Email.Updated
           ( email
-          , subject.Subject.user
-          , subject.Subject.language
+          , contact.Contact.user
+          , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
         |> Pool_event.email_address
       ]
   ;;
 
-  let can pool user subject =
+  let can pool user contact =
     let open Utils.Lwt_result.Infix in
     let check_permission tenant =
       Permission.can
         user
         ~any_of:
-          [ Permission.Update (Permission.Subject, Some (Subject.id subject))
+          [ Permission.Update (Permission.Contact, Some (Contact.id contact))
           ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
@@ -329,33 +329,33 @@ module UpdateEmail : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> Subject.t
+    -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Pool_database.Label.t -> Sihl_user.t -> Subject.t -> bool Lwt.t
+  val can : Pool_database.Label.t -> Sihl_user.t -> Contact.t -> bool Lwt.t
 end = struct
   type t = Email.unverified Email.t
 
-  let handle ?allowed_email_suffixes subject email =
+  let handle ?allowed_email_suffixes contact email =
     let open CCResult in
     let* () =
       User.EmailAddress.validate allowed_email_suffixes (Email.address email)
     in
     Ok
-      [ Subject.EmailUpdated (subject, Email.address email)
-        |> Pool_event.subject
+      [ Contact.EmailUpdated (contact, Email.address email)
+        |> Pool_event.contact
       ; Email.EmailVerified email |> Pool_event.email_address
       ]
   ;;
 
-  let can pool user subject =
+  let can pool user contact =
     let open Utils.Lwt_result.Infix in
     let check_permission tenant =
       Permission.can
         user
         ~any_of:
-          [ Permission.Update (Permission.Subject, Some (Subject.id subject))
+          [ Permission.Update (Permission.Contact, Some (Contact.id contact))
           ; Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id)
           ]
     in
@@ -368,11 +368,11 @@ end
 
 module AcceptTermsAndConditions : sig
   val handle
-    :  Subject.t
+    :  Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
-  let handle subject =
-    Ok [ Subject.TermsAccepted subject |> Pool_event.subject ]
+  let handle contact =
+    Ok [ Contact.TermsAccepted contact |> Pool_event.contact ]
   ;;
 end
 
@@ -380,15 +380,15 @@ module VerifyEmail : sig
   type t = { email : Email.unverified Email.t }
 
   val handle
-    :  Subject.t
+    :  Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = { email : Email.unverified Email.t }
 
-  let handle subject command =
+  let handle contact command =
     Ok
-      [ Subject.EmailVerified subject |> Pool_event.subject
+      [ Contact.EmailVerified contact |> Pool_event.contact
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
   ;;
@@ -396,7 +396,7 @@ end
 
 module Verify = struct
   (* TODO issue #90 step 2 *)
-  (* TODO Verify the subject itself with ID/Pass *)
+  (* TODO Verify the contact itself with ID/Pass *)
 end
 
 module ToggleDisable = struct

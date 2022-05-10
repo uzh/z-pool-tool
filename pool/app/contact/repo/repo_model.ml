@@ -143,7 +143,7 @@ let t =
                                                 (tup2 CreatedAt.t UpdatedAt.t))))))))))))))))
 ;;
 
-let subject =
+let contact =
   let encode m =
     let open Pool_user in
     let open Pool_common in

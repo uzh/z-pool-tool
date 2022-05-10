@@ -8,7 +8,7 @@ type thing =
   | Participant
   | Participation
   | System
-  | Subject
+  | Contact
   | Tenant
   | Tenant_recruiting
   | Waiting_list

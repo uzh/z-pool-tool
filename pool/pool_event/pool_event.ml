@@ -1,6 +1,7 @@
 (* All events that are possible in the whole system *)
 type t =
   | Admin of Admin.event
+  | Contact of Contact.event
   | Database of Database.event
   | EmailAddress of Email.event
   | Experiment of Experiment.event
@@ -11,12 +12,12 @@ type t =
   | Root of Root.event
   | Session of Session.event
   | Settings of Settings.event
-  | Subject of Subject.event
   | Tenant of Tenant.event
   | WaitingList of Waiting_list.event
 [@@deriving eq, show]
 
 let admin events = Admin events
+let contact events = Contact events
 let database events = Database events
 let email_address events = EmailAddress events
 let experiment events = Experiment events
@@ -27,13 +28,13 @@ let pool_tenant events = PoolTenant events
 let root events = Root events
 let session events = Session events
 let settings events = Settings events
-let subject events = Subject events
 let tenant events = Tenant events
 let waiting_list events = WaitingList events
 
 let handle_event pool event =
   match event with
   | Admin event -> Admin.handle_event pool event
+  | Contact event -> Contact.handle_event pool event
   | Database event -> Database.handle_event pool event
   | EmailAddress event -> Email.handle_event pool event
   | Experiment event -> Experiment.handle_event pool event
@@ -44,7 +45,6 @@ let handle_event pool event =
   | Root event -> Root.handle_event pool event
   | Session event -> Session.handle_event pool event
   | Settings event -> Settings.handle_event pool event
-  | Subject event -> Subject.handle_event pool event
   | Tenant event -> Tenant.handle_event pool event
   | WaitingList event -> Waiting_list.handle_event pool event
 ;;

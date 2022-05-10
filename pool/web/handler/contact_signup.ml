@@ -1,7 +1,7 @@
-module Command = Cqrs_command.Subject_command
+module Command = Cqrs_command.Contact_command
 module HttpUtils = Http_utils
 
-let create_layout = Subject_general.create_layout
+let create_layout = Contact_general.create_layout
 
 let sign_up req =
   let result ({ Pool_context.tenant_db; language; _ } as context) =
@@ -11,13 +11,13 @@ let sign_up req =
     Lwt_result.map_err (fun err -> err, "/index")
     @@
     let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
-    let channels = Subject.RecruitmentChannel.(all |> CCList.map show) in
+    let channels = Contact.RecruitmentChannel.(all |> CCList.map show) in
     let email = go Field.Email in
     let firstname = go Field.Firstname in
     let lastname = go Field.Lastname in
     let recruitment_channel = go Field.RecruitmentChannel in
     let* terms = Settings.terms_and_conditions tenant_db language in
-    Page.Subject.sign_up
+    Page.Contact.sign_up
       channels
       email
       firstname
@@ -50,21 +50,21 @@ let sign_up_create req =
          |> Utils.Bool.to_result TermsAndConditionsNotAccepted
          |> Lwt_result.lift
        in
-       let* remove_subject_event =
-         let find_subject email =
+       let* remove_contact_event =
+         let find_contact email =
            email
-           |> Subject.find_by_email tenant_db
+           |> Contact.find_by_email tenant_db
            ||> function
            | Ok partitipant ->
-             if partitipant.Subject.user.Sihl_user.confirmed
+             if partitipant.Contact.user.Sihl_user.confirmed
              then Error EmailAlreadyInUse
              else Ok (Some partitipant)
            | Error _ -> Ok None
          in
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
-         ||> CCOption.to_result SubjectSignupInvalidEmail
+         ||> CCOption.to_result ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
-         >>= find_subject
+         >>= find_contact
          >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
                  Command.DeleteUnverified.handle p |> Lwt_result.lift)
        in
@@ -80,7 +80,7 @@ let sign_up_create req =
          Command.SignUp.(
            decode urlencoded
            >>= handle ?allowed_email_suffixes preferred_language)
-         >>= (fun e -> Ok (remove_subject_event @ e))
+         >>= (fun e -> Ok (remove_contact_event @ e))
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
@@ -124,12 +124,12 @@ let email_verification req =
        >>= Email.find_unverified_by_address tenant_db
        |> Lwt_result.map_err (fun _ -> Field.(Invalid Token))
      in
-     let* subject = Subject.find tenant_db (Email.user_id email) in
+     let* contact = Contact.find tenant_db (Email.user_id email) in
      let* events =
-       match subject.Subject.user.Sihl.Contract.User.confirmed with
+       match contact.Contact.user.Sihl.Contract.User.confirmed with
        | false ->
-         Command.VerifyEmail.(handle subject { email }) |> Lwt_result.lift
-       | true -> Command.UpdateEmail.(handle subject email) |> Lwt_result.lift
+         Command.VerifyEmail.(handle contact { email }) |> Lwt_result.lift
+       | true -> Command.UpdateEmail.(handle contact email) |> Lwt_result.lift
      in
      let%lwt () = Pool_event.handle_events tenant_db events in
      HttpUtils.(
@@ -152,7 +152,7 @@ let terms req =
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
        in
        let* terms = Settings.terms_and_conditions tenant_db language in
-       Page.Subject.terms user.Sihl_user.id terms context
+       Page.Contact.terms user.Sihl_user.id terms context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -168,9 +168,9 @@ let terms_accept req =
       Pool_common.(
         Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
     in
-    let* subject = Subject.find tenant_db id in
+    let* contact = Contact.find tenant_db id in
     let* events =
-      Command.AcceptTermsAndConditions.handle subject |> Lwt_result.lift
+      Command.AcceptTermsAndConditions.handle contact |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
     HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))

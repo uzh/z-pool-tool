@@ -3,6 +3,7 @@
  (libraries
   admin
   conformist
+  contact
   email
   experiment
   i18n
@@ -11,7 +12,6 @@
   service
   session
   sihl
-  subject
   tenant
   utils
   waiting_list)

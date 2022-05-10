@@ -1,6 +1,7 @@
 (library
  (name handler)
  (libraries
+  contact
   cqrs_command
   email
   experiment_type
@@ -10,7 +11,6 @@
   pool_common
   service
   sihl
-  subject
   waiting_list)
  (preprocess
   (pps lwt_ppx)))

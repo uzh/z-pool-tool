@@ -6,7 +6,9 @@ let field_to_string =
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
   | CanceledAt -> "Abgesagt am"
+  | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
+  | Contacts -> "Probanden"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | Database -> "Datenbank"
@@ -73,8 +75,6 @@ let field_to_string =
   | SmtpWriteModel -> "Smtp write model"
   | Start -> "Start"
   | Styles -> "Styles"
-  | Subject -> "Proband"
-  | Subjects -> "Probanden"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert Flag"
   | TenantId -> "Tenant Identifier"
@@ -106,14 +106,14 @@ let success_to_string : success -> string = function
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
     field_message "" (field_to_string field) "wurde erfolgreich gelöscht."
-  | EmailVerified -> "Email erfolgreich verifiziert."
   | EmailConfirmationMessage ->
     "Eine Email wurde an deine Email Adresse zur verifizierung gesendet."
+  | EmailVerified -> "Email erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
-    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
+    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
   | SentList field ->
@@ -141,12 +141,15 @@ let rec error_to_string = function
       errs
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
-  | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | ContactSignupInvalidEmail ->
+    "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
+  | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | Decode field ->
     field_message
       ""
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
+  | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
@@ -156,7 +159,7 @@ let rec error_to_string = function
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
   | ExperimentSessionCountNotZero ->
-    "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht \
+    "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
@@ -187,33 +190,30 @@ let rec error_to_string = function
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NoValue -> "Kein Wert angegeben"
-  | SubjectSignupInvalidEmail ->
-    "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
-  | SubjectUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy msg ->
     Format.asprintf
       "Passwort stimmt nicht mit der benötigten Policy überein! %s"
       msg
-  | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PasswordResetFailMessage ->
-    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert, \
+    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+  | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
+  | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionTenantNotFound ->
-    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals \
-     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator \
+    "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
+     versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
      kontaktieren."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s kleiner als %s"
       (field_to_string field1)
       (field_to_string field2)
-  | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | TerminatoryTenantError | TerminatoryRootError ->
     "Bitte versuchen Sie es später erneut."
   | TerminatoryTenantErrorTitle | TerminatoryRootErrorTitle ->
@@ -224,8 +224,8 @@ let rec error_to_string = function
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
-  | TokenInvalidFormat -> "Ungültiges Token Format!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
+  | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
@@ -246,16 +246,16 @@ let control_to_string = function
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field
   | Create field -> format_submit "erstellen" field
-  | Delete field -> format_submit "löschen" field
   | Decline -> format_submit "ablehnen" None
+  | Delete field -> format_submit "löschen" field
   | Disable -> format_submit "deaktivieren" None
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
-  | Save field -> format_submit "speichern" field
-  | Resend field -> format_submit "erneut senden" field
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Resend field -> format_submit "erneut senden" field
+  | Save field -> format_submit "speichern" field
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | SignUp -> format_submit "registrieren" None

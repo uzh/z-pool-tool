@@ -15,7 +15,18 @@ let create_waiting_list_table =
     |sql}
 ;;
 
+let rename_subject_to_contact =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subject id to contact id"
+    {sql|
+      ALTER TABLE pool_waiting_list
+        RENAME COLUMN subject_id TO contact_id
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "waiting_list" |> add_step create_waiting_list_table)
+    empty "waiting_list"
+    |> add_step create_waiting_list_table
+    |> add_step rename_subject_to_contact)
 ;;

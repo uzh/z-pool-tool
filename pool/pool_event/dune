@@ -3,6 +3,7 @@
  (name pool_event)
  (libraries
   admin
+  contact
   database
   email
   experiment
@@ -13,7 +14,6 @@
   root
   settings
   sihl
-  subject
   tenant
   waiting_list)
  (preprocess

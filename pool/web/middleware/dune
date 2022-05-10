@@ -1,5 +1,5 @@
 (library
  (name middleware)
- (libraries canary http_utils page service sihl subject tenant tyxml utils)
+ (libraries canary contact http_utils page service sihl tenant tyxml utils)
  (preprocess
   (pps lwt_ppx tyxml-ppx)))

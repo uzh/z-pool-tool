@@ -14,11 +14,11 @@ module Sql = struct
               SUBSTR(HEX(pool_waiting_list.uuid), 21)
             )),
             LOWER(CONCAT(
-              SUBSTR(HEX(pool_subjects.user_uuid), 1, 8), '-',
-              SUBSTR(HEX(pool_subjects.user_uuid), 9, 4), '-',
-              SUBSTR(HEX(pool_subjects.user_uuid), 13, 4), '-',
-              SUBSTR(HEX(pool_subjects.user_uuid), 17, 4), '-',
-              SUBSTR(HEX(pool_subjects.user_uuid), 21)
+              SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_contacts.user_uuid), 21)
             )),
             LOWER(CONCAT(
               SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
@@ -30,8 +30,8 @@ module Sql = struct
             pool_waiting_list.created_at,
             pool_waiting_list.updated_at
           FROM pool_waiting_list
-          LEFT JOIN pool_subjects
-            ON pool_waiting_list.subject_id = pool_subjects.id
+          LEFT JOIN pool_contacts
+            ON pool_waiting_list.contact_id = pool_contacts.id
           LEFT JOIN pool_experiments
             ON pool_waiting_list.experiment_id = pool_experiments.id
         |sql}
@@ -61,7 +61,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
       AND
         experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
     |sql}
@@ -69,12 +69,12 @@ module Sql = struct
     |> Caqti_type.(tup2 string string) ->! RepoEntity.t
   ;;
 
-  let user_is_enlisted pool subject experiment =
+  let user_is_enlisted pool contact experiment =
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       user_is_enlisted_request
-      ( subject |> Subject.id |> Pool_common.Id.value
+      ( contact |> Contact.id |> Pool_common.Id.value
       , experiment.Experiment_type.id |> Pool_common.Id.value )
     >|= function
     | None -> false
@@ -109,19 +109,19 @@ module Sql = struct
       user_users.confirmed,
       user_users.created_at,
       user_users.updated_at,
-      pool_subjects.language,
-      pool_subjects.paused,
-      pool_subjects.verified,
-      pool_subjects.num_invitations,
-      pool_subjects.num_assignments,
+      pool_contacts.language,
+      pool_contacts.paused,
+      pool_contacts.verified,
+      pool_contacts.num_invitations,
+      pool_contacts.num_assignments,
       pool_waiting_list.created_at,
       pool_waiting_list.updated_at
     FROM
       pool_waiting_list
-    LEFT JOIN pool_subjects
-      ON pool_waiting_list.subject_id = pool_subjects.id
+    LEFT JOIN pool_contacts
+      ON pool_waiting_list.contact_id = pool_contacts.id
     LEFT JOIN user_users
-      ON pool_subjects.user_uuid = user_users.uuid
+      ON pool_contacts.user_uuid = user_users.uuid
     |sql}
       where_fragment
   ;;
@@ -148,11 +148,11 @@ module Sql = struct
     {sql|
       INSERT INTO pool_waiting_list (
         uuid,
-        subject_id,
+        contact_id,
         experiment_id
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
-        (SELECT id FROM pool_subjects WHERE pool_subjects.user_uuid = UNHEX(REPLACE($2, '-', ''))),
+        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($2, '-', ''))),
         (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($3, '-', '')))
       )
     |sql}
@@ -162,7 +162,7 @@ module Sql = struct
   let insert pool m =
     let caqti =
       ( m.RepoEntity.id |> Pool_common.Id.value
-      , m.RepoEntity.subject_id |> Pool_common.Id.value
+      , m.RepoEntity.contact_id |> Pool_common.Id.value
       , m.RepoEntity.experiment_id |> Pool_common.Id.value )
     in
     Utils.Database.exec (Pool_database.Label.value pool) insert_request caqti
@@ -173,18 +173,18 @@ module Sql = struct
     {sql|
       DELETE FROM pool_waiting_list
       WHERE
-        subject_id = (SELECT id FROM pool_subjects WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
+        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
       AND
         experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
     |sql}
     |> Caqti_type.(tup2 string string ->. unit)
   ;;
 
-  let delete pool subject experiment =
+  let delete pool contact experiment =
     Utils.Database.exec
       (Database.Label.value pool)
       delete_request
-      ( Subject.id subject |> Pool_common.Id.value
+      ( Contact.id contact |> Pool_common.Id.value
       , experiment.Experiment_type.id |> Pool_common.Id.value )
   ;;
 end
@@ -195,8 +195,8 @@ let find pool id =
   let* experiment =
     Experiment.find pool waiting_list.RepoEntity.experiment_id
   in
-  let* subject = Subject.find pool waiting_list.RepoEntity.subject_id in
-  RepoEntity.to_entity waiting_list subject experiment |> Lwt.return_ok
+  let* contact = Contact.find pool waiting_list.RepoEntity.contact_id in
+  RepoEntity.to_entity waiting_list contact experiment |> Lwt.return_ok
 ;;
 
 let user_is_enlisted = Sql.user_is_enlisted

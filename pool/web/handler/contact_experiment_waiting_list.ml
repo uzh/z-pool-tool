@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let create_layout = Subject_general.create_layout
+let create_layout = Contact_general.create_layout
 
 let handle req action =
   let open Utils.Lwt_result.Infix in
@@ -18,13 +18,13 @@ let handle req action =
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment_type.find_public tenant_db experiment_id in
-    let* subject =
+    let* contact =
       Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
       ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-      >>= Subject.find_by_user tenant_db
+      >>= Contact.find_by_user tenant_db
     in
     let events =
-      Waiting_list.{ subject; experiment }
+      Waiting_list.{ contact; experiment }
       |> fun m ->
       (match action with
       | `Create -> Cqrs_command.Waiting_list_command.Create.handle m

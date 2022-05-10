@@ -1,5 +1,5 @@
 (library
- (name subject)
+ (name contact)
  (libraries
   email
   permission

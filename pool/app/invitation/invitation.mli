@@ -9,7 +9,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; subject : Subject.t
+  ; contact : Contact.t
   ; resent_at : ResentAt.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
@@ -17,7 +17,7 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : ?id:Pool_common.Id.t -> Subject.t -> t
+val create : ?id:Pool_common.Id.t -> Contact.t -> t
 
 type notification_history =
   { invitation : t
@@ -33,7 +33,7 @@ val pp_notification_history : Format.formatter -> notification_history -> unit
 
 type create =
   { experiment : Experiment.t
-  ; subject : Subject.t
+  ; contact : Contact.t
   }
 
 type resent =
@@ -67,9 +67,9 @@ val find_by_experiment
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
-val find_by_subject
+val find_by_contact
   :  Pool_database.Label.t
-  -> Subject.t
+  -> Contact.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_experiment_id_of_invitation

@@ -13,7 +13,7 @@ let error =
   Alcotest.testable Pool_common.Message.pp_error Pool_common.Message.equal_error
 ;;
 
-let subject = Alcotest.testable Subject.pp Subject.equal
+let contact = Alcotest.testable Contact.pp Contact.equal
 
 (* Helper functions *)
 
@@ -68,8 +68,8 @@ let dummy_to_file (dummy : Database.SeedAssets.file) =
     }
 ;;
 
-let create_subject () =
-  Subject.
+let create_contact () =
+  Contact.
     { user =
         Sihl_user.
           { id = Pool_common.Id.(create () |> value)

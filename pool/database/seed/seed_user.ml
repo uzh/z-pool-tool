@@ -39,13 +39,13 @@ let admins db_pool =
     data
 ;;
 
-let subjects db_pool =
+let contacts db_pool =
   let users =
     [ ( Id.create ()
       , "Hansruedi"
       , "Rüdisüli"
       , "one@test.com"
-      , Subject.RecruitmentChannel.Friend
+      , Contact.RecruitmentChannel.Friend
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , false
@@ -55,7 +55,7 @@ let subjects db_pool =
       , "Jane"
       , "Doe"
       , "two@test.com"
-      , Subject.RecruitmentChannel.Online
+      , Contact.RecruitmentChannel.Online
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , false
@@ -65,7 +65,7 @@ let subjects db_pool =
       , "John"
       , "Dorrian"
       , "three@mail.com"
-      , Subject.RecruitmentChannel.Lecture
+      , Contact.RecruitmentChannel.Lecture
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , true
@@ -75,7 +75,7 @@ let subjects db_pool =
       , "Kevin"
       , "McCallistor"
       , "four@mail.com"
-      , Subject.RecruitmentChannel.Mailing
+      , Contact.RecruitmentChannel.Mailing
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , true
@@ -85,7 +85,7 @@ let subjects db_pool =
       , "Hello"
       , "Kitty"
       , "five@mail.com"
-      , Subject.RecruitmentChannel.Online
+      , Contact.RecruitmentChannel.Online
       , None
       , Some (Ptime_clock.now ())
       , true
@@ -95,7 +95,7 @@ let subjects db_pool =
       , "Dr."
       , "Murphy"
       , "six@mail.com"
-      , Subject.RecruitmentChannel.Friend
+      , Contact.RecruitmentChannel.Friend
       , None
       , Some (Ptime_clock.now ())
       , true
@@ -105,7 +105,7 @@ let subjects db_pool =
       , "Mr."
       , "Do not accept terms"
       , "seven@mail.com"
-      , Subject.RecruitmentChannel.Friend
+      , Contact.RecruitmentChannel.Friend
       , Some Pool_common.Language.En
       , None
       , true
@@ -120,7 +120,7 @@ let subjects db_pool =
   let%lwt () =
     let open Lwt.Infix in
     Lwt_list.fold_left_s
-      (fun subjects
+      (fun contacts
            ( user_id
            , firstname
            , lastname
@@ -135,8 +135,8 @@ let subjects db_pool =
         let%lwt user = Service.User.find_by_email_opt ~ctx email in
         match user with
         | None ->
-          [ Subject.Created
-              { Subject.user_id
+          [ Contact.Created
+              { Contact.user_id
               ; email = email |> User.EmailAddress.of_string
               ; password =
                   password
@@ -149,34 +149,34 @@ let subjects db_pool =
               ; language
               }
           ]
-          @ subjects
+          @ contacts
           |> Lwt.return
         | Some { Sihl_user.id; _ } ->
           Logs.debug (fun m ->
               m
-                "Subject already exists (%s): %s"
+                "Contact already exists (%s): %s"
                 (db_pool |> Pool_database.Label.value)
                 id);
-          subjects |> Lwt.return)
+          contacts |> Lwt.return)
       []
       users
-    >>= Lwt_list.iter_s (Subject.handle_event db_pool)
+    >>= Lwt_list.iter_s (Contact.handle_event db_pool)
   in
   let open Lwt.Infix in
   Lwt_list.fold_left_s
-    (fun subjects (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
-      let%lwt subject = Subject.find db_pool user_id in
-      match subject with
-      | Ok subject ->
-        [ Subject.PausedUpdated (subject, paused |> User.Paused.create) ]
-        @ (if disabled then [ Subject.Disabled subject ] else [])
-        @ (if verified then [ Subject.EmailVerified subject ] else [])
-        @ subjects
+    (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
+      let%lwt contact = Contact.find db_pool user_id in
+      match contact with
+      | Ok contact ->
+        [ Contact.PausedUpdated (contact, paused |> User.Paused.create) ]
+        @ (if disabled then [ Contact.Disabled contact ] else [])
+        @ (if verified then [ Contact.EmailVerified contact ] else [])
+        @ contacts
         |> Lwt.return
       | Error err ->
         let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
-        subjects |> Lwt.return)
+        contacts |> Lwt.return)
     []
     users
-  >>= Lwt_list.iter_s (Subject.handle_event db_pool)
+  >>= Lwt_list.iter_s (Contact.handle_event db_pool)
 ;;

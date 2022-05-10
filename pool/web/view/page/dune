@@ -2,6 +2,7 @@
  (name page)
  (libraries
   component
+  contact
   experiment
   experiment_type
   htmx
@@ -13,7 +14,6 @@
   service
   session
   sihl
-  subject
   tenant
   tyxml
   utils

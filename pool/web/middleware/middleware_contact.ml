@@ -11,23 +11,23 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
         ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
       in
-      let is_confirmed subject =
+      let is_confirmed contact =
         Lwt_result.lift
-          (match subject.Subject.user.Sihl_user.confirmed with
-          | true -> Ok subject
-          | false -> Error Pool_common.Message.SubjectUnconfirmed)
+          (match contact.Contact.user.Sihl_user.confirmed with
+          | true -> Ok contact
+          | false -> Error Pool_common.Message.ContactUnconfirmed)
       in
-      let terms_agreed subject =
-        let%lwt accepted = Subject.has_terms_accepted pool subject in
+      let terms_agreed contact =
+        let%lwt accepted = Contact.has_terms_accepted pool contact in
         match accepted with
-        | true -> Lwt.return_ok subject
+        | true -> Lwt.return_ok contact
         | false ->
           Lwt.return_error Pool_common.Message.(TermsAndConditionsNotAccepted)
       in
       Pool_common.Id.of_string user.Sihl_user.id
-      |> Subject.find pool
+      |> Contact.find pool
       |> Lwt_result.map_err
-           (CCFun.const Pool_common.Message.(NotFound Field.Subject))
+           (CCFun.const Pool_common.Message.(NotFound Field.Contact))
       >>= is_confirmed
       >>= terms_agreed
     in
@@ -40,7 +40,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
     match confirmed_and_terms_agreed with
     | Ok _ -> handler req
     | Error Pool_common.Message.(NotFound Field.User)
-    | Error Pool_common.Message.(NotFound Field.Subject) ->
+    | Error Pool_common.Message.(NotFound Field.Contact) ->
       Http_utils.redirect_to_with_actions
         (Http_utils.path_with_language query_lang "/login")
         [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
@@ -52,7 +52,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         [ Message.set
             ~error:[ Pool_common.Message.(TermsAndConditionsNotAccepted) ]
         ]
-    | Error Pool_common.Message.SubjectUnconfirmed ->
+    | Error Pool_common.Message.ContactUnconfirmed ->
       Http_utils.redirect_to
         (Http_utils.path_with_language query_lang "/email-confirmation")
     | _ ->
@@ -60,5 +60,5 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
         (Http_utils.path_with_language query_lang "/login")
         [ Message.set ~error:[ Pool_common.Message.SessionInvalid ] ]
   in
-  Rock.Middleware.create ~name:"subject.confirmed" ~filter
+  Rock.Middleware.create ~name:"contact.confirmed" ~filter
 ;;

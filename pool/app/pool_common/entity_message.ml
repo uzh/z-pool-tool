@@ -7,34 +7,34 @@ module Field = struct
     | Admin [@name "admin"] [@printer field_name "admin"]
     | AssetId [@name "asset_id"] [@printer field_name "asset_id"]
     | CanceledAt [@name "canceled_at"] [@printer field_name "canceled_at"]
+    | Contact [@name "contact"] [@printer field_name "contact"]
     | ContactEmail [@name "contact_email"] [@printer field_name "contact_email"]
+    | Contacts [@name "contacts"] [@printer field_name "contacts"]
     | CreatedAt [@name "created_at"] [@printer field_name "created_at"]
-    | CurrentPassword
-        [@name "current_password"] [@printer field_name "current_password"]
+    | CurrentPassword [@name "current_password"]
+        [@printer field_name "current_password"]
     | Database [@name "database"] [@printer field_name "database"]
-    | DatabaseLabel
-        [@name "database_label"] [@printer field_name "database_label"]
+    | DatabaseLabel [@name "database_label"]
+        [@printer field_name "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer field_name "database_url"]
     | Date [@name "date"] [@printer field_name "date"]
     | DateTime [@name "date_time"] [@printer field_name "date_time"]
-    | DefaultLanguage
-        [@name "default_language"] [@printer field_name "default_language"]
+    | DefaultLanguage [@name "default_language"]
+        [@printer field_name "default_language"]
     | Description [@name "description"] [@printer field_name "description"]
     | Disabled [@name "disabled"] [@printer field_name "disabled"]
     | Duration [@name "duration"] [@printer field_name "duration"]
     | Email [@name "email"] [@printer field_name "email"]
     | EmailAddress [@name "email_address"] [@printer field_name "email_address"]
-    | EmailAddressUnverified
-        [@name "email_address_unverified"]
+    | EmailAddressUnverified [@name "email_address_unverified"]
         [@printer field_name "email_address_unverified"]
-    | EmailAddressVerified
-        [@name "email_address_verified"]
+    | EmailAddressVerified [@name "email_address_verified"]
         [@printer field_name "email_address_verified"]
     | EmailSuffix [@name "email_suffix"] [@printer field_name "email_suffix"]
     | Experiment [@name "experiment"] [@printer field_name "experiment"]
     | File [@name "file"] [@printer field_name "file"]
-    | FileMimeType
-        [@name "file_mime_type"] [@printer field_name "file_mime_type"]
+    | FileMimeType [@name "file_mime_type"]
+        [@printer field_name "file_mime_type"]
     | Filename [@name "filename"] [@printer field_name "filename"]
     | Filesize [@name "filesize"] [@printer field_name "filesize"]
     | Firstname [@name "firstname"] [@printer field_name "firstname"]
@@ -42,11 +42,9 @@ module Field = struct
     | I18n [@name "i18n"] [@printer field_name "i18n"]
     | Icon [@name "icon"] [@printer field_name "icon"]
     | Id [@name "id"] [@printer field_name "id"]
-    | InactiveUserDisableAfter
-        [@name "inactive_user_disable_after"]
+    | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
         [@printer field_name "inactive_user_disable_after"]
-    | InactiveUserWarning
-        [@name "inactive_user_warning"]
+    | InactiveUserWarning [@name "inactive_user_warning"]
         [@printer field_name "inactive_user_warning"]
     | Invitation [@name "invitation"] [@printer field_name "invitation"]
     | Invitations [@name "invitations"] [@printer field_name "invitations"]
@@ -56,27 +54,25 @@ module Field = struct
     | LanguageEn [@name "language_en"] [@printer field_name "language_en"]
     | Lastname [@name "lastname"] [@printer field_name "lastname"]
     | LogoType [@name "logo_type"] [@printer field_name "logo_type"]
-    | MaxParticipants
-        [@name "max_participants"] [@printer field_name "max_participants"]
-    | MinParticipants
-        [@name "min_participants"] [@printer field_name "min_participants"]
+    | MaxParticipants [@name "max_participants"]
+        [@printer field_name "max_participants"]
+    | MinParticipants [@name "min_participants"]
+        [@printer field_name "min_participants"]
     | NewPassword [@name "new_password"] [@printer field_name "new_password"]
     | Operator [@name "operator"] [@printer field_name "operator"]
     | Overbook [@name "overbook"] [@printer field_name "overbook"]
     | Page [@name "page"] [@printer field_name "page"]
     | Participant [@name "participant"] [@printer field_name "participant"]
-    | ParticipantCount
-        [@name "participant_count"] [@printer field_name "participant_count"]
+    | ParticipantCount [@name "participant_count"]
+        [@printer field_name "participant_count"]
     | Participants [@name "participants"] [@printer field_name "participants"]
     | Participated [@name "participated"] [@printer field_name "participated"]
     | PartnerLogos [@name "partner_logos"] [@printer field_name "partner_logos"]
     | Password [@name "password"] [@printer field_name "password"]
-    | PasswordConfirmation
-        [@name "password_confirmation"]
+    | PasswordConfirmation [@name "password_confirmation"]
         [@printer field_name "password_confirmation"]
     | Paused [@name "paused"] [@printer field_name "paused"]
-    | RecruitmentChannel
-        [@name "recruitment_channel"]
+    | RecruitmentChannel [@name "recruitment_channel"]
         [@printer field_name "recruitment_channel"]
     | ResentAt [@name "resent_at"] [@printer field_name "resent_at"]
     | Role [@name "role"] [@printer field_name "role"]
@@ -84,36 +80,31 @@ module Field = struct
     | Session [@name "session"] [@printer field_name "session"]
     | Setting [@name "setting"] [@printer field_name "setting"]
     | ShowUp [@name "show_up"] [@printer field_name "show_up"]
-    | SmtpAuthMethod
-        [@name "smtp_auth_method"] [@printer field_name "smtp_auth_method"]
-    | SmtpAuthServer
-        [@name "smtp_auth_server"] [@printer field_name "smtp_auth_server"]
+    | SmtpAuthMethod [@name "smtp_auth_method"]
+        [@printer field_name "smtp_auth_method"]
+    | SmtpAuthServer [@name "smtp_auth_server"]
+        [@printer field_name "smtp_auth_server"]
     | SmtpPassword [@name "smtp_password"] [@printer field_name "smtp_password"]
     | SmtpPort [@name "smtp_port"] [@printer field_name "smtp_port"]
     | SmtpProtocol [@name "smtp_protocol"] [@printer field_name "smtp_protocol"]
-    | SmtpReadModel
-        [@name "smtp_read_model"] [@printer field_name "smtp_read_model"]
+    | SmtpReadModel [@name "smtp_read_model"]
+        [@printer field_name "smtp_read_model"]
     | SmtpUsername [@name "smtp_username"] [@printer field_name "smtp_username"]
-    | SmtpWriteModel
-        [@name "smtp_write_model"] [@printer field_name "smtp_write_model"]
+    | SmtpWriteModel [@name "smtp_write_model"]
+        [@printer field_name "smtp_write_model"]
     | Start [@name "start"] [@printer field_name "start"]
     | Styles [@name "styles"] [@printer field_name "styles"]
-    | Subject [@name "subject"] [@printer field_name "subject"]
-    | Subjects [@name "subjects"] [@printer field_name "subjects"]
     | Tenant [@name "tenant"] [@printer field_name "tenant"]
-    | TenantDisabledFlag
-        [@name "tenant_disabled_flag"]
+    | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer field_name "tenant_disabled_flag"]
     | TenantId [@name "tenant_id"] [@printer field_name "tenant_id"]
     | TenantLogos [@name "tenant_logos"] [@printer field_name "tenant_logos"]
-    | TenantMaintenanceFlag
-        [@name "tenant_maintenance_flag"]
+    | TenantMaintenanceFlag [@name "tenant_maintenance_flag"]
         [@printer field_name "tenant_maintenance_flag"]
     | TenantPool [@name "tenant_pool"] [@printer field_name "tenant_pool"]
-    | TermsAccepted
-        [@name "terms_accepted"] [@printer field_name "terms_accepted"]
-    | TermsAndConditions
-        [@name "terms_and_conditions"]
+    | TermsAccepted [@name "terms_accepted"]
+        [@printer field_name "terms_accepted"]
+    | TermsAndConditions [@name "terms_and_conditions"]
         [@printer field_name "terms_and_conditions"]
     | Time [@name "time"] [@printer field_name "time"]
     | TimeSpan [@name "timespan"] [@printer field_name "timespan"]
@@ -140,8 +131,10 @@ end
 type error =
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
-  | DecodeAction
+  | ContactSignupInvalidEmail
+  | ContactUnconfirmed
   | Decode of Field.t
+  | DecodeAction
   | Disabled of Field.t
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
@@ -162,28 +155,26 @@ type error =
   | NotFoundList of Field.t * string list
   | NotHandled of string
   | NoValue
-  | SubjectSignupInvalidEmail
-  | SubjectUnconfirmed
-  | PasswordPolicy of string
   | PasswordConfirmationDoesNotMatch
-  | PasswordResetInvalidData
+  | PasswordPolicy of string
   | PasswordResetFailMessage
+  | PasswordResetInvalidData
+  | PoolContextNotFound
   | RequestRequiredFields
   | Retrieve of Field.t
   | SessionInvalid
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
-  | PoolContextNotFound
-  | TerminatoryTenantError
   | TerminatoryRootError
-  | TerminatoryTenantErrorTitle
   | TerminatoryRootErrorTitle
+  | TerminatoryTenantError
+  | TerminatoryTenantErrorTitle
   | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
   | TimeInPast
   | TimeSpanPositive
-  | TokenInvalidFormat
   | TokenAlreadyUsed
+  | TokenInvalidFormat
   | Undefined of Field.t
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
@@ -196,8 +187,8 @@ type success =
   | Canceled of Field.t
   | Created of Field.t
   | Deleted of Field.t
-  | EmailVerified
   | EmailConfirmationMessage
+  | EmailVerified
   | FileDeleted
   | PasswordChanged
   | PasswordReset
@@ -235,15 +226,15 @@ type control =
   | Cancel of Field.t option
   | Choose of Field.t option
   | Create of Field.t option
-  | Delete of Field.t option
   | Decline
+  | Delete of Field.t option
   | Disable
   | Edit of Field.t option
   | Enable
   | Login
   | More
-  | Resend of Field.t option
   | RemoveFromWaitingList
+  | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
