@@ -42,7 +42,7 @@ let show experiment user_is_enlisted Pool_context.{ language; _ } =
   in
   let form_control, submit_class =
     match user_is_enlisted with
-    | true -> Pool_common.Message.(RemoveFromWaitingList), "button-error"
+    | true -> Pool_common.Message.(RemoveFromWaitingList), "button--failure"
     | false -> Pool_common.Message.(AddToWaitingList), "button--success"
   in
   div

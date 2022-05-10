@@ -2,6 +2,13 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
+let session_title (session : Session.t) =
+  session.Session.start
+  |> Session.Start.value
+  |> Pool_common.Utils.Time.formatted_date_time
+  |> Format.asprintf "Session at %s"
+;;
+
 let create csrf language experiment_id flash_fetcher =
   div
     [ h1
@@ -65,12 +72,12 @@ let index
     sessions
     flash_fetcher
   =
-  let session_row idx (session : Session.t) =
+  let session_row (session : Session.t) =
     let open Session in
     div
       [ span
           [ txt
-              (Format.asprintf "Session %i %s" idx
+              (Format.asprintf "%s %s" (session |> session_title)
               @@
               (* TODO [aerben] improve this *)
               if CCOption.is_some session.Session.canceled_at
@@ -81,10 +88,9 @@ let index
           ~a:
             [ a_href
                 (Format.asprintf
-                   "/admin/experiments/%s/sessions/%s?number=%i"
+                   "/admin/experiments/%s/sessions/%s"
                    (Pool_common.Id.value experiment_id)
                    (Pool_common.Id.value session.id)
-                   idx
                 |> Sihl.Web.externalize_path)
             ]
           (* TODO [aerben] use Message.More *)
@@ -133,21 +139,15 @@ let index
                 Pool_common.(
                   Utils.text_to_string language I18n.SessionListTitle)
             ]
-        ; div (CCList.mapi session_row sessions)
+        ; div (CCList.map session_row sessions)
         ]
     ]
 ;;
 
-let detail
-    Pool_context.{ language; _ }
-    experiment_id
-    (session : Session.t)
-    number
-  =
+let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
   let open Session in
-  let snumber = CCOption.get_or ~default:"?" number in
   div
-    [ h1 [ txt (Format.asprintf "Session %s" snumber) ]
+    [ h1 [ session |> session_title |> txt ]
       (* TODO [aerben] use better formatted date *)
     ; (let rows =
          let amount amt = amt |> ParticipantAmount.value |> string_of_int in
@@ -185,10 +185,9 @@ let detail
         ~a:
           [ a_href
               (Format.asprintf
-                 "/admin/experiments/%s/sessions/%s/edit?number=%s"
+                 "/admin/experiments/%s/sessions/%s/edit"
                  (Pool_common.Id.value experiment_id)
                  (Pool_common.Id.value session.id)
-                 snumber
               |> Sihl.Web.externalize_path)
           ]
         (* TODO [aerben] use Message.More *)
@@ -199,30 +198,23 @@ let detail
     ]
 ;;
 
-let edit
-    Pool_context.{ language; csrf; _ }
-    experiment_id
-    (session : Session.t)
-    number
-  =
+let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
   let open Session in
-  let snumber = CCOption.get_or ~default:"?" number in
   div
     [ h1
         [ txt
             Pool_common.(Utils.text_to_string language I18n.SessionUpdateTitle)
         ]
-    ; span [ txt @@ Format.asprintf "Session %s" snumber ]
+    ; span [ session |> session_title |> txt ]
     ; (let amount amt = amt |> ParticipantAmount.value |> string_of_int in
        form
          ~a:
            [ a_method `Post
            ; a_action
                (Format.asprintf
-                  "/admin/experiments/%s/sessions/%s?number=%s"
+                  "/admin/experiments/%s/sessions/%s"
                   (Pool_common.Id.value experiment_id)
                   (Pool_common.Id.value session.id)
-                  snumber
                |> Sihl.Web.externalize_path)
            ]
          [ Component.csrf_element csrf ()

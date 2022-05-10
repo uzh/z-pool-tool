@@ -74,10 +74,7 @@ let detail req page =
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
-    (* TODO [aerben] this numbering might be stupid *)
-    (* TODO [aerben] instead use "session on date XXXX" *)
-    let number = Sihl.Web.Request.query "number" req in
-    page context experiment_id session number
+    page context experiment_id session
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
@@ -90,13 +87,11 @@ let edit req = detail req Page.Admin.Session.edit
 let update req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
   let session_id = id req Pool_common.Message.Field.session in
-  let number = Sihl.Web.Request.query "number" req in
   let path =
     Format.asprintf
-      "/admin/experiments/%s/sessions/%s?number=%s"
+      "/admin/experiments/%s/sessions/%s"
       (Pool_common.Id.value experiment_id)
       (Pool_common.Id.value session_id)
-      (CCOption.get_or ~default:"?" number)
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
