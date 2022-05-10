@@ -7,13 +7,13 @@ module Sql = struct
         {sql|
           SELECT
             LOWER(CONCAT(
-              SUBSTR(HEX(uuid), 1, 8), '-',
-              SUBSTR(HEX(uuid), 9, 4), '-',
-              SUBSTR(HEX(uuid), 13, 4), '-',
-              SUBSTR(HEX(uuid), 17, 4), '-',
-              SUBSTR(HEX(uuid), 21)
+              SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+              SUBSTR(HEX(pool_experiments.uuid), 21)
             )),
-            description
+            pool_experiments.description
           FROM pool_experiments
         |sql}
       in
@@ -22,12 +22,21 @@ module Sql = struct
 
     let find_all_request =
       let open Caqti_request.Infix in
-      "" |> select_from_experiments_sql |> Caqti_type.unit ->* RepoEntity.t
+      {sql|
+        INNER JOIN pool_invitations
+        ON pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
+        AND pool_experiments.id = pool_invitations.experiment_id
+      |sql}
+      |> select_from_experiments_sql
+      |> Caqti_type.string ->* RepoEntity.t
     ;;
 
-    let find_all pool =
+    let find_all pool contact =
       (* TODO [timhub]: filter experiments *)
-      Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+      Utils.Database.collect
+        (Pool_database.Label.value pool)
+        find_all_request
+        (Contact.id contact |> Pool_common.Id.value)
     ;;
 
     let find_request =

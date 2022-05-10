@@ -22,7 +22,7 @@ type invitations =
   }
 [@@deriving eq, show]
 
-val find_all_public : Pool_database.Label.t -> unit -> public list Lwt.t
+val find_all_public : Pool_database.Label.t -> Contact.t -> public list Lwt.t
 
 val find_public
   :  Pool_database.Label.t

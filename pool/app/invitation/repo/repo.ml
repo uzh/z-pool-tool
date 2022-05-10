@@ -164,6 +164,35 @@ module Sql = struct
   let update pool =
     Utils.Database.exec (Pool_database.Label.value pool) update_request
   ;;
+
+  (* TODO[timhub]: rename subject *)
+  let contact_was_invited_to_experiment_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT pool_invitations.uuid
+      FROM
+        pool_invitations
+      WHERE
+        (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))),
+        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($2, '-', '')))
+      LIMIT 1
+      |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.(tup2 string string) ->! Pool_common.Repo.Id.t
+  ;;
+
+  let contact_was_invited_to_experiment pool experiment contact =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      contact_was_invited_to_experiment_request
+      ( experiment.Experiment.id |> Pool_common.Id.value
+      , Contact.id contact |> Pool_common.Id.value )
+    >|= fun opt ->
+    match opt with
+    | Some _ -> true
+    | None -> false
+  ;;
 end
 
 let contact_to_invitation pool invitation =
@@ -204,3 +233,4 @@ let insert pool session_id model =
 ;;
 
 let update = Sql.update
+let contact_was_invited_to_experiment = Sql.contact_was_invited_to_experiment
