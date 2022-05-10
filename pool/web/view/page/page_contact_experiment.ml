@@ -30,7 +30,7 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let show experiment user_is_enlisted Pool_context.{ language; _ } =
+let show experiment sessions user_is_enlisted Pool_context.{ language; _ } =
   let open Experiment_type in
   let form_action =
     Format.asprintf
@@ -47,6 +47,10 @@ let show experiment user_is_enlisted Pool_context.{ language; _ } =
   in
   div
     [ div [ txt (Experiment.Description.value experiment.description) ]
+    ; div
+        [ h2 [ txt "Session" ]
+        ; div (Page_subject_sessions.public_overview sessions)
+        ]
     ; div
         [ h2
             [ txt

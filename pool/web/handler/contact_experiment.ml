@@ -35,11 +35,13 @@ let show req =
       ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
       >>= Contact.find_by_user tenant_db
     in
-    let* experiment = Experiment_type.find_public tenant_db id in
+    let* Experiment_type.{ experiment; sessions } =
+      Experiment_type.find_public_sessions tenant_db id
+    in
     let%lwt user_is_enlisted =
       Waiting_list.user_is_enlisted tenant_db contact experiment
     in
-    Page.Contact.Experiment.show experiment user_is_enlisted context
+    Page.Contact.Experiment.show experiment sessions user_is_enlisted context
     |> Lwt.return_ok
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
