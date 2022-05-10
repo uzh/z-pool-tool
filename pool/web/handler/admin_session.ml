@@ -38,7 +38,10 @@ let create req =
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let open Utils.Lwt_result.Infix in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
     Lwt_result.map_err (fun err ->
         err, path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -95,7 +98,10 @@ let update req =
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let open Utils.Lwt_result.Infix in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
     Lwt_result.map_err (fun err -> err, path)
     @@
     let tenant_db = context.Pool_context.tenant_db in

@@ -12,8 +12,6 @@ let create pool =
         |> CCOption.get_exn_or "Invalid time"
       , hour
       , None
-        (* TODO [aerben] this does not work with mariadb 10.6 *)
-        (* https://mariadb.com/kb/en/server-system-variables/#mysql56_temporal_format *)
       , 30
       , 4
       , 4 )

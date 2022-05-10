@@ -151,6 +151,12 @@ let format_htmx_request_boolean_values values urlencoded =
   handle_boolean_values update urlencoded values
 ;;
 
+let remove_empty_values urlencoded =
+  CCList.filter
+    (fun (_, vs) -> CCString.concat "" vs |> CCString.equal "" |> not)
+    urlencoded
+;;
+
 let placeholder_from_name = CCString.replace ~which:`All ~sub:"_" ~by:" "
 
 let is_req_from_root_host req =

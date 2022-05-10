@@ -70,6 +70,7 @@ let parse_time str =
   |> CCResult.map_err (fun (`Msg e) -> Entity_message.NotADatetime (str, e))
   (* TODO [aerben] dont discard timezone *)
   (* TODO [aerben] should experimenter add timezone for start? *)
+  (* TODO [aerben] HANDLE ALL TIMEZONES consistently *)
   >|= fun (time, _, _) -> time
 ;;
 
