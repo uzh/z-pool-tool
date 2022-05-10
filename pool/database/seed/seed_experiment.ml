@@ -1,6 +1,6 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
-let experiments pool () =
+let experiments pool =
   let data =
     [ "The Twenty pound auction", "It was great fun."
     ; ( "The Wallet Game"

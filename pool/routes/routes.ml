@@ -124,6 +124,20 @@ module Admin = struct
         ; post "/:id/resend" Handler.Admin.Experiments.Invitations.resend
         ]
       in
+      let sessions =
+        let specific =
+          [ get "" Handler.Admin.Session.show
+          ; post "" Handler.Admin.Session.update
+          ; get "/edit" Handler.Admin.Session.edit
+          ; post "/cancel" Handler.Admin.Session.cancel
+          ; post "/delete" Handler.Admin.Session.delete
+          ]
+        in
+        [ get "" Handler.Admin.Session.list
+        ; post "" Handler.Admin.Session.create
+        ; choose ~scope:"/:session" specific
+        ]
+      in
       let waiting_list =
         [ get "" Handler.Admin.Experiments.WaitingList.index ]
       in
@@ -136,6 +150,7 @@ module Admin = struct
       ; post "/:id/delete" Handler.Admin.Experiments.delete
       ; choose ~scope:(build_scope "invitations") invitations
       ; choose ~scope:(build_scope "waiting-list") waiting_list
+      ; choose ~scope:(build_scope "sessions") sessions
       ]
     in
     choose

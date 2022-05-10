@@ -51,26 +51,21 @@ let create_subject () =
 ;;
 
 let create_session () =
-  let hour = 60 * 60 in
+  let hour = Ptime.Span.of_int_s @@ (60 * 60) in
   Session.
     { id = Pool_common.Id.create ()
     ; start =
-        Ptime.add_span (Ptime_clock.now ()) (Ptime.Span.of_int_s hour)
+        Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid start"
-    ; duration = Ptime.Span.of_int_s hour
+        |> Start.create
+        |> Pool_common.Utils.get_or_failwith
+    ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
     ; description = None
     ; max_participants =
-        ParticipantAmount.create Pool_common.Message.Field.MaxParticipants "30"
-        |> Pool_common.Utils.get_or_failwith
+        ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
     ; min_participants =
-        ParticipantAmount.create Pool_common.Message.Field.MinParticipants "1"
-        |> Pool_common.Utils.get_or_failwith
-    ; overbook =
-        ParticipantAmount.create Pool_common.Message.Field.Overbook "4"
-        |> Pool_common.Utils.get_or_failwith
-    ; participant_count =
-        ParticipantAmount.create Pool_common.Message.Field.ParticipantCount "0"
-        |> Pool_common.Utils.get_or_failwith
+        ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
+    ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()

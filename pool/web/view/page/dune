@@ -11,6 +11,7 @@
   pool_tenant
   root
   service
+  session
   sihl
   subject
   tenant

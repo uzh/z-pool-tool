@@ -29,7 +29,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate (default_schema command) data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user _ =
@@ -59,7 +59,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate (default_schema command) data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user _ =
@@ -85,7 +85,7 @@ end = struct
 
   let handle { experiment_id; session_count } =
     match session_count > 0 with
-    | true -> Error Pool_common.Message.ExperimenSessionCountNotZero
+    | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
     | false ->
       Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
   ;;

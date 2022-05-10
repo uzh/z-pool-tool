@@ -344,29 +344,26 @@ let update_tenant_database () =
 
 let create_operator () =
   let open Data in
-  match Data.tenant with
-  | Error _ -> failwith "Failed to create tenant"
-  | Ok tenant ->
-    let events =
-      let open CCResult.Infix in
-      let open Admin_command.CreateOperator in
-      Data.urlencoded |> decode >>= handle tenant
+  let events =
+    let open CCResult.Infix in
+    let open Admin_command.CreateOperator in
+    Data.urlencoded |> decode >>= handle
+  in
+  let expected =
+    let open CCResult in
+    let* email = email |> Pool_user.EmailAddress.create in
+    let* password = password |> Pool_user.Password.create in
+    let* firstname = firstname |> Pool_user.Firstname.create in
+    let* lastname = lastname |> Pool_user.Lastname.create in
+    let operator : Admin.create =
+      Admin.{ email; password; firstname; lastname }
     in
-    let expected =
-      let open CCResult in
-      let* email = email |> Pool_user.EmailAddress.create in
-      let* password = password |> Pool_user.Password.create in
-      let* firstname = firstname |> Pool_user.Firstname.create in
-      let* lastname = lastname |> Pool_user.Lastname.create in
-      let operator : Admin.create =
-        Admin.{ email; password; firstname; lastname }
-      in
-      Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
-    in
-    Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected
-        events)
+    Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;

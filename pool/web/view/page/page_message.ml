@@ -1,7 +1,9 @@
 open Tyxml.Html
 
 let concat_messages txts classnames =
-  div ~a:[ a_class classnames ] [ txt (CCString.unlines txts) ]
+  div
+    ~a:[ a_class classnames ]
+    [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii) ]
 ;;
 
 let match_message message classname =

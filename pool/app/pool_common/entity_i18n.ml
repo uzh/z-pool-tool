@@ -12,6 +12,9 @@ type t =
   | LoginTitle
   | ResetPasswordLink
   | ResetPasswordTitle
+  | SessionListTitle
+  | SessionNewTitle
+  | SessionUpdateTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle
@@ -26,6 +29,7 @@ type nav_link =
   | I18n
   | Profile
   | Invitations
+  | Sessions
   | Settings
   | Tenants
   | WaitingList

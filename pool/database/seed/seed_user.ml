@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
-let admins db_pool () =
+let admins db_pool =
   let data =
     [ "The", "One", "admin@example.com", `Operator
     ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
@@ -39,7 +39,7 @@ let admins db_pool () =
     data
 ;;
 
-let subjects db_pool () =
+let subjects db_pool =
   let users =
     [ ( Id.create ()
       , "Hansruedi"

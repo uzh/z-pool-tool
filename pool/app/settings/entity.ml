@@ -1,5 +1,6 @@
 module Message = Pool_common.Message
 
+(* TODO [aerben] maybe move to pool common *)
 module Day = struct
   type t = int [@@deriving eq, show, yojson]
 

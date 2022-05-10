@@ -78,11 +78,11 @@ let create_operator req =
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let find_tenant () = Pool_tenant.find_full id in
-    let events tenant =
+    let events =
       let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateOperator in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle tenant |> Lwt_result.lift
+      urlencoded |> decode >>= handle |> Lwt_result.lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -96,7 +96,7 @@ let create_operator req =
     ()
     |> user
     >>= find_tenant
-    >>= events
+    >> events
     >>= handle
     |> Lwt_result.map_err (fun err ->
            err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))

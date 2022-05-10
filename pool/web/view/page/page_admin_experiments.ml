@@ -5,7 +5,11 @@ module Message = Pool_common.Message
 (* TODO [timhub]: create global nav component, when MR is merged *)
 let subnav language id =
   let open Pool_common in
-  I18n.[ Invitations, "/invitations"; WaitingList, "/waiting-list" ]
+  I18n.
+    [ Invitations, "/invitations"
+    ; WaitingList, "/waiting-list"
+    ; Sessions, "/sessions"
+    ]
   |> CCList.map (fun (label, url) ->
          li
            [ a
@@ -120,7 +124,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
             [ small
                 [ txt
                     Pool_common.(
-                      Message.ExperimenSessionCountNotZero
+                      Message.ExperimentSessionCountNotZero
                       |> Utils.error_to_string language)
                 ]
             ]

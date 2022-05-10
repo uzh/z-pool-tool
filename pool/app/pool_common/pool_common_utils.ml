@@ -62,3 +62,31 @@ let schema_list_decoder create_fcn encode_fnc field =
     (fun l -> l |> encode_fnc)
     Entity_message.Field.(field |> show)
 ;;
+
+let parse_time str =
+  let open CCResult in
+  Ptime.of_rfc3339 str
+  |> Ptime.rfc3339_error_to_msg
+  |> CCResult.map_err (fun (`Msg e) -> Entity_message.NotADatetime (str, e))
+  (* TODO [aerben] dont discard timezone *)
+  (* TODO [aerben] should experimenter add timezone for start? *)
+  >|= fun (time, _, _) -> time
+;;
+
+let parse_time_span str =
+  if CCString.is_empty str
+  then Error Entity_message.NoValue
+  else
+    str
+    |> CCInt.of_string
+    |> CCOption.to_result Entity_message.(Invalid Field.Duration)
+    |> CCResult.map Ptime.Span.of_int_s
+;;
+
+let print_time_span span =
+  Ptime.Span.to_int_s span
+  |> CCOption.map CCInt.to_string
+  (* If span is bigger than int max (signed), print an info string instead *)
+  (* This is only the case if span > 136 years (64bit system) *)
+  |> CCOption.get_or ~default:"Session duration too long!"
+;;
