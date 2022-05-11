@@ -184,6 +184,7 @@ type warning = Warning of string
 
 type success =
   | AddedToWaitingList
+  | AssignmentCreated
   | Canceled of Field.t
   | Created of Field.t
   | Deleted of Field.t
@@ -231,6 +232,7 @@ type control =
   | Disable
   | Edit of Field.t option
   | Enable
+  | Enroll
   | Login
   | More
   | RemoveFromWaitingList

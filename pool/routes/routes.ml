@@ -73,7 +73,12 @@ module Contact = struct
         ; post "/remove" Experiment.WaitingList.delete
         ]
       in
-      let sessions = [ get "/:id" Experiment.Assignment.show ] in
+      let sessions =
+        let open Pool_common.Message.Field in
+        [ get (Id |> url_key) Experiment.Session.show
+        ; post (Id |> url_key) Experiment.Assignment.create
+        ]
+      in
       [ get "" Experiment.index
       ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
       ; choose ~scope:(build_scope "waiting-list") waiting_list

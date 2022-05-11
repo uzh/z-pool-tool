@@ -1,15 +1,9 @@
 module WaitingList = Contact_experiment_waiting_list
+module Session = Contact_experiment_session
 module Assignment = Contact_experiment_assignment
 module HttpUtils = Http_utils
 
 let create_layout = Contact_general.create_layout
-
-let get_current_contact tenant_db req =
-  let open Utils.Lwt_result.Infix in
-  Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-  >>= Contact.find_by_user tenant_db
-;;
 
 let index req =
   let open Utils.Lwt_result.Infix in
@@ -19,7 +13,7 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
-    let* contact = get_current_contact tenant_db req in
+    let* contact = HttpUtils.get_current_contact tenant_db req in
     let%lwt expermient_list =
       Experiment_type.find_all_public tenant_db contact
     in
@@ -42,7 +36,7 @@ let show req =
       Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
       |> Pool_common.Id.of_string
     in
-    let* contact = get_current_contact tenant_db req in
+    let* contact = HttpUtils.get_current_contact tenant_db req in
     let* Experiment_type.{ experiment; sessions } =
       Experiment_type.find_public_sessions tenant_db id contact
     in

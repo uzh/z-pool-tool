@@ -72,6 +72,13 @@ let create_session () =
     }
 ;;
 
+let creat_public_session () =
+  let Session.{ id; start; duration; description; canceled_at; _ } =
+    create_session ()
+  in
+  Session.Public.{ id; start; duration; description; canceled_at }
+;;
+
 let create_assignment () =
   Assignment.
     { id = Pool_common.Id.create ()
@@ -86,7 +93,7 @@ let create_assignment () =
 ;;
 
 let create () =
-  let session = create_session () in
+  let session = creat_public_session () in
   let contact = create_contact () in
   let events =
     let command = AssignmentCommand.Create.{ contact; session } in
@@ -94,7 +101,7 @@ let create () =
   in
   let expected =
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.id })
+      [ Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
       ]
   in

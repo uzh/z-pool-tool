@@ -1,26 +1,18 @@
-module WaitingList = Contact_experiment_waiting_list
 module HttpUtils = Http_utils
 
 let create_layout = Contact_general.create_layout
 
-let get_current_contact tenant_db req =
-  let open Utils.Lwt_result.Infix in
-  Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-  >>= Contact.find_by_user tenant_db
-;;
-
-let show req =
+let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
     Sihl.Web.Router.param req Pool_common.Message.Field.(Experiment |> show)
     |> Pool_common.Id.of_string
   in
-  let error_path =
+  let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
   in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
@@ -28,12 +20,23 @@ let show req =
       Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
       |> Pool_common.Id.of_string
     in
-    let* contact = get_current_contact tenant_db req in
+    let* contact = HttpUtils.get_current_contact tenant_db req in
     let* session = Session.find_public tenant_db id contact in
-    Page.Contact.Experiment.Assignment.detail session context
-    |> Lwt.return_ok
-    >>= create_layout req context
-    >|= Sihl.Web.Response.of_html
+    let events =
+      Cqrs_command.Assignment_command.Create.(handle { contact; session })
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt (_ : unit list) =
+        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpUtils.Message.set
+            ~success:[ Pool_common.Message.(AssignmentCreated) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

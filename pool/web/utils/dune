@@ -1,6 +1,6 @@
 (library
  (name http_utils)
- (libraries pool_common pool_context service sexplib tenant)
+ (libraries pool_common pool_context service sexplib tenant contact)
  (preprocess
   (pps
    lwt_ppx

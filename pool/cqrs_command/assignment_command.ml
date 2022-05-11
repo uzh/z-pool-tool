@@ -3,7 +3,7 @@ module Conformist = Pool_common.Utils.PoolConformist
 module Create : sig
   type t =
     { contact : Contact.t
-    ; session : Session.t
+    ; session : Session.Public.t
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
@@ -11,13 +11,15 @@ module Create : sig
 end = struct
   type t =
     { contact : Contact.t
-    ; session : Session.t
+    ; session : Session.Public.t
     }
 
   let handle (command : t) =
     let create =
       Assignment.
-        { contact = command.contact; session_id = command.session.Session.id }
+        { contact = command.contact
+        ; session_id = command.session.Session.Public.id
+        }
     in
     Ok [ Assignment.Created create |> Pool_event.assignment ]
   ;;

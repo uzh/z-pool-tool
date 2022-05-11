@@ -100,6 +100,7 @@ let info_to_string : info -> string = function
 
 let success_to_string : success -> string = function
   | AddedToWaitingList -> "Sie wurden der Warteliste hinzugefügt."
+  | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
     field_message "" (field_to_string field) "wurde erfolgreich abgesagt."
   | Created field ->
@@ -251,6 +252,7 @@ let control_to_string = function
   | Disable -> format_submit "deaktivieren" None
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
+  | Enroll -> format_submit "anmelden" None
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
