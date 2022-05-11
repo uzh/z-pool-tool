@@ -83,3 +83,10 @@ let create
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
 ;;
+
+module Public = struct
+  type t =
+    { id : Pool_common.Id.t
+    ; canceled_at : CanceledAt.t
+    }
+end

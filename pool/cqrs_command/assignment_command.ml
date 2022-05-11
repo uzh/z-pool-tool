@@ -4,6 +4,7 @@ module Create : sig
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
+    ; experiment : Experiment_type.public
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
@@ -12,6 +13,7 @@ end = struct
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
+    ; experiment : Experiment_type.public
     }
 
   let handle (command : t) =
@@ -21,7 +23,14 @@ end = struct
         ; session_id = command.session.Session.Public.id
         }
     in
-    Ok [ Assignment.Created create |> Pool_event.assignment ]
+    let waitlist =
+      Waiting_list.
+        { contact = command.contact; experiment = command.experiment }
+    in
+    Ok
+      [ Waiting_list.Deleted waitlist |> Pool_event.waiting_list
+      ; Assignment.Created create |> Pool_event.assignment
+      ]
   ;;
 
   let can user _ =

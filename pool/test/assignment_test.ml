@@ -94,9 +94,10 @@ let create_assignment () =
 
 let create () =
   let session = creat_public_session () in
+  let experiment = Test_utils.create_public_experiment () in
   let contact = create_contact () in
   let events =
-    let command = AssignmentCommand.Create.{ contact; session } in
+    let command = AssignmentCommand.Create.{ contact; session; experiment } in
     AssignmentCommand.Create.handle command
   in
   let expected =

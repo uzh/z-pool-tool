@@ -124,3 +124,9 @@ val find_all_public_for_experiment
   -> Contact.t
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
+
+module Repo : sig
+  module Public : sig
+    val t : Public.t Caqti_type.t
+  end
+end

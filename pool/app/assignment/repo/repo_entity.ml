@@ -115,3 +115,17 @@ let t =
                               Pool_common.Repo.CreatedAt.t
                               Pool_common.Repo.UpdatedAt.t)))))))))
 ;;
+
+module Public = struct
+  open Entity.Public
+
+  let t =
+    let encode (m : t) = Ok (Pool_common.Id.value m.id, m.canceled_at) in
+    let decode (id, canceled_at) =
+      let open CCResult in
+      Ok { id = Pool_common.Id.of_string id; canceled_at }
+    in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t CanceledAt.t))
+  ;;
+end

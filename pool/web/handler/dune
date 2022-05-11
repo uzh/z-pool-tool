@@ -1,6 +1,7 @@
 (library
  (name handler)
  (libraries
+  assignment_type
   contact
   cqrs_command
   email

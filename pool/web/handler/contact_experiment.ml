@@ -40,10 +40,18 @@ let show req =
     let* Experiment_type.{ experiment; sessions } =
       Experiment_type.find_public_sessions tenant_db id contact
     in
-    let%lwt user_is_enlisted =
+    let%lwt existing_assignment =
+      Assignment_type.find_opt_by_experiment tenant_db contact experiment
+    in
+    let%lwt user_is_on_waitlist =
       Waiting_list.user_is_enlisted tenant_db contact experiment
     in
-    Page.Contact.Experiment.show experiment sessions user_is_enlisted context
+    Page.Contact.Experiment.show
+      experiment
+      sessions
+      existing_assignment
+      user_is_on_waitlist
+      context
     |> Lwt.return_ok
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html

@@ -32,7 +32,13 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let show experiment sessions user_is_enlisted Pool_context.{ language; _ } =
+let show
+    experiment
+    sessions
+    existing_assignment
+    user_is_enlisted
+    Pool_context.{ language; _ }
+  =
   let open Experiment_type in
   let form_action =
     Format.asprintf
@@ -47,26 +53,42 @@ let show experiment sessions user_is_enlisted Pool_context.{ language; _ } =
     | true -> Pool_common.Message.(RemoveFromWaitingList), "button--failure"
     | false -> Pool_common.Message.(AddToWaitingList), "button--success"
   in
+  let not_enrolled_html () =
+    div
+      [ h2 [ txt "Session" ]
+      ; div [ Session.public_overview sessions experiment language ]
+      ; div
+          [ h2
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string
+                      language
+                      I18n.ExperimentWaitingListTitle)
+              ]
+          ; form
+              ~a:[ a_method `Post; a_action form_action ]
+              [ submit_element
+                  language
+                  form_control
+                  ~classnames:[ submit_class ]
+                  ()
+              ]
+          ]
+      ]
+  in
+  let enrolled_html existing_assignment =
+    div
+      [ p [ txt "You signed up for the following session: " ]
+      ; Page_contact_sessions.public_detail
+          existing_assignment.Assignment_type.session
+          language
+      ]
+  in
+  let html =
+    match existing_assignment with
+    | Some assignment -> enrolled_html assignment
+    | None -> not_enrolled_html ()
+  in
   div
-    [ div [ txt (Experiment.Description.value experiment.description) ]
-    ; div
-        [ h2 [ txt "Session" ]
-        ; div [ Session.public_overview sessions experiment language ]
-        ]
-    ; div
-        [ h2
-            [ txt
-                Pool_common.(
-                  Utils.text_to_string language I18n.ExperimentWaitingListTitle)
-            ]
-        ; form
-            ~a:[ a_method `Post; a_action form_action ]
-            [ submit_element
-                language
-                form_control
-                ~classnames:[ submit_class ]
-                ()
-            ]
-        ]
-    ]
+    [ div [ txt (Experiment.Description.value experiment.description) ]; html ]
 ;;
