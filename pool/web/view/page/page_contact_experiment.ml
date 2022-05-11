@@ -1,5 +1,7 @@
 open Tyxml.Html
 open Component
+module Session = Page_contact_sessions
+module Assignment = Page_contact_assignment
 
 let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment_type.public) =
@@ -49,7 +51,7 @@ let show experiment sessions user_is_enlisted Pool_context.{ language; _ } =
     [ div [ txt (Experiment.Description.value experiment.description) ]
     ; div
         [ h2 [ txt "Session" ]
-        ; div (Page_subject_sessions.public_overview sessions)
+        ; div [ Session.public_overview sessions experiment language ]
         ]
     ; div
         [ h2

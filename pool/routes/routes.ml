@@ -62,19 +62,22 @@ module Contact = struct
 
   let locked_routes =
     let experiments =
+      let build_scope subdir =
+        Format.asprintf
+          "/%s/%s"
+          Pool_common.Message.Field.(Experiment |> url_key)
+          subdir
+      in
       let waiting_list =
         [ post "" Experiment.WaitingList.create
         ; post "/remove" Experiment.WaitingList.delete
         ]
       in
+      let sessions = [ get "/:id" Experiment.Assignment.show ] in
       [ get "" Experiment.index
       ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
-      ; choose
-          ~scope:
-            (Format.asprintf
-               "/%s/waiting-list"
-               Pool_common.Message.Field.(Experiment |> url_key))
-          waiting_list
+      ; choose ~scope:(build_scope "waiting-list") waiting_list
+      ; choose ~scope:(build_scope "sessions") sessions
       ]
     in
     [ get "/dashboard" Handler.Contact.dashboard

@@ -17,6 +17,7 @@ let to_string = function
   | SessionListTitle -> "Sessions"
   | SessionNewTitle -> "Neue Session"
   | SessionUpdateTitle -> "Session updaten"
+  | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"

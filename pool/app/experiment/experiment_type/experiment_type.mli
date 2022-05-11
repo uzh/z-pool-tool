@@ -6,7 +6,7 @@ type public =
 
 type public_sessions =
   { experiment : public
-  ; sessions : Session.t list
+  ; sessions : Session.Public.t list
   }
 [@@deriving eq, show]
 

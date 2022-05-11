@@ -1,4 +1,5 @@
 module WaitingList = Contact_experiment_waiting_list
+module Assignment = Contact_experiment_assignment
 module HttpUtils = Http_utils
 
 let create_layout = Contact_general.create_layout
