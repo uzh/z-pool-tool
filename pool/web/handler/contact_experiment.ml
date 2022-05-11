@@ -43,7 +43,7 @@ let show req =
     in
     let* contact = get_current_contact tenant_db req in
     let* Experiment_type.{ experiment; sessions } =
-      Experiment_type.find_public_sessions tenant_db id
+      Experiment_type.find_public_sessions tenant_db id contact
     in
     let%lwt user_is_enlisted =
       Waiting_list.user_is_enlisted tenant_db contact experiment

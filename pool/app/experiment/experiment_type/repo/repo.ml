@@ -2,6 +2,14 @@ module Sql = struct
   module Public = struct
     module RepoEntity = Repo_entity.Public
 
+    let contact_was_invited_join =
+      {sql|
+        INNER JOIN pool_invitations
+        ON pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
+        AND pool_experiments.id = pool_invitations.experiment_id
+      |sql}
+    ;;
+
     let select_from_experiments_sql where_fragment =
       let select_from =
         {sql|
@@ -22,11 +30,7 @@ module Sql = struct
 
     let find_all_request =
       let open Caqti_request.Infix in
-      {sql|
-        INNER JOIN pool_invitations
-        ON pool_invitations.contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE(?, '-', '')))
-        AND pool_experiments.id = pool_invitations.experiment_id
-      |sql}
+      contact_was_invited_join
       |> select_from_experiments_sql
       |> Caqti_type.string ->* RepoEntity.t
     ;;
@@ -41,19 +45,22 @@ module Sql = struct
 
     let find_request =
       let open Caqti_request.Infix in
-      {sql|
-        WHERE uuid = UNHEX(REPLACE(?, '-', ''))
-      |sql}
+      let where_fragment =
+        {sql|
+          WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
+        |sql}
+      in
+      Format.asprintf "%s %s" contact_was_invited_join where_fragment
       |> select_from_experiments_sql
-      |> Caqti_type.string ->! RepoEntity.t
+      |> Caqti_type.(tup2 string string) ->! RepoEntity.t
     ;;
 
-    let find pool id =
+    let find pool id contact =
       let open Lwt.Infix in
       Utils.Database.find_opt
         (Pool_database.Label.value pool)
         find_request
-        (id |> Pool_common.Id.value)
+        Pool_common.Id.(Contact.id contact |> value, id |> value)
       >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
     ;;
   end

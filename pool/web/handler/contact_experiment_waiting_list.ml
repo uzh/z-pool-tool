@@ -17,11 +17,13 @@ let handle req action =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
-    let* experiment = Experiment_type.find_public tenant_db experiment_id in
     let* contact =
       Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
       ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
       >>= Contact.find_by_user tenant_db
+    in
+    let* experiment =
+      Experiment_type.find_public tenant_db experiment_id contact
     in
     let events =
       Waiting_list.{ contact; experiment }

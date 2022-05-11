@@ -27,11 +27,13 @@ val find_all_public : Pool_database.Label.t -> Contact.t -> public list Lwt.t
 val find_public
   :  Pool_database.Label.t
   -> Pool_common.Id.t
+  -> Contact.t
   -> (public, Repo_entity.Common.Message.error) result Lwt.t
 
 val find_public_sessions
   :  Pool_database.Label.t
   -> Pool_common.Id.t
+  -> Contact.t
   -> (public_sessions, Pool_common.Message.error) Lwt_result.t
 
 val find_invitations
