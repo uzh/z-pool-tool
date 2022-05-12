@@ -254,7 +254,7 @@ let control_to_string = function
   | Disable -> format_submit "deaktivieren" None
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
-  | Enroll -> format_submit "anmelden" None
+  | Enroll -> format_submit "einschreiben" None
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"

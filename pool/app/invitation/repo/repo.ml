@@ -165,7 +165,6 @@ module Sql = struct
     Utils.Database.exec (Pool_database.Label.value pool) update_request
   ;;
 
-  (* TODO[timhub]: rename subject *)
   let contact_was_invited_to_experiment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -188,10 +187,7 @@ module Sql = struct
       contact_was_invited_to_experiment_request
       ( experiment.Experiment.id |> Pool_common.Id.value
       , Contact.id contact |> Pool_common.Id.value )
-    >|= fun opt ->
-    match opt with
-    | Some _ -> true
-    | None -> false
+    >|= CCOption.is_some
   ;;
 end
 

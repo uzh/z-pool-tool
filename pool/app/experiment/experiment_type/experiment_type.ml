@@ -1,7 +1,7 @@
 include Entity
 
 let find_public = Repo.find_public
-let find_all_public = Repo.find_all_public
+let find_all_public_by_contact = Repo.find_all_public_by_contact
 
 let find_public_sessions pool id contact =
   let open Lwt_result.Syntax in

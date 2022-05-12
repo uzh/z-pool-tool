@@ -28,7 +28,7 @@ let create req =
     let%lwt already_enrolled =
       let open Lwt.Infix in
       Assignment_type.find_opt_by_experiment tenant_db contact experiment
-      >|= Utils.Bool.of_option
+      >|= CCOption.is_some
     in
     let events =
       Cqrs_command.Assignment_command.Create.(

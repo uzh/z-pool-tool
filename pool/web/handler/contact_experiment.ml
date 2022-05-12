@@ -15,7 +15,7 @@ let index req =
     let tenant_db = context.Pool_context.tenant_db in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let%lwt expermient_list =
-      Experiment_type.find_all_public tenant_db contact
+      Experiment_type.find_all_public_by_contact tenant_db contact
     in
     Page.Contact.Experiment.index expermient_list context
     |> create_layout ~active_navigation:"/experiments" req context

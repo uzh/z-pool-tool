@@ -28,18 +28,18 @@ module Sql = struct
       Format.asprintf "%s %s" select_from where_fragment
     ;;
 
-    let find_all_request =
+    let find_all_public_by_contact_request =
       let open Caqti_request.Infix in
       contact_was_invited_join
       |> select_from_experiments_sql
       |> Caqti_type.string ->* RepoEntity.t
     ;;
 
-    let find_all pool contact =
+    let find_all_public_by_contact pool contact =
       (* TODO [timhub]: filter experiments *)
       Utils.Database.collect
         (Pool_database.Label.value pool)
-        find_all_request
+        find_all_public_by_contact_request
         (Contact.id contact |> Pool_common.Id.value)
     ;;
 
@@ -66,5 +66,5 @@ module Sql = struct
   end
 end
 
-let find_all_public = Sql.Public.find_all
+let find_all_public_by_contact = Sql.Public.find_all_public_by_contact
 let find_public = Sql.Public.find
