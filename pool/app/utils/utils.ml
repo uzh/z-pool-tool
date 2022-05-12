@@ -38,4 +38,9 @@ module Bool = struct
     | true -> Ok ()
     | false -> Error err
   ;;
+
+  let of_option = function
+    | Some _ -> true
+    | None -> false
+  ;;
 end

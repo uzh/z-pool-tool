@@ -7,7 +7,11 @@ module Create : sig
     ; experiment : Experiment_type.public
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  t
+    -> bool
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
@@ -16,21 +20,24 @@ end = struct
     ; experiment : Experiment_type.public
     }
 
-  let handle (command : t) =
-    let create =
-      Assignment.
-        { contact = command.contact
-        ; session_id = command.session.Session.Public.id
-        }
-    in
-    let waitlist =
-      Waiting_list.
-        { contact = command.contact; experiment = command.experiment }
-    in
-    Ok
-      [ Waiting_list.Deleted waitlist |> Pool_event.waiting_list
-      ; Assignment.Created create |> Pool_event.assignment
-      ]
+  let handle (command : t) already_enrolled =
+    if already_enrolled
+    then Error Pool_common.Message.(AlreadySignedUpForExperiment)
+    else (
+      let create =
+        Assignment.
+          { contact = command.contact
+          ; session_id = command.session.Session.Public.id
+          }
+      in
+      let waitlist =
+        Waiting_list.
+          { contact = command.contact; experiment = command.experiment }
+      in
+      Ok
+        [ Waiting_list.Deleted waitlist |> Pool_event.waiting_list
+        ; Assignment.Created create |> Pool_event.assignment
+        ])
   ;;
 
   let can user _ =

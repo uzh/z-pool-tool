@@ -98,7 +98,7 @@ let create () =
   let contact = create_contact () in
   let events =
     let command = AssignmentCommand.Create.{ contact; session; experiment } in
-    AssignmentCommand.Create.handle command
+    AssignmentCommand.Create.handle command false
   in
   let expected =
     Ok

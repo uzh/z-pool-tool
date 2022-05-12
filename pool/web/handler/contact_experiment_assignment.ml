@@ -20,15 +20,19 @@ let create req =
       Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
       |> Pool_common.Id.of_string
     in
-    (* TODO[timhub]: Check if user is already enrolled *)
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment =
       Experiment_type.find_public tenant_db experiment_id contact
     in
     let* session = Session.find_public tenant_db id contact in
+    let%lwt already_enrolled =
+      let open Lwt.Infix in
+      Assignment_type.find_opt_by_experiment tenant_db contact experiment
+      >|= Utils.Bool.of_option
+    in
     let events =
       Cqrs_command.Assignment_command.Create.(
-        handle { contact; session; experiment })
+        handle { contact; session; experiment } already_enrolled)
       |> Lwt_result.lift
     in
     let handle events =

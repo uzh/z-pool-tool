@@ -132,6 +132,8 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadySignedUpForExperiment ->
+    "Sie haben sich für dieses Experiment bereits angemeldet."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
