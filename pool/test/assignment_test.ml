@@ -101,8 +101,10 @@ let create () =
     AssignmentCommand.Create.handle command false
   in
   let expected =
+    let wait_list = Waiting_list.{ contact; experiment } in
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.Public.id })
+      [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
+      ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
       ]
   in

@@ -43,14 +43,14 @@ let show req =
     let%lwt existing_assignment =
       Assignment_type.find_opt_by_experiment tenant_db contact experiment
     in
-    let%lwt user_is_on_waitlist =
+    let%lwt user_is_on_wait_list =
       Waiting_list.user_is_enlisted tenant_db contact experiment
     in
     Page.Contact.Experiment.show
       experiment
       sessions
       existing_assignment
-      user_is_on_waitlist
+      user_is_on_wait_list
       context
     |> Lwt.return_ok
     >>= create_layout req context

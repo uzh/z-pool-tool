@@ -30,12 +30,12 @@ end = struct
           ; session_id = command.session.Session.Public.id
           }
       in
-      let waitlist =
+      let wait_list =
         Waiting_list.
           { contact = command.contact; experiment = command.experiment }
       in
       Ok
-        [ Waiting_list.Deleted waitlist |> Pool_event.waiting_list
+        [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
         ; Assignment.Created create |> Pool_event.assignment
         ])
   ;;
