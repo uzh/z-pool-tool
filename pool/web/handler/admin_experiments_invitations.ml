@@ -107,9 +107,11 @@ let create req =
 
 let resend req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id =
-    Sihl.Web.Router.param req Pool_common.Message.Field.(Experiment |> show)
-    |> Pool_common.Id.of_string
+  let experiment_id, id =
+    let open Pool_common.Message.Field in
+    HttpUtils.(
+      ( get_field_router_param req Experiment
+      , get_field_router_param req Invitation ))
   in
   let redirect_path =
     Format.asprintf
@@ -119,28 +121,26 @@ let resend req =
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
-    @@
-    let id = Sihl.Web.Router.param req "id" |> Pool_common.Id.of_string in
-    let* invitation = Invitation.find tenant_db id in
-    let* experiment = Experiment.find tenant_db experiment_id in
-    let* default_language = Settings.default_language tenant_db in
-    let events =
-      Cqrs_command.Invitation_command.Resend.handle
-        Invitation.{ invitation; experiment }
-        default_language
-      |> Lwt.return
-    in
-    let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
-      Http_utils.redirect_to_with_actions
-        redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
-        ]
-    in
-    events |>> handle
+    @@ let* invitation = Invitation.find tenant_db id in
+       let* experiment = Experiment.find tenant_db experiment_id in
+       let* default_language = Settings.default_language tenant_db in
+       let events =
+         Cqrs_command.Invitation_command.Resend.handle
+           Invitation.{ invitation; experiment }
+           default_language
+         |> Lwt.return
+       in
+       let handle events =
+         let%lwt (_ : unit list) =
+           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           redirect_path
+           [ Message.set
+               ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
+           ]
+       in
+       events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

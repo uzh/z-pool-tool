@@ -70,7 +70,7 @@ let create_operator req =
     let open Utils.Lwt_result.Infix in
     let open Common.Message in
     let id =
-      Sihl.Web.Router.param req Field.(Id |> show) |> Common.Id.of_string
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
     in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
@@ -112,7 +112,7 @@ let tenant_detail req =
     Lwt_result.map_err (fun err -> err, "/root/tenants")
     @@
     let id =
-      Router.param req Common.Message.Field.(Id |> show) |> Common.Id.of_string
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
     in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail tenant context |> Response.of_html |> Lwt.return_ok

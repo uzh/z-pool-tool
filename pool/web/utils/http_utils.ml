@@ -15,6 +15,11 @@ let get_current_contact tenant_db req =
   >>= Contact.find_by_user tenant_db
 ;;
 
+let get_field_router_param req field =
+  Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
+  |> Pool_common.Id.of_string
+;;
+
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_common.Message.Field.(Language |> show) req

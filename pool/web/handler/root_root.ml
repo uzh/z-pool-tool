@@ -39,8 +39,7 @@ let toggle_status req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
     let id =
-      Pool_common.(
-        Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Root
     in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift

@@ -4,9 +4,10 @@ let create_layout = Contact_general.create_layout
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id =
-    Sihl.Web.Router.param req Pool_common.Message.Field.(Experiment |> show)
-    |> Pool_common.Id.of_string
+  let experiment_id, id =
+    let open Pool_common.Message.Field in
+    HttpUtils.(
+      get_field_router_param req Experiment, get_field_router_param req Session)
   in
   let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
@@ -16,10 +17,6 @@ let create req =
     @@
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
-    let id =
-      Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
-      |> Pool_common.Id.of_string
-    in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment =
       Experiment_type.find_public tenant_db experiment_id contact

@@ -33,8 +33,7 @@ let show req =
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
     let id =
-      Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show)
-      |> Pool_common.Id.of_string
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
     in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* Experiment_type.{ experiment; sessions } =

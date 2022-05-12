@@ -8,7 +8,9 @@ let update req command success_message =
   let result _ =
     let open Utils.Lwt_result.Infix in
     let open Common.Message.Field in
-    let id = Sihl.Web.Router.param req (Id |> show) |> Common.Id.of_string in
+    let id =
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+    in
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)
     in
@@ -77,7 +79,7 @@ let delete_asset req =
   let open Common.Message in
   let go m = m |> Router.param req |> Common.Id.of_string in
   let asset_id = go Field.(AssetId |> show) in
-  let tenant_id = go Field.(TenantId |> show) in
+  let tenant_id = go Field.(Tenant |> show) in
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
