@@ -4,7 +4,6 @@ let waiting_list pool =
     Experiment_type.
       { id = experiment.Experiment.id
       ; description = experiment.Experiment.description
-      ; sessions = []
       }
   in
   let%lwt events =

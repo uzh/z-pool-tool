@@ -129,6 +129,7 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AlreadySignedUpForExperiment
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail
@@ -184,6 +185,7 @@ type warning = Warning of string
 
 type success =
   | AddedToWaitingList
+  | AssignmentCreated
   | Canceled of Field.t
   | Created of Field.t
   | Deleted of Field.t
@@ -231,6 +233,7 @@ type control =
   | Disable
   | Edit of Field.t option
   | Enable
+  | Enroll
   | Login
   | More
   | RemoveFromWaitingList

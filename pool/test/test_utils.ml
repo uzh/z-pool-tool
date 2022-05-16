@@ -115,7 +115,6 @@ let create_public_experiment () =
         Experiment.Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; sessions = []
     }
 ;;
 

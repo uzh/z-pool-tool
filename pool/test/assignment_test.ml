@@ -72,6 +72,13 @@ let create_session () =
     }
 ;;
 
+let creat_public_session () =
+  let Session.{ id; start; duration; description; canceled_at; _ } =
+    create_session ()
+  in
+  Session.Public.{ id; start; duration; description; canceled_at }
+;;
+
 let create_assignment () =
   Assignment.
     { id = Pool_common.Id.create ()
@@ -86,15 +93,18 @@ let create_assignment () =
 ;;
 
 let create () =
-  let session = create_session () in
+  let session = creat_public_session () in
+  let experiment = Test_utils.create_public_experiment () in
   let contact = create_contact () in
   let events =
-    let command = AssignmentCommand.Create.{ contact; session } in
-    AssignmentCommand.Create.handle command
+    let command = AssignmentCommand.Create.{ contact; session; experiment } in
+    AssignmentCommand.Create.handle command false
   in
   let expected =
+    let wait_list = Waiting_list.{ contact; experiment } in
     Ok
-      [ Assignment.(Created { contact; session_id = session.Session.id })
+      [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
+      ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
       ]
   in

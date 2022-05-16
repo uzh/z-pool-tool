@@ -151,3 +151,14 @@ type notification_history =
   }
 
 let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
+
+module Public = struct
+  type t =
+    { id : Pool_common.Id.t
+    ; start : Start.t
+    ; duration : Ptime.Span.t
+    ; description : Description.t option
+    ; canceled_at : Ptime.t option
+    }
+  [@@deriving eq, show]
+end

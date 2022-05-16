@@ -15,6 +15,7 @@ type t =
   | SessionListTitle
   | SessionNewTitle
   | SessionUpdateTitle
+  | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle

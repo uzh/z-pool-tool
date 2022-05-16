@@ -66,3 +66,16 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+
+module Public : sig
+  type t =
+    { id : Pool_common.Id.t
+    ; canceled_at : CanceledAt.t
+    }
+end
+
+module Repo : sig
+  module Public : sig
+    val t : Public.t Caqti_type.t
+  end
+end

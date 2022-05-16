@@ -62,19 +62,27 @@ module Contact = struct
 
   let locked_routes =
     let experiments =
+      let build_scope subdir =
+        Format.asprintf
+          "/%s/%s"
+          Pool_common.Message.Field.(Experiment |> url_key)
+          subdir
+      in
       let waiting_list =
         [ post "" Experiment.WaitingList.create
         ; post "/remove" Experiment.WaitingList.delete
         ]
       in
+      let sessions =
+        let open Pool_common.Message.Field in
+        [ get (Session |> url_key) Experiment.Session.show
+        ; post (Session |> url_key) Experiment.Assignment.create
+        ]
+      in
       [ get "" Experiment.index
-      ; get Pool_common.Message.Field.(Id |> url_key) Experiment.show
-      ; choose
-          ~scope:
-            (Format.asprintf
-               "/%s/waiting-list"
-               Pool_common.Message.Field.(Experiment |> url_key))
-          waiting_list
+      ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
+      ; choose ~scope:(build_scope "waiting-list") waiting_list
+      ; choose ~scope:(build_scope "sessions") sessions
       ]
     in
     [ get "/dashboard" Handler.Contact.dashboard
@@ -111,17 +119,17 @@ module Admin = struct
   ;;
 
   let routes =
+    let open Pool_common.Message.Field in
     let build_scope subdir =
-      Format.asprintf
-        "/%s/%s"
-        Pool_common.Message.Field.(Experiment |> url_key)
-        subdir
+      Format.asprintf "/%s/%s" (Experiment |> url_key) subdir
     in
     let experiments =
       let invitations =
         [ get "" Handler.Admin.Experiments.Invitations.index
         ; post "" Handler.Admin.Experiments.Invitations.create
-        ; post "/:id/resend" Handler.Admin.Experiments.Invitations.resend
+        ; post
+            (Format.asprintf "/%s/resend" (Invitation |> url_key))
+            Handler.Admin.Experiments.Invitations.resend
         ]
       in
       let sessions =
@@ -144,10 +152,14 @@ module Admin = struct
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form
       ; post "" Handler.Admin.Experiments.create
-      ; get "/:id" Handler.Admin.Experiments.show
-      ; get "/:id/edit" Handler.Admin.Experiments.edit
-      ; post "/:id" Handler.Admin.Experiments.update
-      ; post "/:id/delete" Handler.Admin.Experiments.delete
+      ; get (Experiment |> url_key) Handler.Admin.Experiments.show
+      ; get
+          (Format.asprintf "/%s/edit" (Experiment |> url_key))
+          Handler.Admin.Experiments.edit
+      ; post (Experiment |> url_key) Handler.Admin.Experiments.update
+      ; post
+          (Format.asprintf "/%s/delete" (Experiment |> url_key))
+          Handler.Admin.Experiments.delete
       ; choose ~scope:(build_scope "invitations") invitations
       ; choose ~scope:(build_scope "waiting-list") waiting_list
       ; choose ~scope:(build_scope "sessions") sessions
@@ -159,7 +171,9 @@ module Admin = struct
       ; get "/settings" Handler.Admin.Settings.show
       ; post "/settings/:action" Handler.Admin.Settings.update_settings
       ; get "/i18n" Handler.Admin.I18n.index
-      ; post "/i18n/:id" Handler.Admin.I18n.update
+      ; post
+          (Format.asprintf "/i18n/%s" (I18n |> url_key))
+          Handler.Admin.I18n.update
       ; choose ~scope:"/experiments" experiments
       ]
   ;;
@@ -191,19 +205,32 @@ module Root = struct
   ;;
 
   let locked_routes =
+    let open Pool_common.Message.Field in
     let open Handler.Root in
-    [ get "/tenants" Tenant.tenants
-    ; post "/tenants/create" Tenant.create
-    ; get "/tenants/:id" Tenant.tenant_detail
-    ; post "/tenants/:id/create-operator" Tenant.create_operator
-    ; post "/tenants/:id/update-detail" Tenant.Update.update_detail
-    ; post "/tenants/:id/update-database" Tenant.Update.update_database
-    ; post
-        "/tenants/:tenant_id/assets/:asset_id/delete"
-        Tenant.Update.delete_asset
-    ; post "/root/create" Root.create
-    ; post "/root/:id/toggle-status" Root.toggle_status
-    ]
+    let build_route appendix =
+      Format.asprintf "%s/%s" (Tenant |> url_key) appendix
+    in
+    let tenants =
+      [ get "" Tenant.tenants
+      ; post "/create" Tenant.create
+      ; get (Tenant |> url_key) Tenant.tenant_detail
+      ; post (build_route "create-operator") Tenant.create_operator
+      ; post (build_route "update-detail") Tenant.Update.update_detail
+      ; post (build_route "update-database") Tenant.Update.update_database
+      ; post
+          (build_route
+             (Format.asprintf "assets/%s/delete" (AssetId |> url_key)))
+          Tenant.Update.delete_asset
+      ]
+    in
+    let root =
+      [ post "/create" Root.create
+      ; post
+          (Format.asprintf "/%s/toggle-status" (Root |> url_key))
+          Root.toggle_status
+      ]
+    in
+    [ choose [ choose ~scope:"tenants" tenants; choose ~scope:"root" root ] ]
   ;;
 
   let routes =

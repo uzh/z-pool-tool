@@ -41,12 +41,14 @@ let index req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let id = Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show) in
+  let id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.i18n
+  in
   let redirect_path = Format.asprintf "/admin/i18n" in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
-    let property () = I18n.find tenant_db (id |> Pool_common.Id.of_string) in
+    let property () = I18n.find tenant_db id in
     let events property =
       let open CCResult.Infix in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in

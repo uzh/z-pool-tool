@@ -88,13 +88,45 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
+module Public : sig
+  type t =
+    { id : Pool_common.Id.t
+    ; start : Start.t
+    ; duration : Duration.t
+    ; description : Description.t option
+    ; canceled_at : Ptime.t option
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 (* TODO [aerben] this should be experiment id type *)
+val find
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
+
+val find_public
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Contact.t
+  -> (Public.t, Pool_common.Message.error) Lwt_result.t
+
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> t list Lwt.t
 
-val find
+val find_all_public_for_experiment
   :  Pool_database.Label.t
+  -> Contact.t
   -> Pool_common.Id.t
-  -> (t, Pool_common.Message.error) Lwt_result.t
+  -> Public.t list Lwt.t
+
+module Repo : sig
+  module Public : sig
+    val t : Public.t Caqti_type.t
+  end
+end

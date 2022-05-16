@@ -1,0 +1,13 @@
+(library
+ (name assignment_type)
+ (libraries
+  session
+  pool_common
+  pool_database
+  sihl
+  assignment
+  experiment_type)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+
+(include_subdirs unqualified)

@@ -22,16 +22,16 @@ module Sql = struct
           SUBSTR(HEX(pool_sessions.uuid), 21)
         )),
         LOWER(CONCAT(
-          SUBSTR(HEX(pool_contacts.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_contacts.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_contacts.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_contacts.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_contacts.uuid), 21)
+          SUBSTR(HEX(pool_contacts.user_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_contacts.user_uuid), 21)
         )),
         pool_assignments.show_up,
         pool_assignments.participated,
         pool_assignments.matches_filter,
-        pool_assignments.chanceled_at,
+        pool_assignments.canceled_at,
         pool_assignments.created_at,
         pool_assignments.updated_at
       FROM
@@ -106,13 +106,13 @@ module Sql = struct
         show_up,
         participated,
         matches_filter,
-        chanceled_at,
+        canceled_at,
         created_at,
         updated_at
       ) VALUES (
         UNHEX(REPLACE($1, '-', '')),
         (SELECT id FROM pool_sessions WHERE pool_sessions.uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_contacts WHERE pool_contacts.uuid = UNHEX(REPLACE($3, '-', ''))),
+        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($3, '-', ''))),
         $4,
         $5,
         $6,

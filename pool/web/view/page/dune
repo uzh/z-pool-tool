@@ -1,6 +1,7 @@
 (library
  (name page)
  (libraries
+  assignment_type
   component
   contact
   experiment

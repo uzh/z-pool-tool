@@ -101,6 +101,7 @@ let info_to_string : info -> string = function
 
 let success_to_string : success -> string = function
   | AddedToWaitingList -> "You were added to the waiting list."
+  | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
     field_message "" (field_to_string field) "was successfully canceled."
   | Created field ->
@@ -132,6 +133,8 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadySignedUpForExperiment ->
+    "You are already signed up for this experiment."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -229,6 +232,7 @@ let control_to_string = function
   | Disable -> format_submit "disable" None
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
+  | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
   | More -> "more"
   | RemoveFromWaitingList -> "Remove from waiting list"
