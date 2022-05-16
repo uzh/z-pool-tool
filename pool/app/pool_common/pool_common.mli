@@ -25,7 +25,6 @@ module Language : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val code : t -> string
   val of_string : string -> (t, Message.error) result
-  val t : t Caqti_type.t
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
@@ -128,6 +127,12 @@ module Repo : sig
     type t = Id.t
 
     val t : string Caqti_type.t
+  end
+
+  module Language : sig
+    type t = Language.t
+
+    val t : t Caqti_type.t
   end
 
   module Version : sig

@@ -27,16 +27,6 @@ module Language = struct
     | _ -> Error PoolError.(Invalid Field.Language)
   ;;
 
-  let t =
-    let open CCResult in
-    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> code |> pure)
-        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
-        string)
-  ;;
-
   let label country_code = country_code |> code |> Utils.Countries.find
 
   let schema () =

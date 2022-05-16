@@ -32,5 +32,7 @@ let t =
     custom
       ~encode
       ~decode
-      (tup2 Common.Repo.Id.t (tup2 Key.t (tup2 Common.Language.t Content.t))))
+      (tup2
+         Common.Repo.Id.t
+         (tup2 Key.t (tup2 Common.Repo.Language.t Content.t))))
 ;;

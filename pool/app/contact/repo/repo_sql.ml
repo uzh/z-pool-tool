@@ -231,7 +231,7 @@ module Language = struct
         language_version = $3
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t ->. unit)
+    |> Caqti_type.(tup3 Id.t (option Language.t) Version.t ->. unit)
   ;;
 
   let update pool (Entity.{ language; language_version; _ } as contact) =

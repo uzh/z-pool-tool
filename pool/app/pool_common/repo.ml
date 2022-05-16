@@ -6,6 +6,21 @@ module Id = struct
   let t = Caqti_type.string
 end
 
+module Language = struct
+  include Language
+
+  let encode m = m |> code |> CCResult.pure
+
+  let decode m =
+    m
+    |> of_string
+    |> CCResult.map_err (fun _ ->
+           Locales_en.error_to_string Entity_message.(Decode Field.Language))
+  ;;
+
+  let t = Caqti_type.(custom ~encode ~decode string)
+end
+
 module Version = struct
   include Version
 

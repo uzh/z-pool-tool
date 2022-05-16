@@ -13,26 +13,6 @@ module RecruitmentChannel = struct
   ;;
 end
 
-module Language = struct
-  open Pool_common.Language
-
-  let t =
-    let open CCResult in
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> CCOption.map code |> pure)
-        ~decode:(fun m ->
-          map_err (fun _ ->
-              let open Pool_common in
-              Utils.error_to_string Language.En Message.(Decode Field.Language))
-          @@
-          match m with
-          | None -> Ok None
-          | Some language -> language |> of_string >|= CCOption.some)
-        (option string))
-  ;;
-end
-
 module NumberOfInvitations = struct
   include NumberOfInvitations
 
@@ -119,7 +99,7 @@ let t =
             (tup2
                TermsAccepted.t
                (tup2
-                  Language.t
+                  (option Language.t)
                   (tup2
                      Paused.t
                      (tup2
@@ -182,7 +162,7 @@ let contact =
             (tup2
                TermsAccepted.t
                (tup2
-                  Language.t
+                  (option Language.t)
                   (tup2
                      Paused.t
                      (tup2
@@ -248,7 +228,7 @@ module Write = struct
               (tup2
                  TermsAccepted.t
                  (tup2
-                    Language.t
+                    (option Language.t)
                     (tup2
                        Paused.t
                        (tup2
@@ -310,7 +290,7 @@ module Preview = struct
         (tup2
            Pool_user.Repo.user_caqti
            (tup2
-              Language.t
+              (option Pool_common.Repo.Language.t)
               (tup2
                  Paused.t
                  (tup2
