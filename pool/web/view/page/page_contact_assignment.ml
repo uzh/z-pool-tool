@@ -9,18 +9,23 @@ let detail session experiment Pool_context.{ language; _ } =
     |> Sihl.Web.externalize_path
   in
   div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
+        ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.SessionSignUpTitle)
         ]
-    ; Page_contact_sessions.public_detail session language
-    ; form
-        ~a:[ a_action form_action; a_method `Post ]
-        [ Component.submit_element
-            language
-            Pool_common.Message.(Enroll)
-            ~classnames:[ "button--success" ]
-            ()
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ Page_contact_sessions.public_detail session language
+        ; form
+            ~a:[ a_action form_action; a_method `Post ]
+            [ Component.submit_element
+                language
+                Pool_common.Message.(Enroll)
+                ~submit_type:`Success
+                ()
+            ]
         ]
     ]
 ;;

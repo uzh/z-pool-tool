@@ -103,12 +103,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: input_fields)
-          @ [ submit_element
-                language
-                Message.(Create None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Create None) () ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -121,12 +116,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
           (CCList.map
              (input_element "")
              Message.Field.[ Email; Password; Firstname; Lastname ]
-          @ [ submit_element
-                language
-                Message.(Create (Some Field.root))
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Create (Some Field.root)) () ])
       ]
   in
   Page_layout.create_root_layout
@@ -239,7 +229,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
                  ; submit_element
                      language
                      Message.(Delete (Some Field.file))
-                     ~classnames:[ "button--failure" ]
+                     ~submit_type:`Error
                      ()
                  ]
              ])
@@ -273,13 +263,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: detail_input_fields)
-          @ [ disabled
-            ; submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ disabled; submit_element language Message.(Update None) () ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -295,12 +279,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ; a_class [ "stack" ]
             ]
           ((Component.csrf_element csrf () :: database_input_fields)
-          @ [ submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Update None) () ])
       ; hr ()
       ; form
           ~a:
@@ -316,11 +295,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
            :: CCList.map
                 (CCFun.flip input_element "")
                 Message.Field.[ Email; Password; Firstname; Lastname ])
-          @ [ submit_element
-                language
-                Message.(Create (Some Field.operator))
-                ~classnames:[ "button--primary" ]
-                ()
+          @ [ submit_element language Message.(Create (Some Field.operator)) ()
             ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

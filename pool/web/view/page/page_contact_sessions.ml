@@ -27,7 +27,7 @@ let public_overview sessions experiment language =
             ]
         ])
     sessions
-  |> table
+  |> table ~a:[ a_class [ "striped" ] ]
 ;;
 
 let public_detail (session : Session.Public.t) language =
@@ -60,5 +60,5 @@ let public_detail (session : Session.Public.t) language =
              ; td [ txt value ]
              ])
   in
-  table rows
+  table ~a:[ a_class [ "striped" ] ] rows
 ;;

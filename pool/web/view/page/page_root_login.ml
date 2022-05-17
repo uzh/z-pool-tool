@@ -16,11 +16,7 @@ let login Pool_context.{ language; csrf; message; _ } =
           [ csrf_element csrf ()
           ; input_element `Text Message.Field.Email ""
           ; input_element `Password Message.Field.Password ""
-          ; submit_element
-              language
-              Message.Login
-              ~classnames:[ "button--primary" ]
-              ()
+          ; submit_element language Message.Login ()
           ]
       ; a
           ~a:
@@ -51,11 +47,7 @@ let request_reset_password Pool_context.{ language; csrf; message; _ } =
             ]
           [ csrf_element csrf ()
           ; input_element `Text Message.Field.Email ""
-          ; submit_element
-              language
-              Message.SendResetLink
-              ~classnames:[ "button--primary" ]
-              ()
+          ; submit_element language Message.SendResetLink ()
           ]
       ]
   in
@@ -81,11 +73,7 @@ let reset_password token Pool_context.{ language; csrf; message; _ } =
           ; input_element `Hidden Message.Field.Token token
           ; input_element `Password Message.Field.Password ""
           ; input_element `Password Message.Field.PasswordConfirmation ""
-          ; submit_element
-              language
-              Message.(Save (Some Field.password))
-              ~classnames:[ "button--primary" ]
-              ()
+          ; submit_element language Message.(Save (Some Field.password)) ()
           ]
       ]
   in

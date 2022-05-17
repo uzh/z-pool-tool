@@ -20,7 +20,7 @@ let show is_edit req =
        match is_edit with
        | false ->
          Page.Contact.detail contact context
-         |> create_layout req context
+         |> create_layout ~active_navigation:"/user" req context
          >|= Sihl.Web.Response.of_html
        | true ->
          let* tenant_languages =

@@ -53,7 +53,6 @@ module Partials = struct
                     ; submit_element
                         language
                         Pool_common.Message.(Resend (Some Field.Invitation))
-                        ~classnames:[ "button--warning" ]
                         ()
                     ]
                 ]
@@ -67,7 +66,8 @@ module Partials = struct
             [ txt
                 (field
                 |> CCOption.map_or ~default:"" (fun field ->
-                       Pool_common.Utils.field_to_string language field))
+                       Pool_common.Utils.field_to_string language field
+                       |> CCString.capitalize_ascii))
             ])
         Pool_common.Message.Field.
           [ Some contact; Some ResentAt; Some CreatedAt; None ]
@@ -75,7 +75,7 @@ module Partials = struct
       |> CCList.pure
       |> thead
     in
-    table ~thead html_body
+    table ~a:[ a_class [ "table" ] ] ~thead html_body
   ;;
 
   let send_invitation
@@ -84,38 +84,45 @@ module Partials = struct
       filtered_contacts
     =
     div
-      [ h3
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
           [ txt
               Pool_common.(
                 I18n.InvitationNewTitle |> Utils.text_to_string language)
           ]
       ; form
-          ~a:[ a_method `Post; a_action (form_action experiment.Experiment.id) ]
+          ~a:
+            [ a_method `Post
+            ; a_action (form_action experiment.Experiment.id)
+            ; a_class [ "stack" ]
+            ]
           [ csrf_element csrf ()
           ; div
-              ~a:[ a_class [ "stack" ] ]
+              ~a:[ a_class [ "striped" ] ]
               (CCList.map
                  (fun (contact : Contact.t) ->
                    let id = Contact.id contact |> Pool_common.Id.value in
                    div
-                     ~a:[ a_class [ "is-box"; "flex--row" ] ]
-                     [ input
-                         ~a:
-                           [ a_input_type `Checkbox
-                           ; a_name "contacts[]"
-                           ; a_id id
-                           ; a_value id
-                           ]
-                         ()
-                     ; label
-                         ~a:[ a_label_for id ]
-                         [ txt (Contact.fullname contact) ]
+                     ~a:[ a_class [ "form-group"; "inset-sm" ] ]
+                     [ div
+                         [ input
+                             ~a:
+                               [ a_input_type `Checkbox
+                               ; a_name "subjects[]"
+                               ; a_id id
+                               ; a_value id
+                               ]
+                             ()
+                         ; label
+                             ~a:[ a_label_for id ]
+                             [ txt (Contact.fullname contact) ]
+                         ]
                      ])
                  filtered_contacts)
           ; submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))
-              ~classnames:[ "button--success" ]
+              ~submit_type:`Success
               ()
           ]
       ]

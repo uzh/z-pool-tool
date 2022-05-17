@@ -11,26 +11,24 @@ let subnav language id =
     ; Sessions, "/sessions"
     ]
   |> CCList.map (fun (label, url) ->
-         li
-           [ a
-               ~a:
-                 [ a_href
-                     (Sihl.Web.externalize_path
-                        (Format.asprintf
-                           "/admin/experiments/%s/%s"
-                           (Id.value id)
-                           url))
-                 ]
-               [ txt (Utils.nav_link_to_string language label) ]
-           ])
-  |> ul
+         a
+           ~a:
+             [ a_href
+                 (Sihl.Web.externalize_path
+                    (Format.asprintf
+                       "/admin/experiments/%s/%s"
+                       (Id.value id)
+                       url))
+             ]
+           [ txt (Utils.nav_link_to_string language label) ])
+  |> nav ~a:[ a_class [ "sub-nav" ] ]
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.t) =
     let open Experiment in
     div
-      ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
+      ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm" ] ]
       [ span [ txt (Title.value experiment.title) ]
       ; a
           ~a:
@@ -44,20 +42,28 @@ let index experiment_list Pool_context.{ language; _ } =
       ]
   in
   div
-    ~a:[ a_class [ "stack" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1
+        ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.ExperimentListTitle)
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        (CCList.map experiment_item experiment_list)
-    ; a
-        ~a:[ a_href (Sihl.Web.externalize_path "/admin/experiments/new") ]
-        [ txt
-            Pool_common.(
-              Message.(Add (Some Field.Experiment))
-              |> Utils.control_to_string language)
+        [ div
+            ~a:[ a_class [ "striped" ] ]
+            (CCList.map experiment_item experiment_list)
+        ; p
+            [ a
+                ~a:
+                  [ a_href (Sihl.Web.externalize_path "/admin/experiments/new")
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.(Add (Some Field.Experiment))
+                      |> Utils.control_to_string language)
+                ]
+            ]
         ]
     ]
 ;;
@@ -74,7 +80,7 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   div
-    ~a:[ a_class [ "stack" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
     [ h1
         [ txt
             Pool_common.(
@@ -104,7 +110,7 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
               match experiment with
               | None -> Create field
               | Some _ -> Update field)
-            ~classnames:[ "button--success" ]
+            ~submit_type:`Success
             ()
         ]
     ]
@@ -118,7 +124,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
         [ submit_element
             language
             Message.(Delete (Some Field.Experiment))
-            ~classnames:[ "button--neutral" ]
+            ~submit_type:`Disabled
             ()
         ; p
             [ small
@@ -142,15 +148,18 @@ let detail experiment session_count Pool_context.{ language; _ } =
         [ submit_element
             language
             Message.(Delete (Some Field.Experiment))
-            ~classnames:[ "button--failure" ]
+            ~submit_type:`Error
+            ~has_icon:`TrashOutline
             ()
         ]
   in
   let open Experiment in
   div
-    ~a:[ a_class [ "stack" ] ]
-    [ h1 [ txt (experiment.title |> Title.value) ]
-    ; subnav language experiment.id
+    ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
+    [ subnav language experiment.id
+    ; h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (experiment.title |> Title.value) ]
     ; p [ txt (experiment.description |> Description.value) ]
     ; p
         [ a
@@ -178,19 +187,24 @@ let invitations
   =
   let experiment = experiment_invitations.Experiment_type.experiment in
   div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ subnav language experiment.Experiment.id
-    ; h2
+    ; h1
+        ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.InvitationListTitle)
         ]
-    ; Page_admin_invitations.Partials.list
-        context
-        experiment
-        experiment_invitations.Experiment_type.invitations
-    ; Page_admin_invitations.Partials.send_invitation
-        context
-        experiment
-        filtered_contacts
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ Page_admin_invitations.Partials.list
+            context
+            experiment
+            experiment_invitations.Experiment_type.invitations
+        ; Page_admin_invitations.Partials.send_invitation
+            context
+            experiment
+            filtered_contacts
+        ]
     ]
 ;;
 
@@ -199,15 +213,14 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
   let waiting_list_entries =
     CCList.map
       (fun entry ->
-        div
-          ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
-          [ div [ txt (Contact.Preview.fullname entry.contact) ]
-          ; div
+        tr
+          [ td [ txt (Contact.Preview.fullname entry.contact) ]
+          ; td
               [ txt
                   (Contact.Preview.email_address entry.contact
                   |> Pool_user.EmailAddress.value)
               ]
-          ; div
+          ; td
               [ a
                   ~a:
                     [ a_href
@@ -223,10 +236,13 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
               ]
           ])
       waiting_list.waiting_list_entries
-    |> div ~a:[ a_class [ "stack" ] ]
+    |> table ~a:[ a_class [ "striped" ] ]
   in
   div
-    [ h1
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ subnav language waiting_list.experiment.Experiment.id
+    ; h1
+        ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(
               Utils.text_to_string language I18n.ExperimentWaitingListTitle)

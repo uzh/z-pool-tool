@@ -5,11 +5,14 @@ type t =
   | ExperimentNewTitle
   | ExperimentListTitle
   | ExperimentWaitingListTitle
+  | ExperimentContactEnrolledNote
   | HomeTitle
   | I18nTitle
   | InvitationListTitle
   | InvitationNewTitle
   | LoginTitle
+  | NumberIsDaysHint
+  | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionListTitle

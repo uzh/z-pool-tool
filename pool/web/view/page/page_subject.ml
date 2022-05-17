@@ -1,8 +1,5 @@
+module Experiment = Page_contact_experiment
 open Tyxml.Html
-module I18n = Page_admin_i18n
-module Settings = Page_admin_settings
-module Session = Page_admin_session
-module Experiments = Page_admin_experiments
 
 let dashboard Pool_context.{ language; _ } =
   div
@@ -12,3 +9,8 @@ let dashboard Pool_context.{ language; _ } =
         [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
     ]
 ;;
+
+let sign_up = Page_contact_signup.signup
+let terms = Page_contact_terms.terms
+let detail = Page_contact_edit.detail
+let edit = Page_contact_edit.edit
