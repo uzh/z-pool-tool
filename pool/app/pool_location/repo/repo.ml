@@ -17,7 +17,11 @@ module Sql = struct
         )),
         pool_locations.name,
         pool_locations.description,
-        pool_locations.address,
+        pool_locations.room,
+        pool_locations.building,
+        pool_locations.street,
+        pool_locations.zip,
+        pool_locations.city,
         LOWER(CONCAT(
           SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
           SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
@@ -61,7 +65,11 @@ module Sql = struct
         uuid,
         name,
         description,
-        address,
+        room,
+        building,
+        street,
+        zip,
+        city,
         link,
         status,
         created_at,
@@ -90,9 +98,13 @@ module Sql = struct
       SET
         name = $2,
         description = $3,
-        address = $4,
-        link = $5,
-        status = $6,
+        room = $4,
+        building = $5,
+        street = $6,
+        zip = $7,
+        city = $8,
+        link = $9,
+        status = $10,
       WHERE
       pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -100,7 +112,9 @@ module Sql = struct
          Caqti_type.(
            tup2
              Name.t
-             (tup2 Description.t (tup2 MailingAddress.t (tup2 Link.t Status.t)))
+             (tup2
+                (option Description.t)
+                (tup2 (option MailingAddress.t) (tup2 (option Link.t) Status.t)))
            ->. unit))
   ;;
 
@@ -109,9 +123,10 @@ module Sql = struct
       (Pool_database.Label.value pool)
       update_request
       ( name |> Entity.Name.value
-      , ( description |> Entity.Description.value
-        , ( address |> Entity.Description.value
-          , (link |> Entity.Link.value, status |> Entity.Status.show) ) ) )
+      , ( description |> CCOption.map Entity.Description.value
+        , ( address
+          , ( link |> CCOption.map Entity.Link.value
+            , status |> Entity.Status.show ) ) ) )
   ;;
 end
 

@@ -2,9 +2,9 @@ open Entity
 
 type update =
   { name : Name.t
-  ; description : Description.t
-  ; address : MailingAddress.t
-  ; link : Link.t
+  ; description : Description.t option
+  ; address : MailingAddress.t option
+  ; link : Link.t option
   ; status : Status.t
   }
 [@@deriving eq, show]

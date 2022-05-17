@@ -13,7 +13,47 @@ end
 module MailingAddress = struct
   include Entity.MailingAddress
 
-  let t = Caqti_type.string
+  module Room = struct
+    include Room
+
+    let t = Caqti_type.string
+  end
+
+  module Building = struct
+    include Building
+
+    let t = Caqti_type.string
+  end
+
+  module Street = struct
+    include Street
+
+    let t = Caqti_type.string
+  end
+
+  module Zip = struct
+    include Zip
+
+    let t = Caqti_type.string
+  end
+
+  module City = struct
+    include City
+
+    let t = Caqti_type.string
+  end
+
+  let t =
+    let encode m = Ok (m.room, (m.building, (m.street, (m.zip, m.city)))) in
+    let decode (room, (building, (street, (zip, city)))) =
+      Ok { room; building; street; zip; city }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 Room.t (tup2 Building.t (tup2 Street.t (tup2 Zip.t City.t)))))
+  ;;
 end
 
 module Link = struct
@@ -31,9 +71,9 @@ end
 type t =
   { id : Pool_common.Id.t
   ; name : Name.t
-  ; description : Description.t
-  ; address : MailingAddress.t
-  ; link : Link.t
+  ; description : Description.t option
+  ; address : MailingAddress.t option
+  ; link : Link.t option
   ; status : Status.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -77,11 +117,11 @@ let t =
          (tup2
             Name.t
             (tup2
-               Description.t
+               (option Description.t)
                (tup2
-                  MailingAddress.t
+                  (option MailingAddress.t)
                   (tup2
-                     Link.t
+                     (option Link.t)
                      (tup2
                         Status.t
                         (tup2
@@ -138,6 +178,10 @@ module Update = struct
         ~decode
         (tup2
            Pool_common.Repo.Id.t
-           (tup2 Name.t (tup2 Description.t (tup2 MailingAddress.t Link.t)))))
+           (tup2
+              Name.t
+              (tup2
+                 (option Description.t)
+                 (tup2 (option MailingAddress.t) (option Link.t))))))
   ;;
 end
