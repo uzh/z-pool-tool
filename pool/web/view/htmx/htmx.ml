@@ -45,7 +45,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
       ( input
           ~a:
             (base_input_attributes `Text field version
-            @ [ a_value (User.Firstname.value value); a_class [ "input" ] ])
+            @ [ a_value (User.Firstname.value value) ])
           ()
       , field )
     | Lastname (version, value) ->
@@ -53,7 +53,7 @@ let create m language ?(classnames = []) ?hx_post ?error () =
       ( input
           ~a:
             (base_input_attributes `Text field version
-            @ [ a_value (User.Lastname.value value); a_class [ "input" ] ])
+            @ [ a_value (User.Lastname.value value) ])
           ()
       , field )
     | Paused (version, value) ->
@@ -77,11 +77,11 @@ let create m language ?(classnames = []) ?hx_post ?error () =
     | None -> span []
     | Some error ->
       span
-        ~a:[ a_class [ "error-message" ] ]
+        ~a:[ a_class [ "help"; "error-message" ] ]
         [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
   in
   div
-    ~a:[ a_class ([ "flexcolumn" ] @ classnames) ]
+    ~a:[ a_class ([ "form-group" ] @ classnames) ]
     [ label [ txt (field_to_string field) ]; input; error ]
 ;;
 

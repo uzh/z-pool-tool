@@ -10,6 +10,8 @@ type t =
   | InvitationListTitle
   | InvitationNewTitle
   | LoginTitle
+  | NumberIsDaysHint
+  | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionListTitle

@@ -19,24 +19,18 @@ let create message lang () =
   | None -> div []
   | Some message ->
     let success =
-      match_message
-        (get_success message lang)
-        [ notification_class; "notification--success" ]
+      match_message (get_success message lang) [ notification_class; "success" ]
     in
     let info =
-      match_message
-        (get_info message lang)
-        [ notification_class; "notification--neutral" ]
+      match_message (get_info message lang) [ notification_class; "neutral" ]
     in
     let warning =
-      match_message
-        (get_warning message lang)
-        [ notification_class; "notification--warning" ]
+      match_message (get_warning message lang) [ notification_class; "warning" ]
     in
     let error =
-      match_message
-        (get_error message lang)
-        [ notification_class; "notification--failure " ]
+      match_message (get_error message lang) [ notification_class; "error" ]
     in
-    div [ success; info; warning; error ]
+    div
+      ~a:[ a_class [ "notification-fixed" ] ]
+      [ success; info; warning; error ]
 ;;

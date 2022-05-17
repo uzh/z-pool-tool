@@ -34,3 +34,7 @@ _opam/
 
 # NPM
 node_modules
+
+# Assets
+resources/global.css
+resources/global.css.map

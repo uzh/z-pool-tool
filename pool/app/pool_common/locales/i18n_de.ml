@@ -13,6 +13,8 @@ let to_string = function
   | InvitationListTitle -> "Einladungen"
   | InvitationNewTitle -> "Einladung senden"
   | LoginTitle -> "Anmelden"
+  | NumberIsDaysHint -> "Tage"
+  | NumberIsWeeksHint -> "Wochen"
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SessionListTitle -> "Sessions"
   | SessionNewTitle -> "Neue Session"

@@ -8,7 +8,6 @@
         "parcel": "^2.0.0"
     },
     "dependencies": {
-        "@econ/frontend-framework": "^0.10.0",
         "flatpickr": "^4.6.13",
         "htmx.org": "^1.6.0"
     }

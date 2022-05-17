@@ -7,7 +7,10 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
     Format.asprintf "/terms-accepted/%s" user_id |> externalize
   in
   div
-    [ h1 [ txt (Utils.text_to_string language I18n.TermsAndConditionsTitle) ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (Utils.text_to_string language I18n.TermsAndConditionsTitle) ]
     ; p [ txt (terms |> Settings.TermsAndConditions.Terms.value) ]
     ; form
         ~a:[ a_action submit_url; a_method `Post ]
@@ -25,7 +28,6 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
         ; Component.submit_element
             language
             Message.(Accept (Some Field.termsandconditions))
-            ~classnames:[ "button--primary" ]
             ()
         ]
     ]

@@ -6,29 +6,30 @@ let detail contact Pool_context.{ language; query_language; _ } =
   let open Contact in
   let open Pool_common.I18n in
   let text_to_string = Pool_common.Utils.text_to_string language in
-  let content =
-    div
-      [ div
-          ([ h1 [ txt (text_to_string UserProfileTitle) ]
-           ; p [ contact |> fullname |> Format.asprintf "Name: %s" |> txt ]
-           ]
-          @
-          if contact.paused |> Pool_user.Paused.value
-          then [ p [ txt (text_to_string UserProfilePausedNote) ] ]
-          else [])
-      ; a
-          ~a:
-            [ a_href
-                (HttpUtils.externalize_path_with_lang
-                   query_language
-                   "/user/edit")
+  div
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin"; "stack" ] ]
+    [ div
+        ([ h1 [ txt (text_to_string UserProfileTitle) ]
+         ; p [ contact |> fullname |> Format.asprintf "Name: %s" |> txt ]
+         ]
+        @
+        if contact.paused |> Pool_user.Paused.value
+        then [ p [ txt (text_to_string UserProfilePausedNote) ] ]
+        else [])
+    ; p
+        [ a
+            ~a:
+              [ a_href
+                  (HttpUtils.externalize_path_with_lang
+                     query_language
+                     "/user/edit")
+              ]
+            [ txt
+                Pool_common.(
+                  Utils.control_to_string language (Message.Edit None))
             ]
-          [ txt
-              Pool_common.(Utils.control_to_string language (Message.Edit None))
-          ]
-      ]
-  in
-  div [ content ]
+        ]
+    ]
 ;;
 
 let edit
@@ -68,11 +69,7 @@ let edit
       ~a:(form_attrs "/user/update-email")
       [ csrf_element csrf ()
       ; input_element `Email Message.Field.Email contact.user.Sihl_user.email
-      ; submit_element
-          language
-          Message.(Update (Some Field.Email))
-          ~classnames:[ "button--primary" ]
-          ()
+      ; submit_element language Message.(Update (Some Field.Email)) ()
       ]
   in
   let password_form =
@@ -85,29 +82,35 @@ let edit
           ; Message.Field.NewPassword
           ; Message.Field.PasswordConfirmation
           ]
-      @ [ submit_element
-            language
-            Message.(Update (Some Field.password))
-            ~classnames:[ "button--primary" ]
-            ()
-        ])
+      @ [ submit_element language Message.(Update (Some Field.password)) () ])
   in
   div
-    [ h1 [ txt (text_to_string UserProfileTitle) ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (text_to_string UserProfileTitle) ]
     ; div
+        ~a:[ a_class [ "stack-lg" ] ]
         [ div
-            [ h2 [ txt (text_to_string UserProfileDetailsSubtitle) ]
+            [ h2
+                ~a:[ a_class [ "heading-2" ] ]
+                [ txt (text_to_string UserProfileDetailsSubtitle) ]
             ; details_form
             ]
-        ; hr ()
         ; div
-            [ h2 [ txt (text_to_string UserProfileLoginSubtitle) ]
+            [ h2
+                ~a:[ a_class [ "heading-2" ] ]
+                [ txt (text_to_string UserProfileLoginSubtitle) ]
             ; email_form
             ; password_form
             ]
+        ; p
+            [ a
+                ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
+                [ txt
+                    Pool_common.(Utils.control_to_string language Message.Back)
+                ]
+            ]
         ]
-    ; a
-        ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
-        [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
     ]
 ;;

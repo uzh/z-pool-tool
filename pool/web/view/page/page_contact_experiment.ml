@@ -7,27 +7,34 @@ let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment_type.public) =
     let open Experiment_type in
     div
-      ~a:[ a_class [ "flex-box"; "flex--row"; "flex--between" ] ]
-      [ span [ txt (Experiment.Description.value experiment.description) ]
-      ; a
-          ~a:
-            [ a_href
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/experiments/%s"
-                      (experiment.id |> Pool_common.Id.value)))
-            ]
-          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
+      ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm"; "flex-gap" ] ]
+      [ div
+          ~a:[ a_class [ "grow" ] ]
+          [ txt (Experiment.Description.value experiment.description) ]
+      ; div
+          [ a
+              ~a:
+                [ a_href
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/experiments/%s"
+                          (experiment.id |> Pool_common.Id.value)))
+                ]
+              [ txt
+                  Pool_common.(Message.More |> Utils.control_to_string language)
+              ]
+          ]
       ]
   in
   div
-    ~a:[ a_class [ "stack" ] ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
+        ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(Utils.text_to_string language I18n.ExperimentListTitle)
         ]
     ; div
-        ~a:[ a_class [ "stack" ] ]
+        ~a:[ a_class [ "striped" ] ]
         (CCList.map experiment_item experiment_list)
     ]
 ;;
@@ -50,8 +57,8 @@ let show
   in
   let form_control, submit_class =
     match user_is_enlisted with
-    | true -> Pool_common.Message.(RemoveFromWaitingList), "button--failure"
-    | false -> Pool_common.Message.(AddToWaitingList), "button--success"
+    | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
+    | false -> Pool_common.Message.(AddToWaitingList), "success"
   in
   let not_enrolled_html () =
     div
@@ -90,5 +97,17 @@ let show
     | None -> not_enrolled_html ()
   in
   div
-    [ div [ txt (Experiment.Description.value experiment.description) ]; html ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ div
+        ~a:[ a_class [ "stack" ] ]
+        [ p [ txt (Experiment.Description.value experiment.description) ]
+        ; h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
+                Pool_common.(
+                  Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+            ]
+        ; html
+        ]
+    ]
 ;;
