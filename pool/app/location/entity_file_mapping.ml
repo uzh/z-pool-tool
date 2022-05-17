@@ -32,15 +32,3 @@ type file =
   ; file : File.t
   }
 [@@deriving eq, show]
-
-module Write = struct
-  type file =
-    { id : Id.t
-    ; label : Label.t
-    ; language : Pool_common.Language.t
-    ; description : Description.t
-    ; asset_id : Pool_common.Id.t
-    ; location_id : Pool_common.Id.t
-    }
-  [@@deriving eq, show]
-end

@@ -24,7 +24,7 @@ module File = struct
   let t = Pool_common.Repo.File.t
 end
 
-let t =
+let file =
   let encode m =
     Ok
       ( Id.value m.id
@@ -56,9 +56,17 @@ let t =
 ;;
 
 module Write = struct
-  open Write
+  type file =
+    { id : Id.t
+    ; label : Label.t
+    ; language : Pool_common.Language.t
+    ; description : Description.t
+    ; asset_id : Pool_common.Id.t
+    ; location_id : Pool_common.Id.t
+    }
+  [@@deriving eq, show]
 
-  let t =
+  let file =
     let encode (m : file) =
       Ok
         ( Id.value m.id
@@ -92,6 +100,17 @@ module Write = struct
                  (tup2 Description.t (tup2 Id.t Id.t))))))
   ;;
 end
+
+let of_entity (location : Entity.t) (m : file) : Write.file =
+  Write.
+    { id = m.id
+    ; label = m.label
+    ; language = m.language
+    ; description = m.description
+    ; asset_id = m.file.File.id
+    ; location_id = location.Entity.id
+    }
+;;
 
 module Sql = struct
   let select_from_tenant_logo_mappings_sql where_fragment =
@@ -134,7 +153,7 @@ module Sql = struct
       WHERE pool_location_file_mappings.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_tenant_logo_mappings_sql
-    |> Caqti_type.string ->! t
+    |> Caqti_type.string ->! file
   ;;
 
   let find pool mapping_id =
@@ -152,7 +171,7 @@ module Sql = struct
       WHERE pool_location_file_mappings.location_id = (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> select_from_tenant_logo_mappings_sql
-    |> Caqti_type.string ->* t
+    |> Caqti_type.string ->* file
   ;;
 
   let find_by_location pool location =
@@ -181,7 +200,7 @@ module Sql = struct
         (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($6, '-', '')))
       )
     |sql}
-    |> Write.t ->. Caqti_type.unit
+    |> Write.file ->. Caqti_type.unit
   ;;
 
   let insert pool =

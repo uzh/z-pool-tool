@@ -6,18 +6,26 @@ end
 
 module Name = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 end
 
 module Description = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 end
 
 module MailingAddress = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 end
 
 module Link = struct
   type t = string [@@deriving eq, show]
+
+  let value m = m
 end
 
 module Status = struct
