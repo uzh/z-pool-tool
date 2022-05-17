@@ -6,8 +6,10 @@ module Create : sig
 end = struct
   type t = Waiting_list.create
 
-  let handle command =
-    Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
+  let handle (command : Waiting_list.create) =
+    if command.Waiting_list.experiment.Experiment.Public.waiting_list_disabled
+    then Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
+    else Error Pool_common.Message.NotEligible
   ;;
 
   let can user =

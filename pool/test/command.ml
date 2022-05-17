@@ -108,10 +108,18 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
+        ; test_case
+            "Create experiment with mutually exclusive options"
+            `Quick
+            Experiment_test.create_with_mutually_exclusive_options
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create
         ; test_case "sign off" `Quick Waiting_list_test.delete
+        ; test_case
+            "create with waiting list disabled"
+            `Quick
+            Waiting_list_test.create_with_waiting_list_disabled
         ] )
     ]
 ;;

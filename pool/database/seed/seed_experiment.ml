@@ -21,7 +21,18 @@ let experiments pool =
           let description =
             Experiment.Description.create description |> get_or_failwith
           in
-          Experiment.{ title; description }
+          let waiting_list_disabled =
+            Experiment.WaitingListDisabled.create true
+          in
+          let direct_registration_disabled =
+            Experiment.DirectRegistrationDisabled.create false
+          in
+          Experiment.
+            { title
+            ; description
+            ; waiting_list_disabled
+            ; direct_registration_disabled
+            }
         in
         Experiment.Created experiment)
       data

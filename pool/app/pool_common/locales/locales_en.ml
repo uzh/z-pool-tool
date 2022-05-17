@@ -18,6 +18,7 @@ let field_to_string =
   | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | Description -> "description"
+  | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
   | Duration -> "duration"
   | Email -> "email address"
@@ -93,6 +94,7 @@ let field_to_string =
   | User -> "user"
   | Version -> "version"
   | WaitingList -> "waiting list"
+  | WaitingListDisabled -> "waiting list disabled"
 ;;
 
 let info_to_string : info -> string = function
@@ -172,6 +174,7 @@ let rec error_to_string = function
     Format.asprintf "%s: '%s' is not a valid date or time." err time
   | NotANumber field -> Format.asprintf "'%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
+  | NotEligible -> "Your are not eligible to perform this action."
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotFoundList (field, items) ->
     field_message
@@ -209,6 +212,8 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | WaitingListFlagsMutuallyExclusive ->
+    "Direct registration can only be disabled when waiting list is enabled."
   | WriteOnlyModel -> "Write only model!"
 ;;
 

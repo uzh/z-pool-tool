@@ -182,6 +182,7 @@ module Utils : sig
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
+  val bool_to_string : Language.t -> bool -> string
 
   val with_log_warning
     :  ?level:Logs.level

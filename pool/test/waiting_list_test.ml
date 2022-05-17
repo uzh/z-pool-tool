@@ -45,3 +45,22 @@ let delete () =
   in
   check_result expected events
 ;;
+
+let create_with_waiting_list_disabled () =
+  let open Waiting_list in
+  let experiment = Test_utils.create_public_experiment () in
+  let experiment =
+    Experiment.Public.
+      { experiment with
+        waiting_list_disabled = false |> Experiment.WaitingListDisabled.create
+      }
+  in
+  let contact = Test_utils.create_contact () in
+  let events =
+    let open WaitingListCommand in
+    let command = { experiment; contact } in
+    Create.handle command
+  in
+  let expected = Error Pool_common.Message.NotEligible in
+  check_result expected events
+;;

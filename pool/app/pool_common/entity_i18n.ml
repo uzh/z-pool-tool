@@ -26,6 +26,7 @@ type t =
   | UserProfileDetailsSubtitle
   | UserProfileTitle
   | UserProfilePausedNote
+  | WaitingListIsDisabled
 
 type nav_link =
   | Dashboard

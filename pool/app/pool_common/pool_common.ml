@@ -57,4 +57,10 @@ module Utils = struct
     |> CCResult.map_err (error_to_string Language.En)
     |> CCResult.get_or_failwith
   ;;
+
+  let bool_to_string lang m =
+    match lang with
+    | Language.De -> if m then "Ja" else "Nein"
+    | Language.En -> if m then "Yes" else "No"
+  ;;
 end

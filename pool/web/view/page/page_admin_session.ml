@@ -127,7 +127,7 @@ let index
       ]
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
         [ Page_admin_experiments.subnav language experiment_id
@@ -148,7 +148,7 @@ let index
 let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
   let open Session in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ session |> session_title |> txt ]
     ; div
         ~a:[ a_class [ "stack" ] ]
@@ -211,7 +211,7 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
 let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
   let open Session in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt

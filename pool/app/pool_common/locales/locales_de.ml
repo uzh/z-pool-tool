@@ -18,6 +18,7 @@ let field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | Description -> "Beschreibung"
+  | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
   | Duration -> "Dauer"
   | Email -> "Email Adresse"
@@ -92,6 +93,7 @@ let field_to_string =
   | User -> "Benutzer"
   | Version -> "Version"
   | WaitingList -> "Warteliste"
+  | WaitingListDisabled -> "Warteliste deaktivieren"
 ;;
 
 let info_to_string : info -> string = function
@@ -181,6 +183,7 @@ let rec error_to_string = function
   | NotANumber field -> Format.asprintf "'%s' ist keine Nummer." field
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
+  | NotEligible -> "Sie sind nicht befugt, diese Aktuion durchzuführen."
   | NotFound field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
   | NotFoundList (field, items) ->
@@ -231,6 +234,9 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
+  | WaitingListFlagsMutuallyExclusive ->
+    "Die direkte Registrierung kann nur mit aktivierter Warteliste deaktiviert \
+     werden."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 

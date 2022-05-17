@@ -115,6 +115,9 @@ let create_public_experiment () =
         Experiment.Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
+    ; waiting_list_disabled = true |> Experiment.WaitingListDisabled.create
+    ; direct_registration_disabled =
+        false |> Experiment.DirectRegistrationDisabled.create
     }
 ;;
 
@@ -131,6 +134,8 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
+    ; waiting_list_disabled = true |> WaitingListDisabled.create
+    ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

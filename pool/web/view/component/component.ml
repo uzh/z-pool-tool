@@ -75,8 +75,8 @@ module Elements = struct
     | None -> Format.asprintf "%s" n
   ;;
 
-  let attributes input_type classes name additional_attributes =
-    let base_attributes = [ a_input_type input_type; a_class classes ] in
+  let attributes input_type name additional_attributes =
+    let base_attributes = [ a_input_type input_type ] in
     additional_attributes
     @ base_attributes
     @ [ a_name (name |> Pool_common.Message.Field.show) ]
@@ -105,6 +105,13 @@ module Elements = struct
     | `Horizontal ->
       div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
   ;;
+
+  let identifier ?identifier language name =
+    CCOption.value
+      identifier
+      ~default:(Pool_common.Utils.field_to_string language name)
+    |> CCString.replace ~which:`All ~sub:" " ~by:"_"
+  ;;
 end
 
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
@@ -119,6 +126,7 @@ let input_element
     ?label_field
     ?help
     ?info
+    ?identifier
     language
     input_type
     name
@@ -131,8 +139,12 @@ let input_element
     | `Time -> [ "spanpicker" ]
     | _ -> []
   in
+  let id = Elements.identifier ?identifier language name in
   let attributes =
-    Elements.attributes input_type input_classes name [ a_value value ]
+    Elements.attributes
+      input_type
+      name
+      [ a_value value; a_id id; a_class input_classes ]
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
@@ -142,7 +154,7 @@ let input_element
     let input_element = Elements.apply_orientation attributes orientation in
     div
       ~a:[ a_class group_class ]
-      ([ label [ txt input_label ]; input_element ] @ help)
+      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help)
 ;;
 
 let checkbox_element
@@ -151,6 +163,7 @@ let checkbox_element
     ?label_field
     ?help
     ?info
+    ?identifier
     language
     input_type
     name
@@ -162,7 +175,10 @@ let checkbox_element
     | true -> [ a_checked () ]
     | false -> []
   in
-  let attributes = Elements.attributes input_type [] name value_attrs in
+  let id = Elements.identifier ?identifier language name in
+  let attributes =
+    Elements.attributes input_type name (value_attrs @ [ a_id id ])
+  in
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
@@ -171,7 +187,10 @@ let checkbox_element
     let input_element = Elements.apply_orientation attributes orientation in
     div
       ~a:[ a_class group_class ]
-      [ div ([ input_element; label [ txt input_label ] ] @ help) ]
+      [ div
+          ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
+          @ help)
+      ]
 ;;
 
 (* Use the value from flash as the value, if no value is in flash use a default

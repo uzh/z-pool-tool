@@ -4,13 +4,39 @@ module Id = Pool_common.Id
 
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
-    make Field.[ Title.schema (); Description.schema () ] command)
+    make
+      Field.
+        [ Title.schema ()
+        ; Description.schema ()
+        ; WaitingListDisabled.schema ()
+        ; DirectRegistrationDisabled.schema ()
+        ]
+      command)
+;;
+
+let default_command
+    title
+    description
+    waiting_list_disabled
+    direct_registration_disabled
+  =
+  { title; description; waiting_list_disabled; direct_registration_disabled }
+;;
+
+let validate_waiting_list_flags
+    ({ waiting_list_disabled; direct_registration_disabled; _ } : create)
+  =
+  let open Experiment in
+  if direct_registration_disabled |> DirectRegistrationDisabled.value
+     && waiting_list_disabled |> WaitingListDisabled.value
+  then Error Pool_common.Message.WaitingListFlagsMutuallyExclusive
+  else Ok ()
 ;;
 
 module Create : sig
   type t = create
 
-  val handle : t -> (Pool_event.t list, 'a) result
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -20,15 +46,21 @@ module Create : sig
 end = struct
   type t = create
 
-  let command title description = { title; description }
-
   let handle (command : t) =
-    let t = { title = command.title; description = command.description } in
+    let open CCResult in
+    let t =
+      { title = command.title
+      ; description = command.description
+      ; waiting_list_disabled = command.waiting_list_disabled
+      ; direct_registration_disabled = command.direct_registration_disabled
+      }
+    in
+    let* () = validate_waiting_list_flags t in
     Ok [ Experiment.Created t |> Pool_event.experiment ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema command) data
+    Conformist.decode_and_validate (default_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -40,7 +72,10 @@ end
 module Update : sig
   type t = create
 
-  val handle : Experiment.t -> t -> (Pool_event.t list, 'a) result
+  val handle
+    :  Experiment.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -50,15 +85,21 @@ module Update : sig
 end = struct
   type t = create
 
-  let command title description = { title; description }
-
   let handle experiment (command : t) =
-    let update = { title = command.title; description = command.description } in
+    let open CCResult in
+    let update =
+      { title = command.title
+      ; description = command.description
+      ; waiting_list_disabled = command.waiting_list_disabled
+      ; direct_registration_disabled = command.direct_registration_disabled
+      }
+    in
+    let* () = validate_waiting_list_flags update in
     Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema command) data
+    Conformist.decode_and_validate (default_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
