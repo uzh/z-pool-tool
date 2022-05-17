@@ -229,7 +229,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
                  ; submit_element
                      language
                      Message.(Delete (Some Field.file))
-                     ~classnames:[ "button--failure" ]
+                     ~submit_type:`Error
                      ()
                  ]
              ])

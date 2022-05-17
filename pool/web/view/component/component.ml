@@ -180,6 +180,7 @@ let submit_element
     @ CCList.pure
     @@
     match submit_type with
+    | `Disabled -> "disabled"
     | `Error -> "error"
     | `Primary -> "primary"
     | `Success -> "success"

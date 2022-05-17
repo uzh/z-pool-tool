@@ -62,10 +62,17 @@ let show
   in
   let not_enrolled_html () =
     div
-      [ h2 [ txt "Session" ]
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              Pool_common.(Utils.field_to_string language Message.Field.Session)
+          ]
       ; div [ Session.public_overview sessions experiment language ]
       ; div
+          ~a:[ a_class [ "stack" ] ]
           [ h2
+              ~a:[ a_class [ "heading-2" ] ]
               [ txt
                   Pool_common.(
                     Utils.text_to_string
@@ -85,7 +92,11 @@ let show
   in
   let enrolled_html existing_assignment =
     div
-      [ p [ txt "You signed up for the following session: " ]
+      [ p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
+          ]
       ; Page_contact_sessions.public_detail
           existing_assignment.Assignment_type.session
           language
@@ -101,12 +112,6 @@ let show
     [ div
         ~a:[ a_class [ "stack" ] ]
         [ p [ txt (Experiment.Description.value experiment.description) ]
-        ; h2
-            ~a:[ a_class [ "heading-2" ] ]
-            [ txt
-                Pool_common.(
-                  Utils.text_to_string language I18n.ExperimentWaitingListTitle)
-            ]
         ; html
         ]
     ]

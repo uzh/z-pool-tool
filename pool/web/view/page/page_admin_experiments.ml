@@ -110,7 +110,7 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
               match experiment with
               | None -> Create field
               | Some _ -> Update field)
-            ~classnames:[ "success" ]
+            ~submit_type:`Success
             ()
         ]
     ]
@@ -124,7 +124,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
         [ submit_element
             language
             Message.(Delete (Some Field.Experiment))
-            ~classnames:[ "disabled" ]
+            ~submit_type:`Disabled
             ()
         ; p
             [ small
@@ -150,7 +150,6 @@ let detail experiment session_count Pool_context.{ language; _ } =
             Message.(Delete (Some Field.Experiment))
             ~submit_type:`Error
             ~has_icon:`TrashOutline
-            ~classnames:[ "error" ]
             ()
         ]
   in

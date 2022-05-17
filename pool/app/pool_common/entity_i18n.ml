@@ -5,6 +5,7 @@ type t =
   | ExperimentNewTitle
   | ExperimentListTitle
   | ExperimentWaitingListTitle
+  | ExperimentContactEnrolledNote
   | HomeTitle
   | I18nTitle
   | InvitationListTitle

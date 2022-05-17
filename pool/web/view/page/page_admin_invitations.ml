@@ -122,7 +122,7 @@ module Partials = struct
           ; submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))
-              ~classnames:[ "success" ]
+              ~submit_type:`Success
               ()
           ]
       ]

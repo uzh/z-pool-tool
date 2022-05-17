@@ -8,6 +8,7 @@ let to_string = function
   | ExperimentListTitle -> "Experiments"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentWaitingListTitle -> "Waiting list"
+  | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | InvitationListTitle -> "Invitations"

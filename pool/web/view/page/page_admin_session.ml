@@ -105,11 +105,7 @@ let index
                 |> Sihl.Web.externalize_path)
             ]
           [ Component.csrf_element csrf ()
-          ; submit_element
-              language
-              Message.(Cancel (Some Field.Session))
-              ~classnames:[ "warning" ]
-              ()
+          ; submit_element language Message.(Cancel (Some Field.Session)) ()
           ]
       ; form
           ~a:
@@ -125,7 +121,7 @@ let index
           ; submit_element
               language
               Message.(Delete (Some Field.Session))
-              ~classnames:[ "error" ]
+              ~submit_type:`Error
               ()
           ]
       ]
@@ -270,7 +266,7 @@ let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) 
          ; submit_element
              language
              Message.(Update (Some Field.Session))
-             ~classnames:[ "success" ]
+             ~submit_type:`Success
              ()
          ])
     ]
