@@ -64,6 +64,49 @@ let csrf_attibs ?id csrf =
   | None -> attribs
 ;;
 
+module Elements = struct
+  let input_label language name label_field info =
+    CCOption.value ~default:name label_field
+    |> Pool_common.Utils.field_to_string language
+    |> CCString.capitalize_ascii
+    |> fun n ->
+    match info with
+    | Some info -> Format.asprintf "%s (%s)" n info
+    | None -> Format.asprintf "%s" n
+  ;;
+
+  let attributes input_type classes name additional_attributes =
+    let base_attributes = [ a_input_type input_type; a_class classes ] in
+    additional_attributes
+    @ base_attributes
+    @ [ a_name (name |> Pool_common.Message.Field.show) ]
+  ;;
+
+  let group_class classnames orientation =
+    [ "form-group" ]
+    @ classnames
+    @
+    match orientation with
+    | `Vertical -> []
+    | `Horizontal -> [ "horizontal"; "flex-gap" ]
+  ;;
+
+  let help language = function
+    | None -> []
+    | Some help ->
+      [ span
+          ~a:[ a_class [ "help" ] ]
+          [ txt Pool_common.(Utils.text_to_string language help) ]
+      ]
+  ;;
+
+  let apply_orientation attributes = function
+    | `Vertical -> input ~a:attributes ()
+    | `Horizontal ->
+      div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
+  ;;
+end
+
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
 (* TODO [aerben] add way to provide additional attributes (min for numbers,
@@ -81,56 +124,54 @@ let input_element
     name
     value
   =
-  let input_label =
-    CCOption.value ~default:name label_field
-    |> Pool_common.Utils.field_to_string language
-    |> CCString.capitalize_ascii
-    |> fun n ->
-    match info with
-    | Some info -> Format.asprintf "%s (%s)" n info
-    | None -> Format.asprintf "%s" n
-  in
-  let additional_classes =
+  let input_label = Elements.input_label language name label_field info in
+  let input_classes =
     match input_type with
     | `Datetime -> [ "datepicker" ]
     | `Time -> [ "spanpicker" ]
     | _ -> []
   in
-  let base_attributes =
-    [ a_input_type input_type; a_value value; a_class additional_classes ]
-  in
   let attributes =
-    base_attributes @ [ a_name (name |> Pool_common.Message.Field.show) ]
+    Elements.attributes input_type input_classes name [ a_value value ]
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
-    let group_class =
-      [ "form-group" ]
-      @ classnames
-      @
-      match orientation with
-      | `Vertical -> []
-      | `Horizontal -> [ "horizontal"; "flex-gap" ]
-    in
-    let help =
-      match help with
-      | None -> []
-      | Some help ->
-        [ span
-            ~a:[ a_class [ "help" ] ]
-            [ txt Pool_common.(Utils.text_to_string language help) ]
-        ]
-    in
-    let input_element =
-      match orientation with
-      | `Vertical -> input ~a:attributes ()
-      | `Horizontal ->
-        div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
-    in
+    let group_class = Elements.group_class classnames orientation in
+    let help = Elements.help language help in
+    let input_element = Elements.apply_orientation attributes orientation in
     div
       ~a:[ a_class group_class ]
       ([ label [ txt input_label ]; input_element ] @ help)
+;;
+
+let checkbox_element
+    ?(orientation = `Vertical)
+    ?(classnames = [])
+    ?label_field
+    ?help
+    ?info
+    language
+    input_type
+    name
+    value
+  =
+  let input_label = Elements.input_label language name label_field info in
+  let value_attrs =
+    match value with
+    | true -> [ a_checked () ]
+    | false -> []
+  in
+  let attributes = Elements.attributes input_type [] name value_attrs in
+  match input_type with
+  | `Hidden -> input ~a:attributes ()
+  | _ ->
+    let group_class = Elements.group_class classnames orientation in
+    let help = Elements.help language help in
+    let input_element = Elements.apply_orientation attributes orientation in
+    div
+      ~a:[ a_class group_class ]
+      [ div ([ input_element; label [ txt input_label ] ] @ help) ]
 ;;
 
 (* Use the value from flash as the value, if no value is in flash use a default
