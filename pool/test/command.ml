@@ -120,6 +120,7 @@ let () =
             "create with waiting list disabled"
             `Quick
             Waiting_list_test.create_with_waiting_list_disabled
+        ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
     ]
 ;;

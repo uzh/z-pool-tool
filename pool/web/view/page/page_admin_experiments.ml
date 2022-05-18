@@ -241,6 +241,24 @@ let invitations
 let waiting_list waiting_list Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
+    let thead =
+      CCList.map
+        (fun field ->
+          th
+            [ txt
+                (CCOption.map_or
+                   ~default:""
+                   (fun f ->
+                     Pool_common.Utils.field_to_string language f
+                     |> CCString.capitalize_ascii)
+                   field)
+            ])
+        Pool_common.Message.Field.
+          [ Some Name; Some Email; Some CreatedAt; None ]
+      |> tr
+      |> CCList.pure
+      |> thead
+    in
     CCList.map
       (fun entry ->
         tr
@@ -251,12 +269,21 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
                   |> Pool_user.EmailAddress.value)
               ]
           ; td
+              [ txt
+                  Pool_common.(
+                    entry.created_at
+                    |> CreatedAt.value
+                    |> Utils.Time.formatted_date_time)
+              ]
+          ; td
               [ a
                   ~a:
                     [ a_href
                         (Sihl.Web.externalize_path
                            (Format.asprintf
-                              "/admin/experiments/waiting-list/%s"
+                              "/admin/experiments/%s/waiting-list/%s"
+                              (waiting_list.experiment.Experiment.id
+                              |> Pool_common.Id.value)
                               (entry.id |> Pool_common.Id.value)))
                     ]
                   [ txt
@@ -266,7 +293,7 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
               ]
           ])
       waiting_list.waiting_list_entries
-    |> table ~a:[ a_class [ "striped" ] ]
+    |> table ~thead ~a:[ a_class [ "striped" ] ]
   in
   let content =
     match waiting_list.experiment.Experiment.waiting_list_disabled with

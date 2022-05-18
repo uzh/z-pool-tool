@@ -140,3 +140,16 @@ let create_experiment () =
     ; updated_at = Ptime_clock.now ()
     }
 ;;
+
+let create_waiting_list () =
+  let contact = create_contact () in
+  let experiment = create_experiment () in
+  Waiting_list.
+    { id = Pool_common.Id.create ()
+    ; contact
+    ; experiment
+    ; comment = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;

@@ -64,3 +64,24 @@ let create_with_waiting_list_disabled () =
   let expected = Error Pool_common.Message.NotEligible in
   check_result expected events
 ;;
+
+let update () =
+  let waiting_list = Test_utils.create_waiting_list () in
+  let urlencoded =
+    [ Pool_common.Message.Field.(Comment |> show), [ "Some comment" ] ]
+  in
+  let events =
+    let open CCResult in
+    let open WaitingListCommand in
+    urlencoded |> Update.decode >>= Update.handle waiting_list
+  in
+  let expected =
+    let open CCResult in
+    let* decoded = urlencoded |> WaitingListCommand.Update.decode in
+    Ok
+      [ Waiting_list.(Updated (decoded, waiting_list))
+        |> Pool_event.waiting_list
+      ]
+  in
+  check_result expected events
+;;

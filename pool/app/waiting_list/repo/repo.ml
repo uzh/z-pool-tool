@@ -27,6 +27,7 @@ module Sql = struct
               SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
               SUBSTR(HEX(pool_experiments.uuid), 21)
             )),
+            pool_waiting_list.comment,
             pool_waiting_list.created_at,
             pool_waiting_list.updated_at
           FROM pool_waiting_list
@@ -42,7 +43,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_waiting_list.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -114,6 +115,7 @@ module Sql = struct
       pool_contacts.verified,
       pool_contacts.num_invitations,
       pool_contacts.num_assignments,
+      pool_waiting_list.comment,
       pool_waiting_list.created_at,
       pool_waiting_list.updated_at
     FROM
@@ -168,6 +170,23 @@ module Sql = struct
     Utils.Database.exec (Pool_database.Label.value pool) insert_request caqti
   ;;
 
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_waiting_list
+        SET
+          comment = $1
+        WHERE uuid = UNHEX(REPLACE($2, '-', ''))
+    |sql}
+    |> Caqti_type.(tup2 (option string) string) ->. Caqti_type.unit
+  ;;
+
+  let update pool (m : Entity.t) =
+    let open Entity in
+    let caqti = m.comment |> Comment.value, m.id |> Pool_common.Id.value in
+    Utils.Database.exec (Pool_database.Label.value pool) update_request caqti
+  ;;
+
   let delete_request =
     let open Caqti_request.Infix in
     {sql|
@@ -210,4 +229,5 @@ let find_by_experiment pool id =
 ;;
 
 let insert = Sql.insert
+let update = Sql.update
 let delete = Sql.delete

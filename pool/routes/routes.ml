@@ -148,7 +148,14 @@ module Admin = struct
         ]
       in
       let waiting_list =
-        [ get "" Handler.Admin.Experiments.WaitingList.index ]
+        [ get "" Handler.Admin.Experiments.WaitingList.index
+        ; post
+            (WaitingList |> url_key)
+            Handler.Admin.Experiments.WaitingList.update
+        ; get
+            (WaitingList |> url_key)
+            Handler.Admin.Experiments.WaitingList.detail
+        ]
       in
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form

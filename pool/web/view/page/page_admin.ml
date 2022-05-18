@@ -3,6 +3,7 @@ module I18n = Page_admin_i18n
 module Settings = Page_admin_settings
 module Session = Page_admin_session
 module Experiments = Page_admin_experiments
+module WaitingList = Page_admin_waiting_list
 
 let dashboard Pool_context.{ language; _ } =
   div

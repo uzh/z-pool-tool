@@ -218,7 +218,10 @@ let textarea_element
     ?(attributes = [])
     ()
   =
-  let input_label = Pool_common.Utils.field_to_string language input_label in
+  let input_label =
+    Pool_common.Utils.field_to_string language input_label
+    |> CCString.capitalize_ascii
+  in
   let input =
     textarea ~a:([ a_name name; a_class classnames ] @ attributes) (txt value)
   in

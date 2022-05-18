@@ -177,6 +177,7 @@ module Utils : sig
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
   val field_to_string : Language.t -> Message.Field.t -> string
+  val field_to_string_capitalized : Language.t -> Message.Field.t -> string
   val control_to_string : Language.t -> Message.control -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string

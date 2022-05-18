@@ -1,14 +1,27 @@
+module Comment : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val value : t -> string
+  val create : string -> t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
 type t =
   { id : Pool_common.Id.t
   ; contact : Contact.t
   ; experiment : Experiment.t
+  ; comment : Comment.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-val create : ?id:Pool_common.Id.t -> Contact.t -> Experiment.t -> t
 
 type create =
   { experiment : Experiment.Public.t
@@ -19,8 +32,22 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
+type update = { comment : Comment.t option }
+
+val equal_update : update -> update -> bool
+val pp_update : Format.formatter -> update -> unit
+val show_update : update -> string
+
+val create
+  :  ?id:Pool_common.Id.t
+  -> Contact.t
+  -> Experiment.t
+  -> Comment.t option
+  -> t
+
 type event =
   | Created of create
+  | Updated of update * t
   | Deleted of create
 
 val equal_event : event -> event -> bool
@@ -32,6 +59,7 @@ module ExperimentList : sig
   type waiting_list_entry =
     { id : Pool_common.Id.t
     ; contact : Contact.Preview.t
+    ; comment : Comment.t option
     ; created_at : Ptime.t
     ; updated_at : Ptime.t
     }
