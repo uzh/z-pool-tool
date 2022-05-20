@@ -3,18 +3,25 @@ module PoolError = Entity_message
 
 (* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  type t = string [@@deriving eq, show, sexp]
 
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m
   let value m = m
+
+  let schema () =
+    Pool_common_utils.schema_decoder
+      (Utils.map_ok of_string)
+      value
+      PoolError.Field.Id
+  ;;
 end
 
 module Language = struct
   type t =
     | En [@name "EN"]
     | De [@name "DE"]
-  [@@deriving eq, show, yojson, sexp_of]
+  [@@deriving eq, show, yojson, sexp]
 
   let code = function
     | En -> "EN"
@@ -42,7 +49,10 @@ module Language = struct
     | En -> LanguageEn
     | De -> LanguageDe
   ;;
-end
+
+  (* TODO: Is there a better way the supressing the warning 4 for the whole
+     module? *)
+end [@warning "-4"]
 
 module Version = struct
   type t = int [@@deriving eq, show, yojson]

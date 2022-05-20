@@ -11,6 +11,11 @@ module Id : sig
   val of_string : string -> t
   val value : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Language : sig
@@ -27,6 +32,7 @@ module Language : sig
   val of_string : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   val schema
     :  unit
@@ -126,7 +132,7 @@ module Repo : sig
   module Id : sig
     type t = Id.t
 
-    val t : string Caqti_type.t
+    val t : t Caqti_type.t
   end
 
   module Language : sig
@@ -207,4 +213,14 @@ module Utils : sig
   val parse_time : string -> (Ptime.t, Message.error) result
   val parse_time_span : string -> (Ptime.Span.t, Message.error) result
   val print_time_span : Ptime.Span.t -> string
+
+  module type BaseSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : t -> (t, Entity_message.error) result
+    val schema : unit -> (Message.error, t) PoolConformist.Field.t
+  end
 end

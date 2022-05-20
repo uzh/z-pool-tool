@@ -91,3 +91,13 @@ let print_time_span span =
   (* This is only the case if span > 136 years (64bit system) *)
   |> CCOption.get_or ~default:"Session duration too long!"
 ;;
+
+module type BaseSig = sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : t -> (t, Entity_message.error) result
+  val schema : unit -> (Entity_message.error, t) PoolConformist.Field.t
+end
