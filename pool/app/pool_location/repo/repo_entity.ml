@@ -10,49 +10,72 @@ module Description = struct
   let t = Caqti_type.string
 end
 
-module MailingAddress = struct
-  include Entity.MailingAddress
+module Address = struct
+  include Entity_address
 
-  module Room = struct
-    include Room
+  module Mail = struct
+    include Mail
 
-    let t = Caqti_type.string
-  end
+    module Room = struct
+      include Room
 
-  module Building = struct
-    include Building
+      let t = Caqti_type.string
+    end
 
-    let t = Caqti_type.string
-  end
+    module Building = struct
+      include Building
 
-  module Street = struct
-    include Street
+      let t = Caqti_type.string
+    end
 
-    let t = Caqti_type.string
-  end
+    module Street = struct
+      include Street
 
-  module Zip = struct
-    include Zip
+      let t = Caqti_type.string
+    end
 
-    let t = Caqti_type.string
-  end
+    module Zip = struct
+      include Zip
 
-  module City = struct
-    include City
+      let t = Caqti_type.string
+    end
 
-    let t = Caqti_type.string
+    module City = struct
+      include City
+
+      let t = Caqti_type.string
+    end
+
+    let t =
+      let encode m = Ok (m.room, (m.building, (m.street, (m.zip, m.city)))) in
+      let decode (room, (building, (street, (zip, city)))) =
+        Ok { room; building; street; zip; city }
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2
+             Room.t
+             (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t)))))
+    ;;
   end
 
   let t =
-    let encode m = Ok (m.room, (m.building, (m.street, (m.zip, m.city)))) in
-    let decode (room, (building, (street, (zip, city)))) =
-      Ok { room; building; street; zip; city }
+    let encode = function
+      | Virtual -> Ok (true, None)
+      | Address address -> Ok (false, Some address)
     in
-    Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2 Room.t (tup2 Building.t (tup2 Street.t (tup2 Zip.t City.t)))))
+    let decode (is_virtual, address) =
+      match is_virtual, address with
+      | true, _ -> Ok Virtual
+      | _, Some address -> Ok (Address address)
+      | false, None ->
+        failwith
+          "Location could be created without beeing virtual and without \
+           address!"
+    in
+    Caqti_type.(custom ~encode ~decode (tup2 bool (option Mail.t)))
   ;;
 end
 
@@ -72,7 +95,7 @@ type t =
   { id : Pool_common.Id.t
   ; name : Name.t
   ; description : Description.t option
-  ; address : MailingAddress.t option
+  ; address : Address.t
   ; link : Link.t option
   ; status : Status.t
   ; created_at : Pool_common.CreatedAt.t
@@ -119,7 +142,7 @@ let t =
             (tup2
                (option Description.t)
                (tup2
-                  (option MailingAddress.t)
+                  Address.t
                   (tup2
                      (option Link.t)
                      (tup2
@@ -159,8 +182,7 @@ module Update = struct
     { id : Pool_common.Id.t
     ; name : Name.t
     ; description : Description.t
-    ; address : MailingAddress.t
-    ; asset_id : Pool_common.Id.t
+    ; address : Address.t
     ; link : Link.t
     }
 
@@ -177,8 +199,6 @@ module Update = struct
            Pool_common.Repo.Id.t
            (tup2
               Name.t
-              (tup2
-                 (option Description.t)
-                 (tup2 (option MailingAddress.t) (option Link.t))))))
+              (tup2 (option Description.t) (tup2 Address.t (option Link.t))))))
   ;;
 end

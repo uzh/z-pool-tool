@@ -17,6 +17,7 @@ module Sql = struct
         )),
         pool_locations.name,
         pool_locations.description,
+        pool_locations.is_virtual,
         pool_locations.room,
         pool_locations.building,
         pool_locations.street,
@@ -65,6 +66,7 @@ module Sql = struct
         uuid,
         name,
         description,
+        is_virtual,
         room,
         building,
         street,
@@ -98,13 +100,14 @@ module Sql = struct
       SET
         name = $2,
         description = $3,
-        room = $4,
-        building = $5,
-        street = $6,
-        zip = $7,
-        city = $8,
-        link = $9,
-        status = $10,
+        is_virtual = $4,
+        room = $5,
+        building = $6,
+        street = $7,
+        zip = $8,
+        city = $9,
+        link = $10,
+        status = $11,
       WHERE
       pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -114,7 +117,7 @@ module Sql = struct
              Name.t
              (tup2
                 (option Description.t)
-                (tup2 (option MailingAddress.t) (tup2 (option Link.t) Status.t)))
+                (tup2 Address.t (tup2 (option Link.t) Status.t)))
            ->. unit))
   ;;
 
@@ -141,12 +144,8 @@ let find pool id =
   Sql.find pool id >|= files_to_location pool
 ;;
 
-let insert pool (Entity.{ files; _ } as location) =
-  let%lwt () =
-    files
-    |> CCList.map (RepoFileMapping.of_entity location)
-    |> RepoFileMapping.insert_multiple pool
-  in
+let insert pool location files =
+  let%lwt () = files |> RepoFileMapping.insert_multiple pool in
   location |> of_entity |> Sql.insert pool
 ;;
 

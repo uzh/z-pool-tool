@@ -9,13 +9,11 @@ end
 module Label = struct
   include Label
 
-  let t = Caqti_type.string
-end
-
-module Description = struct
-  include Description
-
-  let t = Caqti_type.string
+  let t =
+    let encode = Utils.fcn_ok show in
+    let decode = Utils.fcn_ok read in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module File = struct
@@ -25,56 +23,26 @@ module File = struct
 end
 
 let file =
-  let encode m =
-    Ok (m.id, (Label.show m.label, (m.language, (m.description, m.file))))
-  in
-  let decode (id, (label, (language, (description, file)))) =
-    let open CCResult in
-    map_err
-      (CCFun.const
-         Pool_common.(
-           Utils.error_to_string Language.En Message.(Decode Field.FileMapping)))
-    @@ Ok { id; label = label |> Label.read; language; description; file }
+  let encode m = Ok (m.id, (m.label, (m.language, m.file))) in
+  let decode (id, (label, (language, file))) =
+    Ok { id; label; language; file }
   in
   Caqti_type.(
     custom
       ~encode
       ~decode
-      (tup2
-         Id.t
-         (tup2
-            Label.t
-            (tup2 Pool_common.Repo.Language.t (tup2 Description.t File.t)))))
+      (tup2 Id.t (tup2 Label.t (tup2 Pool_common.Repo.Language.t File.t))))
 ;;
 
 module Write = struct
-  type file =
-    { id : Id.t
-    ; label : Label.t
-    ; language : Pool_common.Language.t
-    ; description : Description.t
-    ; asset_id : Pool_common.Id.t
-    ; location_id : Pool_common.Id.t
-    }
-  [@@deriving eq, show]
+  include Write
 
   let file =
     let encode (m : file) =
-      Ok
-        ( m.id
-        , ( Label.show m.label
-          , (m.language, (m.description, (m.asset_id, m.location_id))) ) )
+      Ok (m.id, (m.label, (m.language, (m.asset_id, m.location_id))))
     in
-    let decode (id, (label, (language, (description, (asset_id, location_id)))))
-      =
-      Ok
-        { id
-        ; label = Label.read label
-        ; language
-        ; description
-        ; asset_id
-        ; location_id
-        }
+    let decode (id, (label, (language, (asset_id, location_id)))) =
+      Ok { id; label; language; asset_id; location_id }
     in
     Caqti_type.(
       custom
@@ -82,11 +50,7 @@ module Write = struct
         ~decode
         (tup2
            Id.t
-           (tup2
-              Label.t
-              (tup2
-                 Pool_common.Repo.Language.t
-                 (tup2 Description.t (tup2 Id.t Id.t))))))
+           (tup2 Label.t (tup2 Pool_common.Repo.Language.t (tup2 Id.t Id.t)))))
   ;;
 end
 
@@ -95,7 +59,6 @@ let of_entity (location : Entity.t) (m : file) : Write.file =
     { id = m.id
     ; label = m.label
     ; language = m.language
-    ; description = m.description
     ; asset_id = m.file.File.id
     ; location_id = location.Entity.id
     }
@@ -115,7 +78,6 @@ module Sql = struct
             )),
             pool_location_file_mappings.label,
             pool_location_file_mappings.language,
-            pool_location_file_mappings.description,
             LOWER(CONCAT(
               SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
               SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
@@ -177,7 +139,6 @@ module Sql = struct
         uuid,
         label,
         language,
-        description,
         asset_id,
         location_id
       ) VALUES (
