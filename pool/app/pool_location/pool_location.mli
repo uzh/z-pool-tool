@@ -250,24 +250,6 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
 
-module RepoEntity = Pool_location__.Repo_entity
-module RepoFileMapping = Pool_location__.Repo_file_mapping
-
-val to_entity : RepoEntity.t -> Mapping.file list -> t
-val of_entity : t -> RepoEntity.t
-
-module Sql = Pool_location__Repo.Sql
-
-val files_to_location : Pool_database.Label.t -> RepoEntity.t -> t Lwt.t
-
-val insert
-  :  Pool_database.Label.t
-  -> t
-  -> RepoFileMapping.Write.file list
-  -> unit Lwt.t
-
-val update : Pool_database.Label.t -> t -> unit Lwt.t
-
 val find
   :  Pool_database.Label.t
   -> Id.t
