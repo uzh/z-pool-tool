@@ -43,11 +43,11 @@ module Address : sig
     val show : t -> string
 
     val create
-      :  Room.t
-      -> Building.t option
-      -> Street.t
-      -> Zip.t
-      -> City.t
+      :  string
+      -> string option
+      -> string
+      -> string
+      -> string
       -> (t, Pool_common.Message.error) result
 
     val command
@@ -219,10 +219,10 @@ val show : t -> string
 
 val create
   :  ?id:Id.t
-  -> Name.t
-  -> Description.t option
+  -> string
+  -> string option
   -> Address.t
-  -> Link.t option
+  -> string option
   -> Status.t
   -> Mapping.file list
   -> (t, Pool_common.Message.error) result
@@ -254,3 +254,5 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t Lwt.t, Pool_common.Message.error) Lwt_result.t
+
+val default_values : t list

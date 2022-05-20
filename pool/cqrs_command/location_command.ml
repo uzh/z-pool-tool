@@ -63,15 +63,18 @@ module Create = struct
       { name; description; link; address; files }
     =
     let open CCResult in
-    let* location =
-      Pool_location.create
-        ~id
-        name
-        description
-        address
-        link
-        Pool_location.Status.init
-        []
+    let location =
+      Pool_location.
+        { id
+        ; name
+        ; description
+        ; address
+        ; link
+        ; status = Status.Active
+        ; files = []
+        ; created_at = Pool_common.CreatedAt.create ()
+        ; updated_at = Pool_common.UpdatedAt.create ()
+        }
     in
     let files =
       CCList.map
