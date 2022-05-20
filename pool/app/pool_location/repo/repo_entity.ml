@@ -83,7 +83,7 @@ type t =
 let t =
   let encode m =
     Ok
-      ( Pool_common.Id.value m.id
+      ( m.id
       , ( m.name
         , ( m.description
           , ( m.address
@@ -98,7 +98,7 @@ let t =
     =
     let open CCResult in
     Ok
-      { id = Pool_common.Id.of_string id
+      { id
       ; name
       ; description
       ; address
@@ -166,10 +166,7 @@ module Update = struct
 
   let t =
     let encode (m : Entity.t) =
-      Ok
-        Entity.(
-          ( Pool_common.Id.value m.id
-          , (m.name, (m.description, (m.address, m.link))) ))
+      Ok Entity.(m.id, (m.name, (m.description, (m.address, m.link))))
     in
     let decode _ = failwith "Write model only" in
     Caqti_type.(

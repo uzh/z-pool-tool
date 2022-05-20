@@ -129,7 +129,7 @@ let insert pool t =
     (Database.Label.value pool)
     insert_request
     ( address t |> Pool_user.EmailAddress.value
-    , user_id t |> Pool_common.Id.value
+    , user_id t
     , token t |> Token.value )
 ;;
 
@@ -153,7 +153,7 @@ let verify pool t =
   Utils.Database.exec
     (Database.Label.value pool)
     verify_request
-    ( user_id t |> Pool_common.Id.value
+    ( user_id t
     , address t |> Pool_user.EmailAddress.value
     , VerifiedAt.create_now () )
 ;;

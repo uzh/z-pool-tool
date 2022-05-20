@@ -14,9 +14,7 @@ module Content = struct
 end
 
 let t =
-  let encode m =
-    Ok (Common.Id.value m.id, (Key.to_string m.key, (m.language, m.content)))
-  in
+  let encode m = Ok (m.id, (Key.to_string m.key, (m.language, m.content))) in
   let decode (id, (key, (language, content))) =
     let open CCResult in
     map_err (fun _ ->
@@ -26,7 +24,7 @@ let t =
             (Message.Decode Message.Field.I18n)))
     @@ let* key = Key.of_string key in
        let* content = Content.create content in
-       Ok { id = Common.Id.of_string id; key; language; content }
+       Ok { id; key; language; content }
   in
   Caqti_type.(
     custom

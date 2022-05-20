@@ -63,9 +63,9 @@ let of_entity (session_id : Pool_common.Id.t) (m : Entity.t) : t =
 let t =
   let encode m =
     Ok
-      ( Pool_common.Id.value m.id
-      , ( Pool_common.Id.value m.session_id
-        , ( Pool_common.Id.value m.contact_id
+      ( m.id
+      , ( m.session_id
+        , ( m.contact_id
           , ( ShowUp.value m.show_up
             , ( m.participated
               , (m.matches_filter, (m.canceled_at, (m.created_at, m.updated_at)))
@@ -82,9 +82,9 @@ let t =
     =
     let open CCResult in
     Ok
-      { id = Pool_common.Id.of_string id
-      ; session_id = Pool_common.Id.of_string session_id
-      ; contact_id = Pool_common.Id.of_string contact_id
+      { id
+      ; session_id
+      ; contact_id
       ; show_up = ShowUp.create show_up
       ; participated = Participated.create participated
       ; matches_filter = MatchesFilter.create matches_filter
@@ -120,10 +120,10 @@ module Public = struct
   open Entity.Public
 
   let t =
-    let encode (m : t) = Ok (Pool_common.Id.value m.id, m.canceled_at) in
+    let encode (m : t) = Ok (m.id, m.canceled_at) in
     let decode (id, canceled_at) =
       let open CCResult in
-      Ok { id = Pool_common.Id.of_string id; canceled_at }
+      Ok { id; canceled_at }
     in
     Caqti_type.(
       custom ~encode ~decode (tup2 Pool_common.Repo.Id.t CanceledAt.t))

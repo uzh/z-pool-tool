@@ -6,7 +6,7 @@ module RepoId = Pool_common.Repo.Id
 let t =
   let encode m =
     Ok
-      ( Id.value m.id
+      ( m.id
       , ( m.start
         , ( m.duration
           , ( m.description
@@ -26,7 +26,7 @@ let t =
       )
     =
     Ok
-      { id = Id.of_string id
+      { id
       ; start
       ; duration
       ; description
@@ -61,7 +61,7 @@ module Write = struct
   let t =
     let encode m =
       Ok
-        ( Id.value m.id
+        ( m.id
         , ( m.start
           , ( m.duration
             , ( m.description
@@ -90,10 +90,10 @@ module Public = struct
 
   let t =
     let encode (m : t) =
-      Ok (Id.value m.id, (m.start, (m.duration, (m.description, m.canceled_at))))
+      Ok (m.id, (m.start, (m.duration, (m.description, m.canceled_at))))
     in
     let decode (id, (start, (duration, (description, canceled_at)))) =
-      Ok { id = Id.of_string id; start; duration; description; canceled_at }
+      Ok { id; start; duration; description; canceled_at }
     in
     Caqti_type.(
       custom

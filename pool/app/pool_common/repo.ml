@@ -3,7 +3,11 @@ open Entity
 module Id = struct
   include Id
 
-  let t = Caqti_type.string
+  let t =
+    let encode = Utils.fcn_ok value in
+    let decode = Utils.fcn_ok of_string in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module Language = struct

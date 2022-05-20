@@ -26,9 +26,7 @@ end
 
 let file =
   let encode m =
-    Ok
-      ( Id.value m.id
-      , (Label.show m.label, (m.language, (m.description, m.file))) )
+    Ok (m.id, (Label.show m.label, (m.language, (m.description, m.file))))
   in
   let decode (id, (label, (language, (description, file)))) =
     let open CCResult in
@@ -36,13 +34,7 @@ let file =
       (CCFun.const
          Pool_common.(
            Utils.error_to_string Language.En Message.(Decode Field.FileMapping)))
-    @@ Ok
-         { id = Id.of_string id
-         ; label = label |> Label.read
-         ; language
-         ; description
-         ; file
-         }
+    @@ Ok { id; label = label |> Label.read; language; description; file }
   in
   Caqti_type.(
     custom
@@ -69,22 +61,19 @@ module Write = struct
   let file =
     let encode (m : file) =
       Ok
-        ( Id.value m.id
+        ( m.id
         , ( Label.show m.label
-          , ( m.language
-            , ( m.description
-              , ( Pool_common.Id.value m.asset_id
-                , Pool_common.Id.value m.location_id ) ) ) ) )
+          , (m.language, (m.description, (m.asset_id, m.location_id))) ) )
     in
     let decode (id, (label, (language, (description, (asset_id, location_id)))))
       =
       Ok
-        { id = Id.of_string id
+        { id
         ; label = Label.read label
         ; language
         ; description
-        ; asset_id = Pool_common.Id.of_string asset_id
-        ; location_id = Pool_common.Id.of_string location_id
+        ; asset_id
+        ; location_id
         }
     in
     Caqti_type.(

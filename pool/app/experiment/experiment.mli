@@ -105,6 +105,6 @@ val description_value : t -> string
 
 module Repo : sig
   module Description : sig
-    val t : string Caqti_type.t
+    val t : Description.t Caqti_type.t
   end
 end

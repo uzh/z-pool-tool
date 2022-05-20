@@ -11,7 +11,7 @@ module Id = struct
 
   let schema () =
     Pool_common_utils.schema_decoder
-      (Utils.map_ok of_string)
+      (Utils.fcn_ok of_string)
       value
       PoolError.Field.Id
   ;;

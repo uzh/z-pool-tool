@@ -194,7 +194,7 @@ module Write = struct
       let open Pool_user in
       let open Pool_common in
       Ok
-        ( Id.value m.user_id
+        ( m.user_id
         , ( m.recruitment_channel
           , ( TermsAccepted.value m.terms_accepted_at
             , ( m.language
