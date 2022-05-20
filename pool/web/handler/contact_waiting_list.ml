@@ -22,9 +22,7 @@ let handle req action =
       ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
       >>= Contact.find_by_user tenant_db
     in
-    let* experiment =
-      Experiment_type.find_public tenant_db experiment_id contact
-    in
+    let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let events =
       Waiting_list.{ contact; experiment }
       |> fun m ->

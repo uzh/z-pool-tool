@@ -4,7 +4,7 @@ module Create : sig
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
-    ; experiment : Experiment_type.public
+    ; experiment : Experiment.Public.t
     }
 
   val handle
@@ -17,7 +17,7 @@ end = struct
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
-    ; experiment : Experiment_type.public
+    ; experiment : Experiment.Public.t
     }
 
   let handle (command : t) already_enrolled =

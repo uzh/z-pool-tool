@@ -71,3 +71,22 @@ module Write = struct
         (tup2 RepoId.t (tup2 Title.t (tup2 Description.t string))))
   ;;
 end
+
+module Public = struct
+  open Entity.Public
+
+  let t =
+    let encode (m : t) = Ok (Id.value m.id, Description.value m.description) in
+    let decode (id, description) =
+      let open CCResult in
+      map_err (fun _ ->
+          Common.(
+            Utils.error_to_string
+              Language.En
+              (Message.Decode Message.Field.I18n)))
+      @@ let* description = Description.create description in
+         Ok { id = Id.of_string id; description }
+    in
+    Caqti_type.(custom ~encode ~decode (tup2 RepoId.t Description.t))
+  ;;
+end

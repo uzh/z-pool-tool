@@ -108,7 +108,9 @@ module Partials = struct
                          [ input
                              ~a:
                                [ a_input_type `Checkbox
-                               ; a_name "subjects[]"
+                               ; a_name
+                                   Pool_common.Message.Field.(
+                                     Contacts |> array_key)
                                ; a_id id
                                ; a_value id
                                ]

@@ -1,11 +1,9 @@
 (library
  (name page)
  (libraries
-  assignment_type
   component
   contact
   experiment
-  experiment_type
   htmx
   http_utils
   i18n

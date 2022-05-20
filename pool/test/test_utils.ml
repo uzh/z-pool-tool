@@ -109,7 +109,7 @@ let create_contact () =
 
 let create_public_experiment () =
   let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
-  Experiment_type.
+  Experiment.Public.
     { id = Pool_common.Id.create ()
     ; description =
         Experiment.Description.create "A description for everyone"

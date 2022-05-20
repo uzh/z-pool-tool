@@ -53,3 +53,11 @@ let create ?id title description =
 
 let title_value (m : t) = Title.value m.title
 let description_value (m : t) = Description.value m.description
+
+module Public = struct
+  type t =
+    { id : Pool_common.Id.t
+    ; description : Description.t
+    }
+  [@@deriving eq, show]
+end

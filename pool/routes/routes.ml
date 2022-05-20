@@ -49,6 +49,9 @@ module Contact = struct
   module SignUp = Handler.Contact.SignUp
   module UserProfile = Handler.Contact.UserProfile
   module Experiment = Handler.Contact.Experiment
+  module WaitingList = Handler.Contact.WaitingList
+  module Session = Handler.Contact.Session
+  module Assignment = Handler.Contact.Assignment
 
   let public =
     [ get "/signup" SignUp.sign_up
@@ -69,14 +72,12 @@ module Contact = struct
           subdir
       in
       let waiting_list =
-        [ post "" Experiment.WaitingList.create
-        ; post "/remove" Experiment.WaitingList.delete
-        ]
+        [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
       in
       let sessions =
         let open Pool_common.Message.Field in
-        [ get (Session |> url_key) Experiment.Session.show
-        ; post (Session |> url_key) Experiment.Assignment.create
+        [ get (Session |> url_key) Session.show
+        ; post (Session |> url_key) Assignment.create
         ]
       in
       [ get "" Experiment.index

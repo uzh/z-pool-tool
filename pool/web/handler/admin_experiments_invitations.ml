@@ -16,15 +16,16 @@ let index req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, error_path)
-    @@ let* experiment_invitations =
-         Experiment_type.find_invitations tenant_db id
-       in
-       let experiment = experiment_invitations.Experiment_type.experiment in
+    @@ let* experiment = Experiment.find tenant_db id in
        let%lwt filtered_contacts =
          Contact.find_filtered tenant_db experiment.Experiment.filter ()
        in
+       let* invitations =
+         Invitation.find_by_experiment tenant_db experiment.Experiment.id
+       in
        Page.Admin.Experiments.invitations
-         experiment_invitations
+         invitations
+         experiment
          filtered_contacts
          context
        |> create_layout req context
@@ -48,12 +49,16 @@ let create req =
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, redirect_path)
-    @@ let%lwt contact_ids =
+    @@ let* contact_ids =
          let open Lwt.Infix in
          Sihl.Web.Request.urlencoded_list
            Pool_common.Message.Field.(Contacts |> array_key)
            req
          >|= CCList.map Pool_common.Id.of_string
+         >|= fun list ->
+         if CCInt.equal (CCList.length list) 0
+         then Error Pool_common.Message.(NoOptionSelected Field.Contact)
+         else Ok list
        in
        let* experiment = Experiment.find tenant_db experiment_id in
        let* contacts =

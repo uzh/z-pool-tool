@@ -18,13 +18,14 @@ let create req =
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
     let* contact = HttpUtils.get_current_contact tenant_db req in
-    let* experiment =
-      Experiment_type.find_public tenant_db experiment_id contact
-    in
+    let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let* session = Session.find_public tenant_db id contact in
     let%lwt already_enrolled =
       let open Lwt.Infix in
-      Assignment_type.find_opt_by_experiment tenant_db contact experiment
+      Assignment.find_by_experiment_and_contact_opt
+        tenant_db
+        experiment.Experiment.Public.id
+        contact
       >|= CCOption.is_some
     in
     let events =
