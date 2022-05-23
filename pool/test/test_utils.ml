@@ -115,7 +115,7 @@ let create_public_experiment () =
         Experiment.Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; waiting_list_disabled = true |> Experiment.WaitingListDisabled.create
+    ; waiting_list_disabled = false |> Experiment.WaitingListDisabled.create
     ; direct_registration_disabled =
         false |> Experiment.DirectRegistrationDisabled.create
     }

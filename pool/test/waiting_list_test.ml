@@ -52,7 +52,7 @@ let create_with_waiting_list_disabled () =
   let experiment =
     Experiment.Public.
       { experiment with
-        waiting_list_disabled = false |> Experiment.WaitingListDisabled.create
+        waiting_list_disabled = true |> Experiment.WaitingListDisabled.create
       }
   in
   let contact = Test_utils.create_contact () in
