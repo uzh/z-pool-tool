@@ -75,10 +75,32 @@ let create_session () =
 ;;
 
 let creat_public_session () =
-  let Session.{ id; start; duration; description; canceled_at; _ } =
+  let Session.
+        { id
+        ; start
+        ; duration
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignments_count
+        ; canceled_at
+        ; _
+        }
+    =
     create_session ()
   in
-  Session.Public.{ id; start; duration; description; canceled_at }
+  Session.Public.
+    { id
+    ; start
+    ; duration
+    ; description
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; assignments_count
+    ; canceled_at
+    }
 ;;
 
 let create_assignment () =

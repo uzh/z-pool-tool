@@ -136,10 +136,36 @@ module Public = struct
 
   let t =
     let encode (m : t) =
-      Ok (Id.value m.id, (m.start, (m.duration, (m.description, m.canceled_at))))
+      Ok
+        ( Id.value m.id
+        , ( m.start
+          , ( m.duration
+            , ( m.description
+              , ( m.max_participants
+                , ( m.min_participants
+                  , (m.overbook, (m.assignments_count, m.canceled_at)) ) ) ) )
+          ) )
     in
-    let decode (id, (start, (duration, (description, canceled_at)))) =
-      Ok { id = Id.of_string id; start; duration; description; canceled_at }
+    let decode
+        ( id
+        , ( start
+          , ( duration
+            , ( description
+              , ( max_participants
+                , ( min_participants
+                  , (overbook, (assignments_count, canceled_at)) ) ) ) ) ) )
+      =
+      Ok
+        { id = Id.of_string id
+        ; start
+        ; duration
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignments_count
+        ; canceled_at
+        }
     in
     Caqti_type.(
       custom
@@ -147,6 +173,12 @@ module Public = struct
         ~decode
         (tup2
            RepoId.t
-           (tup2 ptime (tup2 ptime_span (tup2 (option string) (option ptime))))))
+           (tup2
+              ptime
+              (tup2
+                 ptime_span
+                 (tup2
+                    (option string)
+                    (tup2 int (tup2 int (tup2 int (tup2 int (option ptime))))))))))
   ;;
 end

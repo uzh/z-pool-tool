@@ -172,6 +172,7 @@ type error =
   | PoolContextNotFound
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)

@@ -21,9 +21,16 @@ end = struct
     }
 
   let handle (command : t) already_enrolled =
+    let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else (
+    else
+      let* _ =
+        Session.Public.is_fully_booked command.session
+        |> function
+        | true -> Error Pool_common.Message.(SessionFullyBooked)
+        | false -> Ok ()
+      in
       let create =
         Assignment.
           { contact = command.contact
@@ -37,7 +44,7 @@ end = struct
       Ok
         [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
         ; Assignment.Created create |> Pool_event.assignment
-        ])
+        ]
   ;;
 
   let can user _ =

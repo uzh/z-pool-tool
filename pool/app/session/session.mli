@@ -105,12 +105,17 @@ module Public : sig
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignments_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val is_fully_booked : t -> bool
 end
 
 (* TODO [aerben] this should be experiment id type *)
@@ -140,9 +145,3 @@ val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
-
-module Repo : sig
-  module Public : sig
-    val t : Public.t Caqti_type.t
-  end
-end

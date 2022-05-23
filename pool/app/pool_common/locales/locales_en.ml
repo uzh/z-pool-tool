@@ -196,6 +196,7 @@ let rec error_to_string = function
   | PoolContextNotFound -> "Context could not be found."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \

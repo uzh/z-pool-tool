@@ -104,13 +104,13 @@ let show
          Experiment.DirectRegistrationDisabled.value
            experiment.direct_registration_disabled
        with
-      | true ->
+      | false ->
         let session_html = session_list sessions in
         (match experiment.waiting_list_disabled with
         | false -> [ session_html; waiting_list_form () ]
         | true -> [ session_html ])
         |> div ~a:[ a_class [ "stack-lg" ] ]
-      | false -> div [ waiting_list_form () ])
+      | true -> div [ waiting_list_form () ])
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]

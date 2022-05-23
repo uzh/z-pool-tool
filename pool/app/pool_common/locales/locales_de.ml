@@ -213,6 +213,7 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \

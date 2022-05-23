@@ -172,7 +172,15 @@ module Public = struct
     ; start : Start.t
     ; duration : Ptime.Span.t
     ; description : Description.t option
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignments_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
   [@@deriving eq, show]
+
+  let is_fully_booked (m : t) =
+    m.assignments_count >= m.max_participants + m.overbook
+  ;;
 end
