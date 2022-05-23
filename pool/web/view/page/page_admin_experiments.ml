@@ -254,7 +254,7 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
                    field)
             ])
         Pool_common.Message.Field.
-          [ Some Name; Some Email; Some CreatedAt; None ]
+          [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
       |> tr
       |> CCList.pure
       |> thead
@@ -274,6 +274,11 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
                     entry.created_at
                     |> CreatedAt.value
                     |> Utils.Time.formatted_date_time)
+              ]
+          ; td
+              [ entry.comment
+                |> CCOption.map_or ~default:"" Waiting_list.Comment.value
+                |> txt
               ]
           ; td
               [ a
@@ -306,7 +311,7 @@ let waiting_list waiting_list Pool_context.{ language; _ } =
         ]
   in
   div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ subnav language waiting_list.experiment.Experiment.id
     ; h1
         ~a:[ a_class [ "heading-1" ] ]
