@@ -65,12 +65,8 @@ let create csrf language experiment_id flash_fetcher =
     ]
 ;;
 
-let index
-    Pool_context.{ language; csrf; _ }
-    experiment_id
-    sessions
-    flash_fetcher
-  =
+let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
+  let experiment_id = experiment.Experiment.id in
   let session_row (session : Session.t) =
     let open Session in
     tr
@@ -156,26 +152,29 @@ let index
     |> CCList.pure
     |> thead
   in
-  div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
-    [ div
-        ~a:[ a_class [ "stack-lg" ] ]
-        [ Page_admin_experiments.subnav language experiment_id
-        ; create csrf language experiment_id flash_fetcher
-        ; div
-            [ h2
-                ~a:[ a_class [ "heading-2" ] ]
-                [ txt
-                    Pool_common.(
-                      Utils.text_to_string language I18n.SessionListTitle)
-                ]
-            ; table
-                ~thead
-                ~a:[ a_class [ "striped" ] ]
-                (CCList.map session_row sessions)
-            ]
-        ]
-    ]
+  let html =
+    div
+      [ create csrf language experiment_id flash_fetcher
+      ; div
+          [ h2
+              ~a:[ a_class [ "heading-2" ] ]
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.SessionListTitle)
+              ]
+          ; table
+              ~thead
+              ~a:[ a_class [ "striped" ] ]
+              (CCList.map session_row sessions)
+          ]
+      ]
+  in
+  Page_admin_experiments.experiment_layout
+    language
+    Pool_common.I18n.ExperimentEditTitle
+    experiment
+    ~active:Pool_common.I18n.Sessions
+    html
 ;;
 
 let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =

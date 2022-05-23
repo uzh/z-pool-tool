@@ -16,13 +16,15 @@ let list req =
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
+    let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
     let experiment_id = id req Pool_common.Message.Field.Experiment in
+    let* experiment = Experiment.find tenant_db experiment_id in
     let%lwt sessions =
       Session.find_all_for_experiment tenant_db experiment_id
     in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Session.index context experiment_id sessions flash_fetcher
+    Page.Admin.Session.index context experiment sessions flash_fetcher
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in

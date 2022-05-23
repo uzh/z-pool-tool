@@ -2,6 +2,7 @@ type t =
   | DashboardTitle
   | EmailConfirmationNote
   | EmailConfirmationTitle
+  | ExperimentEditTitle
   | ExperimentNewTitle
   | ExperimentListTitle
   | ExperimentWaitingListTitle
@@ -32,9 +33,11 @@ type nav_link =
   | Dashboard
   | Experiments
   | I18n
-  | Profile
   | Invitations
+  | Overview
+  | Profile
   | Sessions
   | Settings
   | Tenants
   | WaitingList
+[@@deriving eq]

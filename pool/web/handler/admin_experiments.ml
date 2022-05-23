@@ -28,7 +28,7 @@ let new_form req =
   let error_path = "/admin/experiments" in
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
-    @@ (Page.Admin.Experiments.form context
+    @@ (Page.Admin.Experiments.create context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html)
   in
@@ -82,7 +82,7 @@ let detail edit req =
       let* session_count = Experiment.session_count tenant_db id in
       Page.Admin.Experiments.detail experiment session_count context
       |> Lwt.return_ok
-    | true -> Page.Admin.Experiments.form ~experiment context |> Lwt.return_ok)
+    | true -> Page.Admin.Experiments.edit experiment context |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
   in
