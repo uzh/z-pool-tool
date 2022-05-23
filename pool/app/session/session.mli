@@ -43,6 +43,15 @@ module Duration : sig
   val create : Ptime.Span.t -> (t, Pool_common.Message.error) result
 end
 
+module AssignmentCount : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val value : t -> int
+  val create : int -> (t, Pool_common.Message.error) result
+end
+
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
@@ -51,6 +60,7 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; assignments_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -66,6 +76,7 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
+val show : t -> string
 
 type base =
   { start : Start.t

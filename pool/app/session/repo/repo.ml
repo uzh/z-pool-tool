@@ -17,21 +17,22 @@ module Sql = struct
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
+            SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 21)
           )),
-          start,
-          duration,
-          description,
-          max_participants,
-          min_participants,
-          overbook,
-          canceled_at,
-          created_at,
-          updated_at
+          pool_sessions.start,
+          pool_sessions.duration,
+          pool_sessions.description,
+          pool_sessions.max_participants,
+          pool_sessions.min_participants,
+          pool_sessions.overbook,
+          (select count(pool_assignments.id) FROM pool_assignments WHERE id=pool_sessions.id),
+          pool_sessions.canceled_at,
+          pool_sessions.created_at,
+          pool_sessions.updated_at
         FROM pool_sessions
       |sql}
     in
@@ -62,7 +63,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-        WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+        WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
     |> find_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -82,7 +83,7 @@ module Sql = struct
     (* TODO [aerben] order by what here? *)
     {sql|
         WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        ORDER BY start
+        ORDER BY pool_sessions.start
       |sql}
     |> find_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -169,9 +170,7 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
-        canceled_at,
-        created_at,
-        updated_at
+        canceled_at
       ) VALUES (
         UNHEX(REPLACE($2, '-', '')),
         UNHEX(REPLACE($1, '-', '')),
@@ -181,16 +180,17 @@ module Sql = struct
         $6,
         $7,
         $8,
-        $9,
-        $10,
-        $11
+        $9
       )
     |sql}
-    |> Caqti_type.(tup2 string RepoEntity.t ->. unit)
+    |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let insert pool (experiment_id, session) =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      insert_request
+      (experiment_id, session |> RepoEntity.Write.entity_to_write)
   ;;
 
   let update_request =
@@ -211,8 +211,11 @@ module Sql = struct
     |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool m =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      update_request
+      (m |> RepoEntity.Write.entity_to_write)
   ;;
 
   let delete_request =

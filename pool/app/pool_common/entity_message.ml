@@ -6,6 +6,8 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer field_name "admin"]
     | AssetId [@name "asset_id"] [@printer field_name "asset_id"]
+    | AssignmentCount [@name "assignment_count"]
+        [@printer field_name "assignment_count"]
     | CanceledAt [@name "canceled_at"] [@printer field_name "canceled_at"]
     | Comment [@name "comment"] [@printer field_name "comment"]
     | Contact [@name "contact"] [@printer field_name "contact"]

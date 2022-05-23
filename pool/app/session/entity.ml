@@ -87,6 +87,18 @@ module Duration = struct
   ;;
 end
 
+module AssignmentCount = struct
+  type t = int [@@deriving eq, show]
+
+  let value m = m
+
+  let create m =
+    if m < 0
+    then Error Pool_common.Message.(Invalid Field.AssignmentCount)
+    else Ok m
+  ;;
+end
+
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
@@ -95,6 +107,7 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; assignments_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -128,6 +141,7 @@ let create
   ; max_participants
   ; min_participants
   ; overbook
+  ; assignments_count = 0
   ; canceled_at = None
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()

@@ -66,6 +66,8 @@ let create_session () =
     ; min_participants =
         ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+    ; assignments_count =
+        0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
