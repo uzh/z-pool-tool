@@ -75,6 +75,11 @@ module Address : sig
   val show : t -> string
   val address : Mail.t -> t
   val virtual_ : t
+
+  val address_rows_human
+    :  Pool_common.Language.t
+    -> t
+    -> string * string * string
 end
 
 module Mapping : sig
@@ -162,6 +167,7 @@ module Id : sig
 
   val create : unit -> t
   val value : t -> string
+  val of_string : string -> t
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
 end
@@ -199,6 +205,8 @@ module Status : sig
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
+  val all : t list
 end
 
 type t =
@@ -253,6 +261,7 @@ val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t Lwt.t, Pool_common.Message.error) Lwt_result.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
 
+val find_all : Pool_database.Label.t -> t list Lwt.t
 val default_values : t list

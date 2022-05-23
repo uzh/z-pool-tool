@@ -186,6 +186,7 @@ module Tenant = struct
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments
+        ; "/admin/locations", Locations
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])

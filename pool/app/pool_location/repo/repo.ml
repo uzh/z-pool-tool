@@ -23,20 +23,12 @@ module Sql = struct
         pool_locations.street,
         pool_locations.zip,
         pool_locations.city,
-        LOWER(CONCAT(
-          SUBSTR(HEX(storage_handles.uuid), 1, 8), '-',
-          SUBSTR(HEX(storage_handles.uuid), 9, 4), '-',
-          SUBSTR(HEX(storage_handles.uuid), 13, 4), '-',
-          SUBSTR(HEX(storage_handles.uuid), 17, 4), '-',
-          SUBSTR(HEX(storage_handles.uuid), 21)
-        )),
         pool_locations.link,
+        pool_locations.status,
         pool_locations.created_at,
         pool_locations.updated_at
       FROM
         pool_locations
-      LEFT JOIN storage_handles
-        ON pool_locations.asset_id = storage_handles.id
     |sql}
   ;;
 
@@ -57,6 +49,17 @@ module Sql = struct
       find_request
       (Pool_common.Id.value id)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+  ;;
+
+  let find_all_request =
+    let open Caqti_request.Infix in
+    ""
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.unit ->* RepoEntity.t
+  ;;
+
+  let find_all pool =
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request ()
   ;;
 
   let insert_request =
@@ -113,29 +116,32 @@ module Sql = struct
         zip = $8,
         city = $9,
         link = $10,
-        status = $11,
+        status = $11
       WHERE
-      pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
+        pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> RepoEntity.(
          Caqti_type.(
            tup2
-             Name.t
+             Id.t
              (tup2
-                (option Description.t)
-                (tup2 Address.t (tup2 (option Link.t) Status.t)))
+                Name.t
+                (tup2
+                   (option Description.t)
+                   (tup2 Address.t (tup2 (option Link.t) Status.t))))
            ->. unit))
   ;;
 
-  let update pool Entity.{ name; description; address; link; status; _ } =
+  let update pool Entity.{ id; name; description; address; link; status; _ } =
     Utils.Database.exec
       (Pool_database.Label.value pool)
       update_request
-      ( name |> Entity.Name.value
-      , ( description |> CCOption.map Entity.Description.value
-        , ( address
-          , ( link |> CCOption.map Entity.Link.value
-            , status |> Entity.Status.show ) ) ) )
+      ( id
+      , ( name |> Entity.Name.value
+        , ( description |> CCOption.map Entity.Description.value
+          , ( address
+            , ( link |> CCOption.map Entity.Link.value
+              , status |> Entity.Status.show ) ) ) ) )
   ;;
 end
 
@@ -147,7 +153,13 @@ let files_to_location pool (RepoEntity.{ id; _ } as location) =
 let find pool id =
   let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  Sql.find pool id >|= files_to_location pool
+  Sql.find pool id |>> files_to_location pool
+;;
+
+let find_all pool =
+  let open Lwt.Infix in
+  (* TODO Implement as transaction *)
+  Sql.find_all pool >>= Lwt_list.map_s (files_to_location pool)
 ;;
 
 let insert pool location files =

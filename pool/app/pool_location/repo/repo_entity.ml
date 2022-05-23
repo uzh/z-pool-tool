@@ -1,3 +1,7 @@
+module Id = struct
+  include Pool_common.Repo.Id
+end
+
 module Name = struct
   include Entity.Name
 

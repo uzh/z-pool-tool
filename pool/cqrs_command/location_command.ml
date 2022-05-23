@@ -1,27 +1,28 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module Message = Pool_common.Message
+open Pool_location
 
 module Create = struct
   type file_base =
-    { label : Pool_location.Mapping.Label.t
+    { label : Mapping.Label.t
     ; language : Pool_common.Language.t
     ; asset_id : Pool_common.Id.t
     }
   [@@deriving eq, show, sexp]
 
   type base =
-    { name : Pool_location.Name.t
-    ; description : Pool_location.Description.t option
-    ; link : Pool_location.Link.t option
+    { name : Name.t
+    ; description : Description.t option
+    ; link : Link.t option
     ; files : file_base list
     }
 
-  type address = Pool_location.Address.t
+  type address = Address.t
 
   type t =
-    { name : Pool_location.Name.t
-    ; description : Pool_location.Description.t option
-    ; link : Pool_location.Link.t option
+    { name : Name.t
+    ; description : Description.t option
+    ; link : Link.t option
     ; address : address
     ; files : file_base list
     }
@@ -30,7 +31,7 @@ module Create = struct
     { name; description; link; files }
   ;;
 
-  let schema_mail_address = Pool_location.Address.Mail.schema ()
+  let schema_mail_address = Address.Mail.schema ()
 
   let schema_files ()
       : (Conformist.error_msg, file_base list) Conformist.Field.t
@@ -50,47 +51,53 @@ module Create = struct
     Conformist.(
       make
         Field.
-          [ Pool_location.Name.schema ()
-          ; Conformist.optional @@ Pool_location.Description.schema ()
-          ; Conformist.optional @@ Pool_location.Link.schema ()
+          [ Name.schema ()
+          ; Conformist.optional @@ Description.schema ()
+          ; Conformist.optional @@ Link.schema ()
           ; schema_files ()
           ]
         command_base)
   ;;
 
   let handle
-      ?(id = Pool_location.Id.create ())
-      { name; description; link; address; files }
+      ?(id = Id.create ())
+      ({ name; description; link; address; files } : t)
     =
     let open CCResult in
     let location =
-      Pool_location.
-        { id
-        ; name
-        ; description
-        ; address
-        ; link
-        ; status = Status.Active
-        ; files = []
-        ; created_at = Pool_common.CreatedAt.create ()
-        ; updated_at = Pool_common.UpdatedAt.create ()
-        }
+      { id
+      ; name
+      ; description
+      ; address
+      ; link
+      ; status = Status.Active
+      ; files = []
+      ; created_at = Pool_common.CreatedAt.create ()
+      ; updated_at = Pool_common.UpdatedAt.create ()
+      }
     in
     let files =
       CCList.map
         (fun { label; language; asset_id } ->
-          Pool_location.Mapping.Write.create
+          Mapping.Write.create
             label
             language
             asset_id
-            (id |> Pool_location.Id.value |> Pool_common.Id.of_string))
+            (id |> Id.value |> Pool_common.Id.of_string))
         files
     in
-    Ok [ Pool_location.Created (location, files) |> Pool_event.pool_location ]
+    Ok [ Created (location, files) |> Pool_event.pool_location ]
   ;;
 
   let decode data =
     let open CCResult in
+    print_endline
+      (CCString.concat
+         ", "
+         (CCList.map
+            (fun (key, value) ->
+              CCString.concat ", " value |> Format.asprintf "%s: %s" key)
+            data));
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address =
@@ -99,10 +106,10 @@ module Create = struct
            |> CCList.hd
            |> CCString.equal "true"
          with
-         | true -> Ok Pool_location.Address.Virtual
+         | true -> Ok Address.Virtual
          | false ->
            Conformist.decode_and_validate schema_mail_address data
-           >|= Pool_location.Address.address
+           >|= Address.address
        in
        Ok
          { name = base.name
@@ -122,63 +129,67 @@ end
 
 module Update = struct
   type base =
-    { name : Pool_location.Name.t
-    ; description : Pool_location.Description.t option
-    ; link : Pool_location.Link.t option
-    ; status : Pool_location.Status.t
+    { name : Name.t
+    ; description : Description.t option
+    ; link : Link.t option
+    ; status : Status.t
     }
 
-  type address = Pool_location.Address.t
-
-  type t =
-    { name : Pool_location.Name.t
-    ; description : Pool_location.Description.t option
-    ; address : address
-    ; link : Pool_location.Link.t option
-    ; status : Pool_location.Status.t
-    }
+  type address = Address.t
 
   let command_base name description link status =
     { name; description; link; status }
   ;;
 
-  let schema_mail_address = Pool_location.Address.Mail.schema ()
+  let schema_mail_address = Address.Mail.schema ()
 
   let schema =
     Conformist.(
       make
         Field.
-          [ Pool_location.Name.schema ()
-          ; Conformist.optional @@ Pool_location.Description.schema ()
-          ; Conformist.optional @@ Pool_location.Link.schema ()
-          ; Pool_location.Status.schema ()
+          [ Name.schema ()
+          ; Conformist.optional @@ Description.schema ()
+          ; Conformist.optional @@ Link.schema ()
+          ; Status.schema ()
           ]
         command_base)
   ;;
 
   let handle location update =
-    Ok [ Pool_location.Updated (location, update) |> Pool_event.pool_location ]
+    Ok [ Updated (location, update) |> Pool_event.pool_location ]
   ;;
 
   let decode data =
     let open CCResult in
+    let to_bool m =
+      m
+      |> CCList.inter ~eq:CCString.equal [ "on"; "checked"; "true" ]
+      |> CCList.is_empty
+      |> not
+    in
+    print_endline
+      (CCString.concat
+         ", "
+         (CCList.map
+            (fun (key, value) ->
+              CCString.concat ", " value |> Format.asprintf "%s: %s" key)
+            data));
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
-       let* address =
+       let* address_new =
          match
-           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
-           |> CCList.hd
-           |> CCString.equal "true"
+           CCList.assoc_opt ~eq:( = ) Message.Field.(Virtual |> show) data
+           |> CCOption.map_or ~default:false to_bool
          with
-         | true -> Ok Pool_location.Address.Virtual
+         | true -> Ok Address.Virtual
          | false ->
            Conformist.decode_and_validate schema_mail_address data
-           >|= Pool_location.Address.address
+           >|= Address.address
        in
        Ok
          { name = base.name
          ; description = base.description
-         ; address
+         ; address = address_new
          ; link = base.link
          ; status = base.status
          }

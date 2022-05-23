@@ -65,7 +65,7 @@ let of_entity (location : Entity.t) (m : file) : Write.file =
 ;;
 
 module Sql = struct
-  let select_from_tenant_logo_mappings_sql where_fragment =
+  let select_from_location_file_mappings_sql where_fragment =
     let select_from =
       {sql|
           SELECT
@@ -103,7 +103,7 @@ module Sql = struct
     {sql|
       WHERE pool_location_file_mappings.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> select_from_tenant_logo_mappings_sql
+    |> select_from_location_file_mappings_sql
     |> Caqti_type.string ->! file
   ;;
 
@@ -121,7 +121,7 @@ module Sql = struct
     {sql|
       WHERE pool_location_file_mappings.location_id = (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
-    |> select_from_tenant_logo_mappings_sql
+    |> select_from_location_file_mappings_sql
     |> Caqti_type.string ->* file
   ;;
 

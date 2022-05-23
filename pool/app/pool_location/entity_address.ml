@@ -109,3 +109,25 @@ type t =
   | Address of Mail.t
   | Virtual
 [@@deriving eq, show, variants]
+
+let address_rows_human language address =
+  match address with
+  | Virtual ->
+    ( Pool_common.Utils.field_to_string language Field.Virtual
+      |> CCString.capitalize_ascii
+    , ""
+    , "" )
+  | Address address ->
+    let open Mail in
+    let building_room =
+      match address.building with
+      | None -> Room.value address.room
+      | Some building ->
+        [ Building.value building; Room.value address.room ]
+        |> CCString.concat " "
+    in
+    let zip_city =
+      [ Zip.value address.zip; City.value address.city ] |> CCString.concat " "
+    in
+    building_room, Street.value address.street, zip_city
+;;

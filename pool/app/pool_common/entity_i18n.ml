@@ -10,6 +10,8 @@ type t =
   | I18nTitle
   | InvitationListTitle
   | InvitationNewTitle
+  | LocationListTitle
+  | LocationNewTitle
   | LoginTitle
   | NumberIsDaysHint
   | NumberIsWeeksHint
@@ -31,8 +33,9 @@ type nav_link =
   | Dashboard
   | Experiments
   | I18n
-  | Profile
   | Invitations
+  | Locations
+  | Profile
   | Sessions
   | Settings
   | Tenants
