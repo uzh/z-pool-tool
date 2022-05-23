@@ -71,6 +71,7 @@ let create_operator req =
     let open Common.Message in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
@@ -113,6 +114,7 @@ let tenant_detail req =
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail tenant context |> Response.of_html |> Lwt.return_ok

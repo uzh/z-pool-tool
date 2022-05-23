@@ -17,7 +17,6 @@ let get_current_contact tenant_db req =
 
 let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
-  |> Pool_common.Id.of_string
 ;;
 
 let find_query_lang req =

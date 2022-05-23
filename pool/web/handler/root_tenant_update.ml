@@ -10,6 +10,7 @@ let update req command success_message =
     let open Common.Message.Field in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)

@@ -67,6 +67,7 @@ let detail edit req =
     let open Lwt_result.Syntax in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+      |> Pool_common.Id.of_string
     in
     let* experiment = Experiment.find tenant_db id in
     (match edit with
@@ -89,6 +90,7 @@ let update req =
   let result { Pool_context.tenant_db; _ } =
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+      |> Pool_common.Id.of_string
     in
     let detail_path =
       Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)
@@ -126,6 +128,7 @@ let delete req =
     let open Lwt_result.Syntax in
     let experiment_id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+      |> Pool_common.Id.of_string
     in
     let experiments_path = "/admin/experiments" in
     Lwt_result.map_err (fun err ->

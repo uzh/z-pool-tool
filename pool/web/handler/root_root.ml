@@ -40,6 +40,7 @@ let toggle_status req =
   let result { Pool_context.tenant_db; _ } =
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Root
+      |> Pool_common.Id.of_string
     in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift

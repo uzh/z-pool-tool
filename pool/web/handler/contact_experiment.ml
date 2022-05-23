@@ -31,6 +31,7 @@ let show req =
     let tenant_db = context.Pool_context.tenant_db in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+      |> Pool_common.Id.of_string
     in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db id contact in
