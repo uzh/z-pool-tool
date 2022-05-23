@@ -10,8 +10,8 @@ end = struct
 
   let handle (command : Waiting_list.create) =
     if command.Waiting_list.experiment.Experiment.Public.waiting_list_disabled
-    then Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
-    else Error Pool_common.Message.NotEligible
+    then Error Pool_common.Message.NotEligible
+    else Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
   ;;
 
   let can user =
