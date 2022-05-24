@@ -1,6 +1,7 @@
 open Tyxml.Html
 
 let public_overview sessions experiment language =
+  let open Experiment.Public in
   CCList.map
     (fun (session : Session.Public.t) ->
       tr
@@ -17,7 +18,7 @@ let public_overview sessions experiment language =
                   [ a_href
                       (Format.asprintf
                          "/experiments/%s/sessions/%s"
-                         (experiment.Experiment_type.id |> Pool_common.Id.value)
+                         (experiment.id |> Pool_common.Id.value)
                          (session.Session.Public.id |> Pool_common.Id.value))
                   ]
                 [ txt

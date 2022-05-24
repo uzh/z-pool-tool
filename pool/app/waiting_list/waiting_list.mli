@@ -11,7 +11,7 @@ val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> Contact.t -> Experiment.t -> t
 
 type create =
-  { experiment : Experiment_type.public
+  { experiment : Experiment.Public.t
   ; contact : Contact.t
   }
 
@@ -54,7 +54,7 @@ val find
 val user_is_enlisted
   :  Pool_database.Label.t
   -> Contact.t
-  -> Experiment_type.public
+  -> Experiment.Public.t
   -> bool Lwt.t
 
 val find_by_experiment

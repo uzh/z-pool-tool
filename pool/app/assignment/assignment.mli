@@ -47,10 +47,23 @@ type t =
 val pp : Format.formatter -> t -> unit
 val equal : t -> t -> bool
 
+module Public : sig
+  type t =
+    { id : Pool_common.Id.t
+    ; canceled_at : CanceledAt.t
+    }
+end
+
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Entity.t, Pool_common.Message.error) result Lwt.t
+
+val find_by_experiment_and_contact_opt
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Contact.t
+  -> Public.t option Lwt.t
 
 type create =
   { contact : Contact.t
@@ -66,16 +79,3 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
-
-module Public : sig
-  type t =
-    { id : Pool_common.Id.t
-    ; canceled_at : CanceledAt.t
-    }
-end
-
-module Repo : sig
-  module Public : sig
-    val t : Public.t Caqti_type.t
-  end
-end

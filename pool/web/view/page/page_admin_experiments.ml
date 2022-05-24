@@ -181,11 +181,11 @@ let detail experiment session_count Pool_context.{ language; _ } =
 ;;
 
 let invitations
-    (experiment_invitations : Experiment_type.invitations)
+    invitations
+    experiment
     filtered_contacts
     (Pool_context.{ language; _ } as context)
   =
-  let experiment = experiment_invitations.Experiment_type.experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ subnav language experiment.Experiment.id
@@ -196,10 +196,7 @@ let invitations
         ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ Page_admin_invitations.Partials.list
-            context
-            experiment
-            experiment_invitations.Experiment_type.invitations
+        [ Page_admin_invitations.Partials.list context experiment invitations
         ; Page_admin_invitations.Partials.send_invitation
             context
             experiment

@@ -75,7 +75,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       user_is_enlisted_request
       ( contact |> Contact.id |> Pool_common.Id.value
-      , experiment.Experiment_type.id |> Pool_common.Id.value )
+      , experiment.Experiment.Public.id |> Pool_common.Id.value )
     >|= function
     | None -> false
     | Some _ -> true
@@ -185,7 +185,7 @@ module Sql = struct
       (Database.Label.value pool)
       delete_request
       ( Contact.id contact |> Pool_common.Id.value
-      , experiment.Experiment_type.id |> Pool_common.Id.value )
+      , experiment.Experiment.Public.id |> Pool_common.Id.value )
   ;;
 end
 

@@ -51,6 +51,17 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
+module Public : sig
+  type t =
+    { id : Id.t
+    ; description : Description.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 type event =
   | Created of create
   | Updated of t * create
@@ -70,6 +81,17 @@ val find
   -> (t, Repo_entity.Common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_public
+  :  Pool_database.Label.t
+  -> Id.t
+  -> Contact.t
+  -> (Public.t, Pool_common.Message.error) result Lwt.t
+
+val find_all_public_by_contact
+  :  Pool_database.Label.t
+  -> Contact.t
+  -> Public.t list Lwt.t
 
 val session_count
   :  Pool_database.Label.t

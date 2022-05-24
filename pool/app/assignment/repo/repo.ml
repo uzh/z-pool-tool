@@ -43,6 +43,26 @@ module Sql = struct
     |sql}
   ;;
 
+  let select_public_sql =
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_assignments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_assignments.uuid), 21)
+        )),
+        pool_assignments.canceled_at
+      FROM
+        pool_assignments
+      LEFT JOIN pool_sessions
+        ON pool_assignments.session_id = pool_sessions.id
+      LEFT JOIN pool_contacts
+        ON pool_assignments.session_id = pool_contacts.id
+    |sql}
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     {sql|
@@ -94,6 +114,25 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_by_contact_request
       (Pool_common.Id.value id)
+  ;;
+
+  let find_by_experiment_and_contact_opt_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      AND
+        pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+    |sql}
+    |> Format.asprintf "%s\n%s" select_public_sql
+    |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
+  ;;
+
+  let find_by_experiment_and_contact_opt pool experiment_id contact =
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_by_experiment_and_contact_opt_request
+      Pool_common.Id.(value experiment_id, value (Contact.id contact))
   ;;
 
   let insert_request =
@@ -198,3 +237,4 @@ let insert pool session_id model =
 ;;
 
 let update = Sql.update
+let find_by_experiment_and_contact_opt = Sql.find_by_experiment_and_contact_opt

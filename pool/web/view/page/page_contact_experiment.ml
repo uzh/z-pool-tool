@@ -4,8 +4,8 @@ module Session = Page_contact_sessions
 module Assignment = Page_contact_assignment
 
 let index experiment_list Pool_context.{ language; _ } =
-  let experiment_item (experiment : Experiment_type.public) =
-    let open Experiment_type in
+  let experiment_item (experiment : Experiment.Public.t) =
+    let open Experiment.Public in
     div
       ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm"; "flex-gap" ] ]
       [ div
@@ -42,15 +42,15 @@ let index experiment_list Pool_context.{ language; _ } =
 let show
     experiment
     sessions
-    existing_assignment
+    session_user_is_assigned
     user_is_enlisted
     Pool_context.{ language; _ }
   =
-  let open Experiment_type in
+  let open Experiment.Public in
   let form_action =
     Format.asprintf
       "/experiments/%s/waiting-list/"
-      (experiment.Experiment_type.id |> Pool_common.Id.value)
+      (experiment.id |> Pool_common.Id.value)
     |> (fun url ->
          if user_is_enlisted then Format.asprintf "%s/remove" url else url)
     |> Sihl.Web.externalize_path
@@ -90,21 +90,19 @@ let show
           ]
       ]
   in
-  let enrolled_html existing_assignment =
+  let enrolled_html session =
     div
       [ p
           [ txt
               Pool_common.(
                 Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
           ]
-      ; Page_contact_sessions.public_detail
-          existing_assignment.Assignment_type.session
-          language
+      ; Page_contact_sessions.public_detail session language
       ]
   in
   let html =
-    match existing_assignment with
-    | Some assignment -> enrolled_html assignment
+    match session_user_is_assigned with
+    | Some session -> enrolled_html session
     | None -> not_enrolled_html ()
   in
   div
