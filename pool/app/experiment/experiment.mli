@@ -32,6 +32,8 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   ; filter : string
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
@@ -40,11 +42,20 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val create : ?id:Id.t -> Title.t -> Description.t -> t
+
+val create
+  :  ?id:Id.t
+  -> Title.t
+  -> Description.t
+  -> Pool_common.Reminder.Text.t option
+  -> Pool_common.Reminder.LeadTime.t
+  -> t
 
 type create =
   { title : Title.t
   ; description : Description.t
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   }
 
 val equal_create : create -> create -> bool
@@ -102,6 +113,8 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val description_value : t -> string
+val session_reminder_text_value : t -> string option
+val session_reminder_lead_time_value : t -> Ptime.span
 
 module Repo : sig
   module Description : sig

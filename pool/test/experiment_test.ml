@@ -5,22 +5,6 @@ module Data = struct
   let title = "New experiment"
   let description = "Description"
   let filter = "1=1"
-
-  let experiment =
-    let open CCResult in
-    let id = Pool_common.Id.create () in
-    let* title = title |> Experiment.Title.create in
-    let* description = description |> Experiment.Description.create in
-    Ok
-      Experiment.
-        { id
-        ; title
-        ; description
-        ; filter
-        ; created_at = Common.CreatedAt.create ()
-        ; updated_at = Common.UpdatedAt.create ()
-        }
-  ;;
 end
 
 let database_label = Test_utils.Data.database_label
@@ -40,7 +24,16 @@ let create () =
     let open Experiment in
     let* title = Title.create Data.title in
     let* description = Description.create Data.description in
-    let create = { title; description } in
+    let* session_reminder_lead_time =
+      Ptime.Span.of_int_s @@ (60 * 60) |> Pool_common.Reminder.LeadTime.create
+    in
+    let create =
+      { title
+      ; description
+      ; session_reminder_text = None
+      ; session_reminder_lead_time
+      }
+    in
     Ok [ Experiment.Created create |> Pool_event.experiment ]
   in
   Alcotest.(
@@ -71,7 +64,7 @@ let create_without_title () =
 ;;
 
 let update () =
-  let experiment = CCResult.get_exn Data.experiment in
+  let experiment = Test_utils.create_experiment () in
   let open CCResult.Infix in
   let events =
     Pool_common.Message.Field.
@@ -98,7 +91,7 @@ let update () =
 ;;
 
 let delete_with_sessions () =
-  let experiment = CCResult.get_exn Data.experiment in
+  let experiment = Test_utils.create_experiment () in
   let events =
     let session_count = 1234 in
     ExperimentCommand.Delete.(

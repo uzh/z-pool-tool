@@ -7,6 +7,8 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
 
@@ -28,6 +30,8 @@ let handle_event pool = function
         session.max_participants
         session.min_participants
         session.overbook
+        session.reminder_text
+        session.reminder_lead_time
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
@@ -40,6 +44,8 @@ let handle_event pool = function
         ; max_participants
         ; min_participants
         ; overbook
+        ; reminder_text
+        ; reminder_lead_time
         }
       , session ) ->
     Repo.update
@@ -51,5 +57,7 @@ let handle_event pool = function
       ; max_participants
       ; min_participants
       ; overbook
+      ; reminder_text
+      ; reminder_lead_time
       }
 ;;

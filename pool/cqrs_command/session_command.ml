@@ -7,6 +7,8 @@ let session_command
     max_participants
     min_participants
     overbook
+    reminder_text
+    reminder_lead_time
   =
   Session.
     { start
@@ -15,6 +17,8 @@ let session_command
     ; max_participants
     ; min_participants
     ; overbook
+    ; reminder_text
+    ; reminder_lead_time
     }
 ;;
 
@@ -30,6 +34,8 @@ let session_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       session_command)
 ;;
@@ -51,6 +57,8 @@ module Create = struct
          ; min_participants
          ; (* TODO [aerben] find a better name *)
            overbook
+         ; reminder_text
+         ; reminder_lead_time
          } :
         Session.base)
     =
@@ -64,6 +72,8 @@ module Create = struct
           ; max_participants
           ; min_participants
           ; overbook
+          ; reminder_text
+          ; reminder_lead_time
           }
       in
       Ok [ Session.Created (session, experiment_id) |> Pool_event.session ])
@@ -98,6 +108,8 @@ module Update = struct
          ; max_participants
          ; min_participants
          ; overbook
+         ; reminder_text
+         ; reminder_lead_time
          } :
         Session.base)
     =
@@ -111,6 +123,8 @@ module Update = struct
           ; max_participants
           ; min_participants
           ; overbook
+          ; reminder_text
+          ; reminder_lead_time
           }
       in
       Ok [ Session.Updated (session_cmd, session) |> Pool_event.session ])

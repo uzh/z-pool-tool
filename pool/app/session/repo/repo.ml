@@ -29,6 +29,8 @@ module Sql = struct
           max_participants,
           min_participants,
           overbook,
+          reminder_text,
+          reminder_lead_time,
           canceled_at,
           created_at,
           updated_at
@@ -169,6 +171,8 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
+        reminder_text,
+        reminder_lead_time,
         canceled_at,
         created_at,
         updated_at
@@ -183,7 +187,9 @@ module Sql = struct
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12,
+        $13
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.t ->. unit)
@@ -204,7 +210,9 @@ module Sql = struct
         max_participants = $5,
         min_participants = $6,
         overbook = $7,
-        canceled_at = $8
+        reminder_text = $8,
+        reminder_lead_time = $9,
+        canceled_at = $10
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

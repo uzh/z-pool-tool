@@ -123,6 +123,37 @@ module File : sig
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 end
 
+module Reminder : sig
+  module Text : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> t
+    val create : unit -> t
+    val of_string : string -> t
+    val value : t -> string
+    val pp : Format.formatter -> t -> unit
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module LeadTime : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> string
+    val create : Ptime.Span.t -> (t, Message.error) result
+    val value : t -> Ptime.Span.t
+    val pp : Format.formatter -> t -> unit
+
+    val schema
+      :  unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+end
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -152,6 +183,20 @@ module Repo : sig
     type t = File.t
 
     val t : t Caqti_type.t
+  end
+
+  module Reminder : sig
+    module Text : sig
+      type t = Reminder.Text.t
+
+      val t : t Caqti_type.t
+    end
+
+    module LeadTime : sig
+      type t = Reminder.LeadTime.t
+
+      val t : t Caqti_type.t
+    end
   end
 end
 

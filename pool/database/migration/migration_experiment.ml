@@ -16,7 +16,19 @@ let create_pool_experiments_table =
     |sql}
 ;;
 
+let add_session_reminder_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"add field versioning for participants"
+    {sql|
+     ALTER TABLE pool_experiments
+     ADD COLUMN session_reminder_text TEXT DEFAULT NULL AFTER description,
+     ADD COLUMN reminder_lead_time INTEGER NOT NULL AFTER session_reminder_text
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "pool_experiments" |> add_step create_pool_experiments_table)
+    empty "pool_experiments"
+    |> add_step create_pool_experiments_table
+    |> add_step add_session_reminder_columns)
 ;;

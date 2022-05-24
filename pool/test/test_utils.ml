@@ -131,6 +131,12 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
+    ; session_reminder_text = None
+    ; session_reminder_lead_time =
+        Ptime.Span.of_int_s @@ (60 * 60)
+        |> Pool_common.Reminder.LeadTime.create
+        |> CCResult.map_err show_error
+        |> CCResult.get_or_failwith
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

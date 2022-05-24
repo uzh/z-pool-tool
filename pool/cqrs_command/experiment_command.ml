@@ -4,7 +4,23 @@ module Id = Pool_common.Id
 
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
-    make Field.[ Title.schema (); Description.schema () ] command)
+    make
+      Field.
+        [ Title.schema ()
+        ; Description.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Pool_common.Reminder.LeadTime.schema ()
+        ]
+      command)
+;;
+
+let default_command
+    title
+    description
+    session_reminder_text
+    session_reminder_lead_time
+  =
+  { title; description; session_reminder_text; session_reminder_lead_time }
 ;;
 
 module Create : sig
@@ -20,15 +36,19 @@ module Create : sig
 end = struct
   type t = create
 
-  let command title description = { title; description }
-
   let handle (command : t) =
-    let t = { title = command.title; description = command.description } in
+    let t =
+      { title = command.title
+      ; description = command.description
+      ; session_reminder_text = command.session_reminder_text
+      ; session_reminder_lead_time = command.session_reminder_lead_time
+      }
+    in
     Ok [ Experiment.Created t |> Pool_event.experiment ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema command) data
+    Conformist.decode_and_validate (default_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -50,15 +70,19 @@ module Update : sig
 end = struct
   type t = create
 
-  let command title description = { title; description }
-
   let handle experiment (command : t) =
-    let update = { title = command.title; description = command.description } in
+    let update =
+      { title = command.title
+      ; description = command.description
+      ; session_reminder_text = command.session_reminder_text
+      ; session_reminder_lead_time = command.session_reminder_lead_time
+      }
+    in
     Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
   ;;
 
   let decode data =
-    Conformist.decode_and_validate (default_schema command) data
+    Conformist.decode_and_validate (default_schema default_command) data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 

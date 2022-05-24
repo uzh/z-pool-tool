@@ -14,7 +14,9 @@ let create pool =
       , None
       , 30
       , 4
-      , 4 )
+      , 4
+      , None
+      , Some 3600 )
     ; ( ex.Experiment.id |> Pool_common.Id.value
       , Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid time"
@@ -22,7 +24,9 @@ let create pool =
       , Some "No metal allowed!"
       , 28
       , 20
-      , 0 )
+      , 0
+      , None
+      , None )
     ; ( ex.Experiment.id |> Pool_common.Id.value
       , Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid time"
@@ -30,12 +34,22 @@ let create pool =
       , Some "No metal allowed!"
       , 30
       , 2
-      , 5 )
+      , 5
+      , None
+      , Some 7200 )
     ]
   in
   let events =
     CCList.map
-      (fun (experiment_id, start, duration, description, max, min, overbook) ->
+      (fun ( experiment_id
+           , start
+           , duration
+           , description
+           , max
+           , min
+           , overbook
+           , reminder_text
+           , reminder_lead_time ) ->
         let open CCOption in
         let open Pool_common.Utils in
         let session =
@@ -48,6 +62,15 @@ let create pool =
             ; max_participants = ParticipantAmount.create max |> get_or_failwith
             ; min_participants = ParticipantAmount.create min |> get_or_failwith
             ; overbook = ParticipantAmount.create overbook |> get_or_failwith
+            ; reminder_text =
+                reminder_text |> CCOption.map Pool_common.Reminder.Text.create
+            ; reminder_lead_time =
+                reminder_lead_time
+                |> CCOption.map (fun lead_time ->
+                       lead_time
+                       |> Ptime.Span.of_int_s
+                       |> Pool_common.Reminder.LeadTime.create
+                       |> get_or_failwith)
             }
         in
         Session.Created (session, Pool_common.Id.of_string experiment_id))

@@ -7,12 +7,16 @@ module Sql = struct
         uuid,
         title,
         description,
+        session_reminder_text,
+        reminder_lead_time,
         filter
       ) VALUES (
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?
+        UNHEX(REPLACE($1, '-', '')),
+        $2,
+        $3,
+        $4,
+        $5,
+        $6
       )
     |sql}
   ;;
@@ -39,6 +43,8 @@ module Sql = struct
           )),
           title,
           description,
+          session_reminder_text,
+          reminder_lead_time,
           filter,
           created_at,
           updated_at
@@ -82,7 +88,9 @@ module Sql = struct
       SET
         title = $2,
         description = $3,
-        filter = $4
+        session_reminder_text = $4,
+        reminder_lead_time = $5,
+        filter = $6
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -97,8 +105,11 @@ module Sql = struct
     , t.filter )
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool model =
+    let () = Caqti_request.pp Format.std_formatter insert_request in
+    print_endline "XXXXXXXXXXX";
+    Logs.info (fun m -> m "%s" (Entity.show model));
+    Utils.Database.exec (Database.Label.value pool) update_request model
   ;;
 
   let destroy_request =

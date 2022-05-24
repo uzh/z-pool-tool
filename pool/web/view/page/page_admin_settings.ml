@@ -235,17 +235,24 @@ let show
     let terms_and_conditions_textareas =
       CCList.map
         (fun sys_language ->
-          Component.textarea_element
-            language
-            (Pool_common.Language.code sys_language)
-            (Pool_common.Language.field_of_t sys_language)
-            (CCList.assoc_opt
-               ~eq:Pool_common.Language.equal
-               sys_language
-               terms_and_conditions
-            |> CCOption.map Settings.TermsAndConditions.Terms.value
-            |> CCOption.value ~default:"")
-            ())
+          div
+            ~a:[ a_class [ "form-group" ] ]
+            [ label
+                [ txt
+                    Pool_common.(
+                      Language.field_of_t sys_language
+                      |> Utils.field_to_string language)
+                ]
+            ; textarea
+                ~a:[ a_name (Pool_common.Language.code sys_language) ]
+                (txt
+                   (CCList.assoc_opt
+                      ~eq:Pool_common.Language.equal
+                      sys_language
+                      terms_and_conditions
+                   |> CCOption.map Settings.TermsAndConditions.Terms.value
+                   |> CCOption.value ~default:""))
+            ])
         (Pool_common.Language.all ())
     in
     div

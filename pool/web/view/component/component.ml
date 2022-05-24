@@ -135,15 +135,13 @@ let input_element
 
 (* Use the value from flash as the value, if no value is in flash use a default
    value *)
-let input_element_persistent
-    ?info
-    ?default
-    language
-    input_type
-    name
-    flash_fetcher
+let input_element_persistent ?info ?value language input_type name flash_fetcher
   =
-  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
+  let default = value in
+  let old_value =
+    CCOption.bind flash_fetcher (fun fetcher ->
+        name |> Pool_common.Message.Field.show |> fetcher)
+  in
   let open CCOption in
   let value = old_value <+> default |> get_or ~default:"" in
   input_element ?info language input_type name value
@@ -152,17 +150,38 @@ let input_element_persistent
 let textarea_element
     language
     name
-    input_label
     value
     ?(classnames = [])
     ?(attributes = [])
     ()
   =
-  let input_label = Pool_common.Utils.field_to_string language input_label in
+  let input_label = Pool_common.Utils.field_to_string language name in
   let input =
-    textarea ~a:([ a_name name; a_class classnames ] @ attributes) (txt value)
+    textarea
+      ~a:
+        ([ a_name (name |> Pool_common.Message.Field.show); a_class classnames ]
+        @ attributes)
+      (txt value)
   in
   div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]
+;;
+
+let textarea_element_persisted
+    language
+    name
+    ?value
+    ?(classnames = [])
+    ?(attributes = [])
+    flash_fetcher
+  =
+  let default_value = value in
+  let old_value =
+    CCOption.bind flash_fetcher (fun fetcher ->
+        name |> Pool_common.Message.Field.show |> fetcher)
+  in
+  let open CCOption in
+  let value = old_value <+> default_value |> get_or ~default:"" in
+  textarea_element language name value ~classnames ~attributes ()
 ;;
 
 let submit_element

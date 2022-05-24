@@ -95,6 +95,8 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -120,6 +122,8 @@ let create
     max_participants
     min_participants
     overbook
+    reminder_text
+    reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
   ; start
@@ -128,6 +132,8 @@ let create
   ; max_participants
   ; min_participants
   ; overbook
+  ; reminder_text
+  ; reminder_lead_time
   ; canceled_at = None
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()

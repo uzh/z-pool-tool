@@ -12,8 +12,11 @@ let t =
           , ( m.description
             , ( m.max_participants
               , ( m.min_participants
-                , (m.overbook, (m.canceled_at, (m.created_at, m.updated_at))) )
-              ) ) ) ) )
+                , ( m.overbook
+                  , ( m.reminder_text
+                    , ( m.reminder_lead_time
+                      , (m.canceled_at, (m.created_at, m.updated_at)) ) ) ) ) )
+            ) ) ) )
   in
   let decode
       ( id
@@ -22,7 +25,10 @@ let t =
           , ( description
             , ( max_participants
               , ( min_participants
-                , (overbook, (canceled_at, (created_at, updated_at))) ) ) ) ) )
+                , ( overbook
+                  , ( reminder_text
+                    , ( reminder_lead_time
+                      , (canceled_at, (created_at, updated_at)) ) ) ) ) ) ) ) )
       )
     =
     Ok
@@ -33,6 +39,8 @@ let t =
       ; max_participants
       ; min_participants
       ; overbook
+      ; reminder_text
+      ; reminder_lead_time
       ; canceled_at
       ; created_at
       ; updated_at
@@ -54,7 +62,13 @@ let t =
                      int
                      (tup2
                         int
-                        (tup2 int (tup2 (option ptime) (tup2 ptime ptime))))))))))
+                        (tup2
+                           int
+                           (tup2
+                              (option Pool_common.Repo.Reminder.Text.t)
+                              (tup2
+                                 (option Pool_common.Repo.Reminder.LeadTime.t)
+                                 (tup2 (option ptime) (tup2 ptime ptime))))))))))))
 ;;
 
 module Write = struct
@@ -66,7 +80,10 @@ module Write = struct
           , ( m.duration
             , ( m.description
               , ( m.max_participants
-                , (m.min_participants, (m.overbook, m.canceled_at)) ) ) ) ) )
+                , ( m.min_participants
+                  , ( m.overbook
+                    , (m.reminder_text, (m.reminder_lead_time, m.canceled_at))
+                    ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -81,7 +98,17 @@ module Write = struct
                  ptime_span
                  (tup2
                     (option string)
-                    (tup2 int (tup2 int (tup2 int (option ptime)))))))))
+                    (tup2
+                       int
+                       (tup2
+                          int
+                          (tup2
+                             int
+                             (tup2
+                                (option Pool_common.Repo.Reminder.Text.t)
+                                (tup2
+                                   (option Pool_common.Repo.Reminder.LeadTime.t)
+                                   (option ptime)))))))))))
   ;;
 end
 

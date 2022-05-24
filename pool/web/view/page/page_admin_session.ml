@@ -9,58 +9,113 @@ let session_title (session : Session.t) =
   |> Format.asprintf "Session at %s"
 ;;
 
+let session_form
+    csrf
+    language
+    experiment_id
+    (session : Session.t option)
+    flash_fetcher
+  =
+  let action =
+    Sihl.Web.externalize_path
+    @@
+    match session with
+    | Some session ->
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s"
+        (Pool_common.Id.value experiment_id)
+        (Pool_common.Id.value session.Session.id)
+    | None ->
+      Format.asprintf "/admin/experiments/%s/sessions"
+      @@ Pool_common.Id.value experiment_id
+  in
+  let amount amt = amt |> Session.ParticipantAmount.value |> string_of_int in
+  let default_value fnc = (session : Session.t option) |> CCOption.map fnc in
+  let open Session in
+  form
+    ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
+    [ Component.csrf_element csrf ()
+    ; input_element_persistent
+        language
+        ?value:
+          (default_value (fun session ->
+               session.start |> Start.value |> Ptime.to_rfc3339))
+        `Datetime
+        Pool_common.Message.Field.Start
+        flash_fetcher
+    ; input_element_persistent
+        language
+        (* TODO [aerben] make this `Time and convert span from flatpickr to
+           seconds *)
+        ?value:
+          (default_value (fun session ->
+               session.duration
+               |> Duration.value
+               |> Ptime.Span.to_int_s
+               |> CCOption.map_or ~default:"" CCInt.to_string))
+        `Number
+        Pool_common.Message.Field.Duration
+        ~info:"in seconds"
+        flash_fetcher
+    ; textarea_element_persisted
+        language
+        ?value:
+          (default_value (fun session ->
+               session.description
+               |> CCOption.map_or ~default:"" Description.value))
+        Pool_common.Message.Field.Description
+        flash_fetcher
+    ; input_element_persistent
+        language
+        ?value:
+          (default_value (fun session -> session.max_participants |> amount))
+        `Number
+        Pool_common.Message.Field.MaxParticipants
+        flash_fetcher
+    ; input_element_persistent
+        language
+        `Number
+        Pool_common.Message.Field.MinParticipants
+        flash_fetcher
+        ?value:
+          (default_value (fun session -> session.min_participants |> amount))
+    ; input_element_persistent
+        language
+        `Number
+        Pool_common.Message.Field.Overbook
+        ?value:(default_value (fun session -> session.overbook |> amount))
+        flash_fetcher
+    ; input_element_persistent
+        language
+        `Number
+        Pool_common.Message.Field.LeadTime
+        ?value:
+          (default_value (fun session ->
+               session.reminder_lead_time
+               |> CCOption.map_or ~default:"" (fun lead ->
+                      lead
+                      |> Pool_common.Reminder.LeadTime.value
+                      |> Ptime.Span.to_int_s
+                      |> CCOption.map_or ~default:"" CCInt.to_string)))
+        flash_fetcher
+    ; textarea_element_persisted
+        language
+        ?value:
+          (default_value (fun session ->
+               session.reminder_text
+               |> CCOption.map_or ~default:"" Pool_common.Reminder.Text.value))
+        Pool_common.Message.Field.ReminderText
+        flash_fetcher
+    ; submit_element language Message.(Create (Some Field.Session)) ()
+    ]
+;;
+
 let create csrf language experiment_id flash_fetcher =
   div
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.SessionNewTitle) ]
-    ; form
-        ~a:
-          [ a_class [ "stack" ]
-          ; a_method `Post
-          ; a_action
-              (Format.asprintf "/admin/experiments/%s/sessions"
-               @@ Pool_common.Id.value experiment_id
-              |> Sihl.Web.externalize_path)
-          ]
-        [ Component.csrf_element csrf ()
-        ; input_element_persistent
-            language
-            `Datetime
-            Pool_common.Message.Field.Start
-            flash_fetcher
-        ; input_element_persistent
-            language
-            (* TODO [aerben] make this `Time and convert span from flatpickr to
-               seconds *)
-            `Number
-            Pool_common.Message.Field.Duration
-            ~info:"in seconds"
-            flash_fetcher
-          (* TODO [aerben] this should be textarea *)
-        ; input_element_persistent
-            language
-            `Text
-            Pool_common.Message.Field.Description
-            flash_fetcher
-        ; input_element_persistent
-            language
-            `Number
-            Pool_common.Message.Field.MaxParticipants
-            flash_fetcher
-        ; input_element_persistent
-            language
-            `Number
-            Pool_common.Message.Field.MinParticipants
-            flash_fetcher
-            ~default:"0"
-        ; input_element_persistent
-            language
-            `Number
-            Pool_common.Message.Field.Overbook
-            flash_fetcher
-        ; submit_element language Message.(Create (Some Field.Session)) ()
-        ]
+    ; session_form csrf language experiment_id None (Some flash_fetcher)
     ]
 ;;
 
@@ -209,7 +264,6 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
 ;;
 
 let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
-  let open Session in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -218,56 +272,6 @@ let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) 
             Pool_common.(Utils.text_to_string language I18n.SessionUpdateTitle)
         ]
     ; p [ session |> session_title |> txt ]
-    ; (let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-       form
-         ~a:
-           [ a_class [ "stack" ]
-           ; a_method `Post
-           ; a_action
-               (Format.asprintf
-                  "/admin/experiments/%s/sessions/%s"
-                  (Pool_common.Id.value experiment_id)
-                  (Pool_common.Id.value session.id)
-               |> Sihl.Web.externalize_path)
-           ]
-         [ Component.csrf_element csrf ()
-           (* TODO [aerben] use better formatted date *)
-         ; input_element
-             language
-             `Datetime
-             Pool_common.Message.Field.Start
-             (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
-         ; input_element
-             language
-             `Number
-             Pool_common.Message.Field.Duration
-             ~info:"in seconds"
-             (session.duration
-             |> Duration.value
-             |> Pool_common.Utils.print_time_span)
-           (* TODO [aerben] this should be textarea *)
-         ; input_element language `Text Pool_common.Message.Field.Description
-           @@ CCOption.map_or ~default:"" Description.value session.description
-         ; input_element
-             language
-             `Number
-             Pool_common.Message.Field.MaxParticipants
-             (amount session.max_participants)
-         ; input_element
-             language
-             `Number
-             Pool_common.Message.Field.MinParticipants
-             (amount session.min_participants)
-         ; input_element
-             language
-             `Number
-             Pool_common.Message.Field.Overbook
-             (amount session.overbook)
-         ; submit_element
-             language
-             Message.(Update (Some Field.Session))
-             ~submit_type:`Success
-             ()
-         ])
+    ; session_form csrf language experiment_id (Some session) None
     ]
 ;;

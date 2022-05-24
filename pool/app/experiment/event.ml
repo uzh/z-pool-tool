@@ -3,6 +3,8 @@ open Entity
 type create =
   { title : Title.t
   ; description : Description.t
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   }
 [@@deriving eq, show]
 
@@ -17,11 +19,18 @@ type event =
 
 let handle_event pool : event -> unit Lwt.t = function
   | Created create_t ->
-    create create_t.title create_t.description |> Repo.insert pool
+    create
+      create_t.title
+      create_t.description
+      create_t.session_reminder_text
+      create_t.session_reminder_lead_time
+    |> Repo.insert pool
   | Updated (experiment, update_t) ->
     { experiment with
       title = update_t.title
     ; description = update_t.description
+    ; session_reminder_text = update_t.session_reminder_text
+    ; session_reminder_lead_time = update_t.session_reminder_lead_time
     ; updated_at =
         Ptime_clock.now () (* TODO [timhub]: How to use SQL timestamp update? *)
     }

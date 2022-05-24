@@ -166,3 +166,39 @@ module File = struct
       (Format.asprintf "/custom/assets/%s/%s" m.id m.name)
   ;;
 end
+
+module Reminder = struct
+  module Text = struct
+    type t = string [@@deriving eq, show, sexp_of]
+
+    let create () = Uuidm.v `V4 |> Uuidm.to_string
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common_utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        PoolError.Field.ReminderText
+    ;;
+  end
+
+  module LeadTime = struct
+    type t = Ptime.Span.t [@@deriving eq, show]
+
+    let create m =
+      if Ptime.Span.abs m |> Ptime.Span.equal m
+      then Ok m
+      else Error PoolError.NegativeAmount
+    ;;
+
+    let value m = m
+
+    let schema () =
+      let open CCResult in
+      let decode str = Pool_common_utils.parse_time_span str >>= create in
+      let encode span = Pool_common_utils.print_time_span span in
+      Pool_common_utils.schema_decoder decode encode PoolError.Field.LeadTime
+    ;;
+  end
+end

@@ -102,7 +102,12 @@ function initDatepicker() {
             enableTime: true,
             noCalendar: true,
             altFormat: "H:i",
-            dateFormat: "i",
+            dateFormat: "H:i",
+            onChange: (selectedDates, dateStr, instance) => {
+              [hours, minutes] = dateStr.split(":");
+              const seconds = (hours * 3600) + (minutes * 60);
+              console.log(instance);
+              },
             time_24hr: true
         })
     });

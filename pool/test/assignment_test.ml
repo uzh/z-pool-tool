@@ -67,6 +67,8 @@ let create_session () =
         ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None
+    ; reminder_text = None
+    ; reminder_lead_time = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }

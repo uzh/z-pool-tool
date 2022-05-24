@@ -35,16 +35,26 @@ type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   ; filter : string
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 [@@deriving eq, show]
 
-let create ?id title description =
+let create
+    ?id
+    title
+    description
+    session_reminder_text
+    session_reminder_lead_time
+  =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
+  ; session_reminder_text
+  ; session_reminder_lead_time
   ; filter = "1=1"
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
@@ -61,3 +71,11 @@ module Public = struct
     }
   [@@deriving eq, show]
 end
+
+let session_reminder_text_value m =
+  m.session_reminder_text |> CCOption.map Pool_common.Reminder.Text.value
+;;
+
+let session_reminder_lead_time_value m =
+  Pool_common.Reminder.LeadTime.value m.session_reminder_lead_time
+;;

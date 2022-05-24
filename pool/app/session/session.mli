@@ -43,6 +43,17 @@ module Duration : sig
   val create : Ptime.Span.t -> (t, Pool_common.Message.error) result
 end
 
+type base =
+  { start : Start.t
+  ; duration : Duration.t
+  ; description : Description.t option
+  ; max_participants : ParticipantAmount.t
+  ; min_participants : ParticipantAmount.t
+  ; overbook : ParticipantAmount.t
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  }
+
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
@@ -51,6 +62,8 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -66,15 +79,6 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
-
-type base =
-  { start : Start.t
-  ; duration : Duration.t
-  ; description : Description.t option
-  ; max_participants : ParticipantAmount.t
-  ; min_participants : ParticipantAmount.t
-  ; overbook : ParticipantAmount.t
-  }
 
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)

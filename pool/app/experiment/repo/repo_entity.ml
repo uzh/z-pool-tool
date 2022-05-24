@@ -21,9 +21,18 @@ let t =
       ( Id.value m.id
       , ( Title.value m.title
         , ( Description.value m.description
-          , (m.filter, (m.created_at, m.updated_at)) ) ) )
+          , ( m.session_reminder_text
+            , ( m.session_reminder_lead_time
+              , (m.filter, (m.created_at, m.updated_at)) ) ) ) ) )
   in
-  let decode (id, (title, (description, (filter, (created_at, updated_at))))) =
+  let decode
+      ( id
+      , ( title
+        , ( description
+          , ( session_reminder_text
+            , (session_reminder_lead_time, (filter, (created_at, updated_at)))
+            ) ) ) )
+    =
     let open CCResult in
     map_err (fun _ ->
         Common.(
@@ -36,6 +45,8 @@ let t =
          { id = Id.of_string id
          ; title
          ; description
+         ; session_reminder_text
+         ; session_reminder_lead_time
          ; filter
          ; created_at
          ; updated_at
@@ -52,8 +63,12 @@ let t =
             (tup2
                Description.t
                (tup2
-                  string
-                  (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t))))))
+                  (option Pool_common.Repo.Reminder.Text.t)
+                  (tup2
+                     Pool_common.Repo.Reminder.LeadTime.t
+                     (tup2
+                        string
+                        (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t))))))))
 ;;
 
 module Write = struct
@@ -61,14 +76,25 @@ module Write = struct
     let encode (m : t) =
       Ok
         ( Id.value m.id
-        , (Title.value m.title, (Description.value m.description, m.filter)) )
+        , ( Title.value m.title
+          , ( Description.value m.description
+            , (m.session_reminder_text, (m.session_reminder_lead_time, m.filter))
+            ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
       custom
         ~encode
         ~decode
-        (tup2 RepoId.t (tup2 Title.t (tup2 Description.t string))))
+        (tup2
+           RepoId.t
+           (tup2
+              Title.t
+              (tup2
+                 Description.t
+                 (tup2
+                    (option Pool_common.Repo.Reminder.Text.t)
+                    (tup2 Pool_common.Repo.Reminder.LeadTime.t string))))))
   ;;
 end
 

@@ -21,7 +21,17 @@ let experiments pool =
           let description =
             Experiment.Description.create description |> get_or_failwith
           in
-          Experiment.{ title; description }
+          let session_reminder_lead_time =
+            Ptime.Span.of_int_s @@ (60 * 60)
+            |> Pool_common.Reminder.LeadTime.create
+            |> get_or_failwith
+          in
+          Experiment.
+            { title
+            ; description
+            ; session_reminder_text = None
+            ; session_reminder_lead_time
+            }
         in
         Experiment.Created experiment)
       data

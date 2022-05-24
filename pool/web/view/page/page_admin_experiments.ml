@@ -103,6 +103,24 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
             `Text
             Pool_common.Message.Field.Description
             (value description_value)
+        ; input_element
+            language
+            `Time
+            Pool_common.Message.Field.LeadTime
+            (value (fun experiment ->
+                 experiment
+                 |> session_reminder_lead_time_value
+                 |> Ptime.Span.to_int_s
+                 |> CCOption.map CCInt.to_string
+                 |> CCOption.value ~default:""))
+        ; textarea_element
+            language
+            Pool_common.Message.Field.ReminderText
+            (value (fun experiment ->
+                 experiment
+                 |> session_reminder_text_value
+                 |> CCOption.value ~default:""))
+            ()
         ; submit_element
             language
             Message.(
@@ -153,6 +171,7 @@ let detail experiment session_count Pool_context.{ language; _ } =
             ()
         ]
   in
+  let field_to_string = Pool_common.Utils.field_to_string language in
   let open Experiment in
   div
     ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
@@ -161,6 +180,28 @@ let detail experiment session_count Pool_context.{ language; _ } =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
     ; p [ txt (experiment.description |> Description.value) ]
+    ; table
+        ~a:[ a_class [ "striped" ] ]
+        [ tr
+            [ th
+                [ txt (field_to_string Pool_common.Message.Field.ReminderText) ]
+            ; td
+                [ txt
+                    (session_reminder_text_value experiment
+                    |> CCOption.value ~default:"")
+                ]
+            ]
+        ; tr
+            [ th [ txt (field_to_string Pool_common.Message.Field.LeadTime) ]
+              (* TODO: Format time values *)
+            ; td
+                [ txt
+                    (session_reminder_lead_time_value experiment
+                    |> Ptime.Span.to_float_s
+                    |> CCFloat.to_string)
+                ]
+            ]
+        ]
     ; p
         [ a
             ~a:
