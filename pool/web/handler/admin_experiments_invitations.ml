@@ -56,7 +56,7 @@ let create req =
            req
          >|= CCList.map Pool_common.Id.of_string
          >|= fun list ->
-         if CCInt.equal (CCList.length list) 0
+         if CCList.is_empty list
          then Error Pool_common.Message.(NoOptionSelected Field.Contact)
          else Ok list
        in
