@@ -1,6 +1,9 @@
 module Database = Pool_database
 module RepoEntity = Repo_entity
 
+let of_entity = RepoEntity.of_entity
+let to_entity = RepoEntity.to_entity
+
 module Sql = struct
   let contact_was_invited_join =
     {sql|
@@ -17,22 +20,31 @@ module Sql = struct
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
+            SUBSTR(HEX(pool_sessions.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_sessions.uuid), 21)
           )),
-          start,
-          duration,
-          description,
-          max_participants,
-          min_participants,
-          overbook,
-          canceled_at,
-          created_at,
-          updated_at
+          pool_sessions.start,
+          pool_sessions.duration,
+          pool_sessions.description,
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 21)
+          )),
+          pool_sessions.max_participants,
+          pool_sessions.min_participants,
+          pool_sessions.overbook,
+          pool_sessions.canceled_at,
+          pool_sessions.created_at,
+          pool_sessions.updated_at
         FROM pool_sessions
+        INNER JOIN pool_locations
+          ON pool_locations.id = pool_sessions.location_id
       |sql}
     in
     Format.asprintf "%s %s" select where
@@ -52,8 +64,17 @@ module Sql = struct
           pool_sessions.start,
           pool_sessions.duration,
           pool_sessions.description,
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 21)
+          )),
           pool_sessions.canceled_at
         FROM pool_sessions
+        INNER JOIN pool_locations
+          ON pool_locations.id = pool_sessions.location_id
       |sql}
     in
     Format.asprintf "%s %s" select where
@@ -62,7 +83,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-        WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+        WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
       |sql}
     |> find_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -166,6 +187,7 @@ module Sql = struct
         start,
         duration,
         description,
+        location_id,
         max_participants,
         min_participants,
         overbook,
@@ -178,12 +200,13 @@ module Sql = struct
         $3,
         $4,
         $5,
-        $6,
+        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($6, '-', ''))),
         $7,
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.t ->. unit)
@@ -201,10 +224,11 @@ module Sql = struct
         start = $2,
         duration = $3,
         description = $4,
-        max_participants = $5,
-        min_participants = $6,
-        overbook = $7,
-        canceled_at = $8
+        location_id = (SELECT pool_locations.id FROM pool_locations WHERE pool_locations.uuid = UNHEX(REPLACE($5, '-', ''))),
+        max_participants = $6,
+        min_participants = $7,
+        overbook = $8,
+        canceled_at = $9
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -232,11 +256,47 @@ module Sql = struct
   ;;
 end
 
-let find = Sql.find
-let find_public = Sql.find_public
-let find_all_for_experiment = Sql.find_all_for_experiment
-let find_all_public_for_experiment = Sql.find_all_public_for_experiment
-let find_public_by_assignment = Sql.find_public_by_assignment
+let location_to_repo_entity pool session =
+  let open Utils.Lwt_result.Infix in
+  Pool_location.find pool session.RepoEntity.location_id >|= to_entity session
+;;
+
+let location_to_public_repo_entity pool session =
+  let open Utils.Lwt_result.Infix in
+  Pool_location.find pool session.RepoEntity.Public.location_id
+  >|= RepoEntity.Public.to_entity session
+;;
+
+let find pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find pool id >>= location_to_repo_entity pool
+;;
+
+let find_public pool id contact =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_public pool id contact >>= location_to_public_repo_entity pool
+;;
+
+let find_all_for_experiment pool experiment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_all_for_experiment pool experiment_id
+  >|> Lwt_list.map_s (location_to_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
+let find_all_public_for_experiment pool contact experiment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_all_public_for_experiment pool contact experiment_id
+  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
+let find_public_by_assignment pool assignment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_public_by_assignment pool assignment_id
+  >>= location_to_public_repo_entity pool
+;;
+
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

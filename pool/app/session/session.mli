@@ -48,6 +48,7 @@ type t =
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -79,10 +80,10 @@ type base =
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
-  | Created of (base * Pool_common.Id.t)
+  | Created of (base * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
-  | Updated of (base * t)
+  | Updated of (base * Pool_location.t * t)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -94,6 +95,7 @@ module Public : sig
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
+    ; location : Pool_location.t
     ; canceled_at : Ptime.t option
     }
 
@@ -117,13 +119,13 @@ val find_public
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> t list Lwt.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
 
 val find_public_by_assignment
   :  Pool_database.Label.t
@@ -132,6 +134,8 @@ val find_public_by_assignment
 
 module Repo : sig
   module Public : sig
-    val t : Public.t Caqti_type.t
+    val t : Repo_entity.Public.t Caqti_type.t
+    val to_entity : Repo_entity.Public.t -> Pool_location.t -> Entity.Public.t
+    val of_entity : Entity.Public.t -> Repo_entity.Public.t
   end
 end

@@ -35,7 +35,7 @@ let show req =
     in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db id contact in
-    let%lwt sessions =
+    let* sessions =
       Session.find_all_public_for_experiment
         tenant_db
         contact

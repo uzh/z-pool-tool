@@ -92,6 +92,7 @@ type t =
   ; start : Start.t
   ; duration : Ptime.Span.t
   ; description : Description.t option
+  ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
@@ -117,6 +118,7 @@ let create
     start
     duration
     description
+    location
     max_participants
     min_participants
     overbook
@@ -125,6 +127,7 @@ let create
   ; start
   ; duration
   ; description
+  ; location
   ; max_participants
   ; min_participants
   ; overbook
@@ -158,6 +161,7 @@ module Public = struct
     ; start : Start.t
     ; duration : Ptime.Span.t
     ; description : Description.t option
+    ; location : Pool_location.t
     ; canceled_at : Ptime.t option
     }
   [@@deriving eq, show]

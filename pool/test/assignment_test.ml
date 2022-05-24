@@ -11,6 +11,21 @@ let check_result expected generated =
       generated)
 ;;
 
+let create_location () =
+  Pool_location.
+    { id = Pool_location.Id.create ()
+    ; name =
+        Pool_location.Name.create "Online" |> Pool_common.Utils.get_or_failwith
+    ; description = None
+    ; link = None
+    ; address = Pool_location.Address.Virtual
+    ; status = Pool_location.Status.Active
+    ; files = []
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;
+
 let create_contact () =
   Contact.
     { user =
@@ -61,6 +76,7 @@ let create_session () =
         |> Pool_common.Utils.get_or_failwith
     ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
     ; description = None
+    ; location = create_location ()
     ; max_participants =
         ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
     ; min_participants =
@@ -73,10 +89,10 @@ let create_session () =
 ;;
 
 let creat_public_session () =
-  let Session.{ id; start; duration; description; canceled_at; _ } =
+  let Session.{ id; start; duration; description; location; canceled_at; _ } =
     create_session ()
   in
-  Session.Public.{ id; start; duration; description; canceled_at }
+  Session.Public.{ id; start; duration; description; location; canceled_at }
 ;;
 
 let create_assignment () =

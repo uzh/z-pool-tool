@@ -145,7 +145,7 @@ let index
     ]
 ;;
 
-let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
+let detail Pool_context.{ language; _ } experiment_id (session : Session.t) _ =
   let open Session in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -167,6 +167,15 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
                    ~default:""
                    Description.value
                    session.description )
+             ; ( Field.Location
+               , CCString.concat
+                   ", "
+                   (Pool_location.Address.address_rows_human
+                      language
+                      session.location.Pool_location.address
+                   |> fun (room, street, city) ->
+                   [ room; street; city ]
+                   |> CCList.filter (fun m -> m |> CCString.is_empty |> not)) )
              ; Field.MaxParticipants, amount session.max_participants
              ; Field.MinParticipants, amount session.min_participants
              ; Field.Overbook, amount session.overbook
@@ -208,7 +217,40 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
     ]
 ;;
 
-let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
+let location_select options selected ?(attributes = []) () =
+  let open Pool_location in
+  let name = Message.Field.(show Location) in
+  div
+    [ label [ txt (name |> CCString.capitalize_ascii) ]
+    ; div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:([ a_name name ] @ attributes)
+            (CCList.map
+               (fun l ->
+                 let is_selected =
+                   selected
+                   |> CCOption.map (fun selected ->
+                          if Pool_location.equal selected l
+                          then [ a_selected () ]
+                          else [])
+                   |> CCOption.value ~default:[]
+                 in
+                 option
+                   ~a:
+                     ([ a_value (l.id |> Pool_location.Id.value) ] @ is_selected)
+                   (txt (l.name |> Pool_location.Name.value)))
+               options)
+        ]
+    ]
+;;
+
+let edit
+    Pool_context.{ language; csrf; _ }
+    experiment_id
+    (session : Session.t)
+    locations
+  =
   let open Session in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
@@ -248,6 +290,7 @@ let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) 
            (* TODO [aerben] this should be textarea *)
          ; input_element language `Text Pool_common.Message.Field.Description
            @@ CCOption.map_or ~default:"" Description.value session.description
+         ; location_select locations (Some session.location) ()
          ; input_element
              language
              `Number

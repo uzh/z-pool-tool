@@ -1,8 +1,8 @@
-module RepoEntity = Repo_entity
+include Repo_entity
 module RepoFileMapping = Repo_file_mapping
 
-let to_entity = RepoEntity.to_entity
-let of_entity = RepoEntity.of_entity
+let to_entity = to_entity
+let of_entity = of_entity
 
 module Sql = struct
   let select_sql =
@@ -39,7 +39,7 @@ module Sql = struct
         pool_locations.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.string ->! RepoEntity.t
+    |> Caqti_type.string ->! t
   ;;
 
   let find pool id =
@@ -53,9 +53,7 @@ module Sql = struct
 
   let find_all_request =
     let open Caqti_request.Infix in
-    ""
-    |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.unit ->* RepoEntity.t
+    "" |> Format.asprintf "%s\n%s" select_sql |> Caqti_type.unit ->* t
   ;;
 
   let find_all pool =
@@ -95,7 +93,7 @@ module Sql = struct
         ?
       )
     |sql}
-    |> RepoEntity.t ->. Caqti_type.unit
+    |> t ->. Caqti_type.unit
   ;;
 
   let insert pool =
@@ -120,19 +118,18 @@ module Sql = struct
       WHERE
         pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> RepoEntity.(
-         Caqti_type.(
-           tup2
-             Id.t
-             (tup2
-                Name.t
-                (tup2
-                   (option Description.t)
-                   (tup2 Address.t (tup2 (option Link.t) Status.t))))
-           ->. unit))
+    |> Caqti_type.(
+         tup2
+           Id.t
+           (tup2
+              Name.t
+              (tup2
+                 (option Description.t)
+                 (tup2 Address.t (tup2 (option Link.t) Status.t))))
+         ->. unit)
   ;;
 
-  let update pool Entity.{ id; name; description; address; link; status; _ } =
+  let update pool { Entity.id; name; description; address; link; status; _ } =
     Utils.Database.exec
       (Pool_database.Label.value pool)
       update_request
@@ -145,7 +142,7 @@ module Sql = struct
   ;;
 end
 
-let files_to_location pool (RepoEntity.{ id; _ } as location) =
+let files_to_location pool ({ id; _ } as location) =
   let open Utils.Lwt_result.Infix in
   RepoFileMapping.find_by_location pool id ||> to_entity location
 ;;

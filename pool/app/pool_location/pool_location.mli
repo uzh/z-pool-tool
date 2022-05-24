@@ -258,6 +258,12 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_tenant.Database.Label.t -> event -> unit Lwt.t
 
+module Repo : sig
+  module Id : sig
+    val t : Id.t Caqti_type.t
+  end
+end
+
 val find
   :  Pool_database.Label.t
   -> Id.t

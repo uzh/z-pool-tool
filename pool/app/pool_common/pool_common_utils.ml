@@ -98,6 +98,6 @@ module type BaseSig = sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : t -> (t, Entity_message.error) result
+  val create : string -> (t, Entity_message.error) result
   val schema : unit -> (Entity_message.error, t) PoolConformist.Field.t
 end

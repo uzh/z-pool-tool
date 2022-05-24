@@ -11,6 +11,7 @@ let id req field =
 ;;
 
 let list req =
+  let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
   let result context =
@@ -18,9 +19,7 @@ let list req =
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let experiment_id = id req Pool_common.Message.Field.Experiment in
-    let%lwt sessions =
-      Session.find_all_for_experiment tenant_db experiment_id
-    in
+    let* sessions = Session.find_all_for_experiment tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Session.index context experiment_id sessions flash_fetcher
     |> create_layout req context
@@ -37,7 +36,7 @@ let create req =
       (Pool_common.Id.value experiment_id)
   in
   let result context =
-    let open Utils.Lwt_result.Syntax in
+    let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
@@ -46,10 +45,21 @@ let create req =
         err, path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
+    let* location =
+      let open Pool_common.Message in
+      Field.(Location |> show)
+      |> CCList.pure
+      |> HttpUtils.urlencoded_to_params urlencoded
+      |> CCOption.to_result (NotFound Field.Location)
+      |> Lwt_result.lift
+      >|= List.assoc Field.(Location |> show)
+      >|= Pool_location.Id.of_string
+      >>= Pool_location.find tenant_db
+    in
     let* events =
       let open CCResult.Infix in
       Cqrs_command.Session_command.Create.(
-        urlencoded |> decode >>= handle experiment_id)
+        urlencoded |> decode >>= handle experiment_id location)
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
@@ -75,9 +85,10 @@ let detail req page =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
+    let%lwt locations = Pool_location.find_all tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
-    page context experiment_id session
+    page context experiment_id session locations
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
@@ -105,11 +116,22 @@ let update req =
     Lwt_result.map_err (fun err -> err, path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
+    let* location =
+      let open Pool_common.Message in
+      Field.(Location |> show)
+      |> CCList.pure
+      |> HttpUtils.urlencoded_to_params urlencoded
+      |> CCOption.to_result (NotFound Field.Location)
+      |> Lwt_result.lift
+      >|= List.assoc Field.(Location |> show)
+      >|= Pool_location.Id.of_string
+      >>= Pool_location.find tenant_db
+    in
     let* session = Session.find tenant_db session_id in
     let* events =
       let open CCResult.Infix in
       Cqrs_command.Session_command.Update.(
-        urlencoded |> decode >>= handle session)
+        urlencoded |> decode >>= handle session location)
       |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
