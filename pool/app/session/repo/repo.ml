@@ -83,8 +83,8 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-        WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
-      |sql}
+      WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
     |> find_sql
     |> Caqti_type.string ->! RepoEntity.t
   ;;
@@ -102,9 +102,9 @@ module Sql = struct
     let open Caqti_request.Infix in
     (* TODO [aerben] order by what here? *)
     {sql|
-        WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
-        ORDER BY start
-      |sql}
+      WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      ORDER BY start
+    |sql}
     |> find_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
@@ -141,10 +141,10 @@ module Sql = struct
   let find_public_by_assignment_request =
     let open Caqti_request.Infix in
     {sql|
-        INNER JOIN pool_assignments
-          ON pool_assignments.session_id = pool_sessions.id
-        WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
-      |sql}
+      INNER JOIN pool_assignments
+        ON pool_assignments.session_id = pool_sessions.id
+      WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
     |> find_public_sql
     |> Caqti_type.string ->! RepoEntity.Public.t
   ;;
@@ -176,6 +176,52 @@ module Sql = struct
       (Database.Label.value pool)
       find_all_public_for_experiment_request
       (Contact.id contact |> Pool_common.Id.value, Pool_common.Id.value id)
+  ;;
+
+  let find_all_public_by_location_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE pool_locations.uuid = UNHEX(REPLACE(?, '-', ''))
+      ORDER BY start
+    |sql}
+    |> find_public_sql
+    |> Caqti_type.string ->* RepoEntity.Public.t
+  ;;
+
+  let find_all_public_by_location pool id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_all_public_by_location_request
+      (Pool_location.Id.value id)
+  ;;
+
+  let find_experiment_id_and_title_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_experiments.uuid), 21)
+        )),
+        pool_experiments.title
+      FROM pool_sessions
+      INNER JOIN pool_experiments
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->! tup2 Pool_common.Repo.Id.t string)
+  ;;
+
+  let find_experiment_id_and_title pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_experiment_id_and_title_request
+      (Pool_common.Id.value id)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let insert_request =
@@ -272,6 +318,13 @@ let find pool id =
   Sql.find pool id >>= location_to_repo_entity pool
 ;;
 
+let find_all_public_by_location pool location_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_all_public_by_location pool location_id
+  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
 let find_public pool id contact =
   let open Utils.Lwt_result.Infix in
   Sql.find_public pool id contact >>= location_to_public_repo_entity pool
@@ -297,6 +350,7 @@ let find_public_by_assignment pool assignment_id =
   >>= location_to_public_repo_entity pool
 ;;
 
+let find_experiment_id_and_title = Sql.find_experiment_id_and_title
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

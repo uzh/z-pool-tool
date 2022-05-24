@@ -254,7 +254,85 @@ let form
     ]
 ;;
 
-let detail (location : Pool_location.t) Pool_context.{ language; _ } =
+module SessionList = struct
+  let session_title (session : Session.Public.t) =
+    session.Session.Public.start
+    |> Session.Start.value
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> Format.asprintf "Session at %s"
+  ;;
+
+  let thead language =
+    let open Pool_common in
+    let open Message in
+    CCList.map
+      (fun field ->
+        field
+        |> Utils.field_to_string language
+        |> CCString.capitalize_ascii
+        |> txt
+        |> CCList.pure)
+      [ Field.Session; Field.Experiment; Field.Start; Field.Duration ]
+    @ [ [ txt "" ] ]
+    |> CCList.map th
+    |> tr
+    |> CCList.pure
+    |> thead
+  ;;
+
+  let row
+      language
+      ((session, (experiment_id, experiment_title)) :
+        Session.Public.t * (Pool_common.Id.t * string))
+    =
+    let open Session.Public in
+    tr
+      [ td
+          [ session
+            |> session_title
+            |> (Format.asprintf "%s %s"
+               @@
+               (* TODO [aerben] improve this *)
+               if CCOption.is_some session.Session.Public.canceled_at
+               then "CANCELED"
+               else "")
+            |> txt
+          ]
+      ; td [ experiment_title |> txt ]
+      ; td
+          [ session.start
+            |> Session.Start.value
+            |> Pool_common.Utils.Time.formatted_date_time
+            |> txt
+          ]
+      ; td
+          [ p
+              [ a
+                  ~a:
+                    [ Format.asprintf
+                        "/admin/experiments/%s/sessions/%s"
+                        (Pool_common.Id.value experiment_id)
+                        (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path
+                      |> a_href
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Message.More |> Utils.control_to_string language)
+                  ]
+              ]
+          ]
+      ]
+  ;;
+
+  let create ?(classnames = []) language sessions =
+    let thead = thead language in
+    let body = CCList.map (row language) sessions in
+    table ~a:[ a_class classnames ] ~thead body
+  ;;
+end
+
+let detail (location : Pool_location.t) Pool_context.{ language; _ } sessions =
   let open Pool_location in
   div
     ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
@@ -264,6 +342,7 @@ let detail (location : Pool_location.t) Pool_context.{ language; _ } =
             (location.description
             |> CCOption.map_or ~default:"" Description.value)
         ]
+    ; SessionList.create language sessions
     ; p
         [ a
             ~a:

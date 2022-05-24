@@ -64,7 +64,7 @@ let create req =
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/locations" in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.tenant_db; language; _ } as context) =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
@@ -73,10 +73,27 @@ let detail edit req =
       |> Pool_location.Id.of_string
     in
     let* location = Pool_location.find tenant_db id in
+    let* sessions = Session.find_all_public_by_location tenant_db id in
+    let add_experiment_title session =
+      let%lwt title =
+        Session.find_experiment_id_and_title tenant_db session.Session.Public.id
+      in
+      ( session
+      , title
+        |> CCResult.get_or
+             ~default:
+               ( Pool_common.Id.create ()
+               , Pool_common.(
+                   Utils.error_to_string
+                     language
+                     Message.(NotFound Field.Experiment)) ) )
+      |> Lwt.return
+    in
+    let%lwt session_list = Lwt_list.map_s add_experiment_title sessions in
     let states = Pool_location.Status.all in
     Page.Admin.Location.(
       match edit with
-      | false -> detail location context
+      | false -> detail location context session_list
       | true -> form ~location ~states context)
     |> Lwt.return_ok
     >>= create_layout req context

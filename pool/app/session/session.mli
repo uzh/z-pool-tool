@@ -116,6 +116,11 @@ val find_public
   -> Contact.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
+val find_all_public_by_location
+  :  Pool_database.Label.t
+  -> Pool_location.Id.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
@@ -131,6 +136,11 @@ val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
+
+val find_experiment_id_and_title
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
 
 module Repo : sig
   module Public : sig
