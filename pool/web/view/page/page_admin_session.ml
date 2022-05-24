@@ -115,7 +115,7 @@ let create csrf language experiment_id flash_fetcher =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.SessionNewTitle) ]
-    ; session_form csrf language experiment_id None (Some flash_fetcher)
+    ; session_form csrf language experiment_id None flash_fetcher
     ]
 ;;
 
@@ -263,7 +263,12 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
     ]
 ;;
 
-let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
+let edit
+    Pool_context.{ language; csrf; _ }
+    experiment_id
+    (session : Session.t)
+    flash_fetcher
+  =
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -272,6 +277,6 @@ let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) 
             Pool_common.(Utils.text_to_string language I18n.SessionUpdateTitle)
         ]
     ; p [ session |> session_title |> txt ]
-    ; session_form csrf language experiment_id (Some session) None
+    ; session_form csrf language experiment_id (Some session) flash_fetcher
     ]
 ;;

@@ -62,7 +62,7 @@ let create req =
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let detail req page =
+let detail req action =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Pool_common.Message.Field.Experiment in
   let error_path =
@@ -77,15 +77,20 @@ let detail req page =
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
-    page context experiment_id session
-    |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    let page =
+      match action with
+      | `Show -> Page.Admin.Session.detail context experiment_id session
+      | `Edit ->
+        let flash_fetcher key = Sihl.Web.Flash.find key req in
+        Page.Admin.Session.edit context experiment_id session flash_fetcher
+    in
+    page |> create_layout req context >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let show req = detail req Page.Admin.Session.detail
-let edit req = detail req Page.Admin.Session.edit
+let show req = detail req `Show
+let edit req = detail req `Edit
 
 let update req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
@@ -102,7 +107,10 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err -> err, path)
+    Lwt_result.map_err (fun err ->
+        ( err
+        , Format.asprintf "%s/edit" path
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* session = Session.find tenant_db session_id in
@@ -119,7 +127,7 @@ let update req =
       ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let disabler req command =

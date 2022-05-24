@@ -137,13 +137,10 @@ let input_element
    value *)
 let input_element_persistent ?info ?value language input_type name flash_fetcher
   =
-  let default = value in
-  let old_value =
-    CCOption.bind flash_fetcher (fun fetcher ->
-        name |> Pool_common.Message.Field.show |> fetcher)
+  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
+  let value =
+    CCOption.or_ old_value ~else_:value |> CCOption.get_or ~default:""
   in
-  let open CCOption in
-  let value = old_value <+> default |> get_or ~default:"" in
   input_element ?info language input_type name value
 ;;
 
@@ -174,13 +171,10 @@ let textarea_element_persisted
     ?(attributes = [])
     flash_fetcher
   =
-  let default_value = value in
-  let old_value =
-    CCOption.bind flash_fetcher (fun fetcher ->
-        name |> Pool_common.Message.Field.show |> fetcher)
+  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
+  let value =
+    CCOption.or_ old_value ~else_:value |> CCOption.get_or ~default:""
   in
-  let open CCOption in
-  let value = old_value <+> default_value |> get_or ~default:"" in
   textarea_element language name value ~classnames ~attributes ()
 ;;
 
