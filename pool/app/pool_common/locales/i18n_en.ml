@@ -9,6 +9,9 @@ let to_string = function
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
+  | ExperimentSessionReminderHint ->
+    "There are default settings for the sessions of this experiment. These \
+     settings can be overwritten for each session."
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | InvitationListTitle -> "Invitations"

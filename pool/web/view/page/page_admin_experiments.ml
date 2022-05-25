@@ -103,6 +103,14 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
             `Text
             Pool_common.Message.Field.Description
             (value description_value)
+        ; h3 ~a:[ a_class [ "heading-3" ] ] [ txt "Session reminder" ]
+        ; p
+            [ txt
+                Pool_common.(
+                  Utils.text_to_string
+                    language
+                    I18n.ExperimentSessionReminderHint)
+            ]
         ; input_element
             language
             `Number

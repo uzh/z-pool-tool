@@ -7,6 +7,9 @@ let to_string = function
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
   | ExperimentListTitle -> "Experimente"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
+  | ExperimentSessionReminderHint ->
+    "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
+     Einstellungen können pro Session angepasst werden."
   | ExperimentWaitingListTitle -> "Warteliste"
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
