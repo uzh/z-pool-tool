@@ -82,20 +82,26 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let find_by_session_request =
+  let find_by_session_request ?where_fragment () =
     let open Caqti_request.Infix in
-    {sql|
+    let id_fragment =
+      {sql|
       WHERE
-        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
+    in
+    where_fragment
+    |> CCOption.map_or
+         ~default:id_fragment
+         (Format.asprintf "%s AND %s" id_fragment)
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_session pool id =
+  let find_by_session ?where_fragment pool id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_by_session_request
+      (find_by_session_request ?where_fragment ())
       (Pool_common.Id.value id)
   ;;
 
@@ -103,7 +109,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        contact_id = (SELECT id FROM pool_contacts WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        contact_id = (SELECT id FROM pool_contacts WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -212,12 +218,18 @@ let find pool id =
   Sql.find pool id >>= contact_to_assignment pool
 ;;
 
-let find_by_session pool id =
+let where_uncanceled_fragment = "pool_assignments.canceled_at IS NULL"
+
+let find_by_session filter pool id =
   let open Lwt.Infix in
   (* TODO Implement as transaction *)
-  Sql.find_by_session pool id
-  >>= Lwt_list.map_s (contact_to_assignment pool)
-  |> Lwt.map CCList.all_ok
+  let sql =
+    match filter with
+    | `All -> Sql.find_by_session pool id
+    | `Uncanceled ->
+      Sql.find_by_session ~where_fragment:where_uncanceled_fragment pool id
+  in
+  sql >>= Lwt_list.map_s (contact_to_assignment pool) |> Lwt.map CCList.all_ok
 ;;
 
 let find_by_contact pool contact =

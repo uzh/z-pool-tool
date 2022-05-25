@@ -79,12 +79,18 @@ let detail req action =
     let* session = Session.find tenant_db session_id in
     let page =
       match action with
-      | `Show -> Page.Admin.Session.detail context experiment_id session
+      | `Show ->
+        let* assignments =
+          Assignment.find_by_session tenant_db session.Session.id
+        in
+        Lwt.return_ok
+        @@ Page.Admin.Session.detail context experiment_id session assignments
       | `Edit ->
         let flash_fetcher key = Sihl.Web.Flash.find key req in
-        Page.Admin.Session.edit context experiment_id session flash_fetcher
+        Lwt.return_ok
+        @@ Page.Admin.Session.edit context experiment_id session flash_fetcher
     in
-    page |> create_layout req context >|= Sihl.Web.Response.of_html
+    page >>= create_layout req context >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

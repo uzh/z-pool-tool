@@ -13,6 +13,8 @@ let to_string = function
   | I18nTitle -> "Translations"
   | InvitationListTitle -> "Invitations"
   | InvitationNewTitle -> "Send invitation"
+  | NoEntries field ->
+    Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | LoginTitle -> "Login"
   | NumberIsDaysHint -> "Days"
   | NumberIsWeeksHint -> "Weeks"

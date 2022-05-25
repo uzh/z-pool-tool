@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
+  | Assignments -> "Assignments"
   | CanceledAt -> "Abgesagt am"
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
@@ -48,6 +49,7 @@ let field_to_string =
   | LogoType -> "Logo Typ"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
+  | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | Operator -> "Operator"
   | Overbook -> "Überbuchen"

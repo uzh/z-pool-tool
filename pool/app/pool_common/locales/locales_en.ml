@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AssetId -> "asset identifier"
+  | Assignments -> "assignments"
   | CanceledAt -> "canceled at"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
@@ -48,6 +49,7 @@ let field_to_string =
   | LeadTime -> "lead time"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
+  | Name -> "name"
   | NewPassword -> "new password"
   | Operator -> "operator"
   | Overbook -> "overbook"

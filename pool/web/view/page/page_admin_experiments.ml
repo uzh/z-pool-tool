@@ -105,7 +105,7 @@ let form ?experiment Pool_context.{ language; csrf; _ } =
             (value description_value)
         ; input_element
             language
-            `Time
+            `Number
             Pool_common.Message.Field.LeadTime
             (value (fun experiment ->
                  experiment

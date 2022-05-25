@@ -105,11 +105,8 @@ module Sql = struct
     , t.filter )
   ;;
 
-  let update pool model =
-    let () = Caqti_request.pp Format.std_formatter insert_request in
-    print_endline "XXXXXXXXXXX";
-    Logs.info (fun m -> m "%s" (Entity.show model));
-    Utils.Database.exec (Database.Label.value pool) update_request model
+  let update pool =
+    Utils.Database.exec (Database.Label.value pool) update_request
   ;;
 
   let destroy_request =

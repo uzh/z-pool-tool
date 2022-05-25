@@ -200,65 +200,125 @@ let index
     ]
 ;;
 
-let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
+let detail
+    Pool_context.{ language; _ }
+    experiment_id
+    (session : Session.t)
+    assignments
+  =
+  let assignments =
+    let content =
+      if CCList.is_empty assignments
+      then
+        p
+          [ txt
+              Pool_common.(
+                Utils.text_to_string
+                  language
+                  I18n.(NoEntries Message.Field.Assignments))
+          ]
+      else (
+        let thead =
+          let open Pool_common in
+          Message.Field.[ Name; CanceledAt ]
+          |> CCList.map (fun field ->
+                 td [ txt (Utils.field_to_string language field) ])
+          |> tr
+          |> CCList.pure
+          |> thead
+        in
+        CCList.map
+          (fun (assignment : Assignment.t) ->
+            tr
+              [ td [ txt (Contact.fullname assignment.Assignment.contact) ]
+              ; td
+                  [ txt
+                      (assignment.Assignment.canceled_at
+                      |> Assignment.CanceledAt.value
+                      |> CCOption.map_or
+                           ~default:""
+                           Pool_common.Utils.Time.formatted_date_time)
+                  ]
+              ])
+          (assignments : Assignment.t list)
+        |> table ~thead ~a:[ a_class [ "striped" ] ])
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              Pool_common.(
+                Utils.field_to_string language Message.Field.Assignments)
+          ]
+      ; content
+      ]
+  in
   let open Session in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ session |> session_title |> txt ]
     ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ (* TODO [aerben] use better formatted date *)
-          (let rows =
-             let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-             let open Message in
-             [ ( Field.Start
-               , session.start |> Start.value |> Ptime.to_rfc3339 ~space:true )
-             ; ( Field.Duration
-               , session.duration
-                 |> Duration.value
-                 |> Pool_common.Utils.print_time_span )
-             ; ( Field.Description
-               , CCOption.map_or
-                   ~default:""
-                   Description.value
-                   session.description )
-             ; Field.MaxParticipants, amount session.max_participants
-             ; Field.MinParticipants, amount session.min_participants
-             ; Field.Overbook, amount session.overbook
-             ; ( Field.CanceledAt
-               , CCOption.map_or
-                   ~default:"Not canceled"
-                   (Ptime.to_rfc3339 ~space:true)
-                   session.canceled_at )
-             ]
-             |> CCList.map (fun (field, value) ->
-                    tr
-                      [ th
-                          [ txt
-                              (field
-                              |> Pool_common.Utils.field_to_string language
-                              |> CCString.capitalize_ascii)
-                          ]
-                      ; td [ txt value ]
-                      ])
-           in
-           table ~a:[ a_class [ "striped" ] ] rows)
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/edit"
-                         (Pool_common.Id.value experiment_id)
-                         (Pool_common.Id.value session.id)
-                      |> Sihl.Web.externalize_path)
-                  ]
-                (* TODO [aerben] use Message.More *)
-                [ Message.(Edit (Some Field.Session))
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ div
+            ~a:[ a_class [ "stack" ] ]
+            [ (* TODO [aerben] use better formatted date *)
+              (let rows =
+                 let amount amt =
+                   amt |> ParticipantAmount.value |> string_of_int
+                 in
+                 let open Message in
+                 [ ( Field.Start
+                   , session.start
+                     |> Start.value
+                     |> Ptime.to_rfc3339 ~space:true )
+                 ; ( Field.Duration
+                   , session.duration
+                     |> Duration.value
+                     |> Pool_common.Utils.print_time_span )
+                 ; ( Field.Description
+                   , CCOption.map_or
+                       ~default:""
+                       Description.value
+                       session.description )
+                 ; Field.MaxParticipants, amount session.max_participants
+                 ; Field.MinParticipants, amount session.min_participants
+                 ; Field.Overbook, amount session.overbook
+                 ; ( Field.CanceledAt
+                   , CCOption.map_or
+                       ~default:"Not canceled"
+                       (Ptime.to_rfc3339 ~space:true)
+                       session.canceled_at )
+                 ]
+                 |> CCList.map (fun (field, value) ->
+                        tr
+                          [ th
+                              [ txt
+                                  (field
+                                  |> Pool_common.Utils.field_to_string language
+                                  |> CCString.capitalize_ascii)
+                              ]
+                          ; td [ txt value ]
+                          ])
+               in
+               table ~a:[ a_class [ "striped" ] ] rows)
+            ; p
+                [ a
+                    ~a:
+                      [ a_href
+                          (Format.asprintf
+                             "/admin/experiments/%s/sessions/%s/edit"
+                             (Pool_common.Id.value experiment_id)
+                             (Pool_common.Id.value session.id)
+                          |> Sihl.Web.externalize_path)
+                      ]
+                    (* TODO [aerben] use Message.More *)
+                    [ Message.(Edit (Some Field.Session))
+                      |> Pool_common.Utils.control_to_string language
+                      |> txt
+                    ]
                 ]
             ]
+        ; assignments
         ]
     ]
 ;;

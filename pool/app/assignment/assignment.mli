@@ -31,6 +31,7 @@ module CanceledAt : sig
 
   val init : t
   val create_now : unit -> t
+  val value : t -> Ptime.t option
 end
 
 type t =
@@ -57,7 +58,17 @@ end
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Entity.t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_by_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common__Entity_message.error) result Lwt.t
+
+val find_uncanceled_by_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common__Entity_message.error) result Lwt.t
 
 val find_by_experiment_and_contact_opt
   :  Pool_database.Label.t

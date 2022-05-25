@@ -2,30 +2,31 @@ type t =
   | DashboardTitle
   | EmailConfirmationNote
   | EmailConfirmationTitle
-  | ExperimentNewTitle
-  | ExperimentListTitle
-  | ExperimentWaitingListTitle
   | ExperimentContactEnrolledNote
+  | ExperimentListTitle
+  | ExperimentNewTitle
+  | ExperimentWaitingListTitle
   | HomeTitle
   | I18nTitle
   | InvitationListTitle
   | InvitationNewTitle
   | LoginTitle
+  | NoEntries of Entity_message.Field.t
   | NumberIsDaysHint
   | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionListTitle
   | SessionNewTitle
-  | SessionUpdateTitle
   | SessionSignUpTitle
+  | SessionUpdateTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle
-  | UserProfileLoginSubtitle
   | UserProfileDetailsSubtitle
-  | UserProfileTitle
+  | UserProfileLoginSubtitle
   | UserProfilePausedNote
+  | UserProfileTitle
 
 type nav_link =
   | Dashboard
