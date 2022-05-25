@@ -92,6 +92,18 @@ let () =
             "set attendance on assignment"
             `Quick
             Assignment_test.set_attendance
+        ; test_case
+            "assign to fully booked session"
+            `Quick
+            Assignment_test.assign_to_fully_booked_session
+        ; test_case
+            "assign to session contact is already assigned"
+            `Quick
+            Assignment_test.assign_to_session_contact_is_already_assigned
+        ; test_case
+            "assign user from waiting list"
+            `Quick
+            Assignment_test.assign_contact_from_waitinglist
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

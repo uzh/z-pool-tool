@@ -164,3 +164,96 @@ let create_waiting_list_from_experiment_and_contact experiment contact =
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
 ;;
+
+let create_session () =
+  let hour = Ptime.Span.of_int_s @@ (60 * 60) in
+  Session.
+    { id = Pool_common.Id.create ()
+    ; start =
+        Ptime.add_span (Ptime_clock.now ()) hour
+        |> CCOption.get_exn_or "Invalid start"
+        |> Start.create
+        |> Pool_common.Utils.get_or_failwith
+    ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
+    ; description = None
+    ; max_participants =
+        ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
+    ; min_participants =
+        ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
+    ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+    ; assignments_count =
+        0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+    ; canceled_at = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;
+
+let creat_public_session () =
+  let Session.
+        { id
+        ; start
+        ; duration
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignments_count
+        ; canceled_at
+        ; _
+        }
+    =
+    create_session ()
+  in
+  Session.Public.
+    { id
+    ; start
+    ; duration
+    ; description
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; assignments_count
+    ; canceled_at
+    }
+;;
+
+let fully_book_session session =
+  Session.
+    { session with
+      max_participants =
+        ParticipantAmount.create 5 |> Pool_common.Utils.get_or_failwith
+    ; min_participants =
+        ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
+    ; overbook = ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
+    ; assignments_count =
+        5 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+    }
+;;
+
+let fully_book_public_session session =
+  Session.Public.
+    { session with
+      max_participants =
+        Session.ParticipantAmount.create 5 |> Pool_common.Utils.get_or_failwith
+    ; min_participants =
+        Session.ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
+    ; overbook =
+        Session.ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
+    ; assignments_count =
+        5 |> Session.AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+    }
+;;
+
+let create_assignment () =
+  Assignment.
+    { id = Pool_common.Id.create ()
+    ; contact = create_contact ()
+    ; show_up = ShowUp.init
+    ; participated = Participated.init
+    ; matches_filter = MatchesFilter.init
+    ; canceled_at = CanceledAt.init
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;
