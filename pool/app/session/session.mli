@@ -77,6 +77,7 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
+val is_fully_booked : t -> bool
 
 type base =
   { start : Start.t

@@ -70,16 +70,12 @@ module Sql = struct
     |> Caqti_type.(tup2 string string) ->! RepoEntity.t
   ;;
 
-  let user_is_enlisted pool contact experiment =
-    let open Lwt.Infix in
+  let find_by_contact_and_experiment pool contact experiment =
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       user_is_enlisted_request
       ( contact |> Contact.id |> Pool_common.Id.value
       , experiment.Experiment.Public.id |> Pool_common.Id.value )
-    >|= function
-    | None -> false
-    | Some _ -> true
   ;;
 
   let find_multiple_sql where_fragment =
@@ -192,19 +188,16 @@ module Sql = struct
     {sql|
       DELETE FROM pool_waiting_list
       WHERE
-        contact_id = (SELECT id FROM pool_contacts WHERE user_uuid = UNHEX(REPLACE($1, '-', '')))
-      AND
-        experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE($2, '-', '')))
+        uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup2 string string ->. unit)
+    |> Caqti_type.(string ->. unit)
   ;;
 
-  let delete pool contact experiment =
+  let delete pool m =
     Utils.Database.exec
       (Database.Label.value pool)
       delete_request
-      ( Contact.id contact |> Pool_common.Id.value
-      , experiment.Experiment.Public.id |> Pool_common.Id.value )
+      (m.Entity.id |> Pool_common.Id.value)
   ;;
 end
 
@@ -218,7 +211,25 @@ let find pool id =
   RepoEntity.to_entity waiting_list contact experiment |> Lwt.return_ok
 ;;
 
-let user_is_enlisted = Sql.user_is_enlisted
+let find_by_contact_and_experiment pool contact experiment =
+  let open Lwt_result.Syntax in
+  let%lwt waiting_list =
+    Sql.find_by_contact_and_experiment pool contact experiment
+  in
+  let* experiment = Experiment.find pool experiment.Experiment.Public.id in
+  CCOption.map
+    (fun waiting_list -> RepoEntity.to_entity waiting_list contact experiment)
+    waiting_list
+  |> Lwt.return_ok
+;;
+
+let user_is_enlisted pool contact experiment =
+  let open Lwt.Infix in
+  Sql.find_by_contact_and_experiment pool contact experiment
+  >|= function
+  | None -> false
+  | Some _ -> true
+;;
 
 let find_by_experiment pool id =
   let open Lwt_result.Syntax in

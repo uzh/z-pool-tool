@@ -148,6 +148,10 @@ let create
   }
 ;;
 
+let is_fully_booked (m : t) =
+  m.assignments_count >= m.max_participants + m.overbook
+;;
+
 type assignments =
   { session : t
   ; assignments : Assignment.t list

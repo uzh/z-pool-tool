@@ -29,19 +29,13 @@ let create () =
 ;;
 
 let delete () =
-  let open Waiting_list in
-  let experiment = Test_utils.create_public_experiment () in
-  let contact = Test_utils.create_contact () in
+  let waiting_list = Test_utils.create_waiting_list () in
   let events =
     let open WaitingListCommand in
-    let command = { experiment; contact } in
-    Destroy.handle command
+    Destroy.handle waiting_list
   in
   let expected =
-    Ok
-      [ Waiting_list.(Deleted { experiment; contact })
-        |> Pool_event.waiting_list
-      ]
+    Ok [ Waiting_list.(Deleted waiting_list) |> Pool_event.waiting_list ]
   in
   check_result expected events
 ;;

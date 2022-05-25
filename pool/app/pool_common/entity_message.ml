@@ -235,6 +235,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Assign of Field.t option
   | Back
   | Cancel of Field.t option
   | Choose of Field.t option

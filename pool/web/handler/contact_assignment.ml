@@ -20,6 +20,9 @@ let create req =
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let* session = Session.find_public tenant_db id contact in
+    let* waiting_list =
+      Waiting_list.find_by_contact_and_experiment tenant_db contact experiment
+    in
     let%lwt already_enrolled =
       let open Lwt.Infix in
       Assignment.find_by_experiment_and_contact_opt
@@ -30,7 +33,7 @@ let create req =
     in
     let events =
       Cqrs_command.Assignment_command.Create.(
-        handle { contact; session; experiment } already_enrolled)
+        handle { contact; session; waiting_list } already_enrolled)
       |> Lwt_result.lift
     in
     let handle events =

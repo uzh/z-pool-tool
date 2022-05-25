@@ -232,6 +232,7 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
+  | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field

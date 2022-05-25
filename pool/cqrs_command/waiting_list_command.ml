@@ -61,12 +61,12 @@ end = struct
 end
 
 module Destroy : sig
-  type t = Waiting_list.create
+  type t = Waiting_list.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> bool Lwt.t
 end = struct
-  type t = Waiting_list.create
+  type t = Waiting_list.t
 
   let handle m = Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
 

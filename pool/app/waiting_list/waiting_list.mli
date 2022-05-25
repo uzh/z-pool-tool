@@ -48,7 +48,7 @@ val create
 type event =
   | Created of create
   | Updated of update * t
-  | Deleted of create
+  | Deleted of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -89,3 +89,9 @@ val find_by_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (ExperimentList.t, Pool_common.Message.error) Lwt_result.t
+
+val find_by_contact_and_experiment
+  :  Pool_database.Label.t
+  -> Contact.t
+  -> Experiment.Public.t
+  -> (t option, Pool_common.Message.error) result Lwt.t

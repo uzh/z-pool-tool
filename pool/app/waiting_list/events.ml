@@ -11,7 +11,7 @@ type update = { comment : Comment.t option } [@@deriving eq, show]
 type event =
   | Created of create
   | Updated of update * t
-  | Deleted of create
+  | Deleted of Entity.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -20,5 +20,5 @@ let handle_event pool : event -> unit Lwt.t = function
     |> Repo.insert pool
   | Updated (command, waiting_list) ->
     { waiting_list with comment = command.comment } |> Repo.update pool
-  | Deleted { experiment; contact } -> Repo.delete pool contact experiment
+  | Deleted m -> Repo.delete pool m
 ;;

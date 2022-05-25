@@ -255,6 +255,7 @@ let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
+  | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field

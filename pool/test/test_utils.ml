@@ -153,3 +153,14 @@ let create_waiting_list () =
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
 ;;
+
+let create_waiting_list_from_experiment_and_contact experiment contact =
+  Waiting_list.
+    { id = Pool_common.Id.create ()
+    ; contact
+    ; experiment
+    ; comment = None
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;

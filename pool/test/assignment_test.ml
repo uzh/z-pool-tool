@@ -118,16 +118,23 @@ let create_assignment () =
 
 let create () =
   let session = creat_public_session () in
-  let experiment = Test_utils.create_public_experiment () in
+  let experiment = Test_utils.create_experiment () in
   let contact = create_contact () in
+  let waiting_list =
+    Test_utils.create_waiting_list_from_experiment_and_contact
+      experiment
+      contact
+  in
   let events =
-    let command = AssignmentCommand.Create.{ contact; session; experiment } in
+    let command =
+      AssignmentCommand.Create.
+        { contact; session; waiting_list = Some waiting_list }
+    in
     AssignmentCommand.Create.handle command false
   in
   let expected =
-    let wait_list = Waiting_list.{ contact; experiment } in
     Ok
-      [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
+      [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
       ]

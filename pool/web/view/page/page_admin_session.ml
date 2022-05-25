@@ -13,7 +13,7 @@ let session_title s = s |> session_date |> Format.asprintf "Session at %s"
 let create csrf language experiment_id flash_fetcher =
   div
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-2" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.SessionNewTitle) ]
     ; form
         ~a:
@@ -154,24 +154,17 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
   in
   let html =
     div
-      [ create csrf language experiment_id flash_fetcher
-      ; div
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.SessionListTitle)
-              ]
-          ; table
-              ~thead
-              ~a:[ a_class [ "striped" ] ]
-              (CCList.map session_row sessions)
-          ]
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ table
+          ~thead
+          ~a:[ a_class [ "striped" ] ]
+          (CCList.map session_row sessions)
+      ; create csrf language experiment_id flash_fetcher
       ]
   in
   Page_admin_experiments.experiment_layout
     language
-    Pool_common.I18n.ExperimentEditTitle
+    Pool_common.I18n.SessionListTitle
     experiment
     ~active:Pool_common.I18n.Sessions
     html
