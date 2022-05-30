@@ -64,7 +64,7 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
-  ; ( "reminder_contact"
+  ; ( "reminder_subject"
     , [ "EN", "Reminder: Experiment-Session"
       ; "DE", "Erinnerung: Experiment-Session"
       ] )

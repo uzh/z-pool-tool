@@ -26,6 +26,11 @@ let invitation = function
   | En -> Default_en.invitation
 ;;
 
+let session_reminder = function
+  | De -> Default_de.session_reminder
+  | En -> Default_en.session_reminder
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -38,6 +43,7 @@ let default_values_tenant =
   ; password_reset
   ; signup_verification
   ; invitation
+  ; session_reminder
   ]
   @@@ [ En; De ]
 ;;

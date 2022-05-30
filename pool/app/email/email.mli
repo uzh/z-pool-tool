@@ -83,6 +83,7 @@ module TemplateLabel : sig
     | Invitation
     | PasswordChange
     | PasswordReset
+    | SessionReminder
     | SignUpVerification
 
   val equal : t -> t -> bool

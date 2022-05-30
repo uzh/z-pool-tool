@@ -13,6 +13,8 @@ module TemplateLabel = struct
         [@printer field_name "password_change"]
     | PasswordReset [@name "password_reset"]
         [@printer field_name "password_reset"]
+    | SessionReminder [@name "session_reminder"]
+        [@printer field_name "session_reminder"]
     | SignUpVerification [@name "signup_verification"]
         [@printer field_name "signup_verification"]
   [@@deriving eq, show { with_path = false }, yojson, variants]

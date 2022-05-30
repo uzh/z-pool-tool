@@ -18,7 +18,7 @@ module Key = struct
     | InvitationWithoutSelfRegistrationContact
     | InvitationWithoutSelfRegistrationText
     | PasswordPolicyText
-    | ReminderContact
+    | ReminderSubject
     | ReminderSmsText
     | ReminderText
     | SessionFinishContact
@@ -53,7 +53,7 @@ module Key = struct
     | InvitationWithoutSelfRegistrationText ->
       "invitation_without_self_registration_text"
     | PasswordPolicyText -> "password_policy_text"
-    | ReminderContact -> "reminder_contact"
+    | ReminderSubject -> "reminder_subject"
     | ReminderSmsText -> "reminder_sms_text"
     | ReminderText -> "reminder_text"
     | SessionFinishContact -> "session_finish_contact"
@@ -81,7 +81,7 @@ module Key = struct
     | "invitation_without_self_registration_text" ->
       Ok InvitationWithoutSelfRegistrationText
     | "password_policy_text" -> Ok PasswordPolicyText
-    | "reminder_contact" -> Ok ReminderContact
+    | "reminder_subject" -> Ok ReminderSubject
     | "reminder_sms_text" -> Ok ReminderSmsText
     | "reminder_text" -> Ok ReminderText
     | "session_finish_contact" -> Ok SessionFinishContact

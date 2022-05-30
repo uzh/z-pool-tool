@@ -15,7 +15,7 @@ module Key : sig
     | InvitationWithoutSelfRegistrationContact
     | InvitationWithoutSelfRegistrationText
     | PasswordPolicyText
-    | ReminderContact
+    | ReminderSubject
     | ReminderSmsText
     | ReminderText
     | SessionFinishContact
