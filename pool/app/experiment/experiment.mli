@@ -99,6 +99,11 @@ val find_public
   -> Contact.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
+val find_of_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+
 val find_all_public_by_contact
   :  Pool_database.Label.t
   -> Contact.t
