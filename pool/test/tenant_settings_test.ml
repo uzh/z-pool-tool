@@ -94,7 +94,7 @@ let update_terms_and_conditions _ () =
     let data =
       CCList.map
         (fun lang ->
-          Pool_common.Language.code lang, [ terms_and_conditions_text ])
+          Pool_common.Language.show lang, [ terms_and_conditions_text ])
         languages
     in
     let result =
@@ -115,7 +115,7 @@ let update_terms_and_conditions _ () =
         (CCList.map
            (fun l ->
              Settings.TermsAndConditions.create
-               (l |> Pool_common.Language.code)
+               (l |> Pool_common.Language.show)
                terms_and_conditions_text)
            languages)
     in

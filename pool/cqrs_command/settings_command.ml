@@ -258,7 +258,7 @@ end = struct
              (fun tenant_language ->
                CCList.assoc_opt
                  ~eq:CCString.equal
-                 (tenant_language |> Pool_common.Language.code)
+                 (tenant_language |> Pool_common.Language.show)
                  terms
                |> CCOption.to_result ())
              tenant_languages

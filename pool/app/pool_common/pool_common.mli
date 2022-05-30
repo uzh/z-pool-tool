@@ -28,8 +28,7 @@ module Language : sig
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val code : t -> string
-  val of_string : string -> (t, Message.error) result
+  val create : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val t_of_sexp : Sexplib0.Sexp.t -> t
@@ -38,8 +37,8 @@ module Language : sig
     :  unit
     -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 
-  val all : unit -> t list
-  val all_codes : unit -> string list
+  val all : t list
+  val all_codes : string list
   val field_of_t : t -> Message.Field.t
 end
 
@@ -98,6 +97,7 @@ module File : sig
       | Gif
       | Ico
       | Jpeg
+      | Pdf
       | Png
       | Svg
       | Webp

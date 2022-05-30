@@ -76,7 +76,7 @@ let show
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
-      ; Pool_common.Language.all ()
+      ; Pool_common.Language.all
         |> CCList.filter_map (fun k ->
                match CCList.mem k tenant_languages with
                | true -> None
@@ -94,7 +94,7 @@ let show
            (fun (language, selected) ->
              let attrs =
                [ a_input_type `Checkbox
-               ; a_name (Pool_common.Language.code language)
+               ; a_name (Pool_common.Language.show language)
                ]
              in
              let selected =
@@ -115,7 +115,7 @@ let show
              let checkbox = input ~a:(attrs @ selected @ disabled) () in
              div
                ~a:[ a_user_data "sortable-item" "" ]
-               [ checkbox; label [ txt (Pool_common.Language.code language) ] ])
+               [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
            all_languages)
     in
     div
@@ -237,7 +237,7 @@ let show
         (fun sys_language ->
           Component.textarea_element
             language
-            (Pool_common.Language.code sys_language)
+            (Pool_common.Language.show sys_language)
             (Pool_common.Language.field_of_t sys_language)
             (CCList.assoc_opt
                ~eq:Pool_common.Language.equal
@@ -246,7 +246,7 @@ let show
             |> CCOption.map Settings.TermsAndConditions.Terms.value
             |> CCOption.value ~default:"")
             ())
-        (Pool_common.Language.all ())
+        Pool_common.Language.all
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]

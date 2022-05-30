@@ -12,6 +12,8 @@ type t =
   | InvitationNewTitle
   | LocationListTitle
   | LocationNewTitle
+  | LocationNoSessions
+  | LocationFileNew
   | LoginTitle
   | NumberIsDaysHint
   | NumberIsWeeksHint

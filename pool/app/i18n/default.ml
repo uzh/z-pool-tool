@@ -92,7 +92,7 @@ let default_values =
            (fun (language, content) ->
              create
                key
-               (language |> Pool_common.Language.of_string |> get_or_failwith)
+               (language |> Pool_common.Language.create |> get_or_failwith)
                (content |> Content.create |> get_or_failwith))
            data)
   |> CCList.flatten

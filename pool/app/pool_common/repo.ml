@@ -13,11 +13,11 @@ end
 module Language = struct
   include Language
 
-  let encode m = m |> code |> CCResult.pure
+  let encode m = m |> show |> CCResult.pure
 
   let decode m =
     m
-    |> of_string
+    |> create
     |> CCResult.map_err (fun _ ->
            Locales_en.error_to_string Entity_message.(Decode Field.Language))
   ;;

@@ -184,5 +184,5 @@ let delete_email_template pool label language =
   Utils.Database.exec
     (Pool_database.Label.value pool)
     delete_email_template_request
-  @@ (TemplateLabel.show label, Pool_common.Language.code language)
+  @@ (TemplateLabel.show label, Pool_common.Language.show language)
 ;;

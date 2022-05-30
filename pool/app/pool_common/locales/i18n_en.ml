@@ -15,6 +15,8 @@ let to_string = function
   | InvitationNewTitle -> "Send invitation"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
+  | LocationNoSessions -> "No sessions found for this location."
+  | LocationFileNew -> "Add file to location"
   | LoginTitle -> "Login"
   | NumberIsDaysHint -> "Days"
   | NumberIsWeeksHint -> "Weeks"

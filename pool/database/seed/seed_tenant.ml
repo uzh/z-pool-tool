@@ -122,8 +122,7 @@ let create () =
                 |> get_or_failwith)
               (Styles.Write.create styles |> get_or_failwith)
               (Icon.Write.create icon |> get_or_failwith)
-              (Pool_common.Language.of_string default_language
-              |> get_or_failwith))
+              (Pool_common.Language.create default_language |> get_or_failwith))
         in
         let logo_mappings =
           let open Pool_tenant.LogoMapping in
