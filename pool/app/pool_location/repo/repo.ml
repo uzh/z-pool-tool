@@ -160,8 +160,8 @@ let find_all pool =
 ;;
 
 let insert pool location files =
-  let%lwt () = files |> RepoFileMapping.insert_multiple pool in
-  location |> of_entity |> Sql.insert pool
+  let%lwt () = location |> of_entity |> Sql.insert pool in
+  files |> Lwt_list.iter_s (RepoFileMapping.insert pool)
 ;;
 
 let update = Sql.update

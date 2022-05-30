@@ -1,5 +1,5 @@
 include Entity
-include Events
+include Event
 include Default
 module Repo = Repo
 

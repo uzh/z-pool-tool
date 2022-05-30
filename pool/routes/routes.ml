@@ -129,10 +129,20 @@ module Admin = struct
   let routes =
     let open Pool_common.Message.Field in
     let location =
+      let files =
+        [ get "/create" Handler.Admin.Location.new_file
+        ; post "" Handler.Admin.Location.add_file
+        ; choose
+            ~scope:(add_key FileMapping)
+            [ post "/delete" Handler.Admin.Location.delete ]
+        ; choose ~scope:(add_key File) [ get "" Handler.Admin.Location.asset ]
+        ]
+      in
       let specific =
         [ get "" Handler.Admin.Location.show
         ; get "/edit" Handler.Admin.Location.edit
         ; post "" Handler.Admin.Location.update
+        ; choose ~scope:"/files" files
         ]
       in
       [ get "" Handler.Admin.Location.index

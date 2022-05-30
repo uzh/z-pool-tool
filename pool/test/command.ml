@@ -113,5 +113,6 @@ let () =
       , [ test_case "sign up" `Quick Waiting_list_test.create
         ; test_case "sign off" `Quick Waiting_list_test.delete
         ] )
+    ; "location", [ test_case "create location" `Quick Location_test.create ]
     ]
 ;;

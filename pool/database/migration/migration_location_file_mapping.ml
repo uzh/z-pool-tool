@@ -5,9 +5,8 @@ let create_mappings_table =
       CREATE TABLE IF NOT EXISTS pool_location_file_mappings (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `uuid` binary(16) NOT NULL,
-        `label` binary(16) NOT NULL,
+        `label` varchar(255) NOT NULL,
         `language` varchar(128) NOT NULL,
-        `description` text,
         `asset_id` bigint(20) unsigned NOT NULL,
         `location_id` bigint(20) unsigned NOT NULL,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

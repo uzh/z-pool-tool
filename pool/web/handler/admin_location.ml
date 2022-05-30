@@ -1,35 +1,31 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout `Admin req
 
 (* Use this to extract ids from requests, the params are not named :id, because
    two ids appear in a route *)
-let id req field =
-  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field
-  |> Pool_common.Id.of_string
+let id req field encode =
+  Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/dashboard" in
-  let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
-    @@
-    let tenant_db = context.Pool_context.tenant_db in
-    let%lwt location_list = Pool_location.find_all tenant_db in
-    Page.Admin.Location.index location_list context
-    |> create_layout ~active_navigation:"/locations" req context
-    >|= Sihl.Web.Response.of_html
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    Lwt_result.map_err (fun err -> err, "/admin/dashboard")
+    @@ let%lwt location_list = Pool_location.find_all tenant_db in
+       Page.Admin.Location.index location_list context
+       |> create_layout ~active_navigation:"/locations" req context
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let new_form req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/locations" in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_err (fun err -> err, "/admin/locations")
     @@ (Page.Admin.Location.form context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html)
@@ -40,23 +36,119 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, "/admin/locations/new")
+    Lwt_result.map_err (fun err -> err, "/admin/locations/create")
+    @@ let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       let events =
+         let open CCResult.Infix in
+         let open Cqrs_command.Location_command.Create in
+         urlencoded
+         |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
+         |> HttpUtils.remove_empty_values
+         |> decode
+         >>= handle
+         |> Lwt_result.lift
+       in
+       let handle events =
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           "/admin/locations"
+           [ Message.set
+               ~success:[ Pool_common.Message.(Created Field.Location) ]
+           ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let new_file req =
+  let open Utils.Lwt_result.Infix in
+  let open Pool_location in
+  let id = id req Field.Location Id.of_string in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    Lwt_result.map_err (fun err ->
+        ( err
+        , id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create" ))
     @@
+    let open Lwt_result.Syntax in
+    let* location = find tenant_db id in
+    let labels = Mapping.Label.all in
+    let languages = Pool_common.Language.all in
+    Page.Admin.Location.file_form labels languages location context
+    |> create_layout req context
+    >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let add_file req =
+  let open Utils.Lwt_result.Infix in
+  let id =
+    HttpUtils.get_field_router_param req Field.Location
+    |> Pool_location.Id.of_string
+  in
+  let path =
+    id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
+  in
+  let result { Pool_context.tenant_db; _ } =
+    Lwt_result.map_err (fun err -> err, path)
+    @@
+    let open Lwt_result.Syntax in
+    let* location = Pool_location.find tenant_db id in
+    let%lwt multipart_encoded =
+      Sihl.Web.Request.to_multipart_form_data_exn req
+    in
+    let* files =
+      HttpUtils.File.upload_files tenant_db [ Field.(FileMapping |> show) ] req
+    in
+    let finalize = function
+      | Ok resp -> Lwt.return_ok resp
+      | Error err ->
+        let%lwt () =
+          Lwt_list.iter_s
+            (fun (_, asset_id) ->
+              asset_id
+              |> Service.Storage.delete ~ctx:(Pool_tenant.to_ctx tenant_db))
+            files
+        in
+        Lwt.return_error err
+    in
     let events =
       let open CCResult.Infix in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      Cqrs_command.Location_command.Create.(
-        urlencoded |> HttpUtils.remove_empty_values |> decode >>= handle)
+      let open Cqrs_command.Location_command.AddFile in
+      files @ multipart_encoded
+      |> HttpUtils.File.multipart_form_data_to_urlencoded
+      |> decode
+      >>= handle location
       |> Lwt_result.lift
     in
     let handle events =
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
-        "/admin/locations"
-        [ Message.set ~success:[ Pool_common.Message.(Created Field.Location) ]
+        path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Created Field.FileMapping) ]
         ]
     in
-    events |>> handle
+    events >|> finalize |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let asset req =
+  let open Sihl.Contract.Storage in
+  let id = id req Pool_common.Message.Field.File Pool_common.Id.of_string in
+  let result { Pool_context.tenant_db; _ } =
+    let ctx = Pool_tenant.to_ctx tenant_db in
+    let%lwt file = Service.Storage.find ~ctx (Pool_common.Id.value id) in
+    let%lwt content = Service.Storage.download_data_base64 ~ctx file in
+    let mime = file.file.mime in
+    let content = content |> Base64.decode_exn in
+    Sihl.Web.Response.of_plain_text content
+    |> Sihl.Web.Response.set_content_type mime
+    |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -69,7 +161,7 @@ let detail edit req =
     @@
     let open Lwt_result.Syntax in
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Location
+      HttpUtils.get_field_router_param req Field.Location
       |> Pool_location.Id.of_string
     in
     let* location = Pool_location.find tenant_db id in
@@ -109,7 +201,7 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Location
+      HttpUtils.get_field_router_param req Field.Location
       |> Pool_location.Id.of_string
     in
     let detail_path =
@@ -137,6 +229,34 @@ let update req =
         ]
     in
     events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let delete req =
+  let result { Pool_context.tenant_db; _ } =
+    let location_id = id req Field.Location Pool_location.Id.of_string in
+    let mapping_id =
+      id req Field.FileMapping Pool_location.Mapping.Id.of_string
+    in
+    let path =
+      location_id
+      |> Pool_location.Id.value
+      |> Format.asprintf "/admin/locations/%s"
+    in
+    Lwt_result.map_err (fun err -> err, path)
+    @@
+    let open Utils.Lwt_result.Syntax in
+    let* events =
+      mapping_id
+      |> Cqrs_command.Location_command.DeleteFile.handle
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events tenant_db events in
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ Pool_common.Message.(Deleted Field.File) ] ]
+    |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

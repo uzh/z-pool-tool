@@ -11,7 +11,12 @@ module Label = struct
 
   let t =
     let encode = Utils.fcn_ok show in
-    let decode = Utils.fcn_ok read in
+    let decode m =
+      m
+      |> create
+      |> CCResult.map_err (fun err ->
+             Pool_common.(Utils.error_to_string Language.En err))
+    in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -145,9 +150,8 @@ module Sql = struct
         UNHEX(REPLACE($1, '-', '')),
         $2,
         $3,
-        $4,
-        (SELECT id FROM storage_handles WHERE uuid = UNHEX(REPLACE($5, '-', ''))),
-        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($6, '-', '')))
+        (SELECT id FROM storage_handles WHERE uuid = UNHEX(REPLACE($4, '-', ''))),
+        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($5, '-', '')))
       )
     |sql}
     |> Write.file ->. Caqti_type.unit
@@ -166,8 +170,10 @@ module Sql = struct
     |> Caqti_type.(string ->. unit)
   ;;
 
-  let delete pool Entity_file_mapping.{ id; file; _ } =
+  let delete pool id =
+    let open Utils.Lwt_result.Infix in
     (* TODO: Transaction *)
+    let%lwt { file; _ } = find pool id ||> Pool_common.Utils.get_or_failwith in
     let%lwt () =
       Utils.Database.exec
         (Pool_database.Label.value pool)
@@ -180,7 +186,7 @@ module Sql = struct
   ;;
 end
 
-let insert_multiple pool ms = Lwt_list.iter_s (Sql.insert pool) ms
+let insert = Sql.insert
 let find_by_tenant = Sql.find
 let find_by_location = Sql.find_by_location
 let delete = Sql.delete

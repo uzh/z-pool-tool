@@ -16,7 +16,15 @@ module Label = struct
     | Direction [@name "direction"] [@printer go "direction"]
     | AdditionalInformation [@name "additional_information"]
         [@printer go "additional_information"]
-  [@@deriving eq, show { with_path = false }, yojson, sexp]
+  [@@deriving enum, eq, show { with_path = false }, yojson, sexp]
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "Location Mapping Label: Could not create list of all keys!"
+  ;;
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -40,6 +48,13 @@ type file =
   ; file : File.t
   }
 [@@deriving eq, show]
+
+type file_base =
+  { label : Label.t
+  ; language : Pool_common.Language.t
+  ; asset_id : Pool_common.Id.t
+  }
+[@@deriving eq, show, sexp]
 
 type create =
   { label : Label.t

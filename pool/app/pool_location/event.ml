@@ -10,29 +10,27 @@ type update =
 [@@deriving eq, show]
 
 type event =
-  | Created of t * Mapping.Write.file list
-  | FilesUploaded of t * Mapping.Write.file list
+  | Created of t
+  | FileUploaded of Mapping.Write.file
   | Updated of t * update
-  | FileDeleted of Mapping.file
-[@@deriving eq, show]
+  | FileDeleted of Mapping.Id.t
+[@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Created (({ id; _ } as location), files) ->
-    let open Entity.Mapping.Write in
+  | Created ({ files; _ } as location) ->
     let%lwt () =
       files
-      |> CCList.map (fun { label; language; asset_id; _ } ->
-             create label language asset_id id)
+      |> CCList.map (Repo.RepoFileMapping.of_entity location)
       |> Repo.insert pool location
     in
     Lwt.return_unit
-  | FilesUploaded ({ id; _ }, files) ->
+  | FileUploaded file ->
     let open Entity.Mapping.Write in
     let%lwt () =
-      files
-      |> CCList.map (fun { label; language; asset_id; _ } ->
-             create label language asset_id id)
-      |> Repo.RepoFileMapping.insert_multiple pool
+      file
+      |> (fun { label; language; asset_id; location_id; _ } ->
+           create label language asset_id location_id)
+      |> Repo.RepoFileMapping.insert pool
     in
     Lwt.return_unit
   | Updated (location, m) ->
@@ -47,7 +45,7 @@ let handle_event pool : event -> unit Lwt.t = function
       |> Repo.update pool
     in
     Lwt.return_unit
-  | FileDeleted file ->
-    let%lwt () = Repo_file_mapping.delete pool file in
+  | FileDeleted id ->
+    let%lwt () = Repo_file_mapping.delete pool id in
     Lwt.return_unit
 ;;

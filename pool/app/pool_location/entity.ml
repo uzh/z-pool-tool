@@ -85,7 +85,14 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving show]
+
+let equal m k =
+  Id.equal m.id k.id
+  && Name.equal m.name k.name
+  && Address.equal m.address k.address
+  && Status.equal m.status k.status
+;;
 
 let create ?(id = Id.create ()) name description address link status files =
   let open CCResult in

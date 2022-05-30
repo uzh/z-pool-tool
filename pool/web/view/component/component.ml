@@ -51,8 +51,8 @@ let language_select
                |> CCOption.value ~default:[]
              in
              option
-               ~a:([ a_value (Language.code l) ] @ is_selected)
-               (txt (Language.code l)))
+               ~a:([ a_value (Language.show l) ] @ is_selected)
+               (txt (Language.show l)))
            options)
     ]
 ;;
@@ -147,6 +147,23 @@ let input_element_persistent
   let open CCOption in
   let value = old_value <+> default |> get_or ~default:"" in
   input_element ?info language input_type name value
+;;
+
+let input_element_file ?(allow_multiple = false) language field =
+  let field_label =
+    Pool_common.Utils.field_to_string language field
+    |> CCString.capitalize_ascii
+  in
+  div
+    [ label [ txt field_label ]
+    ; input
+        ~a:
+          [ a_input_type `File
+          ; a_name Pool_common.Message.Field.(field |> show)
+          ; (if allow_multiple then a_multiple () else a_value "")
+          ]
+        ()
+    ]
 ;;
 
 let textarea_element

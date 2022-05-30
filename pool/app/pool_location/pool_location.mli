@@ -88,6 +88,7 @@ module Mapping : sig
 
     val create : unit -> t
     val value : t -> string
+    val of_string : string -> t
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
   end
@@ -97,6 +98,7 @@ module Mapping : sig
       | Direction
       | AdditionalInformation
 
+    val all : t list
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
@@ -119,6 +121,18 @@ module Mapping : sig
   val equal_file : file -> file -> bool
   val pp_file : Format.formatter -> file -> unit
   val show_file : file -> string
+
+  type file_base =
+    { label : Label.t
+    ; language : Pool_common.Language.t
+    ; asset_id : Pool_common.Id.t
+    }
+
+  val equal_file_base : file_base -> file_base -> bool
+  val pp_file_base : Format.formatter -> file_base -> unit
+  val show_file_base : file_base -> string
+  val file_base_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> file_base
+  val sexp_of_file_base : file_base -> Ppx_sexp_conv_lib.Sexp.t
 
   type create =
     { label : Label.t
@@ -248,11 +262,15 @@ val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
 type event =
-  | Created of t * Mapping.Write.file list
-  | FilesUploaded of t * Mapping.Write.file list
+  | Created of t
+  | FileUploaded of Mapping.Write.file
   | Updated of t * update
-  | FileDeleted of Mapping.file
+  | FileDeleted of Mapping.Id.t
 
+val created : t -> event
+val fileuploaded : Mapping.Write.file -> event
+val updated : t -> update -> event
+val filedeleted : Mapping.Id.t -> event
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string

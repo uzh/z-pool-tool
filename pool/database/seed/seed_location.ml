@@ -49,6 +49,6 @@ let locations =
 let create pool =
   let open Pool_location in
   default_values @ locations
-  |> CCList.map (fun m -> Created (m, []))
+  |> CCList.map created
   |> Lwt_list.iter_s (handle_event pool)
 ;;

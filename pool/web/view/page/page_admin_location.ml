@@ -2,28 +2,24 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let status_select options selected ?(attributes = []) () =
-  let open Pool_location in
-  let name = Message.Field.(show Status) in
+let selector field equal show options selected ?(attributes = []) () =
+  let name = Message.Field.(show field) in
   div
-    [ label [ txt (name |> CCString.capitalize_ascii) ]
+    [ label [ name |> CCString.capitalize_ascii |> txt ]
     ; div
         ~a:[ a_class [ "select" ] ]
         [ select
-            ~a:([ a_name name ] @ attributes)
+            ~a:(a_name name :: attributes)
             (CCList.map
                (fun l ->
                  let is_selected =
                    selected
-                   |> CCOption.map (fun selected ->
-                          if Status.equal selected l
-                          then [ a_selected () ]
-                          else [])
-                   |> CCOption.value ~default:[]
+                   |> CCOption.map_or ~default:[] (fun selected ->
+                          if equal selected l then [ a_selected () ] else [])
                  in
                  option
-                   ~a:([ a_value (Status.show l) ] @ is_selected)
-                   (txt (l |> Status.show |> CCString.capitalize_ascii)))
+                   ~a:((l |> show |> a_value) :: is_selected)
+                   (l |> show |> CCString.capitalize_ascii |> txt))
                options)
         ]
     ]
@@ -53,7 +49,7 @@ module List = struct
         |> Utils.control_to_string language
         |> txt
         |> CCList.pure
-        |> a ~a:[ a_href (Sihl.Web.externalize_path "/admin/locations/new") ]
+        |> a ~a:[ a_href (Sihl.Web.externalize_path "/admin/locations/create") ]
         |> CCList.pure
       ]
     |> CCList.map th
@@ -120,39 +116,114 @@ let index location_list Pool_context.{ language; _ } =
     ]
 ;;
 
+let file_form
+    (labels : Pool_location.Mapping.Label.t list)
+    (languages : Pool_common.Language.t list)
+    (location : Pool_location.t)
+    Pool_context.{ language; csrf; _ }
+  =
+  let open Pool_location in
+  let action =
+    location.id |> Id.value |> Format.asprintf "/admin/locations/%s/files"
+  in
+  let label_select =
+    let open Mapping.Label in
+    selector Message.Field.Label equal show labels None ()
+  in
+  let language_select =
+    let open Pool_common.Language in
+    selector Message.Field.Language equal show languages None ()
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
+    [ h1
+        [ [ Pool_common.(Utils.text_to_string language I18n.LocationFileNew)
+          ; location.name |> Name.show
+          ]
+          |> CCString.concat " "
+          |> txt
+        ]
+    ; form
+        ~a:
+          [ a_method `Post
+          ; a_action (Sihl.Web.externalize_path action)
+          ; a_enctype "multipart/form-data"
+          ; a_class [ "stack" ]
+          ]
+        [ Component.csrf_element csrf ()
+        ; label_select
+        ; language_select
+        ; input_element_file
+            language
+            ~allow_multiple:false
+            Message.Field.FileMapping
+        ; submit_element
+            language
+            Message.(Create (Some Field.FileMapping))
+            ~submit_type:`Success
+            ()
+        ]
+    ]
+;;
+
 let form
     ?(location : Pool_location.t option)
     ?(states : Pool_location.Status.t list = [])
     Pool_context.{ language; csrf; _ }
   =
   let open Pool_location in
+  let path = "/admin/locations" in
+  let default = "" in
   let action =
     location
-    |> CCOption.map_or ~default:"/admin/locations" (fun m ->
-           m.id |> Id.value |> Format.asprintf "/admin/locations/%s")
+    |> CCOption.map_or ~default:path (fun { id; _ } ->
+           id |> Id.value |> Format.asprintf "%s/%s" path)
   in
-  let value = CCFun.flip (CCOption.map_or ~default:"") location in
-  let address_value ?(default = "") fcn =
+  let value field_fcn decode_fcn =
+    let open CCOption.Infix in
+    location >|= field_fcn |> CCOption.map_or ~default decode_fcn
+  in
+  let value_opt field_fcn decode_fcn =
+    let open CCOption.Infix in
+    location >>= field_fcn |> CCOption.map_or ~default decode_fcn
+  in
+  let status_select_opt =
+    match location with
+    | Some { status; _ } ->
+      [ selector
+          Message.Field.Status
+          Status.equal
+          Status.show
+          states
+          (Some status)
+          ()
+      ]
+    | None -> []
+  in
+  let address_value fcn =
     location
-    |> (CCOption.map_or ~default) (fun (location : t) ->
-           match location.address with
+    |> CCOption.map_or ~default (fun ({ address; _ } : t) ->
+           match address with
            | Address.Virtual -> default
            | Address.Address m -> m |> fcn)
   in
-  let selected =
-    location
-    |> CCOption.map_or ~default:[] (fun (m : Pool_location.t) ->
-           match m.address with
-           | Address.Virtual -> [ a_checked () ]
-           | Address.Address _ -> [])
+  let is_virtual_checkbox =
+    let selected =
+      location
+      |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
+             match address with
+             | Address.Virtual -> [ a_checked () ]
+             | Address.Address _ -> [])
+    in
+    input
+      ~a:
+        ([ a_class [ "toggle-address" ]
+         ; a_input_type `Checkbox
+         ; a_name Message.Field.(Virtual |> show)
+         ]
+        @ selected)
+      ()
   in
-  let attrs =
-    [ a_class [ "toggle-address" ]
-    ; a_input_type `Checkbox
-    ; a_name Message.Field.(Virtual |> show)
-    ]
-  in
-  let checkbox = input ~a:(attrs @ selected) () in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
     [ h1
@@ -163,96 +234,197 @@ let form
         ~a:
           [ a_method `Post
           ; a_action (Sihl.Web.externalize_path action)
+          ; a_enctype "multipart/form-data"
           ; a_class [ "stack" ]
           ]
-        [ Component.csrf_element csrf ()
-        ; input_element
-            language
-            `Text
-            Message.Field.Name
-            (value (fun m -> m.name |> Name.value))
-        ; input_element
-            language
-            `Text
-            Message.Field.Description
-            (value (fun m ->
-                 m.description |> CCOption.map_or ~default:"" Description.value))
-        ; input_element
-            language
-            `Text
-            Message.Field.Link
-            (value (fun m -> m.link |> CCOption.map_or ~default:"" Link.value))
-        ; status_select
-            states
-            (location |> CCOption.map (fun (m : Pool_location.t) -> m.status))
-            ()
-        ; div
-            [ label
-                [ txt
-                    (Message.Field.Location
-                    |> Pool_common.Utils.field_to_string language
-                    |> CCString.capitalize_ascii)
-                ]
-            ; div
-                [ checkbox
-                ; label
-                    [ txt
-                        Message.Field.(
-                          Virtual |> show |> CCString.capitalize_ascii)
-                    ]
-                ; div
-                    ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                    [ input_element
-                        language
-                        `Text
-                        Message.Field.Room
-                        (address_value (fun m ->
-                             Address.Mail.(m.room |> Room.value)))
-                    ; input_element
-                        language
-                        `Text
-                        Message.Field.Building
-                        (address_value (fun m ->
+        ([ Component.csrf_element csrf ()
+         ; input_element
+             language
+             `Text
+             Message.Field.Name
+             (value (fun m -> m.name) Name.value)
+         ; input_element
+             language
+             `Text
+             Message.Field.Description
+             (value_opt (fun m -> m.description) Description.value)
+         ; input_element
+             language
+             `Text
+             Message.Field.Link
+             (value_opt (fun m -> m.link) Link.value)
+         ]
+        @ status_select_opt
+        @ [ div
+              [ label
+                  [ txt
+                      (Message.Field.Location
+                      |> Pool_common.Utils.field_to_string language
+                      |> CCString.capitalize_ascii)
+                  ]
+              ; div
+                  ~a:[ a_class [ "stack" ] ]
+                  [ is_virtual_checkbox
+                  ; label
+                      [ txt
+                          Message.Field.(
+                            Virtual |> show |> CCString.capitalize_ascii)
+                      ]
+                  ; div
+                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
+                      [ input_element
+                          language
+                          `Text
+                          Message.Field.Room
+                          (address_value
+                             Address.Mail.(fun { room; _ } -> Room.value room))
+                      ; input_element
+                          language
+                          `Text
+                          Message.Field.Building
+                          (address_value
                              Address.Mail.(
-                               m.building
-                               |> CCOption.map_or ~default:"" Building.value)))
-                    ]
-                ; input_element
-                    ~classnames:[ "toggled" ]
-                    language
-                    `Text
-                    Message.Field.Street
-                    (address_value (fun m ->
-                         Address.Mail.(m.street |> Street.value)))
-                ; div
-                    ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                    [ input_element
-                        language
-                        `Text
-                        Message.Field.Zip
-                        (address_value (fun m ->
-                             Address.Mail.(m.zip |> Zip.value)))
-                    ; input_element
-                        language
-                        `Text
-                        Message.Field.City
-                        (address_value (fun m ->
-                             Address.Mail.(m.city |> City.value)))
-                    ]
-                ]
-            ]
-        ; submit_element
-            language
-            Message.(
-              let field = Some Field.location in
-              match location with
-              | None -> Create field
-              | Some _ -> Update field)
-            ~submit_type:`Success
-            ()
-        ]
+                               fun { building; _ } ->
+                                 building
+                                 |> CCOption.map_or ~default:"" Building.value))
+                      ]
+                  ; input_element
+                      ~classnames:[ "toggled" ]
+                      language
+                      `Text
+                      Message.Field.Street
+                      Address.Mail.(
+                        address_value (fun { street; _ } -> Street.value street))
+                  ; div
+                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
+                      [ input_element
+                          language
+                          `Text
+                          Message.Field.Zip
+                          Address.Mail.(
+                            address_value (fun { zip; _ } -> Zip.value zip))
+                      ; input_element
+                          language
+                          `Text
+                          Message.Field.City
+                          Address.Mail.(
+                            address_value (fun { city; _ } -> City.value city))
+                      ]
+                  ]
+              ]
+          ; submit_element
+              language
+              Message.(
+                let field = Some Field.location in
+                match location with
+                | None -> Create field
+                | Some _ -> Update field)
+              ~submit_type:`Success
+              ()
+          ])
     ]
 ;;
+
+module FileList = struct
+  open Pool_location
+
+  let add_link location_id language =
+    let open Pool_common in
+    a
+      ~a:
+        [ location_id
+          |> Pool_location.Id.value
+          |> Format.asprintf "/admin/locations/%s/files/create"
+          |> Sihl.Web.externalize_path
+          |> a_href
+        ]
+      Message.
+        [ Add (Some Field.File) |> Utils.control_to_string language |> txt ]
+  ;;
+
+  let thead location_id language =
+    let open Pool_common in
+    let open Message in
+    let open CCList in
+    map
+      (fun field ->
+        [ field
+          |> Utils.field_to_string language
+          |> CCString.capitalize_ascii
+          |> txt
+        ])
+      [ Field.Label; Field.Start ]
+    @ [ add_link location_id language |> pure ]
+    |> map th
+    |> tr
+    |> pure
+    |> thead
+  ;;
+
+  let row
+      csrf
+      visual_language
+      location_id
+      (Mapping.{ id; label; language; file } : Mapping.file)
+    =
+    let delete_form =
+      Tyxml.Html.form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Format.asprintf
+                 "/admin/locations/%s/files/%s/delete"
+                 (Id.value location_id)
+                 (Mapping.Id.value id)
+              |> Sihl.Web.externalize_path)
+          ]
+        [ Component.csrf_element csrf ()
+        ; submit_element
+            language
+            Message.(Delete (Some Field.FileMapping))
+            ~submit_type:`Error
+            ()
+        ]
+    in
+    tr
+      [ td [ label |> Mapping.Label.show |> txt ]
+      ; td [ language |> Pool_common.Language.show |> txt ]
+      ; td
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          [ p
+              [ a
+                  ~a:
+                    [ Format.asprintf
+                        "/admin/locations/%s/files/%s"
+                        (Id.value location_id)
+                        Pool_common.(Id.value file.File.id)
+                      |> Sihl.Web.externalize_path
+                      |> a_href
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Message.More |> Utils.control_to_string visual_language)
+                  ]
+              ]
+          ; delete_form
+          ]
+      ]
+  ;;
+
+  let create
+      csrf
+      ?(classnames = [])
+      language
+      ({ id; files; _ } : Pool_location.t)
+    =
+    if CCList.is_empty files
+    then add_link id language
+    else (
+      let thead = thead id language in
+      let body = CCList.map (row csrf language id) files in
+      table ~a:[ a_class classnames ] ~thead body)
+  ;;
+end
 
 module SessionList = struct
   let session_title (session : Session.Public.t) =
@@ -265,18 +437,19 @@ module SessionList = struct
   let thead language =
     let open Pool_common in
     let open Message in
-    CCList.map
+    let open CCList in
+    map
       (fun field ->
-        field
-        |> Utils.field_to_string language
-        |> CCString.capitalize_ascii
-        |> txt
-        |> CCList.pure)
+        [ field
+          |> Utils.field_to_string language
+          |> CCString.capitalize_ascii
+          |> txt
+        ])
       [ Field.Session; Field.Experiment; Field.Start; Field.Duration ]
     @ [ [ txt "" ] ]
-    |> CCList.map th
+    |> map th
     |> tr
-    |> CCList.pure
+    |> pure
     |> thead
   ;;
 
@@ -326,13 +499,24 @@ module SessionList = struct
   ;;
 
   let create ?(classnames = []) language sessions =
-    let thead = thead language in
-    let body = CCList.map (row language) sessions in
-    table ~a:[ a_class classnames ] ~thead body
+    if CCList.is_empty sessions
+    then
+      div
+        [ Pool_common.(I18n.LocationNoSessions |> Utils.text_to_string language)
+          |> txt
+        ]
+    else (
+      let thead = thead language in
+      let body = CCList.map (row language) sessions in
+      table ~a:[ a_class classnames ] ~thead body)
   ;;
 end
 
-let detail (location : Pool_location.t) Pool_context.{ language; _ } sessions =
+let detail
+    (location : Pool_location.t)
+    Pool_context.{ csrf; language; _ }
+    sessions
+  =
   let open Pool_location in
   div
     ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
@@ -342,6 +526,7 @@ let detail (location : Pool_location.t) Pool_context.{ language; _ } sessions =
             (location.description
             |> CCOption.map_or ~default:"" Description.value)
         ]
+    ; FileList.create csrf language location
     ; SessionList.create language sessions
     ; p
         [ a

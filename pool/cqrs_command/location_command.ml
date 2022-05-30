@@ -3,18 +3,10 @@ module Message = Pool_common.Message
 open Pool_location
 
 module Create = struct
-  type file_base =
-    { label : Mapping.Label.t
-    ; language : Pool_common.Language.t
-    ; asset_id : Pool_common.Id.t
-    }
-  [@@deriving eq, show, sexp]
-
   type base =
     { name : Name.t
     ; description : Description.t option
     ; link : Link.t option
-    ; files : file_base list
     }
 
   type address = Address.t
@@ -24,28 +16,10 @@ module Create = struct
     ; description : Description.t option
     ; link : Link.t option
     ; address : address
-    ; files : file_base list
     }
 
-  let command_base name description link files =
-    { name; description; link; files }
-  ;;
-
+  let command_base name description link = { name; description; link }
   let schema_mail_address = Address.Mail.schema ()
-
-  let schema_files ()
-      : (Conformist.error_msg, file_base list) Conformist.Field.t
-    =
-    let open Sexplib in
-    Pool_common.Utils.schema_list_decoder
-      (fun m ->
-        m
-        |> CCList.map (fun k -> k |> Sexp.of_string |> file_base_of_sexp)
-        |> CCResult.pure)
-      (fun m ->
-        m |> CCList.map (fun k -> k |> sexp_of_file_base |> Sexp.to_string))
-      Pool_common.Message.Field.FileMapping
-  ;;
 
   let schema =
     Conformist.(
@@ -54,15 +28,11 @@ module Create = struct
           [ Name.schema ()
           ; Conformist.optional @@ Description.schema ()
           ; Conformist.optional @@ Link.schema ()
-          ; schema_files ()
           ]
         command_base)
   ;;
 
-  let handle
-      ?(id = Id.create ())
-      ({ name; description; link; address; files } : t)
-    =
+  let handle ?(id = Id.create ()) ({ name; description; link; address } : t) =
     let open CCResult in
     let location =
       { id
@@ -76,28 +46,11 @@ module Create = struct
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
     in
-    let files =
-      CCList.map
-        (fun { label; language; asset_id } ->
-          Mapping.Write.create
-            label
-            language
-            asset_id
-            (id |> Id.value |> Pool_common.Id.of_string))
-        files
-    in
-    Ok [ Created (location, files) |> Pool_event.pool_location ]
+    Ok [ Created location |> Pool_event.pool_location ]
   ;;
 
   let decode data =
     let open CCResult in
-    print_endline
-      (CCString.concat
-         ", "
-         (CCList.map
-            (fun (key, value) ->
-              CCString.concat ", " value |> Format.asprintf "%s: %s" key)
-            data));
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address =
@@ -116,7 +69,6 @@ module Create = struct
          ; description = base.description
          ; link = base.link
          ; address
-         ; files = base.files
          }
   ;;
 
@@ -161,25 +113,13 @@ module Update = struct
 
   let decode data =
     let open CCResult in
-    let to_bool m =
-      m
-      |> CCList.inter ~eq:CCString.equal [ "on"; "checked"; "true" ]
-      |> CCList.is_empty
-      |> not
-    in
-    print_endline
-      (CCString.concat
-         ", "
-         (CCList.map
-            (fun (key, value) ->
-              CCString.concat ", " value |> Format.asprintf "%s: %s" key)
-            data));
     map_err Message.to_conformist_error
     @@ let* base = Conformist.decode_and_validate schema data in
        let* address_new =
          match
-           CCList.assoc_opt ~eq:( = ) Message.Field.(Virtual |> show) data
-           |> CCOption.map_or ~default:false to_bool
+           CCList.assoc ~eq:( = ) Message.Field.(Virtual |> show) data
+           |> CCList.hd
+           |> CCString.equal "true"
          with
          | true -> Ok Address.Virtual
          | false ->
@@ -197,5 +137,75 @@ module Update = struct
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  ;;
+end
+
+module AddFile = struct
+  open Mapping
+
+  type t = file_base
+
+  let command label language asset_id = { label; language; asset_id }
+
+  let schema =
+    let fcn_ok = Utils.fcn_ok in
+    Conformist.(
+      make
+        Field.
+          [ Label.schema ()
+          ; Pool_common.Language.schema ()
+          ; Pool_common.(
+              Utils.schema_decoder
+                (fcn_ok Id.of_string)
+                Id.value
+                Message.Field.FileMapping)
+          ]
+        command)
+  ;;
+
+  let handle location ({ label; language; asset_id } : t) =
+    let open CCResult in
+    let file =
+      Mapping.Write.create
+        label
+        language
+        asset_id
+        (location.Pool_location.id
+        |> Pool_location.Id.value
+        |> Pool_common.Id.of_string)
+    in
+    Ok [ FileUploaded file |> Pool_event.pool_location ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Message.to_conformist_error
+  ;;
+
+  let can user _ =
+    Permission.can
+      user
+      ~any_of:[ Permission.Manage (Permission.Location, None) ]
+  ;;
+end
+
+module DeleteFile = struct
+  open Mapping
+
+  type t = Id.t
+
+  let command id = id
+  let schema = Conformist.(make Field.[ Id.schema () ] command)
+  let handle (id : t) = Ok [ FileDeleted id |> Pool_event.pool_location ]
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Message.to_conformist_error
+  ;;
+
+  let can user _ =
+    Permission.can
+      user
+      ~any_of:[ Permission.Manage (Permission.Location, None) ]
   ;;
 end
