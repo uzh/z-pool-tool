@@ -79,7 +79,7 @@ let load_file filename =
   Ok (filesize, mime, data)
 ;;
 
-let file_to_storage_add filename =
+let file_to_storage_add pool filename =
   let open Lwt_result.Syntax in
   let* filesize, mime, data = load_file filename |> Lwt_result.lift in
   let asset_id = Id.(create () |> value) in
@@ -92,7 +92,9 @@ let file_to_storage_add filename =
       }
   in
   let base64 = Base64.encode_exn data in
-  let%lwt _ = Service.Storage.upload_base64 file base64 in
+  let%lwt _ =
+    Service.Storage.upload_base64 ~ctx:(Pool_tenant.to_ctx pool) file base64
+  in
   let%lwt () = remove_imported_file filename in
   file.Sihl_storage.id |> Lwt.return_ok
 ;;
@@ -110,17 +112,17 @@ let multipart_form_data_to_urlencoded list =
   fields |> Hashtbl.to_seq |> CCList.of_seq
 ;;
 
-let upload_files allow_list req =
+let upload_files pool allow_list req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   save_files allow_list req
   >|> Lwt_list.map_s (fun (k, v) ->
-          let* id = file_to_storage_add v in
+          let* id = file_to_storage_add pool v in
           Lwt.return_ok (k, id))
   ||> CCResult.flatten_l
 ;;
 
-let update_files files req =
+let update_files pool files req =
   let%lwt filenames = save_files (CCList.map fst files) req in
   let update_asset key id =
     let filename = CCList.assoc_opt ~eq:CCString.equal key filenames in
@@ -128,7 +130,7 @@ let update_files files req =
     | Some filename ->
       (match load_file filename with
       | Ok (filesize, mime, data) ->
-        let ctx = Pool_tenant.to_ctx Database.root in
+        let ctx = Pool_tenant.to_ctx pool in
         let%lwt file = Service.Storage.find ~ctx id in
         let updated_file =
           let open Sihl_storage in
@@ -138,7 +140,7 @@ let update_files files req =
           |> set_mime_stored (File.Mime.to_string mime)
         in
         let base64 = Base64.encode_exn data in
-        let%lwt _ = Service.Storage.update_base64 updated_file base64 in
+        let%lwt _ = Service.Storage.update_base64 ~ctx updated_file base64 in
         let%lwt () = remove_imported_file filename in
         Lwt.return_some (Ok id)
       | Error err -> Lwt.return_some (Error err))

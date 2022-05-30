@@ -22,6 +22,7 @@ let update req command success_message =
       in
       let* _ =
         File.update_files
+          Database.root
           [ ( Styles |> show
             , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
             )
@@ -32,6 +33,7 @@ let update req command success_message =
       in
       let* logo_files =
         File.upload_files
+          Database.root
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in

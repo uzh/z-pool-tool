@@ -31,7 +31,7 @@ let create req =
         [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
         |> CCList.map show
       in
-      let* files = File.upload_files file_fields req in
+      let* files = File.upload_files Database.root file_fields req in
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
