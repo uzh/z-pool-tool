@@ -79,3 +79,37 @@ let send_reminder pool session =
   >|= Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
   |> Lwt_result.lift
 ;;
+
+let test_reminder =
+  Sihl.Command.make
+    ~name:"reminder.test"
+    ~description:"Test reminder"
+    (fun args ->
+      match args with
+      | [ session_id ] ->
+        let open Lwt_result.Syntax in
+        let%lwt result =
+          let session_id = Pool_common.Id.of_string session_id in
+          let%lwt selections = Pool_tenant.Selection.find_all () in
+          let* pool =
+            CCList.assoc_opt
+              ~eq:(fun url label -> CCString.prefix ~pre:url label)
+              "localhost:3017"
+              (selections
+              |> CCList.map (fun sel ->
+                     Pool_tenant.Selection.(url sel, label sel)))
+            |> CCOption.to_result
+                 Pool_common.Message.(NotFound Field.TenantPool)
+            |> CCResult.map_err
+                 (CCFun.const Pool_common.Message.SessionTenantNotFound)
+            |> Lwt_result.lift
+          in
+          Logs.info (fun m -> m "%s" (pool |> Pool_database.Label.value));
+          let* session = Session.find pool session_id in
+          send_reminder pool session
+        in
+        (match result with
+        | Ok _ -> Lwt.return_some ()
+        | Error _ -> failwith "Something went wrong")
+      | _ -> failwith "Arguments do not match")
+;;
