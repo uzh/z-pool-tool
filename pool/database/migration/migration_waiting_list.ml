@@ -29,7 +29,7 @@ let add_comment_to_waiting_list =
     ~label:"add comment to waiting list"
     {sql|
       ALTER TABLE pool_waiting_list
-        ADD COLUMN comment varchar(512) NULL AFTER experiment_id
+        ADD COLUMN comment text NULL AFTER experiment_id
     |sql}
 ;;
 
