@@ -7,9 +7,13 @@ module Sql = struct
         uuid,
         title,
         description,
-        filter
+        filter,
+        waiting_list_disabled,
+        direct_registration_disabled
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
         ?,
         ?,
         ?
@@ -40,6 +44,8 @@ module Sql = struct
           title,
           description,
           filter,
+          waiting_list_disabled,
+          direct_registration_disabled,
           created_at,
           updated_at
         FROM pool_experiments
@@ -82,7 +88,9 @@ module Sql = struct
       SET
         title = $2,
         description = $3,
-        filter = $4
+        filter = $4,
+        waiting_list_disabled = $5,
+        direct_registration_disabled = $6
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

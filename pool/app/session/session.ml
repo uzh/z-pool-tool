@@ -9,10 +9,6 @@ let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 
-module Repo = struct
-  module Public = struct
-    let t = Repo_entity.Public.t
-    let to_entity = Repo_entity.Public.to_entity
-    let of_entity = Repo_entity.Public.of_entity
-  end
-end
+(* module Repo = struct module Public = struct let t = Repo_entity.Public.t let
+   to_entity = Repo_entity.Public.to_entity let of_entity =
+   Repo_entity.Public.of_entity end end *)

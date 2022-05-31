@@ -24,12 +24,23 @@ let handle req action =
     in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let events =
-      Waiting_list.{ contact; experiment }
-      |> fun m ->
-      (match action with
-      | `Create -> Cqrs_command.Waiting_list_command.Create.handle m
-      | `Destroy -> Cqrs_command.Waiting_list_command.Destroy.handle m)
-      |> Lwt.return
+      match action with
+      | `Create ->
+        Waiting_list.{ contact; experiment }
+        |> Cqrs_command.Waiting_list_command.Create.handle
+        |> Lwt_result.lift
+      | `Destroy ->
+        let* waiting_list =
+          Waiting_list.find_by_contact_and_experiment
+            tenant_db
+            contact
+            experiment
+        in
+        let open CCResult.Infix in
+        waiting_list
+        |> CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+        >>= Cqrs_command.Waiting_list_command.Destroy.handle
+        |> Lwt_result.lift
     in
     let handle events =
       let%lwt (_ : unit list) =

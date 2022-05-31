@@ -4,8 +4,6 @@ module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout `Admin req
 
-(* Use this to extract ids from requests, the params are not named :id, because
-   two ids appear in a route *)
 let id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;

@@ -56,14 +56,14 @@ let show req =
           assignment.Assignment.Public.id
         |> Lwt_result.map (fun session -> Some session)
     in
-    let%lwt user_is_on_wait_list =
+    let%lwt user_is_on_waiting_list =
       Waiting_list.user_is_enlisted tenant_db contact experiment
     in
     Page.Contact.Experiment.show
       experiment
       sessions
       session_user_is_assigned
-      user_is_on_wait_list
+      user_is_on_waiting_list
       context
     |> Lwt.return_ok
     >>= create_layout req context

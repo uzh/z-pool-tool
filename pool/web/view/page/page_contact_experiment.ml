@@ -60,7 +60,7 @@ let show
     | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
     | false -> Pool_common.Message.(AddToWaitingList), "success"
   in
-  let not_enrolled_html () =
+  let[@warning "-26"] session_list sessions =
     div
       ~a:[ a_class [ "stack-lg" ] ]
       [ h2
@@ -69,24 +69,20 @@ let show
               Pool_common.(Utils.field_to_string language Message.Field.Session)
           ]
       ; div [ Session.public_overview sessions experiment language ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string
-                      language
-                      I18n.ExperimentWaitingListTitle)
-              ]
-          ; form
-              ~a:[ a_method `Post; a_action form_action ]
-              [ submit_element
-                  language
-                  form_control
-                  ~classnames:[ submit_class ]
-                  ()
-              ]
+      ]
+  in
+  let waiting_list_form () =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+          ]
+      ; form
+          ~a:[ a_method `Post; a_action form_action ]
+          [ submit_element language form_control ~classnames:[ submit_class ] ()
           ]
       ]
   in
@@ -103,7 +99,18 @@ let show
   let html =
     match session_user_is_assigned with
     | Some session -> enrolled_html session
-    | None -> not_enrolled_html ()
+    | None ->
+      (match
+         Experiment.DirectRegistrationDisabled.value
+           experiment.direct_registration_disabled
+       with
+      | false ->
+        let session_html = session_list sessions in
+        (match experiment.waiting_list_disabled with
+        | false -> [ session_html; waiting_list_form () ]
+        | true -> [ session_html ])
+        |> div ~a:[ a_class [ "stack-lg" ] ]
+      | true -> div [ waiting_list_form () ])
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]

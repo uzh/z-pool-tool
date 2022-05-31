@@ -177,7 +177,15 @@ module Admin = struct
         ]
       in
       let waiting_list =
-        [ get "" Handler.Admin.Experiments.WaitingList.index ]
+        let specific =
+          [ post "" Handler.Admin.Experiments.WaitingList.update
+          ; get "" Handler.Admin.Experiments.WaitingList.detail
+          ; post "/assign" Handler.Admin.Experiments.WaitingList.assign_contact
+          ]
+        in
+        [ get "" Handler.Admin.Experiments.WaitingList.index
+        ; choose ~scope:(WaitingList |> url_key) specific
+        ]
       in
       [ get "" Handler.Admin.Experiments.index
       ; get "/new" Handler.Admin.Experiments.new_form

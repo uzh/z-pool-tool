@@ -10,6 +10,7 @@ type t =
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
   ; overbook : Entity.ParticipantAmount.t
+  ; assignment_count : Entity.AssignmentCount.t
   ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -25,6 +26,7 @@ let of_entity (m : Entity.t) =
   ; max_participants = m.Entity.max_participants
   ; min_participants = m.Entity.min_participants
   ; overbook = m.Entity.overbook
+  ; assignment_count = m.Entity.assignment_count
   ; canceled_at = m.Entity.canceled_at
   ; created_at = m.Entity.created_at
   ; updated_at = m.Entity.updated_at
@@ -41,6 +43,7 @@ let to_entity (m : t) location : Entity.t =
     ; max_participants = m.max_participants
     ; min_participants = m.min_participants
     ; overbook = m.overbook
+    ; assignment_count = m.assignment_count
     ; canceled_at = m.canceled_at
     ; created_at = m.created_at
     ; updated_at = m.updated_at
@@ -58,8 +61,10 @@ let t =
             , ( m.location_id
               , ( m.max_participants
                 , ( m.min_participants
-                  , (m.overbook, (m.canceled_at, (m.created_at, m.updated_at)))
-                  ) ) ) ) ) ) )
+                  , ( m.overbook
+                    , ( m.assignment_count
+                      , (m.canceled_at, (m.created_at, m.updated_at)) ) ) ) ) )
+            ) ) ) )
   in
   let decode
       ( id
@@ -69,8 +74,9 @@ let t =
             , ( location_id
               , ( max_participants
                 , ( min_participants
-                  , (overbook, (canceled_at, (created_at, updated_at))) ) ) ) )
-          ) ) )
+                  , ( overbook
+                    , (assignment_count, (canceled_at, (created_at, updated_at)))
+                    ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -81,6 +87,7 @@ let t =
       ; max_participants
       ; min_participants
       ; overbook
+      ; assignment_count
       ; canceled_at
       ; created_at
       ; updated_at
@@ -104,12 +111,55 @@ let t =
                         int
                         (tup2
                            int
-                           (tup2 int (tup2 (option ptime) (tup2 ptime ptime)))))))))))
+                           (tup2
+                              int
+                              (tup2
+                                 int
+                                 (tup2 (option ptime) (tup2 ptime ptime))))))))))))
 ;;
 
 module Write = struct
+  type t =
+    { id : Pool_common.Id.t
+    ; start : Entity.Start.t
+    ; duration : Ptime.Span.t
+    ; description : Entity.Description.t option
+    ; location_id : Pool_location.Id.t
+    ; max_participants : Entity.ParticipantAmount.t
+    ; min_participants : Entity.ParticipantAmount.t
+    ; overbook : Entity.ParticipantAmount.t
+    ; canceled_at : Ptime.t option
+    }
+
+  let entity_to_write
+      (Entity.
+         { id
+         ; start
+         ; duration
+         ; description
+         ; location
+         ; max_participants
+         ; min_participants
+         ; overbook
+         ; canceled_at
+         ; _
+         } :
+        Entity.t)
+    =
+    { id
+    ; start
+    ; duration
+    ; description
+    ; location_id = location.Pool_location.id
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; canceled_at
+    }
+  ;;
+
   let t =
-    let encode m =
+    let encode (m : t) =
       Ok
         ( m.id
         , ( m.start
@@ -120,7 +170,11 @@ module Write = struct
                   , (m.min_participants, (m.overbook, m.canceled_at)) ) ) ) ) )
         )
     in
-    let decode _ = failwith "Write only model" in
+    let decode _ =
+      failwith
+        Pool_common.(
+          Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+    in
     Caqti_type.(
       custom
         ~encode
@@ -146,6 +200,10 @@ module Public = struct
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option
     ; location_id : Pool_location.Id.t
+    ; max_participants : Entity.ParticipantAmount.t
+    ; min_participants : Entity.ParticipantAmount.t
+    ; overbook : Entity.ParticipantAmount.t
+    ; assignment_count : Entity.AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
   [@@deriving eq, show]
@@ -156,6 +214,10 @@ module Public = struct
     ; duration = m.Entity.Public.duration
     ; description = m.Entity.Public.description
     ; location_id = m.Entity.Public.location.Pool_location.id
+    ; max_participants = m.Entity.Public.max_participants
+    ; min_participants = m.Entity.Public.min_participants
+    ; overbook = m.Entity.Public.overbook
+    ; assignment_count = m.Entity.Public.assignment_count
     ; canceled_at = m.Entity.Public.canceled_at
     }
   ;;
@@ -167,6 +229,10 @@ module Public = struct
       ; duration = m.duration
       ; description = m.description
       ; location
+      ; max_participants = m.max_participants
+      ; min_participants = m.min_participants
+      ; overbook = m.overbook
+      ; assignment_count = m.assignment_count
       ; canceled_at = m.canceled_at
       }
   ;;
@@ -176,12 +242,36 @@ module Public = struct
       Ok
         ( m.id
         , ( m.start
-          , (m.duration, (m.description, (m.location_id, m.canceled_at))) ) )
+          , ( m.duration
+            , ( m.description
+              , ( m.location_id
+                , ( m.max_participants
+                  , ( m.min_participants
+                    , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) ) )
+            ) ) )
     in
     let decode
-        (id, (start, (duration, (description, (location_id, canceled_at)))))
+        ( id
+        , ( start
+          , ( duration
+            , ( description
+              , ( location_id
+                , ( max_participants
+                  , ( min_participants
+                    , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) ) )
       =
-      Ok { id; start; duration; description; location_id; canceled_at }
+      Ok
+        { id
+        ; start
+        ; duration
+        ; description
+        ; location_id
+        ; max_participants
+        ; min_participants
+        ; overbook
+        ; assignment_count
+        ; canceled_at
+        }
     in
     Caqti_type.(
       custom
@@ -195,6 +285,10 @@ module Public = struct
                  ptime_span
                  (tup2
                     (option string)
-                    (tup2 Pool_location.Repo.Id.t (option ptime)))))))
+                    (tup2
+                       Pool_location.Repo.Id.t
+                       (tup2
+                          int
+                          (tup2 int (tup2 int (tup2 int (option ptime)))))))))))
   ;;
 end

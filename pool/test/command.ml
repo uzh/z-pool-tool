@@ -92,6 +92,18 @@ let () =
             "set attendance on assignment"
             `Quick
             Assignment_test.set_attendance
+        ; test_case
+            "assign to fully booked session"
+            `Quick
+            Assignment_test.assign_to_fully_booked_session
+        ; test_case
+            "assign to session contact is already assigned"
+            `Quick
+            Assignment_test.assign_to_session_contact_is_already_assigned
+        ; test_case
+            "assign user from waiting list"
+            `Quick
+            Assignment_test.assign_contact_from_waiting_list
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create
@@ -108,10 +120,19 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
+        ; test_case
+            "Create experiment with mutually exclusive options"
+            `Quick
+            Experiment_test.create_with_mutually_exclusive_options
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create
         ; test_case "sign off" `Quick Waiting_list_test.delete
+        ; test_case
+            "create with waiting list disabled"
+            `Quick
+            Waiting_list_test.create_with_waiting_list_disabled
+        ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
     ; "location", [ test_case "create location" `Quick Location_test.create ]
     ]

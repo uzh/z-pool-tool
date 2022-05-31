@@ -5,9 +5,11 @@ let field_to_string =
   function
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
+  | AssignmentCount -> "No. Assignments"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
+  | Comment -> "Kommentar"
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
@@ -20,6 +22,7 @@ let field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | Description -> "Beschreibung"
+  | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
   | Duration -> "Dauer"
   | Email -> "Email Adresse"
@@ -103,6 +106,7 @@ let field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
+  | WaitingListDisabled -> "Warteliste deaktivieren"
   | Zip -> "PLZ"
 ;;
 
@@ -193,6 +197,7 @@ let rec error_to_string = function
   | NotANumber field -> Format.asprintf "'%s' ist keine Nummer." field
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
+  | NotEligible -> "Sie sind nicht befugt, diese Aktuion durchzuführen."
   | NotFound field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
   | NotFoundList (field, items) ->
@@ -219,6 +224,7 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
@@ -243,6 +249,9 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
+  | WaitingListFlagsMutuallyExclusive ->
+    "Die direkte Registrierung kann nur mit aktivierter Warteliste deaktiviert \
+     werden."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
@@ -257,6 +266,7 @@ let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
+  | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field

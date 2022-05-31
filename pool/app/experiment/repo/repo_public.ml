@@ -19,7 +19,9 @@ let select_from_experiments_sql where_fragment =
             SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
-          pool_experiments.description
+          pool_experiments.description,
+          pool_experiments.waiting_list_disabled,
+          pool_experiments.direct_registration_disabled
         FROM pool_experiments
       |sql}
   in

@@ -28,11 +28,41 @@ module Description : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module WaitingListDisabled : sig
+  type t = bool
+
+  val equal : t -> t -> t
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : bool -> t
+  val value : t -> bool
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
+module DirectRegistrationDisabled : sig
+  type t
+
+  val equal : t -> t -> t
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : bool -> t
+  val value : t -> bool
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
   ; filter : string
+  ; waiting_list_disabled : WaitingListDisabled.t
+  ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -40,11 +70,20 @@ type t =
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
-val create : ?id:Id.t -> Title.t -> Description.t -> t
+
+val create
+  :  ?id:Id.t
+  -> Title.t
+  -> Description.t
+  -> WaitingListDisabled.t
+  -> DirectRegistrationDisabled.t
+  -> t
 
 type create =
   { title : Title.t
   ; description : Description.t
+  ; waiting_list_disabled : WaitingListDisabled.t
+  ; direct_registration_disabled : DirectRegistrationDisabled.t
   }
 
 val equal_create : create -> create -> bool
@@ -55,6 +94,8 @@ module Public : sig
   type t =
     { id : Id.t
     ; description : Description.t
+    ; waiting_list_disabled : WaitingListDisabled.t
+    ; direct_registration_disabled : DirectRegistrationDisabled.t
     }
 
   val equal : t -> t -> bool
@@ -102,9 +143,19 @@ val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val description_value : t -> string
+val waiting_list_disabled_value : t -> bool
+val direct_registration_disabled_value : t -> bool
 
 module Repo : sig
   module Description : sig
     val t : Description.t Caqti_type.t
+  end
+
+  module WaitingListDisabled : sig
+    val t : bool Caqti_type.t
+  end
+
+  module DirectRegistrationDisabled : sig
+    val t : bool Caqti_type.t
   end
 end

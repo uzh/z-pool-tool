@@ -5,13 +5,15 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AssetId -> "asset identifier"
+  | AssignmentCount -> "no. assignments"
   | Building -> "building"
   | CanceledAt -> "canceled at"
   | City -> "city"
+  | Comment -> "comment"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
-  | CreatedAt -> "Created at"
+  | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | Database -> "database"
   | DatabaseLabel -> "database label"
@@ -20,6 +22,7 @@ let field_to_string =
   | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | Description -> "description"
+  | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
   | Duration -> "duration"
   | Email -> "email address"
@@ -40,13 +43,13 @@ let field_to_string =
   | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
-  | Invitation -> "Invitation"
-  | Invitations -> "Invitations"
+  | Invitation -> "invitation"
+  | Invitations -> "invitations"
   | Key -> "key"
   | Label -> "label"
   | Language -> "language"
-  | LanguageDe -> "German"
-  | LanguageEn -> "English"
+  | LanguageDe -> "german"
+  | LanguageEn -> "english"
   | Lastname -> "lastname"
   | Link -> "link"
   | Location -> "location"
@@ -104,6 +107,7 @@ let field_to_string =
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
+  | WaitingListDisabled -> "waiting list disabled"
   | Zip -> "zip code"
 ;;
 
@@ -184,6 +188,7 @@ let rec error_to_string = function
     Format.asprintf "%s: '%s' is not a valid date or time." err time
   | NotANumber field -> Format.asprintf "'%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
+  | NotEligible -> "Your are not eligible to perform this action."
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotFoundList (field, items) ->
     field_message
@@ -202,6 +207,7 @@ let rec error_to_string = function
   | PoolContextNotFound -> "Context could not be found."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
@@ -221,6 +227,8 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | WaitingListFlagsMutuallyExclusive ->
+    "Direct registration can only be disabled when waiting list is enabled."
   | WriteOnlyModel -> "Write only model!"
 ;;
 
@@ -235,6 +243,7 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
+  | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field

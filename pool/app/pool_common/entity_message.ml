@@ -6,9 +6,12 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
+    | AssignmentCount [@name "assignment_count"]
+        [@printer go "assignment_count"]
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
+    | Comment [@name "comment"] [@printer go "comment"]
     | Contact [@name "contact"] [@printer go "contact"]
     | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
     | Contacts [@name "contacts"] [@printer go "contacts"]
@@ -23,10 +26,13 @@ module Field = struct
     | DefaultLanguage [@name "default_language"]
         [@printer go "default_language"]
     | Description [@name "description"] [@printer go "description"]
+    | DirectRegistrationDisabled [@name "direct_registration_disabled"]
+        [@printer go "direct_registration_disabled"]
     | Disabled [@name "disabled"] [@printer go "disabled"]
     | Duration [@name "duration"] [@printer go "duration"]
     | Email [@name "email"] [@printer go "email"]
     | EmailAddress [@name "email_address"] [@printer go "email_address"]
+        [@printer go "default_language"]
     | EmailAddressUnverified [@name "email_address_unverified"]
         [@printer go "email_address_unverified"]
     | EmailAddressVerified [@name "email_address_verified"]
@@ -119,7 +125,10 @@ module Field = struct
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
     | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
+    | WaitingListDisabled [@name "waiting_list_disabled"]
+        [@printer go "waiting_list_disabled"]
     | Zip [@name "zip"] [@printer go "zip"]
+        [@printer field_name "terms_and_conditions"]
   [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
   let read m =
@@ -159,6 +168,7 @@ type error =
   | NoTenantsRegistered
   | NotFound of Field.t
   | NotFoundList of Field.t * string list
+  | NotEligible
   | NotHandled of string
   | NoValue
   | PasswordConfirmationDoesNotMatch
@@ -168,6 +178,7 @@ type error =
   | PoolContextNotFound
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
@@ -182,6 +193,7 @@ type error =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | Undefined of Field.t
+  | WaitingListFlagsMutuallyExclusive
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 
@@ -229,6 +241,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Assign of Field.t option
   | Back
   | Cancel of Field.t option
   | Choose of Field.t option

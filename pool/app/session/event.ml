@@ -30,11 +30,9 @@ let handle_event pool = function
         session.min_participants
         session.overbook
     in
-    Repo.insert pool (Pool_common.Id.value experiment_id, sess |> Repo.of_entity)
+    Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
-    { session with canceled_at = Some (Ptime_clock.now ()) }
-    |> Repo.of_entity
-    |> Repo.update pool
+    { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool
   | Deleted session -> Repo.delete pool session.id
   | Updated
       ( { start
@@ -55,6 +53,5 @@ let handle_event pool = function
     ; min_participants
     ; overbook
     }
-    |> Repo.of_entity
     |> Repo.update pool
 ;;

@@ -24,9 +24,19 @@ let rename_subject_to_contact =
     |sql}
 ;;
 
+let add_comment_to_waiting_list =
+  Sihl.Database.Migration.create_step
+    ~label:"add comment to waiting list"
+    {sql|
+      ALTER TABLE pool_waiting_list
+        ADD COLUMN comment text NULL AFTER experiment_id
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "waiting_list"
     |> add_step create_waiting_list_table
-    |> add_step rename_subject_to_contact)
+    |> add_step rename_subject_to_contact
+    |> add_step add_comment_to_waiting_list)
 ;;

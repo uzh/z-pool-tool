@@ -4,6 +4,9 @@ let waiting_list pool =
     Experiment.Public.
       { id = experiment.Experiment.id
       ; description = experiment.Experiment.description
+      ; waiting_list_disabled = experiment.Experiment.waiting_list_disabled
+      ; direct_registration_disabled =
+          experiment.Experiment.direct_registration_disabled
       }
   in
   let%lwt events =
