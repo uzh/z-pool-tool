@@ -132,9 +132,6 @@ module Admin = struct
       let files =
         [ get "/create" Handler.Admin.Location.new_file
         ; post "" Handler.Admin.Location.add_file
-        ; choose
-            ~scope:(add_key FileMapping)
-            [ post "/delete" Handler.Admin.Location.delete ]
         ; choose ~scope:(add_key File) [ get "" Handler.Admin.Location.asset ]
         ]
       in
@@ -143,6 +140,9 @@ module Admin = struct
         ; get "/edit" Handler.Admin.Location.edit
         ; post "" Handler.Admin.Location.update
         ; choose ~scope:"/files" files
+        ; choose
+            ~scope:(add_key ~prefix:"mapping" FileMapping)
+            [ post "/delete" Handler.Admin.Location.delete ]
         ]
       in
       [ get "" Handler.Admin.Location.index

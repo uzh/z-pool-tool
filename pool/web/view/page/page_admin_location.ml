@@ -373,7 +373,7 @@ module FileList = struct
           [ a_method `Post
           ; a_action
               (Format.asprintf
-                 "/admin/locations/%s/files/%s/delete"
+                 "/admin/locations/%s/mapping/%s/delete"
                  (Id.value location_id)
                  (Mapping.Id.value id)
               |> Sihl.Web.externalize_path)
