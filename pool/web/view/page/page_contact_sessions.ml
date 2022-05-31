@@ -13,18 +13,28 @@ let public_overview sessions experiment language =
                   |> Pool_common.Utils.Time.formatted_date_time)
             ]
         ; td
-            [ a
-                ~a:
-                  [ a_href
-                      (Format.asprintf
-                         "/experiments/%s/sessions/%s"
-                         (experiment.id |> Pool_common.Id.value)
-                         (session.Session.Public.id |> Pool_common.Id.value))
+            [ (match Session.Public.is_fully_booked session with
+              | false ->
+                a
+                  ~a:
+                    [ a_href
+                        (Format.asprintf
+                           "/experiments/%s/sessions/%s"
+                           (experiment.id |> Pool_common.Id.value)
+                           (session.Session.Public.id |> Pool_common.Id.value))
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Utils.control_to_string language Message.signup)
                   ]
-                [ txt
-                    Pool_common.(
-                      Utils.control_to_string language Message.signup)
-                ]
+              | true ->
+                span
+                  [ txt
+                      Pool_common.(
+                        Utils.error_to_string
+                          language
+                          Message.SessionFullyBooked)
+                  ])
             ]
         ])
     sessions

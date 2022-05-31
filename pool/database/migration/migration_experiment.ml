@@ -16,7 +16,29 @@ let create_pool_experiments_table =
     |sql}
 ;;
 
+let add_waiting_list_flags_to_experiment =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subject id to contact id"
+    {sql|
+      ALTER TABLE pool_experiments
+        ADD COLUMN direct_registration_disabled boolean NOT NULL DEFAULT 0 AFTER filter,
+        ADD COLUMN waiting_list_disabled boolean NOT NULL DEFAULT 0 AFTER filter
+    |sql}
+;;
+
+let change_description_column_type =
+  Sihl.Database.Migration.create_step
+    ~label:"change description column type"
+    {sql|
+      ALTER TABLE pool_experiments
+        MODIFY description text
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "pool_experiments" |> add_step create_pool_experiments_table)
+    empty "pool_experiments"
+    |> add_step create_pool_experiments_table
+    |> add_step add_waiting_list_flags_to_experiment
+    |> add_step change_description_column_type)
 ;;

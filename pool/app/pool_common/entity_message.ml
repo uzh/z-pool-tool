@@ -6,7 +6,10 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer field_name "admin"]
     | AssetId [@name "asset_id"] [@printer field_name "asset_id"]
+    | AssignmentCount [@name "assignment_count"]
+        [@printer field_name "assignment_count"]
     | CanceledAt [@name "canceled_at"] [@printer field_name "canceled_at"]
+    | Comment [@name "comment"] [@printer field_name "comment"]
     | Contact [@name "contact"] [@printer field_name "contact"]
     | ContactEmail [@name "contact_email"] [@printer field_name "contact_email"]
     | Contacts [@name "contacts"] [@printer field_name "contacts"]
@@ -22,6 +25,8 @@ module Field = struct
     | DefaultLanguage [@name "default_language"]
         [@printer field_name "default_language"]
     | Description [@name "description"] [@printer field_name "description"]
+    | DirectRegistrationDisabled [@name "direct_registration_disabled"]
+        [@printer field_name "direct_registration_disabled"]
     | Disabled [@name "disabled"] [@printer field_name "disabled"]
     | Duration [@name "duration"] [@printer field_name "duration"]
     | Email [@name "email"] [@printer field_name "email"]
@@ -58,6 +63,7 @@ module Field = struct
         [@printer field_name "max_participants"]
     | MinParticipants [@name "min_participants"]
         [@printer field_name "min_participants"]
+    | Name [@name "name"] [@printer field_name "name"]
     | NewPassword [@name "new_password"] [@printer field_name "new_password"]
     | Operator [@name "operator"] [@printer field_name "operator"]
     | Overbook [@name "overbook"] [@printer field_name "overbook"]
@@ -115,6 +121,8 @@ module Field = struct
     | User [@name "user"] [@printer field_name "user"]
     | Version [@name "version"] [@printer field_name "version"]
     | WaitingList [@name "waiting_list"] [@printer field_name "waiting_list"]
+    | WaitingListDisabled [@name "waiting_list_disabled"]
+        [@printer field_name "waiting_list_disabled"]
   [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
   let read m =
@@ -154,6 +162,7 @@ type error =
   | NoTenantsRegistered
   | NotFound of Field.t
   | NotFoundList of Field.t * string list
+  | NotEligible
   | NotHandled of string
   | NoValue
   | PasswordConfirmationDoesNotMatch
@@ -163,6 +172,7 @@ type error =
   | PoolContextNotFound
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
   | Smaller of (Field.t * Field.t)
@@ -177,6 +187,7 @@ type error =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | Undefined of Field.t
+  | WaitingListFlagsMutuallyExclusive
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 
@@ -224,6 +235,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Assign of Field.t option
   | Back
   | Cancel of Field.t option
   | Choose of Field.t option

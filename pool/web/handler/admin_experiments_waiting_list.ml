@@ -18,10 +18,138 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
+    let* experiment = Experiment.find tenant_db id in
     let* waiting_list = Waiting_list.find_by_experiment tenant_db id in
-    Page.Admin.Experiments.waiting_list waiting_list context
+    Page.Admin.Experiments.waiting_list waiting_list experiment context
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let detail req =
+  let open Utils.Lwt_result.Infix in
+  let id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.WaitingList
+  in
+  let experiment_id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+  in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/waiting-list"
+      (Pool_common.Id.value experiment_id)
+  in
+  let result context =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, error_path)
+    @@
+    let tenant_db = context.Pool_context.tenant_db in
+    let* waiting_list = Waiting_list.find tenant_db id in
+    let%lwt sessions =
+      Session.find_all_for_experiment tenant_db experiment_id
+    in
+    Page.Admin.WaitingList.detail waiting_list sessions experiment_id context
+    |> create_layout req context
+    >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let update req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+  in
+  let waiting_list_id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.WaitingList
+  in
+  let redirect_path =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/waiting-list/%s"
+      (value experiment_id)
+      (value waiting_list_id)
+  in
+  let result context =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@
+    let tenant_db = context.Pool_context.tenant_db in
+    let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let events =
+      let open Cqrs_command.Waiting_list_command in
+      let open CCResult in
+      urlencoded
+      |> Update.decode
+      >>= Update.handle waiting_list
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Updated Field.WaitingList) ]
+        ]
+    in
+    events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let assign_contact req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id, waiting_list_id =
+    let open Pool_common.Message.Field in
+    HttpUtils.(
+      ( get_field_router_param req Experiment
+      , get_field_router_param req WaitingList ))
+  in
+  let redirect_path =
+    Format.asprintf
+      "/admin/experiments/%s/waiting-list"
+      (experiment_id |> Pool_common.Id.value)
+  in
+  let result context =
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@
+    let open Lwt_result.Syntax in
+    let tenant_db = context.Pool_context.tenant_db in
+    let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
+    let* session =
+      let open Pool_common.Message in
+      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      urlencoded
+      |> CCList.assoc_opt ~eq:CCString.equal Field.(show Session)
+      |> CCFun.flip CCOption.bind CCList.head_opt
+      |> CCOption.to_result NoValue
+      |> Lwt_result.lift
+      >>= fun id -> id |> Pool_common.Id.of_string |> Session.find tenant_db
+    in
+    let%lwt already_enrolled =
+      let open Lwt.Infix in
+      Assignment.find_by_experiment_and_contact_opt
+        tenant_db
+        experiment_id
+        waiting_list.Waiting_list.contact
+      >|= CCOption.is_some
+    in
+    let events =
+      Cqrs_command.Assignment_command.CreateFromWaitingList.(
+        handle { session; waiting_list; already_enrolled })
+      |> Lwt_result.lift
+    in
+    let handle events =
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ HttpUtils.Message.set
+            ~success:[ Pool_common.Message.(AssignmentCreated) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

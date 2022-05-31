@@ -3,7 +3,10 @@ open Tyxml.Html
 
 let dashboard Pool_context.{ language; _ } =
   div
-    [ h1 [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.text_to_string language I18n.DashboardTitle) ]
     ]
 ;;
 

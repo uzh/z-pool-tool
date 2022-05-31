@@ -6,6 +6,7 @@ let to_string = function
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
   | ExperimentListTitle -> "Experimente"
+  | ExperimentEditTitle -> "Experiment bearbeiten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentWaitingListTitle -> "Warteliste"
   | ExperimentContactEnrolledNote ->
@@ -31,6 +32,7 @@ let to_string = function
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | UserProfileTitle -> "Benutzerprofil"
+  | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
 let nav_link_to_string = function
@@ -38,6 +40,7 @@ let nav_link_to_string = function
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
   | Invitations -> "Einladungen"
+  | Overview -> "Übersicht"
   | Profile -> "Profil"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"

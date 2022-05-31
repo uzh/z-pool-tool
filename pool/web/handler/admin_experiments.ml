@@ -5,6 +5,11 @@ module WaitingList = Admin_experiments_waiting_list
 
 let create_layout req = General.create_tenant_layout `Admin req
 
+let experiment_boolean_fields =
+  Pool_common.Message.Field.
+    [ WaitingListDisabled |> show; DirectRegistrationDisabled |> show ]
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
@@ -23,7 +28,7 @@ let new_form req =
   let error_path = "/admin/experiments" in
   let result context =
     Lwt_result.map_err (fun err -> err, error_path)
-    @@ (Page.Admin.Experiments.form context
+    @@ (Page.Admin.Experiments.create context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html)
   in
@@ -37,7 +42,10 @@ let create req =
     @@
     let events =
       let open CCResult.Infix in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let%lwt urlencoded =
+        Sihl.Web.Request.to_urlencoded req
+        ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
+      in
       urlencoded
       |> Cqrs_command.Experiment_command.Create.decode
       >>= Cqrs_command.Experiment_command.Create.handle
@@ -74,7 +82,7 @@ let detail edit req =
       let* session_count = Experiment.session_count tenant_db id in
       Page.Admin.Experiments.detail experiment session_count context
       |> Lwt.return_ok
-    | true -> Page.Admin.Experiments.form ~experiment context |> Lwt.return_ok)
+    | true -> Page.Admin.Experiments.edit experiment context |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
   in
@@ -99,7 +107,10 @@ let update req =
     let* experiment = Experiment.find tenant_db id in
     let events =
       let open CCResult.Infix in
-      let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+      let%lwt urlencoded =
+        Sihl.Web.Request.to_urlencoded req
+        ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
+      in
       urlencoded
       |> Cqrs_command.Experiment_command.Update.decode
       >>= Cqrs_command.Experiment_command.Update.handle experiment
