@@ -160,10 +160,7 @@ let detail edit req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
-    let id =
-      HttpUtils.get_field_router_param req Field.Location
-      |> Pool_location.Id.of_string
-    in
+    let id = id req Field.Location Pool_location.Id.of_string in
     let* location = Pool_location.find tenant_db id in
     let* sessions = Session.find_all_public_by_location tenant_db id in
     let add_experiment_title session =
@@ -200,12 +197,9 @@ let edit = detail true
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
-    let id =
-      HttpUtils.get_field_router_param req Field.Location
-      |> Pool_location.Id.of_string
-    in
+    let id = id req Field.Location Pool_location.Id.of_string in
     let detail_path =
-      Format.asprintf "/admin/locations/%s" (id |> Pool_location.Id.value)
+      id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
     Lwt_result.map_err (fun err -> err, Format.asprintf "%s/edit" detail_path)
     @@
