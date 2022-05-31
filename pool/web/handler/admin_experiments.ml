@@ -5,6 +5,10 @@ module WaitingList = Admin_experiments_waiting_list
 
 let create_layout req = General.create_tenant_layout `Admin req
 
+let id req field encode =
+  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+;;
+
 let experiment_boolean_fields =
   Pool_common.Message.Field.
     [ WaitingListDisabled |> show; DirectRegistrationDisabled |> show ]
@@ -38,7 +42,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, "/admin/experiments/new")
+    Lwt_result.map_err (fun err -> err, "/admin/experiments/create")
     @@
     let events =
       let open CCResult.Infix in
@@ -68,15 +72,11 @@ let create req =
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in
-  let error_path = "/admin/experiments" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_err (fun err -> err, "/admin/experiments")
     @@
     let open Lwt_result.Syntax in
-    let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
-      |> Pool_common.Id.of_string
-    in
+    let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
     let* experiment = Experiment.find tenant_db id in
     (match edit with
     | false ->
@@ -96,10 +96,7 @@ let edit = detail true
 let update req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
-    let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
-      |> Pool_common.Id.of_string
-    in
+    let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
     let detail_path =
       Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)
     in
@@ -109,19 +106,15 @@ let update req =
     let* experiment = Experiment.find tenant_db id in
     let events =
       let open CCResult.Infix in
+      let open Cqrs_command.Experiment_command.Update in
       let%lwt urlencoded =
         Sihl.Web.Request.to_urlencoded req
         ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
       in
-      urlencoded
-      |> Cqrs_command.Experiment_command.Update.decode
-      >>= Cqrs_command.Experiment_command.Update.handle experiment
-      |> Lwt_result.lift
+      urlencoded |> decode >>= handle experiment |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
         detail_path
         [ Message.set
@@ -138,8 +131,7 @@ let delete req =
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     let experiment_id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
-      |> Pool_common.Id.of_string
+      Pool_common.(id req Pool_common.Message.Field.Experiment Id.of_string)
     in
     let experiments_path = "/admin/experiments" in
     Lwt_result.map_err (fun err ->

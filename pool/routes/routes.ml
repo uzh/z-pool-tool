@@ -188,7 +188,7 @@ module Admin = struct
         ]
       in
       [ get "" Handler.Admin.Experiments.index
-      ; get "/new" Handler.Admin.Experiments.new_form
+      ; get "/create" Handler.Admin.Experiments.new_form
       ; post "" Handler.Admin.Experiments.create
       ; get (Experiment |> url_key) Handler.Admin.Experiments.show
       ; get
