@@ -158,8 +158,3 @@ val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
-
-(* module Repo : sig module Public : sig val t : Repo_entity.Public.t
-   Caqti_type.t val to_entity : Repo_entity.Public.t -> Pool_location.t ->
-   Entity.Public.t val of_entity : Entity.Public.t -> Repo_entity.Public.t end
-   end *)
