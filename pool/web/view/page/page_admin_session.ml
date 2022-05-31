@@ -81,8 +81,7 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
           ]
       ; td
           [ txt
-              (Format.asprintf
-                 "%n"
+              (CCInt.to_string
                  (session.Session.assignments_count
                  |> Session.AssignmentCount.value))
           ]
@@ -96,7 +95,6 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
                        (Pool_common.Id.value session.id)
                     |> Sihl.Web.externalize_path)
                 ]
-              (* TODO [aerben] use Message.More *)
               [ txt
                   Pool_common.(Utils.control_to_string language Message.(More))
               ]
@@ -223,7 +221,6 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
-                (* TODO [aerben] use Message.More *)
                 [ Message.(Edit (Some Field.Session))
                   |> Pool_common.Utils.control_to_string language
                   |> txt

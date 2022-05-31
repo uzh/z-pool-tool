@@ -29,7 +29,7 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          (select count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
           pool_sessions.canceled_at,
           pool_sessions.created_at,
           pool_sessions.updated_at
@@ -56,7 +56,7 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          (select count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
           pool_sessions.canceled_at
         FROM pool_sessions
       |sql}

@@ -103,7 +103,7 @@ let () =
         ; test_case
             "assign user from waiting list"
             `Quick
-            Assignment_test.assign_contact_from_waitinglist
+            Assignment_test.assign_contact_from_waiting_list
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

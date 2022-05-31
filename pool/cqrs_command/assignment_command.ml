@@ -40,8 +40,8 @@ end = struct
       let delete_events =
         match command.waiting_list with
         | None -> []
-        | Some wait_list ->
-          [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list ]
+        | Some waiting_list ->
+          [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
       Ok (delete_events @ [ Assignment.Created create |> Pool_event.assignment ])
   ;;

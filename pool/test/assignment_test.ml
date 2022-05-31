@@ -122,7 +122,7 @@ let assign_to_session_contact_is_already_assigned () =
   check_result expected events
 ;;
 
-let assign_contact_from_waitinglist () =
+let assign_contact_from_waiting_list () =
   let session = Test_utils.create_session () in
   let waiting_list = Test_utils.create_waiting_list () in
   let already_enrolled = false in

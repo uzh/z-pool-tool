@@ -219,15 +219,13 @@ let creat_public_session () =
 ;;
 
 let fully_book_session session =
+  let get_or_failwith = Pool_common.Utils.get_or_failwith in
   Session.
     { session with
-      max_participants =
-        ParticipantAmount.create 5 |> Pool_common.Utils.get_or_failwith
-    ; min_participants =
-        ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
-    ; overbook = ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
-    ; assignments_count =
-        5 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+      max_participants = ParticipantAmount.create 5 |> get_or_failwith
+    ; min_participants = ParticipantAmount.create 0 |> get_or_failwith
+    ; overbook = ParticipantAmount.create 0 |> get_or_failwith
+    ; assignments_count = 5 |> AssignmentCount.create |> get_or_failwith
     }
 ;;
 
