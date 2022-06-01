@@ -49,7 +49,7 @@ let update req =
     let path_with_lang = HttpUtils.path_with_language query_language in
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
     let version_raw = go "version" in
-    let name = go "field" |> Field.read in
+    let _name_ = go "field" |> Field.read in
     let open Utils.Lwt_result.Syntax in
     let* user =
       Http_utils.user_from_session tenant_db req
@@ -70,23 +70,23 @@ let update req =
       |> CCOption.get_exn_or
            (Pool_common.Utils.error_to_string
               language
-              (NotANumber Field.(name |> show)))
+              (NotANumber Field.(_name_ |> show)))
     in
     let get_version =
       CCOption.get_exn_or
         (Pool_common.Utils.error_to_string
            language
-           (NotHandled Field.(name |> show)))
+           (NotHandled Field.(_name_ |> show)))
     in
     let current_version =
-      Contact.version_selector contact Field.(name |> show) |> get_version
+      Contact.version_selector contact Field.(_name_ |> show) |> get_version
     in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Contact_command.Update in
       if Pool_common.Version.value current_version <= version
       then urlencoded |> decode >>= handle contact
-      else Error (MeantimeUpdate name)
+      else Error (MeantimeUpdate _name_)
     in
     let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
     let htmx_element contact classnames ?error () =
@@ -100,7 +100,7 @@ let update req =
       in
       Lwt_result.return
       @@
-      match[@warning "-4"] name with
+      match[@warning "-4"] _name_ with
       | Field.Paused ->
         Htmx.Paused (contact.paused_version, contact.paused) |> html_response
       | Field.Firstname ->
