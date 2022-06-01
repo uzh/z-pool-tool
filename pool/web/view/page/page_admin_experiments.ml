@@ -80,7 +80,8 @@ let index experiment_list Pool_context.{ language; _ } =
         ; p
             [ a
                 ~a:
-                  [ a_href (Sihl.Web.externalize_path "/admin/experiments/new")
+                  [ a_href
+                      (Sihl.Web.externalize_path "/admin/experiments/create")
                   ]
                 [ txt
                     Pool_common.(

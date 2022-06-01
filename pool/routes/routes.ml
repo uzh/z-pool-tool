@@ -1,6 +1,13 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
 
+let add_key ?(prefix = "") ?(suffix = "") field =
+  let open Pool_common.Message.Field in
+  [ prefix; field |> url_key; suffix ]
+  |> CCList.filter (fun m -> m |> CCString.is_empty |> not)
+  |> CCString.concat "/"
+;;
+
 let global_middlewares =
   [ Middleware.id ()
   ; CustomMiddleware.Error.error ()
@@ -121,17 +128,39 @@ module Admin = struct
 
   let routes =
     let open Pool_common.Message.Field in
-    let build_scope subdir =
-      Format.asprintf "/%s/%s" (Experiment |> url_key) subdir
+    let location =
+      let files =
+        [ get "/create" Handler.Admin.Location.new_file
+        ; post "" Handler.Admin.Location.add_file
+        ; choose ~scope:(add_key File) [ get "" Handler.Admin.Location.asset ]
+        ]
+      in
+      let specific =
+        [ get "" Handler.Admin.Location.show
+        ; get "/edit" Handler.Admin.Location.edit
+        ; post "" Handler.Admin.Location.update
+        ; choose ~scope:"/files" files
+        ; choose
+            ~scope:(add_key ~prefix:"mapping" FileMapping)
+            [ post "/delete" Handler.Admin.Location.delete ]
+        ]
+      in
+      [ get "" Handler.Admin.Location.index
+      ; get "/create" Handler.Admin.Location.new_form
+      ; post "" Handler.Admin.Location.create
+      ; choose ~scope:(add_key Location) specific
+      ]
     in
     let experiments =
+      let build_scope subdir =
+        Format.asprintf "/%s/%s" (Experiment |> url_key) subdir
+      in
       let invitations =
-        [ get "" Handler.Admin.Experiments.Invitations.index
-        ; post "" Handler.Admin.Experiments.Invitations.create
-        ; post
-            (Format.asprintf "/%s/resend" (Invitation |> url_key))
-            Handler.Admin.Experiments.Invitations.resend
-        ]
+        Handler.Admin.Experiments.Invitations.
+          [ get "" index
+          ; post "" create
+          ; post (add_key ~suffix:"resend" Invitation) resend
+          ]
       in
       let sessions =
         let specific =
@@ -159,7 +188,7 @@ module Admin = struct
         ]
       in
       [ get "" Handler.Admin.Experiments.index
-      ; get "/new" Handler.Admin.Experiments.new_form
+      ; get "/create" Handler.Admin.Experiments.new_form
       ; post "" Handler.Admin.Experiments.create
       ; get (Experiment |> url_key) Handler.Admin.Experiments.show
       ; get
@@ -184,6 +213,7 @@ module Admin = struct
           (Format.asprintf "/i18n/%s" (I18n |> url_key))
           Handler.Admin.I18n.update
       ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:"/locations" location
       ]
   ;;
 end

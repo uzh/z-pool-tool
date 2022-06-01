@@ -3,6 +3,10 @@ module Message = HttpUtils.Message
 
 let create_layout req = General.create_tenant_layout `Admin req
 
+let id req field encode =
+  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let id =
@@ -29,29 +33,27 @@ let index req =
 
 let detail req =
   let open Utils.Lwt_result.Infix in
-  let id =
-    HttpUtils.get_field_router_param req Pool_common.Message.Field.WaitingList
-  in
   let experiment_id =
-    HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+    id req Pool_common.Message.Field.Experiment Pool_common.Id.of_string
+  in
+  let id =
+    id req Pool_common.Message.Field.WaitingList Pool_common.Id.of_string
   in
   let error_path =
     Format.asprintf
       "/admin/experiments/%s/waiting-list"
       (Pool_common.Id.value experiment_id)
   in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err -> err, error_path)
-    @@
-    let tenant_db = context.Pool_context.tenant_db in
-    let* waiting_list = Waiting_list.find tenant_db id in
-    let%lwt sessions =
-      Session.find_all_for_experiment tenant_db experiment_id
-    in
-    Page.Admin.WaitingList.detail waiting_list sessions experiment_id context
-    |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    @@ let* waiting_list = Waiting_list.find tenant_db id in
+       let* sessions =
+         Session.find_all_for_experiment tenant_db experiment_id
+       in
+       Page.Admin.WaitingList.detail waiting_list sessions experiment_id context
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -59,10 +61,10 @@ let detail req =
 let update req =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+    id req Pool_common.Message.Field.Experiment Pool_common.Id.of_string
   in
   let waiting_list_id =
-    HttpUtils.get_field_router_param req Pool_common.Message.Field.WaitingList
+    id req Pool_common.Message.Field.WaitingList Pool_common.Id.of_string
   in
   let redirect_path =
     let open Pool_common.Id in
@@ -102,10 +104,9 @@ let update req =
 let assign_contact req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, waiting_list_id =
-    let open Pool_common.Message.Field in
-    HttpUtils.(
-      ( get_field_router_param req Experiment
-      , get_field_router_param req WaitingList ))
+    let open Pool_common in
+    ( id req Message.Field.Experiment Id.of_string
+    , id req Message.Field.WaitingList Id.of_string )
   in
   let redirect_path =
     Format.asprintf

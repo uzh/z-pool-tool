@@ -182,7 +182,7 @@ let update_language () =
   let language = Language.De in
   let events =
     Contact_command.Update.(
-      [ Field.(Language |> show), [ language |> Language.code ] ]
+      [ Field.(Language |> show), [ language |> Language.show ] ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
       |> handle contact)
@@ -223,7 +223,7 @@ let update_full () =
       [ Field.(Firstname |> show), [ firstname ]
       ; Field.(Lastname |> show), [ lastname ]
       ; Field.(Paused |> show), [ paused |> string_of_bool ]
-      ; Field.(Language |> show), [ language |> Language.code ]
+      ; Field.(Language |> show), [ language |> Language.show ]
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith

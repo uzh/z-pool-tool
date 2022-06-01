@@ -19,7 +19,7 @@ let create () =
     let open CCResult in
     let open I18n in
     let* key = Key.of_string "confirmation_contact" in
-    let* language = Pool_common.Language.of_string "EN" in
+    let* language = Pool_common.Language.create "EN" in
     let* content = Content.create "Contact" in
     let create = { key; language; content } in
     Ok [ I18n.Created create |> Pool_event.i18n ]

@@ -40,19 +40,17 @@ let to_entity (m : t) contact experiment =
 let t =
   let encode (m : t) =
     Ok
-      ( Pool_common.Id.value m.id
-      , ( Pool_common.Id.value m.contact_id
-        , ( Pool_common.Id.value m.experiment_id
-          , (m.comment, (m.created_at, m.updated_at)) ) ) )
+      ( m.id
+      , ( m.contact_id
+        , (m.experiment_id, (m.comment, (m.created_at, m.updated_at))) ) )
   in
   let decode
       (id, (contact_id, (experiment_id, (comment, (created_at, updated_at)))))
     =
-    let open CCResult in
     Ok
-      { id = Pool_common.Id.of_string id
-      ; contact_id = Pool_common.Id.of_string contact_id
-      ; experiment_id = Pool_common.Id.of_string experiment_id
+      { id
+      ; contact_id
+      ; experiment_id
       ; comment = CCOption.map Comment.create comment
       ; created_at
       ; updated_at
@@ -80,14 +78,11 @@ module Experiment = struct
 
   let t =
     let encode (m : waiting_list_entry) =
-      Ok
-        ( Pool_common.Id.value m.id
-        , (m.contact, (m.comment, (m.created_at, m.updated_at))) )
+      Ok (m.id, (m.contact, (m.comment, (m.created_at, m.updated_at))))
     in
     let decode (id, (contact, (comment, (created_at, updated_at)))) =
-      let open CCResult in
       Ok
-        { id = Pool_common.Id.of_string id
+        { id
         ; contact
         ; comment = CCOption.map Comment.create comment
         ; created_at

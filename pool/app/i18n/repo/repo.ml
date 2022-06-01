@@ -53,7 +53,7 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_by_key_request
-      (key |> Entity.Key.to_string, language |> Pool_common.Language.code)
+      (key |> Entity.Key.to_string, language |> Pool_common.Language.show)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
   ;;
 

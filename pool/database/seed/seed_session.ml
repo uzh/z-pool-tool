@@ -1,5 +1,9 @@
 let create pool =
   let%lwt experiments = Experiment.find_all pool () in
+  let%lwt location = Pool_location.find_all pool in
+  let location =
+    location |> CCList.head_opt |> CCOption.get_exn_or "No locations seeded"
+  in
   let ex =
     experiments
     |> CCList.head_opt
@@ -50,7 +54,8 @@ let create pool =
             ; overbook = ParticipantAmount.create overbook |> get_or_failwith
             }
         in
-        Session.Created (session, Pool_common.Id.of_string experiment_id))
+        Session.Created
+          (session, Pool_common.Id.of_string experiment_id, location))
       data
   in
   let%lwt () = Lwt_list.iter_s (Session.handle_event pool) events in

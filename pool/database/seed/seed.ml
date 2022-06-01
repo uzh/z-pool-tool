@@ -18,6 +18,7 @@ module Tenant = struct
         let%lwt () = Seed_user.contacts pool in
         let%lwt () = Seed_i18n.i18n pool in
         let%lwt () = Seed_experiment.experiments pool in
+        let%lwt () = Seed_location.create pool in
         let%lwt () = Seed_session.create pool in
         let%lwt () = Seed_invitation.invitations pool in
         let%lwt () = Seed_waiting_list.waiting_list pool in

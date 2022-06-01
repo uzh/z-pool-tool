@@ -26,13 +26,13 @@ module Sihl_user = struct
 end
 
 module RecruitmentChannel = struct
-  let name m fmt _ = Format.pp_print_string fmt m
+  let go m fmt _ = Format.pp_print_string fmt m
 
   type t =
-    | Friend [@name "friend"] [@printer name "friend"]
-    | Online [@name "online"] [@printer name "online"]
-    | Lecture [@name "lecture"] [@printer name "lecture"]
-    | Mailing [@name "mailing"] [@printer name "mailing"]
+    | Friend [@name "friend"] [@printer go "friend"]
+    | Online [@name "online"] [@printer go "online"]
+    | Lecture [@name "lecture"] [@printer go "lecture"]
+    | Mailing [@name "mailing"] [@printer go "mailing"]
   (* @name: used by yojson as key *)
   (* @printer: used by show as key/string (removing @printer would change to
      Field as written -> Capital case) *)

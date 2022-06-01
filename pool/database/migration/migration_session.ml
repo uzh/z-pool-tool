@@ -21,6 +21,18 @@ let create_participant_table =
     |sql}
 ;;
 
+let add_location =
+  Sihl.Database.Migration.create_step
+    ~label:"add field for location"
+    {sql|
+      ALTER TABLE pool_sessions
+      ADD COLUMN location_id bigint(20) unsigned NOT NULL AFTER description
+    |sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "session" |> add_step create_participant_table)
+  Sihl.Database.Migration.(
+    empty "session"
+    |> add_step create_participant_table
+    |> add_step add_location)
 ;;

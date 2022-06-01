@@ -83,7 +83,7 @@ let handle_event pool : event -> unit Lwt.t =
           Service.EmailTemplate.create
             ~ctx:(Pool_tenant.to_ctx pool)
             ~label:(TemplateLabel.show label)
-            ~language:(Pool_common.Language.code language)
+            ~language:(Pool_common.Language.show language)
             ~html
             text
         in

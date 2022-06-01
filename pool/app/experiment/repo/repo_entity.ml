@@ -6,13 +6,25 @@ module RepoId = Common.Repo.Id
 module Title = struct
   include Title
 
-  let t = Caqti_type.string
+  let t =
+    let encode = Utils.fcn_ok value in
+    let decode m =
+      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module Description = struct
   include Description
 
-  let t = Caqti_type.string
+  let t =
+    let encode = Utils.fcn_ok value in
+    let decode m =
+      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module WaitingListDisabled = struct
@@ -30,9 +42,9 @@ end
 let t =
   let encode (m : t) =
     Ok
-      ( Id.value m.id
+      ( m.id
       , ( Title.value m.title
-        , ( Description.value m.description
+        , ( m.description
           , ( m.filter
             , ( m.waiting_list_disabled
               , (m.direct_registration_disabled, (m.created_at, m.updated_at))
@@ -48,23 +60,16 @@ let t =
         ) )
     =
     let open CCResult in
-    map_err (fun _ ->
-        Common.(
-          Utils.error_to_string
-            Common.Language.En
-            (Message.Decode Message.Field.I18n)))
-    @@ let* title = Title.create title in
-       let* description = Description.create description in
-       Ok
-         { id = Id.of_string id
-         ; title
-         ; description
-         ; filter
-         ; waiting_list_disabled
-         ; direct_registration_disabled
-         ; created_at
-         ; updated_at
-         }
+    Ok
+      { id
+      ; title
+      ; description
+      ; filter
+      ; waiting_list_disabled
+      ; direct_registration_disabled
+      ; created_at
+      ; updated_at
+      }
   in
   Caqti_type.(
     custom
@@ -89,7 +94,7 @@ module Write = struct
   let t =
     let encode (m : t) =
       Ok
-        ( Id.value m.id
+        ( m.id
         , ( Title.value m.title
           , ( Description.value m.description
             , ( m.filter
@@ -119,8 +124,8 @@ module Public = struct
   let t =
     let encode (m : t) =
       Ok
-        ( Id.value m.id
-        , ( Description.value m.description
+        ( m.id
+        , ( m.description
           , (m.waiting_list_disabled, m.direct_registration_disabled) ) )
     in
     let decode
@@ -128,19 +133,8 @@ module Public = struct
         , (description, (waiting_list_disabled, direct_registration_disabled))
         )
       =
-      let open CCResult in
-      map_err (fun _ ->
-          Common.(
-            Utils.error_to_string
-              Language.En
-              (Message.Decode Message.Field.I18n)))
-      @@ let* description = Description.create description in
-         Ok
-           { id = Id.of_string id
-           ; description
-           ; waiting_list_disabled
-           ; direct_registration_disabled
-           }
+      Ok
+        { id; description; waiting_list_disabled; direct_registration_disabled }
     in
     Caqti_type.(
       custom

@@ -18,7 +18,7 @@ type assignment_data =
   }
 
 let assignment_data () =
-  let session = Test_utils.creat_public_session () in
+  let session = Test_utils.create_public_session () in
   let experiment = Test_utils.create_experiment () in
   let contact = Test_utils.create_contact () in
   { session; experiment; contact }

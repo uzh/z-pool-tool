@@ -18,7 +18,7 @@ let prepare_email pool language label subject email params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
       ~ctx:(Pool_tenant.to_ctx pool)
-      ~language:(Pool_common.Language.code language)
+      ~language:(Pool_common.Language.show language)
       (TemplateLabel.show label)
   in
   match template, Sihl.Configuration.read_string "SMTP_SENDER" with
@@ -56,7 +56,7 @@ module PasswordReset = struct
         Pool_common.
           [ Message.Field.Token, token
           ; ( Message.Field.Language
-            , language |> Pool_common.Language.code |> CCString.lowercase_ascii
+            , language |> Pool_common.Language.show |> CCString.lowercase_ascii
             )
           ]
         |> Pool_common.Message.add_field_query_params "/reset-password/"

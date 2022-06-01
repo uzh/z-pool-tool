@@ -10,6 +10,7 @@ let update req command success_message =
     let open Common.Message.Field in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)
@@ -21,6 +22,7 @@ let update req command success_message =
       in
       let* _ =
         File.update_files
+          Database.root
           [ ( Styles |> show
             , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
             )
@@ -31,6 +33,7 @@ let update req command success_message =
       in
       let* logo_files =
         File.upload_files
+          Database.root
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in

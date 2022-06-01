@@ -52,10 +52,8 @@ let update_settings req =
                in
                m
                |> CCList.filter_map (fun (k, _) ->
-                      match
-                        CCList.mem k (Pool_common.Language.all_codes ())
-                      with
-                      | true -> Some (k |> Pool_common.Language.of_string)
+                      match CCList.mem k Pool_common.Language.all_codes with
+                      | true -> Some (k |> Pool_common.Language.create)
                       | false -> None)
                |> CCResult.flatten_l
                >>= UpdateLanguages.handle terms_and_conditions

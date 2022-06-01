@@ -148,7 +148,7 @@ val direct_registration_disabled_value : t -> bool
 
 module Repo : sig
   module Description : sig
-    val t : string Caqti_type.t
+    val t : Description.t Caqti_type.t
   end
 
   module WaitingListDisabled : sig

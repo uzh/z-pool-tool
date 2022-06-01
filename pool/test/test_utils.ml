@@ -107,6 +107,21 @@ let create_contact () =
     }
 ;;
 
+let create_location () =
+  Pool_location.
+    { id = Pool_location.Id.create ()
+    ; name =
+        Pool_location.Name.create "Online" |> Pool_common.Utils.get_or_failwith
+    ; description = None
+    ; link = None
+    ; address = Pool_location.Address.Virtual
+    ; status = Pool_location.Status.Active
+    ; files = []
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;
+
 let create_public_experiment () =
   let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
   Experiment.Public.
@@ -176,12 +191,13 @@ let create_session () =
         |> Pool_common.Utils.get_or_failwith
     ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
     ; description = None
+    ; location = create_location ()
     ; max_participants =
         ParticipantAmount.create 30 |> Pool_common.Utils.get_or_failwith
     ; min_participants =
         ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-    ; assignments_count =
+    ; assignment_count =
         0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
@@ -189,16 +205,17 @@ let create_session () =
     }
 ;;
 
-let creat_public_session () =
+let create_public_session () =
   let Session.
         { id
         ; start
         ; duration
         ; description
+        ; location
         ; max_participants
         ; min_participants
         ; overbook
-        ; assignments_count
+        ; assignment_count
         ; canceled_at
         ; _
         }
@@ -210,10 +227,11 @@ let creat_public_session () =
     ; start
     ; duration
     ; description
+    ; location
     ; max_participants
     ; min_participants
     ; overbook
-    ; assignments_count
+    ; assignment_count
     ; canceled_at
     }
 ;;
@@ -225,7 +243,7 @@ let fully_book_session session =
       max_participants = ParticipantAmount.create 5 |> get_or_failwith
     ; min_participants = ParticipantAmount.create 0 |> get_or_failwith
     ; overbook = ParticipantAmount.create 0 |> get_or_failwith
-    ; assignments_count = 5 |> AssignmentCount.create |> get_or_failwith
+    ; assignment_count = 5 |> AssignmentCount.create |> get_or_failwith
     }
 ;;
 
@@ -238,7 +256,7 @@ let fully_book_public_session session =
         Session.ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
     ; overbook =
         Session.ParticipantAmount.create 0 |> Pool_common.Utils.get_or_failwith
-    ; assignments_count =
+    ; assignment_count =
         5 |> Session.AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     }
 ;;

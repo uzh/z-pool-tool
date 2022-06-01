@@ -10,7 +10,35 @@ let session_date (session : Session.t) =
 
 let session_title s = s |> session_date |> Format.asprintf "Session at %s"
 
-let create csrf language experiment_id flash_fetcher =
+let location_select options selected ?(attributes = []) () =
+  let open Pool_location in
+  let name = Message.Field.(show Location) in
+  div
+    [ label [ txt (name |> CCString.capitalize_ascii) ]
+    ; div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:([ a_name name ] @ attributes)
+            (CCList.map
+               (fun l ->
+                 let is_selected =
+                   selected
+                   |> CCOption.map (fun selected ->
+                          if Pool_location.equal selected l
+                          then [ a_selected () ]
+                          else [])
+                   |> CCOption.value ~default:[]
+                 in
+                 option
+                   ~a:
+                     ([ a_value (l.id |> Pool_location.Id.value) ] @ is_selected)
+                   (txt (l.name |> Pool_location.Name.value)))
+               options)
+        ]
+    ]
+;;
+
+let create csrf language experiment_id locations flash_fetcher =
   div
     [ h1
         ~a:[ a_class [ "heading-2" ] ]
@@ -44,6 +72,7 @@ let create csrf language experiment_id flash_fetcher =
             `Text
             Pool_common.Message.Field.Description
             flash_fetcher
+        ; location_select locations None ()
         ; input_element_persistent
             language
             `Number
@@ -65,7 +94,13 @@ let create csrf language experiment_id flash_fetcher =
     ]
 ;;
 
-let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
+let index
+    Pool_context.{ language; csrf; _ }
+    experiment
+    sessions
+    locations
+    flash_fetcher
+  =
   let experiment_id = experiment.Experiment.id in
   let session_row (session : Session.t) =
     let open Session in
@@ -82,7 +117,7 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
       ; td
           [ txt
               (CCInt.to_string
-                 (session.Session.assignments_count
+                 (session.Session.assignment_count
                  |> Session.AssignmentCount.value))
           ]
       ; td
@@ -157,7 +192,7 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
           ~thead
           ~a:[ a_class [ "striped" ] ]
           (CCList.map session_row sessions)
-      ; create csrf language experiment_id flash_fetcher
+      ; create csrf language experiment_id locations flash_fetcher
       ]
   in
   Page_admin_experiments.experiment_layout
@@ -168,7 +203,7 @@ let index Pool_context.{ language; csrf; _ } experiment sessions flash_fetcher =
     html
 ;;
 
-let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
+let detail Pool_context.{ language; _ } experiment_id (session : Session.t) _ =
   let open Session in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
@@ -190,6 +225,15 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
                    ~default:""
                    Description.value
                    session.description )
+             ; ( Field.Location
+               , CCString.concat
+                   ", "
+                   (Pool_location.Address.address_rows_human
+                      language
+                      session.location.Pool_location.address
+                   |> fun (room, street, city) ->
+                   [ room; street; city ]
+                   |> CCList.filter (fun m -> m |> CCString.is_empty |> not)) )
              ; Field.MaxParticipants, amount session.max_participants
              ; Field.MinParticipants, amount session.min_participants
              ; Field.Overbook, amount session.overbook
@@ -230,7 +274,12 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) =
     ]
 ;;
 
-let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) =
+let edit
+    Pool_context.{ language; csrf; _ }
+    experiment_id
+    (session : Session.t)
+    locations
+  =
   let open Session in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
@@ -270,6 +319,7 @@ let edit Pool_context.{ language; csrf; _ } experiment_id (session : Session.t) 
            (* TODO [aerben] this should be textarea *)
          ; input_element language `Text Pool_common.Message.Field.Description
            @@ CCOption.map_or ~default:"" Description.value session.description
+         ; location_select locations (Some session.location) ()
          ; input_element
              language
              `Number

@@ -214,7 +214,7 @@ module Paused = struct
     Utils.Database.exec
       (Database.Label.value pool)
       update_request
-      ( contact |> Entity.id |> Id.value
+      ( contact |> Entity.id
       , paused |> Pool_user.Paused.value
       , paused_version |> Pool_common.Version.value )
   ;;
@@ -231,14 +231,14 @@ module Language = struct
         language_version = $3
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup3 Id.t Repo_model.Language.t Version.t ->. unit)
+    |> Caqti_type.(tup3 Id.t (option Language.t) Version.t ->. unit)
   ;;
 
   let update pool (Entity.{ language; language_version; _ } as contact) =
     Utils.Database.exec
       (Database.Label.value pool)
       update_request
-      ( contact |> Entity.id |> Id.value
+      ( contact |> Entity.id
       , language
       , language_version |> Pool_common.Version.value )
   ;;
@@ -261,7 +261,7 @@ let update_version_for pool field (id, version) =
   Utils.Database.exec
     (Database.Label.value pool)
     (field |> update_version_for_request)
-    (id |> Id.value, version |> Pool_common.Version.value)
+    (id, version |> Pool_common.Version.value)
 ;;
 
 let update_request =

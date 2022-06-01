@@ -43,6 +43,7 @@ module Create = struct
 
   let handle
       experiment_id
+      location
       (Session.
          { start
          ; duration
@@ -66,7 +67,10 @@ module Create = struct
           ; overbook
           }
       in
-      Ok [ Session.Created (session, experiment_id) |> Pool_event.session ])
+      Ok
+        [ Session.Created (session, experiment_id, location)
+          |> Pool_event.session
+        ])
     else
       Error
         Pool_common.Message.(
@@ -91,6 +95,7 @@ module Update = struct
 
   let handle
       session
+      location
       (Session.
          { start
          ; duration
@@ -113,7 +118,9 @@ module Update = struct
           ; overbook
           }
       in
-      Ok [ Session.Updated (session_cmd, session) |> Pool_event.session ])
+      Ok
+        [ Session.Updated (session_cmd, location, session) |> Pool_event.session
+        ])
     else
       Error
         Pool_common.Message.(

@@ -57,10 +57,11 @@ type t =
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; assignments_count : AssignmentCount.t
+  ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -91,10 +92,10 @@ type base =
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
-  | Created of (base * Pool_common.Id.t)
+  | Created of (base * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
-  | Updated of (base * t)
+  | Updated of (base * Pool_location.t * t)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -106,10 +107,11 @@ module Public : sig
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
+    ; location : Pool_location.t
     ; max_participants : ParticipantAmount.t
     ; min_participants : ParticipantAmount.t
     ; overbook : ParticipantAmount.t
-    ; assignments_count : AssignmentCount.t
+    ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
 
@@ -131,18 +133,28 @@ val find_public
   -> Contact.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
+val find_all_public_by_location
+  :  Pool_database.Label.t
+  -> Pool_location.Id.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> t list Lwt.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
 
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
+
+val find_experiment_id_and_title
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t

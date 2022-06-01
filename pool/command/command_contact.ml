@@ -47,7 +47,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
             let open CCResult.Infix in
             let open Cqrs_command.Contact_command.SignUp in
             let language =
-              Pool_common.Language.of_string language |> CCResult.to_opt
+              Pool_common.Language.create language |> CCResult.to_opt
             in
             [ "email", [ email ]
             ; "password", [ password ]

@@ -81,7 +81,7 @@ let footer title =
 (* TODO [aerben] maybe extract? *)
 let datepicker lang =
   lang
-  |> Pool_common.Language.code
+  |> Pool_common.Language.show
   |> CCString.lowercase_ascii
   |> Format.asprintf
        (* TODO [aerben] add locale first day of week *)
@@ -153,7 +153,7 @@ module Tenant = struct
       ~a:[ a_class [ "main-nav" ] ]
       (CCList.map
          (fun tenant_language ->
-           let label = Pool_common.Language.code tenant_language in
+           let label = Pool_common.Language.show tenant_language in
            if Pool_common.Language.equal tenant_language active_lang
            then
              span
@@ -168,7 +168,7 @@ module Tenant = struct
                          add_field_query_params
                            ""
                            [ ( Field.Language
-                             , Language.code tenant_language
+                             , Language.show tenant_language
                                |> CCString.lowercase_ascii )
                            ]))
                  ; a_class link_classes
@@ -186,6 +186,7 @@ module Tenant = struct
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments
+        ; "/admin/locations", Locations
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
