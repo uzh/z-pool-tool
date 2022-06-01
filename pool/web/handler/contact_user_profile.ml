@@ -49,6 +49,7 @@ let update req =
     let path_with_lang = HttpUtils.path_with_language query_language in
     let go name = CCList.assoc ~eq:String.equal name urlencoded |> CCList.hd in
     let version_raw = go "version" in
+    (* '_name_' with underscores to not match any field constructor function *)
     let _name_ = go "field" |> Field.read in
     let open Utils.Lwt_result.Syntax in
     let* user =

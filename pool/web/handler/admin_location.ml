@@ -205,12 +205,13 @@ let update req =
     let* location = Pool_location.find tenant_db id in
     let events =
       let open CCResult.Infix in
+      let open Cqrs_command.Location_command.Update in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      Cqrs_command.Location_command.Update.(
-        urlencoded
-        |> HttpUtils.remove_empty_values
-        |> decode
-        >>= handle location)
+      urlencoded
+      |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
+      |> HttpUtils.remove_empty_values
+      |> decode
+      >>= handle location
       |> Lwt_result.lift
     in
     let handle events =
