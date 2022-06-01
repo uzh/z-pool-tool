@@ -14,7 +14,7 @@ let index req =
     Lwt_result.map_err (fun err -> err, "/admin/dashboard")
     @@ let%lwt location_list = Pool_location.find_all tenant_db in
        Page.Admin.Location.index location_list context
-       |> create_layout ~active_navigation:"/locations" req context
+       |> create_layout ~active_navigation:"/admin/locations" req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

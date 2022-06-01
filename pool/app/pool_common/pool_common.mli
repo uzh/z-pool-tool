@@ -31,7 +31,6 @@ module Language : sig
   val create : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val t_of_sexp : Sexplib0.Sexp.t -> t
 
   val schema
     :  unit

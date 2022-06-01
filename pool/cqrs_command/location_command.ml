@@ -62,7 +62,7 @@ module Create = struct
          | true -> Ok Address.Virtual
          | false ->
            Conformist.decode_and_validate schema_mail_address data
-           >|= Address.address
+           >|= Address.physical
        in
        Ok
          { name = base.name
@@ -124,7 +124,7 @@ module Update = struct
          | true -> Ok Address.Virtual
          | false ->
            Conformist.decode_and_validate schema_mail_address data
-           >|= Address.address
+           >|= Address.physical
        in
        Ok
          { name = base.name

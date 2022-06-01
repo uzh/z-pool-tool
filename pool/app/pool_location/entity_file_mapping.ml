@@ -16,7 +16,7 @@ module Label = struct
     | Direction [@name "direction"] [@printer go "direction"]
     | AdditionalInformation [@name "additional_information"]
         [@printer go "additional_information"]
-  [@@deriving enum, eq, show { with_path = false }, yojson, sexp]
+  [@@deriving enum, eq, show { with_path = false }, yojson]
 
   let all : t list =
     CCList.range min max
@@ -36,10 +36,7 @@ module Label = struct
   ;;
 
   let schema () = Pool_common.Utils.schema_decoder create show field
-
-  (* TODO: Is there a better way the supressing the warning 4 for the whole
-     module? *)
-end [@warning "-4"]
+end
 
 type file =
   { id : Id.t
@@ -54,7 +51,7 @@ type file_base =
   ; language : Pool_common.Language.t
   ; asset_id : Pool_common.Id.t
   }
-[@@deriving eq, show, sexp]
+[@@deriving eq, show]
 
 type create =
   { label : Label.t
@@ -77,7 +74,7 @@ module Write = struct
     ; asset_id : Id.t
     ; location_id : Pool_common.Id.t
     }
-  [@@deriving eq, show, sexp]
+  [@@deriving eq, show]
 
   let create
       ?(id = Pool_common.Id.create ())

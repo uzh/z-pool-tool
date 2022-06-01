@@ -68,12 +68,12 @@ module Address = struct
   let t =
     let encode = function
       | Virtual -> Ok (true, None)
-      | Address address -> Ok (false, Some address)
+      | Physical address -> Ok (false, Some address)
     in
     let decode (is_virtual, address) =
       match is_virtual, address with
       | true, _ -> Ok Virtual
-      | _, Some address -> Ok (Address address)
+      | _, Some address -> Ok (Physical address)
       | false, None ->
         failwith
           "Location could be created without beeing virtual and without \

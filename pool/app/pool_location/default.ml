@@ -12,7 +12,7 @@ let default_values =
            | Some (room, building, street, zip, city) ->
              Address.Mail.create room building street zip city
              |> get_or_failwith
-             |> Address.address
+             |> Address.physical
            | None -> Address.Virtual
          in
          create label description address link status [] |> get_or_failwith)

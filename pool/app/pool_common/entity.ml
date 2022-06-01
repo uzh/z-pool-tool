@@ -24,7 +24,7 @@ module Language = struct
   type t =
     | En [@name "EN"] [@printer go "EN"]
     | De [@name "DE"] [@printer go "DE"]
-  [@@deriving enum, eq, show { with_path = false }, yojson, sexp]
+  [@@deriving enum, eq, show { with_path = false }, yojson, sexp_of]
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -56,10 +56,7 @@ module Language = struct
     | En -> LanguageEn
     | De -> LanguageDe
   ;;
-
-  (* TODO: Is there a better way the supressing the warning 4 for the whole
-     module? *)
-end [@warning "-4"]
+end
 
 module Version = struct
   type t = int [@@deriving eq, show, yojson]

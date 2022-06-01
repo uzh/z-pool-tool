@@ -39,7 +39,7 @@ let locations =
            | Some (room, building, street, zip, city) ->
              Address.Mail.create room building street zip city
              |> Pool_common.Utils.get_or_failwith
-             |> Address.address
+             |> Address.physical
            | None -> Address.Virtual
          in
          create label description address link status []

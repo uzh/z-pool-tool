@@ -67,13 +67,13 @@ module Address : sig
   end
 
   type t =
-    | Address of Mail.t
     | Virtual
+    | Physical of Mail.t
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val address : Mail.t -> t
+  val physical : Mail.t -> t
   val virtual_ : t
 
   val address_rows_human
@@ -89,8 +89,6 @@ module Mapping : sig
     val create : unit -> t
     val value : t -> string
     val of_string : string -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
   end
 
   module Label : sig
@@ -102,8 +100,6 @@ module Mapping : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val create : string -> (t, Pool_common.Message.error) result
 
     val schema
@@ -131,8 +127,6 @@ module Mapping : sig
   val equal_file_base : file_base -> file_base -> bool
   val pp_file_base : Format.formatter -> file_base -> unit
   val show_file_base : file_base -> string
-  val file_base_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> file_base
-  val sexp_of_file_base : file_base -> Ppx_sexp_conv_lib.Sexp.t
 
   type create =
     { label : Label.t
@@ -163,8 +157,6 @@ module Mapping : sig
     val equal_file : file -> file -> bool
     val pp_file : Format.formatter -> file -> unit
     val show_file : file -> string
-    val file_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> file
-    val sexp_of_file : file -> Ppx_sexp_conv_lib.Sexp.t
 
     val create
       :  ?id:Id.t
@@ -182,8 +174,6 @@ module Id : sig
   val create : unit -> t
   val value : t -> string
   val of_string : string -> t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val t_of_sexp : Ppx_sexp_conv_lib.Sexp.t -> t
 end
 
 module Name : sig
@@ -213,7 +203,6 @@ module Status : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val init : t
 
   val schema

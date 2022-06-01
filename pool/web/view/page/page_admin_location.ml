@@ -205,7 +205,7 @@ let form
     |> CCOption.map_or ~default (fun ({ address; _ } : t) ->
            match address with
            | Address.Virtual -> default
-           | Address.Address m -> m |> fcn)
+           | Address.Physical m -> m |> fcn)
   in
   let is_virtual_checkbox =
     let selected =
@@ -213,7 +213,7 @@ let form
       |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
              match address with
              | Address.Virtual -> [ a_checked () ]
-             | Address.Address _ -> [])
+             | Address.Physical _ -> [])
     in
     input
       ~a:

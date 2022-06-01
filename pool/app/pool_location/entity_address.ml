@@ -106,8 +106,8 @@ module Mail = struct
 end
 
 type t =
-  | Address of Mail.t
   | Virtual
+  | Physical of Mail.t
 [@@deriving eq, show, variants]
 
 let address_rows_human language address =
@@ -117,7 +117,7 @@ let address_rows_human language address =
       |> CCString.capitalize_ascii
     , ""
     , "" )
-  | Address address ->
+  | Physical address ->
     let open Mail in
     let building_room =
       match address.building with
