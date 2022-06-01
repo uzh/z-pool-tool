@@ -234,7 +234,6 @@ let form
         ~a:
           [ a_method `Post
           ; a_action (Sihl.Web.externalize_path action)
-          ; a_enctype "multipart/form-data"
           ; a_class [ "stack" ]
           ]
         ([ Component.csrf_element csrf ()
