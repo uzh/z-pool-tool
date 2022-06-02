@@ -259,6 +259,7 @@ type control =
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
+  | SelectFilePlaceholder
   | SignUp
   | Update of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]

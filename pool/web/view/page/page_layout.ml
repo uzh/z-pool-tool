@@ -225,7 +225,7 @@ module Tenant = struct
       let navigation =
         navigation layout_context active_lang query_language active_navigation
       in
-      (fun html -> [ div ~a:[ a_class [ "flexrow flex-gap" ] ] html ])
+      (fun html -> [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] html ])
       @@
       match layout_context with
       | `Admin -> [ navigation ]

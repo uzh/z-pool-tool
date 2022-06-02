@@ -5,6 +5,7 @@ module Message = Pool_common.Message
 let selector field equal show options selected ?(attributes = []) () =
   let name = Message.Field.(show field) in
   div
+    ~a:[ a_class (Component.Elements.group_class [] `Vertical) ]
     [ label [ name |> CCString.capitalize_ascii |> txt ]
     ; div
         ~a:[ a_class [ "select" ] ]
