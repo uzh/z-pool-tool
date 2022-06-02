@@ -261,6 +261,7 @@ let control_to_string = function
   | Save field -> format_submit "save" field
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
+  | SelectFilePlaceholder -> format_submit "select file.." None
   | SignUp -> format_submit "sign up" None
   | Update field -> format_submit "update" field
 ;;

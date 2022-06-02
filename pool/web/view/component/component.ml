@@ -22,7 +22,8 @@ let icon icon_type =
   | `SchoolOutline -> "school-outline"
   | `School -> "school"
   | `TrashOutline -> "trash-outline"
-  | `Trash -> "trash")
+  | `Trash -> "trash"
+  | `UploadOutline -> "upload-outline")
   |> fun icon_class ->
   i ~a:[ a_class [ Format.asprintf "icon-%s" icon_class ] ] []
 ;;
@@ -209,20 +210,46 @@ let input_element_persistent
   input_element ?info language input_type name value
 ;;
 
-let input_element_file ?(allow_multiple = false) language field =
+let input_element_file
+    ?(orientation = `Vertical)
+    ?(allow_multiple = false)
+    ?(has_icon = true)
+    language
+    field
+  =
   let field_label =
     Pool_common.Utils.field_to_string language field
     |> CCString.capitalize_ascii
   in
+  let name = Pool_common.Message.Field.(field |> show) in
+  let visible_part =
+    let placeholder =
+      span
+        [ txt
+            Pool_common.(
+              Utils.control_to_string language Message.SelectFilePlaceholder)
+        ]
+    in
+    match has_icon with
+    | false -> placeholder
+    | true ->
+      span ~a:[ a_class [ "has-icon" ] ] [ icon `UploadOutline; placeholder ]
+  in
   div
-    [ label [ txt field_label ]
-    ; input
-        ~a:
-          [ a_input_type `File
-          ; a_name Pool_common.Message.Field.(field |> show)
-          ; (if allow_multiple then a_multiple () else a_value "")
-          ]
-        ()
+    ~a:[ a_class (Elements.group_class [] orientation) ]
+    [ label ~a:[ a_label_for name ] [ txt field_label ]
+    ; label
+        ~a:[ a_label_for name; a_class [ "file-input" ] ]
+        [ input
+            ~a:
+              [ a_input_type `File
+              ; a_id name
+              ; a_name name
+              ; (if allow_multiple then a_multiple () else a_value "")
+              ]
+            ()
+        ; visible_part
+        ]
     ]
 ;;
 

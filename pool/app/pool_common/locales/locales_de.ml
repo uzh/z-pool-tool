@@ -284,6 +284,7 @@ let control_to_string = function
   | Save field -> format_submit "speichern" field
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
+  | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | SignUp -> format_submit "registrieren" None
   | Update field -> format_submit "aktualisieren" field
 ;;
