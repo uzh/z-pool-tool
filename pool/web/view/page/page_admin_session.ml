@@ -226,14 +226,7 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) _ =
                    Description.value
                    session.description )
              ; ( Field.Location
-               , CCString.concat
-                   ", "
-                   (Pool_location.Address.address_rows_human
-                      language
-                      session.location.Pool_location.address
-                   |> fun (room, street, city) ->
-                   [ room; street; city ]
-                   |> CCList.filter (fun m -> m |> CCString.is_empty |> not)) )
+               , Component.show_location language session.Session.location )
              ; Field.MaxParticipants, amount session.max_participants
              ; Field.MinParticipants, amount session.min_participants
              ; Field.Overbook, amount session.overbook

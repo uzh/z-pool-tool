@@ -2,6 +2,12 @@ open Tyxml.Html
 
 let public_overview sessions experiment language =
   let open Experiment.Public in
+  let thead =
+    Pool_common.Message.Field.[ Start; Duration; Location ]
+    |> CCList.map (fun field ->
+           td [ txt (Pool_common.Utils.field_to_string language field) ])
+    |> fun head -> head @ [ td [] ] |> tr |> CCList.pure |> thead
+  in
   CCList.map
     (fun (session : Session.Public.t) ->
       tr
@@ -11,6 +17,18 @@ let public_overview sessions experiment language =
                   session.Session.Public.start
                   |> Start.value
                   |> Pool_common.Utils.Time.formatted_date_time)
+            ]
+        ; td
+            [ txt
+                Session.(
+                  session.Session.Public.duration
+                  |> Duration.value
+                  |> Pool_common.Utils.print_time_span)
+            ]
+        ; td
+            [ txt
+                (session.Session.Public.location
+                |> Component.show_location language)
             ]
         ; td
             [ (match Session.Public.is_fully_booked session with
@@ -38,7 +56,7 @@ let public_overview sessions experiment language =
             ]
         ])
     sessions
-  |> table ~a:[ a_class [ "striped" ] ]
+  |> table ~thead ~a:[ a_class [ "striped" ] ]
 ;;
 
 let public_detail (session : Session.Public.t) language =
@@ -46,7 +64,9 @@ let public_detail (session : Session.Public.t) language =
   let open Pool_common.Message in
   let rows =
     [ ( Field.Start
-      , session.Public.start |> Start.value |> Ptime.to_rfc3339 ~space:true )
+      , session.Public.start
+        |> Start.value
+        |> Pool_common.Utils.Time.formatted_date_time )
     ; ( Field.Duration
       , session.Public.duration
         |> Duration.value
@@ -54,6 +74,8 @@ let public_detail (session : Session.Public.t) language =
     ; ( Field.Description
       , CCOption.map_or ~default:"" Description.value session.Public.description
       )
+    ; ( Field.Location
+      , session.Session.Public.location |> Component.show_location language )
     ; ( Field.CanceledAt
       , CCOption.map_or
           ~default:"Not canceled"
