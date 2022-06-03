@@ -151,6 +151,7 @@ let create_experiment () =
     ; filter = "1=1"
     ; waiting_list_disabled = true |> WaitingListDisabled.create
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
+    ; registration_disabled = false |> RegistrationDisabled.create
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

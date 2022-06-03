@@ -10,6 +10,7 @@ let default_schema command =
         ; Description.schema ()
         ; WaitingListDisabled.schema ()
         ; DirectRegistrationDisabled.schema ()
+        ; RegistrationDisabled.schema ()
         ]
       command)
 ;;
@@ -19,8 +20,14 @@ let default_command
     description
     waiting_list_disabled
     direct_registration_disabled
+    registration_disabled
   =
-  { title; description; waiting_list_disabled; direct_registration_disabled }
+  { title
+  ; description
+  ; waiting_list_disabled
+  ; direct_registration_disabled
+  ; registration_disabled
+  }
 ;;
 
 let validate_waiting_list_flags
@@ -46,17 +53,10 @@ module Create : sig
 end = struct
   type t = create
 
-  let handle (command : t) =
+  let handle command =
     let open CCResult in
-    let t =
-      { title = command.title
-      ; description = command.description
-      ; waiting_list_disabled = command.waiting_list_disabled
-      ; direct_registration_disabled = command.direct_registration_disabled
-      }
-    in
-    let* () = validate_waiting_list_flags t in
-    Ok [ Experiment.Created t |> Pool_event.experiment ]
+    let* () = validate_waiting_list_flags command in
+    Ok [ Experiment.Created command |> Pool_event.experiment ]
   ;;
 
   let decode data =
@@ -85,17 +85,10 @@ module Update : sig
 end = struct
   type t = create
 
-  let handle experiment (command : t) =
+  let handle experiment command =
     let open CCResult in
-    let update =
-      { title = command.title
-      ; description = command.description
-      ; waiting_list_disabled = command.waiting_list_disabled
-      ; direct_registration_disabled = command.direct_registration_disabled
-      }
-    in
-    let* () = validate_waiting_list_flags update in
-    Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
+    let* () = validate_waiting_list_flags command in
+    Ok [ Experiment.Updated (experiment, command) |> Pool_event.experiment ]
   ;;
 
   let decode data =

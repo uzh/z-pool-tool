@@ -3,7 +3,10 @@ module Common = Pool_common
 
 let experiment_boolean_fields =
   Pool_common.Message.Field.
-    [ WaitingListDisabled |> show; DirectRegistrationDisabled |> show ]
+    [ WaitingListDisabled |> show
+    ; DirectRegistrationDisabled |> show
+    ; RegistrationDisabled |> show
+    ]
 ;;
 
 module Data = struct
@@ -25,6 +28,7 @@ module Data = struct
         ; waiting_list_disabled = true |> WaitingListDisabled.create
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
+        ; registration_disabled = false |> RegistrationDisabled.create
         ; created_at = Common.CreatedAt.create ()
         ; updated_at = Common.UpdatedAt.create ()
         }
@@ -54,11 +58,13 @@ let create () =
     let direct_registration_disabled =
       false |> DirectRegistrationDisabled.create
     in
+    let registration_disabled = false |> RegistrationDisabled.create in
     let create =
       { title
       ; description
       ; waiting_list_disabled
       ; direct_registration_disabled
+      ; registration_disabled
       }
     in
     Ok [ Experiment.Created create |> Pool_event.experiment ]

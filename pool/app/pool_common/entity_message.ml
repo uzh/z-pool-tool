@@ -85,6 +85,8 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
+    | RegistrationDisabled [@name "registration_disabled"]
+        [@printer go "registration_disabled"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
@@ -177,6 +179,7 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
+  | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
   | SessionFullyBooked

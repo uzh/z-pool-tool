@@ -168,21 +168,27 @@ end = struct
         | true -> Error Pool_common.Message.(SessionFullyBooked)
         | false -> Ok ()
       in
-      let create =
-        let open Waiting_list in
-        Assignment.
-          { contact = command.waiting_list.contact
-          ; session_id = command.session.Session.id
-          }
-      in
-      (* TODO [timhub]: send confirmation mail *)
-      Ok
-        [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
-        ; Assignment.Created create |> Pool_event.assignment
-        ; Assignment.ConfirmationSent
-            (confirmation_email, command.waiting_list.Waiting_list.contact)
-          |> Pool_event.assignment
-        ]
+      match
+        command.waiting_list.Waiting_list.experiment
+        |> Experiment.registration_disabled_value
+      with
+      | true -> Error Pool_common.Message.(RegistrationDisabled)
+      | false ->
+        let create =
+          let open Waiting_list in
+          Assignment.
+            { contact = command.waiting_list.contact
+            ; session_id = command.session.Session.id
+            }
+        in
+        (* TODO [timhub]: send confirmation mail *)
+        Ok
+          [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
+          ; Assignment.Created create |> Pool_event.assignment
+          ; Assignment.ConfirmationSent
+              (confirmation_email, command.waiting_list.Waiting_list.contact)
+            |> Pool_event.assignment
+          ]
   ;;
 
   let can user _ =

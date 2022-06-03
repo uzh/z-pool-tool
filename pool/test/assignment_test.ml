@@ -51,6 +51,10 @@ let create () =
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
+      ; Assignment.(
+          ConfirmationSent
+            (confirmation_email, waiting_list.Waiting_list.contact))
+        |> Pool_event.assignment
       ]
   in
   check_result expected events
@@ -151,7 +155,34 @@ let assign_contact_from_waiting_list () =
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.Created create |> Pool_event.assignment
+      ; Assignment.(
+          ConfirmationSent
+            (confirmation_email, waiting_list.Waiting_list.contact))
+        |> Pool_event.assignment
       ]
   in
+  check_result expected events
+;;
+
+let assign_contact_from_waiting_list_to_disabled_experiment () =
+  let session = Test_utils.create_session () in
+  let experiment = Test_utils.create_experiment () in
+  let experiment =
+    Experiment.
+      { experiment with
+        registration_disabled = true |> RegistrationDisabled.create
+      }
+  in
+  let waiting_list = Test_utils.create_waiting_list () in
+  let waiting_list = Waiting_list.{ waiting_list with experiment } in
+  let already_enrolled = false in
+  let events =
+    let command =
+      AssignmentCommand.CreateFromWaitingList.
+        { session; waiting_list; already_enrolled }
+    in
+    AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
+  in
+  let expected = Error Pool_common.Message.(RegistrationDisabled) in
   check_result expected events
 ;;

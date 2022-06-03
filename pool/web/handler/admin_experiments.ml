@@ -10,8 +10,9 @@ let id req field encode =
 ;;
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.
-    [ WaitingListDisabled |> show; DirectRegistrationDisabled |> show ]
+  Pool_common.Message.Field.(
+    [ WaitingListDisabled; DirectRegistrationDisabled; RegistrationDisabled ]
+    |> CCList.map show)
 ;;
 
 let index req =

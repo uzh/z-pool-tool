@@ -133,6 +133,12 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
         Pool_common.Message.Field.DirectRegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false direct_registration_disabled_value)
+    ; checkbox_element
+        language
+        `Checkbox
+        Pool_common.Message.Field.RegistrationDisabled
+        (experiment
+        |> CCOption.map_or ~default:false registration_disabled_value)
     ; submit_element
         language
         Message.(
@@ -206,28 +212,23 @@ let detail experiment session_count Pool_context.{ language; _ } =
   let bool_to_string = Pool_common.Utils.bool_to_string language in
   let open Experiment in
   let html =
+    let boolean_fields =
+      let open Experiment in
+      Message.Field.
+        [ WaitingListDisabled, waiting_list_disabled_value
+        ; DirectRegistrationDisabled, direct_registration_disabled_value
+        ; RegistrationDisabled, registration_disabled_value
+        ]
+    in
     div
       [ p [ txt (experiment.description |> Description.value) ]
       ; table
-          [ tr
-              [ td [ txt (field_to_string Message.Field.WaitingListDisabled) ]
-              ; td
-                  [ txt
-                      (waiting_list_disabled_value experiment |> bool_to_string)
-                  ]
-              ]
-          ; tr
-              [ td
-                  [ txt
-                      (field_to_string Message.Field.DirectRegistrationDisabled)
-                  ]
-              ; td
-                  [ txt
-                      (direct_registration_disabled_value experiment
-                      |> bool_to_string)
-                  ]
-              ]
-          ]
+          (boolean_fields
+          |> CCList.map (fun (label, fnc) ->
+                 tr
+                   [ td [ txt (field_to_string label) ]
+                   ; td [ txt (fnc experiment |> bool_to_string) ]
+                   ]))
       ; p
           [ a
               ~a:

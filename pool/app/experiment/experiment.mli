@@ -56,6 +56,20 @@ module DirectRegistrationDisabled : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module RegistrationDisabled : sig
+  type t
+
+  val equal : t -> t -> t
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : bool -> t
+  val value : t -> bool
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -63,6 +77,7 @@ type t =
   ; filter : string
   ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -77,6 +92,7 @@ val create
   -> Description.t
   -> WaitingListDisabled.t
   -> DirectRegistrationDisabled.t
+  -> RegistrationDisabled.t
   -> t
 
 type create =
@@ -84,6 +100,7 @@ type create =
   ; description : Description.t
   ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
   }
 
 val equal_create : create -> create -> bool
@@ -145,6 +162,7 @@ val title_value : t -> string
 val description_value : t -> string
 val waiting_list_disabled_value : t -> bool
 val direct_registration_disabled_value : t -> bool
+val registration_disabled_value : t -> bool
 
 module Repo : sig
   module Description : sig

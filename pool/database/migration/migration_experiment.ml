@@ -35,10 +35,20 @@ let change_description_column_type =
     |sql}
 ;;
 
+let add_disable_registration =
+  Sihl.Database.Migration.create_step
+    ~label:"rename subject id to contact id"
+    {sql|
+      ALTER TABLE pool_experiments
+        ADD COLUMN registration_disabled boolean NOT NULL DEFAULT 0 AFTER direct_registration_disabled
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
     |> add_step create_pool_experiments_table
     |> add_step add_waiting_list_flags_to_experiment
-    |> add_step change_description_column_type)
+    |> add_step change_description_column_type
+    |> add_step add_disable_registration)
 ;;

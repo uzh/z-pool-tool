@@ -92,26 +92,48 @@ let detail
           sessions
         |> table ~thead ~a:[ a_class [ "striped" ] ]
         |> fun content ->
-        form
-          ~a:
-            [ a_method `Post
-            ; a_action
-                (Format.asprintf
-                   "/admin/experiments/%s/waiting-list/%s/assign"
-                   (experiment_id |> Pool_common.Id.value)
-                   (id |> Pool_common.Id.value)
-                |> Sihl.Web.externalize_path)
+        match experiment |> Experiment.registration_disabled_value with
+        | true ->
+          div
+            [ content
+            ; div
+                ~a:[ a_class [ "gap" ] ]
+                [ Component.submit_element
+                    language
+                    ~classnames:[ "disabled" ]
+                    Pool_common.Message.(Assign (Some Field.Contact))
+                    ()
+                ; p
+                    ~a:[ a_class [ "help" ] ]
+                    [ txt
+                        Pool_common.(
+                          Utils.error_to_string
+                            language
+                            Message.RegistrationDisabled)
+                    ]
+                ]
             ]
-          [ Component.csrf_element csrf ()
-          ; content
-          ; div
-              ~a:[ a_class [ "gap" ] ]
-              [ Component.submit_element
-                  language
-                  Pool_common.Message.(Assign (Some Field.Contact))
-                  ()
+        | false ->
+          form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Format.asprintf
+                     "/admin/experiments/%s/waiting-list/%s/assign"
+                     (experiment_id |> Pool_common.Id.value)
+                     (id |> Pool_common.Id.value)
+                  |> Sihl.Web.externalize_path)
               ]
-          ])
+            [ Component.csrf_element csrf ()
+            ; content
+            ; div
+                ~a:[ a_class [ "gap" ] ]
+                [ Component.submit_element
+                    language
+                    Pool_common.Message.(Assign (Some Field.Contact))
+                    ()
+                ]
+            ])
     in
     div
       [ h2

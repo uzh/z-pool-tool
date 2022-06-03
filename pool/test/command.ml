@@ -104,6 +104,11 @@ let () =
             "assign user from waiting list"
             `Quick
             Assignment_test.assign_contact_from_waiting_list
+        ; test_case
+            "assign contact from waiting_list to disabled experiment"
+            `Quick
+            Assignment_test
+            .assign_contact_from_waiting_list_to_disabled_experiment
         ] )
     ; ( "invitation"
       , [ test_case "create invitation" `Quick Invitation_test.create

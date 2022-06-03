@@ -69,6 +69,7 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
+  | RegistrationDisabled -> "Registrierung deaktiviert"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -222,6 +223,7 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."

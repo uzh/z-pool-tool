@@ -39,6 +39,12 @@ module DirectRegistrationDisabled = struct
   let t = Caqti_type.bool
 end
 
+module RegistrationDisabled = struct
+  include RegistrationDisabled
+
+  let t = Caqti_type.bool
+end
+
 let t =
   let encode (m : t) =
     Ok
@@ -47,8 +53,9 @@ let t =
         , ( m.description
           , ( m.filter
             , ( m.waiting_list_disabled
-              , (m.direct_registration_disabled, (m.created_at, m.updated_at))
-              ) ) ) ) )
+              , ( m.direct_registration_disabled
+                , (m.registration_disabled, (m.created_at, m.updated_at)) ) ) )
+          ) ) )
   in
   let decode
       ( id
@@ -56,8 +63,8 @@ let t =
         , ( description
           , ( filter
             , ( waiting_list_disabled
-              , (direct_registration_disabled, (created_at, updated_at)) ) ) )
-        ) )
+              , ( direct_registration_disabled
+                , (registration_disabled, (created_at, updated_at)) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -67,6 +74,7 @@ let t =
       ; filter
       ; waiting_list_disabled
       ; direct_registration_disabled
+      ; registration_disabled
       ; created_at
       ; updated_at
       }
@@ -87,7 +95,11 @@ let t =
                      WaitingListDisabled.t
                      (tup2
                         DirectRegistrationDisabled.t
-                        (tup2 Common.Repo.CreatedAt.t Common.Repo.UpdatedAt.t))))))))
+                        (tup2
+                           RegistrationDisabled.t
+                           (tup2
+                              Common.Repo.CreatedAt.t
+                              Common.Repo.UpdatedAt.t)))))))))
 ;;
 
 module Write = struct
@@ -98,8 +110,9 @@ module Write = struct
         , ( Title.value m.title
           , ( Description.value m.description
             , ( m.filter
-              , (m.waiting_list_disabled, m.direct_registration_disabled) ) ) )
-        )
+              , ( m.waiting_list_disabled
+                , (m.direct_registration_disabled, m.registration_disabled) ) )
+            ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -114,7 +127,11 @@ module Write = struct
                  Description.t
                  (tup2
                     string
-                    (tup2 WaitingListDisabled.t DirectRegistrationDisabled.t))))))
+                    (tup2
+                       WaitingListDisabled.t
+                       (tup2
+                          DirectRegistrationDisabled.t
+                          RegistrationDisabled.t)))))))
   ;;
 end
 

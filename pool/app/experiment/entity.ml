@@ -67,6 +67,24 @@ module DirectRegistrationDisabled = struct
   ;;
 end
 
+module RegistrationDisabled = struct
+  type t = bool [@@deriving eq, show]
+
+  let create m = m
+  let value m = m
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Common.Message.Field.RegistrationDisabled
+  ;;
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -74,6 +92,7 @@ type t =
   ; filter : string
   ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -85,6 +104,7 @@ let create
     description
     waiting_list_disabled
     direct_registration_disabled
+    registration_disabled
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
@@ -94,6 +114,7 @@ let create
   ; direct_registration_disabled
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
+  ; registration_disabled
   }
 ;;
 
@@ -116,4 +137,8 @@ let waiting_list_disabled_value (m : t) =
 
 let direct_registration_disabled_value (m : t) =
   DirectRegistrationDisabled.value m.direct_registration_disabled
+;;
+
+let registration_disabled_value (m : t) =
+  RegistrationDisabled.value m.registration_disabled
 ;;
