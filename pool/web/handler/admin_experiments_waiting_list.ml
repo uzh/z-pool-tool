@@ -109,9 +109,11 @@ let assign_contact req =
     , id req Message.Field.WaitingList Id.of_string )
   in
   let redirect_path =
+    let open Pool_common.Id in
     Format.asprintf
-      "/admin/experiments/%s/waiting-list"
-      (experiment_id |> Pool_common.Id.value)
+      "/admin/experiments/%s/waiting-list/%s"
+      (experiment_id |> value)
+      (waiting_list_id |> value)
   in
   let result context =
     Lwt_result.map_err (fun err -> err, redirect_path)

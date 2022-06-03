@@ -75,6 +75,7 @@ let field_to_string =
   | Room -> "room"
   | Root -> "root"
   | Session -> "session"
+  | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUp -> "show up"
   | SmtpAuthMethod -> "smtp authentication method"

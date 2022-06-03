@@ -2,6 +2,7 @@ type t =
   | DashboardTitle
   | EmailConfirmationNote
   | EmailConfirmationTitle
+  | EmtpyList of Entity_message.Field.t
   | ExperimentEditTitle
   | ExperimentNewTitle
   | ExperimentListTitle

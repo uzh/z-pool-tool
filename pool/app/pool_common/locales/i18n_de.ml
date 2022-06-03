@@ -5,6 +5,10 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
+  | EmtpyList field ->
+    Format.asprintf
+      "Es sind keine %s vorhanden."
+      (Locales_de.field_to_string field)
   | ExperimentListTitle -> "Experimente"
   | ExperimentEditTitle -> "Experiment bearbeiten"
   | ExperimentNewTitle -> "Neues Experiment erstellen"

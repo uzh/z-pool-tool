@@ -90,6 +90,7 @@ module Field = struct
     | Room [@name "room"] [@printer go "room"]
     | Root [@name "root"] [@printer go "root"]
     | Session [@name "session"] [@printer go "session"]
+    | Sessions [@name "sessions"] [@printer go "sessions"]
     | Setting [@name "setting"] [@printer go "setting"]
     | ShowUp [@name "show_up"] [@printer go "show_up"]
     | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
