@@ -44,9 +44,9 @@ test: ## Run the all tests
 .PHONY: test-migrate
 test-migrate: ## Run the all tests
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe migrate.root
-	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.root
+	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.root.clean
 	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe migrate.tenant
-	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.tenant
+	SIHL_ENV=test opam exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
 
 .PHONY: clean
 clean: ## Clean build artifacts and other generated files

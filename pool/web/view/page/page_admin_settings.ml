@@ -76,7 +76,7 @@ let show
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
-      ; Pool_common.Language.all ()
+      ; Pool_common.Language.all
         |> CCList.filter_map (fun k ->
                match CCList.mem k tenant_languages with
                | true -> None
@@ -89,12 +89,12 @@ let show
     in
     let field_elements =
       div
-        ~a:[ a_user_data "sortable" "" ]
+        ~a:[ a_user_data "sortable" ""; a_class [ "input-group" ] ]
         (CCList.map
            (fun (language, selected) ->
              let attrs =
                [ a_input_type `Checkbox
-               ; a_name (Pool_common.Language.code language)
+               ; a_name (Pool_common.Language.show language)
                ]
              in
              let selected =
@@ -115,11 +115,11 @@ let show
              let checkbox = input ~a:(attrs @ selected @ disabled) () in
              div
                ~a:[ a_user_data "sortable-item" "" ]
-               [ label [ txt (Pool_common.Language.code language) ]; checkbox ])
+               [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
            all_languages)
     in
     div
-      [ h2 [ txt "Languages" ]
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Languages" ]
       ; p
           [ txt
               "You have to add Terms and Condidions before you can activate a \
@@ -128,17 +128,12 @@ let show
       ; form
           ~a:(form_attrs `UpdateTenantLanguages)
           ([ Component.csrf_element csrf (); field_elements ]
-          @ [ submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Update None) () ])
       ]
   in
   let email_suffixes_html =
     div
-      [ h2 [ txt "Email Suffixes" ]
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Email Suffixes" ]
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ form
@@ -150,42 +145,42 @@ let show
                      Message.Field.EmailSuffix
                      (suffix |> Settings.EmailSuffix.value))
                  email_suffixes
-              @ [ submit_element
-                    language
-                    Message.(Update None)
-                    ~classnames:[ "button--primary" ]
-                    ()
-                ])
+              @ [ submit_element language Message.(Update None) () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
               [ input_element `Text Message.Field.EmailSuffix ""
-              ; submit_element
-                  language
-                  Message.(Add None)
-                  ~classnames:[ "button--success" ]
-                  ()
+              ; submit_element language Message.(Add None) ()
               ]
           ; div
               (CCList.map
                  (fun suffix ->
-                   form
-                     ~a:(form_attrs `DeleteTenantEmailSuffix)
-                     [ span [ txt (Settings.EmailSuffix.value suffix) ]
-                     ; input
-                         ~a:
-                           [ a_input_type `Hidden
-                           ; a_name "email_suffix"
-                           ; a_value (Settings.EmailSuffix.value suffix)
-                           ; a_readonly ()
-                           ]
-                         ()
-                     ; submit_element
-                         language
-                         Message.(Delete None)
-                         ~classnames:[ "button--failure" ]
-                         ()
+                   tr
+                     [ td [ span [ txt (Settings.EmailSuffix.value suffix) ] ]
+                     ; td
+                         [ form
+                             ~a:
+                               [ a_method `Post
+                               ; a_action (action_path `DeleteTenantEmailSuffix)
+                               ]
+                             [ input
+                                 ~a:
+                                   [ a_input_type `Hidden
+                                   ; a_name "email_suffix"
+                                   ; a_value (Settings.EmailSuffix.value suffix)
+                                   ; a_readonly ()
+                                   ]
+                                 ()
+                             ; submit_element
+                                 language
+                                 Message.(Delete None)
+                                 ~submit_type:`Error
+                                 ()
+                             ]
+                         ]
                      ])
-                 email_suffixes)
+                 email_suffixes
+              |> table ~a:[ a_class [ "width-auto" ] ]
+              |> CCList.pure)
           ]
       ]
   in
@@ -198,45 +193,38 @@ let show
               `Text
               Message.Field.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
-          ; submit_element
-              language
-              Message.(Add None)
-              ~classnames:[ "button--success" ]
-              ()
+          ; submit_element language Message.(Add None) ()
           ]
       ]
   in
   let inactive_user_html =
     let open Settings.InactiveUser in
     div
-      [ h2 [ txt "Inactive Users" ]
-      ; form
-          ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-          [ p [ txt "Disable user after (weeks)" ]
-          ; input_element
-              `Number
-              Message.Field.InactiveUserDisableAfter
-              (inactive_user_disable_after
-              |> DisableAfter.value
-              |> CCInt.to_string)
-          ; submit_element
-              language
-              Message.(Update None)
-              ~classnames:[ "button--primary" ]
-              ()
-          ]
-      ; form
-          ~a:(form_attrs `UpdateInactiveUserWarning)
-          [ p [ txt "Send warning before disabling (days)" ]
-          ; input_element
-              `Number
-              Message.Field.InactiveUserWarning
-              (inactive_user_warning |> Warning.value |> CCInt.to_string)
-          ; submit_element
-              language
-              Message.(Update None)
-              ~classnames:[ "button--primary" ]
-              ()
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Inactive Users" ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UpdateInactiveUserDisableAfter)
+              [ Component.input_element
+                  ~help:Pool_common.I18n.NumberIsWeeksHint
+                  language
+                  `Number
+                  Message.Field.InactiveUserDisableAfter
+                  (inactive_user_disable_after
+                  |> DisableAfter.value
+                  |> CCInt.to_string)
+              ; submit_element language Message.(Update None) ()
+              ]
+          ; form
+              ~a:(form_attrs `UpdateInactiveUserWarning)
+              [ Component.input_element
+                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  language
+                  `Number
+                  Message.Field.InactiveUserWarning
+                  (inactive_user_warning |> Warning.value |> CCInt.to_string)
+              ; submit_element language Message.(Update None) ()
+              ]
           ]
       ]
   in
@@ -249,32 +237,28 @@ let show
         (fun sys_language ->
           Component.textarea_element
             language
-            (Pool_common.Language.code sys_language)
+            (Pool_common.Language.show sys_language)
             (Pool_common.Language.field_of_t sys_language)
             (CCList.assoc_opt
                ~eq:Pool_common.Language.equal
-               language
+               sys_language
                terms_and_conditions
             |> CCOption.map Settings.TermsAndConditions.Terms.value
             |> CCOption.value ~default:"")
             ())
-        (Pool_common.Language.all ())
+        Pool_common.Language.all
     in
     div
-      [ h2 [ txt "Terms and conditions" ]
+      [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]
       ; form
           ~a:(form_attrs `UpdateTermsAndConditions)
           (terms_and_conditions_textareas
-          @ [ submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Update None) () ])
       ]
   in
   div
-    [ h1 [ txt "Settings" ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Settings" ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ languages_html

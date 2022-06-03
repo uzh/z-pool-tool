@@ -1,4 +1,4 @@
-let tenant pool () =
+let tenant pool =
   Email.(DefaultRestored default_values_tenant |> handle_event pool)
 ;;
 

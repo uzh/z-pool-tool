@@ -1,31 +1,5 @@
 module PoolError = Pool_common.Message
 
-module Password = struct
-  type t = string [@@deriving eq]
-
-  let default_password_policy p =
-    if CCString.length p < 8 then Error "password_policy_text" else Ok ()
-  ;;
-
-  let validate ?(password_policy = default_password_policy) password =
-    let open CCResult in
-    let* () = password_policy password |> map_err PoolError.passwordpolicy in
-    Ok ()
-  ;;
-
-  let create password = Ok password
-  let to_sihl m = m
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
-  ;;
-
-  let schema ?(field = PoolError.Field.Password) () =
-    Pool_common.Utils.schema_decoder create show field
-  ;;
-end
-
 module PasswordConfirmed = struct
   type t = string [@@deriving eq]
 
@@ -39,6 +13,51 @@ module PasswordConfirmed = struct
 
   let schema ?(field = PoolError.Field.PasswordConfirmation) () =
     Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
+  ;;
+end
+
+module Password = struct
+  type t = string [@@deriving eq]
+
+  let create password = Ok password
+  let to_sihl m = m
+  let show m = CCString.repeat "*" @@ CCString.length m
+
+  let pp (formatter : Format.formatter) (m : t) : unit =
+    Format.fprintf formatter "%s" m
+  ;;
+
+  let schema ?(field = PoolError.Field.Password) () =
+    Pool_common.Utils.schema_decoder create show field
+  ;;
+
+  let default_password_policy p =
+    if CCString.length p < 8
+    then
+      Error
+        PoolError.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
+    else Ok ()
+  ;;
+
+  let validate ?(password_policy = default_password_policy) password =
+    (* TODO: Consider checking against old password *)
+    password |> password_policy
+  ;;
+
+  let validate_current_password
+      ?(field = PoolError.Field.CurrentPassword)
+      user
+      password
+    =
+    if Sihl_user.matches_password (password |> to_sihl) user
+    then Ok ()
+    else Error PoolError.(Invalid field)
+  ;;
+
+  let validate_password_confirmation new_password password_confirmation =
+    if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
+    then Ok ()
+    else Error PoolError.PasswordConfirmationDoesNotMatch
   ;;
 end
 
@@ -174,4 +193,13 @@ module Verified = struct
   let create m = m
   let create_now () = Some (Ptime_clock.now ())
   let value m = m
+end
+
+module EmailVerified = struct
+  type t = Ptime.t option [@@deriving eq, show]
+
+  let create m = m
+  let create_now () = Some (Ptime_clock.now ())
+  let value m = m
+  let is_some m = m |> CCOption.is_some
 end

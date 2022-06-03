@@ -3,27 +3,27 @@ module PoolError = Common.Message
 
 module Key = struct
   type t =
-    | ConfirmationSubject
+    | ConfirmationContact
     | ConfirmationText
-    | ConfirmationWithoutSelfRegistrationSubject
+    | ConfirmationWithoutSelfRegistrationContact
     | ConfirmationWithoutSelfRegistrationText
     | CreditsText
-    | ExperimentFinishSubject
+    | ExperimentFinishContact
     | ExperimentFinishText
     | GreetingsText
-    | ImportInvitationSubject
+    | ImportInvitationContact
     | ImportInvitationText
-    | InvitationSubject
+    | InvitationContact
     | InvitationText
-    | InvitationWithoutSelfRegistrationSubject
+    | InvitationWithoutSelfRegistrationContact
     | InvitationWithoutSelfRegistrationText
+    | PasswordPolicyText
+    | ReminderContact
     | ReminderSmsText
-    | ReminderSubject
     | ReminderText
-    | SessionFinishSubject
+    | SessionFinishContact
     | SessionFinishText
     | WelcomeText
-    | PasswordPolicyText
   [@@deriving eq, show, enum]
 
   let all : t list =
@@ -34,59 +34,59 @@ module Key = struct
   ;;
 
   let to_string = function
-    | ConfirmationSubject -> "confirmation_subject"
+    | ConfirmationContact -> "confirmation_contact"
     | ConfirmationText -> "confirmation_text"
-    | ConfirmationWithoutSelfRegistrationSubject ->
-      "confirmation_without_self_registration_subject"
+    | ConfirmationWithoutSelfRegistrationContact ->
+      "confirmation_without_self_registration_contact"
     | ConfirmationWithoutSelfRegistrationText ->
       "confirmation_without_self_registration_text"
     | CreditsText -> "credits_text"
-    | ExperimentFinishSubject -> "experiment_finish_subject"
+    | ExperimentFinishContact -> "experiment_finish_contact"
     | ExperimentFinishText -> "experiment_finish_text"
     | GreetingsText -> "greetings_text"
-    | ImportInvitationSubject -> "import_invitation_subject"
+    | ImportInvitationContact -> "import_invitation_contact"
     | ImportInvitationText -> "import_invitation_text"
-    | InvitationSubject -> "invitation_subject"
+    | InvitationContact -> "invitation_contact"
     | InvitationText -> "invitation_text"
-    | InvitationWithoutSelfRegistrationSubject ->
-      "invitation_without_self_registration_subject"
+    | InvitationWithoutSelfRegistrationContact ->
+      "invitation_without_self_registration_contact"
     | InvitationWithoutSelfRegistrationText ->
       "invitation_without_self_registration_text"
+    | PasswordPolicyText -> "password_policy_text"
+    | ReminderContact -> "reminder_contact"
     | ReminderSmsText -> "reminder_sms_text"
-    | ReminderSubject -> "reminder_subject"
     | ReminderText -> "reminder_text"
-    | SessionFinishSubject -> "session_finish_subject"
+    | SessionFinishContact -> "session_finish_contact"
     | SessionFinishText -> "session_finish_text"
     | WelcomeText -> "welcome_text"
-    | PasswordPolicyText -> "password_policy_text"
   ;;
 
   let of_string = function
-    | "confirmation_subject" -> Ok ConfirmationSubject
+    | "confirmation_contact" -> Ok ConfirmationContact
     | "confirmation_text" -> Ok ConfirmationText
-    | "confirmation_without_self_registration_subject" ->
-      Ok ConfirmationWithoutSelfRegistrationSubject
+    | "confirmation_without_self_registration_contact" ->
+      Ok ConfirmationWithoutSelfRegistrationContact
     | "confirmation_without_self_registration_text" ->
       Ok ConfirmationWithoutSelfRegistrationText
     | "credits_text" -> Ok ConfirmationText
-    | "experiment_finish_subject" -> Ok ExperimentFinishSubject
+    | "experiment_finish_contact" -> Ok ExperimentFinishContact
     | "experiment_finish_text" -> Ok ExperimentFinishText
     | "greetings_text" -> Ok GreetingsText
-    | "import_invitation_subject" -> Ok ImportInvitationSubject
+    | "import_invitation_contact" -> Ok ImportInvitationContact
     | "import_invitation_text" -> Ok ImportInvitationText
-    | "invitation_subject" -> Ok InvitationSubject
+    | "invitation_contact" -> Ok InvitationContact
     | "invitation_text" -> Ok InvitationText
-    | "invitation_without_self_registration_subject" ->
-      Ok InvitationWithoutSelfRegistrationSubject
+    | "invitation_without_self_registration_contact" ->
+      Ok InvitationWithoutSelfRegistrationContact
     | "invitation_without_self_registration_text" ->
       Ok InvitationWithoutSelfRegistrationText
+    | "password_policy_text" -> Ok PasswordPolicyText
+    | "reminder_contact" -> Ok ReminderContact
     | "reminder_sms_text" -> Ok ReminderSmsText
-    | "reminder_subject" -> Ok ReminderSubject
     | "reminder_text" -> Ok ReminderText
-    | "session_finish_subject" -> Ok SessionFinishSubject
+    | "session_finish_contact" -> Ok SessionFinishContact
     | "session_finish_text" -> Ok SessionFinishText
     | "welcome_text" -> Ok WelcomeText
-    | "password_policy_text" -> Ok PasswordPolicyText
     | _ -> Error PoolError.(Invalid Field.Key)
   ;;
 

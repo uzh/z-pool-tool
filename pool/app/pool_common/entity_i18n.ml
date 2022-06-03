@@ -2,11 +2,28 @@ type t =
   | DashboardTitle
   | EmailConfirmationNote
   | EmailConfirmationTitle
+  | ExperimentEditTitle
+  | ExperimentNewTitle
+  | ExperimentListTitle
+  | ExperimentWaitingListTitle
+  | ExperimentContactEnrolledNote
   | HomeTitle
   | I18nTitle
+  | InvitationListTitle
+  | InvitationNewTitle
+  | LocationListTitle
+  | LocationNewTitle
+  | LocationNoSessions
+  | LocationFileNew
   | LoginTitle
+  | NumberIsDaysHint
+  | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
+  | SessionListTitle
+  | SessionNewTitle
+  | SessionUpdateTitle
+  | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle
@@ -14,10 +31,18 @@ type t =
   | UserProfileDetailsSubtitle
   | UserProfileTitle
   | UserProfilePausedNote
+  | WaitingListIsDisabled
 
 type nav_link =
   | Dashboard
+  | Experiments
   | I18n
+  | Invitations
+  | Locations
+  | Overview
   | Profile
+  | Sessions
   | Settings
   | Tenants
+  | WaitingList
+[@@deriving eq]

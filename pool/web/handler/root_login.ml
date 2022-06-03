@@ -67,7 +67,9 @@ let request_reset_password_post req =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
-    let* context = Pool_context.find req |> Lwt_result.lift in
+    let* { Pool_context.language; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
     let* email =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result (NotFound Field.Email)
@@ -76,7 +78,6 @@ let request_reset_password_post req =
       Service.User.find_by_email_opt ~ctx email
       ||> CCOption.to_result PasswordResetFailMessage
     in
-    let language = context.Pool_context.language in
     Email.Helper.PasswordReset.create Database.root language ~user
     >|= Service.Email.send ~ctx
   in

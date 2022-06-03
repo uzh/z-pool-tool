@@ -1,3 +1,4 @@
+(* TODO [aerben] move everything to pool_common utils *)
 let decimal n =
   if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
 ;;

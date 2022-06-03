@@ -1,5 +1,6 @@
 module Message = Pool_common.Message
 
+(* TODO [aerben] maybe move to pool common *)
 module Day = struct
   type t = int [@@deriving eq, show, yojson]
 
@@ -110,7 +111,7 @@ module TermsAndConditions = struct
 
   let create language content =
     let open CCResult in
-    let* language = Pool_common.Language.of_string language in
+    let* language = Pool_common.Language.create language in
     let* content = Terms.create content in
     Ok (language, content)
   ;;

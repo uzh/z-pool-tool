@@ -199,7 +199,7 @@ let[@warning "-4"] create_tenant () =
         Write.
           { server; port; username; password; authentication_method; protocol }
     in
-    let* default_language = default_language |> Common.Language.of_string in
+    let* default_language = default_language |> Common.Language.create in
     let create : Pool_tenant.Write.t =
       Pool_tenant.Write.
         { id = tenant_id
@@ -281,7 +281,7 @@ let[@warning "-4"] update_tenant_details () =
         let* protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
         Ok { server; port; username; authentication_method; protocol }
       in
-      let* default_language = default_language |> Common.Language.of_string in
+      let* default_language = default_language |> Common.Language.create in
       let disabled = false |> Disabled.create in
       let update : update =
         { title; description; url; smtp_auth; default_language; disabled }
@@ -344,29 +344,26 @@ let update_tenant_database () =
 
 let create_operator () =
   let open Data in
-  match Data.tenant with
-  | Error _ -> failwith "Failed to create tenant"
-  | Ok tenant ->
-    let events =
-      let open CCResult.Infix in
-      let open Admin_command.CreateOperator in
-      Data.urlencoded |> decode >>= handle tenant
+  let events =
+    let open CCResult.Infix in
+    let open Admin_command.CreateOperator in
+    Data.urlencoded |> decode >>= handle
+  in
+  let expected =
+    let open CCResult in
+    let* email = email |> Pool_user.EmailAddress.create in
+    let* password = password |> Pool_user.Password.create in
+    let* firstname = firstname |> Pool_user.Firstname.create in
+    let* lastname = lastname |> Pool_user.Lastname.create in
+    let operator : Admin.create =
+      Admin.{ email; password; firstname; lastname }
     in
-    let expected =
-      let open CCResult in
-      let* email = email |> Pool_user.EmailAddress.create in
-      let* password = password |> Pool_user.Password.create in
-      let* firstname = firstname |> Pool_user.Firstname.create in
-      let* lastname = lastname |> Pool_user.Lastname.create in
-      let operator : Admin.create =
-        Admin.{ email; password; firstname; lastname }
-      in
-      Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
-    in
-    Alcotest.(
-      check
-        (result (list Test_utils.event) Test_utils.error)
-        "succeeds"
-        expected
-        events)
+    Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;

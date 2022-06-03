@@ -1,28 +1,67 @@
 open Experiment
+module Conformist = Pool_common.Utils.PoolConformist
 module Id = Pool_common.Id
 
-module AddExperiment : sig
-  type t =
-    { title : Experiment.Title.t
-    ; description : Experiment.Description.t
-    }
+let default_schema command =
+  Pool_common.Utils.PoolConformist.(
+    make
+      Field.
+        [ Title.schema ()
+        ; Description.schema ()
+        ; WaitingListDisabled.schema ()
+        ; DirectRegistrationDisabled.schema ()
+        ]
+      command)
+;;
 
-  val handle : t -> (Pool_event.t list, 'a) result
+let default_command
+    title
+    description
+    waiting_list_disabled
+    direct_registration_disabled
+  =
+  { title; description; waiting_list_disabled; direct_registration_disabled }
+;;
+
+let validate_waiting_list_flags
+    ({ waiting_list_disabled; direct_registration_disabled; _ } : create)
+  =
+  let open Experiment in
+  if direct_registration_disabled |> DirectRegistrationDisabled.value
+     && waiting_list_disabled |> WaitingListDisabled.value
+  then Error Pool_common.Message.WaitingListFlagsMutuallyExclusive
+  else Ok ()
+;;
+
+module Create : sig
+  type t = create
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t =
-    { title : Experiment.Title.t
-    ; description : Experiment.Description.t
-    }
+  type t = create
 
   let handle (command : t) =
-    let create : Experiment.create =
-      { title = command.title; description = command.description }
+    let open CCResult in
+    let t =
+      { title = command.title
+      ; description = command.description
+      ; waiting_list_disabled = command.waiting_list_disabled
+      ; direct_registration_disabled = command.direct_registration_disabled
+      }
     in
-    let event (t : Experiment.create) =
-      Ok [ Experiment.ExperimentAdded t |> Pool_event.experiment ]
-    in
-    create |> event
+    let* () = validate_waiting_list_flags t in
+    Ok [ Experiment.Created t |> Pool_event.experiment ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate (default_schema default_command) data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user _ =
@@ -30,48 +69,67 @@ end = struct
   ;;
 end
 
-module EditExperiment : sig
-  type t =
-    { experiment_id : Id.t
-    ; room : Experiment.Location.Room.t
-    ; building : Experiment.Location.Building.t
-    ; street : Experiment.Location.Street.t
-    ; zip : Experiment.Location.Zip.t
-    ; city : Experiment.Location.City.t
-    }
+module Update : sig
+  type t = create
 
-  val handle : t -> Experiment.t -> (Pool_event.t list, string) result
+  val handle
+    :  Experiment.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t =
-    { experiment_id : Id.t
-    ; room : Experiment.Location.Room.t
-    ; building : Experiment.Location.Building.t
-    ; street : Experiment.Location.Street.t
-    ; zip : Experiment.Location.Zip.t
-    ; city : Experiment.Location.City.t
-    }
+  type t = create
 
-  let handle = Utils.todo
+  let handle experiment (command : t) =
+    let open CCResult in
+    let update =
+      { title = command.title
+      ; description = command.description
+      ; waiting_list_disabled = command.waiting_list_disabled
+      ; direct_registration_disabled = command.direct_registration_disabled
+      }
+    in
+    let* () = validate_waiting_list_flags update in
+    Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
+  ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Experiment, Some command.experiment_id)
-        ]
+  let decode data =
+    Conformist.decode_and_validate (default_schema default_command) data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
   ;;
 end
 
-module DestroyExperiment : sig
-  type t = { experiment_id : Id.t }
+module Delete : sig
+  type t =
+    { experiment_id : Id.t
+    ; session_count : int
+    }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  type t = { experiment_id : Id.t }
+  (* Only when no sessions added *)
 
-  let handle = Utils.todo
+  type t =
+    { experiment_id : Id.t
+    ; session_count : int
+    }
+
+  let handle { experiment_id; session_count } =
+    match session_count > 0 with
+    | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
+    | false ->
+      Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
+  ;;
 
   let can user command =
     Permission.can
@@ -80,6 +138,10 @@ end = struct
         [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
         ]
   ;;
+end
+
+module UpdateFilter : sig end = struct
+  (* Update 'match_filter' flag in currently existing assignments *)
 end
 
 module AddExperimenter : sig

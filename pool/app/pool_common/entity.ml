@@ -1,49 +1,54 @@
 open Sexplib.Conv
 module PoolError = Entity_message
 
+(* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  type t = string [@@deriving eq, show, sexp]
 
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m
   let value m = m
+
+  let schema () =
+    Pool_common_utils.schema_decoder
+      (Utils.fcn_ok of_string)
+      value
+      PoolError.Field.Id
+  ;;
 end
 
 module Language = struct
+  let field = PoolError.Field.Language
+  let go m fmt _ = Format.pp_print_string fmt m
+
   type t =
-    | En [@name "EN"]
-    | De [@name "DE"]
-  [@@deriving eq, show, yojson, sexp_of]
+    | En [@name "EN"] [@printer go "EN"]
+    | De [@name "DE"] [@printer go "DE"]
+  [@@deriving enum, eq, show { with_path = false }, yojson, sexp_of]
 
-  let code = function
-    | En -> "EN"
-    | De -> "DE"
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
   ;;
 
-  let of_string = function
-    | "EN" -> Ok En
-    | "DE" -> Ok De
-    | _ -> Error PoolError.(Invalid Field.Language)
+  let create m =
+    try Ok (read m) with
+    | _ -> Error PoolError.(Invalid field)
   ;;
 
-  let t =
-    let open CCResult in
-    (* TODO: Belongs to Repo (search for all caqti types in entities) *)
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> code |> pure)
-        ~decode:(fun m -> map_err (fun _ -> "decode language") @@ of_string m)
-        string)
-  ;;
-
-  let label country_code = country_code |> code |> Utils.Countries.find
+  let label country_code = country_code |> show |> Utils.Countries.find
 
   let schema () =
-    Pool_common_utils.schema_decoder of_string code PoolError.Field.Language
+    Pool_common_utils.schema_decoder create show PoolError.Field.Language
   ;;
 
-  let all () = [ En; De ]
-  let all_codes () = [ En; De ] |> CCList.map code
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
+  ;;
+
+  let all_codes = [ En; De ] |> CCList.map show
 
   let field_of_t =
     let open Entity_message.Field in
@@ -67,7 +72,7 @@ module CreatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
-  let sexp_of_t = Utils.Time.ptime_to_sexp
+  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module UpdatedAt = struct
@@ -75,7 +80,7 @@ module UpdatedAt = struct
 
   let create = Ptime_clock.now
   let value m = m
-  let sexp_of_t = Utils.Time.ptime_to_sexp
+  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module File = struct
@@ -108,12 +113,14 @@ module File = struct
       | Gif
       | Ico
       | Jpeg
+      | Pdf
       | Png
       | Svg
       | Webp
     [@@deriving eq, show, sexp_of]
 
     let of_string = function
+      | "application/pdf" -> Ok Pdf
       | "text/css" -> Ok Css
       | "image/gif" -> Ok Gif
       | "image/vnd.microsoft.icon" -> Ok Ico
@@ -129,6 +136,7 @@ module File = struct
       | Gif -> "image/gif"
       | Ico -> "image/vnd.microsoft.icon"
       | Jpeg -> "image/jpeg"
+      | Pdf -> "application/pdf"
       | Png -> "image/png"
       | Svg -> "image/svg+xml"
       | Webp -> "image/webp"
@@ -140,6 +148,7 @@ module File = struct
       | ".gif" -> Ok Gif
       | ".ico" -> Ok Ico
       | ".jpeg" | ".jpg" -> Ok Jpeg
+      | ".pdf" -> Ok Pdf
       | ".png" -> Ok Png
       | ".svg" -> Ok Svg
       | ".webp" -> Ok Webp

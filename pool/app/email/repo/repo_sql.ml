@@ -129,7 +129,7 @@ let insert pool t =
     (Database.Label.value pool)
     insert_request
     ( address t |> Pool_user.EmailAddress.value
-    , user_id t |> Pool_common.Id.value
+    , user_id t
     , token t |> Token.value )
 ;;
 
@@ -153,7 +153,7 @@ let verify pool t =
   Utils.Database.exec
     (Database.Label.value pool)
     verify_request
-    ( user_id t |> Pool_common.Id.value
+    ( user_id t
     , address t |> Pool_user.EmailAddress.value
     , VerifiedAt.create_now () )
 ;;
@@ -184,5 +184,5 @@ let delete_email_template pool label language =
   Utils.Database.exec
     (Pool_database.Label.value pool)
     delete_email_template_request
-  @@ (TemplateLabel.show label, Pool_common.Language.code language)
+  @@ (TemplateLabel.show label, Pool_common.Language.show language)
 ;;

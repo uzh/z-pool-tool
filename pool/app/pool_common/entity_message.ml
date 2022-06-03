@@ -1,95 +1,134 @@
 open Sexplib.Conv
 
 module Field = struct
-  let field_name m fmt _ = Format.pp_print_string fmt m
+  let go m fmt _ = Format.pp_print_string fmt m
 
   type t =
-    | Admin [@name "admin"] [@printer field_name "admin"]
-    | AssetId [@name "asset_id"] [@printer field_name "asset_id"]
-    | ContactEmail [@name "contact_email"] [@printer field_name "contact_email"]
+    | Admin [@name "admin"] [@printer go "admin"]
+    | AssetId [@name "asset_id"] [@printer go "asset_id"]
+    | AssignmentCount [@name "assignment_count"]
+        [@printer go "assignment_count"]
+    | Building [@name "building"] [@printer go "building"]
+    | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
+    | City [@name "city"] [@printer go "city"]
+    | Comment [@name "comment"] [@printer go "comment"]
+    | Contact [@name "contact"] [@printer go "contact"]
+    | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
+    | Contacts [@name "contacts"] [@printer go "contacts"]
+    | CreatedAt [@name "created_at"] [@printer go "created_at"]
     | CurrentPassword [@name "current_password"]
-        [@printer field_name "current_password"]
-    | Database [@name "database"] [@printer field_name "database"]
-    | DatabaseLabel [@name "database_label"]
-        [@printer field_name "database_label"]
-    | DatabaseUrl [@name "database_url"] [@printer field_name "database_url"]
+        [@printer go "current_password"]
+    | Database [@name "database"] [@printer go "database"]
+    | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
+    | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
+    | Date [@name "date"] [@printer go "date"]
+    | DateTime [@name "date_time"] [@printer go "date_time"]
     | DefaultLanguage [@name "default_language"]
-        [@printer field_name "default_language"]
-    | Description [@name "description"] [@printer field_name "description"]
-    | Disabled [@name "disabled"] [@printer field_name "disabled"]
-    | Email [@name "email"] [@printer field_name "email"]
-    | EmailAddress [@name "email_address"] [@printer field_name "email_address"]
-    | EmailSuffix [@name "email_suffix"] [@printer field_name "email_suffix"]
+        [@printer go "default_language"]
+    | Description [@name "description"] [@printer go "description"]
+    | DirectRegistrationDisabled [@name "direct_registration_disabled"]
+        [@printer go "direct_registration_disabled"]
+    | Disabled [@name "disabled"] [@printer go "disabled"]
+    | Duration [@name "duration"] [@printer go "duration"]
+    | Email [@name "email"] [@printer go "email"]
+    | EmailAddress [@name "email_address"] [@printer go "email_address"]
+        [@printer go "default_language"]
     | EmailAddressUnverified [@name "email_address_unverified"]
-        [@printer field_name "email_address_unverified"]
+        [@printer go "email_address_unverified"]
     | EmailAddressVerified [@name "email_address_verified"]
-        [@printer field_name "email_address_verified"]
-    | File [@name "file"] [@printer field_name "file"]
-    | FileMimeType [@name "file_mime_type"]
-        [@printer field_name "file_mime_type"]
-    | Filename [@name "filename"] [@printer field_name "filename"]
-    | Filesize [@name "filesize"] [@printer field_name "filesize"]
-    | Firstname [@name "firstname"] [@printer field_name "firstname"]
-    | Host [@name "host"] [@printer field_name "host"]
-    | I18n [@name "i18n"] [@printer field_name "i18n"]
-    | Icon [@name "icon"] [@printer field_name "icon"]
-    | Id [@name "id"] [@printer field_name "id"]
+        [@printer go "email_address_verified"]
+    | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
+    | Experiment [@name "experiment"] [@printer go "experiment"]
+    | File [@name "file"] [@printer go "file"]
+    | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
+    | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
+    | Filename [@name "filename"] [@printer go "filename"]
+    | Filesize [@name "filesize"] [@printer go "filesize"]
+    | Firstname [@name "firstname"] [@printer go "firstname"]
+    | Host [@name "host"] [@printer go "host"]
+    | I18n [@name "i18n"] [@printer go "i18n"]
+    | Icon [@name "icon"] [@printer go "icon"]
+    | Id [@name "id"] [@printer go "id"]
     | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
-        [@printer field_name "inactive_user_disable_after"]
+        [@printer go "inactive_user_disable_after"]
     | InactiveUserWarning [@name "inactive_user_warning"]
-        [@printer field_name "inactive_user_warning"]
-    | Key [@name "key"] [@printer field_name "key"]
-    | Language [@name "language"] [@printer field_name "language"]
-    | LanguageDe [@name "language_de"] [@printer field_name "language_de"]
-    | LanguageEn [@name "language_en"] [@printer field_name "language_en"]
-    | Lastname [@name "lastname"] [@printer field_name "lastname"]
-    | LogoType [@name "logo_type"] [@printer field_name "logo_type"]
-    | NewPassword [@name "new_password"] [@printer field_name "new_password"]
-    | Operator [@name "operator"] [@printer field_name "operator"]
-    | Page [@name "page"] [@printer field_name "page"]
-    | Participant [@name "participant"] [@printer field_name "participant"]
-    | PartnerLogos [@name "partner_logos"] [@printer field_name "partner_logos"]
-    | Password [@name "password"] [@printer field_name "password"]
+        [@printer go "inactive_user_warning"]
+    | Invitation [@name "invitation"] [@printer go "invitation"]
+    | Invitations [@name "invitations"] [@printer go "invitations"]
+    | Key [@name "key"] [@printer go "key"]
+    | Label [@name "label"] [@printer go "label"]
+    | Language [@name "language"] [@printer go "language"]
+    | LanguageDe [@name "language_de"] [@printer go "language_de"]
+    | LanguageEn [@name "language_en"] [@printer go "language_en"]
+    | Lastname [@name "lastname"] [@printer go "lastname"]
+    | Link [@name "link"] [@printer go "link"]
+    | Location [@name "location"] [@printer go "location"]
+    | LogoType [@name "logo_type"] [@printer go "logo_type"]
+    | MaxParticipants [@name "max_participants"]
+        [@printer go "max_participants"]
+    | MinParticipants [@name "min_participants"]
+        [@printer go "min_participants"]
+    | Name [@name "name"] [@printer go "name"]
+    | NewPassword [@name "new_password"] [@printer go "new_password"]
+    | Operator [@name "operator"] [@printer go "operator"]
+    | Overbook [@name "overbook"] [@printer go "overbook"]
+    | Page [@name "page"] [@printer go "page"]
+    | Participant [@name "participant"] [@printer go "participant"]
+    | ParticipantCount [@name "participant_count"]
+        [@printer go "participant_count"]
+    | Participants [@name "participants"] [@printer go "participants"]
+    | Participated [@name "participated"] [@printer go "participated"]
+    | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
+    | Password [@name "password"] [@printer go "password"]
     | PasswordConfirmation [@name "password_confirmation"]
-        [@printer field_name "password_confirmation"]
-    | Paused [@name "paused"] [@printer field_name "paused"]
+        [@printer go "password_confirmation"]
+    | Paused [@name "paused"] [@printer go "paused"]
     | RecruitmentChannel [@name "recruitment_channel"]
-        [@printer field_name "recruitment_channel"]
-    | Role [@name "role"] [@printer field_name "role"]
-    | Root [@name "root"] [@printer field_name "root"]
-    | Setting [@name "setting"] [@printer field_name "setting"]
-    | SmtpAuthMethod [@name "smtp_auth_method"]
-        [@printer field_name "smtp_auth_method"]
-    | SmtpAuthServer [@name "smtp_auth_server"]
-        [@printer field_name "smtp_auth_server"]
-    | SmtpPassword [@name "smtp_password"] [@printer field_name "smtp_password"]
-    | SmtpPort [@name "smtp_port"] [@printer field_name "smtp_port"]
-    | SmtpProtocol [@name "smtp_protocol"] [@printer field_name "smtp_protocol"]
-    | SmtpReadModel [@name "smtp_read_model"]
-        [@printer field_name "smtp_read_model"]
-    | SmtpWriteModel [@name "smtp_write_model"]
-        [@printer field_name "smtp_write_model"]
-    | SmtpUsername [@name "smtp_username"] [@printer field_name "smtp_username"]
-    | Styles [@name "styles"] [@printer field_name "styles"]
-    | Tenant [@name "tenant"] [@printer field_name "tenant"]
+        [@printer go "recruitment_channel"]
+    | ResentAt [@name "resent_at"] [@printer go "resent_at"]
+    | Role [@name "role"] [@printer go "role"]
+    | Room [@name "room"] [@printer go "room"]
+    | Root [@name "root"] [@printer go "root"]
+    | Session [@name "session"] [@printer go "session"]
+    | Setting [@name "setting"] [@printer go "setting"]
+    | ShowUp [@name "show_up"] [@printer go "show_up"]
+    | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
+    | SmtpAuthServer [@name "smtp_auth_server"] [@printer go "smtp_auth_server"]
+    | SmtpPassword [@name "smtp_password"] [@printer go "smtp_password"]
+    | SmtpPort [@name "smtp_port"] [@printer go "smtp_port"]
+    | SmtpProtocol [@name "smtp_protocol"] [@printer go "smtp_protocol"]
+    | SmtpReadModel [@name "smtp_read_model"] [@printer go "smtp_read_model"]
+    | SmtpUsername [@name "smtp_username"] [@printer go "smtp_username"]
+    | SmtpWriteModel [@name "smtp_write_model"] [@printer go "smtp_write_model"]
+    | Start [@name "start"] [@printer go "start"]
+    | Status [@name "status"] [@printer go "status"]
+    | Street [@name "street"] [@printer go "street"]
+    | Styles [@name "styles"] [@printer go "styles"]
+    | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
-        [@printer field_name "tenant_disabled_flag"]
-    | TenantId [@name "tenant_id"] [@printer field_name "tenant_id"]
-    | TenantLogos [@name "tenant_logos"] [@printer field_name "tenant_logos"]
+        [@printer go "tenant_disabled_flag"]
+    | TenantId [@name "tenant_id"] [@printer go "tenant_id"]
+    | TenantLogos [@name "tenant_logos"] [@printer go "tenant_logos"]
     | TenantMaintenanceFlag [@name "tenant_maintenance_flag"]
-        [@printer field_name "tenant_maintenance_flag"]
-    | TenantPool [@name "tenant_pool"] [@printer field_name "tenant_pool"]
-    | TermsAccepted [@name "terms_accepted"]
-        [@printer field_name "terms_accepted"]
+        [@printer go "tenant_maintenance_flag"]
+    | TenantPool [@name "tenant_pool"] [@printer go "tenant_pool"]
+    | TermsAccepted [@name "terms_accepted"] [@printer go "terms_accepted"]
     | TermsAndConditions [@name "terms_and_conditions"]
+        [@printer go "terms_and_conditions"]
+    | Time [@name "time"] [@printer go "time"]
+    | TimeSpan [@name "timespan"] [@printer go "timespan"]
+    | Title [@name "title"] [@printer go "title"]
+    | Token [@name "token"] [@printer go "token"]
+    | Translation [@name "translation"] [@printer go "translation"]
+    | Url [@name "url"] [@printer go "url"]
+    | User [@name "user"] [@printer go "user"]
+    | Version [@name "version"] [@printer go "version"]
+    | Virtual [@name "virtual"] [@printer go "virtual"]
+    | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
+    | WaitingListDisabled [@name "waiting_list_disabled"]
+        [@printer go "waiting_list_disabled"]
+    | Zip [@name "zip"] [@printer go "zip"]
         [@printer field_name "terms_and_conditions"]
-    | TimeSpan [@name "timespan"] [@printer field_name "timespan"]
-    | Title [@name "title"] [@printer field_name "title"]
-    | Translation [@name "translation"] [@printer field_name "translation"]
-    | Token [@name "token"] [@printer field_name "token"]
-    | Url [@name "url"] [@printer field_name "url"]
-    | User [@name "user"] [@printer field_name "user"]
-    | Version [@name "version"] [@printer field_name "version"]
   [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
 
   let read m =
@@ -97,48 +136,64 @@ module Field = struct
   ;;
 
   let url_key m = m |> show |> Format.asprintf ":%s"
+  let array_key m = m |> show |> Format.asprintf "%s[]"
 end
 
+(* TODO [aerben] make these general, compare what fields exist already, whenever
+   pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
+   Field.t *)
 type error =
+  | AlreadySignedUpForExperiment
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
-  | DecodeAction
+  | ContactSignupInvalidEmail
+  | ContactUnconfirmed
   | Decode of Field.t
+  | DecodeAction
   | Disabled of Field.t
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
+  | EmailDeleteAlreadyVerified
   | EmailMalformed
+  | ExperimentSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
+  | NegativeAmount
   | NoOptionSelected of Field.t
+  | NotADatetime of (string * string)
   | NotANumber of string
   | NoTenantsRegistered
   | NotFound of Field.t
+  | NotFoundList of Field.t * string list
+  | NotEligible
   | NotHandled of string
   | NoValue
-  | ParticipantSignupInvalidEmail
-  | ParticipantUnconfirmed
+  | PasswordConfirmationDoesNotMatch
   | PasswordPolicy of string
-  | PasswordResetInvalidData
   | PasswordResetFailMessage
+  | PasswordResetInvalidData
+  | PoolContextNotFound
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
-  | PoolContextNotFound
-  | TerminatoryTenantError
+  | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
-  | TerminatoryTenantErrorTitle
   | TerminatoryRootErrorTitle
+  | TerminatoryTenantError
+  | TerminatoryTenantErrorTitle
   | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
+  | TimeInPast
   | TimeSpanPositive
-  | TokenInvalidFormat
   | TokenAlreadyUsed
+  | TokenInvalidFormat
   | Undefined of Field.t
+  | WaitingListFlagsMutuallyExclusive
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 
@@ -146,13 +201,19 @@ type warning = Warning of string
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 type success =
+  | AddedToWaitingList
+  | AssignmentCreated
+  | Canceled of Field.t
   | Created of Field.t
-  | EmailVerified
+  | Deleted of Field.t
   | EmailConfirmationMessage
+  | EmailVerified
   | FileDeleted
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | RemovedFromWaitingList
+  | SentList of Field.t
   | SettingsUpdated
   | TenantUpdateDatabase
   | TenantUpdateDetails
@@ -179,22 +240,31 @@ let handle_sihl_login_error = function
 type control =
   | Accept of Field.t option
   | Add of Field.t option
+  | AddToWaitingList
+  | Assign of Field.t option
   | Back
+  | Cancel of Field.t option
   | Choose of Field.t option
   | Create of Field.t option
-  | Delete of Field.t option
   | Decline
+  | Delete of Field.t option
   | Disable
   | Edit of Field.t option
   | Enable
+  | Enroll
   | Login
+  | More
+  | RemoveFromWaitingList
+  | Resend of Field.t option
   | Save of Field.t option
+  | Send of Field.t option
   | SendResetLink
+  | SelectFilePlaceholder
   | SignUp
   | Update of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-let to_coformist_error error_list =
+let to_conformist_error error_list =
   CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
   |> conformist
 ;;

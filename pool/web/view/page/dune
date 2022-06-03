@@ -2,14 +2,19 @@
  (name page)
  (libraries
   component
+  contact
+  experiment
   htmx
   http_utils
   i18n
-  participant
+  invitation
+  pool_location
   pool_tenant
   root
   service
+  session
   sihl
   tenant
   tyxml
-  utils))
+  utils
+  waiting_list))

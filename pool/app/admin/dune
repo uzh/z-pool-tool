@@ -1,17 +1,17 @@
 (library
  (name admin)
  (libraries
-  sihl
-  sihl-user
-  service
   permission
-  role
+  pool_common
   pool_tenant
   pool_user
-  pool_common
-  utils
-  ptime)
+  ptime
+  role
+  service
+  sihl
+  sihl-user
+  utils)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show ppx_deriving.eq)))
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 
 (include_subdirs unqualified)

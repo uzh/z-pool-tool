@@ -5,15 +5,15 @@ type default = t list [@@deriving eq, show]
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let default_values =
-  [ ( "confirmation_subject"
+  [ ( "confirmation_contact"
     , [ "EN", "Sessionenrollment confirmation"
       ; "DE", "Bestätigung zur Sessionanmeldung"
       ] )
   ; ( "confirmation_text"
-    , [ "EN", "We hereby confirm the mandatory participation."
+    , [ "EN", "We hereby confirm the mandatory assignment."
       ; "DE", "Hiermit bestätigen wir verbindlich Experiment-Teilnahme."
       ] )
-  ; ( "confirmation_without_self_registration_subject"
+  ; ( "confirmation_without_self_registration_contact"
     , [ "EN", "Your expression of interest to the experiment."
       ; "DE", "Ihre Interessensbekundung zum Experiment."
       ] )
@@ -26,7 +26,7 @@ let default_values =
            werden Sie in Kürze kontaktieren." )
       ] )
   ; "credits_text", [ "EN", "<h2>Credits</h2>"; "DE", "<h2>Impressum</h2>" ]
-  ; ( "experiment_finish_subject"
+  ; ( "experiment_finish_contact"
     , [ "EN", "Session statements incomplete."
       ; "DE", "Sessionabschluss unvollständig"
       ] )
@@ -35,8 +35,8 @@ let default_values =
       ; "DE", "Bitte vervollständigen Sie noch die Teilnahmedaten."
       ] )
   ; "greetings_text", [ "EN", "Greetings Text "; "DE", "Begrüssungstext" ]
-  ; ( "import_invitation_subject"
-    , [ "EN", "Experiment participation"; "DE", "Experimentteilnahme" ] )
+  ; ( "import_invitation_contact"
+    , [ "EN", "Experiment assignment"; "DE", "Experimentteilnahme" ] )
   ; ( "import_invitation_text"
     , [ ( "EN"
         , "We have updated our management software for organizing experiments. \
@@ -45,14 +45,14 @@ let default_values =
         , "Wir haben unsere Verwaltungssoftware zur Organisation von \
            Experimenten aktualisiert. Bitte aktivieren Sie Ihren Account." )
       ] )
-  ; ( "invitation_subject"
+  ; ( "invitation_contact"
     , [ "EN", "Experiment invitation"; "DE", "Einladung zur Studienteilnahme" ]
     )
   ; ( "invitation_text"
     , [ "EN", "We would like to invite you to an upcoming experiment."
       ; "DE", "Wir möchten Sie zu einem bevorstehenden Experiment einladen."
       ] )
-  ; ( "invitation_without_self_registration_subject"
+  ; ( "invitation_without_self_registration_contact"
     , [ "EN", "Invitation to an experiment"
       ; "DE", "Einladung zu einem Experiment"
       ] )
@@ -64,7 +64,7 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
-  ; ( "reminder_subject"
+  ; ( "reminder_contact"
     , [ "EN", "Reminder: Experiment-Session"
       ; "DE", "Erinnerung: Experiment-Session"
       ] )
@@ -72,7 +72,7 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
-  ; ( "session_finish_subject"
+  ; ( "session_finish_contact"
     , [ "EN", "Session statements incomplete."
       ; "DE", "Sessionabschluss unvollständig"
       ] )
@@ -82,8 +82,8 @@ let default_values =
       ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
-    , [ "EN", "Password must be at least 6 characters in length."
-      ; "DE", "Das Passwort muss mindestens 6 Zeichen lang sein."
+    , [ "EN", "Password must be at least 8 characters in length."
+      ; "DE", "Das Passwort muss mindestens 8 Zeichen lang sein."
       ] )
   ]
   |> CCList.map (fun (key, data) ->
@@ -92,7 +92,7 @@ let default_values =
            (fun (language, content) ->
              create
                key
-               (language |> Pool_common.Language.of_string |> get_or_failwith)
+               (language |> Pool_common.Language.create |> get_or_failwith)
                (content |> Content.create |> get_or_failwith))
            data)
   |> CCList.flatten

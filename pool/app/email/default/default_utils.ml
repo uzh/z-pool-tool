@@ -36,7 +36,7 @@ let combine_html language html_title content =
       ]
   in
   html
-    ~a:[ a_lang (Pool_common.Language.code language) ]
+    ~a:[ a_lang (Pool_common.Language.show language) ]
     email_header
     (email_body content)
 ;;

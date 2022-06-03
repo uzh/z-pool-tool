@@ -12,7 +12,7 @@ end)
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let sort translations =
@@ -31,7 +31,6 @@ let index req =
              CCString.compare (I18n.Key.to_string k1) (I18n.Key.to_string k2))
       |> Lwt.return
     in
-    let tenant_db = context.Pool_context.tenant_db in
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
     Page.Admin.I18n.list translation_list context
     |> create_layout req ~active_navigation:"/admin/i18n" context
@@ -42,13 +41,15 @@ let index req =
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let id = Sihl.Web.Router.param req Pool_common.Message.Field.(Id |> show) in
+  let id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.i18n
+    |> Pool_common.Id.of_string
+  in
   let redirect_path = Format.asprintf "/admin/i18n" in
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
-    let tenant_db = context.Pool_context.tenant_db in
-    let property () = I18n.find tenant_db (id |> Pool_common.Id.of_string) in
+    let property () = I18n.find tenant_db id in
     let events property =
       let open CCResult.Infix in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in

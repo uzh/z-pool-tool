@@ -8,7 +8,10 @@ let update req command success_message =
   let result _ =
     let open Utils.Lwt_result.Infix in
     let open Common.Message.Field in
-    let id = Sihl.Web.Router.param req (Id |> show) |> Common.Id.of_string in
+    let id =
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
+    in
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)
     in
@@ -19,6 +22,7 @@ let update req command success_message =
       in
       let* _ =
         File.update_files
+          Database.root
           [ ( Styles |> show
             , tenant.Pool_tenant.Write.styles |> Pool_tenant.Styles.Write.value
             )
@@ -29,6 +33,7 @@ let update req command success_message =
       in
       let* logo_files =
         File.upload_files
+          Database.root
           (Pool_tenant.LogoMapping.LogoType.all_fields |> CCList.map show)
           req
       in
@@ -77,15 +82,15 @@ let delete_asset req =
   let open Common.Message in
   let go m = m |> Router.param req |> Common.Id.of_string in
   let asset_id = go Field.(AssetId |> show) in
-  let tenant_id = go Field.(TenantId |> show) in
+  let tenant_id = go Field.(Tenant |> show) in
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_err (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = context.Pool_context.tenant_db |> Pool_tenant.to_ctx in
+    let ctx = tenant_db |> Pool_tenant.to_ctx in
     let event tenant =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift

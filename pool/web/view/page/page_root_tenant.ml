@@ -1,28 +1,11 @@
 open Tyxml.Html
+open Component
 module File = Pool_common.File
 module Id = Pool_common.Id
 module Message = Pool_common.Message
 
-let submit_element = Component.submit_element
-
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
-  let input_element = Component.input_element language `Text |> CCFun.flip in
-  let input_element_file ?(allow_multiple = false) field =
-    let field_label =
-      Pool_common.Utils.field_to_string language field
-      |> CCString.capitalize_ascii
-    in
-    div
-      [ label [ txt field_label ]
-      ; input
-          ~a:
-            [ a_input_type `File
-            ; a_name Message.Field.(field |> show)
-            ; (if allow_multiple then a_multiple () else a_value "")
-            ]
-          ()
-      ]
-  in
+  let input_element = input_element language `Text |> CCFun.flip in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
     CCList.map
@@ -85,10 +68,10 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_fields =
     let open Message in
     CCList.map (input_element "") text_fields
-    @ [ Component.language_select (Pool_common.Language.all ()) None () ]
-    @ CCList.map input_element_file [ Field.Styles; Field.Icon ]
+    @ [ language_select Pool_common.Language.all None () ]
+    @ CCList.map (input_element_file language) [ Field.Styles; Field.Icon ]
     @ CCList.map
-        (input_element_file ~allow_multiple:true)
+        (input_element_file language ~allow_multiple:true)
         [ Field.TenantLogos; Field.PartnerLogos ]
   in
   let html =
@@ -102,13 +85,8 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ; a_enctype "multipart/form-data"
             ; a_class [ "stack" ]
             ]
-          ((Component.csrf_element csrf () :: input_fields)
-          @ [ submit_element
-                language
-                Message.(Create None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          ((csrf_element csrf () :: input_fields)
+          @ [ submit_element language Message.(Create None) () ])
       ; hr ()
       ; h1 [ txt "Root users" ]
       ; div root_list
@@ -121,12 +99,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
           (CCList.map
              (input_element "")
              Message.Field.[ Email; Password; Firstname; Lastname ]
-          @ [ submit_element
-                language
-                Message.(Create (Some Field.root))
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          @ [ submit_element language Message.(Create (Some Field.root)) () ])
       ]
   in
   Page_layout.create_root_layout
@@ -140,7 +113,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
-  let input_element = Component.input_element language `Text in
+  let input_element = input_element language `Text in
   let input_element_file ?(allow_multiple = false) ?file_href field =
     let field_label =
       Pool_common.Utils.field_to_string language field
@@ -178,8 +151,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
   in
   let detail_input_fields =
     (CCList.map (CCFun.uncurry input_element) detail_fields
-    @ [ Component.language_select
-          (Pool_common.Language.all ())
+    @ [ language_select
+          Pool_common.Language.all
           (Some tenant.default_language)
           ()
       ])
@@ -235,11 +208,11 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
                    ; a_method `Post
                    ; a_class [ "stack" ]
                    ]
-                 [ Component.csrf_element csrf ()
+                 [ csrf_element csrf ()
                  ; submit_element
                      language
                      Message.(Delete (Some Field.file))
-                     ~classnames:[ "button--failure" ]
+                     ~submit_type:`Error
                      ()
                  ]
              ])
@@ -272,14 +245,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ; a_enctype "multipart/form-data"
             ; a_class [ "stack" ]
             ]
-          ((Component.csrf_element csrf () :: detail_input_fields)
-          @ [ disabled
-            ; submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          ((csrf_element csrf () :: detail_input_fields)
+          @ [ disabled; submit_element language Message.(Update None) () ])
       ; hr ()
       ; delete_file_forms
       ; hr ()
@@ -294,13 +261,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ; a_enctype "multipart/form-data"
             ; a_class [ "stack" ]
             ]
-          ((Component.csrf_element csrf () :: database_input_fields)
-          @ [ submit_element
-                language
-                Message.(Update None)
-                ~classnames:[ "button--primary" ]
-                ()
-            ])
+          ((csrf_element csrf () :: database_input_fields)
+          @ [ submit_element language Message.(Update None) () ])
       ; hr ()
       ; form
           ~a:
@@ -312,15 +274,11 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ; a_method `Post
             ; a_class [ "stack" ]
             ]
-          ((Component.csrf_element csrf ()
+          ((csrf_element csrf ()
            :: CCList.map
                 (CCFun.flip input_element "")
                 Message.Field.[ Email; Password; Firstname; Lastname ])
-          @ [ submit_element
-                language
-                Message.(Create (Some Field.operator))
-                ~classnames:[ "button--primary" ]
-                ()
+          @ [ submit_element language Message.(Create (Some Field.operator)) ()
             ])
       ; a
           ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]

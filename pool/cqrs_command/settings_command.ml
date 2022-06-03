@@ -63,7 +63,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
 
@@ -124,7 +124,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
 
@@ -155,7 +155,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_coformist_error
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
 
@@ -191,7 +191,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.to_coformist_error
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
   end
 
@@ -226,7 +226,7 @@ module InactiveUser = struct
 
     let decode data =
       Conformist.decode_and_validate schema data
-      |> CCResult.map_err Pool_common.Message.to_coformist_error
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
   end
 end
@@ -258,7 +258,7 @@ end = struct
              (fun tenant_language ->
                CCList.assoc_opt
                  ~eq:CCString.equal
-                 (tenant_language |> Pool_common.Language.code)
+                 (tenant_language |> Pool_common.Language.show)
                  terms
                |> CCOption.to_result ())
              tenant_languages

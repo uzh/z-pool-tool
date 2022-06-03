@@ -107,7 +107,7 @@ let update pool value = Sql.update pool Entity.Write.{ value }
 let insert pool ?(id = Pool_common.Id.create ()) (value : Entity.Value.t) =
   Sql.insert
     pool
-    ( id |> Pool_common.Id.value
+    ( id
     , { Entity.value
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()

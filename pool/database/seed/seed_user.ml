@@ -3,7 +3,7 @@ module Id = Pool_common.Id
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
-let admins db_pool () =
+let admins db_pool =
   let data =
     [ "The", "One", "admin@example.com", `Operator
     ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
@@ -39,147 +39,144 @@ let admins db_pool () =
     data
 ;;
 
-let participants db_pool () =
+let contacts db_pool =
   let users =
     [ ( Id.create ()
       , "Hansruedi"
       , "Rüdisüli"
       , "one@test.com"
-      , Participant.RecruitmentChannel.Friend
+      , Contact.RecruitmentChannel.Friend
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , false
       , false
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Jane"
       , "Doe"
       , "two@test.com"
-      , Participant.RecruitmentChannel.Online
+      , Contact.RecruitmentChannel.Online
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , false
       , false
-      , None )
+      , false )
     ; ( Id.create ()
       , "John"
       , "Dorrian"
       , "three@mail.com"
-      , Participant.RecruitmentChannel.Lecture
+      , Contact.RecruitmentChannel.Lecture
       , Some Pool_common.Language.De
       , Some (Ptime_clock.now ())
       , true
       , false
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Kevin"
       , "McCallistor"
       , "four@mail.com"
-      , Participant.RecruitmentChannel.Mailing
+      , Contact.RecruitmentChannel.Mailing
       , Some Pool_common.Language.En
       , Some (Ptime_clock.now ())
       , true
       , false
-      , None )
+      , false )
     ; ( Id.create ()
       , "Hello"
       , "Kitty"
       , "five@mail.com"
-      , Participant.RecruitmentChannel.Online
+      , Contact.RecruitmentChannel.Online
       , None
       , Some (Ptime_clock.now ())
       , true
       , true
-      , Some (Ptime_clock.now ()) )
+      , true )
     ; ( Id.create ()
       , "Dr."
       , "Murphy"
       , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , Contact.RecruitmentChannel.Friend
       , None
       , Some (Ptime_clock.now ())
       , true
       , true
-      , None )
+      , false )
     ; ( Id.create ()
       , "Mr."
       , "Do not accept terms"
-      , "six@mail.com"
-      , Participant.RecruitmentChannel.Friend
+      , "seven@mail.com"
+      , Contact.RecruitmentChannel.Friend
       , Some Pool_common.Language.En
       , None
       , true
       , true
-      , None )
+      , false )
     ]
   in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"user"
   in
-  Lwt_list.iter_s
-    (fun ( user_id
-         , given_name
-         , name
-         , email
-         , recruitment_channel
-         , language
-         , terms_accepted_at
-         , paused
-         , disabled
-         , verified ) ->
-      let ctx = Pool_tenant.to_ctx db_pool in
-      let%lwt user = Service.User.find_by_email_opt ~ctx email in
-      match user with
-      | None ->
-        let%lwt user =
-          Service.User.create_user
-            ~ctx
-            ~id:(user_id |> Pool_common.Id.value)
-            ~name
-            ~given_name
-            ~password
-            email
-        in
-        let%lwt () =
-          let address = User.EmailAddress.create email |> get_or_failwith in
-          let firstname = User.Firstname.create given_name |> get_or_failwith in
-          let lastname = User.Lastname.create name |> get_or_failwith in
-          let%lwt () =
-            Email.Created
-              (address, user_id, firstname, lastname, Pool_common.Language.En)
-            |> Email.handle_event db_pool
-          in
-          if CCOption.is_some verified
-          then (
-            let%lwt _ =
-              Service.User.update ~ctx Sihl_user.{ user with confirmed = true }
-            in
-            let%lwt unverified =
-              Email.find_unverified_by_user db_pool user_id
-              |> Lwt.map get_or_failwith
-            in
-            Email.(EmailVerified unverified |> handle_event db_pool))
-          else Lwt.return_unit
-        in
-        Participant.
-          { user
-          ; recruitment_channel
-          ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
-          ; language
-          ; paused = User.Paused.create paused
-          ; disabled = User.Disabled.create disabled
-          ; verified = User.Verified.create verified
-          ; firstname_version = Pool_common.Version.create ()
-          ; lastname_version = Pool_common.Version.create ()
-          ; paused_version = Pool_common.Version.create ()
-          ; language_version = Pool_common.Version.create ()
-          ; created_at = Ptime_clock.now ()
-          ; updated_at = Ptime_clock.now ()
-          }
-        |> Participant.insert db_pool
-      | Some _ ->
-        Logs.debug (fun m -> m "%s" "Participant already exists");
-        Lwt.return_unit)
+  let%lwt () =
+    let open Lwt.Infix in
+    Lwt_list.fold_left_s
+      (fun contacts
+           ( user_id
+           , firstname
+           , lastname
+           , email
+           , recruitment_channel
+           , language
+           , terms_accepted_at
+           , _
+           , _
+           , _ ) ->
+        let ctx = Pool_tenant.to_ctx db_pool in
+        let%lwt user = Service.User.find_by_email_opt ~ctx email in
+        match user with
+        | None ->
+          [ Contact.Created
+              { Contact.user_id
+              ; email = email |> User.EmailAddress.of_string
+              ; password =
+                  password
+                  |> User.Password.create
+                  |> Pool_common.Utils.get_or_failwith
+              ; firstname = firstname |> User.Firstname.of_string
+              ; lastname = lastname |> User.Lastname.of_string
+              ; recruitment_channel
+              ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
+              ; language
+              }
+          ]
+          @ contacts
+          |> Lwt.return
+        | Some { Sihl_user.id; _ } ->
+          Logs.debug (fun m ->
+              m
+                "Contact already exists (%s): %s"
+                (db_pool |> Pool_database.Label.value)
+                id);
+          contacts |> Lwt.return)
+      []
+      users
+    >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+  in
+  let open Lwt.Infix in
+  Lwt_list.fold_left_s
+    (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
+      let%lwt contact = Contact.find db_pool user_id in
+      match contact with
+      | Ok contact ->
+        [ Contact.PausedUpdated (contact, paused |> User.Paused.create) ]
+        @ (if disabled then [ Contact.Disabled contact ] else [])
+        @ (if verified then [ Contact.EmailVerified contact ] else [])
+        @ contacts
+        |> Lwt.return
+      | Error err ->
+        let _ = Pool_common.Utils.with_log_error ~level:Logs.Debug err in
+        contacts |> Lwt.return)
+    []
     users
+  >>= Lwt_list.iter_s (Contact.handle_event db_pool)
 ;;

@@ -6,9 +6,9 @@ module Update = Root_tenant_update
 module Database = Pool_database
 
 let tenants req =
-  let context = Pool_context.find_exn req in
-  let message = context.Pool_context.message in
-  let csrf = context.Pool_context.csrf in
+  let ({ Pool_context.csrf; message; _ } as context) =
+    Pool_context.find_exn req
+  in
   let%lwt tenant_list = Pool_tenant.find_all () in
   let%lwt root_list = Root.find_all () in
   Page.Root.Tenant.list csrf tenant_list root_list message context
@@ -18,7 +18,7 @@ let tenants req =
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     let events () =
       Lwt_result.map_err (fun err -> err, "/root/tenants")
       @@
@@ -31,11 +31,11 @@ let create req =
         [ Styles; Icon ] @ Pool_tenant.LogoMapping.LogoType.all_fields
         |> CCList.map show
       in
-      let* files = File.upload_files file_fields req in
+      let* files = File.upload_files Database.root file_fields req in
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
-          let ctx = context.Pool_context.tenant_db |> Pool_tenant.to_ctx in
+          let ctx = tenant_db |> Pool_tenant.to_ctx in
           let%lwt () =
             Lwt_list.iter_s
               (fun (_, id) -> Service.Storage.delete ~ctx id)
@@ -66,27 +66,28 @@ let create req =
 ;;
 
 let create_operator req =
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     let open Utils.Lwt_result.Infix in
     let open Common.Message in
     let id =
-      Sihl.Web.Router.param req Field.(Id |> show) |> Common.Id.of_string
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
-    let pool = context.Pool_context.tenant_db in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingOperator
-      >>= HttpUtils.validate_email_existance pool
+      >>= HttpUtils.validate_email_existance tenant_db
     in
     let find_tenant () = Pool_tenant.find_full id in
-    let events tenant =
+    let events =
       let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateOperator in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle tenant |> Lwt_result.lift
+      urlencoded |> decode >>= handle |> Lwt_result.lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event pool) events |> Lwt_result.ok
+      Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+      |> Lwt_result.ok
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
@@ -96,7 +97,7 @@ let create_operator req =
     ()
     |> user
     >>= find_tenant
-    >>= events
+    >> events
     >>= handle
     |> Lwt_result.map_err (fun err ->
            err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
@@ -112,7 +113,8 @@ let tenant_detail req =
     Lwt_result.map_err (fun err -> err, "/root/tenants")
     @@
     let id =
-      Router.param req Common.Message.Field.(Id |> show) |> Common.Id.of_string
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
     Page.Root.Tenant.detail tenant context |> Response.of_html |> Lwt.return_ok

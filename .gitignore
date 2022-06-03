@@ -20,6 +20,7 @@ _opam/
 .env
 .env.test
 .env.development
+.dotenv
 
 # devcontainer
 .devcontainer/data
@@ -33,3 +34,7 @@ _opam/
 
 # NPM
 node_modules
+
+# Assets
+resources/global.css
+resources/global.css.map

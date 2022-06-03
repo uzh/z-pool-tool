@@ -3,11 +3,10 @@ module Message = HttpUtils.Message
 module Database = Pool_database
 
 let create req =
-  let result context =
+  let result { Pool_context.tenant_db; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
     let user () =
-      let tenant_db = context.Pool_context.tenant_db in
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingRoot
       >>= HttpUtils.validate_email_existance tenant_db
@@ -38,11 +37,10 @@ let create req =
 
 let toggle_status req =
   let open Utils.Lwt_result.Infix in
-  let result context =
-    let tenant_db = context.Pool_context.tenant_db in
+  let result { Pool_context.tenant_db; _ } =
     let id =
-      Pool_common.(
-        Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Root
+      |> Pool_common.Id.of_string
     in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift

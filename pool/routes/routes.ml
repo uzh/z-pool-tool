@@ -1,6 +1,13 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
 
+let add_key ?(prefix = "") ?(suffix = "") field =
+  let open Pool_common.Message.Field in
+  [ prefix; field |> url_key; suffix ]
+  |> CCList.filter (fun m -> m |> CCString.is_empty |> not)
+  |> CCString.concat "/"
+;;
+
 let global_middlewares =
   [ Middleware.id ()
   ; CustomMiddleware.Error.error ()
@@ -28,7 +35,7 @@ module Public = struct
       choose
         [ choose
             ~middlewares:
-              [ CustomMiddleware.Context.context `Participant ()
+              [ CustomMiddleware.Context.context `Contact ()
               ; CustomMiddleware.Tenant.valid_tenant ()
               ]
             [ get "/index" index
@@ -45,37 +52,67 @@ module Public = struct
   ;;
 end
 
-module Participant = struct
+module Contact = struct
+  module SignUp = Handler.Contact.SignUp
+  module UserProfile = Handler.Contact.UserProfile
+  module Experiment = Handler.Contact.Experiment
+  module WaitingList = Handler.Contact.WaitingList
+  module Session = Handler.Contact.Session
+  module Assignment = Handler.Contact.Assignment
+
   let public =
-    [ get "/signup" Handler.Participant.sign_up
-    ; post "/signup" Handler.Participant.sign_up_create
+    [ get "/signup" SignUp.sign_up
+    ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
-    ; get "/termsandconditions" Handler.Participant.terms
-    ; get "/email-verified" Handler.Participant.email_verification
-    ; post "/terms-accepted/:id" Handler.Participant.terms_accept
+    ; get "/termsandconditions" SignUp.terms
+    ; get "/email-verified" SignUp.email_verification
+    ; post "/terms-accepted/:id" SignUp.terms_accept
     ]
   ;;
 
   let locked_routes =
-    [ get "/dashboard" Handler.Participant.dashboard
-    ; get "/user" Handler.Participant.details
-    ; get "/user/edit" Handler.Participant.edit
-    ; post "/user/update" Handler.Participant.update
-    ; post "/user/update-email" Handler.Participant.update_email
-    ; post "/user/update-password" Handler.Participant.update_password
+    let experiments =
+      let build_scope subdir =
+        Format.asprintf
+          "/%s/%s"
+          Pool_common.Message.Field.(Experiment |> url_key)
+          subdir
+      in
+      let waiting_list =
+        [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
+      in
+      let sessions =
+        let open Pool_common.Message.Field in
+        [ get (Session |> url_key) Session.show
+        ; post (Session |> url_key) Assignment.create
+        ]
+      in
+      [ get "" Experiment.index
+      ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
+      ; choose ~scope:(build_scope "waiting-list") waiting_list
+      ; choose ~scope:(build_scope "sessions") sessions
+      ]
+    in
+    [ get "/dashboard" Handler.Contact.dashboard
+    ; get "/user" UserProfile.details
+    ; get "/user/edit" UserProfile.edit
+    ; post "/user/update" UserProfile.update
+    ; post "/user/update-email" UserProfile.update_email
+    ; post "/user/update-password" UserProfile.update_password
+    ; choose ~scope:"/experiments" experiments
     ]
   ;;
 
   let routes =
     choose
       ~middlewares:
-        [ CustomMiddleware.Context.context `Participant ()
+        [ CustomMiddleware.Context.context `Contact ()
         ; CustomMiddleware.Tenant.valid_tenant ()
         ]
       [ choose public
       ; choose
           ~middlewares:
-            [ CustomMiddleware.Participant.confirmed_and_terms_agreed () ]
+            [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
           locked_routes
       ]
   ;;
@@ -90,13 +127,93 @@ module Admin = struct
   ;;
 
   let routes =
+    let open Pool_common.Message.Field in
+    let location =
+      let files =
+        [ get "/create" Handler.Admin.Location.new_file
+        ; post "" Handler.Admin.Location.add_file
+        ; choose ~scope:(add_key File) [ get "" Handler.Admin.Location.asset ]
+        ]
+      in
+      let specific =
+        [ get "" Handler.Admin.Location.show
+        ; get "/edit" Handler.Admin.Location.edit
+        ; post "" Handler.Admin.Location.update
+        ; choose ~scope:"/files" files
+        ; choose
+            ~scope:(add_key ~prefix:"mapping" FileMapping)
+            [ post "/delete" Handler.Admin.Location.delete ]
+        ]
+      in
+      [ get "" Handler.Admin.Location.index
+      ; get "/create" Handler.Admin.Location.new_form
+      ; post "" Handler.Admin.Location.create
+      ; choose ~scope:(add_key Location) specific
+      ]
+    in
+    let experiments =
+      let build_scope subdir =
+        Format.asprintf "/%s/%s" (Experiment |> url_key) subdir
+      in
+      let invitations =
+        Handler.Admin.Experiments.Invitations.
+          [ get "" index
+          ; post "" create
+          ; post (add_key ~suffix:"resend" Invitation) resend
+          ]
+      in
+      let sessions =
+        let specific =
+          [ get "" Handler.Admin.Session.show
+          ; post "" Handler.Admin.Session.update
+          ; get "/edit" Handler.Admin.Session.edit
+          ; post "/cancel" Handler.Admin.Session.cancel
+          ; post "/delete" Handler.Admin.Session.delete
+          ]
+        in
+        [ get "" Handler.Admin.Session.list
+        ; post "" Handler.Admin.Session.create
+        ; choose ~scope:"/:session" specific
+        ]
+      in
+      let waiting_list =
+        let specific =
+          [ post "" Handler.Admin.Experiments.WaitingList.update
+          ; get "" Handler.Admin.Experiments.WaitingList.detail
+          ; post "/assign" Handler.Admin.Experiments.WaitingList.assign_contact
+          ]
+        in
+        [ get "" Handler.Admin.Experiments.WaitingList.index
+        ; choose ~scope:(WaitingList |> url_key) specific
+        ]
+      in
+      [ get "" Handler.Admin.Experiments.index
+      ; get "/create" Handler.Admin.Experiments.new_form
+      ; post "" Handler.Admin.Experiments.create
+      ; get (Experiment |> url_key) Handler.Admin.Experiments.show
+      ; get
+          (Format.asprintf "/%s/edit" (Experiment |> url_key))
+          Handler.Admin.Experiments.edit
+      ; post (Experiment |> url_key) Handler.Admin.Experiments.update
+      ; post
+          (Format.asprintf "/%s/delete" (Experiment |> url_key))
+          Handler.Admin.Experiments.delete
+      ; choose ~scope:(build_scope "invitations") invitations
+      ; choose ~scope:(build_scope "waiting-list") waiting_list
+      ; choose ~scope:(build_scope "sessions") sessions
+      ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" Handler.Admin.dashboard
       ; get "/settings" Handler.Admin.Settings.show
       ; post "/settings/:action" Handler.Admin.Settings.update_settings
       ; get "/i18n" Handler.Admin.I18n.index
-      ; post "/i18n/:id" Handler.Admin.I18n.update
+      ; post
+          (Format.asprintf "/i18n/%s" (I18n |> url_key))
+          Handler.Admin.I18n.update
+      ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:"/locations" location
       ]
   ;;
 end
@@ -127,19 +244,32 @@ module Root = struct
   ;;
 
   let locked_routes =
+    let open Pool_common.Message.Field in
     let open Handler.Root in
-    [ get "/tenants" Tenant.tenants
-    ; post "/tenants/create" Tenant.create
-    ; get "/tenants/:id" Tenant.tenant_detail
-    ; post "/tenants/:id/create-operator" Tenant.create_operator
-    ; post "/tenants/:id/update-detail" Tenant.Update.update_detail
-    ; post "/tenants/:id/update-database" Tenant.Update.update_database
-    ; post
-        "/tenants/:tenant_id/assets/:asset_id/delete"
-        Tenant.Update.delete_asset
-    ; post "/root/create" Root.create
-    ; post "/root/:id/toggle-status" Root.toggle_status
-    ]
+    let build_route appendix =
+      Format.asprintf "%s/%s" (Tenant |> url_key) appendix
+    in
+    let tenants =
+      [ get "" Tenant.tenants
+      ; post "/create" Tenant.create
+      ; get (Tenant |> url_key) Tenant.tenant_detail
+      ; post (build_route "create-operator") Tenant.create_operator
+      ; post (build_route "update-detail") Tenant.Update.update_detail
+      ; post (build_route "update-database") Tenant.Update.update_database
+      ; post
+          (build_route
+             (Format.asprintf "assets/%s/delete" (AssetId |> url_key)))
+          Tenant.Update.delete_asset
+      ]
+    in
+    let root =
+      [ post "/create" Root.create
+      ; post
+          (Format.asprintf "/%s/toggle-status" (Root |> url_key))
+          Root.toggle_status
+      ]
+    in
+    [ choose [ choose ~scope:"tenants" tenants; choose ~scope:"root" root ] ]
   ;;
 
   let routes =
@@ -154,13 +284,13 @@ end
 let router =
   choose
     [ Public.routes
-    ; Participant.routes
+    ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Context.context `Participant () ]
+        ~middlewares:[ CustomMiddleware.Context.context `Contact () ]
         Handler.Public.not_found
     ]
 ;;
