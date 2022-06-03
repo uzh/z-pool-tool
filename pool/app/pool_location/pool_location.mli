@@ -238,6 +238,8 @@ val create
   -> Mapping.file list
   -> (t, Pool_common.Message.error) result
 
+val to_string : Pool_common.Language.t -> t -> string
+
 type update =
   { name : Name.t
   ; description : Description.t option

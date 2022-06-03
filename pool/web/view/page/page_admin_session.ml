@@ -226,7 +226,7 @@ let detail Pool_context.{ language; _ } experiment_id (session : Session.t) _ =
                    Description.value
                    session.description )
              ; ( Field.Location
-               , Component.show_location language session.Session.location )
+               , Pool_location.to_string language session.Session.location )
              ; Field.MaxParticipants, amount session.max_participants
              ; Field.MinParticipants, amount session.min_participants
              ; Field.Overbook, amount session.overbook

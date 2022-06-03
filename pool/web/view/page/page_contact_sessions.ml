@@ -28,7 +28,7 @@ let public_overview sessions experiment language =
         ; td
             [ txt
                 (session.Session.Public.location
-                |> Component.show_location language)
+                |> Pool_location.to_string language)
             ]
         ; td
             [ (match Session.Public.is_fully_booked session with
@@ -75,7 +75,7 @@ let public_detail (session : Session.Public.t) language =
       , CCOption.map_or ~default:"" Description.value session.Public.description
       )
     ; ( Field.Location
-      , session.Session.Public.location |> Component.show_location language )
+      , session.Session.Public.location |> Pool_location.to_string language )
     ; ( Field.CanceledAt
       , CCOption.map_or
           ~default:"Not canceled"

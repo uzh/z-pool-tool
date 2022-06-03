@@ -311,14 +311,3 @@ let submit_icon ?(classnames = []) icon_type =
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
     [ icon icon_type ]
 ;;
-
-let show_location language (location : Pool_location.t) =
-  CCString.concat
-    ", "
-    (Pool_location.Address.address_rows_human
-       language
-       location.Pool_location.address
-    |> fun (room, street, city) ->
-    [ room; street; city ]
-    |> CCList.filter (fun m -> m |> CCString.is_empty |> not))
-;;

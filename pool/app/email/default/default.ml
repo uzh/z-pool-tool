@@ -26,6 +26,11 @@ let invitation = function
   | En -> Default_en.invitation
 ;;
 
+let boilerplate = function
+  | De -> Default_de.boilerplate
+  | En -> Default_en.boilerplate
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -38,6 +43,7 @@ let default_values_tenant =
   ; password_reset
   ; signup_verification
   ; invitation
+  ; boilerplate
   ]
   @@@ [ En; De ]
 ;;

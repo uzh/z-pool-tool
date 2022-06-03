@@ -24,6 +24,29 @@ let create req =
     let* waiting_list =
       Waiting_list.find_by_contact_and_experiment tenant_db contact experiment
     in
+    let* confirmation_email =
+      let* language =
+        let* default = Settings.default_language tenant_db in
+        contact.Contact.language |> CCOption.value ~default |> Lwt_result.return
+      in
+      let* subject =
+        I18n.find_by_key tenant_db I18n.Key.ConfirmationSubject language
+        >|= I18n.content
+      in
+      let* text =
+        I18n.find_by_key tenant_db I18n.Key.ConfirmationText language
+        >|= I18n.content
+      in
+      let session_text =
+        Session.(
+          to_email_text
+            language
+            session.Public.start
+            session.Public.duration
+            session.Public.location)
+      in
+      Lwt_result.return Assignment.{ subject; text; language; session_text }
+    in
     let%lwt already_enrolled =
       let open Lwt.Infix in
       Assignment.find_by_experiment_and_contact_opt
@@ -34,7 +57,10 @@ let create req =
     in
     let events =
       Cqrs_command.Assignment_command.Create.(
-        handle { contact; session; waiting_list } already_enrolled)
+        handle
+          { contact; session; waiting_list }
+          confirmation_email
+          already_enrolled)
       |> Lwt_result.lift
     in
     let handle events =

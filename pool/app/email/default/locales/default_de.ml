@@ -45,7 +45,7 @@ let password_reset =
         ]
     ; complimentary_close
     ]
-    |> combine_html language "Password reset"
+    |> combine_html language (Some "Password reset")
     |> html_to_string
   in
   let text =
@@ -90,7 +90,7 @@ let email_verification =
         ]
     ; complimentary_close
     ]
-    |> combine_html language "Neue E-Mail Adresse"
+    |> combine_html language (Some "Neue E-Mail Adresse")
     |> html_to_string
   in
   let text =
@@ -121,7 +121,7 @@ let password_change =
         ]
     ; complimentary_close
     ]
-    |> combine_html language "Neues Passwort"
+    |> combine_html language (Some "Neues Passwort")
     |> html_to_string
   in
   let text =
@@ -160,7 +160,7 @@ let signup_verification =
         ]
     ; complimentary_close
     ]
-    |> combine_html language "Sign up"
+    |> combine_html language (Some "Sign up")
     |> html_to_string
   in
   let text =
@@ -189,7 +189,7 @@ let invitation =
     ; p [ txt "Sessions......" ]
     ; complimentary_close
     ]
-    |> combine_html language "Einladung zur Studienteilnahme"
+    |> combine_html language (Some "Einladung zur Studienteilnahme")
     |> html_to_string
   in
   let text =
@@ -204,5 +204,20 @@ Sessions......
     |}
     |> add_salutation_to_text
   in
+  { label; language; text; html }
+;;
+
+let boilerplate =
+  let label = TemplateLabel.Boilerplate in
+  let language = Pool_common.Language.De in
+  let html =
+    let open Tyxml.Html in
+    [ salutation; p [ txt "{content}" ]; complimentary_close ]
+    |> combine_html language None
+    |> html_to_string
+  in
+  let text = {|
+{content}
+    |} |> add_salutation_to_text in
   { label; language; text; html }
 ;;

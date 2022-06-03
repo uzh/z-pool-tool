@@ -173,6 +173,35 @@ type notification_history =
 
 let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
 
+let to_email_text language start duration location =
+  let format label text =
+    Format.asprintf
+      "%s: %s"
+      Pool_common.(Utils.field_to_string language label)
+      text
+  in
+  let start =
+    format
+      Pool_common.Message.Field.Start
+      (Start.value start |> Pool_common.Utils.Time.formatted_date_time)
+  in
+  let duration =
+    format
+      Pool_common.Message.Field.Duration
+      (Duration.value duration |> Pool_common.Utils.print_time_span)
+  in
+  let location =
+    format
+      Pool_common.Message.Field.Location
+      (Pool_location.to_string language location)
+  in
+  Format.asprintf {|
+%s
+%s
+%s
+  |} start duration location
+;;
+
 module Public = struct
   type t =
     { id : Pool_common.Id.t

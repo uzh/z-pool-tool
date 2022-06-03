@@ -137,9 +137,37 @@ let assign_contact req =
         waiting_list.Waiting_list.contact
       >|= CCOption.is_some
     in
+    let* confirmation_email =
+      let* language =
+        let* default = Settings.default_language tenant_db in
+        waiting_list.Waiting_list.contact.Contact.language
+        |> CCOption.value ~default
+        |> Lwt_result.return
+      in
+      let* subject =
+        I18n.find_by_key
+          tenant_db
+          I18n.Key.ConfirmationWithoutSelfRegistrationSubject
+          language
+        >|= I18n.content
+      in
+      let* text =
+        I18n.find_by_key
+          tenant_db
+          I18n.Key.ConfirmationWithoutSelfRegistrationText
+          language
+        >|= I18n.content
+      in
+      let session_text =
+        Session.(
+          to_email_text language session.start session.duration session.location)
+      in
+      Lwt_result.return Assignment.{ subject; text; language; session_text }
+    in
     let events =
       Cqrs_command.Assignment_command.CreateFromWaitingList.(
         handle { session; waiting_list; already_enrolled })
+        confirmation_email
       |> Lwt_result.lift
     in
     let handle events =
