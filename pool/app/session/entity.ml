@@ -195,11 +195,7 @@ let to_email_text language start duration location =
       Pool_common.Message.Field.Location
       (Pool_location.to_string language location)
   in
-  Format.asprintf {|
-%s
-%s
-%s
-  |} start duration location
+  CCString.concat "\n" [ start; duration; location ]
 ;;
 
 let session_date_to_human (session : t) =

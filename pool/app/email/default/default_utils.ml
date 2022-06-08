@@ -5,10 +5,9 @@ let combine_html language html_title content =
     head
       (title
          (txt
-            ((CCOption.map (fun title ->
+            ((CCOption.map_or ~default:pool_title (fun title ->
                   CCString.concat " - " [ title; pool_title ]))
-               html_title
-            |> CCOption.value ~default:pool_title)))
+               html_title)))
       [ meta
           ~a:
             [ a_http_equiv "Content-Type"

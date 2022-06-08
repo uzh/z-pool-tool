@@ -181,7 +181,6 @@ end = struct
             ; session_id = command.session.Session.id
             }
         in
-        (* TODO [timhub]: send confirmation mail *)
         Ok
           [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
           ; Assignment.Created create |> Pool_event.assignment

@@ -206,18 +206,3 @@ Sessions......
   in
   { label; language; text; html }
 ;;
-
-let boilerplate =
-  let label = TemplateLabel.Boilerplate in
-  let language = Pool_common.Language.De in
-  let html =
-    let open Tyxml.Html in
-    [ salutation; p [ txt "{content}" ]; complimentary_close ]
-    |> combine_html language None
-    |> html_to_string
-  in
-  let text = {|
-{content}
-    |} |> add_salutation_to_text in
-  { label; language; text; html }
-;;
