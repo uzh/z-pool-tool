@@ -10,6 +10,7 @@ let subnav language active id =
     ; Invitations, "/invitations"
     ; WaitingList, "/waiting-list"
     ; Sessions, "/sessions"
+    ; Assignments, "/assignments"
     ]
   |> CCList.map (fun (label, url) ->
          let is_active =
@@ -37,13 +38,24 @@ let subnav language active id =
   |> nav ~a:[ a_class [ "sub-nav"; "flexrow"; "flex-gap" ] ]
 ;;
 
-let experiment_layout language title experiment ?active html =
+type title =
+  | Control of Pool_common.Message.control
+  | NavLink of Pool_common.I18n.nav_link
+  | I18n of Pool_common.I18n.t
+
+let title_to_string language text =
+  let open Pool_common.Utils in
+  match text with
+  | Control text -> control_to_string language text
+  | NavLink text -> nav_link_to_string language text
+  | I18n text -> text_to_string language text
+;;
+
+let experiment_layout language title experiment_id ?active html =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ subnav language active experiment.Experiment.id
-    ; h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.text_to_string language title) ]
+    [ subnav language active experiment_id
+    ; h1 ~a:[ a_class [ "heading-1" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
 ;;
@@ -156,7 +168,10 @@ let create (Pool_context.{ language; _ } as context) =
     ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
     [ h1
         [ txt
-            Pool_common.(Utils.text_to_string language I18n.ExperimentNewTitle)
+            Pool_common.(
+              Utils.control_to_string
+                language
+                Message.(Create (Some Field.Experiment)))
         ]
     ; experiment_form context
     ]
@@ -166,8 +181,8 @@ let edit experiment (Pool_context.{ language; _ } as context) =
   let html = experiment_form ~experiment context in
   experiment_layout
     language
-    Pool_common.I18n.ExperimentEditTitle
-    experiment
+    (Control Pool_common.Message.(Edit (Some Field.Experiment)))
+    experiment.Experiment.id
     html
 ;;
 
@@ -249,8 +264,8 @@ let detail experiment session_count Pool_context.{ language; _ } =
   in
   experiment_layout
     language
-    Pool_common.I18n.ExperimentListTitle
-    experiment
+    (NavLink Pool_common.I18n.Experiments)
+    experiment.Experiment.id
     ~active:Pool_common.I18n.Overview
     html
 ;;
@@ -273,8 +288,8 @@ let invitations
   in
   experiment_layout
     language
-    Pool_common.I18n.InvitationListTitle
-    experiment
+    (NavLink Pool_common.I18n.Invitations)
+    experiment.Experiment.id
     ~active:Pool_common.I18n.Invitations
     html
 ;;
@@ -353,7 +368,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   in
   experiment_layout
     language
-    Pool_common.I18n.ExperimentWaitingListTitle
+    (NavLink Pool_common.I18n.WaitingList)
     experiment
     ~active:Pool_common.I18n.WaitingList
     content

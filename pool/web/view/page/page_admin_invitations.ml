@@ -88,7 +88,8 @@ module Partials = struct
           ~a:[ a_class [ "heading-2" ] ]
           [ txt
               Pool_common.(
-                I18n.InvitationNewTitle |> Utils.text_to_string language)
+                Message.(Send (Some Field.Invitation))
+                |> Utils.control_to_string language)
           ]
       ; form
           ~a:

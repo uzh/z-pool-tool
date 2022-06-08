@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Invitations = Admin_experiments_invitations
 module WaitingList = Admin_experiments_waiting_list
+module Assignment = Admin_experiments_assignments
 
 let create_layout req = General.create_tenant_layout `Admin req
 

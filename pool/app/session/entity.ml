@@ -202,6 +202,10 @@ let to_email_text language start duration location =
   |} start duration location
 ;;
 
+let session_date_to_human (session : t) =
+  session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+;;
+
 module Public = struct
   type t =
     { id : Pool_common.Id.t

@@ -147,7 +147,7 @@ let detail
   in
   Page_admin_experiments.experiment_layout
     language
-    Pool_common.I18n.ExperimentWaitingListTitle
-    experiment
+    (Page_admin_experiments.NavLink Pool_common.I18n.WaitingList)
+    experiment.Experiment.id
     html
 ;;

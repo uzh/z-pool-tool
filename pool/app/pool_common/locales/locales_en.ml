@@ -5,6 +5,8 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AssetId -> "asset identifier"
+  | Assignment -> "assignment"
+  | Assignments -> "assignments"
   | AssignmentCount -> "no. assignments"
   | Building -> "building"
   | CanceledAt -> "canceled at"

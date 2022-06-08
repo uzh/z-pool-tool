@@ -79,6 +79,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val is_fully_booked : t -> bool
+val session_date_to_human : t -> string
 
 type base =
   { start : Start.t

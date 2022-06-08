@@ -3,15 +3,11 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
-  | ExperimentEditTitle
-  | ExperimentNewTitle
   | ExperimentListTitle
   | ExperimentWaitingListTitle
   | ExperimentContactEnrolledNote
   | HomeTitle
   | I18nTitle
-  | InvitationListTitle
-  | InvitationNewTitle
   | LocationListTitle
   | LocationNewTitle
   | LocationNoSessions
@@ -21,9 +17,7 @@ type t =
   | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
-  | SessionListTitle
-  | SessionNewTitle
-  | SessionUpdateTitle
+  | SessionDetailTitle of Ptime.t
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
@@ -35,6 +29,7 @@ type t =
   | WaitingListIsDisabled
 
 type nav_link =
+  | Assignments
   | Dashboard
   | Experiments
   | I18n

@@ -86,7 +86,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
