@@ -31,6 +31,7 @@ module CanceledAt : sig
 
   val init : t
   val create_now : unit -> t
+  val value : t -> Ptime.t option
 end
 
 type t =

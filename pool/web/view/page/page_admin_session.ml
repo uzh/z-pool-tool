@@ -205,7 +205,7 @@ let index
 ;;
 
 let detail
-    Pool_context.{ language; _ }
+    (Pool_context.{ language; _ } as context)
     experiment_id
     (session : Session.t)
     assignments
@@ -269,7 +269,10 @@ let detail
   in
   let assignments_html =
     let assignment_list =
-      Page_admin_assignments.Partials.overview_list language assignments
+      Page_admin_assignments.Partials.overview_list
+        context
+        experiment_id
+        assignments
     in
     div
       [ h2

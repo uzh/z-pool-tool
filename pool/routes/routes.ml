@@ -188,7 +188,9 @@ module Admin = struct
         ]
       in
       let assignments =
-        let specific = [] in
+        let specific =
+          [ post "/cancel" Handler.Admin.Experiments.Assignment.cancel ]
+        in
         [ get "" Handler.Admin.Experiments.Assignment.index
         ; choose ~scope:(Assignment |> url_key) specific
         ]

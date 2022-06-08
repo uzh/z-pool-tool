@@ -298,22 +298,10 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
     let thead =
-      CCList.map
-        (fun field ->
-          th
-            [ txt
-                (CCOption.map_or
-                   ~default:""
-                   (fun f ->
-                     Pool_common.Utils.field_to_string language f
-                     |> CCString.capitalize_ascii)
-                   field)
-            ])
+      Table.head
+        language
         Pool_common.Message.Field.
           [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
-      |> tr
-      |> CCList.pure
-      |> thead
     in
     CCList.map
       (fun entry ->

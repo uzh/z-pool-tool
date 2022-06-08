@@ -36,3 +36,38 @@ let index req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+let cancel req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id, id =
+    let open Pool_common.Message.Field in
+    let open HttpUtils in
+    ( get_field_router_param req Experiment |> Pool_common.Id.of_string
+    , get_field_router_param req Assignment |> Pool_common.Id.of_string )
+  in
+  let redirect_path =
+    Format.asprintf
+      "/admin/experiments/%s/assignments"
+      (Pool_common.Id.value experiment_id)
+  in
+  let result { Pool_context.tenant_db; _ } =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@ let* assignment = Assignment.find tenant_db id in
+       let events =
+         Cqrs_command.Assignment_command.Cancel.handle assignment |> Lwt.return
+       in
+       let handle events =
+         let%lwt (_ : unit list) =
+           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           redirect_path
+           [ Message.set
+               ~success:[ Pool_common.Message.(Canceled Field.Assignment) ]
+           ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
