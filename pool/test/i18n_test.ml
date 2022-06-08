@@ -8,7 +8,7 @@ let create () =
   let events =
     let open CCResult.Infix in
     Pool_common.Message.Field.
-      [ Key |> show, [ "confirmation_contact" ]
+      [ Key |> show, [ "confirmation_subject" ]
       ; Language |> show, [ "EN" ]
       ; Translation |> show, [ "Contact" ]
       ]
@@ -18,7 +18,7 @@ let create () =
   let expected =
     let open CCResult in
     let open I18n in
-    let* key = Key.of_string "confirmation_contact" in
+    let* key = Key.of_string "confirmation_subject" in
     let* language = Pool_common.Language.create "EN" in
     let* content = Content.create "Contact" in
     let create = { key; language; content } in

@@ -311,3 +311,21 @@ let submit_icon ?(classnames = []) icon_type =
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
     [ icon icon_type ]
 ;;
+
+module Table = struct
+  let head language fields =
+    CCList.map
+      (fun field ->
+        th
+          [ txt
+              (CCOption.map_or
+                 ~default:""
+                 (fun f -> Pool_common.Utils.field_to_string language f)
+                 field)
+          ])
+      fields
+    |> tr
+    |> CCList.pure
+    |> thead
+  ;;
+end

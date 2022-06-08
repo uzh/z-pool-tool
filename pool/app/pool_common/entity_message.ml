@@ -6,6 +6,8 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
+    | Assignment [@name "assignment"] [@printer go "assignment"]
+    | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
     | AssignmentCount [@name "assignment_count"]
         [@printer go "assignment_count"]
     | Building [@name "building"] [@printer go "building"]
@@ -85,11 +87,14 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
+    | RegistrationDisabled [@name "registration_disabled"]
+        [@printer go "registration_disabled"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
     | Root [@name "root"] [@printer go "root"]
     | Session [@name "session"] [@printer go "session"]
+    | Sessions [@name "sessions"] [@printer go "sessions"]
     | Setting [@name "setting"] [@printer go "setting"]
     | ShowUp [@name "show_up"] [@printer go "show_up"]
     | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
@@ -176,6 +181,7 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
+  | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
   | SessionFullyBooked

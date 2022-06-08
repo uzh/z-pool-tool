@@ -24,6 +24,14 @@ let assignment_data () =
   { session; experiment; contact }
 ;;
 
+let confirmation_email =
+  let language = Pool_common.Language.En in
+  let subject = "Confirmation" |> I18n.Content.create |> CCResult.get_exn in
+  let text = "Text" |> I18n.Content.create |> CCResult.get_exn in
+  let session_text = "Session info" in
+  Assignment.{ subject; text; language; session_text }
+;;
+
 let create () =
   let { session; experiment; contact } = assignment_data () in
   let waiting_list =
@@ -36,12 +44,16 @@ let create () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list }
     in
-    AssignmentCommand.Create.handle command false
+    AssignmentCommand.Create.handle command confirmation_email false
   in
   let expected =
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
+        |> Pool_event.assignment
+      ; Assignment.(
+          ConfirmationSent
+            (confirmation_email, waiting_list.Waiting_list.contact))
         |> Pool_event.assignment
       ]
   in
@@ -97,7 +109,7 @@ let assign_to_fully_booked_session () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list }
     in
-    AssignmentCommand.Create.handle command false
+    AssignmentCommand.Create.handle command confirmation_email false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
   check_result expected events
@@ -116,7 +128,7 @@ let assign_to_session_contact_is_already_assigned () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list }
     in
-    AssignmentCommand.Create.handle command already_assigned
+    AssignmentCommand.Create.handle command confirmation_email already_assigned
   in
   let expected = Error Pool_common.Message.(AlreadySignedUpForExperiment) in
   check_result expected events
@@ -131,7 +143,7 @@ let assign_contact_from_waiting_list () =
       AssignmentCommand.CreateFromWaitingList.
         { session; waiting_list; already_enrolled }
     in
-    AssignmentCommand.CreateFromWaitingList.handle command
+    AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
   let expected =
     let create =
@@ -143,7 +155,34 @@ let assign_contact_from_waiting_list () =
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.Created create |> Pool_event.assignment
+      ; Assignment.(
+          ConfirmationSent
+            (confirmation_email, waiting_list.Waiting_list.contact))
+        |> Pool_event.assignment
       ]
   in
+  check_result expected events
+;;
+
+let assign_contact_from_waiting_list_to_disabled_experiment () =
+  let session = Test_utils.create_session () in
+  let experiment = Test_utils.create_experiment () in
+  let experiment =
+    Experiment.
+      { experiment with
+        registration_disabled = true |> RegistrationDisabled.create
+      }
+  in
+  let waiting_list = Test_utils.create_waiting_list () in
+  let waiting_list = Waiting_list.{ waiting_list with experiment } in
+  let already_enrolled = false in
+  let events =
+    let command =
+      AssignmentCommand.CreateFromWaitingList.
+        { session; waiting_list; already_enrolled }
+    in
+    AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
+  in
+  let expected = Error Pool_common.Message.(RegistrationDisabled) in
   check_result expected events
 ;;

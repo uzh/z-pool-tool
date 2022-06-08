@@ -187,6 +187,14 @@ module Admin = struct
         ; choose ~scope:(WaitingList |> url_key) specific
         ]
       in
+      let assignments =
+        let specific =
+          [ post "/cancel" Handler.Admin.Experiments.Assignment.cancel ]
+        in
+        [ get "" Handler.Admin.Experiments.Assignment.index
+        ; choose ~scope:(Assignment |> url_key) specific
+        ]
+      in
       [ get "" Handler.Admin.Experiments.index
       ; get "/create" Handler.Admin.Experiments.new_form
       ; post "" Handler.Admin.Experiments.create
@@ -201,6 +209,7 @@ module Admin = struct
       ; choose ~scope:(build_scope "invitations") invitations
       ; choose ~scope:(build_scope "waiting-list") waiting_list
       ; choose ~scope:(build_scope "sessions") sessions
+      ; choose ~scope:(build_scope "assignments") assignments
       ]
     in
     choose

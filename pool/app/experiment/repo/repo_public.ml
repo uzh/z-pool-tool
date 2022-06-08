@@ -8,6 +8,10 @@ let contact_was_invited_join =
     |sql}
 ;;
 
+let where_registration_not_disabled =
+  "pool_experiments.registration_disabled = 0"
+;;
+
 let select_from_experiments_sql where_fragment =
   let select_from =
     {sql|
@@ -21,7 +25,8 @@ let select_from_experiments_sql where_fragment =
           )),
           pool_experiments.description,
           pool_experiments.waiting_list_disabled,
-          pool_experiments.direct_registration_disabled
+          pool_experiments.direct_registration_disabled,
+          pool_experiments.registration_disabled
         FROM pool_experiments
       |sql}
   in
@@ -30,7 +35,10 @@ let select_from_experiments_sql where_fragment =
 
 let find_all_public_by_contact_request =
   let open Caqti_request.Infix in
-  contact_was_invited_join
+  Format.asprintf
+    "%s WHERE %s"
+    contact_was_invited_join
+    where_registration_not_disabled
   |> select_from_experiments_sql
   |> Caqti_type.string ->* RepoEntity.Public.t
 ;;
@@ -46,9 +54,12 @@ let find_all_public_by_contact pool contact =
 let find_request =
   let open Caqti_request.Infix in
   let where_fragment =
-    {sql|
+    Format.asprintf
+      {sql|
         WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND %s
       |sql}
+      where_registration_not_disabled
   in
   Format.asprintf "%s %s" contact_was_invited_join where_fragment
   |> select_from_experiments_sql

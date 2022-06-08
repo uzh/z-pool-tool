@@ -5,16 +5,16 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
+  | EmtpyList field ->
+    Format.asprintf
+      "Es sind keine %s vorhanden."
+      (Locales_de.field_to_string field)
   | ExperimentListTitle -> "Experimente"
-  | ExperimentEditTitle -> "Experiment bearbeiten"
-  | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentWaitingListTitle -> "Warteliste"
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
-  | InvitationListTitle -> "Einladungen"
-  | InvitationNewTitle -> "Einladung senden"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
@@ -23,9 +23,8 @@ let to_string = function
   | NumberIsDaysHint -> "Tage"
   | NumberIsWeeksHint -> "Wochen"
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
-  | SessionListTitle -> "Sessions"
-  | SessionNewTitle -> "Neue Session"
-  | SessionUpdateTitle -> "Session updaten"
+  | SessionDetailTitle start ->
+    Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"
@@ -40,6 +39,7 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | Assignments -> "Anmeldungen"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"

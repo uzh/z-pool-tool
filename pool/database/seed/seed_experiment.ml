@@ -27,11 +27,15 @@ let experiments pool =
           let direct_registration_disabled =
             Experiment.DirectRegistrationDisabled.create false
           in
+          let registration_disabled =
+            Experiment.RegistrationDisabled.create false
+          in
           Experiment.
             { title
             ; description
             ; waiting_list_disabled
             ; direct_registration_disabled
+            ; registration_disabled
             }
         in
         Experiment.Created experiment)

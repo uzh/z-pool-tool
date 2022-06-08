@@ -5,15 +5,15 @@ let to_string = function
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
   | EmailConfirmationTitle -> "Email confirmation"
+  | EmtpyList field ->
+    Format.asprintf
+      "There are no %s available."
+      (Locales_en.field_to_string field)
   | ExperimentListTitle -> "Experiments"
-  | ExperimentEditTitle -> "Edit experiment"
-  | ExperimentNewTitle -> "Create new experiment"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
-  | InvitationListTitle -> "Invitations"
-  | InvitationNewTitle -> "Send invitation"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
   | LocationNoSessions -> "No sessions found for this location."
@@ -22,9 +22,8 @@ let to_string = function
   | NumberIsDaysHint -> "Days"
   | NumberIsWeeksHint -> "Weeks"
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
-  | SessionListTitle -> "Sessions"
-  | SessionNewTitle -> "New Session"
-  | SessionUpdateTitle -> "Update Session"
+  | SessionDetailTitle start ->
+    Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
@@ -39,6 +38,7 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | Assignments -> "Assignments"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
   | I18n -> "Translations"

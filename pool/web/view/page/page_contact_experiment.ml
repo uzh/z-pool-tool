@@ -27,7 +27,7 @@ let index experiment_list Pool_context.{ language; _ } =
       ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -113,7 +113,7 @@ let show
       | true -> div [ waiting_list_form () ])
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ div
         ~a:[ a_class [ "stack" ] ]
         [ p [ txt (Experiment.Description.value experiment.description) ]

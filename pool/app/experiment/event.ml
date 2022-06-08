@@ -5,6 +5,7 @@ type create =
   ; description : Description.t
   ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
   }
 [@@deriving eq, show]
 
@@ -24,6 +25,7 @@ let handle_event pool : event -> unit Lwt.t = function
       create_t.description
       create_t.waiting_list_disabled
       create_t.direct_registration_disabled
+      create_t.registration_disabled
     |> Repo.insert pool
   | Updated (experiment, update_t) ->
     { experiment with
@@ -31,6 +33,7 @@ let handle_event pool : event -> unit Lwt.t = function
     ; description = update_t.description
     ; waiting_list_disabled = update_t.waiting_list_disabled
     ; direct_registration_disabled = update_t.direct_registration_disabled
+    ; registration_disabled = update_t.registration_disabled
     ; updated_at =
         Ptime_clock.now () (* TODO [timhub]: How to use SQL timestamp update? *)
     }

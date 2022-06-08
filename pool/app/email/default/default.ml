@@ -26,6 +26,31 @@ let invitation = function
   | En -> Default_en.invitation
 ;;
 
+let boilerplate language =
+  let salutation, complimentary_close, add_salutation_to_text =
+    match language with
+    | De ->
+      let open Default_de in
+      salutation, complimentary_close, add_salutation_to_text
+    | En ->
+      let open Default_en in
+      salutation, complimentary_close, add_salutation_to_text
+  in
+  let label = Entity.TemplateLabel.Boilerplate in
+  let language = Pool_common.Language.En in
+  let html =
+    let open Tyxml.Html in
+    let open Default_utils in
+    [ salutation; p [ txt "{content}" ]; complimentary_close ]
+    |> combine_html language None
+    |> html_to_string
+  in
+  let text = {|
+{content}
+    |} |> add_salutation_to_text in
+  { label; language; text; html }
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -38,6 +63,7 @@ let default_values_tenant =
   ; password_reset
   ; signup_verification
   ; invitation
+  ; boilerplate
   ]
   @@@ [ En; De ]
 ;;

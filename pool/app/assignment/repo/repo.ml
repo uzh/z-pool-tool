@@ -39,7 +39,7 @@ module Sql = struct
       LEFT JOIN pool_sessions
         ON pool_assignments.session_id = pool_sessions.id
       LEFT JOIN pool_contacts
-        ON pool_assignments.session_id = pool_contacts.id
+        ON pool_assignments.contact_id = pool_contacts.id
     |sql}
   ;;
 
@@ -67,7 +67,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        uuid = UNHEX(REPLACE(?, '-', ''))
+        pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->! RepoEntity.t
@@ -86,7 +86,7 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', ''))),
+        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -173,10 +173,10 @@ module Sql = struct
         UPDATE
           pool_assignments
         SET
-          show_up = $4,
-          participated = $5,
-          matches_filter = $6,
-          canceled_at = $7
+          show_up = $2,
+          participated = $3,
+          matches_filter = $4,
+          canceled_at = $5
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}

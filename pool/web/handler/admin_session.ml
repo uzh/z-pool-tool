@@ -86,18 +86,27 @@ let detail req page =
     Lwt_result.map_err (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
-    let%lwt locations = Pool_location.find_all tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
-    page context experiment_id session locations
-    |> create_layout req context
+    (match page with
+    | `Detail ->
+      let* assignments =
+        Assignment.find_by_session tenant_db session.Session.id
+      in
+      Page.Admin.Session.detail context experiment_id session assignments
+      |> Lwt.return_ok
+    | `Edit ->
+      let%lwt locations = Pool_location.find_all tenant_db in
+      Page.Admin.Session.edit context experiment_id session locations
+      |> Lwt.return_ok)
+    >>= create_layout req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let show req = detail req Page.Admin.Session.detail
-let edit req = detail req Page.Admin.Session.edit
+let show req = detail req `Detail
+let edit req = detail req `Edit
 
 let update req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in

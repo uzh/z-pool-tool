@@ -1,8 +1,13 @@
 let combine_html language html_title content =
   let open Tyxml.Html in
   let email_header =
+    let pool_title = "Pool Tool" in
     head
-      (title (txt (CCString.concat " - " [ html_title; "Pool Tool" ])))
+      (title
+         (txt
+            ((CCOption.map_or ~default:pool_title (fun title ->
+                  CCString.concat " - " [ title; pool_title ]))
+               html_title)))
       [ meta
           ~a:
             [ a_http_equiv "Content-Type"

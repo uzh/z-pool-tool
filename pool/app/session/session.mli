@@ -79,6 +79,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val is_fully_booked : t -> bool
+val session_date_to_human : t -> string
 
 type base =
   { start : Start.t
@@ -158,3 +159,10 @@ val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
+
+val to_email_text
+  :  Pool_common.Language.t
+  -> Start.t
+  -> Duration.t
+  -> Pool_location.t
+  -> string
