@@ -90,7 +90,7 @@ let detail
                   ]
               ])
           sessions
-        |> table ~thead ~a:[ a_class [ "striped" ] ]
+        |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->

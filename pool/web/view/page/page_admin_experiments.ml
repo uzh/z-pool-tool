@@ -342,7 +342,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
               ]
           ])
       waiting_list.waiting_list_entries
-    |> table ~thead ~a:[ a_class [ "striped" ] ]
+    |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
   in
   let content =
     match waiting_list.experiment.Experiment.waiting_list_disabled with

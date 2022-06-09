@@ -191,7 +191,7 @@ let index
       ~a:[ a_class [ "stack-lg" ] ]
       [ table
           ~thead
-          ~a:[ a_class [ "striped" ] ]
+          ~a:[ a_class [ "table"; "striped" ] ]
           (CCList.map session_row sessions)
       ; create csrf language experiment_id locations flash_fetcher
       ]
@@ -249,7 +249,7 @@ let detail
                     ; td [ txt value ]
                     ])
          in
-         table ~a:[ a_class [ "striped" ] ] rows)
+         table ~a:[ a_class [ "table"; "striped" ] ] rows)
       ; p
           [ a
               ~a:

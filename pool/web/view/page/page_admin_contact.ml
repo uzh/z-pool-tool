@@ -26,5 +26,5 @@ let personal_detail language contact =
     [ Field.Name, fullname contact
     ; Field.Email, email_address contact |> Pool_user.EmailAddress.value
     ]
-  |> to_horizontal_table ~classnames:[ "striped" ] language
+  |> to_horizontal_table ~classnames:[ "table"; "striped" ] language
 ;;

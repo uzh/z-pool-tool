@@ -75,7 +75,7 @@ module Partials = struct
       |> CCList.pure
       |> thead
     in
-    table ~a:[ a_class [ "table" ] ] ~thead html_body
+    table ~a:[ a_class [ "table"; "simple" ] ] ~thead html_body
   ;;
 
   let send_invitation
