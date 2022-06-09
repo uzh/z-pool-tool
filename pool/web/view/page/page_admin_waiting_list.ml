@@ -24,7 +24,8 @@ let detail
                      (value experiment.Experiment.id)
                      (value id)))
             ]
-          [ textarea_element
+          [ csrf_element csrf ()
+          ; textarea_element
               language
               Pool_common.Message.Field.(show Comment)
               Pool_common.Message.Field.Comment
@@ -90,7 +91,7 @@ let detail
                   ]
               ])
           sessions
-        |> table ~thead ~a:[ a_class [ "striped" ] ]
+        |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->

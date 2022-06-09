@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let detail session experiment Pool_context.{ language; _ } =
+let detail session experiment Pool_context.{ language; csrf; _ } =
   let form_action =
     Format.asprintf
       "/experiments/%s/sessions/%s"
@@ -20,7 +20,8 @@ let detail session experiment Pool_context.{ language; _ } =
         [ Page_contact_sessions.public_detail session language
         ; form
             ~a:[ a_action form_action; a_method `Post ]
-            [ Component.submit_element
+            [ Component.csrf_element csrf ()
+            ; Component.submit_element
                 language
                 Pool_common.Message.(Enroll)
                 ~submit_type:`Success

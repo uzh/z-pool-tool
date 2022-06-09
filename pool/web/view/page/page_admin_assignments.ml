@@ -65,7 +65,7 @@ module Partials = struct
           | Some _ -> base @ [ td [] ])
           |> tr)
         assignments
-      |> table ~thead ~a:[ a_class [ "striped" ] ]
+      |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
   ;;
 end
 

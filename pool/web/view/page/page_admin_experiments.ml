@@ -186,7 +186,7 @@ let edit experiment (Pool_context.{ language; _ } as context) =
     html
 ;;
 
-let detail experiment session_count Pool_context.{ language; _ } =
+let detail experiment session_count Pool_context.{ language; csrf; _ } =
   let delete_form =
     match session_count > 0 with
     | true ->
@@ -215,7 +215,8 @@ let detail experiment session_count Pool_context.{ language; _ } =
                     "/admin/experiments/%s/delete"
                     (experiment.Experiment.id |> Pool_common.Id.value)))
           ]
-        [ submit_element
+        [ csrf_element csrf ()
+        ; submit_element
             language
             Message.(Delete (Some Field.Experiment))
             ~submit_type:`Error
@@ -342,7 +343,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
               ]
           ])
       waiting_list.waiting_list_entries
-    |> table ~thead ~a:[ a_class [ "striped" ] ]
+    |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
   in
   let content =
     match waiting_list.experiment.Experiment.waiting_list_disabled with

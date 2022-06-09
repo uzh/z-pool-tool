@@ -138,17 +138,19 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateTenantEmailSuffixes)
-              (CCList.map
-                 (fun suffix ->
-                   input_element
-                     `Text
-                     Message.Field.EmailSuffix
-                     (suffix |> Settings.EmailSuffix.value))
-                 email_suffixes
+              ([ Component.csrf_element csrf () ]
+              @ CCList.map
+                  (fun suffix ->
+                    input_element
+                      `Text
+                      Message.Field.EmailSuffix
+                      (suffix |> Settings.EmailSuffix.value))
+                  email_suffixes
               @ [ submit_element language Message.(Update None) () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
-              [ input_element `Text Message.Field.EmailSuffix ""
+              [ Component.csrf_element csrf ()
+              ; input_element `Text Message.Field.EmailSuffix ""
               ; submit_element language Message.(Add None) ()
               ]
           ; div
@@ -162,7 +164,8 @@ let show
                                [ a_method `Post
                                ; a_action (action_path `DeleteTenantEmailSuffix)
                                ]
-                             [ input
+                             [ Component.csrf_element csrf ()
+                             ; input
                                  ~a:
                                    [ a_input_type `Hidden
                                    ; a_name "email_suffix"
@@ -189,7 +192,8 @@ let show
       [ h2 [ txt "Contact Email" ]
       ; form
           ~a:(form_attrs `UpdateTenantContactEmail)
-          [ input_element
+          [ Component.csrf_element csrf ()
+          ; input_element
               `Text
               Message.Field.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
@@ -205,7 +209,8 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-              [ Component.input_element
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
                   ~help:Pool_common.I18n.NumberIsWeeksHint
                   language
                   `Number
@@ -217,7 +222,8 @@ let show
               ]
           ; form
               ~a:(form_attrs `UpdateInactiveUserWarning)
-              [ Component.input_element
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
                   ~help:Pool_common.I18n.NumberIsDaysHint
                   language
                   `Number
@@ -252,7 +258,8 @@ let show
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]
       ; form
           ~a:(form_attrs `UpdateTermsAndConditions)
-          (terms_and_conditions_textareas
+          ([ Component.csrf_element csrf () ]
+          @ terms_and_conditions_textareas
           @ [ submit_element language Message.(Update None) () ])
       ]
   in
