@@ -91,6 +91,7 @@ module Tenant = struct
       ; Migration_waiting_list.migration ()
       ; Migration_location.migration ()
       ; Migration_location_file_mapping.migration ()
+      ; Migration_mailing.migration ()
       ]
   ;;
 

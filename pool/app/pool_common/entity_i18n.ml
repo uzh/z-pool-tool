@@ -15,6 +15,12 @@ type t =
   | LocationNoSessions
   | LocationFileNew
   | LoginTitle
+  | NumberIsDaysHint
+  | NumberIsWeeksHint
+  | RateDependencyHint
+  | RateHint
+  | RateNumberPerMinutesHint of int
+  | RateTotalSent
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t

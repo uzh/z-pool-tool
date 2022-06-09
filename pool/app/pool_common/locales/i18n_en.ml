@@ -21,6 +21,16 @@ let to_string = function
   | LocationNoSessions -> "No sessions found for this location."
   | LocationFileNew -> "Add file to location"
   | LoginTitle -> "Login"
+  | NumberIsDaysHint -> "Days"
+  | NumberIsWeeksHint -> "Weeks"
+  | RateDependencyHint ->
+    "There are other mailings running at the same time. In case the sum of all \
+     rates reaches the maximum of the server, they will automatically get \
+     reduced."
+  | RateHint -> "Generated Invitations per hour"
+  | RateNumberPerMinutesHint number ->
+    Format.asprintf "Generates new invitations every %d minutes." number
+  | RateTotalSent -> "Totally generated invitations:"
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
