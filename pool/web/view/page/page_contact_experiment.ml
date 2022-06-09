@@ -44,7 +44,7 @@ let show
     sessions
     session_user_is_assigned
     user_is_enlisted
-    Pool_context.{ language; _ }
+    Pool_context.{ language; csrf; _ }
   =
   let open Experiment.Public in
   let form_action =
@@ -82,7 +82,8 @@ let show
           ]
       ; form
           ~a:[ a_method `Post; a_action form_action ]
-          [ submit_element language form_control ~classnames:[ submit_class ] ()
+          [ csrf_element csrf ()
+          ; submit_element language form_control ~classnames:[ submit_class ] ()
           ]
       ]
   in

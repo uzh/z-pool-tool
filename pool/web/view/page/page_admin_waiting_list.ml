@@ -24,7 +24,8 @@ let detail
                      (value experiment.Experiment.id)
                      (value id)))
             ]
-          [ textarea_element
+          [ csrf_element csrf ()
+          ; textarea_element
               language
               Pool_common.Message.Field.(show Comment)
               Pool_common.Message.Field.Comment
