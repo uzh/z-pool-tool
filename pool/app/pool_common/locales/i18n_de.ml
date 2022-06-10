@@ -9,19 +9,21 @@ let to_string = function
     Format.asprintf
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
-  | ExperimentListTitle -> "Experimente"
-  | ExperimentWaitingListTitle -> "Warteliste"
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
   | Files -> "Dateien"
+  | ExperimentListTitle -> "Experimente"
+  | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
+  | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
   | LocationNoFiles -> "Es existieren keine Dateien zu diesem Standort."
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
-  | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LoginTitle -> "Anmelden"
+  | MailingDetailTitle start ->
+    Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
   | NumberIsDaysHint -> "Tage"
   | NumberIsWeeksHint -> "Wochen"
   | RateDependencyHint ->
@@ -56,6 +58,7 @@ let nav_link_to_string = function
   | Locations -> "Standorte"
   | LoginInformation -> "Anmeldeinformationen"
   | Logout -> "Logout"
+  | Mailings -> "Versand"
   | Overview -> "Übersicht"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"

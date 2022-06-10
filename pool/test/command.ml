@@ -140,5 +140,6 @@ let () =
         ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
     ; "location", [ test_case "create location" `Quick Location_test.create ]
+    ; "mailing", [ test_case "create mailing" `Quick Mailing_test.create ]
     ]
 ;;

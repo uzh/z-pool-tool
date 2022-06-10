@@ -275,6 +275,7 @@ type control =
   | SendResetLink
   | SelectFilePlaceholder
   | SignUp
+  | Stop of Field.t option
   | Update of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 

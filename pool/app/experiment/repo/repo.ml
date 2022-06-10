@@ -130,8 +130,22 @@ module Sql = struct
   ;;
 end
 
-let find = Sql.find
-let find_all = Sql.find_all
+let mailing_to_experiment pool experiment =
+  let open Lwt.Syntax in
+  let* mailings = Mailing.find_by_experiment pool experiment.Entity.id in
+  Lwt.return Entity.{ experiment with mailings }
+;;
+
+let find pool id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find pool id |>> mailing_to_experiment pool
+;;
+
+let find_all pool () =
+  let open Utils.Lwt_result.Infix in
+  () |> Sql.find_all pool >|> Lwt_list.map_s (mailing_to_experiment pool)
+;;
+
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy

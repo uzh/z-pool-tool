@@ -6,6 +6,7 @@ module Experiments = Page_admin_experiments
 module Location = Page_admin_location
 module WaitingList = Page_admin_waiting_list
 module Assignment = Page_admin_assignments
+module Mailing = Page_admin_mailings
 
 let dashboard Pool_context.{ language; _ } =
   div

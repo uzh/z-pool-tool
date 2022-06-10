@@ -9,6 +9,7 @@ module StartAt = struct
   let create m = m
   let value m = m
   let sexp_of_t = Pool_common.Utils.Time.ptime_to_sexp
+  let to_human = Pool_common.Utils.Time.formatted_date_time
 
   let schema () =
     let decode str =
@@ -21,6 +22,16 @@ end
 
 module EndAt = struct
   include StartAt
+
+  let field = Pool_common.Message.Field.End
+
+  let schema () =
+    let decode str =
+      let open CCResult in
+      Pool_common.(Utils.parse_time str >|= create)
+    in
+    Pool_common.Utils.schema_decoder decode Ptime.to_rfc3339 field
+  ;;
 end
 
 module Rate = struct

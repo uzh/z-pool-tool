@@ -25,6 +25,7 @@ module Data = struct
         ; title
         ; description
         ; filter
+        ; mailings = []
         ; waiting_list_disabled = true |> WaitingListDisabled.create
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create

@@ -276,6 +276,7 @@ let control_to_string = function
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
   | SignUp -> format_submit "sign up" None
+  | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
 ;;
 

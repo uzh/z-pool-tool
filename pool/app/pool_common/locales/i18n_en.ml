@@ -9,18 +9,20 @@ let to_string = function
     Format.asprintf
       "There are no %s available."
       (Locales_en.field_to_string field)
+  | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | ExperimentListTitle -> "Experiments"
   | ExperimentWaitingListTitle -> "Waiting list"
-  | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | Files -> "Files"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
+  | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
   | LocationNoFiles -> "There are no files for this location."
   | LocationNoSessions -> "No sessions found for this location."
-  | LocationFileNew -> "Add file to location"
   | LoginTitle -> "Login"
+  | MailingDetailTitle start ->
+    Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
   | NumberIsDaysHint -> "Days"
   | NumberIsWeeksHint -> "Weeks"
   | RateDependencyHint ->
@@ -41,7 +43,7 @@ let to_string = function
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
   | UserProfilePausedNote ->
-    "You paused all notifications for your user! (Click 'edit' to update this  \
+    "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | UserProfileTitle -> "User Profile"
   | WaitingListIsDisabled -> "The waiting list is disabled."
@@ -56,6 +58,7 @@ let nav_link_to_string = function
   | LoginInformation -> "Login information"
   | Locations -> "Locations"
   | Logout -> "Logout"
+  | Mailings -> "Mailings"
   | Overview -> "Overview"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"

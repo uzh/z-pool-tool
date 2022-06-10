@@ -3,18 +3,19 @@ type t =
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
+  | ExperimentContactEnrolledNote
   | ExperimentListTitle
   | ExperimentWaitingListTitle
-  | ExperimentContactEnrolledNote
   | Files
   | HomeTitle
   | I18nTitle
+  | LocationFileNew
   | LocationListTitle
   | LocationNewTitle
   | LocationNoFiles
   | LocationNoSessions
-  | LocationFileNew
   | LoginTitle
+  | MailingDetailTitle of Ptime.t
   | NumberIsDaysHint
   | NumberIsWeeksHint
   | RateDependencyHint
@@ -28,10 +29,10 @@ type t =
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle
-  | UserProfileLoginSubtitle
   | UserProfileDetailsSubtitle
-  | UserProfileTitle
+  | UserProfileLoginSubtitle
   | UserProfilePausedNote
+  | UserProfileTitle
   | WaitingListIsDisabled
 
 type nav_link =
@@ -43,6 +44,7 @@ type nav_link =
   | Locations
   | LoginInformation
   | Logout
+  | Mailings
   | Overview
   | PersonalDetails
   | Profile

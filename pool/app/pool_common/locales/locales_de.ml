@@ -299,6 +299,7 @@ let control_to_string = function
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | SignUp -> format_submit "registrieren" None
+  | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
 ;;
 
