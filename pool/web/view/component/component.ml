@@ -1,4 +1,5 @@
 module HttpUtils = Http_utils
+module Table = Component_table
 open Tyxml.Html
 
 let icon icon_type =
@@ -312,20 +313,7 @@ let submit_icon ?(classnames = []) icon_type =
     [ icon icon_type ]
 ;;
 
-module Table = struct
-  let head language fields =
-    CCList.map
-      (fun field ->
-        th
-          [ txt
-              (CCOption.map_or
-                 ~default:""
-                 (fun f -> Pool_common.Utils.field_to_string language f)
-                 field)
-          ])
-      fields
-    |> tr
-    |> CCList.pure
-    |> thead
-  ;;
-end
+(* module Table = struct let head language fields = CCList.map (fun field -> th
+   [ txt (CCOption.map_or ~default:"" (fun f ->
+   Pool_common.Utils.field_to_string language f) field) ]) fields |> tr |>
+   CCList.pure |> thead ;; end *)

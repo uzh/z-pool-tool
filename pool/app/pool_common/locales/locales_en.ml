@@ -73,7 +73,7 @@ let field_to_string =
   | Paused -> "paused"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
-  | ResentAt -> "Resent at"
+  | ResentAt -> "resent at"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"

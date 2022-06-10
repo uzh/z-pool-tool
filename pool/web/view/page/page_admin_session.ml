@@ -103,96 +103,73 @@ let index
     flash_fetcher
   =
   let experiment_id = experiment.Experiment.id in
-  let session_row (session : Session.t) =
-    let open Session in
-    tr
-      [ td
-          [ txt
-              (Format.asprintf "%s %s" (session |> Session.session_date_to_human)
-              @@
-              (* TODO [aerben] improve this *)
-              if CCOption.is_some session.Session.canceled_at
-              then "CANCELED"
-              else "")
-          ]
-      ; td
-          [ txt
-              (CCInt.to_string
-                 (session.Session.assignment_count
-                 |> Session.AssignmentCount.value))
-          ]
-      ; td
-          [ a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(Utils.control_to_string language Message.(More))
+  let rows =
+    CCList.map
+      (fun (session : Session.t) ->
+        let open Session in
+        [ txt
+            (Format.asprintf "%s %s" (session |> Session.session_date_to_human)
+            @@
+            (* TODO [aerben] improve this *)
+            if CCOption.is_some session.Session.canceled_at
+            then "CANCELED"
+            else "")
+        ; txt
+            (CCInt.to_string
+               (session.Session.assignment_count
+               |> Session.AssignmentCount.value))
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions/%s"
+                     (Pool_common.Id.value experiment_id)
+                     (Pool_common.Id.value session.id)
+                  |> Sihl.Web.externalize_path)
               ]
-          ]
-      ; td
-          [ form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/cancel"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element language Message.(Cancel None) ()
+            [ txt Pool_common.(Utils.control_to_string language Message.(More))
+            ]
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions/%s/cancel"
+                     (Pool_common.Id.value experiment_id)
+                     (Pool_common.Id.value session.id)
+                  |> Sihl.Web.externalize_path)
               ]
-          ]
-      ; td
-          [ form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/delete"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
+            [ Component.csrf_element csrf ()
+            ; submit_element language Message.(Cancel None) ()
+            ]
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions/%s/delete"
+                     (Pool_common.Id.value experiment_id)
+                     (Pool_common.Id.value session.id)
+                  |> Sihl.Web.externalize_path)
               ]
-          ]
-      ]
+            [ Component.csrf_element csrf ()
+            ; submit_element
+                language
+                Message.(Delete None)
+                ~submit_type:`Error
+                ()
+            ]
+        ])
+      sessions
   in
   let thead =
-    let open Pool_common in
-    Message.Field.[ Some Date; Some AssignmentCount; None; None; None ]
-    |> CCList.map (fun field ->
-           th
-             [ txt
-                 (CCOption.map_or
-                    ~default:""
-                    (fun f -> Utils.field_to_string_capitalized language f)
-                    field)
-             ])
-    |> tr
-    |> CCList.pure
-    |> thead
+    Pool_common.Message.Field.
+      [ Some Date; Some AssignmentCount; None; None; None ]
   in
   let html =
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ table
-          ~thead
-          ~a:[ a_class [ "table"; "striped" ] ]
-          (CCList.map session_row sessions)
+      [ Table.horizontal_table `Striped language ~thead rows
       ; create csrf language experiment_id locations flash_fetcher
       ]
   in
@@ -219,37 +196,33 @@ let detail
            let amount amt = amt |> ParticipantAmount.value |> string_of_int in
            let open Message in
            [ ( Field.Start
-             , session.start |> Start.value |> Ptime.to_rfc3339 ~space:true )
+             , session.start
+               |> Start.value
+               |> Ptime.to_rfc3339 ~space:true
+               |> txt )
            ; ( Field.Duration
              , session.duration
                |> Duration.value
-               |> Pool_common.Utils.print_time_span )
+               |> Pool_common.Utils.print_time_span
+               |> txt )
            ; ( Field.Description
              , CCOption.map_or ~default:"" Description.value session.description
-             )
+               |> txt )
            ; ( Field.Location
-             , Pool_location.to_string language session.Session.location )
-           ; Field.MaxParticipants, amount session.max_participants
-           ; Field.MinParticipants, amount session.min_participants
-           ; Field.Overbook, amount session.overbook
+             , Pool_location.to_string language session.Session.location |> txt
+             )
+           ; Field.MaxParticipants, amount session.max_participants |> txt
+           ; Field.MinParticipants, amount session.min_participants |> txt
+           ; Field.Overbook, amount session.overbook |> txt
            ; ( Field.CanceledAt
              , CCOption.map_or
                  ~default:"Not canceled"
                  (Ptime.to_rfc3339 ~space:true)
-                 session.canceled_at )
+                 session.canceled_at
+               |> txt )
            ]
-           |> CCList.map (fun (field, value) ->
-                  tr
-                    [ th
-                        [ txt
-                            (field
-                            |> Pool_common.Utils.field_to_string language
-                            |> CCString.capitalize_ascii)
-                        ]
-                    ; td [ txt value ]
-                    ])
          in
-         table ~a:[ a_class [ "table"; "striped" ] ] rows)
+         Table.vertical_table `Striped language rows)
       ; p
           [ a
               ~a:

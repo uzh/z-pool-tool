@@ -54,7 +54,7 @@ let header ?(children = []) title =
       [ a_class
           [ "inset"
           ; "flexrow"
-          ; "space-between"
+          ; "justify-between"
           ; "align-center"
           ; "bg-grey-light"
           ; "border-bottom"

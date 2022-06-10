@@ -50,48 +50,37 @@ let detail
                   (I18n.EmtpyList Message.Field.Session))
           ]
       else (
-        let thead =
-          Pool_common.
-            [ Utils.field_to_string language Message.Field.Date
-            ; "Assign contact" (* TODO: Crate hints type?? *)
-            ]
-          |> CCList.map (fun text -> th [ txt text ])
-          |> tr
-          |> CCList.pure
-          |> thead
-        in
-        CCList.map
-          (fun (session : Session.t) ->
-            tr
-              [ td
-                  [ txt
-                      Session.(
-                        session.Session.start
-                        |> Start.value
-                        |> Pool_common.Utils.Time.formatted_date_time)
-                  ]
-              ; td
-                  [ (match Session.is_fully_booked session with
-                    | false ->
-                      input
-                        ~a:
-                          [ a_input_type `Radio
-                          ; a_name Pool_common.Message.Field.(show Session)
-                          ; a_value Session.(session.id |> Pool_common.Id.value)
-                          ]
-                        ()
-                    | true ->
-                      span
-                        [ txt
-                            Pool_common.(
-                              Utils.error_to_string
-                                language
-                                Message.SessionFullyBooked)
-                        ])
-                  ]
+        (* TODO [timhub]: Add hint *)
+        let thead = Pool_common.Message.Field.[ Some Date; None ] in
+        let rows =
+          CCList.map
+            (fun (session : Session.t) ->
+              [ txt
+                  Session.(
+                    session.Session.start
+                    |> Start.value
+                    |> Pool_common.Utils.Time.formatted_date_time)
+              ; (match Session.is_fully_booked session with
+                | false ->
+                  input
+                    ~a:
+                      [ a_input_type `Radio
+                      ; a_name Pool_common.Message.Field.(show Session)
+                      ; a_value Session.(session.id |> Pool_common.Id.value)
+                      ]
+                    ()
+                | true ->
+                  span
+                    [ txt
+                        Pool_common.(
+                          Utils.error_to_string
+                            language
+                            Message.SessionFullyBooked)
+                    ])
               ])
-          sessions
-        |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
+            sessions
+        in
+        Component.Table.horizontal_table `Striped language ~thead rows
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->

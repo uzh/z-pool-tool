@@ -7,7 +7,7 @@ let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.Public.t) =
     let open Experiment.Public in
     div
-      ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm"; "flex-gap" ] ]
+      ~a:[ a_class [ "flexrow"; "justify-between"; "inset-sm"; "flex-gap" ] ]
       [ div
           ~a:[ a_class [ "grow" ] ]
           [ txt (Experiment.Description.value experiment.description) ]
