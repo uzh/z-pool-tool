@@ -406,7 +406,7 @@ module SessionList = struct
         ; experiment_title |> txt
         ; session.duration
           |> Session.Duration.value
-          |> Pool_common.Utils.print_time_span
+          |> Pool_common.Utils.Time.formatted_timespan
           |> txt
         ; session.canceled_at
           |> CCOption.map_or ~default:"" (fun t ->

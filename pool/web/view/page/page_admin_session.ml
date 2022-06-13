@@ -215,12 +215,12 @@ let detail
            [ ( Field.Start
              , session.start
                |> Start.value
-               |> Ptime.to_rfc3339 ~space:true
+               |> Pool_common.Utils.Time.formatted_date_time
                |> txt )
            ; ( Field.Duration
              , session.duration
                |> Duration.value
-               |> Pool_common.Utils.print_time_span
+               |> Pool_common.Utils.Time.formatted_timespan
                |> txt )
            ; ( Field.Description
              , CCOption.map_or ~default:"" Description.value session.description
@@ -231,13 +231,15 @@ let detail
            ; Field.MaxParticipants, amount session.max_participants |> txt
            ; Field.MinParticipants, amount session.min_participants |> txt
            ; Field.Overbook, amount session.overbook |> txt
-           ; ( Field.CanceledAt
-             , CCOption.map_or
-                 ~default:"Not canceled"
-                 (Ptime.to_rfc3339 ~space:true)
-                 session.canceled_at
-               |> txt )
            ]
+           |> fun rows ->
+           match session.canceled_at with
+           | None -> rows
+           | Some canceled ->
+             rows
+             @ [ ( Field.CanceledAt
+                 , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
+               ]
          in
          Table.vertical_table `Striped language rows)
       ; p

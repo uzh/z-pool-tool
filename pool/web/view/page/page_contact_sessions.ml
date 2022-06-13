@@ -16,7 +16,7 @@ let public_overview sessions experiment language =
           Session.(
             session.Session.Public.duration
             |> Duration.value
-            |> Pool_common.Utils.print_time_span)
+            |> Pool_common.Utils.Time.formatted_timespan)
       ; txt (session.Session.Public.location |> Pool_location.to_string language)
       ; (match Session.Public.is_fully_booked session with
         | false ->
@@ -52,7 +52,7 @@ let public_detail (session : Session.Public.t) language =
     ; ( Field.Duration
       , session.Public.duration
         |> Duration.value
-        |> Pool_common.Utils.print_time_span )
+        |> Pool_common.Utils.Time.formatted_timespan )
     ; ( Field.Description
       , CCOption.map_or ~default:"" Description.value session.Public.description
       )

@@ -96,3 +96,18 @@ let%test "create invalid dates from string" =
       | Error _ -> true)
     invalid_dates
 ;;
+
+let formatted_timespan timespan =
+  let format (value, label) =
+    if CCFloat.equal value 0.0
+    then None
+    else Some (Format.asprintf "%i%s" (CCFloat.to_int value) label)
+  in
+  let total = timespan |> Ptime.Span.to_float_s in
+  let hours = floor (total /. 3600.00) in
+  let minutes = (total -. (hours *. 3600.00)) /. 60.00 in
+  let seconds = total -. (hours *. 3600.00) -. (minutes *. 60.00) in
+  [ hours, "h"; minutes, "min"; seconds, "s" ]
+  |> CCList.filter_map format
+  |> CCString.concat " "
+;;
