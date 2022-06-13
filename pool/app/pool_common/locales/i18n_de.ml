@@ -24,6 +24,7 @@ let to_string = function
   | LoginTitle -> "Anmelden"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
+  | MailingNewTitle -> "Neuen Versand erstellen"
   | NumberIsDaysHint -> "Tage"
   | NumberIsWeeksHint -> "Wochen"
   | RateDependencyHint ->

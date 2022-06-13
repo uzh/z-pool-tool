@@ -16,6 +16,7 @@ type t =
   | LocationNoSessions
   | LoginTitle
   | MailingDetailTitle of Ptime.t
+  | MailingNewTitle
   | NumberIsDaysHint
   | NumberIsWeeksHint
   | RateDependencyHint

@@ -7,10 +7,26 @@ let mailing_title (s : Mailing.t) =
     (s.Mailing.start_at |> Mailing.StartAt.value)
 ;;
 
-let index Pool_context.{ language; csrf; _ } experiment mailings =
-  let experiment_id = experiment.Experiment.id in
-  let mailing_row (mailing : Mailing.t) =
+module List = struct
+  let thead language =
+    let open Pool_common in
+    Message.Field.[ Some Start; Some End; Some Rate; None; None; None ]
+    |> CCList.map (fun field ->
+           th
+             [ txt
+                 (CCOption.map_or
+                    ~default:""
+                    (fun f -> Utils.field_to_string_capitalized language f)
+                    field)
+             ])
+    |> tr
+    |> CCList.pure
+    |> thead
+  ;;
+
+  let row Pool_context.{ csrf; language; _ } experiment (mailing : Mailing.t) =
     let open Mailing in
+    let experiment_id = experiment.Experiment.id in
     tr
       [ td [ mailing.start_at |> StartAt.to_human |> txt ]
       ; td [ mailing.end_at |> EndAt.to_human |> txt ]
@@ -50,7 +66,7 @@ let index Pool_context.{ language; csrf; _ } experiment mailings =
                 [ a_method `Post
                 ; a_action
                     (Format.asprintf
-                       "/admin/experiments/%s/Mailings/%s/delete"
+                       "/admin/experiments/%s/mailings/%s/delete"
                        (Pool_common.Id.value experiment_id)
                        (Id.value mailing.id)
                     |> Sihl.Web.externalize_path)
@@ -64,36 +80,47 @@ let index Pool_context.{ language; csrf; _ } experiment mailings =
               ]
           ]
       ]
-  in
-  let thead =
-    let open Pool_common in
-    Message.Field.[ Some Start; Some End; Some Rate; None; None; None ]
-    |> CCList.map (fun field ->
-           th
-             [ txt
-                 (CCOption.map_or
-                    ~default:""
-                    (fun f -> Utils.field_to_string_capitalized language f)
-                    field)
-             ])
-    |> tr
-    |> CCList.pure
-    |> thead
-  in
+  ;;
+
+  let create (Pool_context.{ language; _ } as context) experiment mailings =
+    table
+      ~thead:(thead language)
+      ~a:[ a_class [ "striped" ] ]
+      (CCList.map (row context experiment) mailings)
+  ;;
+end
+
+let index (Pool_context.{ language; _ } as context) experiment mailings =
+  let open Pool_common in
   let html =
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ table
-          ~thead
-          ~a:[ a_class [ "striped" ] ]
-          (CCList.map mailing_row mailings)
+      [ (if CCList.is_empty mailings
+        then
+          div
+            [ p
+                [ I18n.EmtpyList Message.Field.Mailing
+                  |> Utils.text_to_string language
+                  |> txt
+                ]
+            ; a
+                ~a:
+                  [ a_href
+                      (Format.asprintf
+                         "/admin/experiments/%s/mailings/create"
+                         (Id.value experiment.Experiment.id)
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ Utils.text_to_string language I18n.MailingNewTitle |> txt ]
+            ]
+        else List.create context experiment mailings)
       ]
   in
   Page_admin_experiments.experiment_layout
     language
-    (Page_admin_experiments.NavLink Pool_common.I18n.Mailings)
+    (Page_admin_experiments.NavLink I18n.Mailings)
     experiment.Experiment.id
-    ~active:Pool_common.I18n.Mailings
+    ~active:I18n.Mailings
     html
 ;;
 

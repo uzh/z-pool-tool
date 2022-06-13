@@ -23,6 +23,7 @@ let to_string = function
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
+  | MailingNewTitle -> "Create new mailing"
   | NumberIsDaysHint -> "Days"
   | NumberIsWeeksHint -> "Weeks"
   | RateDependencyHint ->
