@@ -104,7 +104,12 @@ let update req =
       let open Contact in
       let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
       let html_response input =
-        [ Htmx.create input language ~classnames ~hx_post ?error ()
+        let success =
+          match error with
+          | None -> true
+          | Some _ -> false
+        in
+        [ Htmx.create input language ~classnames ~hx_post ?error ~success ()
         ; csrf_element
         ]
         |> HttpUtils.multi_html_to_plain_text_response
