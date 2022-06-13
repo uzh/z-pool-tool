@@ -161,9 +161,8 @@ let input_element
       input_type
       name
       [ a_value value; a_id id; a_class input_classes ]
-    |> fun attrs -> if required then attrs @ [] else attrs
+    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
-  (* [ a_required () ] *)
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
@@ -182,12 +181,19 @@ let checkbox_element
     ?help
     ?info
     ?identifier
+    ?flash_fetcher
     language
     input_type
     name
     value
   =
   let input_label = Elements.input_label language name label_field info in
+  let value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+    |> CCOption.map (fun s -> CCString.equal "true" s)
+    |> CCOption.value ~default:value
+  in
   let value_attrs =
     match value with
     | true -> [ a_checked () ]

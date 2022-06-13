@@ -121,6 +121,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         Pool_common.Message.Field.WaitingListDisabled
         (experiment
         |> CCOption.map_or ~default:false waiting_list_disabled_value)
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
@@ -128,6 +129,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         Pool_common.Message.Field.DirectRegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false direct_registration_disabled_value)
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
@@ -135,6 +137,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         Pool_common.Message.Field.RegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false registration_disabled_value)
+        ~flash_fetcher
     ; submit_element
         language
         Message.(
