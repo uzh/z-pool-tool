@@ -96,8 +96,14 @@ let detail req page =
       Page.Admin.Session.detail context experiment_id session assignments
       |> Lwt.return_ok
     | `Edit ->
+      let flash_fetcher key = Sihl.Web.Flash.find key req in
       let%lwt locations = Pool_location.find_all tenant_db in
-      Page.Admin.Session.edit context experiment_id session locations
+      Page.Admin.Session.edit
+        context
+        experiment_id
+        session
+        locations
+        flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -123,7 +129,10 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err -> err, path)
+    Lwt_result.map_err (fun err ->
+        ( err
+        , Format.asprintf "%s/edit" path
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location =
@@ -151,7 +160,7 @@ let update req =
       ]
     |> Lwt_result.ok
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let disabler req command =

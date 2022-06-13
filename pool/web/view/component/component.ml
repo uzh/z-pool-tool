@@ -130,12 +130,16 @@ let input_element
     ?help
     ?info
     ?identifier
+    ?(required = false)
     language
     input_type
     name
     value
   =
-  let input_label = Elements.input_label language name label_field info in
+  let input_label =
+    let base = Elements.input_label language name label_field info in
+    if required then Format.asprintf "%s *" base else base
+  in
   let input_classes =
     match input_type with
     | `Datetime -> [ "datepicker" ]
@@ -148,6 +152,7 @@ let input_element
       input_type
       name
       [ a_value value; a_id id; a_class input_classes ]
+    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
@@ -199,9 +204,10 @@ let checkbox_element
 (* Use the value from flash as the value, if no value is in flash use a default
    value *)
 let input_element_persistent
-    ?info
+    ?help
     ?default
     ?classnames
+    ?(required = false)
     language
     input_type
     name
@@ -210,19 +216,21 @@ let input_element_persistent
   let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
   let open CCOption in
   let value = old_value <+> default |> get_or ~default:"" in
-  input_element ?info ?classnames language input_type name value
+  input_element ?help ?classnames ~required language input_type name value
 ;;
 
 let input_element_file
     ?(orientation = `Vertical)
     ?(allow_multiple = false)
     ?(has_icon = true)
+    ?(required = false)
     language
     field
   =
   let field_label =
     Pool_common.Utils.field_to_string language field
     |> CCString.capitalize_ascii
+    |> fun label -> if required then Format.asprintf "%s *" label else label
   in
   let name = Pool_common.Message.Field.(field |> show) in
   let visible_part =
@@ -238,21 +246,24 @@ let input_element_file
     | true ->
       span ~a:[ a_class [ "has-icon" ] ] [ icon `UploadOutline; placeholder ]
   in
+  let input_attributes =
+    let attributes =
+      [ a_input_type `File
+      ; a_id name
+      ; a_name name
+      ; (if allow_multiple then a_multiple () else a_value "")
+      ]
+    in
+    match required with
+    | true -> attributes @ [ a_required () ]
+    | false -> attributes
+  in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
     [ label ~a:[ a_label_for name ] [ txt field_label ]
     ; label
         ~a:[ a_label_for name; a_class [ "file-input" ] ]
-        [ input
-            ~a:
-              [ a_input_type `File
-              ; a_id name
-              ; a_name name
-              ; (if allow_multiple then a_multiple () else a_value "")
-              ]
-            ()
-        ; visible_part
-        ]
+        [ input ~a:input_attributes (); visible_part ]
     ]
 ;;
 
@@ -262,22 +273,30 @@ let textarea_element
     input_label
     ?(classnames = [])
     ?(attributes = [])
+    ?(required = false)
     ?default
     ?flash_fetcher
     ()
   =
   let input_label =
-    Pool_common.Utils.field_to_string language input_label
-    |> CCString.capitalize_ascii
+    let base =
+      Pool_common.Utils.field_to_string language input_label
+      |> CCString.capitalize_ascii
+    in
+    if required then Format.asprintf "%s *" base else base
   in
   let old_value =
     CCOption.bind flash_fetcher (fun flash_fetcher -> name |> flash_fetcher)
   in
+  let textarea_attributes =
+    let base = [ a_name name; a_class classnames ] in
+    match required with
+    | true -> base @ [ a_required () ]
+    | false -> base
+  in
   let open CCOption in
   let value = old_value <+> default |> get_or ~default:"" in
-  let input =
-    textarea ~a:([ a_name name; a_class classnames ] @ attributes) (txt value)
-  in
+  let input = textarea ~a:(textarea_attributes @ attributes) (txt value) in
   div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]
 ;;
 

@@ -106,12 +106,14 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         `Text
         Pool_common.Message.Field.Title
         ~default:(value title_value)
+        ~required:true
         flash_fetcher
     ; input_element_persistent
         language
         `Text
         Pool_common.Message.Field.Description
         ~default:(value description_value)
+        ~required:true
         flash_fetcher
     ; checkbox_element
         language

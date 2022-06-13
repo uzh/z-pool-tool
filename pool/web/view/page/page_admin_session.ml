@@ -10,6 +10,7 @@ let location_select options selected ?(attributes = []) () =
   let open Pool_location in
   let name = Message.Field.(show Location) in
   div
+    ~a:[ a_class [ "form-group" ] ]
     [ label [ txt (name |> CCString.capitalize_ascii) ]
     ; div
         ~a:[ a_class [ "select" ] ]
@@ -58,14 +59,16 @@ let create csrf language experiment_id locations flash_fetcher =
             language
             `Datetime
             Pool_common.Message.Field.Start
+            ~required:true
             flash_fetcher
         ; input_element_persistent
             language
             (* TODO [aerben] make this `Time and convert span from flatpickr to
                seconds *)
+            ~required:true
             `Number
             Pool_common.Message.Field.Duration
-            ~info:"in seconds"
+            ~help:Pool_common.I18n.NumberIsSecondsHint
             flash_fetcher
           (* TODO [aerben] this should be textarea *)
         ; input_element_persistent
@@ -78,17 +81,20 @@ let create csrf language experiment_id locations flash_fetcher =
             language
             `Number
             Pool_common.Message.Field.MaxParticipants
+            ~required:true
             flash_fetcher
         ; input_element_persistent
             language
             `Number
             Pool_common.Message.Field.MinParticipants
+            ~required:true
             flash_fetcher
             ~default:"0"
         ; input_element_persistent
             language
             `Number
             Pool_common.Message.Field.Overbook
+            ~required:true
             flash_fetcher
         ; submit_element language Message.(Create (Some Field.Session)) ()
         ]
@@ -289,6 +295,7 @@ let edit
     experiment_id
     (session : Session.t)
     locations
+    flash_fetcher
   =
   let open Session in
   let html =
@@ -313,42 +320,59 @@ let edit
              ]
            [ Component.csrf_element csrf ()
              (* TODO [aerben] use better formatted date *)
-           ; input_element
+           ; input_element_persistent
                language
                `Datetime
                Pool_common.Message.Field.Start
-               (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
-           ; input_element
+               ~required:true
+               ~default:
+                 (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
+               flash_fetcher
+           ; input_element_persistent
                language
                `Number
                Pool_common.Message.Field.Duration
-               ~info:"in seconds"
-               (session.duration
-               |> Duration.value
-               |> Pool_common.Utils.print_time_span)
+               ~help:Pool_common.I18n.NumberIsSecondsHint
+               ~default:
+                 (session.duration
+                 |> Duration.value
+                 |> Pool_common.Utils.print_time_span)
+               ~required:true
+               flash_fetcher
              (* TODO [aerben] this should be textarea *)
-           ; input_element language `Text Pool_common.Message.Field.Description
-             @@ CCOption.map_or
-                  ~default:""
-                  Description.value
-                  session.description
+           ; input_element_persistent
+               language
+               `Text
+               Pool_common.Message.Field.Description
+               ~default:
+                 (CCOption.map_or
+                    ~default:""
+                    Description.value
+                    session.description)
+               flash_fetcher
            ; location_select locations (Some session.location) ()
-           ; input_element
+           ; input_element_persistent
                language
                `Number
                Pool_common.Message.Field.MaxParticipants
-               (amount session.max_participants)
-           ; input_element
+               ~required:true
+               ~default:(amount session.max_participants)
+               flash_fetcher
+           ; input_element_persistent
                language
                `Number
                Pool_common.Message.Field.MinParticipants
-               (amount session.min_participants)
-           ; input_element
+               ~required:true
+               ~default:(amount session.min_participants)
+               flash_fetcher
+           ; input_element_persistent
                language
                `Number
                ~help:Pool_common.I18n.Overbook
                Pool_common.Message.Field.Overbook
-               (amount session.overbook)
+               ~required:true
+               ~default:(amount session.overbook)
+               flash_fetcher
            ; submit_element
                language
                Message.(Update (Some Field.Session))

@@ -13,10 +13,12 @@ let to_string = function
   | ExperimentWaitingListTitle -> "Warteliste"
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
+  | Files -> "Dateien"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
+  | LocationNoFiles -> "Es existieren keine Dateien zu diesem Standort."
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LoginTitle -> "Anmelden"
@@ -60,6 +62,7 @@ let hint_to_string = function
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
+  | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | Overbook ->

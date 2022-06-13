@@ -8,6 +8,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       ~orientation:`Horizontal
       ~classnames:[ "grow" ]
       ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
+      ~required:true
       language
       `Text
       Pool_common.Message.Field.Translation

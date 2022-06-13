@@ -142,6 +142,7 @@ let file_form
         ; input_element_file
             language
             ~allow_multiple:false
+            ~required:true
             Message.Field.FileMapping
         ; submit_element
             language
@@ -397,11 +398,23 @@ module FileList = struct
 
   (* TODO: add link and message, if list is empty *)
   let create csrf language ({ id; files; _ } : Pool_location.t) =
-    if CCList.is_empty files
-    then p [ add_link id language ]
-    else (
-      let body = CCList.map (row csrf language id) files in
-      Table.horizontal_table `Striped language ~thead body)
+    let form =
+      match CCList.is_empty files with
+      | true ->
+        div
+          [ Pool_common.(I18n.LocationNoFiles |> Utils.text_to_string language)
+            |> txt
+          ]
+      | false ->
+        let body = CCList.map (row csrf language id) files in
+        Table.horizontal_table `Striped language ~thead body
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
+      ; div ~a:[ a_class [ "stack" ] ] [ form; p [ add_link id language ] ]
+      ]
   ;;
 end
 
@@ -443,24 +456,33 @@ module SessionList = struct
   ;;
 
   let create language sessions =
-    if CCList.is_empty sessions
-    then
-      div
-        [ Pool_common.(I18n.LocationNoSessions |> Utils.text_to_string language)
-          |> txt
-        ]
-    else (
-      let thead =
-        Pool_common.Message.Field.
-          [ Some Session
-          ; Some Experiment
-          ; Some Duration
-          ; Some CanceledAt
-          ; None
+    let html =
+      if CCList.is_empty sessions
+      then
+        div
+          [ Pool_common.(
+              I18n.LocationNoSessions |> Utils.text_to_string language)
+            |> txt
           ]
-      in
-      let rows = rows language sessions in
-      Table.horizontal_table `Striped language ~thead rows)
+      else (
+        let thead =
+          Pool_common.Message.Field.
+            [ Some Session
+            ; Some Experiment
+            ; Some Duration
+            ; Some CanceledAt
+            ; None
+            ]
+        in
+        let rows = rows language sessions in
+        Table.horizontal_table `Striped language ~thead rows)
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+      ; div ~a:[ a_class [ "stack" ] ] [ html ]
+      ]
   ;;
 end
 

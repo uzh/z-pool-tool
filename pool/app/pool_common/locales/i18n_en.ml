@@ -12,10 +12,12 @@ let to_string = function
   | ExperimentListTitle -> "Experiments"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
+  | Files -> "Files"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
+  | LocationNoFiles -> "There are no files for this location."
   | LocationNoSessions -> "No sessions found for this location."
   | LocationFileNew -> "Add file to location"
   | LoginTitle -> "Login"
@@ -59,6 +61,7 @@ let hint_to_string = function
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
+  | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"
   | Overbook ->

@@ -6,10 +6,12 @@ type t =
   | ExperimentListTitle
   | ExperimentWaitingListTitle
   | ExperimentContactEnrolledNote
+  | Files
   | HomeTitle
   | I18nTitle
   | LocationListTitle
   | LocationNewTitle
+  | LocationNoFiles
   | LocationNoSessions
   | LocationFileNew
   | LoginTitle
@@ -47,6 +49,7 @@ type nav_link =
 type hint =
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
+  | NumberIsSecondsHint
   | NumberIsDaysHint
   | NumberIsWeeksHint
   | Overbook

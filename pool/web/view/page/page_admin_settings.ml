@@ -73,7 +73,6 @@ let show
   let form_attrs action =
     [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
   in
-  let input_element = input_element language in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
@@ -142,16 +141,23 @@ let show
               ([ Component.csrf_element csrf () ]
               @ CCList.map
                   (fun suffix ->
-                    input_element
+                    Component.input_element
+                      language
                       `Text
                       Message.Field.EmailSuffix
+                      ~required:true
                       (suffix |> Settings.EmailSuffix.value))
                   email_suffixes
               @ [ submit_element language Message.(Update None) () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
               [ Component.csrf_element csrf ()
-              ; input_element `Text Message.Field.EmailSuffix ""
+              ; Component.input_element
+                  language
+                  `Text
+                  Message.Field.EmailSuffix
+                  ""
+                  ~required:true
               ; submit_element language Message.(Add None) ()
               ]
           ; div
@@ -200,10 +206,12 @@ let show
       ; form
           ~a:(form_attrs `UpdateTenantContactEmail)
           [ Component.csrf_element csrf ()
-          ; input_element
+          ; Component.input_element
+              language
               `Text
               Message.Field.ContactEmail
               (contact_email |> Settings.ContactEmail.value)
+              ~required:true
           ; submit_element language Message.(Add None) ()
           ]
       ]
@@ -219,6 +227,7 @@ let show
               [ Component.csrf_element csrf ()
               ; Component.input_element
                   ~help:Pool_common.I18n.NumberIsWeeksHint
+                  ~required:true
                   language
                   `Number
                   Message.Field.InactiveUserDisableAfter
@@ -231,6 +240,7 @@ let show
               ~a:(form_attrs `UpdateInactiveUserWarning)
               [ Component.csrf_element csrf ()
               ; Component.input_element
+                  ~required:true
                   ~help:Pool_common.I18n.NumberIsDaysHint
                   language
                   `Number
@@ -259,6 +269,7 @@ let show
                  terms_and_conditions
               |> CCOption.map Settings.TermsAndConditions.Terms.value
               |> CCOption.value ~default:"")
+            ~required:true
             ~flash_fetcher
             ())
         Pool_common.Language.all

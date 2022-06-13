@@ -94,7 +94,7 @@ let add_file req =
     id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, path)
+    Lwt_result.map_err (fun err -> err, Format.asprintf "%s/files/create" path)
     @@
     let open Lwt_result.Syntax in
     let* location = Pool_location.find tenant_db id in
