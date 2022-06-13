@@ -15,7 +15,6 @@ let signup
     Http_utils.externalize_path_with_lang query_language "/signup"
   in
   let txt_to_string m = [ txt (Pool_common.Utils.text_to_string language m) ] in
-  let input_element = Component.input_element language in
   let email = email |> CCOption.value ~default:"" in
   let firstname = firstname |> CCOption.value ~default:"" in
   let lastname = lastname |> CCOption.value ~default:"" in
@@ -43,15 +42,16 @@ let signup
              (txt channel))
     |> CCList.cons default
   in
+  let open Component in
   div
     [ h1 (txt_to_string Pool_common.I18n.SignUpTitle)
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         [ Component.csrf_element csrf ()
-        ; input_element `Email Field.Email email
-        ; input_element `Text Field.Firstname firstname
-        ; input_element `Text Field.Lastname lastname
-        ; input_element `Password Field.Password ""
+        ; input_element language `Email Field.Email ~value:email
+        ; input_element language `Text Field.Firstname ~value:firstname
+        ; input_element language `Text Field.Lastname ~value:lastname
+        ; input_element language `Password Field.Password ~value:""
         ; div
             ~a:[ a_class [ "flex-box"; "flex--column" ] ]
             [ label [ txt (field_to_string Field.RecruitmentChannel) ]

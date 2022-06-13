@@ -146,7 +146,7 @@ let show
                       `Text
                       Message.Field.EmailSuffix
                       ~required:true
-                      (suffix |> Settings.EmailSuffix.value))
+                      ~value:(suffix |> Settings.EmailSuffix.value))
                   email_suffixes
               @ [ submit_element language Message.(Update None) () ])
           ; form
@@ -156,7 +156,6 @@ let show
                   language
                   `Text
                   Message.Field.EmailSuffix
-                  ""
                   ~required:true
               ; submit_element language Message.(Add None) ()
               ]
@@ -210,7 +209,7 @@ let show
               language
               `Text
               Message.Field.ContactEmail
-              (contact_email |> Settings.ContactEmail.value)
+              ~value:(contact_email |> Settings.ContactEmail.value)
               ~required:true
           ; submit_element language Message.(Add None) ()
           ]
@@ -231,9 +230,10 @@ let show
                   language
                   `Number
                   Message.Field.InactiveUserDisableAfter
-                  (inactive_user_disable_after
-                  |> DisableAfter.value
-                  |> CCInt.to_string)
+                  ~value:
+                    (inactive_user_disable_after
+                    |> DisableAfter.value
+                    |> CCInt.to_string)
               ; submit_element language Message.(Update None) ()
               ]
           ; form
@@ -245,7 +245,8 @@ let show
                   language
                   `Number
                   Message.Field.InactiveUserWarning
-                  (inactive_user_warning |> Warning.value |> CCInt.to_string)
+                  ~value:
+                    (inactive_user_warning |> Warning.value |> CCInt.to_string)
               ; submit_element language Message.(Update None) ()
               ]
           ]

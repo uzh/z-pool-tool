@@ -5,7 +5,6 @@ module Id = Pool_common.Id
 module Message = Pool_common.Message
 
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
-  let input_element = input_element language `Text |> CCFun.flip in
   let build_tenant_rows tenant_list =
     let open Pool_tenant in
     CCList.map
@@ -67,7 +66,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   in
   let input_fields =
     let open Message in
-    CCList.map (input_element "") text_fields
+    CCList.map (input_element language `Text) text_fields
     @ [ language_select Pool_common.Language.all None () ]
     @ CCList.map (input_element_file language) [ Field.Styles; Field.Icon ]
     @ CCList.map
@@ -97,7 +96,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
             ; a_class [ "stack" ]
             ]
           (CCList.map
-             (input_element "")
+             (Component.input_element language `Text)
              Message.Field.[ Email; Password; Firstname; Lastname ]
           @ [ submit_element language Message.(Create (Some Field.root)) () ])
       ]
@@ -113,7 +112,6 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
-  let input_element = input_element language `Text in
   let input_element_file ?(allow_multiple = false) ?file_href field =
     let field_label =
       Pool_common.Utils.field_to_string language field
@@ -149,8 +147,11 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
       ; Field.DatabaseLabel, Pool_database.Label.value tenant.database_label
       ]
   in
+  let to_input_element (field, value) =
+    input_element language `Text field ~value
+  in
   let detail_input_fields =
-    (CCList.map (CCFun.uncurry input_element) detail_fields
+    (CCList.map to_input_element detail_fields
     @ [ language_select
           Pool_common.Language.all
           (Some tenant.default_language)
@@ -166,9 +167,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
       ; input_element_file ~allow_multiple:true Message.Field.PartnerLogos
       ]
   in
-  let database_input_fields =
-    CCList.map (CCFun.uncurry input_element) database_fields
-  in
+  let database_input_fields = CCList.map to_input_element database_fields in
   let disabled =
     let label_text =
       Pool_common.Utils.field_to_string language Message.Field.Disabled
@@ -276,7 +275,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
             ]
           ((csrf_element csrf ()
            :: CCList.map
-                (CCFun.flip input_element "")
+                (Component.input_element language `Text)
                 Message.Field.[ Email; Password; Firstname; Lastname ])
           @ [ submit_element language Message.(Create (Some Field.operator)) ()
             ])

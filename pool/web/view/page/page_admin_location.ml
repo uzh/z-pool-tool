@@ -225,24 +225,24 @@ let form
           ; a_class [ "stack" ]
           ]
         ([ Component.csrf_element csrf ()
-         ; input_element_persistent
+         ; input_element
              language
              `Text
              Message.Field.Name
-             ~default:(value (fun m -> m.name) Name.value)
-             flash_fetcher
-         ; input_element_persistent
+             ~value:(value (fun m -> m.name) Name.value)
+             ~flash_fetcher
+         ; input_element
              language
              `Text
              Message.Field.Description
-             ~default:(value_opt (fun m -> m.description) Description.value)
-             flash_fetcher
-         ; input_element_persistent
+             ~value:(value_opt (fun m -> m.description) Description.value)
+             ~flash_fetcher
+         ; input_element
              language
              `Text
              Message.Field.Link
-             ~default:(value_opt (fun m -> m.link) Link.value)
-             flash_fetcher
+             ~value:(value_opt (fun m -> m.link) Link.value)
+             ~flash_fetcher
          ]
         @ status_select_opt
         @ [ div
@@ -262,54 +262,54 @@ let form
                       ]
                   ; div
                       ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element_persistent
+                      [ input_element
                           language
                           `Text
                           Message.Field.Room
-                          ~default:
+                          ~value:
                             (address_value
                                Address.Mail.(fun { room; _ } -> Room.value room))
-                          flash_fetcher
-                      ; input_element_persistent
+                          ~flash_fetcher
+                      ; input_element
                           language
                           `Text
                           Message.Field.Building
-                          ~default:
+                          ~value:
                             (address_value
                                Address.Mail.(
                                  fun { building; _ } ->
                                    building
                                    |> CCOption.map_or ~default:"" Building.value))
-                          flash_fetcher
+                          ~flash_fetcher
                       ]
-                  ; input_element_persistent
+                  ; input_element
                       ~classnames:[ "toggled" ]
                       language
                       `Text
                       Message.Field.Street
-                      ~default:
+                      ~value:
                         Address.Mail.(
                           address_value (fun { street; _ } ->
                               Street.value street))
-                      flash_fetcher
+                      ~flash_fetcher
                   ; div
                       ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element_persistent
+                      [ input_element
                           language
                           `Text
                           Message.Field.Zip
-                          ~default:
+                          ~value:
                             Address.Mail.(
                               address_value (fun { zip; _ } -> Zip.value zip))
-                          flash_fetcher
-                      ; input_element_persistent
+                          ~flash_fetcher
+                      ; input_element
                           language
                           `Text
                           Message.Field.City
-                          ~default:
+                          ~value:
                             Address.Mail.(
                               address_value (fun { city; _ } -> City.value city))
-                          flash_fetcher
+                          ~flash_fetcher
                       ]
                   ]
               ]

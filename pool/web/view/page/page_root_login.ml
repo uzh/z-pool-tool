@@ -14,8 +14,8 @@ let login Pool_context.{ language; csrf; message; _ } =
             ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
-          ; input_element `Text Message.Field.Email ""
-          ; input_element `Password Message.Field.Password ""
+          ; input_element `Text Message.Field.Email
+          ; input_element `Password Message.Field.Password
           ; submit_element language Message.Login ()
           ]
       ; a
@@ -46,7 +46,7 @@ let request_reset_password Pool_context.{ language; csrf; message; _ } =
             ; a_class [ "stack" ]
             ]
           [ csrf_element csrf ()
-          ; input_element `Text Message.Field.Email ""
+          ; input_element `Text Message.Field.Email
           ; submit_element language Message.SendResetLink ()
           ]
       ]
@@ -60,7 +60,6 @@ let request_reset_password Pool_context.{ language; csrf; message; _ } =
 ;;
 
 let reset_password token Pool_context.{ language; csrf; message; _ } =
-  let input_element = input_element language in
   let html =
     div
       [ h1 [ txt "Reset Password" ]
@@ -70,9 +69,9 @@ let reset_password token Pool_context.{ language; csrf; message; _ } =
             ; a_method `Post
             ]
           [ csrf_element csrf ()
-          ; input_element `Hidden Message.Field.Token token
-          ; input_element `Password Message.Field.Password ""
-          ; input_element `Password Message.Field.PasswordConfirmation ""
+          ; input_element language `Hidden ~value:token Message.Field.Token
+          ; input_element language `Password Message.Field.Password
+          ; input_element language `Password Message.Field.PasswordConfirmation
           ; submit_element language Message.(Save (Some Field.password)) ()
           ]
       ]

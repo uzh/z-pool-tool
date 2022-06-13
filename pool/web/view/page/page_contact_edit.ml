@@ -107,7 +107,6 @@ let login_information
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let input_element = input_element language in
   let form_attrs action =
     [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
@@ -115,7 +114,11 @@ let login_information
     form
       ~a:(form_attrs "/user/update-email")
       [ csrf_element csrf ()
-      ; input_element `Email Message.Field.Email contact.user.Sihl_user.email
+      ; input_element
+          language
+          `Email
+          Message.Field.Email
+          ~value:contact.user.Sihl_user.email
       ; submit_element language Message.(Update (Some Field.Email)) ()
       ]
   in
@@ -124,7 +127,7 @@ let login_information
       ~a:(form_attrs "/user/update-password")
       ([ csrf_element csrf () ]
       @ CCList.map
-          (fun m -> input_element `Password m "")
+          (fun m -> input_element language `Password ~value:"" m)
           [ Message.Field.CurrentPassword
           ; Message.Field.NewPassword
           ; Message.Field.PasswordConfirmation

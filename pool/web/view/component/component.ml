@@ -131,10 +131,11 @@ let input_element
     ?info
     ?identifier
     ?(required = false)
+    ?flash_fetcher
+    ?value
     language
     input_type
     name
-    value
   =
   let input_label =
     let base = Elements.input_label language name label_field info in
@@ -147,13 +148,22 @@ let input_element
     | _ -> []
   in
   let id = Elements.identifier ?identifier language name in
+  let old_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
+  let value =
+    let open CCOption.Infix in
+    old_value <+> value |> CCOption.get_or ~default:""
+  in
   let attributes =
     Elements.attributes
       input_type
       name
       [ a_value value; a_id id; a_class input_classes ]
-    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
+    |> fun attrs -> if required then attrs @ [] else attrs
   in
+  (* [ a_required () ] *)
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
@@ -199,24 +209,6 @@ let checkbox_element
           ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
           @ help)
       ]
-;;
-
-(* Use the value from flash as the value, if no value is in flash use a default
-   value *)
-let input_element_persistent
-    ?help
-    ?default
-    ?classnames
-    ?(required = false)
-    language
-    input_type
-    name
-    flash_fetcher
-  =
-  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
-  let open CCOption in
-  let value = old_value <+> default |> get_or ~default:"" in
-  input_element ?help ?classnames ~required language input_type name value
 ;;
 
 let input_element_file
@@ -285,9 +277,6 @@ let textarea_element
     in
     if required then Format.asprintf "%s *" base else base
   in
-  let old_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> flash_fetcher)
-  in
   let textarea_attributes =
     let base = [ a_name name; a_class classnames ] in
     match required with
@@ -295,6 +284,9 @@ let textarea_element
     | false -> base
   in
   let open CCOption in
+  let old_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> flash_fetcher)
+  in
   let value = old_value <+> default |> get_or ~default:"" in
   let input = textarea ~a:(textarea_attributes @ attributes) (txt value) in
   div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]

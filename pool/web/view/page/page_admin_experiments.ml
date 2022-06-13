@@ -101,20 +101,20 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
       ; a_class [ "stack" ]
       ]
     [ Component.csrf_element csrf ()
-    ; input_element_persistent
+    ; input_element
         language
         `Text
         Pool_common.Message.Field.Title
-        ~default:(value title_value)
+        ~value:(value title_value)
         ~required:true
-        flash_fetcher
-    ; input_element_persistent
+        ~flash_fetcher
+    ; input_element
         language
         `Text
         Pool_common.Message.Field.Description
-        ~default:(value description_value)
+        ~value:(value description_value)
         ~required:true
-        flash_fetcher
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
