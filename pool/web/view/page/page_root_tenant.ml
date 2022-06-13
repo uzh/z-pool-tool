@@ -72,9 +72,13 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
       ]
   in
   let input_fields =
+    let language_select =
+      let open Pool_common.Language in
+      selector Message.Field.Language equal show all None ()
+    in
     let open Message in
     CCList.map (input_element language `Text) text_fields
-    @ [ language_select Pool_common.Language.all None () ]
+    @ [ language_select ]
     @ CCList.map (input_element_file language) [ Field.Styles; Field.Icon ]
     @ CCList.map
         (input_element_file language ~allow_multiple:true)
@@ -158,13 +162,18 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
   let to_input_element (field, value) =
     input_element language `Text field ~value
   in
+  let language_select =
+    let open Pool_common.Language in
+    selector
+      Message.Field.Language
+      equal
+      show
+      all
+      (Some tenant.default_language)
+      ()
+  in
   let detail_input_fields =
-    (CCList.map to_input_element detail_fields
-    @ [ language_select
-          Pool_common.Language.all
-          (Some tenant.default_language)
-          ()
-      ])
+    (CCList.map to_input_element detail_fields @ [ language_select ])
     @ [ div
           [ Component.input_element_file language Message.Field.Styles
           ; div
