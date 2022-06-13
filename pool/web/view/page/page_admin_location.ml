@@ -402,23 +402,15 @@ module SessionList = struct
     CCList.map
       (fun (session, (experiment_id, experiment_title)) ->
         let open Session.Public in
-        [ session
-          |> session_title
-          |> (Format.asprintf "%s %s"
-             @@
-             (* TODO [aerben] improve this *)
-             if CCOption.is_some session.Session.Public.canceled_at
-             then "CANCELED"
-             else "")
-          |> txt
+        [ session |> session_title |> txt
         ; experiment_title |> txt
-        ; session.start
-          |> Session.Start.value
-          |> Pool_common.Utils.Time.formatted_date_time
-          |> txt
         ; session.duration
           |> Session.Duration.value
           |> Pool_common.Utils.print_time_span
+          |> txt
+        ; session.canceled_at
+          |> CCOption.map_or ~default:"" (fun t ->
+                 Pool_common.Utils.Time.formatted_date_time t)
           |> txt
         ; a
             ~a:
@@ -445,7 +437,12 @@ module SessionList = struct
     else (
       let thead =
         Pool_common.Message.Field.
-          [ Some Session; Some Experiment; Some Start; Some Duration; None ]
+          [ Some Session
+          ; Some Experiment
+          ; Some Duration
+          ; Some CanceledAt
+          ; None
+          ]
       in
       let rows = rows language sessions in
       Table.horizontal_table `Striped language ~thead rows)
@@ -495,7 +492,7 @@ let detail
       ]
   in
   div
-    ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
+    ~a:[ a_class [ "safety-margin"; "trim" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (location.name |> Name.value) ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]

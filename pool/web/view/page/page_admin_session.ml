@@ -107,17 +107,42 @@ let index
     CCList.map
       (fun (session : Session.t) ->
         let open Session in
-        [ txt
-            (Format.asprintf "%s %s" (session |> Session.session_date_to_human)
-            @@
-            (* TODO [aerben] improve this *)
-            if CCOption.is_some session.Session.canceled_at
-            then "CANCELED"
-            else "")
+        let cancel_form =
+          match CCOption.is_some session.Session.canceled_at with
+          | true ->
+            submit_element
+              ~submit_type:`Disabled
+              language
+              Message.(Cancel None)
+              ()
+          | false ->
+            form
+              ~a:
+                [ a_method `Post
+                ; a_action
+                    (Format.asprintf
+                       "/admin/experiments/%s/sessions/%s/cancel"
+                       (Pool_common.Id.value experiment_id)
+                       (Pool_common.Id.value session.id)
+                    |> Sihl.Web.externalize_path)
+                ; a_user_data
+                    "confirmable"
+                    Pool_common.(
+                      Utils.confirmable_to_string language I18n.CancelSession)
+                ]
+              [ Component.csrf_element csrf ()
+              ; submit_element language Message.(Cancel None) ()
+              ]
+        in
+        [ txt (session |> Session.session_date_to_human)
         ; txt
             (CCInt.to_string
                (session.Session.assignment_count
                |> Session.AssignmentCount.value))
+        ; session.Session.canceled_at
+          |> CCOption.map_or ~default:"" (fun t ->
+                 Pool_common.Utils.Time.formatted_date_time t)
+          |> txt
         ; a
             ~a:
               [ a_href
@@ -129,23 +154,7 @@ let index
               ]
             [ txt Pool_common.(Utils.control_to_string language Message.(More))
             ]
-        ; form
-            ~a:
-              [ a_method `Post
-              ; a_action
-                  (Format.asprintf
-                     "/admin/experiments/%s/sessions/%s/cancel"
-                     (Pool_common.Id.value experiment_id)
-                     (Pool_common.Id.value session.id)
-                  |> Sihl.Web.externalize_path)
-              ; a_user_data
-                  "confirmable"
-                  Pool_common.(
-                    Utils.confirmable_to_string language I18n.CancelSession)
-              ]
-            [ Component.csrf_element csrf ()
-            ; submit_element language Message.(Cancel None) ()
-            ]
+        ; cancel_form
         ; form
             ~a:
               [ a_method `Post
@@ -172,7 +181,7 @@ let index
   in
   let thead =
     Pool_common.Message.Field.
-      [ Some Date; Some AssignmentCount; None; None; None ]
+      [ Some Date; Some AssignmentCount; Some CanceledAt; None; None; None ]
   in
   let html =
     div
