@@ -4,7 +4,7 @@ module HttpUtils = Http_utils
 let create_layout = Contact_general.create_layout
 let user_update_csrf = "_user_update_csrf"
 
-let show is_edit req =
+let show usage req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
@@ -17,26 +17,35 @@ let show is_edit req =
          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
          |> Lwt_result.map_err (fun err -> err)
        in
-       match is_edit with
-       | false ->
+       match usage with
+       | `Overview ->
          Page.Contact.detail contact context
          |> create_layout ~active_navigation:"/user" req context
          >|= Sihl.Web.Response.of_html
-       | true ->
+       | `LoginInformation ->
+         Page.Contact.login_information contact context
+         |> create_layout ~active_navigation:"/user" req context
+         >|= Sihl.Web.Response.of_html
+       | `PersonalDetails ->
          let* tenant_languages =
            Pool_context.Tenant.find req
            |> Lwt_result.lift
            >|= fun c -> c.Pool_context.Tenant.tenant_languages
          in
-         Page.Contact.edit user_update_csrf contact tenant_languages context
-         |> create_layout req ~active_navigation:"/user/edit" context
+         Page.Contact.personal_details
+           user_update_csrf
+           contact
+           tenant_languages
+           context
+         |> create_layout req ~active_navigation:"/user" context
          >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let details = show false
-let edit = show true
+let details = show `Overview
+let personal_details = show `PersonalDetails
+let login_information = show `LoginInformation
 
 let update req =
   let open Utils.Lwt_result.Infix in
@@ -63,7 +72,8 @@ let update req =
     let* { Pool_context.Tenant.tenant_languages; _ } =
       Pool_context.Tenant.find req
       |> Lwt_result.lift
-      |> Lwt_result.map_err (fun err -> err, path_with_lang "/user/edit")
+      |> Lwt_result.map_err (fun err ->
+             err, path_with_lang "/user/personal-details")
     in
     let version =
       version_raw
@@ -118,7 +128,8 @@ let update req =
           |> html_response
         | None ->
           Sihl.Web.Response.of_plain_text ""
-          |> Sihl.Web.Response.add_header ("HX-Redirect", "/user/edit"))
+          |> Sihl.Web.Response.add_header
+               ("HX-Redirect", "/user/personal-details"))
       | k ->
         failwith
         @@ Pool_common.Utils.error_to_string
@@ -151,7 +162,8 @@ let update_email req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun msg ->
-        HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
+        HttpUtils.(
+          msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result (NotFound Field.User)
@@ -191,7 +203,8 @@ let update_password req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun msg ->
-        HttpUtils.(msg, "/user/edit", [ urlencoded_to_flash urlencoded ]))
+        HttpUtils.(
+          msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
@@ -207,7 +220,7 @@ let update_password req =
            let%lwt () = Pool_event.handle_events tenant_db events in
            HttpUtils.(
              redirect_to_with_actions
-               (path_with_language query_language "/user/edit")
+               (path_with_language query_language "/user/login-information")
                [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in

@@ -33,7 +33,9 @@ type nav_link =
   | I18n
   | Invitations
   | Locations
+  | LoginInformation
   | Overview
+  | PersonalDetails
   | Profile
   | Sessions
   | Settings

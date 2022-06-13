@@ -2,42 +2,6 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-(* TODO [timhub]: create global nav component, when MR is merged *)
-let subnav language active id =
-  let open Pool_common in
-  I18n.
-    [ Overview, "/"
-    ; Invitations, "/invitations"
-    ; WaitingList, "/waiting-list"
-    ; Sessions, "/sessions"
-    ; Assignments, "/assignments"
-    ]
-  |> CCList.map (fun (label, url) ->
-         let is_active =
-           active
-           |> CCOption.map_or ~default:false (fun active ->
-                  I18n.equal_nav_link active label)
-         in
-         let classnames = [] in
-         let link_label = txt (Utils.nav_link_to_string language label) in
-         if is_active
-         then
-           span ~a:[ a_class ([ "color-primary" ] @ classnames) ] [ link_label ]
-         else
-           a
-             ~a:
-               [ a_href
-                   (Sihl.Web.externalize_path
-                      (Format.asprintf
-                         "/admin/experiments/%s/%s"
-                         (Id.value id)
-                         url))
-               ; a_class classnames
-               ]
-             [ link_label ])
-  |> nav ~a:[ a_class [ "sub-nav"; "flexrow"; "flex-gap" ] ]
-;;
-
 type title =
   | Control of Pool_common.Message.control
   | NavLink of Pool_common.I18n.nav_link
@@ -52,9 +16,21 @@ let title_to_string language text =
 ;;
 
 let experiment_layout language title experiment_id ?active html =
+  let subnav_links =
+    Pool_common.I18n.
+      [ Overview, "/"
+      ; Invitations, "/invitations"
+      ; WaitingList, "/waiting-list"
+      ; Sessions, "/sessions"
+      ; Assignments, "/assignments"
+      ]
+  in
+  let base_url =
+    Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value experiment_id)
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ subnav language active experiment_id
+    [ Component.Navigation.subnav language subnav_links base_url active
     ; h1 ~a:[ a_class [ "heading-1" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
