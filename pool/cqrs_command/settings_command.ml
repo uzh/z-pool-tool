@@ -250,9 +250,9 @@ end = struct
     let open CCResult in
     let ignore_emtpy =
       CCList.filter_map (fun (lang, terms) ->
-          match terms with
-          | None | Some "" -> None
-          | Some terms -> Some (lang, terms))
+          match lang, terms with
+          | _, None | _, Some "" | "_csrf", _ -> None
+          | _, Some terms -> Some (lang, terms))
     in
     let tenant_languages_are_set terms =
       let result =

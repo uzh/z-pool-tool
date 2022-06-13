@@ -7,6 +7,7 @@ let detail
     sessions
     experiment_id
     Pool_context.{ language; csrf; _ }
+    flash_fetcher
   =
   let waiting_list_detail =
     div
@@ -29,7 +30,9 @@ let detail
               language
               Pool_common.Message.Field.(show Comment)
               Pool_common.Message.Field.Comment
-              (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
+              ~default:
+                (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
+              ~flash_fetcher
               ()
           ; submit_element
               language

@@ -201,6 +201,7 @@ let checkbox_element
 let input_element_persistent
     ?info
     ?default
+    ?classnames
     language
     input_type
     name
@@ -209,7 +210,7 @@ let input_element_persistent
   let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
   let open CCOption in
   let value = old_value <+> default |> get_or ~default:"" in
-  input_element ?info language input_type name value
+  input_element ?info ?classnames language input_type name value
 ;;
 
 let input_element_file
@@ -259,15 +260,21 @@ let textarea_element
     language
     name
     input_label
-    value
     ?(classnames = [])
     ?(attributes = [])
+    ?default
+    ?flash_fetcher
     ()
   =
   let input_label =
     Pool_common.Utils.field_to_string language input_label
     |> CCString.capitalize_ascii
   in
+  let old_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> flash_fetcher)
+  in
+  let open CCOption in
+  let value = old_value <+> default |> get_or ~default:"" in
   let input =
     textarea ~a:([ a_name name; a_class classnames ] @ attributes) (txt value)
   in
@@ -313,8 +320,3 @@ let submit_icon ?(classnames = []) icon_type =
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
     [ icon icon_type ]
 ;;
-
-(* module Table = struct let head language fields = CCList.map (fun field -> th
-   [ txt (CCOption.map_or ~default:"" (fun f ->
-   Pool_common.Utils.field_to_string language f) field) ]) fields |> tr |>
-   CCList.pure |> thead ;; end *)

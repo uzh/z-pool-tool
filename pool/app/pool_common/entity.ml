@@ -35,6 +35,13 @@ module Language = struct
     | _ -> Error PoolError.(Invalid field)
   ;;
 
+  let create_from_string m =
+    match m |> CCString.uppercase_ascii with
+    | "DE" -> Ok De
+    | "EN" -> Ok En
+    | _ -> Error PoolError.(Invalid Field.Language)
+  ;;
+
   let label country_code = country_code |> show |> Utils.Countries.find
 
   let schema () =

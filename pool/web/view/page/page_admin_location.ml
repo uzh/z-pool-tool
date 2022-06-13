@@ -156,6 +156,7 @@ let form
     ?(location : Pool_location.t option)
     ?(states : Pool_location.Status.t list = [])
     Pool_context.{ language; csrf; _ }
+    flash_fetcher
   =
   let open Pool_location in
   let path = "/admin/locations" in
@@ -223,21 +224,24 @@ let form
           ; a_class [ "stack" ]
           ]
         ([ Component.csrf_element csrf ()
-         ; input_element
+         ; input_element_persistent
              language
              `Text
              Message.Field.Name
-             (value (fun m -> m.name) Name.value)
-         ; input_element
+             ~default:(value (fun m -> m.name) Name.value)
+             flash_fetcher
+         ; input_element_persistent
              language
              `Text
              Message.Field.Description
-             (value_opt (fun m -> m.description) Description.value)
-         ; input_element
+             ~default:(value_opt (fun m -> m.description) Description.value)
+             flash_fetcher
+         ; input_element_persistent
              language
              `Text
              Message.Field.Link
-             (value_opt (fun m -> m.link) Link.value)
+             ~default:(value_opt (fun m -> m.link) Link.value)
+             flash_fetcher
          ]
         @ status_select_opt
         @ [ div
@@ -257,43 +261,54 @@ let form
                       ]
                   ; div
                       ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element
+                      [ input_element_persistent
                           language
                           `Text
                           Message.Field.Room
-                          (address_value
-                             Address.Mail.(fun { room; _ } -> Room.value room))
-                      ; input_element
+                          ~default:
+                            (address_value
+                               Address.Mail.(fun { room; _ } -> Room.value room))
+                          flash_fetcher
+                      ; input_element_persistent
                           language
                           `Text
                           Message.Field.Building
-                          (address_value
-                             Address.Mail.(
-                               fun { building; _ } ->
-                                 building
-                                 |> CCOption.map_or ~default:"" Building.value))
+                          ~default:
+                            (address_value
+                               Address.Mail.(
+                                 fun { building; _ } ->
+                                   building
+                                   |> CCOption.map_or ~default:"" Building.value))
+                          flash_fetcher
                       ]
-                  ; input_element
+                  ; input_element_persistent
                       ~classnames:[ "toggled" ]
                       language
                       `Text
                       Message.Field.Street
-                      Address.Mail.(
-                        address_value (fun { street; _ } -> Street.value street))
+                      ~default:
+                        Address.Mail.(
+                          address_value (fun { street; _ } ->
+                              Street.value street))
+                      flash_fetcher
                   ; div
                       ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element
+                      [ input_element_persistent
                           language
                           `Text
                           Message.Field.Zip
-                          Address.Mail.(
-                            address_value (fun { zip; _ } -> Zip.value zip))
-                      ; input_element
+                          ~default:
+                            Address.Mail.(
+                              address_value (fun { zip; _ } -> Zip.value zip))
+                          flash_fetcher
+                      ; input_element_persistent
                           language
                           `Text
                           Message.Field.City
-                          Address.Mail.(
-                            address_value (fun { city; _ } -> City.value city))
+                          ~default:
+                            Address.Mail.(
+                              address_value (fun { city; _ } -> City.value city))
+                          flash_fetcher
                       ]
                   ]
               ]

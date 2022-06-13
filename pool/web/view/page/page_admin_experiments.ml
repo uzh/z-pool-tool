@@ -82,7 +82,8 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
+let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
+  =
   let open Experiment in
   let action =
     match experiment with
@@ -100,16 +101,18 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
       ; a_class [ "stack" ]
       ]
     [ Component.csrf_element csrf ()
-    ; input_element
+    ; input_element_persistent
         language
         `Text
         Pool_common.Message.Field.Title
-        (value title_value)
-    ; input_element
+        ~default:(value title_value)
+        flash_fetcher
+    ; input_element_persistent
         language
         `Text
         Pool_common.Message.Field.Description
-        (value description_value)
+        ~default:(value description_value)
+        flash_fetcher
     ; checkbox_element
         language
         `Checkbox
@@ -142,7 +145,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
-let create (Pool_context.{ language; _ } as context) =
+let create (Pool_context.{ language; _ } as context) flash_fetcher =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
     [ h1
@@ -152,12 +155,12 @@ let create (Pool_context.{ language; _ } as context) =
                 language
                 Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context
+    ; experiment_form context flash_fetcher
     ]
 ;;
 
-let edit experiment (Pool_context.{ language; _ } as context) =
-  let html = experiment_form ~experiment context in
+let edit experiment (Pool_context.{ language; _ } as context) flash_fetcher =
+  let html = experiment_form ~experiment context flash_fetcher in
   experiment_layout
     language
     (Control Pool_common.Message.(Edit (Some Field.Experiment)))
