@@ -78,8 +78,11 @@ end = struct
   let handle suffixes =
     let open CCResult in
     let* suffixes =
-      CCList.map
-        (fun (_, v) -> Settings.EmailSuffix.create (CCList.hd v))
+      CCList.filter_map
+        (fun (key, v) ->
+          if CCString.equal key "_csrf"
+          then None
+          else Some (Settings.EmailSuffix.create (CCList.hd v)))
         suffixes
       |> CCResult.flatten_l
     in
