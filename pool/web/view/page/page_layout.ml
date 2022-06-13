@@ -190,6 +190,7 @@ module Tenant = struct
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
+      @ [ "/logout", Logout ]
       |> CCList.map (fun item ->
              build_nav_link item language query_language active_navigation)
     in

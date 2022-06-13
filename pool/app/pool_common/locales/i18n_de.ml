@@ -44,6 +44,7 @@ let nav_link_to_string = function
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
   | LoginInformation -> "Anmeldeinformationen"
+  | Logout -> "Logout"
   | Overview -> "Übersicht"
   | PersonalDetails -> "Persönliche Angaben"
   | Profile -> "Profil"

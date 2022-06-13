@@ -34,6 +34,7 @@ type nav_link =
   | Invitations
   | Locations
   | LoginInformation
+  | Logout
   | Overview
   | PersonalDetails
   | Profile
