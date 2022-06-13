@@ -13,8 +13,6 @@ type t =
   | LocationNoSessions
   | LocationFileNew
   | LoginTitle
-  | NumberIsDaysHint
-  | NumberIsWeeksHint
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
@@ -42,3 +40,12 @@ type nav_link =
   | Tenants
   | WaitingList
 [@@deriving eq]
+
+type hint =
+  | AssignContactFromWaitingList
+  | DirectRegistrationDisbled
+  | NumberIsDaysHint
+  | NumberIsWeeksHint
+  | Overbook
+  | RegistrationDisabled
+  | SignUpForWaitingList

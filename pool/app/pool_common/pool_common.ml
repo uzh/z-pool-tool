@@ -57,6 +57,11 @@ module Utils = struct
     | Language.En -> I18n_en.nav_link_to_string
   ;;
 
+  let hint_to_string = function
+    | Language.De -> I18n_de.hint_to_string
+    | Language.En -> I18n_en.hint_to_string
+  ;;
+
   let get_or_failwith m =
     m
     |> CCResult.map_err (error_to_string Language.En)

@@ -98,7 +98,7 @@ module Elements = struct
     | Some help ->
       [ span
           ~a:[ a_class [ "help" ] ]
-          [ txt Pool_common.(Utils.text_to_string language help) ]
+          [ txt Pool_common.(Utils.hint_to_string language help) ]
       ]
   ;;
 

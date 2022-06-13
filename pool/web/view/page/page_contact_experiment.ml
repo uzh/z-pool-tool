@@ -60,14 +60,12 @@ let show
     | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
     | false -> Pool_common.Message.(AddToWaitingList), "success"
   in
-  let[@warning "-26"] session_list sessions =
+  let session_list sessions =
     div
       ~a:[ a_class [ "stack-lg" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ txt
-              Pool_common.(Utils.field_to_string language Message.Field.Session)
-          ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
       ; div [ Session.public_overview sessions experiment language ]
       ]
   in
@@ -80,6 +78,14 @@ let show
               Pool_common.(
                 Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
+      ; (if user_is_enlisted
+        then div []
+        else
+          p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.SignUpForWaitingList)
+            ])
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()

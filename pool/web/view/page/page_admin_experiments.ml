@@ -143,12 +143,14 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
     ; checkbox_element
         language
         `Checkbox
+        ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false direct_registration_disabled_value)
     ; checkbox_element
         language
         `Checkbox
+        ~help:Pool_common.I18n.RegistrationDisabled
         Pool_common.Message.Field.RegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false registration_disabled_value)

@@ -182,7 +182,7 @@ let show
                          ]
                      ])
                  email_suffixes
-              |> table ~a:[ a_class [ "width-auto" ] ]
+              |> table ~a:[ a_class [ "table" ] ]
               |> CCList.pure)
           ]
       ]

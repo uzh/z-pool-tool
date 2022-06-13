@@ -50,7 +50,6 @@ let detail
                   (I18n.EmtpyList Message.Field.Session))
           ]
       else (
-        (* TODO [timhub]: Add hint *)
         let thead = Pool_common.Message.Field.[ Some Date; None ] in
         let rows =
           CCList.map
@@ -129,6 +128,12 @@ let detail
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+      ; p
+          [ txt
+              Pool_common.(
+                I18n.AssignContactFromWaitingList
+                |> Utils.hint_to_string language)
+          ]
       ; content
       ]
   in

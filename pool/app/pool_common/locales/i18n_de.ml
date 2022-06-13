@@ -20,8 +20,6 @@ let to_string = function
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LoginTitle -> "Anmelden"
-  | NumberIsDaysHint -> "Tage"
-  | NumberIsWeeksHint -> "Wochen"
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
@@ -51,4 +49,24 @@ let nav_link_to_string = function
   | Settings -> "Einstellungen"
   | Tenants -> "Tenants"
   | WaitingList -> "Warteliste"
+;;
+
+let hint_to_string = function
+  | AssignContactFromWaitingList ->
+    "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | DirectRegistrationDisbled ->
+    "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
+     setzen, aber nicht direkt für das Experiment einschreiben."
+  | NumberIsDaysHint -> "Anzahl Tage"
+  | NumberIsWeeksHint -> "Anzahl Wochen"
+  | Overbook ->
+    "Anzahl Probanden, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
+     einer Session einschreiben können."
+  | RegistrationDisabled ->
+    "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
+     die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
+     ersichtlich."
+  | SignUpForWaitingList ->
+    "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
+     einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
 ;;

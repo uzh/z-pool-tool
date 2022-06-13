@@ -327,6 +327,7 @@ let edit
            ; input_element
                language
                `Number
+               ~help:Pool_common.I18n.Overbook
                Pool_common.Message.Field.Overbook
                (amount session.overbook)
            ; submit_element
