@@ -2,30 +2,6 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let selector field equal show options selected ?(attributes = []) () =
-  let name = Message.Field.(show field) in
-  div
-    ~a:[ a_class (Component.Elements.group_class [] `Vertical) ]
-    [ label [ name |> CCString.capitalize_ascii |> txt ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:(a_name name :: attributes)
-            (CCList.map
-               (fun l ->
-                 let is_selected =
-                   selected
-                   |> CCOption.map_or ~default:[] (fun selected ->
-                          if equal selected l then [ a_selected () ] else [])
-                 in
-                 option
-                   ~a:((l |> show |> a_value) :: is_selected)
-                   (l |> show |> CCString.capitalize_ascii |> txt))
-               options)
-        ]
-    ]
-;;
-
 let first_n_characters ?(n = 47) m : string =
   if CCString.length m > n
   then CCString.sub m 0 n |> Format.asprintf "%s..."

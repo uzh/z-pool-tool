@@ -93,7 +93,7 @@ let field_to_string =
   | Street -> "Strasse"
   | Styles -> "Styles"
   | Tenant -> "Tenant"
-  | TenantDisabledFlag -> "Deaktiviert Flag"
+  | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
   | TenantLogos -> "Tenant Logos"
   | TenantMaintenanceFlag -> "Wartungsflag"
@@ -298,4 +298,3 @@ let to_string = function
   | Message string -> string
   | PageNotFoundMessage -> "Die Seite konnte nicht gefunden werden."
 ;;
-

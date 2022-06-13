@@ -331,3 +331,27 @@ let submit_icon ?(classnames = []) icon_type =
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
     [ icon icon_type ]
 ;;
+
+let selector field equal show options selected ?(attributes = []) () =
+  let name = Pool_common.Message.Field.(show field) in
+  div
+    ~a:[ a_class (Elements.group_class [] `Vertical) ]
+    [ label [ name |> CCString.capitalize_ascii |> txt ]
+    ; div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:(a_name name :: attributes)
+            (CCList.map
+               (fun l ->
+                 let is_selected =
+                   selected
+                   |> CCOption.map_or ~default:[] (fun selected ->
+                          if equal selected l then [ a_selected () ] else [])
+                 in
+                 option
+                   ~a:((l |> show |> a_value) :: is_selected)
+                   (l |> show |> CCString.capitalize_ascii |> txt))
+               options)
+        ]
+    ]
+;;

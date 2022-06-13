@@ -6,29 +6,32 @@ module Message = Pool_common.Message
 
 let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let build_tenant_rows tenant_list =
+    let thead = Pool_common.Message.Field.[ Some Tenant; None ] in
     let open Pool_tenant in
-    CCList.map
-      (fun (tenant : Pool_tenant.t) ->
-        div
-          [ h2 [ txt (tenant.title |> Pool_tenant.Title.value) ]
+    let body =
+      CCList.map
+        (fun (tenant : Pool_tenant.t) ->
+          [ txt (tenant.title |> Pool_tenant.Title.value)
           ; a
               ~a:
                 [ a_href
                     (Sihl.Web.externalize_path
                        (Format.asprintf "/root/tenants/%s" (Id.value tenant.id)))
                 ]
-              [ txt "detail" ]
-          ; hr ()
+              [ txt Pool_common.(Utils.control_to_string language Message.More)
+              ]
           ])
-      tenant_list
+        tenant_list
+    in
+    Table.horizontal_table `Striped ~thead language body
   in
   let build_root_rows root_list =
     let open Sihl.Contract.User in
     let status_toggle (status : Sihl.Contract.User.status) id =
       let text, style =
         match status with
-        | Active -> Message.Disable, "button--warning"
-        | Inactive -> Message.Enable, "button--primary"
+        | Active -> Message.Disable, "error"
+        | Inactive -> Message.Enable, "primary"
       in
       form
         ~a:
@@ -40,12 +43,16 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
           ]
         [ submit_element language text ~classnames:[ style ] () ]
     in
-    CCList.map
-      (fun root ->
-        let user = root |> Root.user in
-        let status = status_toggle user.status user.id in
-        div [ h2 [ txt user.email ]; status; hr () ])
-      root_list
+    let thead = Pool_common.Message.Field.[ Some Email; None ] in
+    let rows =
+      CCList.map
+        (fun root ->
+          let user = root |> Root.user in
+          let status = status_toggle user.status user.id in
+          [ txt user.email; status ])
+        root_list
+    in
+    Component.Table.horizontal_table `Striped language rows ~thead
   in
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
@@ -75,30 +82,47 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   in
   let html =
     div
-      [ h1 [ txt "Tenants" ]
-      ; div tenant_list
-      ; form
-          ~a:
-            [ a_action (Sihl.Web.externalize_path "/root/tenants/create")
-            ; a_method `Post
-            ; a_enctype "multipart/form-data"
-            ; a_class [ "stack" ]
-            ]
-          ((csrf_element csrf () :: input_fields)
-          @ [ submit_element language Message.(Create None) () ])
-      ; hr ()
-      ; h1 [ txt "Root users" ]
-      ; div root_list
-      ; form
-          ~a:
-            [ a_action (Sihl.Web.externalize_path "/root/root/create")
-            ; a_method `Post
-            ; a_class [ "stack" ]
-            ]
-          (CCList.map
-             (Component.input_element language `Text)
-             Message.Field.[ Email; Password; Firstname; Lastname ]
-          @ [ submit_element language Message.(Create (Some Field.root)) () ])
+      ~a:[ a_class [ "trim"; "narrow" ] ]
+      [ h1
+          ~a:[ a_class [ "heading-1" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tenants) ]
+      ; div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ tenant_list
+          ; div
+              [ h2
+                  ~a:[ a_class [ "heading-2" ] ]
+                  [ Pool_common.(
+                      Utils.control_to_string
+                        language
+                        Message.(Create (Some Field.Tenant)))
+                    |> txt
+                  ]
+              ; form
+                  ~a:
+                    [ a_action
+                        (Sihl.Web.externalize_path "/root/tenants/create")
+                    ; a_method `Post
+                    ; a_enctype "multipart/form-data"
+                    ; a_class [ "stack" ]
+                    ]
+                  ((csrf_element csrf () :: input_fields)
+                  @ [ submit_element language Message.(Create None) () ])
+              ]
+          ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Root users" ]
+          ; root_list
+          ; form
+              ~a:
+                [ a_action (Sihl.Web.externalize_path "/root/root/create")
+                ; a_method `Post
+                ; a_class [ "stack" ]
+                ]
+              (CCList.map
+                 (Component.input_element language `Text)
+                 Message.Field.[ Email; Password; Firstname; Lastname ]
+              @ [ submit_element language Message.(Create (Some Field.root)) ()
+                ])
+          ]
       ]
   in
   Page_layout.create_root_layout
@@ -112,22 +136,6 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
-  let input_element_file ?(allow_multiple = false) ?file_href field =
-    let field_label =
-      Pool_common.Utils.field_to_string language field
-      |> CCString.capitalize_ascii
-    in
-    div
-      [ (match allow_multiple, file_href with
-        | false, Some file_href -> a ~a:[ a_href file_href ] [ txt field_label ]
-        | _, _ -> label [ txt field_label ])
-      ; input
-          ~a:
-            ([ a_input_type `File; a_name Message.Field.(field |> show) ]
-            @ if allow_multiple then [ a_multiple () ] else [])
-          ()
-      ]
-  in
   let detail_fields =
     Message.
       [ Field.Title, Title.value tenant.title
@@ -157,37 +165,50 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
           (Some tenant.default_language)
           ()
       ])
-    @ [ input_element_file
-          ~file_href:(File.path (tenant.styles |> Pool_tenant.Styles.value))
-          Message.Field.Styles
-      ; input_element_file
-          ~file_href:(File.path (tenant.icon |> Pool_tenant.Icon.value))
-          Message.Field.Icon
-      ; input_element_file ~allow_multiple:true Message.Field.TenantLogos
-      ; input_element_file ~allow_multiple:true Message.Field.PartnerLogos
+    @ [ div
+          [ Component.input_element_file language Message.Field.Styles
+          ; div
+              ~a:[ a_class [ "gap-xs" ] ]
+              [ a
+                  ~a:
+                    [ a_href
+                        (File.path (tenant.styles |> Pool_tenant.Styles.value))
+                    ]
+                  [ txt "Download" ]
+              ]
+          ]
+      ; div
+          [ Component.input_element_file language Message.Field.Icon
+          ; div
+              ~a:[ a_class [ "gap-xs" ] ]
+              [ a
+                  ~a:
+                    [ a_href (File.path (tenant.icon |> Pool_tenant.Icon.value))
+                    ]
+                  [ txt "Download" ]
+              ]
+          ]
+      ; Component.input_element_file
+          ~allow_multiple:true
+          language
+          Message.Field.TenantLogos
+      ; Component.input_element_file
+          ~allow_multiple:true
+          language
+          Message.Field.PartnerLogos
       ]
   in
   let database_input_fields = CCList.map to_input_element database_fields in
   let disabled =
-    let label_text =
-      Pool_common.Utils.field_to_string language Message.Field.Disabled
-      |> CCString.capitalize_ascii
-    in
-    let attributes =
-      match tenant.disabled |> Pool_tenant.Disabled.value with
-      | true ->
-        [ a_input_type `Checkbox
-        ; a_name Message.Field.(Disabled |> show)
-        ; a_checked ()
-        ]
-      | false ->
-        [ a_input_type `Checkbox; a_name Message.Field.(Disabled |> show) ]
-    in
-    div [ label [ txt label_text ]; input ~a:attributes () ]
+    checkbox_element
+      language
+      `Checkbox
+      Message.Field.TenantDisabledFlag
+      (tenant.disabled |> Pool_tenant.Disabled.value)
   in
   let delete_img_form files =
     div
-      ~a:[ a_style "display: flex;" ]
+      ~a:[ a_class [ "flexrow" ] ]
       (CCList.map
          (fun (file : File.t) ->
            div
@@ -224,64 +245,74 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
       |> CCString.capitalize_ascii
     in
     div
-      [ h3 [ Message.Field.TenantLogos |> label_text |> txt ]
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
+          [ Message.Field.TenantLogos |> label_text |> txt ]
       ; delete_img_form (tenant.logos |> Pool_tenant.Logos.value)
-      ; h3 [ Message.Field.PartnerLogos |> label_text |> txt ]
+      ; h3
+          ~a:[ a_class [ "heading-3" ] ]
+          [ Message.Field.PartnerLogos |> label_text |> txt ]
       ; delete_img_form (tenant.partner_logo |> Pool_tenant.PartnerLogos.value)
       ]
   in
   let html =
     div
+      ~a:[ a_class [ "trim"; "narrow" ] ]
       [ h1 [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
-      ; form
-          ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/root/tenants/%s/update-detail"
-                      (Id.value tenant.id)))
-            ; a_method `Post
-            ; a_enctype "multipart/form-data"
-            ; a_class [ "stack" ]
-            ]
-          ((csrf_element csrf () :: detail_input_fields)
-          @ [ disabled; submit_element language Message.(Update None) () ])
-      ; hr ()
-      ; delete_file_forms
-      ; hr ()
-      ; form
-          ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/root/tenants/%s/update-database"
-                      (Id.value tenant.id)))
-            ; a_method `Post
-            ; a_enctype "multipart/form-data"
-            ; a_class [ "stack" ]
-            ]
-          ((csrf_element csrf () :: database_input_fields)
-          @ [ submit_element language Message.(Update None) () ])
-      ; hr ()
-      ; form
-          ~a:
-            [ a_action
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/root/tenants/%s/create-operator"
-                      (Id.value tenant.id)))
-            ; a_method `Post
-            ; a_class [ "stack" ]
-            ]
-          ((csrf_element csrf ()
-           :: CCList.map
-                (Component.input_element language `Text)
-                Message.Field.[ Email; Password; Firstname; Lastname ])
-          @ [ submit_element language Message.(Create (Some Field.operator)) ()
-            ])
-      ; a
-          ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
-          [ txt "back" ]
+      ; div
+          ~a:[ a_class [ "stack-lg" ] ]
+          [ form
+              ~a:
+                [ a_action
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/root/tenants/%s/update-detail"
+                          (Id.value tenant.id)))
+                ; a_method `Post
+                ; a_enctype "multipart/form-data"
+                ; a_class [ "stack" ]
+                ]
+              ((csrf_element csrf () :: detail_input_fields)
+              @ [ disabled; submit_element language Message.(Update None) () ])
+          ; delete_file_forms
+          ; form
+              ~a:
+                [ a_action
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/root/tenants/%s/update-database"
+                          (Id.value tenant.id)))
+                ; a_method `Post
+                ; a_enctype "multipart/form-data"
+                ; a_class [ "stack" ]
+                ]
+              ((csrf_element csrf () :: database_input_fields)
+              @ [ submit_element language Message.(Update None) () ])
+          ; form
+              ~a:
+                [ a_action
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/root/tenants/%s/create-operator"
+                          (Id.value tenant.id)))
+                ; a_method `Post
+                ; a_class [ "stack" ]
+                ]
+              ((csrf_element csrf ()
+               :: CCList.map
+                    (Component.input_element language `Text)
+                    Message.Field.[ Email; Password; Firstname; Lastname ])
+              @ [ submit_element
+                    language
+                    Message.(Create (Some Field.operator))
+                    ()
+                ])
+          ; p
+              [ a
+                  ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
+                  [ txt "back" ]
+              ]
+          ]
       ]
   in
   Page_layout.create_root_layout html message language ()

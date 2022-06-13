@@ -94,7 +94,7 @@ let field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Tenant -> "tenant"
-  | TenantDisabledFlag -> "disabled flag"
+  | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
