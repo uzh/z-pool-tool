@@ -7,7 +7,7 @@ module Create : sig
     { start_at : StartAt.t
     ; end_at : EndAt.t
     ; rate : Rate.t
-    ; distribution : Distribution.t
+    ; distribution : Distribution.t option
     }
 
   val handle
@@ -23,7 +23,7 @@ end = struct
     { start_at : StartAt.t
     ; end_at : EndAt.t
     ; rate : Rate.t
-    ; distribution : Distribution.t
+    ; distribution : Distribution.t option
     }
 
   let command start_at end_at rate distribution : t =
@@ -37,7 +37,7 @@ end = struct
           [ StartAt.schema ()
           ; EndAt.schema ()
           ; Rate.schema ()
-          ; Distribution.schema ()
+          ; Conformist.optional @@ Distribution.schema ()
           ]
         command)
   ;;

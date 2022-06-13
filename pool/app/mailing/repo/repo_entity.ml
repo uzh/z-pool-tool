@@ -47,7 +47,7 @@ type t =
   ; start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
-  ; distribution : Distribution.t
+  ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -116,7 +116,7 @@ let t =
                   (tup2
                      Rate.t
                      (tup2
-                        Distribution.t
+                        (option Distribution.t)
                         (tup2
                            Pool_common.Repo.CreatedAt.t
                            Pool_common.Repo.UpdatedAt.t))))))))
@@ -144,6 +144,8 @@ module Update = struct
       custom
         ~encode
         ~decode
-        (tup2 Id.t (tup2 StartAt.t (tup2 EndAt.t (tup2 Rate.t Distribution.t)))))
+        (tup2
+           Id.t
+           (tup2 StartAt.t (tup2 EndAt.t (tup2 Rate.t (option Distribution.t))))))
   ;;
 end

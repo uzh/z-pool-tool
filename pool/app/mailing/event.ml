@@ -4,7 +4,7 @@ type update =
   { start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
-  ; distribution : Distribution.t
+  ; distribution : Distribution.t option
   }
 [@@deriving eq, show]
 

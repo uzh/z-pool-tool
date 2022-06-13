@@ -2,6 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let ( %> ) = CCFun.( %> )
 let create_layout req = General.create_tenant_layout `Admin req
 
 let id req field encode =
@@ -101,3 +102,53 @@ let detail edit req =
 
 let show = detail false
 let edit = detail true
+
+let search_info req =
+  let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* ({ Pool_context.tenant_db; _ } as context) =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let go field encode =
+      CCList.assoc ~eq:String.equal (Field.show field) urlencoded
+      |> CCList.hd
+      |> encode
+      |> Lwt_result.lift
+    in
+    let parse_time = Pool_common.Utils.parse_time in
+    let* start_at = go Field.Start (parse_time %> Mailing.StartAt.create) in
+    let* end_at = go Field.End (parse_time %> Mailing.EndAt.create) in
+    let* rate_decoded = go Field.Rate (int_of_string_opt %> CCResult.return) in
+    let* rate =
+      rate_decoded
+      |> CCOption.get_or ~default:1
+      |> Mailing.Rate.create
+      |> Lwt_result.lift
+    in
+    let* mailing =
+      Mailing.create start_at end_at rate None |> Lwt_result.lift
+    in
+    let average_send, total =
+      match rate_decoded |> CCOption.is_some with
+      | true -> None, None
+      | false ->
+        ( Some (Mailing.per_minutes_rounded 5 mailing)
+        , Some (Mailing.total mailing) )
+    in
+    let%lwt mailings = Mailing.find_overlaps tenant_db mailing in
+    Page.Admin.Mailing.overlaps
+      ?average_send
+      ?total
+      context
+      experiment_id
+      mailings
+    |> Lwt.return_ok
+  in
+  Lwt.return
+  @@
+  match result with
+  | Ok mailings -> mailings |> HttpUtils.html_to_plain_text_response
+  | Error _ -> Rock.Response.make ()
+;;

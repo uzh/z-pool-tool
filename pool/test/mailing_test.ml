@@ -61,7 +61,7 @@ let create_mailing () =
     ; start_at
     ; end_at
     ; rate
-    ; distribution
+    ; distribution = Some distribution
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }

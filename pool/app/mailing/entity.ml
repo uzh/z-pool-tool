@@ -116,7 +116,7 @@ type t =
   ; start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
-  ; distribution : Distribution.t
+  ; distribution : Distribution.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -127,7 +127,8 @@ let equal m1 m2 =
   && StartAt.equal m1.start_at m2.start_at
   && EndAt.equal m1.end_at m2.end_at
   && Rate.equal m1.rate m2.rate
-  && Distribution.equal m1.distribution m2.distribution
+  && CCOption.map2 Distribution.equal m1.distribution m2.distribution
+     |> CCOption.get_or ~default:false
 ;;
 
 let create ?(id = Id.create ()) start_at end_at rate distribution =
@@ -159,4 +160,6 @@ let total { start_at; end_at; rate; _ } =
   of_int rate
   / of_int seconds_per_hour
   * (Ptime.diff end_at start_at |> Ptime.Span.to_float_s)
+  |> round
+  |> to_int
 ;;

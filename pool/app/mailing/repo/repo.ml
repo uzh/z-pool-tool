@@ -155,7 +155,7 @@ let find_by_experiment pool id =
   Sql.find_by_experiment pool id ||> CCList.map to_entity
 ;;
 
-let find_overlaps pool { Entity.start_at; end_at; _ } =
+let find_overlaps pool Entity.{ start_at; end_at; _ } =
   let open Utils.Lwt_result.Infix in
   Sql.find_overlaps pool start_at end_at ||> CCList.map to_entity
 ;;
