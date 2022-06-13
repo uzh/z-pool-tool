@@ -347,11 +347,14 @@ module FileList = struct
                  (Id.value location_id)
                  (Mapping.Id.value id)
               |> Sihl.Web.externalize_path)
+          ; a_user_data
+              "confirmable"
+              Pool_common.(Utils.confirmable_to_string language I18n.DeleteFile)
           ]
         [ Component.csrf_element csrf ()
         ; submit_element
             language
-            Message.(Delete (Some Field.FileMapping))
+            Message.(Delete (Some Field.File))
             ~submit_type:`Error
             ()
         ]

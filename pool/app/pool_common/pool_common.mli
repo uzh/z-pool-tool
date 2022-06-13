@@ -189,6 +189,7 @@ module Utils : sig
   val field_to_string : Language.t -> Message.Field.t -> string
   val field_to_string_capitalized : Language.t -> Message.Field.t -> string
   val control_to_string : Language.t -> Message.control -> string
+  val confirmable_to_string : Language.t -> I18n.confirmable -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
   val hint_to_string : Language.t -> Entity_i18n.hint -> string

@@ -51,3 +51,10 @@ type hint =
   | Overbook
   | RegistrationDisabled
   | SignUpForWaitingList
+
+type confirmable =
+  | CancelSession
+  | DeleteEmailSuffix
+  | DeleteExperiment
+  | DeleteFile
+  | DeleteSession

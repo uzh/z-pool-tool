@@ -70,3 +70,14 @@ let hint_to_string = function
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
 ;;
+
+let confirmable_to_string confirmable =
+  (match confirmable with
+  | CancelSession -> "session", "cancel"
+  | DeleteEmailSuffix -> "email suffix", "delete"
+  | DeleteExperiment -> "experiment", "delete"
+  | DeleteFile -> "the file", "delete"
+  | DeleteSession -> "session", "delete")
+  |> fun (obj, action) ->
+  Format.asprintf "Are you sure you want to %s the %s?" action obj
+;;

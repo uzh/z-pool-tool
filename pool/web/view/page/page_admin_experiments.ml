@@ -193,6 +193,10 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
                  (Format.asprintf
                     "/admin/experiments/%s/delete"
                     (experiment.Experiment.id |> Pool_common.Id.value)))
+          ; a_user_data
+              "confirmable"
+              Pool_common.(
+                Utils.confirmable_to_string language I18n.DeleteExperiment)
           ]
         [ csrf_element csrf ()
         ; submit_element

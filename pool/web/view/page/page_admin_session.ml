@@ -138,6 +138,10 @@ let index
                      (Pool_common.Id.value experiment_id)
                      (Pool_common.Id.value session.id)
                   |> Sihl.Web.externalize_path)
+              ; a_user_data
+                  "confirmable"
+                  Pool_common.(
+                    Utils.confirmable_to_string language I18n.CancelSession)
               ]
             [ Component.csrf_element csrf ()
             ; submit_element language Message.(Cancel None) ()
@@ -151,6 +155,10 @@ let index
                      (Pool_common.Id.value experiment_id)
                      (Pool_common.Id.value session.id)
                   |> Sihl.Web.externalize_path)
+              ; a_user_data
+                  "confirmable"
+                  Pool_common.(
+                    Utils.confirmable_to_string language I18n.DeleteSession)
               ]
             [ Component.csrf_element csrf ()
             ; submit_element

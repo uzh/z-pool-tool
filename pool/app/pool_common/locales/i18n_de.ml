@@ -72,3 +72,14 @@ let hint_to_string = function
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
 ;;
+
+let confirmable_to_string confirmable =
+  (match confirmable with
+  | CancelSession -> "die Session", "absagen"
+  | DeleteEmailSuffix -> "das Suffix", "löschen"
+  | DeleteExperiment -> "das Experiment", "löschen"
+  | DeleteFile -> "die Datei", "löschen"
+  | DeleteSession -> "die Session", "löschen")
+  |> fun (obj, action) ->
+  Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
+;;

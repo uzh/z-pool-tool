@@ -163,6 +163,12 @@ let show
                              ~a:
                                [ a_method `Post
                                ; a_action (action_path `DeleteTenantEmailSuffix)
+                               ; a_user_data
+                                   "confirmable"
+                                   Pool_common.(
+                                     Utils.confirmable_to_string
+                                       language
+                                       I18n.DeleteEmailSuffix)
                                ]
                              [ Component.csrf_element csrf ()
                              ; input
