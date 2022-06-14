@@ -75,6 +75,7 @@ let field_to_string =
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | Rate -> "rate"
+  | PublicTitle -> "public title"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
@@ -116,7 +117,6 @@ let field_to_string =
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
-  | WaitingListDisabled -> "waiting list disabled"
   | Zip -> "zip code"
 ;;
 
@@ -178,6 +178,8 @@ let rec error_to_string = function
     "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
+  | DirectRegistrationIsDisabled ->
+    "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingOperator -> "Please provide operator email address."
@@ -243,8 +245,6 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
-  | WaitingListFlagsMutuallyExclusive ->
-    "Direct registration can only be disabled when waiting list is enabled."
   | WriteOnlyModel -> "Write only model!"
 ;;
 

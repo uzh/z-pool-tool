@@ -39,10 +39,11 @@ let create () =
       experiment
       contact
   in
+  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list }
+        { contact; session; waiting_list = Some waiting_list; experiment }
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
@@ -104,14 +105,42 @@ let assign_to_fully_booked_session () =
       experiment
       contact
   in
+  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list }
+        { contact; session; waiting_list = Some waiting_list; experiment }
     in
     AssignmentCommand.Create.handle command confirmation_email false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
+  check_result expected events
+;;
+
+let assign_to_experiment_with_direct_registration_disabled () =
+  let { session; experiment; contact } = assignment_data () in
+  let session = session |> Test_utils.fully_book_public_session in
+  let waiting_list =
+    Test_utils.create_waiting_list_from_experiment_and_contact
+      experiment
+      contact
+  in
+  let experiment =
+    let public = experiment |> Test_utils.experiment_to_public_experiment in
+    Experiment.Public.
+      { public with
+        direct_registration_disabled =
+          true |> Experiment.DirectRegistrationDisabled.create
+      }
+  in
+  let events =
+    let command =
+      AssignmentCommand.Create.
+        { contact; session; waiting_list = Some waiting_list; experiment }
+    in
+    AssignmentCommand.Create.handle command confirmation_email false
+  in
+  let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
   check_result expected events
 ;;
 
@@ -123,10 +152,11 @@ let assign_to_session_contact_is_already_assigned () =
       experiment
       contact
   in
+  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
-        { contact; session; waiting_list = Some waiting_list }
+        { contact; session; waiting_list = Some waiting_list; experiment }
     in
     AssignmentCommand.Create.handle command confirmation_email already_assigned
   in

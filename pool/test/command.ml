@@ -101,6 +101,11 @@ let () =
             `Quick
             Assignment_test.assign_to_session_contact_is_already_assigned
         ; test_case
+            "assign to experiment with direct registration disabled"
+            `Quick
+            Assignment_test
+            .assign_to_experiment_with_direct_registration_disabled
+        ; test_case
             "assign user from waiting list"
             `Quick
             Assignment_test.assign_contact_from_waiting_list
@@ -125,18 +130,14 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
-        ; test_case
-            "Create experiment with mutually exclusive options"
-            `Quick
-            Experiment_test.create_with_mutually_exclusive_options
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create
         ; test_case "sign off" `Quick Waiting_list_test.delete
         ; test_case
-            "create with waiting list disabled"
+            "create with direct registration enabled"
             `Quick
-            Waiting_list_test.create_with_waiting_list_disabled
+            Waiting_list_test.create_with_direct_registration_enabled
         ; test_case "update comment" `Quick Waiting_list_test.update
         ] )
     ; "location", [ test_case "create location" `Quick Location_test.create ]

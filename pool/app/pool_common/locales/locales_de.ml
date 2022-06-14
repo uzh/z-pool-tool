@@ -74,6 +74,7 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | Rate -> "Rate"
+  | PublicTitle -> "Öffentlicher Titel"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ResentAt -> "Erneut verschickt"
@@ -115,7 +116,6 @@ let field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
-  | WaitingListDisabled -> "Warteliste deaktivieren"
   | Zip -> "PLZ"
 ;;
 
@@ -184,6 +184,8 @@ let rec error_to_string = function
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | DirectRegistrationIsDisabled ->
+    "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
@@ -267,9 +269,6 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
-  | WaitingListFlagsMutuallyExclusive ->
-    "Die direkte Registrierung kann nur mit aktivierter Warteliste deaktiviert \
-     werden."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 

@@ -3,8 +3,8 @@ let waiting_list pool =
   let to_public_experiment (experiment : Experiment.t) =
     Experiment.Public.
       { id = experiment.Experiment.id
+      ; public_title = experiment.Experiment.public_title
       ; description = experiment.Experiment.description
-      ; waiting_list_disabled = experiment.Experiment.waiting_list_disabled
       ; direct_registration_disabled =
           experiment.Experiment.direct_registration_disabled
       }

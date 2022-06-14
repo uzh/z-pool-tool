@@ -109,6 +109,13 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         ~value:(value title_value)
         ~required:true
         ~flash_fetcher
+    ; input_element
+        language
+        `Text
+        Pool_common.Message.Field.publictitle
+        ~value:(value public_title_value)
+        ~required:true
+        ~flash_fetcher
     ; textarea_element
         language
         Pool_common.Message.Field.Description
@@ -117,14 +124,6 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         ~flash_fetcher
     ; checkbox_element
         language
-        Pool_common.Message.Field.WaitingListDisabled
-        ~value:
-          (experiment
-          |> CCOption.map_or ~default:false waiting_list_disabled_value)
-        ~flash_fetcher
-    ; checkbox_element
-        language
-        ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
         ~value:
           (experiment
@@ -221,8 +220,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
     let rows =
       let open Experiment in
       Message.Field.
-        [ WaitingListDisabled, waiting_list_disabled_value
-        ; DirectRegistrationDisabled, direct_registration_disabled_value
+        [ DirectRegistrationDisabled, direct_registration_disabled_value
         ; RegistrationDisabled, registration_disabled_value
         ]
       |> CCList.map (fun (label, fnc) ->
@@ -325,20 +323,11 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     in
     Component.Table.horizontal_table `Striped language ~thead rows
   in
-  let content =
-    match waiting_list.experiment.Experiment.waiting_list_disabled with
-    | false -> waiting_list_entries ()
-    | true ->
-      p
-        [ txt
-            Pool_common.(
-              Utils.text_to_string language I18n.WaitingListIsDisabled)
-        ]
-  in
+  (* TODO timhub: check and remove hint: WaitingListIsDisabled*)
   experiment_layout
     language
     (NavLink Pool_common.I18n.WaitingList)
     experiment
     ~active:Pool_common.I18n.WaitingList
-    content
+    (waiting_list_entries ())
 ;;

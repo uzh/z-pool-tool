@@ -89,6 +89,7 @@ module Field = struct
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
     | Rate [@name "rate"] [@printer go "rate"]
+    | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
@@ -135,8 +136,6 @@ module Field = struct
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
     | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
-    | WaitingListDisabled [@name "waiting_list_disabled"]
-        [@printer go "waiting_list_disabled"]
     | Zip [@name "zip"] [@printer go "zip"]
         [@printer field_name "terms_and_conditions"]
   [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
@@ -162,6 +161,7 @@ type error =
   | ContactUnconfirmed
   | Decode of Field.t
   | DecodeAction
+  | DirectRegistrationIsDisabled
   | Disabled of Field.t
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
@@ -208,7 +208,6 @@ type error =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | Undefined of Field.t
-  | WaitingListFlagsMutuallyExclusive
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 

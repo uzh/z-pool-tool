@@ -14,6 +14,20 @@ module Title : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module PublicTitle : sig
+  type t = string
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val value : t -> string
+  val create : t -> (t, Pool_common.Message.error) result
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+end
+
 module Description : sig
   type t
 
@@ -22,20 +36,6 @@ module Description : sig
   val show : t -> string
   val create : string -> (t, Pool_common.Message.error) result
   val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module WaitingListDisabled : sig
-  type t = bool
-
-  val equal : t -> t -> t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
 
   val schema
     :  unit
@@ -73,9 +73,9 @@ end
 type t =
   { id : Id.t
   ; title : Title.t
+  ; public_title : PublicTitle.t
   ; description : Description.t
   ; filter : string
-  ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; created_at : Ptime.t
@@ -89,16 +89,16 @@ val show : t -> string
 val create
   :  ?id:Id.t
   -> Title.t
+  -> PublicTitle.t
   -> Description.t
-  -> WaitingListDisabled.t
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> t
 
 type create =
   { title : Title.t
+  ; public_title : PublicTitle.t
   ; description : Description.t
-  ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   }
@@ -110,8 +110,8 @@ val show_create : create -> string
 module Public : sig
   type t =
     { id : Id.t
+    ; public_title : PublicTitle.t
     ; description : Description.t
-    ; waiting_list_disabled : WaitingListDisabled.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
     }
 
@@ -159,18 +159,14 @@ val session_count
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
+val public_title_value : t -> string
 val description_value : t -> string
-val waiting_list_disabled_value : t -> bool
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 
 module Repo : sig
   module Description : sig
     val t : Description.t Caqti_type.t
-  end
-
-  module WaitingListDisabled : sig
-    val t : bool Caqti_type.t
   end
 
   module DirectRegistrationDisabled : sig
