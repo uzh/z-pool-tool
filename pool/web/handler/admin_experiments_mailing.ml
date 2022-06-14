@@ -60,7 +60,10 @@ let create req =
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Create in
-         urlencoded |> decode >>= handle experiment
+         urlencoded
+         |> HttpUtils.remove_empty_values
+         |> decode
+         >>= handle experiment
        in
        let handle events =
          let%lwt () =
@@ -132,10 +135,9 @@ let search_info req =
     in
     let average_send, total =
       match rate_decoded |> CCOption.is_some with
-      | true -> None, None
-      | false ->
-        ( Some (Mailing.per_minutes_rounded 5 mailing)
-        , Some (Mailing.total mailing) )
+      | false -> None, None
+      | true ->
+        Some (Mailing.per_minutes 5 mailing), Some (Mailing.total mailing)
     in
     let%lwt mailings = Mailing.find_overlaps tenant_db mailing in
     Page.Admin.Mailing.overlaps

@@ -24,37 +24,54 @@ let detail_mailing_path ?(suffix = "") experiment_id mailing =
 ;;
 
 module List = struct
-  let thead language =
+  let thead with_links language experiment_id =
     let open Pool_common in
-    Message.Field.[ Some Start; Some End; Some Rate; None; None; None ]
-    |> CCList.map (fun field ->
-           th
-             [ txt
-                 (CCOption.map_or
-                    ~default:""
-                    (fun f -> Utils.field_to_string_capitalized language f)
-                    field)
-             ])
-    |> tr
-    |> CCList.pure
-    |> thead
+    let test =
+      CCList.map
+        (fun field ->
+          CCOption.map_or
+            ~default:""
+            (fun f -> Utils.field_to_string_capitalized language f)
+            field
+          |> txt
+          |> CCList.pure)
+        (match with_links with
+        | false -> Message.Field.[ Some Start; Some End; Some Rate; None ]
+        | true -> Message.Field.[ Some Start; Some End; Some Rate; None; None ])
+      @ [ Message.(Add (Some Field.Mailing))
+          |> Utils.control_to_string language
+          |> txt
+          |> CCList.pure
+          |> a ~a:[ mailings_path ~suffix:"create" experiment_id |> a_href ]
+          |> CCList.pure
+        ]
+    in
+    test |> CCList.map th |> tr |> CCList.pure |> thead
   ;;
 
-  let row Pool_context.{ csrf; language; _ } experiment_id (mailing : Mailing.t)
+  let row
+      with_links
+      Pool_context.{ csrf; language; _ }
+      experiment_id
+      (mailing : Mailing.t)
     =
     let open Mailing in
     tr
-      [ td [ mailing.start_at |> StartAt.to_human |> txt ]
-      ; td [ mailing.end_at |> EndAt.to_human |> txt ]
-      ; td [ mailing.rate |> Rate.value |> CCInt.to_string |> txt ]
-      ; td
-          [ a
-              ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
-              [ txt
-                  Pool_common.(Utils.control_to_string language Message.(More))
-              ]
-          ]
-      ; td
+    @@ [ td [ mailing.start_at |> StartAt.to_human |> txt ]
+       ; td [ mailing.end_at |> EndAt.to_human |> txt ]
+       ; td [ mailing.rate |> Rate.value |> CCInt.to_string |> txt ]
+       ; td
+           [ a
+               ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
+               [ txt
+                   Pool_common.(Utils.control_to_string language Message.(More))
+               ]
+           ]
+       ]
+    @
+    if with_links
+    then
+      [ td
           [ form
               ~a:
                 [ a_method `Post
@@ -81,13 +98,19 @@ module List = struct
               ]
           ]
       ]
+    else []
   ;;
 
-  let create (Pool_context.{ language; _ } as context) experiment mailings =
+  let create
+      with_links
+      (Pool_context.{ language; _ } as context)
+      experiment_id
+      mailings
+    =
     table
-      ~thead:(thead language)
+      ~thead:(thead with_links language experiment_id)
       ~a:[ a_class [ "striped" ] ]
-      (CCList.map (row context experiment) mailings)
+      (CCList.map (row with_links context experiment_id) mailings)
   ;;
 end
 
@@ -109,7 +132,7 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
                 ~a:[ a_href (mailings_path ~suffix:"create" experiment_id) ]
                 [ Utils.text_to_string language I18n.MailingNewTitle |> txt ]
             ]
-        else List.create context experiment_id mailings)
+        else List.create true context experiment_id mailings)
       ]
   in
   Page_admin_experiments.experiment_layout
@@ -187,23 +210,17 @@ let form
       });
   |js}
   in
-  let heading, action, submit =
+  let action, submit =
     match mailing with
-    | None ->
-      let text = Message.(Create (Some Field.Mailing)) in
-      ( text |> Pool_common.Utils.control_to_string language
-      , mailings_path experiment_id
-      , text )
+    | None -> mailings_path experiment_id, Message.(Create (Some Field.Mailing))
     | Some m ->
-      ( m |> mailing_title |> Pool_common.Utils.text_to_string language
-      , m |> detail_mailing_path experiment_id
+      ( m |> detail_mailing_path experiment_id
       , Message.(Edit (Some Field.Mailing)) )
   in
   let html =
     let open Htmx in
     div
-      [ h1 ~a:[ a_class [ "heading-2" ] ] [ txt heading ]
-      ; form
+      [ form
           ~a:
             [ a_class [ "stack" ]
             ; a_method `Post
@@ -220,6 +237,10 @@ let form
                 ; hx_post (mailings_path ~suffix:"search-info" experiment_id)
                 ]
               [ input_element
+                  language
+                  `Datetime
+                  Pool_common.Message.Field.Start
+                  ~flash_fetcher
                   ?value:
                     (CCOption.map
                        (fun (m : Mailing.t) ->
@@ -227,11 +248,11 @@ let form
                          |> Mailing.StartAt.value
                          |> Ptime.to_rfc3339 ~space:true)
                        mailing)
+              ; input_element
                   language
                   `Datetime
-                  Pool_common.Message.Field.Start
+                  Pool_common.Message.Field.End
                   ~flash_fetcher
-              ; input_element
                   ?value:
                     (CCOption.map
                        (fun (m : Mailing.t) ->
@@ -239,26 +260,25 @@ let form
                          |> Mailing.EndAt.value
                          |> Ptime.to_rfc3339 ~space:true)
                        mailing)
-                  language
-                  `Datetime
-                  Pool_common.Message.Field.End
-                  ~flash_fetcher
               ; input_element
-                  ?value:
-                    (CCOption.map
-                       (fun (m : Mailing.t) ->
-                         m.Mailing.rate |> Mailing.Rate.value |> CCInt.to_string)
-                       mailing)
                   language
                   `Number
                   Pool_common.Message.Field.Rate
                   ~flash_fetcher
+                  ~help:Pool_common.I18n.Rate
+                  ~value:
+                    (CCOption.map_or
+                       ~default:"1"
+                       (fun (m : Mailing.t) ->
+                         m.Mailing.rate |> Mailing.Rate.value |> CCInt.to_string)
+                       mailing)
               ]
           ; input_element
               language
               `Text
               Pool_common.Message.Field.Distribution
               ~flash_fetcher
+              ~help:Pool_common.I18n.Distribution
               ?value:
                 CCOption.(
                   mailing
@@ -299,11 +319,9 @@ let overlaps
     | None -> []
     | Some average ->
       [ p
-          [ Format.asprintf
-              "%s (ca. %d)"
-              Pool_common.(
-                I18n.RateNumberPerMinutesHint 5 |> Utils.text_to_string language)
-              average
+          [ Pool_common.(
+              I18n.RateNumberPerMinutes (5, average)
+              |> Utils.hint_to_string language)
             |> txt
           ]
       ]
@@ -313,24 +331,29 @@ let overlaps
     | None -> []
     | Some total ->
       [ p
-          [ Format.asprintf
-              "%s %d"
-              Pool_common.(I18n.RateTotalSent |> Utils.text_to_string language)
-              total
+          [ Pool_common.(
+              I18n.RateTotalSent total |> Utils.text_to_string language)
             |> txt
           ]
       ]
   in
   let mailings =
-    [ p
-        [ Pool_common.(I18n.RateDependencyHint |> Utils.text_to_string language)
-          |> txt
-        ]
-    ]
-    @
     match CCList.is_empty mailings with
-    | true -> []
-    | false -> [ List.create context experiment_id mailings ]
+    | true ->
+      [ p
+          [ Pool_common.(
+              I18n.RateDependencyWithout |> Utils.hint_to_string language)
+            |> txt
+          ]
+      ]
+    | false ->
+      [ p
+          [ Pool_common.(
+              I18n.RateDependencyWith |> Utils.hint_to_string language)
+            |> txt
+          ]
+      ; List.create false context experiment_id mailings
+      ]
   in
   div (average @ total @ mailings)
 ;;

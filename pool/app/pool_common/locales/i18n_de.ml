@@ -25,15 +25,8 @@ let to_string = function
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
   | MailingNewTitle -> "Neuen Versand erstellen"
-  | NumberIsDaysHint -> "Tage"
-  | NumberIsWeeksHint -> "Wochen"
-  | RateDependencyHint ->
-    "Zur selben Zeit finden weitere Versande statt. Die Summe aller Raten wird \
-     automatisch gedrosselt, sobald das maximum des Servers erreicht wird."
-  | RateHint -> "Generierte Einladungen pro Stunde"
-  | RateNumberPerMinutesHint number ->
-    Format.asprintf "Generiert alle %d Minuten neue Einladungen." number
-  | RateTotalSent -> "Total generierter Einladungen:"
+  | RateTotalSent number ->
+    Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
@@ -75,12 +68,30 @@ let hint_to_string = function
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
+  | Distribution ->
+    "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
+     versendet werden. Z.B. mit Name aufsteigend und E-Mail Adresse \
+     absteigend: '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'  (Zur Zeit \
+     nur als Json Array Objekte.)"
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | Overbook ->
     "Anzahl Probanden, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
+  | Rate -> "Generierte Einladungen pro Stunde"
+  | RateDependencyWith ->
+    "Zur selben Zeit finden weitere Versande statt, details werden unten \
+     angezeigt. Die Summe aller Raten wird automatisch gedrosselt, sobald das \
+     maximum des Servers erreicht wird."
+  | RateDependencyWithout ->
+    "Falls zur selben Zeit weitere Versande stattfinden, wird die Summe aller \
+     raten automatisch (maximal möglichen für den Server) gedrosselt."
+  | RateNumberPerMinutes (per_n_minutes, number) ->
+    Format.asprintf
+      "Generiert alle %d Minuten %.2f neue Einladungen."
+      per_n_minutes
+      number
   | RegistrationDisabled ->
     "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \

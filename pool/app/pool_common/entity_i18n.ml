@@ -17,12 +17,7 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
-  | NumberIsDaysHint
-  | NumberIsWeeksHint
-  | RateDependencyHint
-  | RateHint
-  | RateNumberPerMinutesHint of int
-  | RateTotalSent
+  | RateTotalSent of int
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
@@ -58,10 +53,15 @@ type nav_link =
 type hint =
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
-  | NumberIsSecondsHint
+  | Distribution
   | NumberIsDaysHint
+  | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | RateDependencyWith
+  | RateDependencyWithout
+  | Rate
+  | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SignUpForWaitingList
 

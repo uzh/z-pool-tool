@@ -24,16 +24,8 @@ let to_string = function
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
   | MailingNewTitle -> "Create new mailing"
-  | NumberIsDaysHint -> "Days"
-  | NumberIsWeeksHint -> "Weeks"
-  | RateDependencyHint ->
-    "There are other mailings running at the same time. In case the sum of all \
-     rates reaches the maximum of the server, they will automatically get \
-     reduced."
-  | RateHint -> "Generated Invitations per hour"
-  | RateNumberPerMinutesHint number ->
-    Format.asprintf "Generates new invitations every %d minutes." number
-  | RateTotalSent -> "Totally generated invitations:"
+  | RateTotalSent number ->
+    Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
@@ -75,12 +67,30 @@ let hint_to_string = function
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
+  | Distribution ->
+    "The distribution can be used to influence which invitations are sent \
+     first. E.g. with name ascending and email address descending: \
+     '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]'. (Currently only as \
+     json array objects.)"
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | Rate -> "Generated Invitations per hour"
+  | RateDependencyWith ->
+    "There are other mailings running at the same time, see its details \
+     bellow. In case the sum of all rates reaches the maximum of the server, \
+     they will automatically get reduced."
+  | RateDependencyWithout ->
+    "In case there are other mailings running at the same time, the server \
+     will reduce the rates to its max."
+  | RateNumberPerMinutes (per_n_minutes, number) ->
+    Format.asprintf
+      "Generates every %d minutes %.2f new invitations ."
+      per_n_minutes
+      number
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."

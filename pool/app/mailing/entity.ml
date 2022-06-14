@@ -149,10 +149,10 @@ let create ?(id = Id.create ()) start_at end_at rate distribution =
 let seconds_per_minute = 60
 let seconds_per_hour = 60 * seconds_per_minute
 
-let per_minutes_rounded n_minutes { rate; _ } =
+let per_minutes n_minutes { rate; _ } =
   let open CCFloat in
   let total_seconds = CCInt.(n_minutes * seconds_per_minute |> to_float) in
-  of_int rate / of_int seconds_per_hour * total_seconds |> round |> to_int
+  of_int rate / of_int seconds_per_hour * total_seconds
 ;;
 
 let total { start_at; end_at; rate; _ } =
