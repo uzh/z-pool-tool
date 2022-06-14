@@ -62,6 +62,15 @@ let add_public_title =
     |sql}
 ;;
 
+let set_default_public_title =
+  Sihl.Database.Migration.create_step
+    ~label:"set default public title"
+    {sql|
+      UPDATE pool_experiments SET public_title = title
+        WHERE public_title is NULL OR public_title = ''
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
@@ -70,5 +79,6 @@ let migration () =
     |> add_step change_description_column_type
     |> add_step add_disable_registration
     |> add_step merge_waiting_list_flags
-    |> add_step add_public_title)
+    |> add_step add_public_title
+    |> add_step set_default_public_title)
 ;;
