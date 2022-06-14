@@ -1,7 +1,8 @@
 module Create : sig
   type t =
     { experiment : Experiment.t
-    ; contact : Contact.t
+    ; contacts : Contact.t list
+    ; invited_contacts : Pool_common.Id.t list
     }
 
   val handle
@@ -13,14 +14,35 @@ module Create : sig
 end = struct
   type t =
     { experiment : Experiment.t
-    ; contact : Contact.t
+    ; contacts : Contact.t list
+    ; invited_contacts : Pool_common.Id.t list
     }
 
   let handle (command : t) language =
-    let (create : Invitation.create) =
-      Invitation.{ experiment = command.experiment; contact = command.contact }
+    let events, errors =
+      CCList.fold_left
+        (fun (events, errors) contact ->
+          match
+            CCList.mem
+              ~eq:Pool_common.Id.equal
+              (Contact.id contact)
+              command.invited_contacts
+          with
+          | true -> events, errors @ [ Contact.fullname contact ]
+          | false ->
+            let create =
+              Invitation.{ experiment = command.experiment; contact }
+            in
+            ( events
+              @ [ (Invitation.Created create, language) |> Pool_event.invitation
+                ]
+            , errors ))
+        ([], [])
+        command.contacts
     in
-    Ok [ (Invitation.Created create, language) |> Pool_event.invitation ]
+    if CCList.is_empty errors
+    then Ok events
+    else Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
   ;;
 
   let can user command =

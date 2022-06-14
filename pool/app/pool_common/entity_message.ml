@@ -155,6 +155,7 @@ type error =
   | AlreadySignedUpForExperiment
   | AlreadyInPast
   | AlreadyStarted
+  | AlreadyInvitedToExperiment of string list
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail

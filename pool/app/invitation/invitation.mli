@@ -77,6 +77,12 @@ val find_experiment_id_of_invitation
   -> t
   -> (Pool_common.Id.t, Pool_common.Message.error) result Lwt.t
 
+val find_multiple_by_experiment_and_contacts
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t list
+  -> Experiment.t
+  -> Pool_common.Id.t list Lwt.t
+
 val contact_was_invited_to_experiment
   :  Pool_database.Label.t
   -> Experiment.t

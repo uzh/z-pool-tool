@@ -164,6 +164,10 @@ let rec error_to_string = function
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
+  | AlreadyInvitedToExperiment names ->
+    Format.asprintf
+      "The following contacts have already been invited to this experiment: %s"
+      (CCString.concat ", " names)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

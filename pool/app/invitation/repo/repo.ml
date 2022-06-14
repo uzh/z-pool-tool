@@ -1,4 +1,5 @@
 module RepoEntity = Repo_entity
+module Dynparam = Utils.Database.Dynparam
 
 let to_entity = RepoEntity.to_entity
 let of_entity = RepoEntity.of_entity
@@ -189,6 +190,54 @@ module Sql = struct
       , Contact.id contact |> Pool_common.Id.value )
     >|= CCOption.is_some
   ;;
+
+  let find_multiple_by_experiment_and_contacts_request ids =
+    Format.asprintf
+      {sql|
+      SELECT
+        LOWER(CONCAT(
+          SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+          SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+          SUBSTR(HEX(user_users.uuid), 21)
+        ))
+      FROM user_users
+      INNER JOIN pool_contacts
+        ON pool_contacts.user_uuid = user_users.uuid
+      INNER JOIN pool_invitations
+        ON pool_contacts.id = pool_invitations.contact_id
+      WHERE
+      pool_invitations.experiment_id = (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', '')))
+      AND
+        pool_invitations.contact_id IN ((SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid IN ( %s )))
+    |sql}
+      (CCList.mapi
+         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
+         ids
+      |> CCString.concat ",")
+  ;;
+
+  let find_multiple_by_experiment_and_contacts pool ids experiment =
+    let open Caqti_request.Infix in
+    let dyn =
+      CCList.fold_left
+        (fun dyn id ->
+          dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+        (Dynparam.empty
+        |> Dynparam.add
+             Caqti_type.string
+             (experiment.Experiment.id |> Pool_common.Id.value))
+        ids
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      ids
+      |> find_multiple_by_experiment_and_contacts_request
+      |> pt ->* Pool_common.Repo.Id.t
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  ;;
 end
 
 let contact_to_invitation pool invitation =
@@ -223,6 +272,10 @@ let find_by_contact pool contact =
 ;;
 
 let find_experiment_id_of_invitation = Sql.find_experiment_id_of_invitation
+
+let find_multiple_by_experiment_and_contacts =
+  Sql.find_multiple_by_experiment_and_contacts
+;;
 
 let insert pool session_id model =
   model |> of_entity session_id |> Sql.insert pool
