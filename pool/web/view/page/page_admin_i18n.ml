@@ -8,10 +8,11 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       ~orientation:`Horizontal
       ~classnames:[ "grow" ]
       ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
+      ~required:true
+      ~value:(translation |> I18n.content |> I18n.Content.value)
       language
       `Text
       Pool_common.Message.Field.Translation
-      (translation |> I18n.content |> I18n.Content.value)
   in
   let build_translations_row translation_list =
     CCList.map

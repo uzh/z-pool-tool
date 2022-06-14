@@ -39,33 +39,33 @@ module Partials = struct
       let thead =
         Pool_common.Message.Field.
           [ Some Name; Some Email; Some CanceledAt; None ]
-        |> Component.Table.head language
       in
-      CCList.map
-        (fun (assignment : Assignment.t) ->
-          let base =
-            [ td [ assignment |> contact_fullname ]
-            ; td [ assignment |> contact_email ]
-            ; td [ assignment |> canceled_at ]
-            ]
-          in
-          let cancel assignment =
-            form
-              ~a:[ a_action (action assignment); a_method `Post ]
-              [ Component.csrf_element csrf ()
-              ; Component.submit_element
-                  language
-                  (Pool_common.Message.Cancel None)
-                  ~submit_type:`Error
-                  ()
+      let rows =
+        CCList.map
+          (fun (assignment : Assignment.t) ->
+            let base =
+              [ assignment |> contact_fullname
+              ; assignment |> contact_email
+              ; assignment |> canceled_at
               ]
-          in
-          (match assignment.canceled_at |> Assignment.CanceledAt.value with
-          | None -> base @ [ td [ cancel assignment ] ]
-          | Some _ -> base @ [ td [] ])
-          |> tr)
-        assignments
-      |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
+            in
+            let cancel assignment =
+              form
+                ~a:[ a_action (action assignment); a_method `Post ]
+                [ Component.csrf_element csrf ()
+                ; Component.submit_element
+                    language
+                    (Pool_common.Message.Cancel None)
+                    ~submit_type:`Error
+                    ()
+                ]
+            in
+            match assignment.canceled_at |> Assignment.CanceledAt.value with
+            | None -> base @ [ cancel assignment ]
+            | Some _ -> base @ [ txt "" ])
+          assignments
+      in
+      Component.Table.horizontal_table `Striped language ~thead rows
   ;;
 end
 

@@ -1,4 +1,6 @@
 module HttpUtils = Http_utils
+module Table = Component_table
+module Navigation = Component_nav
 open Tyxml.Html
 
 let icon icon_type =
@@ -97,7 +99,7 @@ module Elements = struct
     | Some help ->
       [ span
           ~a:[ a_class [ "help" ] ]
-          [ txt Pool_common.(Utils.text_to_string language help) ]
+          [ txt Pool_common.(Utils.hint_to_string language help) ]
       ]
   ;;
 
@@ -128,12 +130,17 @@ let input_element
     ?help
     ?info
     ?identifier
+    ?(required = false)
+    ?flash_fetcher
+    ?value
     language
     input_type
     name
-    value
   =
-  let input_label = Elements.input_label language name label_field info in
+  let input_label =
+    let base = Elements.input_label language name label_field info in
+    if required then Format.asprintf "%s *" base else base
+  in
   let input_classes =
     match input_type with
     | `Datetime -> [ "datepicker" ]
@@ -141,11 +148,20 @@ let input_element
     | _ -> []
   in
   let id = Elements.identifier ?identifier language name in
+  let old_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
+  let value =
+    let open CCOption.Infix in
+    old_value <+> value |> CCOption.get_or ~default:""
+  in
   let attributes =
     Elements.attributes
       input_type
       name
       [ a_value value; a_id id; a_class input_classes ]
+    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
@@ -165,12 +181,19 @@ let checkbox_element
     ?help
     ?info
     ?identifier
+    ?flash_fetcher
     language
     input_type
     name
     value
   =
   let input_label = Elements.input_label language name label_field info in
+  let value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+    |> CCOption.map (fun s -> CCString.equal "true" s)
+    |> CCOption.value ~default:value
+  in
   let value_attrs =
     match value with
     | true -> [ a_checked () ]
@@ -194,32 +217,18 @@ let checkbox_element
       ]
 ;;
 
-(* Use the value from flash as the value, if no value is in flash use a default
-   value *)
-let input_element_persistent
-    ?info
-    ?default
-    language
-    input_type
-    name
-    flash_fetcher
-  =
-  let old_value = name |> Pool_common.Message.Field.show |> flash_fetcher in
-  let open CCOption in
-  let value = old_value <+> default |> get_or ~default:"" in
-  input_element ?info language input_type name value
-;;
-
 let input_element_file
     ?(orientation = `Vertical)
     ?(allow_multiple = false)
     ?(has_icon = true)
+    ?(required = false)
     language
     field
   =
   let field_label =
     Pool_common.Utils.field_to_string language field
     |> CCString.capitalize_ascii
+    |> fun label -> if required then Format.asprintf "%s *" label else label
   in
   let name = Pool_common.Message.Field.(field |> show) in
   let visible_part =
@@ -235,40 +244,59 @@ let input_element_file
     | true ->
       span ~a:[ a_class [ "has-icon" ] ] [ icon `UploadOutline; placeholder ]
   in
+  let input_attributes =
+    let attributes =
+      [ a_input_type `File
+      ; a_id name
+      ; a_name name
+      ; (if allow_multiple then a_multiple () else a_value "")
+      ]
+    in
+    match required with
+    | true -> attributes @ [ a_required () ]
+    | false -> attributes
+  in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
     [ label ~a:[ a_label_for name ] [ txt field_label ]
     ; label
         ~a:[ a_label_for name; a_class [ "file-input" ] ]
-        [ input
-            ~a:
-              [ a_input_type `File
-              ; a_id name
-              ; a_name name
-              ; (if allow_multiple then a_multiple () else a_value "")
-              ]
-            ()
-        ; visible_part
-        ]
+        [ input ~a:input_attributes (); visible_part ]
     ]
 ;;
 
 let textarea_element
-    language
-    name
-    input_label
-    value
     ?(classnames = [])
     ?(attributes = [])
-    ()
+    ?(required = false)
+    ?value
+    ?flash_fetcher
+    language
+    name
   =
   let input_label =
-    Pool_common.Utils.field_to_string language input_label
-    |> CCString.capitalize_ascii
+    let base =
+      name
+      |> Pool_common.Utils.field_to_string language
+      |> CCString.capitalize_ascii
+    in
+    if required then Format.asprintf "%s *" base else base
   in
-  let input =
-    textarea ~a:([ a_name name; a_class classnames ] @ attributes) (txt value)
+  let textarea_attributes =
+    let base =
+      [ a_name (name |> Pool_common.Message.Field.show); a_class classnames ]
+    in
+    match required with
+    | true -> base @ [ a_required () ]
+    | false -> base
   in
+  let ( <+> ) = CCOption.( <+> ) in
+  let old_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
+  let value = old_value <+> value |> CCOption.get_or ~default:"" in
+  let input = textarea ~a:(textarea_attributes @ attributes) (txt value) in
   div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]
 ;;
 
@@ -312,20 +340,26 @@ let submit_icon ?(classnames = []) icon_type =
     [ icon icon_type ]
 ;;
 
-module Table = struct
-  let head language fields =
-    CCList.map
-      (fun field ->
-        th
-          [ txt
-              (CCOption.map_or
-                 ~default:""
-                 (fun f -> Pool_common.Utils.field_to_string language f)
-                 field)
-          ])
-      fields
-    |> tr
-    |> CCList.pure
-    |> thead
-  ;;
-end
+let selector field equal show options selected ?(attributes = []) () =
+  let name = Pool_common.Message.Field.(show field) in
+  div
+    ~a:[ a_class (Elements.group_class [] `Vertical) ]
+    [ label [ name |> CCString.capitalize_ascii |> txt ]
+    ; div
+        ~a:[ a_class [ "select" ] ]
+        [ select
+            ~a:(a_name name :: attributes)
+            (CCList.map
+               (fun l ->
+                 let is_selected =
+                   selected
+                   |> CCOption.map_or ~default:[] (fun selected ->
+                          if equal selected l then [ a_selected () ] else [])
+                 in
+                 option
+                   ~a:((l |> show |> a_value) :: is_selected)
+                   (l |> show |> CCString.capitalize_ascii |> txt))
+               options)
+        ]
+    ]
+;;

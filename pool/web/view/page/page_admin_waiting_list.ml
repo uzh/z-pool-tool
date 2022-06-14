@@ -7,6 +7,7 @@ let detail
     sessions
     experiment_id
     Pool_context.{ language; csrf; _ }
+    flash_fetcher
   =
   let waiting_list_detail =
     div
@@ -27,10 +28,10 @@ let detail
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Pool_common.Message.Field.(show Comment)
               Pool_common.Message.Field.Comment
-              (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
-              ()
+              ~value:
+                (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
+              ~flash_fetcher
           ; submit_element
               language
               Pool_common.Message.(Save (Some Field.Comment))
@@ -50,48 +51,36 @@ let detail
                   (I18n.EmtpyList Message.Field.Session))
           ]
       else (
-        let thead =
-          Pool_common.
-            [ Utils.field_to_string language Message.Field.Date
-            ; "Assign contact" (* TODO: Crate hints type?? *)
-            ]
-          |> CCList.map (fun text -> th [ txt text ])
-          |> tr
-          |> CCList.pure
-          |> thead
-        in
-        CCList.map
-          (fun (session : Session.t) ->
-            tr
-              [ td
-                  [ txt
-                      Session.(
-                        session.Session.start
-                        |> Start.value
-                        |> Pool_common.Utils.Time.formatted_date_time)
-                  ]
-              ; td
-                  [ (match Session.is_fully_booked session with
-                    | false ->
-                      input
-                        ~a:
-                          [ a_input_type `Radio
-                          ; a_name Pool_common.Message.Field.(show Session)
-                          ; a_value Session.(session.id |> Pool_common.Id.value)
-                          ]
-                        ()
-                    | true ->
-                      span
-                        [ txt
-                            Pool_common.(
-                              Utils.error_to_string
-                                language
-                                Message.SessionFullyBooked)
-                        ])
-                  ]
+        let thead = Pool_common.Message.Field.[ Some Date; None ] in
+        let rows =
+          CCList.map
+            (fun (session : Session.t) ->
+              [ txt
+                  Session.(
+                    session.Session.start
+                    |> Start.value
+                    |> Pool_common.Utils.Time.formatted_date_time)
+              ; (match Session.is_fully_booked session with
+                | false ->
+                  input
+                    ~a:
+                      [ a_input_type `Radio
+                      ; a_name Pool_common.Message.Field.(show Session)
+                      ; a_value Session.(session.id |> Pool_common.Id.value)
+                      ]
+                    ()
+                | true ->
+                  span
+                    [ txt
+                        Pool_common.(
+                          Utils.error_to_string
+                            language
+                            Message.SessionFullyBooked)
+                    ])
               ])
-          sessions
-        |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
+            sessions
+        in
+        Component.Table.horizontal_table `Striped language ~thead rows
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->
@@ -140,6 +129,12 @@ let detail
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+      ; p
+          [ txt
+              Pool_common.(
+                I18n.AssignContactFromWaitingList
+                |> Utils.hint_to_string language)
+          ]
       ; content
       ]
   in

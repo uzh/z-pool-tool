@@ -54,7 +54,7 @@ let header ?(children = []) title =
       [ a_class
           [ "inset"
           ; "flexrow"
-          ; "space-between"
+          ; "justify-between"
           ; "align-center"
           ; "bg-grey-light"
           ; "border-bottom"
@@ -190,6 +190,7 @@ module Tenant = struct
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
+      @ [ "/logout", Logout ]
       |> CCList.map (fun item ->
              build_nav_link item language query_language active_navigation)
     in

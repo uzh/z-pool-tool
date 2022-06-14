@@ -2,42 +2,6 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-(* TODO [timhub]: create global nav component, when MR is merged *)
-let subnav language active id =
-  let open Pool_common in
-  I18n.
-    [ Overview, "/"
-    ; Invitations, "/invitations"
-    ; WaitingList, "/waiting-list"
-    ; Sessions, "/sessions"
-    ; Assignments, "/assignments"
-    ]
-  |> CCList.map (fun (label, url) ->
-         let is_active =
-           active
-           |> CCOption.map_or ~default:false (fun active ->
-                  I18n.equal_nav_link active label)
-         in
-         let classnames = [] in
-         let link_label = txt (Utils.nav_link_to_string language label) in
-         if is_active
-         then
-           span ~a:[ a_class ([ "color-primary" ] @ classnames) ] [ link_label ]
-         else
-           a
-             ~a:
-               [ a_href
-                   (Sihl.Web.externalize_path
-                      (Format.asprintf
-                         "/admin/experiments/%s/%s"
-                         (Id.value id)
-                         url))
-               ; a_class classnames
-               ]
-             [ link_label ])
-  |> nav ~a:[ a_class [ "sub-nav"; "flexrow"; "flex-gap" ] ]
-;;
-
 type title =
   | Control of Pool_common.Message.control
   | NavLink of Pool_common.I18n.nav_link
@@ -52,30 +16,45 @@ let title_to_string language text =
 ;;
 
 let experiment_layout language title experiment_id ?active html =
+  let subnav_links =
+    Pool_common.I18n.
+      [ Overview, "/"
+      ; Invitations, "/invitations"
+      ; WaitingList, "/waiting-list"
+      ; Sessions, "/sessions"
+      ; Assignments, "/assignments"
+      ]
+  in
+  let base_url =
+    Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value experiment_id)
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ subnav language active experiment_id
+    [ Component.Navigation.subnav language subnav_links base_url active
     ; h1 ~a:[ a_class [ "heading-1" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
-  let experiment_item (experiment : Experiment.t) =
-    let open Experiment in
-    div
-      ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm" ] ]
-      [ span [ txt (Title.value experiment.title) ]
-      ; a
-          ~a:
-            [ a_href
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/admin/experiments/%s"
-                      (experiment.id |> Pool_common.Id.value)))
+  let thead = Pool_common.Message.Field.[ Some Title; None ] in
+  let rows =
+    CCList.map
+      (fun (experiment : Experiment.t) ->
+        let open Experiment in
+        [ txt (Title.value experiment.title)
+        ; a
+            ~a:
+              [ a_href
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/admin/experiments/%s"
+                        (experiment.id |> Pool_common.Id.value)))
+              ]
+            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
             ]
-          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
-      ]
+        ])
+      experiment_list
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -86,9 +65,7 @@ let index experiment_list Pool_context.{ language; _ } =
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ div
-            ~a:[ a_class [ "striped" ] ]
-            (CCList.map experiment_item experiment_list)
+        [ Table.horizontal_table `Striped language ~thead rows
         ; p
             [ a
                 ~a:
@@ -105,7 +82,8 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
+let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
+  =
   let open Experiment in
   let action =
     match experiment with
@@ -127,30 +105,38 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
         language
         `Text
         Pool_common.Message.Field.Title
-        (value title_value)
-    ; input_element
+        ~value:(value title_value)
+        ~required:true
+        ~flash_fetcher
+    ; textarea_element
         language
-        `Text
         Pool_common.Message.Field.Description
-        (value description_value)
+        ~value:(value description_value)
+        ~required:true
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
         Pool_common.Message.Field.WaitingListDisabled
         (experiment
         |> CCOption.map_or ~default:false waiting_list_disabled_value)
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
+        ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false direct_registration_disabled_value)
+        ~flash_fetcher
     ; checkbox_element
         language
         `Checkbox
+        ~help:Pool_common.I18n.RegistrationDisabled
         Pool_common.Message.Field.RegistrationDisabled
         (experiment
         |> CCOption.map_or ~default:false registration_disabled_value)
+        ~flash_fetcher
     ; submit_element
         language
         Message.(
@@ -163,7 +149,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
-let create (Pool_context.{ language; _ } as context) =
+let create (Pool_context.{ language; _ } as context) flash_fetcher =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
     [ h1
@@ -173,12 +159,12 @@ let create (Pool_context.{ language; _ } as context) =
                 language
                 Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context
+    ; experiment_form context flash_fetcher
     ]
 ;;
 
-let edit experiment (Pool_context.{ language; _ } as context) =
-  let html = experiment_form ~experiment context in
+let edit experiment (Pool_context.{ language; _ } as context) flash_fetcher =
+  let html = experiment_form ~experiment context flash_fetcher in
   experiment_layout
     language
     (Control Pool_common.Message.(Edit (Some Field.Experiment)))
@@ -214,6 +200,10 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
                  (Format.asprintf
                     "/admin/experiments/%s/delete"
                     (experiment.Experiment.id |> Pool_common.Id.value)))
+          ; a_user_data
+              "confirmable"
+              Pool_common.(
+                Utils.confirmable_to_string language I18n.DeleteExperiment)
           ]
         [ csrf_element csrf ()
         ; submit_element
@@ -224,27 +214,22 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
             ()
         ]
   in
-  let field_to_string = Pool_common.Utils.field_to_string language in
   let bool_to_string = Pool_common.Utils.bool_to_string language in
   let open Experiment in
   let html =
-    let boolean_fields =
+    let rows =
       let open Experiment in
       Message.Field.
         [ WaitingListDisabled, waiting_list_disabled_value
         ; DirectRegistrationDisabled, direct_registration_disabled_value
         ; RegistrationDisabled, registration_disabled_value
         ]
+      |> CCList.map (fun (label, fnc) ->
+             label, fnc experiment |> bool_to_string |> txt)
     in
     div
       [ p [ txt (experiment.description |> Description.value) ]
-      ; table
-          (boolean_fields
-          |> CCList.map (fun (label, fnc) ->
-                 tr
-                   [ td [ txt (field_to_string label) ]
-                   ; td [ txt (fnc experiment |> bool_to_string) ]
-                   ]))
+      ; Table.vertical_table `Striped language rows
       ; p
           [ a
               ~a:
@@ -299,51 +284,41 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
     let thead =
-      Table.head
-        language
-        Pool_common.Message.Field.
-          [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
+      Pool_common.Message.Field.
+        [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
     in
-    CCList.map
-      (fun entry ->
-        tr
-          [ td [ txt (Contact.Preview.fullname entry.contact) ]
-          ; td
+    let rows =
+      CCList.map
+        (fun entry ->
+          [ txt (Contact.Preview.fullname entry.contact)
+          ; txt
+              (Contact.Preview.email_address entry.contact
+              |> Pool_user.EmailAddress.value)
+          ; txt
+              Pool_common.(
+                entry.created_at
+                |> CreatedAt.value
+                |> Utils.Time.formatted_date_time)
+          ; entry.comment
+            |> CCOption.map_or ~default:"" Waiting_list.Comment.value
+            |> txt
+          ; a
+              ~a:
+                [ a_href
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/admin/experiments/%s/waiting-list/%s"
+                          (waiting_list.experiment.Experiment.id
+                          |> Pool_common.Id.value)
+                          (entry.id |> Pool_common.Id.value)))
+                ]
               [ txt
-                  (Contact.Preview.email_address entry.contact
-                  |> Pool_user.EmailAddress.value)
-              ]
-          ; td
-              [ txt
-                  Pool_common.(
-                    entry.created_at
-                    |> CreatedAt.value
-                    |> Utils.Time.formatted_date_time)
-              ]
-          ; td
-              [ entry.comment
-                |> CCOption.map_or ~default:"" Waiting_list.Comment.value
-                |> txt
-              ]
-          ; td
-              [ a
-                  ~a:
-                    [ a_href
-                        (Sihl.Web.externalize_path
-                           (Format.asprintf
-                              "/admin/experiments/%s/waiting-list/%s"
-                              (waiting_list.experiment.Experiment.id
-                              |> Pool_common.Id.value)
-                              (entry.id |> Pool_common.Id.value)))
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Message.More |> Utils.control_to_string language)
-                  ]
+                  Pool_common.(Message.More |> Utils.control_to_string language)
               ]
           ])
-      waiting_list.waiting_list_entries
-    |> table ~thead ~a:[ a_class [ "table"; "striped" ] ]
+        waiting_list.waiting_list_entries
+    in
+    Component.Table.horizontal_table `Striped language ~thead rows
   in
   let content =
     match waiting_list.experiment.Experiment.waiting_list_disabled with

@@ -10,6 +10,7 @@ let location_select options selected ?(attributes = []) () =
   let open Pool_location in
   let name = Message.Field.(show Location) in
   div
+    ~a:[ a_class [ "form-group" ] ]
     [ label [ txt (name |> CCString.capitalize_ascii) ]
     ; div
         ~a:[ a_class [ "select" ] ]
@@ -34,7 +35,7 @@ let location_select options selected ?(attributes = []) () =
     ]
 ;;
 
-let create csrf language experiment_id locations flash_fetcher =
+let create csrf language experiment_id locations ~flash_fetcher =
   div
     [ h1
         ~a:[ a_class [ "heading-2" ] ]
@@ -54,42 +55,45 @@ let create csrf language experiment_id locations flash_fetcher =
               |> Sihl.Web.externalize_path)
           ]
         [ Component.csrf_element csrf ()
-        ; input_element_persistent
+        ; input_element
             language
             `Datetime
             Pool_common.Message.Field.Start
-            flash_fetcher
-        ; input_element_persistent
+            ~required:true
+            ~flash_fetcher
+        ; input_element
             language
             (* TODO [aerben] make this `Time and convert span from flatpickr to
                seconds *)
+            ~required:true
             `Number
             Pool_common.Message.Field.Duration
-            ~info:"in seconds"
-            flash_fetcher
-          (* TODO [aerben] this should be textarea *)
-        ; input_element_persistent
+            ~help:Pool_common.I18n.NumberIsSecondsHint
+            ~flash_fetcher
+        ; textarea_element
             language
-            `Text
             Pool_common.Message.Field.Description
-            flash_fetcher
+            ~flash_fetcher
         ; location_select locations None ()
-        ; input_element_persistent
+        ; input_element
             language
             `Number
             Pool_common.Message.Field.MaxParticipants
-            flash_fetcher
-        ; input_element_persistent
+            ~required:true
+            ~flash_fetcher
+        ; input_element
             language
             `Number
             Pool_common.Message.Field.MinParticipants
-            flash_fetcher
-            ~default:"0"
-        ; input_element_persistent
+            ~required:true
+            ~flash_fetcher
+            ~value:"0"
+        ; input_element
             language
             `Number
             Pool_common.Message.Field.Overbook
-            flash_fetcher
+            ~required:true
+            ~flash_fetcher
         ; submit_element language Message.(Create (Some Field.Session)) ()
         ]
     ]
@@ -103,40 +107,20 @@ let index
     flash_fetcher
   =
   let experiment_id = experiment.Experiment.id in
-  let session_row (session : Session.t) =
-    let open Session in
-    tr
-      [ td
-          [ txt
-              (Format.asprintf "%s %s" (session |> Session.session_date_to_human)
-              @@
-              (* TODO [aerben] improve this *)
-              if CCOption.is_some session.Session.canceled_at
-              then "CANCELED"
-              else "")
-          ]
-      ; td
-          [ txt
-              (CCInt.to_string
-                 (session.Session.assignment_count
-                 |> Session.AssignmentCount.value))
-          ]
-      ; td
-          [ a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(Utils.control_to_string language Message.(More))
-              ]
-          ]
-      ; td
-          [ form
+  let rows =
+    CCList.map
+      (fun (session : Session.t) ->
+        let open Session in
+        let cancel_form =
+          match CCOption.is_some session.Session.canceled_at with
+          | true ->
+            submit_element
+              ~submit_type:`Disabled
+              language
+              Message.(Cancel None)
+              ()
+          | false ->
+            form
               ~a:
                 [ a_method `Post
                 ; a_action
@@ -145,55 +129,69 @@ let index
                        (Pool_common.Id.value experiment_id)
                        (Pool_common.Id.value session.id)
                     |> Sihl.Web.externalize_path)
+                ; a_user_data
+                    "confirmable"
+                    Pool_common.(
+                      Utils.confirmable_to_string language I18n.CancelSession)
                 ]
               [ Component.csrf_element csrf ()
               ; submit_element language Message.(Cancel None) ()
               ]
-          ]
-      ; td
-          [ form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/delete"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
+        in
+        [ txt (session |> Session.session_date_to_human)
+        ; txt
+            (CCInt.to_string
+               (session.Session.assignment_count
+               |> Session.AssignmentCount.value))
+        ; session.Session.canceled_at
+          |> CCOption.map_or ~default:"" (fun t ->
+                 Pool_common.Utils.Time.formatted_date_time t)
+          |> txt
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions/%s"
+                     (Pool_common.Id.value experiment_id)
+                     (Pool_common.Id.value session.id)
+                  |> Sihl.Web.externalize_path)
               ]
-          ]
-      ]
+            [ txt Pool_common.(Utils.control_to_string language Message.(More))
+            ]
+        ; cancel_form
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions/%s/delete"
+                     (Pool_common.Id.value experiment_id)
+                     (Pool_common.Id.value session.id)
+                  |> Sihl.Web.externalize_path)
+              ; a_user_data
+                  "confirmable"
+                  Pool_common.(
+                    Utils.confirmable_to_string language I18n.DeleteSession)
+              ]
+            [ Component.csrf_element csrf ()
+            ; submit_element
+                language
+                Message.(Delete None)
+                ~submit_type:`Error
+                ()
+            ]
+        ])
+      sessions
   in
   let thead =
-    let open Pool_common in
-    Message.Field.[ Some Date; Some AssignmentCount; None; None; None ]
-    |> CCList.map (fun field ->
-           th
-             [ txt
-                 (CCOption.map_or
-                    ~default:""
-                    (fun f -> Utils.field_to_string_capitalized language f)
-                    field)
-             ])
-    |> tr
-    |> CCList.pure
-    |> thead
+    Pool_common.Message.Field.
+      [ Some Date; Some AssignmentCount; Some CanceledAt; None; None; None ]
   in
   let html =
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ table
-          ~thead
-          ~a:[ a_class [ "table"; "striped" ] ]
-          (CCList.map session_row sessions)
-      ; create csrf language experiment_id locations flash_fetcher
+      [ Table.horizontal_table `Striped language ~thead rows
+      ; create csrf language experiment_id locations ~flash_fetcher
       ]
   in
   Page_admin_experiments.experiment_layout
@@ -219,37 +217,35 @@ let detail
            let amount amt = amt |> ParticipantAmount.value |> string_of_int in
            let open Message in
            [ ( Field.Start
-             , session.start |> Start.value |> Ptime.to_rfc3339 ~space:true )
+             , session.start
+               |> Start.value
+               |> Pool_common.Utils.Time.formatted_date_time
+               |> txt )
            ; ( Field.Duration
              , session.duration
                |> Duration.value
-               |> Pool_common.Utils.print_time_span )
+               |> Pool_common.Utils.Time.formatted_timespan
+               |> txt )
            ; ( Field.Description
              , CCOption.map_or ~default:"" Description.value session.description
-             )
+               |> txt )
            ; ( Field.Location
-             , Pool_location.to_string language session.Session.location )
-           ; Field.MaxParticipants, amount session.max_participants
-           ; Field.MinParticipants, amount session.min_participants
-           ; Field.Overbook, amount session.overbook
-           ; ( Field.CanceledAt
-             , CCOption.map_or
-                 ~default:"Not canceled"
-                 (Ptime.to_rfc3339 ~space:true)
-                 session.canceled_at )
+             , Pool_location.to_string language session.Session.location |> txt
+             )
+           ; Field.MaxParticipants, amount session.max_participants |> txt
+           ; Field.MinParticipants, amount session.min_participants |> txt
+           ; Field.Overbook, amount session.overbook |> txt
            ]
-           |> CCList.map (fun (field, value) ->
-                  tr
-                    [ th
-                        [ txt
-                            (field
-                            |> Pool_common.Utils.field_to_string language
-                            |> CCString.capitalize_ascii)
-                        ]
-                    ; td [ txt value ]
-                    ])
+           |> fun rows ->
+           match session.canceled_at with
+           | None -> rows
+           | Some canceled ->
+             rows
+             @ [ ( Field.CanceledAt
+                 , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
+               ]
          in
-         table ~a:[ a_class [ "table"; "striped" ] ] rows)
+         Table.vertical_table `Striped language rows)
       ; p
           [ a
               ~a:
@@ -297,6 +293,7 @@ let edit
     experiment_id
     (session : Session.t)
     locations
+    flash_fetcher
   =
   let open Session in
   let html =
@@ -325,37 +322,53 @@ let edit
                language
                `Datetime
                Pool_common.Message.Field.Start
-               (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
+               ~required:true
+               ~value:
+                 (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
+               ~flash_fetcher
            ; input_element
                language
                `Number
                Pool_common.Message.Field.Duration
-               ~info:"in seconds"
-               (session.duration
-               |> Duration.value
-               |> Pool_common.Utils.print_time_span)
-             (* TODO [aerben] this should be textarea *)
-           ; input_element language `Text Pool_common.Message.Field.Description
-             @@ CCOption.map_or
-                  ~default:""
-                  Description.value
-                  session.description
+               ~help:Pool_common.I18n.NumberIsSecondsHint
+               ~value:
+                 (session.duration
+                 |> Duration.value
+                 |> Pool_common.Utils.print_time_span)
+               ~required:true
+               ~flash_fetcher
+           ; textarea_element
+               language
+               Pool_common.Message.Field.Description
+               ~value:
+                 (CCOption.map_or
+                    ~default:""
+                    Description.value
+                    session.description)
+               ~flash_fetcher
            ; location_select locations (Some session.location) ()
            ; input_element
                language
                `Number
                Pool_common.Message.Field.MaxParticipants
-               (amount session.max_participants)
+               ~required:true
+               ~value:(amount session.max_participants)
+               ~flash_fetcher
            ; input_element
                language
                `Number
                Pool_common.Message.Field.MinParticipants
-               (amount session.min_participants)
+               ~required:true
+               ~value:(amount session.min_participants)
+               ~flash_fetcher
            ; input_element
                language
                `Number
+               ~help:Pool_common.I18n.Overbook
                Pool_common.Message.Field.Overbook
-               (amount session.overbook)
+               ~required:true
+               ~value:(amount session.overbook)
+               ~flash_fetcher
            ; submit_element
                language
                Message.(Update (Some Field.Session))

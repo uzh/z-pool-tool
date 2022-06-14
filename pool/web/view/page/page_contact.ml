@@ -13,4 +13,5 @@ let dashboard Pool_context.{ language; _ } =
 let sign_up = Page_contact_signup.signup
 let terms = Page_contact_terms.terms
 let detail = Page_contact_edit.detail
-let edit = Page_contact_edit.edit
+let personal_details = Page_contact_edit.personal_details
+let login_information = Page_contact_edit.login_information

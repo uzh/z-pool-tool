@@ -2,107 +2,59 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let selector field equal show options selected ?(attributes = []) () =
-  let name = Message.Field.(show field) in
-  div
-    ~a:[ a_class (Component.Elements.group_class [] `Vertical) ]
-    [ label [ name |> CCString.capitalize_ascii |> txt ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:(a_name name :: attributes)
-            (CCList.map
-               (fun l ->
-                 let is_selected =
-                   selected
-                   |> CCOption.map_or ~default:[] (fun selected ->
-                          if equal selected l then [ a_selected () ] else [])
-                 in
-                 option
-                   ~a:((l |> show |> a_value) :: is_selected)
-                   (l |> show |> CCString.capitalize_ascii |> txt))
-               options)
-        ]
-    ]
-;;
-
 let first_n_characters ?(n = 47) m : string =
   if CCString.length m > n
   then CCString.sub m 0 n |> Format.asprintf "%s..."
   else m
 ;;
 
+let show_address language (location : Pool_location.t) =
+  let open Pool_location in
+  let room, street, city =
+    Address.address_rows_human language location.address
+  in
+  let mail =
+    if street |> CCString.is_empty |> not
+    then [ [ ""; street; city ] |> CCString.concat ", " |> txt ]
+    else []
+  in
+  span ([ strong [ txt room ] ] @ mail)
+;;
+
 module List = struct
   open Pool_location
 
-  let thead language =
-    let open Pool_common in
-    let open Message in
+  let thead =
+    Pool_common.Message.Field.
+      [ Some Name; Some Description; Some Location; None ]
+  ;;
+
+  let rows language locations =
     CCList.map
-      (fun field ->
-        field
-        |> Utils.field_to_string language
-        |> CCString.capitalize_ascii
-        |> txt
-        |> CCList.pure)
-      [ Field.Name; Field.Description; Field.Location ]
-    @ [ Add (Some Field.Location)
-        |> Utils.control_to_string language
-        |> txt
-        |> CCList.pure
-        |> a ~a:[ a_href (Sihl.Web.externalize_path "/admin/locations/create") ]
-        |> CCList.pure
-      ]
-    |> CCList.map th
-    |> tr
-    |> CCList.pure
-    |> thead
-  ;;
-
-  let row language (location : Pool_location.t) =
-    let address =
-      let room, street, city =
-        Address.address_rows_human language location.address
-      in
-      let mail =
-        if street |> CCString.is_empty |> not
-        then [ [ ""; street; city ] |> CCString.concat ", " |> txt ]
-        else []
-      in
-      [ strong [ txt room ] ] @ mail
-    in
-    tr
-      [ td [ location.name |> Name.value |> txt ]
-      ; td
-          [ location.description
-            |> CCOption.map_or ~default:"" Description.value
-            |> first_n_characters
-            |> txt
-          ]
-      ; td address
-      ; td
-          [ p
-              [ a
-                  ~a:
-                    [ a_href
-                        (Sihl.Web.externalize_path
-                           (Format.asprintf
-                              "/admin/locations/%s"
-                              (location.Pool_location.id |> Id.value)))
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Message.More |> Utils.control_to_string language)
-                  ]
+      (fun (location : Pool_location.t) ->
+        [ location.name |> Name.value |> txt
+        ; location.description
+          |> CCOption.map_or ~default:"" Description.value
+          |> first_n_characters
+          |> txt
+        ; show_address language location
+        ; a
+            ~a:
+              [ a_href
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/admin/locations/%s"
+                        (location.Pool_location.id |> Id.value)))
               ]
-          ]
-      ]
+            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
+            ]
+        ])
+      locations
   ;;
 
-  let create ?(classnames = []) language locations =
-    let thead = thead language in
-    let body = CCList.map (row language) locations in
-    table ~a:[ a_class classnames ] ~thead body
+  let create language locations =
+    let rows = rows language locations in
+    Table.horizontal_table `Striped language ~thead rows
   ;;
 end
 
@@ -114,6 +66,15 @@ let index location_list Pool_context.{ language; _ } =
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
         ]
     ; List.create language location_list
+    ; p
+        [ a
+            ~a:[ a_href (Sihl.Web.externalize_path "/admin/locations/create") ]
+            [ txt
+                Pool_common.(
+                  Message.(Create (Some Field.Location))
+                  |> Utils.control_to_string language)
+            ]
+        ]
     ]
 ;;
 
@@ -157,6 +118,7 @@ let file_form
         ; input_element_file
             language
             ~allow_multiple:false
+            ~required:true
             Message.Field.FileMapping
         ; submit_element
             language
@@ -171,6 +133,7 @@ let form
     ?(location : Pool_location.t option)
     ?(states : Pool_location.Status.t list = [])
     Pool_context.{ language; csrf; _ }
+    flash_fetcher
   =
   let open Pool_location in
   let path = "/admin/locations" in
@@ -242,17 +205,20 @@ let form
              language
              `Text
              Message.Field.Name
-             (value (fun m -> m.name) Name.value)
+             ~value:(value (fun m -> m.name) Name.value)
+             ~flash_fetcher
          ; input_element
              language
              `Text
              Message.Field.Description
-             (value_opt (fun m -> m.description) Description.value)
+             ~value:(value_opt (fun m -> m.description) Description.value)
+             ~flash_fetcher
          ; input_element
              language
              `Text
              Message.Field.Link
-             (value_opt (fun m -> m.link) Link.value)
+             ~value:(value_opt (fun m -> m.link) Link.value)
+             ~flash_fetcher
          ]
         @ status_select_opt
         @ [ div
@@ -276,39 +242,50 @@ let form
                           language
                           `Text
                           Message.Field.Room
-                          (address_value
-                             Address.Mail.(fun { room; _ } -> Room.value room))
+                          ~value:
+                            (address_value
+                               Address.Mail.(fun { room; _ } -> Room.value room))
+                          ~flash_fetcher
                       ; input_element
                           language
                           `Text
                           Message.Field.Building
-                          (address_value
-                             Address.Mail.(
-                               fun { building; _ } ->
-                                 building
-                                 |> CCOption.map_or ~default:"" Building.value))
+                          ~value:
+                            (address_value
+                               Address.Mail.(
+                                 fun { building; _ } ->
+                                   building
+                                   |> CCOption.map_or ~default:"" Building.value))
+                          ~flash_fetcher
                       ]
                   ; input_element
                       ~classnames:[ "toggled" ]
                       language
                       `Text
                       Message.Field.Street
-                      Address.Mail.(
-                        address_value (fun { street; _ } -> Street.value street))
+                      ~value:
+                        Address.Mail.(
+                          address_value (fun { street; _ } ->
+                              Street.value street))
+                      ~flash_fetcher
                   ; div
                       ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
                       [ input_element
                           language
                           `Text
                           Message.Field.Zip
-                          Address.Mail.(
-                            address_value (fun { zip; _ } -> Zip.value zip))
+                          ~value:
+                            Address.Mail.(
+                              address_value (fun { zip; _ } -> Zip.value zip))
+                          ~flash_fetcher
                       ; input_element
                           language
                           `Text
                           Message.Field.City
-                          Address.Mail.(
-                            address_value (fun { city; _ } -> City.value city))
+                          ~value:
+                            Address.Mail.(
+                              address_value (fun { city; _ } -> City.value city))
+                          ~flash_fetcher
                       ]
                   ]
               ]
@@ -342,23 +319,8 @@ module FileList = struct
         [ Add (Some Field.File) |> Utils.control_to_string language |> txt ]
   ;;
 
-  let thead location_id language =
-    let open Pool_common in
-    let open Message in
-    let open CCList in
-    map
-      (fun field ->
-        [ field
-          |> Utils.field_to_string language
-          |> CCString.capitalize_ascii
-          |> txt
-        ])
-      [ Field.Label; Field.Start ]
-    @ [ add_link location_id language |> pure ]
-    |> map th
-    |> tr
-    |> pure
-    |> thead
+  let thead =
+    Pool_common.Message.Field.[ Some Label; Some Language; None; None ]
   ;;
 
   let row
@@ -377,52 +339,58 @@ module FileList = struct
                  (Id.value location_id)
                  (Mapping.Id.value id)
               |> Sihl.Web.externalize_path)
+          ; a_user_data
+              "confirmable"
+              Pool_common.(Utils.confirmable_to_string language I18n.DeleteFile)
           ]
         [ Component.csrf_element csrf ()
         ; submit_element
             language
-            Message.(Delete (Some Field.FileMapping))
+            Message.(Delete (Some Field.File))
             ~submit_type:`Error
             ()
         ]
     in
-    tr
-      [ td [ label |> Mapping.Label.show |> txt ]
-      ; td [ language |> Pool_common.Language.show |> txt ]
-      ; td
-          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-          [ p
-              [ a
-                  ~a:
-                    [ Format.asprintf
-                        "/admin/locations/%s/files/%s"
-                        (Id.value location_id)
-                        Pool_common.(Id.value file.File.id)
-                      |> Sihl.Web.externalize_path
-                      |> a_href
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Message.More |> Utils.control_to_string visual_language)
-                  ]
+    [ label |> Mapping.Label.show |> txt
+    ; language |> Pool_common.Language.show |> txt
+    ; p
+        [ a
+            ~a:
+              [ Format.asprintf
+                  "/admin/locations/%s/files/%s"
+                  (Id.value location_id)
+                  Pool_common.(Id.value file.File.id)
+                |> Sihl.Web.externalize_path
+                |> a_href
               ]
-          ; delete_form
-          ]
-      ]
+            [ txt
+                Pool_common.(
+                  Message.More |> Utils.control_to_string visual_language)
+            ]
+        ]
+    ; delete_form
+    ]
   ;;
 
-  let create
-      csrf
-      ?(classnames = [])
-      language
-      ({ id; files; _ } : Pool_location.t)
-    =
-    if CCList.is_empty files
-    then add_link id language
-    else (
-      let thead = thead id language in
-      let body = CCList.map (row csrf language id) files in
-      table ~a:[ a_class classnames ] ~thead body)
+  (* TODO: add link and message, if list is empty *)
+  let create csrf language ({ id; files; _ } : Pool_location.t) =
+    let form =
+      match CCList.is_empty files with
+      | true ->
+        div
+          [ Pool_common.(I18n.LocationNoFiles |> Utils.text_to_string language)
+            |> txt
+          ]
+      | false ->
+        let body = CCList.map (row csrf language id) files in
+        Table.horizontal_table `Striped language ~thead body
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
+      ; div ~a:[ a_class [ "stack" ] ] [ form; p [ add_link id language ] ]
+      ]
   ;;
 end
 
@@ -434,81 +402,63 @@ module SessionList = struct
     |> Format.asprintf "Session at %s"
   ;;
 
-  let thead language =
-    let open Pool_common in
-    let open Message in
-    let open CCList in
-    map
-      (fun field ->
-        [ field
-          |> Utils.field_to_string language
-          |> CCString.capitalize_ascii
+  let rows language sessions =
+    CCList.map
+      (fun (session, (experiment_id, experiment_title)) ->
+        let open Session.Public in
+        [ session |> session_title |> txt
+        ; experiment_title |> txt
+        ; session.duration
+          |> Session.Duration.value
+          |> Pool_common.Utils.Time.formatted_timespan
           |> txt
-        ])
-      [ Field.Session; Field.Experiment; Field.Start; Field.Duration ]
-    @ [ [ txt "" ] ]
-    |> map th
-    |> tr
-    |> pure
-    |> thead
-  ;;
-
-  let row
-      language
-      ((session, (experiment_id, experiment_title)) :
-        Session.Public.t * (Pool_common.Id.t * string))
-    =
-    let open Session.Public in
-    tr
-      [ td
-          [ session
-            |> session_title
-            |> (Format.asprintf "%s %s"
-               @@
-               (* TODO [aerben] improve this *)
-               if CCOption.is_some session.Session.Public.canceled_at
-               then "CANCELED"
-               else "")
-            |> txt
-          ]
-      ; td [ experiment_title |> txt ]
-      ; td
-          [ session.start
-            |> Session.Start.value
-            |> Pool_common.Utils.Time.formatted_date_time
-            |> txt
-          ]
-      ; td
-          [ p
-              [ a
-                  ~a:
-                    [ Format.asprintf
-                        "/admin/experiments/%s/sessions/%s"
-                        (Pool_common.Id.value experiment_id)
-                        (Pool_common.Id.value session.id)
-                      |> Sihl.Web.externalize_path
-                      |> a_href
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Message.More |> Utils.control_to_string language)
-                  ]
+        ; session.canceled_at
+          |> CCOption.map_or ~default:"" (fun t ->
+                 Pool_common.Utils.Time.formatted_date_time t)
+          |> txt
+        ; a
+            ~a:
+              [ Format.asprintf
+                  "/admin/experiments/%s/sessions/%s"
+                  (Pool_common.Id.value experiment_id)
+                  (Pool_common.Id.value session.id)
+                |> Sihl.Web.externalize_path
+                |> a_href
               ]
-          ]
-      ]
+            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
+            ]
+        ])
+      sessions
   ;;
 
-  let create ?(classnames = []) language sessions =
-    if CCList.is_empty sessions
-    then
-      div
-        [ Pool_common.(I18n.LocationNoSessions |> Utils.text_to_string language)
-          |> txt
-        ]
-    else (
-      let thead = thead language in
-      let body = CCList.map (row language) sessions in
-      table ~a:[ a_class classnames ] ~thead body)
+  let create language sessions =
+    let html =
+      if CCList.is_empty sessions
+      then
+        div
+          [ Pool_common.(
+              I18n.LocationNoSessions |> Utils.text_to_string language)
+            |> txt
+          ]
+      else (
+        let thead =
+          Pool_common.Message.Field.
+            [ Some Session
+            ; Some Experiment
+            ; Some Duration
+            ; Some CanceledAt
+            ; None
+            ]
+        in
+        let rows = rows language sessions in
+        Table.horizontal_table `Striped language ~thead rows)
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+      ; div ~a:[ a_class [ "stack" ] ] [ html ]
+      ]
   ;;
 end
 
@@ -518,30 +468,50 @@ let detail
     sessions
   =
   let open Pool_location in
-  div
-    ~a:[ a_class [ "safety-margin"; "trim"; "measure" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (location.name |> Name.value) ]
-    ; p
-        [ txt
-            (location.description
-            |> CCOption.map_or ~default:"" Description.value)
-        ]
-    ; FileList.create csrf language location
-    ; SessionList.create language sessions
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/locations/%s/edit"
-                        (location.Pool_location.id |> Id.value)))
+  let location_details =
+    let open Pool_common.Message in
+    let table =
+      [ Field.Name, location.name |> Name.value |> txt
+      ; ( Field.Description
+        , location.description
+          |> CCOption.map_or ~default:"" Description.value
+          |> txt )
+      ; Field.Location, show_address language location
+      ; ( Field.Link
+        , location.link |> CCOption.map_or ~default:"" Link.value |> txt )
+      ; ( Field.Status
+        , location.status |> Status.show |> txt (* TODO: Show files *) )
+      ]
+      |> Table.vertical_table `Striped language
+    in
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ table
+      ; p
+          [ a
+              ~a:
+                [ a_href
+                    (Sihl.Web.externalize_path
+                       (Format.asprintf
+                          "/admin/locations/%s/edit"
+                          (location.Pool_location.id |> Id.value)))
+                ]
+              [ txt
+                  Pool_common.(
+                    Message.(Edit (Some Field.Location))
+                    |> Utils.control_to_string language)
               ]
-            [ txt
-                Pool_common.(
-                  Message.(Edit (Some Field.Location))
-                  |> Utils.control_to_string language)
-            ]
+          ]
+      ]
+  in
+  div
+    ~a:[ a_class [ "safety-margin"; "trim" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (location.name |> Name.value) ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ location_details
+        ; FileList.create csrf language location
+        ; SessionList.create language sessions
         ]
     ]
 ;;

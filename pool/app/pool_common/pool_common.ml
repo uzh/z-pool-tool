@@ -38,6 +38,11 @@ module Utils = struct
     | Language.En -> Locales_en.field_to_string
   ;;
 
+  let confirmable_to_string = function
+    | Language.De -> I18n_de.confirmable_to_string
+    | Language.En -> I18n_en.confirmable_to_string
+  ;;
+
   let field_to_string_capitalized l m =
     field_to_string l m |> CCString.capitalize_ascii
   ;;
@@ -55,6 +60,11 @@ module Utils = struct
   let nav_link_to_string = function
     | Language.De -> I18n_de.nav_link_to_string
     | Language.En -> I18n_en.nav_link_to_string
+  ;;
+
+  let hint_to_string = function
+    | Language.De -> I18n_de.hint_to_string
+    | Language.En -> I18n_en.hint_to_string
   ;;
 
   let get_or_failwith m =

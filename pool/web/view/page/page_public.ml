@@ -28,7 +28,6 @@ let index tenant Pool_context.{ language; _ } welcome_text =
 
 let login Pool_context.{ language; query_language; csrf; _ } =
   let txt_to_string = txt_to_string language in
-  let input_element = input_element language in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let open Pool_common in
   div
@@ -45,8 +44,8 @@ let login Pool_context.{ language; query_language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             [ csrf_element csrf ()
-            ; input_element `Text Message.Field.Email ""
-            ; input_element `Password Message.Field.Password ""
+            ; input_element language `Text Message.Field.Email
+            ; input_element language `Password Message.Field.Password
             ; submit_element language Message.Login ()
             ]
         ; p
@@ -59,7 +58,6 @@ let login Pool_context.{ language; query_language; csrf; _ } =
 ;;
 
 let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
-  let input_element = input_element language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -77,7 +75,7 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element `Text Pool_common.Message.Field.Email ""
+        ; input_element language `Text Pool_common.Message.Field.Email
         ; submit_element language Pool_common.Message.SendResetLink ()
         ]
     ]
@@ -86,7 +84,6 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
 let reset_password token Pool_context.{ language; query_language; csrf; _ } =
   let open Pool_common in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let input_element = input_element language in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
@@ -99,9 +96,9 @@ let reset_password token Pool_context.{ language; query_language; csrf; _ } =
           ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
-        ; input_element `Hidden Message.Field.Token token
-        ; input_element `Password Message.Field.Password ""
-        ; input_element `Password Message.Field.PasswordConfirmation ""
+        ; input_element language `Hidden Message.Field.Token ~value:token
+        ; input_element language `Password Message.Field.Password
+        ; input_element language `Password Message.Field.PasswordConfirmation
         ; submit_element language Message.(Save (Some Field.password)) ()
         ]
     ]

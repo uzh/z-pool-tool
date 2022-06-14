@@ -188,7 +188,7 @@ let to_email_text language start duration location =
   let duration =
     format
       Pool_common.Message.Field.Duration
-      (Duration.value duration |> Pool_common.Utils.print_time_span)
+      (Duration.value duration |> Pool_common.Utils.Time.formatted_timespan)
   in
   let location =
     format

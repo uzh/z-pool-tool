@@ -96,3 +96,8 @@ let%test "create invalid dates from string" =
       | Error _ -> true)
     invalid_dates
 ;;
+
+let formatted_timespan timespan =
+  Ptime.Span.pp Format.str_formatter timespan;
+  Format.flush_str_formatter ()
+;;

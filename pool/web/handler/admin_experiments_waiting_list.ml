@@ -54,7 +54,13 @@ let detail req =
        let* sessions =
          Session.find_all_for_experiment tenant_db experiment_id
        in
-       Page.Admin.WaitingList.detail waiting_list sessions experiment_id context
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       Page.Admin.WaitingList.detail
+         waiting_list
+         sessions
+         experiment_id
+         context
+         flash_fetcher
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -76,13 +82,14 @@ let update req =
       (value experiment_id)
       (value waiting_list_id)
   in
+  let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result context =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_err (fun err ->
+        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
-    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let events =
       let open Cqrs_command.Waiting_list_command in
       let open CCResult in
@@ -101,7 +108,7 @@ let update req =
     in
     events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let assign_contact req =
