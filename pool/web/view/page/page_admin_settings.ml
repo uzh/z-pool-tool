@@ -257,7 +257,6 @@ let show
       CCList.map Settings.TermsAndConditions.value terms_and_conditions
     in
     let terms_and_conditions_textareas =
-      (* TODO: check if it works as expected *)
       CCList.map
         (fun sys_language ->
           let field =

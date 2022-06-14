@@ -70,7 +70,6 @@ let create csrf language experiment_id locations ~flash_fetcher =
             Pool_common.Message.Field.Duration
             ~help:Pool_common.I18n.NumberIsSecondsHint
             ~flash_fetcher
-          (* TODO [aerben] this should be textarea *)
         ; textarea_element
             language
             Pool_common.Message.Field.Description
@@ -338,7 +337,6 @@ let edit
                  |> Pool_common.Utils.print_time_span)
                ~required:true
                ~flash_fetcher
-             (* TODO [aerben] this should be textarea *)
            ; textarea_element
                language
                Pool_common.Message.Field.Description
