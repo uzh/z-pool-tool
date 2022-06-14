@@ -266,34 +266,36 @@ let input_element_file
 ;;
 
 let textarea_element
-    language
-    name
-    input_label
     ?(classnames = [])
     ?(attributes = [])
     ?(required = false)
-    ?default
+    ?value
     ?flash_fetcher
-    ()
+    language
+    name
   =
   let input_label =
     let base =
-      Pool_common.Utils.field_to_string language input_label
+      name
+      |> Pool_common.Utils.field_to_string language
       |> CCString.capitalize_ascii
     in
     if required then Format.asprintf "%s *" base else base
   in
   let textarea_attributes =
-    let base = [ a_name name; a_class classnames ] in
+    let base =
+      [ a_name (name |> Pool_common.Message.Field.show); a_class classnames ]
+    in
     match required with
     | true -> base @ [ a_required () ]
     | false -> base
   in
-  let open CCOption in
+  let ( <+> ) = CCOption.( <+> ) in
   let old_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher -> name |> flash_fetcher)
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
   in
-  let value = old_value <+> default |> get_or ~default:"" in
+  let value = old_value <+> value |> CCOption.get_or ~default:"" in
   let input = textarea ~a:(textarea_attributes @ attributes) (txt value) in
   div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]
 ;;

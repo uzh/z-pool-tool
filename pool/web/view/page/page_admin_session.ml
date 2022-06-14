@@ -71,9 +71,8 @@ let create csrf language experiment_id locations ~flash_fetcher =
             ~help:Pool_common.I18n.NumberIsSecondsHint
             ~flash_fetcher
           (* TODO [aerben] this should be textarea *)
-        ; input_element
+        ; textarea_element
             language
-            `Text
             Pool_common.Message.Field.Description
             ~flash_fetcher
         ; location_select locations None ()
@@ -340,9 +339,8 @@ let edit
                ~required:true
                ~flash_fetcher
              (* TODO [aerben] this should be textarea *)
-           ; input_element
+           ; textarea_element
                language
-               `Text
                Pool_common.Message.Field.Description
                ~value:
                  (CCOption.map_or

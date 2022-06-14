@@ -28,12 +28,10 @@ let detail
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Pool_common.Message.Field.(show Comment)
               Pool_common.Message.Field.Comment
-              ~default:
+              ~value:
                 (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
               ~flash_fetcher
-              ()
           ; submit_element
               language
               Pool_common.Message.(Save (Some Field.Comment))

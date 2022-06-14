@@ -257,13 +257,19 @@ let show
       CCList.map Settings.TermsAndConditions.value terms_and_conditions
     in
     let terms_and_conditions_textareas =
+      (* TODO: check if it works as expected *)
       CCList.map
         (fun sys_language ->
+          let field =
+            let open Pool_common in
+            match sys_language with
+            | Language.En -> Message.Field.LanguageEn
+            | Language.De -> Message.Field.LanguageDe
+          in
           Component.textarea_element
             language
-            (Pool_common.Language.show sys_language)
-            (Pool_common.Language.field_of_t sys_language)
-            ~default:
+            field
+            ~value:
               (CCList.assoc_opt
                  ~eq:Pool_common.Language.equal
                  sys_language
@@ -271,8 +277,7 @@ let show
               |> CCOption.map Settings.TermsAndConditions.Terms.value
               |> CCOption.value ~default:"")
             ~required:true
-            ~flash_fetcher
-            ())
+            ~flash_fetcher)
         Pool_common.Language.all
     in
     div

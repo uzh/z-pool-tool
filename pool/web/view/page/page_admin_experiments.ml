@@ -108,9 +108,8 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         ~value:(value title_value)
         ~required:true
         ~flash_fetcher
-    ; input_element
+    ; textarea_element
         language
-        `Text
         Pool_common.Message.Field.Description
         ~value:(value description_value)
         ~required:true

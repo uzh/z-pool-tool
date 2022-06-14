@@ -29,7 +29,6 @@ module Language : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val create : string -> (t, Message.error) result
-  val create_from_string : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
