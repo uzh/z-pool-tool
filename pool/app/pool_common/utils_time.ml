@@ -1,14 +1,3 @@
-(* TODO [timhub]: Make sure frontend uses the same date and time format
-
-   - Option: Pass formatting string to frontend (eg. flatpickr ), use same
-   pattern here
-
-   let date_format = "d.m.Y"
-
-   let time_format = "H:i"
-
-   let date_time_format = Format.asprintf "%s %s" date_format time_format *)
-
 let tz_offset_s ?(hours = 2) () = 3600 * hours
 
 let validate_date_ints (year, month, day) =
@@ -100,4 +89,20 @@ let%test "create invalid dates from string" =
 let formatted_timespan timespan =
   Ptime.Span.pp Format.str_formatter timespan;
   Format.flush_str_formatter ()
+;;
+
+let timespan_spanpicker timespan =
+  timespan
+  |> Ptime.Span.to_int_s
+  |> CCOption.map_or ~default:"" (fun timespan ->
+         let h = timespan / 3600 in
+         let timespan = timespan - (h * 3600) in
+         let min = timespan / 60 in
+         let timespan = timespan - (min * 60) in
+         let s = timespan in
+         Format.asprintf
+           "%s:%s:%s"
+           (h |> decimal)
+           (min |> decimal)
+           (s |> decimal))
 ;;

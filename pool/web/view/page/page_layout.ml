@@ -78,52 +78,6 @@ let footer title =
     [ p [ txt title ] ]
 ;;
 
-(* TODO [aerben] maybe extract? *)
-let datepicker lang =
-  lang
-  |> Pool_common.Language.show
-  |> CCString.lowercase_ascii
-  |> Format.asprintf
-       (* TODO [aerben] add locale first day of week *)
-       {js|
-function initDatepicker() {
-    document.querySelectorAll('.datepicker').forEach(e => {
-        flatpickr(e, {
-            locale: "%s",
-            allowInput: true,
-            altInput: true,
-            altFormat: "d.m.Y H:i",
-            minDate: new Date(),
-            enableTime: true,
-            dateFormat: "Z"
-        })
-    });
-    document.querySelectorAll('.spanpicker').forEach(e => {
-        flatpickr(e, {
-            enableTime: true,
-            noCalendar: true,
-            altFormat: "H:i",
-            dateFormat: "i",
-            time_24hr: true
-        })
-    });
-}
-       |js}
-;;
-
-let onload =
-  {js|
-    window.onload = function () {
-      initDatepicker();
-    }
-  |js}
-;;
-
-let other_scripts lang =
-  let scripts = CCString.concat "\n" [ datepicker lang; onload ] in
-  script (Unsafe.data scripts)
-;;
-
 let build_nav_link (url, title) language query_language active_navigation =
   let classnames = [ "nav-link" ] in
   let txt_to_string m =
@@ -244,7 +198,6 @@ module Tenant = struct
          ; content
          ; footer title_text
          ; scripts
-         ; other_scripts Pool_common.Language.En
          ])
   ;;
 end
@@ -277,6 +230,5 @@ let create_root_layout children message lang ?active_navigation () =
        ; content
        ; footer title_text
        ; scripts
-       ; other_scripts lang
        ])
 ;;

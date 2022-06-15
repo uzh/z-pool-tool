@@ -63,7 +63,9 @@ type hint =
   | RateDependencyWithout
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
+  | SelectedDateIsPast
   | SignUpForWaitingList
+  | TimeSpanPickerHint
 
 type confirmable =
   | CancelSession

@@ -93,9 +93,11 @@ let hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | SelectedDateIsPast -> "The selected date is in the past."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
+  | TimeSpanPickerHint -> "Hours and minutes"
 ;;
 
 let confirmable_to_string confirmable =

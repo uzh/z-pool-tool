@@ -103,7 +103,7 @@ let field_to_string =
   | TenantLogos -> "Tenant Logos"
   | TenantMaintenanceFlag -> "Wartungsflag"
   | TenantPool -> "Tenant Pool"
-  | TermsAccepted -> "Teilnahmebedingungen akzeptiert"
+  | TermsAccepted -> "Akzeptieren"
   | TermsAndConditions -> "Teilnahmebedingungen"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"

@@ -189,7 +189,6 @@ let create_session () =
         Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid start"
         |> Start.create
-        |> Pool_common.Utils.get_or_failwith
     ; duration = Duration.create hour |> Pool_common.Utils.get_or_failwith
     ; description = None
     ; location = create_location ()

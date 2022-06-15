@@ -214,3 +214,15 @@ let browser_language_from_req req =
 let externalize_path_with_lang lang path =
   path_with_language lang path |> Sihl.Web.externalize_path
 ;;
+
+let add_line_breaks str =
+  let open Tyxml.Html in
+  let str = str |> CCString.split ~by:"\n" in
+  CCList.foldi
+    (fun html index str ->
+      let str = str |> txt in
+      if index = 0 then [ str ] else html @ [ br (); str ])
+    []
+    str
+  |> span
+;;

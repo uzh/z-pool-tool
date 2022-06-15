@@ -49,19 +49,13 @@ end
 module Start = struct
   type t = Ptime.t [@@deriving eq, show]
 
-  let create start =
-    let now = () |> Ptime_clock.now in
-    match Ptime.is_earlier start ~than:now with
-    | true -> Error Pool_common.Message.TimeInPast
-    | false -> Ok start
-  ;;
-
+  let create m = m
   let value m = m
 
   let schema () =
     let decode str =
       let open CCResult in
-      Pool_common.(Utils.parse_time str >>= create)
+      Pool_common.(Utils.parse_time str >|= create)
     in
     Pool_common.(
       Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)

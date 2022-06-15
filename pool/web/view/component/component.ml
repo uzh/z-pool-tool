@@ -68,18 +68,14 @@ let csrf_attibs ?id csrf =
 ;;
 
 module Elements = struct
-  let input_label language name label_field info =
+  let input_label language name label_field =
     CCOption.value ~default:name label_field
     |> Pool_common.Utils.field_to_string language
     |> CCString.capitalize_ascii
-    |> fun n ->
-    match info with
-    | Some info -> Format.asprintf "%s (%s)" n info
-    | None -> Format.asprintf "%s" n
   ;;
 
-  let attributes input_type name additional_attributes =
-    let base_attributes = [ a_input_type input_type ] in
+  let attributes input_type name id additional_attributes =
+    let base_attributes = [ a_input_type input_type; a_id id ] in
     additional_attributes
     @ base_attributes
     @ [ a_name (name |> Pool_common.Message.Field.show) ]
@@ -117,6 +113,15 @@ module Elements = struct
   ;;
 end
 
+let flash_fetched_value fetcher value name =
+  let old_value =
+    CCOption.bind fetcher (fun flash_fetcher ->
+        name |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
+  let open CCOption.Infix in
+  old_value <+> value |> CCOption.get_or ~default:""
+;;
+
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
 (* TODO [aerben] add way to provide additional attributes (min for numbers,
@@ -128,7 +133,6 @@ let input_element
     ?(classnames = [])
     ?label_field
     ?help
-    ?info
     ?identifier
     ?(required = false)
     ?flash_fetcher
@@ -138,29 +142,13 @@ let input_element
     name
   =
   let input_label =
-    let base = Elements.input_label language name label_field info in
+    let base = Elements.input_label language name label_field in
     if required then Format.asprintf "%s *" base else base
   in
-  let input_classes =
-    match input_type with
-    | `Datetime -> [ "datepicker" ]
-    | `Time -> [ "spanpicker" ]
-    | _ -> []
-  in
+  let value = flash_fetched_value flash_fetcher value name in
   let id = Elements.identifier ?identifier language name in
-  let old_value =
-    CCOption.bind flash_fetcher (fun flash_fetcher ->
-        name |> Pool_common.Message.Field.show |> flash_fetcher)
-  in
-  let value =
-    let open CCOption.Infix in
-    old_value <+> value |> CCOption.get_or ~default:""
-  in
   let attributes =
-    Elements.attributes
-      input_type
-      name
-      [ a_value value; a_id id; a_class input_classes ]
+    Elements.attributes input_type name id [ a_value value ]
     |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
   in
   match input_type with
@@ -174,20 +162,78 @@ let input_element
       ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help)
 ;;
 
+let flatpicker_element
+    ?(orientation = `Vertical)
+    ?(classnames = [])
+    ?help
+    ?identifier
+    ?(required = false)
+    ?flash_fetcher
+    ?value
+    ?(warn_past = false)
+    language
+    input_type
+    name
+  =
+  let input_label =
+    let base = Elements.input_label language name None in
+    if required then Format.asprintf "%s *" base else base
+  in
+  let value = flash_fetched_value flash_fetcher value name in
+  let flat_picker_help =
+    span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
+    |> CCList.pure
+  in
+  let input_classes =
+    match input_type with
+    | `Datetime_local | `Datetime -> [ "datepicker" ]
+    | `Time -> [ "spanpicker" ]
+  in
+  let flatpicker_attributes =
+    [ a_class input_classes
+    ; a_user_data "language" (Pool_common.Language.show language)
+    ]
+    @ CCList.filter_map
+        (fun (flag, key, value) ->
+          if flag then Some (a_user_data key value) else None)
+        [ ( warn_past
+          , "warn-past"
+          , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast)
+          )
+        ]
+  in
+  let id = Elements.identifier ?identifier language name in
+  let attributes =
+    Elements.attributes
+      input_type
+      name
+      id
+      ([ a_value value ] @ flatpicker_attributes)
+    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
+  in
+  let group_class = Elements.group_class classnames orientation in
+  let help = Elements.help language help in
+  let input_element = Elements.apply_orientation attributes orientation in
+  div
+    ~a:[ a_class group_class ]
+    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
+    @ help
+    @ flat_picker_help)
+;;
+
 let checkbox_element
     ?(orientation = `Vertical)
     ?(classnames = [])
     ?label_field
     ?help
-    ?info
     ?identifier
     ?flash_fetcher
+    ?(required = false)
+    ?(value = false)
     language
-    input_type
     name
-    value
   =
-  let input_label = Elements.input_label language name label_field info in
+  let input_label = Elements.input_label language name label_field in
   let value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
         name |> Pool_common.Message.Field.show |> flash_fetcher)
@@ -201,20 +247,19 @@ let checkbox_element
   in
   let id = Elements.identifier ?identifier language name in
   let attributes =
-    Elements.attributes input_type name (value_attrs @ [ a_id id ])
+    Elements.attributes `Checkbox name id value_attrs
+    |> fun attrs ->
+    if required then CCList.cons (a_required ()) attrs else attrs
   in
-  match input_type with
-  | `Hidden -> input ~a:attributes ()
-  | _ ->
-    let group_class = Elements.group_class classnames orientation in
-    let help = Elements.help language help in
-    let input_element = Elements.apply_orientation attributes orientation in
-    div
-      ~a:[ a_class group_class ]
-      [ div
-          ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
-          @ help)
-      ]
+  let group_class = Elements.group_class classnames orientation in
+  let help = Elements.help language help in
+  let input_element = Elements.apply_orientation attributes orientation in
+  div
+    ~a:[ a_class group_class ]
+    [ div
+        ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
+        @ help)
+    ]
 ;;
 
 let input_element_file

@@ -10,7 +10,9 @@ let index experiment_list Pool_context.{ language; _ } =
       ~a:[ a_class [ "flexrow"; "justify-between"; "inset-sm"; "flex-gap" ] ]
       [ div
           ~a:[ a_class [ "grow" ] ]
-          [ txt (Experiment.Description.value experiment.description) ]
+          [ Experiment.Description.value experiment.description
+            |> HttpUtils.add_line_breaks
+          ]
       ; div
           [ a
               ~a:
@@ -123,7 +125,10 @@ let show
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ div
         ~a:[ a_class [ "stack" ] ]
-        [ p [ txt (Experiment.Description.value experiment.description) ]
+        [ p
+            [ Experiment.Description.value experiment.description
+              |> HttpUtils.add_line_breaks
+            ]
         ; html
         ]
     ]

@@ -75,13 +75,17 @@ let parse_time str =
 ;;
 
 let parse_time_span str =
+  let error = Entity_message.(Invalid Field.Duration) in
   if CCString.is_empty str
   then Error Entity_message.NoValue
   else
-    str
-    |> CCInt.of_string
-    |> CCOption.to_result Entity_message.(Invalid Field.Duration)
-    |> CCResult.map Ptime.Span.of_int_s
+    let open CCResult in
+    CCString.split ~by:":" str
+    |> CCList.map (fun s -> s |> CCInt.of_string |> CCOption.to_result error)
+    |> CCList.all_ok
+    >>= function
+    | [ h; m; s ] -> Ok ((h * 3600) + (m * 60) + s |> Ptime.Span.of_int_s)
+    | _ -> Error error
 ;;
 
 let print_time_span span =
