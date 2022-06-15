@@ -51,6 +51,17 @@ module Data = struct
         )
       ]
     ;;
+
+    let create_end_before_start =
+      let open Mailing in
+      [ Field.(Start |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
+      ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
+      ; Field.(Rate |> show), [ rate |> Rate.value |> CCInt.to_string ]
+      ; ( Field.(Distribution |> show)
+        , [ distribution |> Distribution.yojson_of_t |> Yojson.Safe.to_string ]
+        )
+      ]
+    ;;
   end
 end
 
@@ -84,5 +95,19 @@ let create () =
         |> Pool_event.mailing
       ]
   in
+  check_result expected events
+;;
+
+let create_end_before_start () =
+  let open MailingCommand.Create in
+  let experiment = Test_utils.create_experiment () in
+  let events =
+    Data.Mailing.create_end_before_start
+    |> Http_utils.remove_empty_values
+    |> decode
+    |> Pool_common.Utils.get_or_failwith
+    |> handle ~id:Data.Mailing.id experiment
+  in
+  let expected = Error Pool_common.Message.TimeInPast in
   check_result expected events
 ;;
