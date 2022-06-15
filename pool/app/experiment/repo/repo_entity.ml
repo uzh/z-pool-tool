@@ -72,7 +72,6 @@ let t =
       ; title
       ; description
       ; filter
-      ; mailings = []
       ; waiting_list_disabled
       ; direct_registration_disabled
       ; registration_disabled

@@ -149,7 +149,6 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
-    ; mailings = []
     ; waiting_list_disabled = true |> WaitingListDisabled.create
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create

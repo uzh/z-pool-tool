@@ -75,7 +75,6 @@ type t =
   ; title : Title.t
   ; description : Description.t
   ; filter : string
-  ; mailings : Mailing.t list
   ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
