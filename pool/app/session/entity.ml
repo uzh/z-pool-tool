@@ -55,7 +55,7 @@ module Start = struct
   let schema () =
     let decode str =
       let open CCResult in
-      Pool_common.(Utils.parse_time str >|= create)
+      Pool_common.(Utils.Time.parse_time str >|= create)
     in
     Pool_common.(
       Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
@@ -75,8 +75,8 @@ module Duration = struct
 
   let schema () =
     let open CCResult in
-    let decode str = Pool_common.(Utils.parse_time_span str >>= create) in
-    let encode span = Pool_common.Utils.print_time_span span in
+    let decode str = Pool_common.(Utils.Time.parse_time_span str >>= create) in
+    let encode span = Pool_common.Utils.Time.print_time_span span in
     Pool_common.(Utils.schema_decoder decode encode Message.Field.Duration)
   ;;
 end

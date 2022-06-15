@@ -1,43 +1,6 @@
 let tz_offset_s ?(hours = 2) () = 3600 * hours
 
-let validate_date_ints (year, month, day) =
-  let valid i min max = i >= min && i <= max in
-  match valid year 1000 9999 && valid month 1 12 && valid day 1 31 with
-  | true -> Ok (year, month, day)
-  | false -> Error Entity_message.(Invalid Field.Date)
-;;
-
-let split_date_string date =
-  date
-  |> CCString.split_on_char '.'
-  |> CCList.map int_of_string_opt
-  |> CCOption.sequence_l
-  |> CCOption.to_result Entity_message.(Invalid Field.Date)
-;;
-
-let ptime_of_date_string date =
-  let open CCResult.Infix in
-  let date = split_date_string date in
-  match date with
-  | Ok [ day; month; year ] ->
-    (year, month, day)
-    |> validate_date_ints
-    >>= fun date ->
-    date
-    |> Ptime.of_date
-    |> CCOption.to_result Entity_message.(Invalid Field.Date)
-  | Ok _ -> Error Entity_message.(Invalid Field.Date)
-  | Error msg -> Error msg
-;;
-
-let ptime_date_of_date_string date =
-  let date = split_date_string date in
-  match date with
-  | Ok [ day; month; year ] -> (year, month, day) |> validate_date_ints
-  | Ok _ -> Error Entity_message.(Invalid Field.DateTime)
-  | Error msg -> Error msg
-;;
-
+(* Formatting *)
 let decimal n =
   if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
 ;;
@@ -59,33 +22,6 @@ let formatted_date_time (date : Ptime.t) =
     (formatted_time (Ptime.to_date_time ~tz_offset_s:(tz_offset_s ()) date))
 ;;
 
-let ptime_to_sexp p =
-  let formatted = p |> formatted_date_time in
-  Sexplib0.Sexp.Atom formatted
-;;
-
-let%test "create valid dates from string" =
-  let valid_dates =
-    [ "01.01.1990"; "5.12.2022"; "1.1.2022"; "5.01.2000"; "12.1.2100" ]
-  in
-  let all = CCList.map ptime_date_of_date_string valid_dates |> CCList.all_ok in
-  match all with
-  | Ok _ -> true
-  | Error _ -> false
-;;
-
-let%test "create invalid dates from string" =
-  let invalid_dates =
-    [ "12"; "01.01"; "05.2020"; "120.01.2020"; "01.13.2020"; "01.01.20" ]
-  in
-  CCList.for_all
-    (fun iban ->
-      match ptime_date_of_date_string iban with
-      | Ok _ -> false
-      | Error _ -> true)
-    invalid_dates
-;;
-
 let formatted_timespan timespan =
   Ptime.Span.pp Format.str_formatter timespan;
   Format.flush_str_formatter ()
@@ -105,4 +41,44 @@ let timespan_spanpicker timespan =
            (h |> decimal)
            (min |> decimal)
            (s |> decimal))
+;;
+
+(* Utilities *)
+let ptime_to_sexp p =
+  let formatted = p |> formatted_date_time in
+  Sexplib0.Sexp.Atom formatted
+;;
+
+(* Parsing *)
+let parse_time str =
+  let open CCResult in
+  Ptime.of_rfc3339 str
+  |> Ptime.rfc3339_error_to_msg
+  |> CCResult.map_err (fun (`Msg e) -> Entity_message.NotADatetime (str, e))
+  (* TODO [aerben] dont discard timezone *)
+  (* TODO [aerben] should experimenter add timezone for start? *)
+  (* TODO [aerben] HANDLE ALL TIMEZONES consistently *)
+  >|= fun (time, _, _) -> time
+;;
+
+let parse_time_span str =
+  let error = Entity_message.(Invalid Field.Duration) in
+  if CCString.is_empty str
+  then Error Entity_message.NoValue
+  else
+    let open CCResult in
+    CCString.split ~by:":" str
+    |> CCList.map (fun s -> s |> CCInt.of_string |> CCOption.to_result error)
+    |> CCList.all_ok
+    >>= function
+    | [ h; m; s ] -> Ok ((h * 3600) + (m * 60) + s |> Ptime.Span.of_int_s)
+    | _ -> Error error
+;;
+
+let print_time_span span =
+  Ptime.Span.to_int_s span
+  |> CCOption.map CCInt.to_string
+  (* If span is bigger than int max (signed), print an info string instead *)
+  (* This is only the case if span > 136 years (64bit system) *)
+  |> CCOption.get_or ~default:"Session duration too long!"
 ;;
