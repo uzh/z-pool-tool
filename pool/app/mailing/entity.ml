@@ -36,6 +36,7 @@ module Rate = struct
   ;;
 
   let value m = m
+  let default = 1
 
   let schema () =
     let decode str =

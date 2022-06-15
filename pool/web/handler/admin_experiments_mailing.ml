@@ -117,35 +117,17 @@ let search_info req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let go field encode =
-      CCList.assoc ~eq:String.equal (Field.show field) urlencoded
-      |> CCList.hd
-      |> encode
-      |> Lwt_result.lift
-    in
-    let parse_time = Pool_common.Utils.parse_time in
-    let* start_at =
-      go Field.Start (fun m ->
-          CCResult.(m |> parse_time >>= Mailing.StartAt.create))
-    in
-    let* end_at =
-      go Field.End (fun m ->
-          CCResult.(m |> parse_time >>= Mailing.EndAt.create))
-    in
-    let* rate_decoded = go Field.Rate (int_of_string_opt %> CCResult.return) in
-    let* rate =
-      rate_decoded
-      |> CCOption.get_or ~default:1
-      |> Mailing.Rate.create
-      |> Lwt_result.lift
-    in
-    let* mailing =
-      Mailing.create start_at end_at rate None |> Lwt_result.lift
+    let* with_default_rate, mailing =
+      Lwt_result.lift
+      @@
+      let open CCResult in
+      Cqrs_command.Mailing_command.Overlaps.(
+        urlencoded |> HttpUtils.remove_empty_values |> decode >>= create)
     in
     let average_send, total =
-      match rate_decoded |> CCOption.is_some with
-      | false -> None, None
-      | true ->
+      match with_default_rate with
+      | true -> None, None
+      | false ->
         Some (Mailing.per_minutes 5 mailing), Some (Mailing.total mailing)
     in
     let%lwt mailings = Mailing.find_overlaps tenant_db mailing in

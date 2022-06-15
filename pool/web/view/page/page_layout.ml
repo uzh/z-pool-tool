@@ -90,6 +90,7 @@ function initDatepicker() {
     document.querySelectorAll('.datepicker').forEach(e => {
         flatpickr(e, {
             locale: "%s",
+            allowInput: true,
             altInput: true,
             altFormat: "d.m.Y H:i",
             minDate: new Date(),

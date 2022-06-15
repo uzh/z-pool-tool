@@ -1,126 +1,78 @@
 open Tyxml.Html
 open Component
 module Message = Pool_common.Message
+module Field = Message.Field
 
 let mailing_title (s : Mailing.t) =
   Pool_common.I18n.MailingDetailTitle
     (s.Mailing.start_at |> Mailing.StartAt.value)
 ;;
 
-let mailings_path ?(suffix = "") experiment_id =
-  Format.asprintf
-    "/admin/experiments/%s/mailings/%s"
-    (Pool_common.Id.value experiment_id)
-    suffix
+let mailings_path ?suffix experiment_id =
+  [ Format.asprintf
+      "/admin/experiments/%s/mailings"
+      (Pool_common.Id.value experiment_id)
+  ]
+  @ CCOption.map_or ~default:[] CCList.pure suffix
+  |> CCString.concat "/"
   |> Sihl.Web.externalize_path
 ;;
 
-let detail_mailing_path ?(suffix = "") experiment_id mailing =
+let detail_mailing_path ?suffix experiment_id mailing =
   let open Mailing in
-  Format.asprintf
-    "%s/%s"
-    (mailings_path ~suffix:(Id.value mailing.id) experiment_id)
-    suffix
+  [ mailings_path ~suffix:(Id.value mailing.id) experiment_id ]
+  @ CCOption.map_or ~default:[] CCList.pure suffix
+  |> CCString.concat "/"
 ;;
 
 module List = struct
-  let thead with_links language experiment_id =
-    let open Pool_common in
-    let test =
-      CCList.map
-        (fun field ->
-          CCOption.map_or
-            ~default:""
-            (fun f -> Utils.field_to_string_capitalized language f)
-            field
-          |> txt
-          |> CCList.pure)
-        (match with_links with
-        | false -> Message.Field.[ Some Start; Some End; Some Rate ]
-        | true -> Message.Field.[ Some Start; Some End; Some Rate; None ])
-      @ [ Message.(Add (Some Field.Mailing))
-          |> Utils.control_to_string language
-          |> txt
-          |> CCList.pure
-          |> a ~a:[ mailings_path ~suffix:"create" experiment_id |> a_href ]
-          |> CCList.pure
-        ]
-    in
-    test |> CCList.map th |> tr |> CCList.pure |> thead
-  ;;
-
   let row
-      with_links
+      with_link
       Pool_context.{ csrf; language; _ }
       experiment_id
       (mailing : Mailing.t)
     =
     let open Mailing in
     let now = Ptime_clock.now () in
-    tr
-    @@ [ td [ mailing.start_at |> StartAt.to_human |> txt ]
-       ; td [ mailing.end_at |> EndAt.to_human |> txt ]
-       ; td [ mailing.rate |> Rate.value |> CCInt.to_string |> txt ]
-       ; td
-           [ a
-               ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
-               [ txt
-                   Pool_common.(Utils.control_to_string language Message.(More))
-               ]
-           ]
-       ]
+    let button_form target name submit_type =
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action (detail_mailing_path ~suffix:target experiment_id mailing)
+          ]
+        [ Component.csrf_element csrf ()
+        ; submit_element ~submit_type language (name None) ()
+        ]
+    in
+    [ mailing.start_at |> StartAt.to_human |> txt
+    ; mailing.end_at |> EndAt.to_human |> txt
+    ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
+    ; a
+        ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
+        [ txt Pool_common.(Utils.control_to_string language Message.(More)) ]
+    ]
     @
-    if with_links
-    then
-      [ td
-          (match
-             ( StartAt.value mailing.start_at < now
-             , now < EndAt.value mailing.end_at )
-           with
-          | true, true ->
-            [ form
-                ~a:
-                  [ a_method `Post
-                  ; a_action
-                      (detail_mailing_path ~suffix:"stop" experiment_id mailing)
-                  ]
-                [ Component.csrf_element csrf ()
-                ; submit_element language Message.(Stop None) ()
-                ]
-            ]
-          | false, true ->
-            [ form
-                ~a:
-                  [ a_method `Post
-                  ; a_action
-                      (detail_mailing_path
-                         ~suffix:"delete"
-                         experiment_id
-                         mailing)
-                  ]
-                [ Component.csrf_element csrf ()
-                ; submit_element
-                    language
-                    Message.(Delete None)
-                    ~submit_type:`Error
-                    ()
-                ]
-            ]
-          | _ -> [])
-      ]
+    if with_link
+    then (
+      match
+        StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
+      with
+      | true, true -> [ button_form "stop" Message.stop `Primary ]
+      | false, true -> [ button_form "delete" Message.delete `Error ]
+      | _ -> [ txt "" ])
     else []
   ;;
 
   let create
-      with_links
+      with_link
       (Pool_context.{ language; _ } as context)
       experiment_id
       mailings
     =
-    table
-      ~thead:(thead with_links language experiment_id)
-      ~a:[ a_class [ "striped" ] ]
-      (CCList.map (row with_links context experiment_id) mailings)
+    let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
+    let thead = if with_link then base_head @ [ None ] else base_head in
+    Component.Table.(horizontal_table `Striped language ~thead)
+      (CCList.map (row with_link context experiment_id) mailings)
   ;;
 end
 
@@ -129,18 +81,21 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
   let open Pool_common in
   let html =
     div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ (if CCList.is_empty mailings
+      ~a:[ a_class [ "stack" ] ]
+      [ a
+          ~a:[ mailings_path ~suffix:"create" experiment_id |> a_href ]
+          [ Message.(Add (Some Field.Mailing))
+            |> Utils.control_to_string language
+            |> txt
+          ]
+      ; (if CCList.is_empty mailings
         then
           div
             [ p
-                [ I18n.EmtpyList Message.Field.Mailing
+                [ I18n.EmtpyList Field.Mailing
                   |> Utils.text_to_string language
                   |> txt
                 ]
-            ; a
-                ~a:[ a_href (mailings_path ~suffix:"create" experiment_id) ]
-                [ Utils.text_to_string language I18n.MailingNewTitle |> txt ]
             ]
         else List.create true context experiment_id mailings)
       ]
@@ -179,7 +134,7 @@ let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
                     ; td [ txt value ]
                     ])
          in
-         table ~a:[ a_class [ "striped" ] ] rows)
+         table ~a:[ a_class [ "striped"; "table" ] ] rows)
       ; p
           [ a
               ~a:
@@ -193,7 +148,7 @@ let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
           ]
       ]
   in
-  let html = div ~a:[ a_class [ "stack-lg" ] ] [ mailing_overview ] in
+  let html = div ~a:[ a_class [ "stack" ] ] [ mailing_overview ] in
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.I18n (mailing_title mailing))
@@ -249,8 +204,9 @@ let form
               [ input_element
                   language
                   `Datetime
-                  Pool_common.Message.Field.Start
+                  Field.Start
                   ~flash_fetcher
+                  ~required:true
                   ?value:
                     (CCOption.map
                        (fun (m : Mailing.t) ->
@@ -261,8 +217,9 @@ let form
               ; input_element
                   language
                   `Datetime
-                  Pool_common.Message.Field.End
+                  Field.End
                   ~flash_fetcher
+                  ~required:true
                   ?value:
                     (CCOption.map
                        (fun (m : Mailing.t) ->
@@ -273,20 +230,22 @@ let form
               ; input_element
                   language
                   `Number
-                  Pool_common.Message.Field.Rate
+                  Field.Rate
                   ~flash_fetcher
+                  ~required:true
                   ~help:Pool_common.I18n.Rate
                   ~value:
-                    (CCOption.map_or
-                       ~default:"1"
-                       (fun (m : Mailing.t) ->
-                         m.Mailing.rate |> Mailing.Rate.value |> CCInt.to_string)
-                       mailing)
+                    (mailing
+                    |> CCOption.map_or
+                         ~default:Mailing.Rate.default
+                         (fun (m : Mailing.t) -> m.Mailing.rate)
+                    |> Mailing.Rate.value
+                    |> CCInt.to_string)
               ]
           ; input_element
               language
               `Text
-              Pool_common.Message.Field.Distribution
+              Field.Distribution
               ~flash_fetcher
               ~help:Pool_common.I18n.Distribution
               ?value:

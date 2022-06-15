@@ -40,6 +40,7 @@ module Rate : sig
 
   val create : int -> (t, Pool_common.Message.error) result
   val value : t -> int
+  val default : t
 
   val schema
     :  unit
