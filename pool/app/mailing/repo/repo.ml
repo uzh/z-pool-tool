@@ -55,6 +55,7 @@ module Sql = struct
     {sql|
       WHERE
         experiment_id = (SELECT id FROM pool_experiments WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+      ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Pool_common.Repo.Id.t ->* RepoEntity.t
@@ -71,6 +72,7 @@ module Sql = struct
     {sql|
       WHERE
         $1 < pool_mailing.end AND $2 > pool_mailing.start
+      ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
     |> Caqti_type.tup2 RepoEntity.StartAt.t RepoEntity.EndAt.t ->* RepoEntity.t

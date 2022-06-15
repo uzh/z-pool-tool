@@ -110,7 +110,13 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Manage (Permission.Mailing, Some mailing.Mailing.id) ]
+        [ Permission.Manage
+            ( Permission.Mailing
+            , Some
+                (mailing.Mailing.id
+                |> Mailing.Id.value
+                |> Pool_common.Id.of_string) )
+        ]
   ;;
 end
 
@@ -126,16 +132,20 @@ end = struct
   type t = Mailing.t
 
   let handle (mailing : t) =
-    if mailing.start_at < Ptime_clock.now ()
+    if StartAt.value mailing.start_at < Ptime_clock.now ()
     then Error Message.AlreadyInPast
-    else Ok [ Mailing.Deleted mailing |> Pool_event.mailing ]
+    else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
   let can user mailing =
     Permission.can
       user
       ~any_of:
-        [ Permission.Manage (Permission.Mailing, Some mailing.Mailing.id) ]
+        [ Permission.Manage
+            ( Permission.Mailing
+            , Some (mailing.Mailing.id |> Id.value |> Pool_common.Id.of_string)
+            )
+        ]
   ;;
 end
 
@@ -152,7 +162,7 @@ end = struct
 
   let handle (mailing : t) =
     let now = Ptime_clock.now () in
-    if mailing.start_at < now && now < mailing.end_at
+    if StartAt.value mailing.start_at < now && now < EndAt.value mailing.end_at
     then Ok [ Mailing.Stopped mailing |> Pool_event.mailing ]
     else Error Message.NotInTimeRange
   ;;
@@ -161,6 +171,10 @@ end = struct
     Permission.can
       user
       ~any_of:
-        [ Permission.Manage (Permission.Mailing, Some mailing.Mailing.id) ]
+        [ Permission.Manage
+            ( Permission.Mailing
+            , Some (mailing.Mailing.id |> Id.value |> Pool_common.Id.of_string)
+            )
+        ]
   ;;
 end

@@ -124,8 +124,14 @@ let search_info req =
       |> Lwt_result.lift
     in
     let parse_time = Pool_common.Utils.parse_time in
-    let* start_at = go Field.Start (parse_time %> Mailing.StartAt.create) in
-    let* end_at = go Field.End (parse_time %> Mailing.EndAt.create) in
+    let* start_at =
+      go Field.Start (fun m ->
+          CCResult.(m |> parse_time >>= Mailing.StartAt.create))
+    in
+    let* end_at =
+      go Field.End (fun m ->
+          CCResult.(m |> parse_time >>= Mailing.EndAt.create))
+    in
     let* rate_decoded = go Field.Rate (int_of_string_opt %> CCResult.return) in
     let* rate =
       rate_decoded

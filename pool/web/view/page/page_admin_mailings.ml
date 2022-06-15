@@ -73,7 +73,10 @@ module List = struct
     if with_links
     then
       [ td
-          (match mailing.start_at < now, now < mailing.end_at with
+          (match
+             ( StartAt.value mailing.start_at < now
+             , now < EndAt.value mailing.end_at )
+           with
           | true, true ->
             [ form
                 ~a:

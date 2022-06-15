@@ -1,6 +1,8 @@
 module MailingCommand = Cqrs_command.Mailing_command
 module Field = Pool_common.Message.Field
 
+let get_or_failwith = Pool_common.Utils.get_or_failwith
+
 let check_result expected generated =
   Alcotest.(
     check
@@ -12,15 +14,18 @@ let check_result expected generated =
 
 module Data = struct
   let norm_ptime m =
-    m
-    |> Ptime.to_rfc3339
-    |> Pool_common.Utils.parse_time
-    |> Pool_common.Utils.get_or_failwith
+    m |> Ptime.to_rfc3339 |> Pool_common.Utils.parse_time |> get_or_failwith
   ;;
 
   module Mailing = struct
     let id = Mailing.Id.create ()
-    let start_at = Ptime_clock.now () |> norm_ptime |> Mailing.StartAt.create
+
+    let start_at =
+      Ptime_clock.now ()
+      |> norm_ptime
+      |> Mailing.StartAt.create
+      |> get_or_failwith
+    ;;
 
     let end_at =
       Ptime_clock.now ()
@@ -28,9 +33,10 @@ module Data = struct
       |> CCOption.get_exn_or "Mailing Test: Could not create end_at timestamp."
       |> norm_ptime
       |> Mailing.EndAt.create
+      |> get_or_failwith
     ;;
 
-    let rate = Mailing.Rate.create 200 |> Pool_common.Utils.get_or_failwith
+    let rate = Mailing.Rate.create 200 |> get_or_failwith
 
     let distribution =
       Mailing.Distribution.(
@@ -86,7 +92,7 @@ let create () =
     Data.Mailing.create
     |> Http_utils.remove_empty_values
     |> decode
-    |> Pool_common.Utils.get_or_failwith
+    |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
   let expected =
@@ -105,7 +111,7 @@ let create_end_before_start () =
     Data.Mailing.create_end_before_start
     |> Http_utils.remove_empty_values
     |> decode
-    |> Pool_common.Utils.get_or_failwith
+    |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
   let expected = Error Pool_common.Message.TimeInPast in
