@@ -35,14 +35,15 @@ function globalConfig(e) {
         enableTime: true,
         altInput: true,
         time_24hr: true,
-        minuteIncrement: 1
+        minuteIncrement: 1,
+        allowInput: true
     }
 }
 
 function initDatepicker() {
     flatpickr.localize({ firstDayOfWeek: 1 })
     document.querySelectorAll('.datepicker').forEach(e => {
-        flatpickr(e, {
+        var f = flatpickr(e, {
             ...globalConfig(e),
             altFormat: "d.m.Y H:i",
             dateFormat: "Z",
@@ -56,14 +57,16 @@ function initDatepicker() {
                 }
             },
         })
+        f._input.onkeydown = () => false
     });
     document.querySelectorAll('.spanpicker').forEach(e => {
-        flatpickr(e, {
+        var f = flatpickr(e, {
             ...globalConfig(e),
             noCalendar: true,
             altFormat: "H:i",
             dateFormat: "H:i:S"
         })
+        f._input.onkeydown = () => false
     });
 }
 
