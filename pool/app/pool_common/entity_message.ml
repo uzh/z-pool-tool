@@ -57,6 +57,7 @@ module Field = struct
         [@printer go "inactive_user_disable_after"]
     | InactiveUserWarning [@name "inactive_user_warning"]
         [@printer go "inactive_user_warning"]
+    | Institution [@name "institution"] [@printer go "institution"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
     | Invitations [@name "invitations"] [@printer go "invitations"]
     | Key [@name "key"] [@printer go "key"]

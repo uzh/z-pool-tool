@@ -47,6 +47,7 @@ let field_to_string =
   | Id -> "ID"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Institution -> "Institution"
   | Invitation -> "Einladung"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"

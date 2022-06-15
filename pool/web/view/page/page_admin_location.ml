@@ -222,7 +222,8 @@ let form
          ]
         @ status_select_opt
         @ [ div
-              [ label
+              [ h4
+                  ~a:[ a_class [ "heading-4" ] ]
                   [ txt
                       (Message.Field.Location
                       |> Pool_common.Utils.field_to_string language
@@ -237,55 +238,69 @@ let form
                             Virtual |> show |> CCString.capitalize_ascii)
                       ]
                   ; div
-                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
+                      ~a:[ a_class [ "toggled"; "stack"; "flexcolumn" ] ]
                       [ input_element
                           language
                           `Text
-                          Message.Field.Room
-                          ~value:
-                            (address_value
-                               Address.Mail.(fun { room; _ } -> Room.value room))
-                          ~flash_fetcher
-                      ; input_element
-                          language
-                          `Text
-                          Message.Field.Building
+                          Message.Field.Institution
                           ~value:
                             (address_value
                                Address.Mail.(
-                                 fun { building; _ } ->
-                                   building
-                                   |> CCOption.map_or ~default:"" Building.value))
-                          ~flash_fetcher
-                      ]
-                  ; input_element
-                      ~classnames:[ "toggled" ]
-                      language
-                      `Text
-                      Message.Field.Street
-                      ~value:
-                        Address.Mail.(
-                          address_value (fun { street; _ } ->
-                              Street.value street))
-                      ~flash_fetcher
-                  ; div
-                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element
-                          language
-                          `Text
-                          Message.Field.Zip
-                          ~value:
-                            Address.Mail.(
-                              address_value (fun { zip; _ } -> Zip.value zip))
-                          ~flash_fetcher
+                                 fun { institution; _ } ->
+                                   institution
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Institution.value))
+                      ; div
+                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                          [ input_element
+                              language
+                              `Text
+                              Message.Field.Room
+                              ~value:
+                                (address_value
+                                   Address.Mail.(
+                                     fun { room; _ } -> Room.value room))
+                          ; input_element
+                              language
+                              `Text
+                              Message.Field.Building
+                              ~value:
+                                (address_value
+                                   Address.Mail.(
+                                     fun { building; _ } ->
+                                       building
+                                       |> CCOption.map_or
+                                            ~default:""
+                                            Building.value))
+                          ]
                       ; input_element
                           language
                           `Text
-                          Message.Field.City
+                          Message.Field.Street
                           ~value:
                             Address.Mail.(
-                              address_value (fun { city; _ } -> City.value city))
-                          ~flash_fetcher
+                              address_value (fun { street; _ } ->
+                                  Street.value street))
+                      ; div
+                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                          [ input_element
+                              language
+                              `Text
+                              Message.Field.Zip
+                              ~value:
+                                Address.Mail.(
+                                  address_value (fun { zip; _ } ->
+                                      Zip.value zip))
+                          ; input_element
+                              language
+                              `Text
+                              Message.Field.City
+                              ~value:
+                                Address.Mail.(
+                                  address_value (fun { city; _ } ->
+                                      City.value city))
+                          ]
                       ]
                   ]
               ]
