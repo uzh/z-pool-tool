@@ -154,6 +154,7 @@ end
    Field.t *)
 type error =
   | AlreadySignedUpForExperiment
+  | AlreadyInPast
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail
@@ -177,10 +178,11 @@ type error =
   | NotADatetime of (string * string)
   | NotANumber of string
   | NoTenantsRegistered
+  | NotEligible
   | NotFound of Field.t
   | NotFoundList of Field.t * string list
-  | NotEligible
   | NotHandled of string
+  | NotInTimeRange
   | NoValue
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicy of string
@@ -227,6 +229,7 @@ type success =
   | RemovedFromWaitingList
   | SentList of Field.t
   | SettingsUpdated
+  | Stoped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t

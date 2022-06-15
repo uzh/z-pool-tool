@@ -54,9 +54,12 @@ let create req =
   let redirect_path = experiment_path ~suffix:"mailings" experiment_id in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
-    @@ let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-       let* experiment = Experiment.find tenant_db experiment_id in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    Lwt_result.map_err (fun err ->
+        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@ let* experiment = Experiment.find tenant_db experiment_id in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Create in
@@ -77,7 +80,7 @@ let create req =
        in
        events |> Lwt_result.lift |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
 let detail edit req =
@@ -153,4 +156,37 @@ let search_info req =
   match result with
   | Ok mailings -> mailings |> HttpUtils.html_to_plain_text_response
   | Error _ -> Rock.Response.make ()
+;;
+
+let disabler command success_handler req =
+  let redirect_path =
+    experiment_path
+      ~suffix:"mailings"
+      (id req Field.Experiment Pool_common.Id.of_string)
+  in
+  let mailing_id = id req Field.Mailing Mailing.Id.of_string in
+  let result { Pool_context.tenant_db; _ } =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, redirect_path)
+    @@ let* mailing = Mailing.find tenant_db mailing_id in
+       let* events = command mailing |> Lwt_result.lift in
+       let%lwt () = Pool_event.handle_events tenant_db events in
+       Http_utils.redirect_to_with_actions
+         redirect_path
+         [ Message.set
+             ~success:[ Pool_common.Message.(success_handler Field.Mailing) ]
+         ]
+       |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let stop =
+  disabler Cqrs_command.Mailing_command.Stop.handle Pool_common.Message.stoped
+;;
+
+let delete =
+  disabler
+    Cqrs_command.Mailing_command.Delete.handle
+    Pool_common.Message.deleted
 ;;

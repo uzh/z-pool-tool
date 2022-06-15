@@ -147,6 +147,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
+  | Stoped field ->
+    field_message "" (field_to_string field) "was successfully stoped."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -158,6 +160,7 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
   | Conformist errs ->
@@ -206,6 +209,7 @@ let rec error_to_string = function
       (field_to_string field)
       (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
+  | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy msg ->

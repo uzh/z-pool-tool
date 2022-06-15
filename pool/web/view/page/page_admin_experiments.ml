@@ -23,6 +23,7 @@ let experiment_layout language title experiment_id ?active html =
       ; WaitingList, "/waiting-list"
       ; Sessions, "/sessions"
       ; Assignments, "/assignments"
+      ; Mailings, "/mailings"
       ]
   in
   let base_url =

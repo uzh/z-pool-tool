@@ -191,7 +191,14 @@ module Admin = struct
       in
       let mailings =
         let open Mailings in
-        let specific = [ get "" show; post "" update ] in
+        let specific =
+          [ get "" show
+          ; post "" update
+          ; get "/edit" edit
+          ; post "/delete" delete
+          ; post "/stop" stop
+          ]
+        in
         [ get "" index
         ; post "" create
         ; get "/create" new_form

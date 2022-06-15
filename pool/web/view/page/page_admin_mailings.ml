@@ -36,8 +36,8 @@ module List = struct
           |> txt
           |> CCList.pure)
         (match with_links with
-        | false -> Message.Field.[ Some Start; Some End; Some Rate; None ]
-        | true -> Message.Field.[ Some Start; Some End; Some Rate; None; None ])
+        | false -> Message.Field.[ Some Start; Some End; Some Rate ]
+        | true -> Message.Field.[ Some Start; Some End; Some Rate; None ])
       @ [ Message.(Add (Some Field.Mailing))
           |> Utils.control_to_string language
           |> txt
@@ -56,6 +56,7 @@ module List = struct
       (mailing : Mailing.t)
     =
     let open Mailing in
+    let now = Ptime_clock.now () in
     tr
     @@ [ td [ mailing.start_at |> StartAt.to_human |> txt ]
        ; td [ mailing.end_at |> EndAt.to_human |> txt ]
@@ -72,31 +73,37 @@ module List = struct
     if with_links
     then
       [ td
-          [ form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (detail_mailing_path ~suffix:"stop" experiment_id mailing)
+          (match mailing.start_at < now, now < mailing.end_at with
+          | true, true ->
+            [ form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (detail_mailing_path ~suffix:"stop" experiment_id mailing)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element language Message.(Stop None) ()
                 ]
-              [ Component.csrf_element csrf ()
-              ; submit_element language Message.(Stop None) ()
-              ]
-          ]
-      ; td
-          [ form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (detail_mailing_path ~suffix:"delete" experiment_id mailing)
+            ]
+          | false, true ->
+            [ form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (detail_mailing_path
+                         ~suffix:"delete"
+                         experiment_id
+                         mailing)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element
+                    language
+                    Message.(Delete None)
+                    ~submit_type:`Error
+                    ()
                 ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
-              ]
-          ]
+            ]
+          | _ -> [])
       ]
     else []
   ;;

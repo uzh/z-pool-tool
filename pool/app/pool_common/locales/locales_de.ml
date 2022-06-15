@@ -145,6 +145,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
+  | Stoped field ->
+    field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
@@ -157,6 +159,8 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast ->
+    "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
   | Conformist errs ->
@@ -219,6 +223,7 @@ let rec error_to_string = function
          (CCString.concat "," items))
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
+  | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."

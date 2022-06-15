@@ -85,8 +85,7 @@ let hint_to_string = function
      angezeigt. Die Summe aller Raten wird automatisch gedrosselt, sobald das \
      maximum des Servers erreicht wird."
   | RateDependencyWithout ->
-    "Falls zur selben Zeit weitere Versande stattfinden, wird die Summe aller \
-     raten automatisch (maximal möglichen für den Server) gedrosselt."
+    "Zur Zeit finden im angegebenen Zeitfenster keine weiteren Versande statt."
   | RateNumberPerMinutes (per_n_minutes, number) ->
     Format.asprintf
       "Generiert alle %d Minuten %.2f neue Einladungen."

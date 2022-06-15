@@ -70,7 +70,7 @@ let hint_to_string = function
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first. E.g. with name ascending and email address descending: \
-     '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]'. (Currently only as \
+     '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'. (Currently only as \
      json array objects.)"
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
@@ -84,11 +84,10 @@ let hint_to_string = function
      bellow. In case the sum of all rates reaches the maximum of the server, \
      they will automatically get reduced."
   | RateDependencyWithout ->
-    "In case there are other mailings running at the same time, the server \
-     will reduce the rates to its max."
+    "There are currently no other mailings running in the specified time range."
   | RateNumberPerMinutes (per_n_minutes, number) ->
     Format.asprintf
-      "Generates every %d minutes %.2f new invitations ."
+      "Generates every %d minutes %.2f new invitations."
       per_n_minutes
       number
   | RegistrationDisabled ->

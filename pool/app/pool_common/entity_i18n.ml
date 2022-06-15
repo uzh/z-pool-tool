@@ -58,9 +58,9 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | Rate
   | RateDependencyWith
   | RateDependencyWithout
-  | Rate
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SignUpForWaitingList
