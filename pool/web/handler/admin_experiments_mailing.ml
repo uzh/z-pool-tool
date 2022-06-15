@@ -109,6 +109,43 @@ let detail edit req =
 let show = detail false
 let edit = detail true
 
+let update req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
+  let id = id req Field.Mailing Mailing.Id.of_string in
+  let redirect_path =
+    experiment_path
+      ~suffix:([ "mailings"; Mailing.Id.value id ] |> CCString.concat "/")
+      experiment_id
+  in
+  let result { Pool_context.tenant_db; _ } =
+    let open Lwt_result.Syntax in
+    let%lwt urlencoded =
+      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+    in
+    Lwt_result.map_err (fun err ->
+        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@ let* mailing = Mailing.find tenant_db id in
+       let events =
+         let open CCResult in
+         let open Cqrs_command.Mailing_command.Update in
+         urlencoded |> decode >>= handle mailing
+       in
+       let handle events =
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           redirect_path
+           [ Message.set
+               ~success:[ Pool_common.Message.(Updated Field.Mailing) ]
+           ]
+       in
+       events |> Lwt_result.lift |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
 let search_info req =
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let%lwt result =

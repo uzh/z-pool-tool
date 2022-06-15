@@ -129,106 +129,110 @@ module Admin = struct
 
   let routes =
     let open Pool_common.Message.Field in
+    let open Handler.Admin in
     let location =
-      let open Handler.Admin.Location in
       let files =
-        [ get "/create" new_file
-        ; post "" add_file
-        ; choose ~scope:(add_key File) [ get "" asset ]
-        ]
+        Location.
+          [ get "/create" new_file
+          ; post "" add_file
+          ; choose ~scope:(add_key File) [ get "" asset ]
+          ]
       in
       let specific =
-        [ get "" show
-        ; get "/edit" edit
-        ; post "" update
-        ; choose ~scope:"/files" files
-        ; choose
-            ~scope:(add_key ~prefix:"mapping" FileMapping)
-            [ post "/delete" delete ]
-        ]
+        Location.
+          [ get "" show
+          ; get "/edit" edit
+          ; post "" update
+          ; choose ~scope:"/files" files
+          ; choose
+              ~scope:(add_key ~prefix:"mapping" FileMapping)
+              Location.[ post "/delete" delete ]
+          ]
       in
-      [ get "" index
-      ; get "/create" new_form
-      ; post "" create
-      ; choose ~scope:(add_key Location) specific
-      ]
+      Location.
+        [ get "" index
+        ; get "/create" new_form
+        ; post "" create
+        ; choose ~scope:(add_key Location) specific
+        ]
     in
     let experiments =
-      let open Handler.Admin.Experiments in
       let build_scope subdir =
         Format.asprintf "/%s/%s" (Experiment |> url_key) subdir
       in
       let invitations =
-        let open Invitations in
-        [ get "" index
-        ; post "" create
-        ; post (add_key ~suffix:"resend" Invitation) resend
-        ]
+        Experiments.Invitations.
+          [ get "" index
+          ; post "" create
+          ; post (add_key ~suffix:"resend" Invitation) resend
+          ]
       in
       let sessions =
-        let open Handler.Admin.Session in
         let specific =
-          [ get "" show
-          ; post "" update
-          ; get "/edit" edit
-          ; post "/cancel" cancel
-          ; post "/delete" delete
-          ]
+          Session.
+            [ get "" show
+            ; post "" update
+            ; get "/edit" edit
+            ; post "/cancel" cancel
+            ; post "/delete" delete
+            ]
         in
-        [ get "" list; post "" create; choose ~scope:"/:session" specific ]
+        Session.
+          [ get "" list; post "" create; choose ~scope:"/:session" specific ]
       in
       let waiting_list =
-        let open WaitingList in
         let specific =
-          [ post "" update; get "" detail; post "/assign" assign_contact ]
+          Experiments.WaitingList.
+            [ post "" update; get "" detail; post "/assign" assign_contact ]
         in
-        [ get "" index; choose ~scope:(WaitingList |> url_key) specific ]
+        Experiments.WaitingList.
+          [ get "" index; choose ~scope:(WaitingList |> url_key) specific ]
       in
       let assignments =
-        let open Assignment in
-        let specific = [ post "/cancel" cancel ] in
-        [ get "" index; choose ~scope:(Assignment |> url_key) specific ]
+        let specific = Experiments.Assignment.[ post "/cancel" cancel ] in
+        Experiments.Assignment.
+          [ get "" index; choose ~scope:(Assignment |> url_key) specific ]
       in
       let mailings =
-        let open Mailings in
         let specific =
-          [ get "" show
-          ; post "" update
-          ; get "/edit" edit
-          ; post "/delete" delete
-          ; post "/stop" stop
-          ]
+          Experiments.Mailings.
+            [ get "" show
+            ; post "" update
+            ; get "/edit" edit
+            ; post "/delete" delete
+            ; post "/stop" stop
+            ]
         in
-        [ get "" index
-        ; post "" create
-        ; get "/create" new_form
-        ; post "/search-info" search_info
-        ; choose ~scope:(Mailing |> url_key) specific
-        ]
+        Experiments.Mailings.
+          [ get "" index
+          ; post "" create
+          ; get "/create" new_form
+          ; post "/search-info" search_info
+          ; choose ~scope:(Mailing |> url_key) specific
+          ]
       in
-      [ get "" index
-      ; get "/create" new_form
-      ; post "" create
-      ; get (Experiment |> url_key) show
-      ; get (add_key ~suffix:"edit" Experiment) edit
-      ; post (Experiment |> url_key) update
-      ; post (add_key ~suffix:"delete" Experiment) delete
-      ; choose ~scope:(build_scope "invitations") invitations
-      ; choose ~scope:(build_scope "waiting-list") waiting_list
-      ; choose ~scope:(build_scope "sessions") sessions
-      ; choose ~scope:(build_scope "assignments") assignments
-      ; choose ~scope:(build_scope "mailings") mailings
-      ]
+      Experiments.
+        [ get "" index
+        ; get "/create" new_form
+        ; post "" create
+        ; get (Experiment |> url_key) show
+        ; get (add_key ~suffix:"edit" Experiment) edit
+        ; post (Experiment |> url_key) update
+        ; post (add_key ~suffix:"delete" Experiment) delete
+        ; choose ~scope:(build_scope "invitations") invitations
+        ; choose ~scope:(build_scope "waiting-list") waiting_list
+        ; choose ~scope:(build_scope "sessions") sessions
+        ; choose ~scope:(build_scope "assignments") assignments
+        ; choose ~scope:(build_scope "mailings") mailings
+        ]
     in
     choose
       ~middlewares
-      [ get "/dashboard" Handler.Admin.dashboard
-      ; get "/settings" Handler.Admin.Settings.show
-      ; post "/settings/:action" Handler.Admin.Settings.update_settings
-      ; get "/i18n" Handler.Admin.I18n.index
-      ; post
-          (Format.asprintf "/i18n/%s" (I18n |> url_key))
-          Handler.Admin.I18n.update
+      [ get "/dashboard" dashboard
+      ; get "/settings" Settings.show
+      ; post "/settings/:action" Settings.update_settings
+      ; get "/i18n" I18n.index
+      ; post (Format.asprintf "/i18n/%s" (I18n |> url_key)) I18n.update
       ; choose ~scope:"/experiments" experiments
       ; choose ~scope:"/locations" location
       ]
