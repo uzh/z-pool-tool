@@ -112,14 +112,22 @@ let find_filtered_request filter =
       %s
       AND user_users.admin = 0
       AND user_users.confirmed = 1
-      AND
-      NOT EXISTS
+      AND NOT EXISTS
         (SELECT 1
         FROM pool_invitations
         WHERE
             pool_invitations.contact_id = pool_contacts.id
           AND
             pool_invitations.experiment_id = (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))))
+        AND NOT EXISTS
+        (SELECT 1
+        FROM pool_assignments
+        WHERE
+            pool_assignments.contact_id = pool_contacts.id
+          AND
+            pool_assignments.session_id IN (
+              SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', '')))
+            )
     |sql}
     filter
   |> find_request_sql
