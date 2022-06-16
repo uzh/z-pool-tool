@@ -18,7 +18,10 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt filtered_contacts =
-         Contact.find_filtered tenant_db experiment.Experiment.filter ()
+         Contact.find_filtered
+           tenant_db
+           experiment.Experiment.id
+           experiment.Experiment.filter
        in
        let* invitations =
          Invitation.find_by_experiment tenant_db experiment.Experiment.id

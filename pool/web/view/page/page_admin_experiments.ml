@@ -323,7 +323,6 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     in
     Component.Table.horizontal_table `Striped language ~thead rows
   in
-  (* TODO timhub: check and remove hint: WaitingListIsDisabled*)
   experiment_layout
     language
     (NavLink Pool_common.I18n.WaitingList)

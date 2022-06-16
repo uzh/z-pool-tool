@@ -119,7 +119,6 @@ let show
          Experiment.DirectRegistrationDisabled.value
            experiment.direct_registration_disabled
        with
-      (* TODO[timhub]: check functionality *)
       | false -> session_list sessions
       | true -> div [ waiting_list_form () ])
   in

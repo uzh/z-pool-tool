@@ -29,7 +29,6 @@ type t =
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | UserProfileTitle
-  | WaitingListIsDisabled
 
 type nav_link =
   | Assignments

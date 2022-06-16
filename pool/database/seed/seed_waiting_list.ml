@@ -13,7 +13,10 @@ let waiting_list pool =
     Lwt_list.map_s
       (fun experiment ->
         let%lwt filtered_contacts =
-          Contact.find_filtered pool experiment.Experiment.filter ()
+          Contact.find_filtered
+            pool
+            experiment.Experiment.id
+            experiment.Experiment.filter
         in
         let n = Random.int (CCList.length filtered_contacts) in
         let contact = CCList.nth filtered_contacts n in
