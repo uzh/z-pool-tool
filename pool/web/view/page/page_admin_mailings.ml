@@ -118,40 +118,45 @@ let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
   let mailing_overview =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ (* TODO [aerben] use better formatted date *)
-        (let rows =
-           let open Message in
-           [ Field.Start, mailing.start_at |> StartAt.to_human
-           ; Field.End, mailing.end_at |> EndAt.to_human
-           ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
-           ; ( Field.Distribution
-             , mailing.distribution
-               |> CCOption.map_or ~default:"" Mailing.Distribution.show )
-           ]
-           |> CCList.map (fun (field, value) ->
-                  tr
-                    [ th
-                        [ txt
-                            (field
-                            |> Pool_common.Utils.field_to_string language
-                            |> CCString.capitalize_ascii)
-                        ]
-                    ; td [ txt value ]
-                    ])
-         in
-         table ~a:[ a_class [ "striped"; "table" ] ] rows)
-      ; p
-          [ a
-              ~a:
-                [ detail_mailing_path ~suffix:"edit" experiment_id mailing
-                  |> a_href
+      ([ (* TODO [aerben] use better formatted date *)
+         (let rows =
+            let open Message in
+            [ Field.Start, mailing.start_at |> StartAt.to_human
+            ; Field.End, mailing.end_at |> EndAt.to_human
+            ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+            ; ( Field.Distribution
+              , mailing.distribution
+                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
+            ]
+            |> CCList.map (fun (field, value) ->
+                   tr
+                     [ th
+                         [ txt
+                             (field
+                             |> Pool_common.Utils.field_to_string language
+                             |> CCString.capitalize_ascii)
+                         ]
+                     ; td [ txt value ]
+                     ])
+          in
+          table ~a:[ a_class [ "striped"; "table" ] ] rows)
+       ]
+      @
+      if StartAt.value mailing.start_at > Ptime_clock.now ()
+      then
+        [ p
+            [ a
+                ~a:
+                  [ detail_mailing_path ~suffix:"edit" experiment_id mailing
+                    |> a_href
+                  ]
+                [ Message.(Edit (Some Field.Mailing))
+                  |> Pool_common.Utils.control_to_string language
+                  |> txt
                 ]
-              [ Message.(Edit (Some Field.Mailing))
-                |> Pool_common.Utils.control_to_string language
-                |> txt
-              ]
-          ]
-      ]
+            ]
+        ]
+      else [])
   in
   let html = div ~a:[ a_class [ "stack" ] ] [ mailing_overview ] in
   Page_admin_experiments.experiment_layout
@@ -190,6 +195,7 @@ let form
   let html =
     let open Htmx in
     div
+      ~a:[ a_class [ "stack" ] ]
       [ form
           ~a:
             [ a_class [ "stack" ]
@@ -197,13 +203,24 @@ let form
             ; a_action (action |> Sihl.Web.externalize_path)
             ]
           [ Component.csrf_element csrf ()
+          ; input
+              ~a:
+                [ a_input_type `Hidden
+                ; a_name "id"
+                ; a_value
+                    (CCOption.map_or
+                       ~default:""
+                       (fun m -> m.Mailing.id |> Mailing.Id.value)
+                       mailing)
+                ]
+              ()
           ; div
               ~a:
                 [ a_id "mailings"
                 ; a_class [ "stack" ]
                 ; hx_target "#overlaps"
                 ; hx_trigger "change"
-                ; hx_swap "innerHTML"
+                ; hx_swap "outerHTML"
                 ; hx_post (mailings_path ~suffix:"search-info" experiment_id)
                 ]
               [ input_element
@@ -262,7 +279,7 @@ let form
             (* TODO: Add detailed description how distribution element works *)
           ; submit_element language submit ()
           ]
-      ; div ~a:[ a_class [ "stack" ]; a_id "overlaps" ] []
+      ; div ~a:[ a_id "overlaps" ] []
       ; script (Unsafe.data functions)
       ]
   in
@@ -329,5 +346,5 @@ let overlaps
       ; List.create false context experiment_id mailings
       ]
   in
-  div (average @ total @ mailings)
+  div ~a:[ a_class [ "stack" ]; a_id "overlaps" ] (average @ total @ mailings)
 ;;

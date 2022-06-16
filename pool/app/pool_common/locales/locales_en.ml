@@ -163,6 +163,7 @@ let rec error_to_string = function
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
+  | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

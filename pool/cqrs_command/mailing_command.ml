@@ -101,9 +101,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let handle mailing (update : t) =
-    let open CCResult in
-    Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
+  let handle ({ start_at; _ } as mailing : Mailing.t) (update : t) =
+    match Ptime_clock.now () < Mailing.StartAt.value start_at with
+    | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
+    | false -> Error Pool_common.Message.AlreadyStarted
   ;;
 
   let can user mailing =
@@ -181,7 +182,8 @@ end
 
 module Overlaps : sig
   type t =
-    { start_at : StartAt.t
+    { id : Id.t option
+    ; start_at : StartAt.t
     ; end_at : EndAt.t
     ; rate : Rate.t option
     ; distribution : Distribution.t option
@@ -193,7 +195,8 @@ module Overlaps : sig
   val decode : Conformist.input -> (t, Message.error) result
 end = struct
   type t =
-    { start_at : StartAt.t
+    { id : Id.t option
+    ; start_at : StartAt.t
     ; end_at : EndAt.t
     ; rate : Rate.t option
     ; distribution : Distribution.t option
@@ -201,15 +204,16 @@ end = struct
 
   type with_default_rate = bool
 
-  let command start_at end_at rate distribution : t =
-    { start_at; end_at; rate; distribution }
+  let command id start_at end_at rate distribution : t =
+    { id; start_at; end_at; rate; distribution }
   ;;
 
   let schema =
     Conformist.(
       make
         Field.
-          [ StartAt.schema ()
+          [ Conformist.optional @@ Id.schema ()
+          ; StartAt.schema ()
           ; EndAt.schema ()
           ; Conformist.optional @@ Rate.schema ()
           ; Conformist.optional @@ Distribution.schema ()
@@ -222,9 +226,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let create ({ start_at; end_at; rate; distribution } : t) =
+  let create ({ id; start_at; end_at; rate; distribution } : t) =
     let open CCResult in
     Mailing.create
+      ?id
       start_at
       end_at
       (CCOption.get_or ~default:Mailing.Rate.default rate)

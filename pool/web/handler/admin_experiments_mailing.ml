@@ -91,7 +91,14 @@ let detail edit req =
     let open Lwt_result.Syntax in
     Lwt_result.map_err (fun err ->
         err, experiment_path ~suffix:"mailings" experiment_id)
-    @@ let* mailing = Mailing.find tenant_db id in
+    @@ let* mailing =
+         Mailing.find tenant_db id
+         >== fun m ->
+         if edit
+            && Ptime_clock.now () > Mailing.StartAt.value m.Mailing.start_at
+         then Error Pool_common.Message.AlreadyStarted
+         else Ok m
+       in
        (match edit with
        | false -> Page.Admin.Mailing.detail context experiment_id mailing
        | true ->
@@ -115,7 +122,8 @@ let update req =
   let id = id req Field.Mailing Mailing.Id.of_string in
   let redirect_path =
     experiment_path
-      ~suffix:([ "mailings"; Mailing.Id.value id ] |> CCString.concat "/")
+      ~suffix:
+        ([ "mailings"; Mailing.Id.value id; "edit" ] |> CCString.concat "/")
       experiment_id
   in
   let result { Pool_context.tenant_db; _ } =

@@ -163,6 +163,8 @@ let rec error_to_string = function
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
+  | AlreadyStarted ->
+    "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

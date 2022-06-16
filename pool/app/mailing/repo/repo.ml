@@ -71,18 +71,19 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
       WHERE
-        $1 < pool_mailing.end AND $2 > pool_mailing.start
+        $1 < pool_mailing.end AND $2 > pool_mailing.start AND pool_mailing.uuid != UNHEX(REPLACE($3, '-', ''))
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Caqti_type.tup2 RepoEntity.StartAt.t RepoEntity.EndAt.t ->* RepoEntity.t
+    |> Caqti_type.tup3 RepoEntity.StartAt.t RepoEntity.EndAt.t RepoEntity.Id.t
+       ->* RepoEntity.t
   ;;
 
-  let find_overlaps pool start_at end_at =
+  let find_overlaps pool start_at end_at ignore_id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_overlaps_request
-      (start_at, end_at)
+      (start_at, end_at, ignore_id)
   ;;
 
   let insert_request =
@@ -157,9 +158,9 @@ let find_by_experiment pool id =
   Sql.find_by_experiment pool id ||> CCList.map to_entity
 ;;
 
-let find_overlaps pool Entity.{ start_at; end_at; _ } =
+let find_overlaps pool Entity.{ id; start_at; end_at; _ } =
   let open Utils.Lwt_result.Infix in
-  Sql.find_overlaps pool start_at end_at ||> CCList.map to_entity
+  Sql.find_overlaps pool start_at end_at id ||> CCList.map to_entity
 ;;
 
 let insert pool experiment_id model =
