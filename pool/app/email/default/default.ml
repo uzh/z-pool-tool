@@ -37,7 +37,6 @@ let boilerplate language =
       salutation, complimentary_close, add_salutation_to_text
   in
   let label = Entity.TemplateLabel.Boilerplate in
-  let language = Pool_common.Language.En in
   let html =
     let open Tyxml.Html in
     let open Default_utils in
