@@ -223,9 +223,9 @@ let form
                 ; hx_swap "outerHTML"
                 ; hx_post (mailings_path ~suffix:"search-info" experiment_id)
                 ]
-              [ input_element
+              [ flatpicker_element
                   language
-                  `Datetime
+                  `Datetime_local
                   Field.Start
                   ~flash_fetcher
                   ~required:true
@@ -236,9 +236,9 @@ let form
                          |> Mailing.StartAt.value
                          |> Ptime.to_rfc3339 ~space:true)
                        mailing)
-              ; input_element
+              ; flatpicker_element
                   language
-                  `Datetime
+                  `Datetime_local
                   Field.End
                   ~flash_fetcher
                   ~required:true

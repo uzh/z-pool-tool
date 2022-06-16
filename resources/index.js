@@ -49,11 +49,12 @@ function initDatepicker() {
             dateFormat: "Z",
             onChange: function (selectedDates, dateStr, instance) {
                 const helpText = e.closest(".form-group").querySelector(".datepicker-msg")
-                if (new Date() > selectedDates[0]) {
-                    const message = e.dataset.warnPast || "The selected date is in the past."
-                    helpText.textContent = message;
-                } else {
-                    helpText.textContent = "";
+                if (e.dataset.warnPast) {
+                    if (new Date() > selectedDates[0]) {
+                        helpText.textContent = e.dataset.warnPast;
+                    } else {
+                        helpText.textContent = "";
+                    }
                 }
             },
         })

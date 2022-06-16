@@ -14,7 +14,10 @@ let check_result expected generated =
 
 module Data = struct
   let norm_ptime m =
-    m |> Ptime.to_rfc3339 |> Pool_common.Utils.parse_time |> get_or_failwith
+    m
+    |> Ptime.to_rfc3339
+    |> Pool_common.Utils.Time.parse_time
+    |> get_or_failwith
   ;;
 
   module Mailing = struct
