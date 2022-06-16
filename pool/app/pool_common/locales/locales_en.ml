@@ -186,7 +186,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
-  | EndBeforeStart -> "End before or equal to start"
+  | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->

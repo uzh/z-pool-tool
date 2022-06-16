@@ -171,6 +171,7 @@ let flatpicker_element
     ?flash_fetcher
     ?value
     ?(warn_past = false)
+    ?(disable_past = false)
     language
     input_type
     name
@@ -200,6 +201,7 @@ let flatpicker_element
           , "warn-past"
           , Pool_common.(Utils.hint_to_string language I18n.SelectedDateIsPast)
           )
+        ; disable_past, "disable-past", "true"
         ]
   in
   let id = Elements.identifier ?identifier language name in

@@ -43,10 +43,12 @@ function globalConfig(e) {
 function initDatepicker() {
     flatpickr.localize({ firstDayOfWeek: 1 })
     document.querySelectorAll('.datepicker').forEach(e => {
+        var disablePast = e.dataset.disablePast;
         var f = flatpickr(e, {
             ...globalConfig(e),
             altFormat: "d.m.Y H:i",
             dateFormat: "Z",
+            minDate: disablePast ? new Date() : null,
             onChange: function (selectedDates, dateStr, instance) {
                 const helpText = e.closest(".form-group").querySelector(".datepicker-msg")
                 if (e.dataset.warnPast) {

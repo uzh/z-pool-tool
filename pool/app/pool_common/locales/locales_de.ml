@@ -192,7 +192,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
-  | EndBeforeStart -> "Ende liegt vor oder gleich dem Start."
+  | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."

@@ -229,6 +229,7 @@ let form
                   Field.Start
                   ~flash_fetcher
                   ~required:true
+                  ~disable_past:true
                   ?value:
                     (CCOption.map
                        (fun (m : Mailing.t) ->
@@ -241,6 +242,7 @@ let form
                   `Datetime_local
                   Field.End
                   ~flash_fetcher
+                  ~disable_past:true
                   ~required:true
                   ?value:
                     (CCOption.map

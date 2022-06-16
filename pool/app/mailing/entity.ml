@@ -131,6 +131,8 @@ let equal m1 m2 =
 
 let create ?(id = Id.create ()) start_at end_at rate distribution =
   if Ptime.is_later ~than:end_at start_at
+  then Error Pool_common.Message.EndBeforeStart
+  else if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
   then Error Pool_common.Message.TimeInPast
   else
     Ok
