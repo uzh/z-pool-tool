@@ -228,8 +228,7 @@ let detail
              , CCOption.map_or ~default:"" Description.value session.description
                |> Http_utils.add_line_breaks )
            ; ( Field.Location
-             , Pool_location.to_string language session.Session.location |> txt
-             )
+             , Pool_location.to_html language session.Session.location )
            ; Field.MaxParticipants, amount session.max_participants |> txt
            ; Field.MinParticipants, amount session.min_participants |> txt
            ; Field.Overbook, amount session.overbook |> txt
@@ -243,7 +242,7 @@ let detail
                  , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
                ]
          in
-         Table.vertical_table `Striped language rows)
+         Table.vertical_table `Striped language ~align_top:true rows)
       ; p
           [ a
               ~a:

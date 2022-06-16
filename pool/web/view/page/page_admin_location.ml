@@ -8,19 +8,6 @@ let first_n_characters ?(n = 47) m : string =
   else m
 ;;
 
-let show_address language (location : Pool_location.t) =
-  let open Pool_location in
-  let room, street, city =
-    Address.address_rows_human language location.address
-  in
-  let mail =
-    if street |> CCString.is_empty |> not
-    then [ [ ""; street; city ] |> CCString.concat ", " |> txt ]
-    else []
-  in
-  span ([ strong [ txt room ] ] @ mail)
-;;
-
 module List = struct
   open Pool_location
 
@@ -37,7 +24,7 @@ module List = struct
           |> CCOption.map_or ~default:"" Description.value
           |> first_n_characters
           |> txt
-        ; show_address language location
+        ; Pool_location.Address.to_html language location.address
         ; a
             ~a:
               [ a_href
@@ -54,7 +41,7 @@ module List = struct
 
   let create language locations =
     let rows = rows language locations in
-    Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped language ~thead ~align_top:true rows
   ;;
 end
 
@@ -491,13 +478,13 @@ let detail
         , location.description
           |> CCOption.map_or ~default:"" Description.value
           |> txt )
-      ; Field.Location, show_address language location
+      ; Field.Location, Address.to_html language location.address
       ; ( Field.Link
         , location.link |> CCOption.map_or ~default:"" Link.value |> txt )
       ; ( Field.Status
         , location.status |> Status.show |> txt (* TODO: Show files *) )
       ]
-      |> Table.vertical_table `Striped language
+      |> Table.vertical_table `Striped ~align_top:true language
     in
     div
       ~a:[ a_class [ "stack" ] ]

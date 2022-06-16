@@ -117,7 +117,7 @@ module Mail = struct
         command)
   ;;
 
-  let to_html mail =
+  let to_html ?(highlight_first_line = true) mail =
     let open Tyxml.Html in
     let { institution; room; building; street; zip; city } = mail in
     let building_room =
@@ -133,7 +133,10 @@ module Mail = struct
     |> CCList.foldi
          (fun html index str ->
            let str = str |> txt in
-           if index = 0 then [ strong [ str ] ] else html @ [ br (); str ])
+           match index with
+           | 0 ->
+             CCList.pure (if highlight_first_line then strong [ str ] else str)
+           | _ -> html @ [ br (); str ])
          []
     |> span
   ;;
@@ -144,16 +147,19 @@ type t =
   | Physical of Mail.t
 [@@deriving eq, show, variants]
 
-let to_html language =
+let to_html ?(highlight_first_line = true) language =
   let open Tyxml.Html in
   function
   | Virtual ->
-    strong
-      [ txt
-          (Pool_common.(Utils.field_to_string language Field.Virtual)
-          |> CCString.capitalize_ascii)
-      ]
-  | Physical mail -> Mail.to_html mail
+    [ txt
+        (Pool_common.(Utils.field_to_string language Field.Virtual)
+        |> CCString.capitalize_ascii)
+    ]
+    |> fun html ->
+    (match highlight_first_line with
+    | true -> strong html
+    | false -> span html)
+  | Physical mail -> Mail.to_html ~highlight_first_line mail
 ;;
 
 let address_rows_human language address =

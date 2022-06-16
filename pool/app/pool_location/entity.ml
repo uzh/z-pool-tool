@@ -96,6 +96,42 @@ let to_string language location =
     |> CCList.filter (fun m -> m |> CCString.is_empty |> not))
 ;;
 
+let to_html ?(public = false) language location =
+  (* TODO: differ between public and not *)
+  let open Tyxml.Html in
+  let title = [ strong [ txt location.name ] ] |> p |> CCOption.pure in
+  let address =
+    [ Address.to_html ~highlight_first_line:false language location.address ]
+    |> p
+    |> CCOption.pure
+  in
+  let status =
+    match public with
+    | true -> None
+    | false ->
+      [ span
+          [ txt
+              (Format.asprintf
+                 "%s: %s"
+                 (Pool_common.(
+                    Utils.field_to_string language Message.Field.Status)
+                 |> CCString.capitalize_ascii)
+                 (location.status |> Status.show))
+          ]
+      ]
+      |> p
+      |> CCOption.pure
+  in
+  let link =
+    CCOption.map
+      (fun l -> p [ a ~a:[ a_href l; a_target "_blank" ] [ txt l ] ])
+      location.link
+  in
+  [ title; address; status; link ]
+  |> CCList.filter_map CCFun.id
+  |> div ~a:[ a_class [ "stack-sm" ] ]
+;;
+
 let equal m k =
   Id.equal m.id k.id
   && Name.equal m.name k.name
