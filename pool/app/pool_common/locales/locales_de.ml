@@ -26,12 +26,14 @@ let field_to_string =
   | Description -> "Beschreibung"
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
+  | Distribution -> "Verteilung"
   | Duration -> "Dauer"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
   | EmailAddressUnverified -> "Unverifizierte Email Adresse"
   | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
+  | End -> "Ende"
   | Experiment -> "Experiment"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
@@ -56,6 +58,7 @@ let field_to_string =
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
+  | Mailing -> "Versand"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
   | Name -> "Name"
@@ -70,6 +73,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ResentAt -> "Erneut verschickt"
@@ -88,6 +92,7 @@ let field_to_string =
   | SmtpReadModel -> "Smtp read model"
   | SmtpUsername -> "Smtp Benutzername"
   | SmtpWriteModel -> "Smtp write model"
+  | SortOrder -> "Sortierung"
   | Start -> "Start"
   | Status -> "Status"
   | Street -> "Strasse"
@@ -140,6 +145,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
+  | Stoped field ->
+    field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
@@ -152,8 +159,12 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast ->
+    "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
+  | AlreadyStarted ->
+    "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -181,6 +192,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
+  | EndBeforeStart -> "Ende liegt vor oder gleich dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
@@ -213,6 +225,7 @@ let rec error_to_string = function
          (CCString.concat "," items))
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
+  | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
@@ -271,6 +284,7 @@ let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
+  | Ascending -> "aufsteigend"
   | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
@@ -278,6 +292,7 @@ let control_to_string = function
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
+  | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
@@ -287,10 +302,11 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
+  | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
-  | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | SignUp -> format_submit "registrieren" None
+  | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
 ;;
 

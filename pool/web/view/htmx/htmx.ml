@@ -2,6 +2,14 @@ open Tyxml.Html
 module Version = Pool_common.Version
 module User = Pool_user
 
+let hx_trigger = a_user_data "hx-trigger"
+let hx_post = a_user_data "hx-post"
+let hx_get = a_user_data "hx-get"
+let hx_target = a_user_data "hx-target"
+let hx_swap = a_user_data "hx-swap"
+let hx_params = a_user_data "hx-params"
+let hx_vals = a_user_data "hx-vals"
+
 type t =
   | Firstname of Version.t * User.Firstname.t
   | Lastname of Version.t * User.Lastname.t
@@ -13,19 +21,16 @@ let hx_base_params = [ "_csrf"; "version"; "field" ]
 
 let hx_attributes field version ?action () =
   let name = Pool_common.Message.Field.(field |> show) in
-  [ a_user_data "hx-swap" "outerHTML"
-  ; a_user_data
-      "hx-params"
-      (CCString.concat ", " (CCList.cons name hx_base_params))
-  ; a_user_data "hx-target" "closest div"
-  ; a_user_data
-      "hx-vals"
+  [ hx_swap "outerHTML"
+  ; hx_params (CCString.concat ", " (CCList.cons name hx_base_params))
+  ; hx_target "closest div"
+  ; hx_vals
       (Format.asprintf
          {|{"version": "%i", "field": "%s"}|}
          (version |> Pool_common.Version.value)
          name)
   ]
-  @ CCOption.(CCList.filter_map CCFun.id [ action >|= a_user_data "hx-post" ])
+  @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
 
 let create m language ?(classnames = []) ?hx_post ?error ?success () =

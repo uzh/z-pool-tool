@@ -6,8 +6,8 @@ let field_to_string =
   | Admin -> "admin"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
-  | Assignments -> "assignments"
   | AssignmentCount -> "no. assignments"
+  | Assignments -> "assignments"
   | Building -> "building"
   | CanceledAt -> "canceled at"
   | City -> "city"
@@ -26,12 +26,14 @@ let field_to_string =
   | Description -> "description"
   | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
+  | Distribution -> "distribution"
   | Duration -> "duration"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | End -> "end"
   | Experiment -> "experiment"
   | File -> "file"
   | FileMapping -> "file mapping"
@@ -56,6 +58,7 @@ let field_to_string =
   | Link -> "link"
   | Location -> "location"
   | LogoType -> "logo type"
+  | Mailing -> "mailing"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
   | Name -> "name"
@@ -71,6 +74,7 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | Rate -> "rate"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
@@ -89,6 +93,7 @@ let field_to_string =
   | SmtpReadModel -> "smtp read model"
   | SmtpUsername -> "smtp username"
   | SmtpWriteModel -> "smtp write model"
+  | SortOrder -> "sort order"
   | Start -> "start"
   | Status -> "status"
   | Street -> "street"
@@ -142,6 +147,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
+  | Stoped field ->
+    field_message "" (field_to_string field) "was successfully stoped."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -153,8 +160,10 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
+  | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -177,6 +186,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
+  | EndBeforeStart -> "End before or equal to start"
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->
@@ -200,6 +210,7 @@ let rec error_to_string = function
       (field_to_string field)
       (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
+  | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy msg ->
@@ -248,6 +259,7 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
+  | Ascending -> "ascending"
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -255,6 +267,7 @@ let control_to_string = function
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
+  | Descending -> "descending"
   | Disable -> format_submit "disable" None
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
@@ -264,10 +277,11 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
+  | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
-  | SelectFilePlaceholder -> format_submit "select file.." None
   | SignUp -> format_submit "sign up" None
+  | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
 ;;
 

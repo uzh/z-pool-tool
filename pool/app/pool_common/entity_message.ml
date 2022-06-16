@@ -31,6 +31,7 @@ module Field = struct
     | DirectRegistrationDisabled [@name "direct_registration_disabled"]
         [@printer go "direct_registration_disabled"]
     | Disabled [@name "disabled"] [@printer go "disabled"]
+    | Distribution [@name "distribution"] [@printer go "distribution"]
     | Duration [@name "duration"] [@printer go "duration"]
     | Email [@name "email"] [@printer go "email"]
     | EmailAddress [@name "email_address"] [@printer go "email_address"]
@@ -40,6 +41,7 @@ module Field = struct
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer go "email_address_verified"]
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
+    | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
@@ -66,6 +68,7 @@ module Field = struct
     | Link [@name "link"] [@printer go "link"]
     | Location [@name "location"] [@printer go "location"]
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
+    | Mailing [@name "mailing"] [@printer go "mailing"]
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MinParticipants [@name "min_participants"]
@@ -85,6 +88,7 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
+    | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
@@ -105,6 +109,7 @@ module Field = struct
     | SmtpReadModel [@name "smtp_read_model"] [@printer go "smtp_read_model"]
     | SmtpUsername [@name "smtp_username"] [@printer go "smtp_username"]
     | SmtpWriteModel [@name "smtp_write_model"] [@printer go "smtp_write_model"]
+    | SortOrder [@name "sort_order"] [@printer go "sort_order"]
     | Start [@name "start"] [@printer go "start"]
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
@@ -149,6 +154,8 @@ end
    Field.t *)
 type error =
   | AlreadySignedUpForExperiment
+  | AlreadyInPast
+  | AlreadyStarted
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail
@@ -161,6 +168,7 @@ type error =
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
   | EmailMalformed
+  | EndBeforeStart
   | ExperimentSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
@@ -171,10 +179,11 @@ type error =
   | NotADatetime of (string * string)
   | NotANumber of string
   | NoTenantsRegistered
+  | NotEligible
   | NotFound of Field.t
   | NotFoundList of Field.t * string list
-  | NotEligible
   | NotHandled of string
+  | NotInTimeRange
   | NoValue
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicy of string
@@ -221,6 +230,7 @@ type success =
   | RemovedFromWaitingList
   | SentList of Field.t
   | SettingsUpdated
+  | Stoped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
@@ -247,6 +257,7 @@ type control =
   | Accept of Field.t option
   | Add of Field.t option
   | AddToWaitingList
+  | Ascending
   | Assign of Field.t option
   | Back
   | Cancel of Field.t option
@@ -254,6 +265,7 @@ type control =
   | Create of Field.t option
   | Decline
   | Delete of Field.t option
+  | Descending
   | Disable
   | Edit of Field.t option
   | Enable
@@ -267,6 +279,7 @@ type control =
   | SendResetLink
   | SelectFilePlaceholder
   | SignUp
+  | Stop of Field.t option
   | Update of Field.t option
 [@@deriving eq, show, yojson, variants, sexp_of]
 

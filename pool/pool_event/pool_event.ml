@@ -8,6 +8,7 @@ type t =
   | Experiment of Experiment.event
   | I18n of I18n.event
   | Invitation of Invitation.event
+  | Mailing of Mailing.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
   | Root of Root.event
@@ -25,6 +26,7 @@ let email_address events = EmailAddress events
 let experiment events = Experiment events
 let i18n events = I18n events
 let invitation events = Invitation events
+let mailing events = Mailing events
 let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
 let root events = Root events
@@ -43,6 +45,7 @@ let handle_event pool event =
   | Experiment event -> Experiment.handle_event pool event
   | I18n event -> I18n.handle_event pool event
   | Invitation event -> Invitation.handle_event pool event
+  | Mailing event -> Mailing.handle_event pool event
   | PoolLocation event -> Pool_location.handle_event pool event
   | PoolTenant event -> Pool_tenant.handle_event pool event
   | Root event -> Root.handle_event pool event
