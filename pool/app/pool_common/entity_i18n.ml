@@ -70,4 +70,6 @@ type confirmable =
   | DeleteEmailSuffix
   | DeleteExperiment
   | DeleteFile
+  | DeleteMailing
   | DeleteSession
+  | StopMailing

@@ -106,7 +106,9 @@ let confirmable_to_string confirmable =
   | DeleteEmailSuffix -> "das Suffix", "löschen"
   | DeleteExperiment -> "das Experiment", "löschen"
   | DeleteFile -> "die Datei", "löschen"
-  | DeleteSession -> "die Session", "löschen")
+  | DeleteMailing -> "den Versand", "löschen"
+  | DeleteSession -> "die Session", "löschen"
+  | StopMailing -> "den Versand", "stoppen")
   |> fun (obj, action) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
 ;;

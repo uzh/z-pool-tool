@@ -2,18 +2,17 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
-let ( %> ) = CCFun.( %> )
 let create_layout req = General.create_tenant_layout `Admin req
 
 let id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
-let experiment_path ?(suffix = "") experiment_id =
-  Format.asprintf
-    "/admin/experiments/%s/%s"
-    (Pool_common.Id.value experiment_id)
-    suffix
+let experiment_path ?suffix experiment_id =
+  [ Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value experiment_id)
+  ]
+  @ CCOption.map_or ~default:[] CCList.pure suffix
+  |> CCString.concat "/"
 ;;
 
 let index req =
@@ -51,14 +50,15 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
-  let redirect_path = experiment_path ~suffix:"mailings" experiment_id in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Lwt_result.map_err (fun err ->
-        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+        ( err
+        , experiment_path ~suffix:"mailings/create" experiment_id
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let events =
          let open CCResult in
@@ -73,7 +73,7 @@ let create req =
            Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
          in
          Http_utils.redirect_to_with_actions
-           redirect_path
+           (experiment_path ~suffix:"mailings" experiment_id)
            [ Message.set
                ~success:[ Pool_common.Message.(Created Field.Mailing) ]
            ]

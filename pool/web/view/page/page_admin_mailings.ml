@@ -2,10 +2,10 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 module Field = Message.Field
+module I18n = Pool_common.I18n
 
 let mailing_title (s : Mailing.t) =
-  Pool_common.I18n.MailingDetailTitle
-    (s.Mailing.start_at |> Mailing.StartAt.value)
+  I18n.MailingDetailTitle (s.Mailing.start_at |> Mailing.StartAt.value)
 ;;
 
 let mailings_path ?suffix experiment_id =
@@ -34,11 +34,14 @@ module List = struct
     =
     let open Mailing in
     let now = Ptime_clock.now () in
-    let button_form target name submit_type =
+    let button_form target name submit_type confirm_text =
       form
         ~a:
           [ a_method `Post
           ; a_action (detail_mailing_path ~suffix:target experiment_id mailing)
+          ; a_user_data
+              "confirmable"
+              (Pool_common.Utils.confirmable_to_string language confirm_text)
           ]
         [ Component.csrf_element csrf ()
         ; submit_element ~submit_type language (name None) ()
@@ -57,8 +60,10 @@ module List = struct
       match
         StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
       with
-      | true, true -> [ button_form "stop" Message.stop `Primary ]
-      | false, true -> [ button_form "delete" Message.delete `Error ]
+      | true, true ->
+        [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+      | false, true ->
+        [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
       | _ -> [ txt "" ])
     else []
   ;;
@@ -233,7 +238,7 @@ let form
                   Field.Rate
                   ~flash_fetcher
                   ~required:true
-                  ~help:Pool_common.I18n.Rate
+                  ~help:I18n.Rate
                   ~value:
                     (mailing
                     |> CCOption.map_or
@@ -247,7 +252,7 @@ let form
               `Text
               Field.Distribution
               ~flash_fetcher
-              ~help:Pool_common.I18n.Distribution
+              ~help:I18n.Distribution
               ?value:
                 CCOption.(
                   mailing
@@ -300,8 +305,8 @@ let overlaps
     | None -> []
     | Some total ->
       [ p
-          [ Pool_common.(
-              I18n.RateTotalSent total |> Utils.text_to_string language)
+          [ I18n.RateTotalSent total
+            |> Pool_common.Utils.text_to_string language
             |> txt
           ]
       ]
@@ -310,15 +315,15 @@ let overlaps
     match CCList.is_empty mailings with
     | true ->
       [ p
-          [ Pool_common.(
-              I18n.RateDependencyWithout |> Utils.hint_to_string language)
+          [ I18n.RateDependencyWithout
+            |> Pool_common.Utils.hint_to_string language
             |> txt
           ]
       ]
     | false ->
       [ p
-          [ Pool_common.(
-              I18n.RateDependencyWith |> Utils.hint_to_string language)
+          [ I18n.RateDependencyWith
+            |> Pool_common.Utils.hint_to_string language
             |> txt
           ]
       ; List.create false context experiment_id mailings
