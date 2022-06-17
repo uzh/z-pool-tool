@@ -6,7 +6,12 @@ let field_to_string =
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
   | Assignments -> "Assignments"
+  | Assignment -> "Anmeldung"
+  | AssignmentCount -> "No. Assignments"
+  | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
+  | City -> "Ort"
+  | Comment -> "Kommentar"
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
@@ -19,15 +24,19 @@ let field_to_string =
   | DateTime -> "Datum und Uhrzeit"
   | DefaultLanguage -> "Standard Sprache"
   | Description -> "Beschreibung"
+  | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
+  | Distribution -> "Verteilung"
   | Duration -> "Dauer"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
   | EmailAddressUnverified -> "Unverifizierte Email Adresse"
   | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
+  | End -> "Ende"
   | Experiment -> "Experiment"
   | File -> "Datei"
+  | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
@@ -41,12 +50,16 @@ let field_to_string =
   | Invitation -> "Einladung"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
+  | Label -> "Label"
   | Language -> "Sprache"
   | LanguageDe -> "Deutsch"
   | LanguageEn -> "Englisch"
   | Lastname -> "Nachname"
   | LeadTime -> "Vorlaufzeit"
+  | Link -> "Link"
+  | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
+  | Mailing -> "Versand"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
   | Name -> "Name"
@@ -61,12 +74,16 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | ReminderText -> "Erinnerungstext"
+  | RegistrationDisabled -> "Registrierung deaktiviert"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
+  | Room -> "Raum"
   | Root -> "Root"
   | Session -> "Session"
+  | Sessions -> "Sessions"
   | Setting -> "Einstellung"
   | ShowUp -> "Anwesend"
   | SmtpAuthMethod -> "Smtp Authentifizierungsmethode"
@@ -77,15 +94,18 @@ let field_to_string =
   | SmtpReadModel -> "Smtp read model"
   | SmtpUsername -> "Smtp Benutzername"
   | SmtpWriteModel -> "Smtp write model"
+  | SortOrder -> "Sortierung"
   | Start -> "Start"
+  | Status -> "Status"
+  | Street -> "Strasse"
   | Styles -> "Styles"
   | Tenant -> "Tenant"
-  | TenantDisabledFlag -> "Deaktiviert Flag"
+  | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
   | TenantLogos -> "Tenant Logos"
   | TenantMaintenanceFlag -> "Wartungsflag"
   | TenantPool -> "Tenant Pool"
-  | TermsAccepted -> "Teilnahmebedingungen akzeptiert"
+  | TermsAccepted -> "Akzeptieren"
   | TermsAndConditions -> "Teilnahmebedingungen"
   | Time -> "Uhrzeit"
   | TimeSpan -> "Zeitspanne"
@@ -95,7 +115,10 @@ let field_to_string =
   | Url -> "Url"
   | User -> "Benutzer"
   | Version -> "Version"
+  | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
+  | WaitingListDisabled -> "Warteliste deaktivieren"
+  | Zip -> "PLZ"
 ;;
 
 let info_to_string : info -> string = function
@@ -124,6 +147,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
+  | Stoped field ->
+    field_message "" (field_to_string field) "wurde erfolgreich gestoppt."
   | TenantUpdateDatabase ->
     "Datenbank Informationen wurden erfolgreich upgedated."
   | TenantUpdateDetails -> "Tenant wurde erfolgreich upgedated."
@@ -136,8 +161,12 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast ->
+    "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
+  | AlreadyStarted ->
+    "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -165,6 +194,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
+  | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
@@ -185,6 +215,7 @@ let rec error_to_string = function
   | NotANumber field -> Format.asprintf "'%s' ist keine Nummer." field
   | NoTenantsRegistered ->
     "Es sind keine Tenants auf der Root Datenbank registriert!"
+  | NotEligible -> "Sie sind nicht befugt, diese Aktuion durchzuführen."
   | NotFound field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden!"
   | NotFoundList (field, items) ->
@@ -196,6 +227,7 @@ let rec error_to_string = function
          (CCString.concat "," items))
   | NotHandled field ->
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
+  | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
@@ -208,9 +240,11 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
@@ -235,6 +269,9 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
+  | WaitingListFlagsMutuallyExclusive ->
+    "Die direkte Registrierung kann nur mit aktivierter Warteliste deaktiviert \
+     werden."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 
@@ -249,12 +286,15 @@ let control_to_string = function
   | Accept field -> format_submit "akzeptieren" field
   | Add field -> format_submit "hinzufügen" field
   | AddToWaitingList -> "Ich möchte mich zur Warteliste hinzufügen"
+  | Ascending -> "aufsteigend"
+  | Assign field -> format_submit "zuweisen" field
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
+  | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
@@ -264,9 +304,11 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
+  | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | SignUp -> format_submit "registrieren" None
+  | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
 ;;
 

@@ -6,11 +6,16 @@ let field_to_string =
   | Admin -> "admin"
   | AssetId -> "asset identifier"
   | Assignments -> "assignments"
+  | Assignment -> "assignment"
+  | AssignmentCount -> "no. assignments"
+  | Building -> "building"
   | CanceledAt -> "canceled at"
+  | City -> "city"
+  | Comment -> "comment"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
-  | CreatedAt -> "Created at"
+  | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | Database -> "database"
   | DatabaseLabel -> "database label"
@@ -19,15 +24,19 @@ let field_to_string =
   | DateTime -> "date and time"
   | DefaultLanguage -> "default language"
   | Description -> "description"
+  | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
+  | Distribution -> "distribution"
   | Duration -> "duration"
   | Email -> "email address"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
   | EmailSuffix -> "email suffix"
+  | End -> "end"
   | Experiment -> "experiment"
   | File -> "file"
+  | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
   | Filename -> "filename"
   | Filesize -> "filesize"
@@ -38,15 +47,19 @@ let field_to_string =
   | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
-  | Invitation -> "Invitation"
-  | Invitations -> "Invitations"
+  | Invitation -> "invitation"
+  | Invitations -> "invitations"
   | Key -> "key"
+  | Label -> "label"
   | Language -> "language"
-  | LanguageDe -> "German"
-  | LanguageEn -> "English"
+  | LanguageDe -> "german"
+  | LanguageEn -> "english"
   | Lastname -> "lastname"
+  | Link -> "link"
+  | Location -> "location"
   | LogoType -> "logo type"
   | LeadTime -> "lead time"
+  | Mailing -> "mailing"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
   | Name -> "name"
@@ -62,12 +75,16 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | Rate -> "rate"
   | RecruitmentChannel -> "recruitment channel"
   | ReminderText -> "reminder text"
-  | ResentAt -> "Resent at"
+  | RegistrationDisabled -> "registration disabled"
+  | ResentAt -> "resent at"
   | Role -> "role"
+  | Room -> "room"
   | Root -> "root"
   | Session -> "session"
+  | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUp -> "show up"
   | SmtpAuthMethod -> "smtp authentication method"
@@ -78,15 +95,18 @@ let field_to_string =
   | SmtpReadModel -> "smtp read model"
   | SmtpUsername -> "smtp username"
   | SmtpWriteModel -> "smtp write model"
+  | SortOrder -> "sort order"
   | Start -> "start"
+  | Status -> "status"
+  | Street -> "street"
   | Styles -> "styles"
   | Tenant -> "tenant"
-  | TenantDisabledFlag -> "disabled flag"
+  | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
-  | TenantPool -> "Tenant pool"
-  | TermsAccepted -> "terms accepted"
+  | TenantPool -> "tenant pool"
+  | TermsAccepted -> "accept"
   | TermsAndConditions -> "terms and conditions"
   | Time -> "time"
   | TimeSpan -> "time span"
@@ -96,7 +116,10 @@ let field_to_string =
   | Url -> "url"
   | User -> "user"
   | Version -> "version"
+  | Virtual -> "virtual"
   | WaitingList -> "waiting list"
+  | WaitingListDisabled -> "waiting list disabled"
+  | Zip -> "zip code"
 ;;
 
 let info_to_string : info -> string = function
@@ -126,6 +149,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
+  | Stoped field ->
+    field_message "" (field_to_string field) "was successfully stoped."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -137,8 +162,10 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
+  | AlreadyStarted -> "Already started or ended, action not possible anymore."
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -161,6 +188,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
+  | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->
@@ -176,6 +204,7 @@ let rec error_to_string = function
     Format.asprintf "%s: '%s' is not a valid date or time." err time
   | NotANumber field -> Format.asprintf "'%s' is not a number." field
   | NoTenantsRegistered -> "There are no tenants registered in root database!"
+  | NotEligible -> "Your are not eligible to perform this action."
   | NotFound field -> field_message "" (field_to_string field) "not found!"
   | NotFoundList (field, items) ->
     field_message
@@ -183,6 +212,7 @@ let rec error_to_string = function
       (field_to_string field)
       (Format.asprintf "could not be found: %s" (CCString.concat "," items))
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
+  | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy msg ->
@@ -192,8 +222,10 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
@@ -213,6 +245,8 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
+  | WaitingListFlagsMutuallyExclusive ->
+    "Direct registration can only be disabled when waiting list is enabled."
   | WriteOnlyModel -> "Write only model!"
 ;;
 
@@ -227,12 +261,15 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
+  | Ascending -> "ascending"
+  | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
+  | Descending -> "descending"
   | Disable -> format_submit "disable" None
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
@@ -242,9 +279,11 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
+  | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
   | SignUp -> format_submit "sign up" None
+  | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
 ;;
 

@@ -2,33 +2,43 @@ open Tyxml.Html
 
 let public_overview sessions experiment language =
   let open Experiment.Public in
+  let thead =
+    Pool_common.Message.Field.[ Some Start; Some Duration; Some Location; None ]
+  in
   CCList.map
     (fun (session : Session.Public.t) ->
-      tr
-        [ td
+      [ txt
+          Session.(
+            session.Session.Public.start
+            |> Start.value
+            |> Pool_common.Utils.Time.formatted_date_time)
+      ; txt
+          Session.(
+            session.Session.Public.duration
+            |> Duration.value
+            |> Pool_common.Utils.Time.formatted_timespan)
+      ; txt (session.Session.Public.location |> Pool_location.to_string language)
+      ; (match Session.Public.is_fully_booked session with
+        | false ->
+          a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "/experiments/%s/sessions/%s"
+                     (experiment.id |> Pool_common.Id.value)
+                     (session.Session.Public.id |> Pool_common.Id.value))
+              ]
+            [ txt Pool_common.(Utils.control_to_string language Message.signup)
+            ]
+        | true ->
+          span
             [ txt
-                Session.(
-                  session.Session.Public.start
-                  |> Start.value
-                  |> Pool_common.Utils.Time.formatted_date_time)
-            ]
-        ; td
-            [ a
-                ~a:
-                  [ a_href
-                      (Format.asprintf
-                         "/experiments/%s/sessions/%s"
-                         (experiment.id |> Pool_common.Id.value)
-                         (session.Session.Public.id |> Pool_common.Id.value))
-                  ]
-                [ txt
-                    Pool_common.(
-                      Utils.control_to_string language Message.signup)
-                ]
-            ]
-        ])
+                Pool_common.(
+                  Utils.error_to_string language Message.SessionFullyBooked)
+            ])
+      ])
     sessions
-  |> table ~a:[ a_class [ "striped" ] ]
+  |> Component.Table.horizontal_table `Striped language ~thead
 ;;
 
 let public_detail (session : Session.Public.t) language =
@@ -36,14 +46,18 @@ let public_detail (session : Session.Public.t) language =
   let open Pool_common.Message in
   let rows =
     [ ( Field.Start
-      , session.Public.start |> Start.value |> Ptime.to_rfc3339 ~space:true )
+      , session.Public.start
+        |> Start.value
+        |> Pool_common.Utils.Time.formatted_date_time )
     ; ( Field.Duration
       , session.Public.duration
         |> Duration.value
-        |> Pool_common.Utils.print_time_span )
+        |> Pool_common.Utils.Time.formatted_timespan )
     ; ( Field.Description
       , CCOption.map_or ~default:"" Description.value session.Public.description
       )
+    ; ( Field.Location
+      , session.Session.Public.location |> Pool_location.to_string language )
     ; ( Field.CanceledAt
       , CCOption.map_or
           ~default:"Not canceled"
@@ -61,5 +75,5 @@ let public_detail (session : Session.Public.t) language =
              ; td [ txt value ]
              ])
   in
-  table ~a:[ a_class [ "striped" ] ] rows
+  table ~a:[ a_class [ "table"; "striped" ] ] rows
 ;;

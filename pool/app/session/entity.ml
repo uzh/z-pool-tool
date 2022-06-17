@@ -49,19 +49,13 @@ end
 module Start = struct
   type t = Ptime.t [@@deriving eq, show]
 
-  let create start =
-    let now = () |> Ptime_clock.now in
-    match Ptime.is_earlier start ~than:now with
-    | true -> Error Pool_common.Message.TimeInPast
-    | false -> Ok start
-  ;;
-
+  let create m = m
   let value m = m
 
   let schema () =
     let decode str =
       let open CCResult in
-      Pool_common.(Utils.parse_time str >>= create)
+      Pool_common.(Utils.Time.parse_time str >|= create)
     in
     Pool_common.(
       Utils.schema_decoder decode Ptime.to_rfc3339 Message.Field.Start)
@@ -81,9 +75,21 @@ module Duration = struct
 
   let schema () =
     let open CCResult in
-    let decode str = Pool_common.(Utils.parse_time_span str >>= create) in
-    let encode span = Pool_common.Utils.print_time_span span in
+    let decode str = Pool_common.(Utils.Time.parse_time_span str >>= create) in
+    let encode span = Pool_common.Utils.Time.print_time_span span in
     Pool_common.(Utils.schema_decoder decode encode Message.Field.Duration)
+  ;;
+end
+
+module AssignmentCount = struct
+  type t = int [@@deriving eq, show]
+
+  let value m = m
+
+  let create m =
+    if m < 0
+    then Error Pool_common.Message.(Invalid Field.AssignmentCount)
+    else Ok m
   ;;
 end
 
@@ -92,11 +98,13 @@ type t =
   ; start : Start.t
   ; duration : Ptime.Span.t
   ; description : Description.t option
+  ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -119,6 +127,7 @@ let create
     start
     duration
     description
+    location
     max_participants
     min_participants
     overbook
@@ -129,15 +138,21 @@ let create
   ; start
   ; duration
   ; description
+  ; location
   ; max_participants
   ; min_participants
   ; overbook
   ; reminder_text
   ; reminder_lead_time
+  ; assignment_count = 0
   ; canceled_at = None
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }
+;;
+
+let is_fully_booked (m : t) =
+  m.assignment_count >= m.max_participants + m.overbook
 ;;
 
 type assignments =
@@ -158,13 +173,51 @@ type notification_history =
 
 let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
 
+let to_email_text language start duration location =
+  let format label text =
+    Format.asprintf
+      "%s: %s"
+      Pool_common.(Utils.field_to_string language label)
+      text
+  in
+  let start =
+    format
+      Pool_common.Message.Field.Start
+      (Start.value start |> Pool_common.Utils.Time.formatted_date_time)
+  in
+  let duration =
+    format
+      Pool_common.Message.Field.Duration
+      (Duration.value duration |> Pool_common.Utils.Time.formatted_timespan)
+  in
+  let location =
+    format
+      Pool_common.Message.Field.Location
+      (Pool_location.to_string language location)
+  in
+  CCString.concat "\n" [ start; duration; location ]
+;;
+
+let session_date_to_human (session : t) =
+  session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+;;
+
 module Public = struct
   type t =
     { id : Pool_common.Id.t
     ; start : Start.t
     ; duration : Ptime.Span.t
     ; description : Description.t option
+    ; location : Pool_location.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
   [@@deriving eq, show]
+
+  let is_fully_booked (m : t) =
+    m.assignment_count >= m.max_participants + m.overbook
+  ;;
 end

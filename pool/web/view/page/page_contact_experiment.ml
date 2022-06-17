@@ -7,10 +7,12 @@ let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.Public.t) =
     let open Experiment.Public in
     div
-      ~a:[ a_class [ "flexrow"; "space-between"; "inset-sm"; "flex-gap" ] ]
+      ~a:[ a_class [ "flexrow"; "justify-between"; "inset-sm"; "flex-gap" ] ]
       [ div
           ~a:[ a_class [ "grow" ] ]
-          [ txt (Experiment.Description.value experiment.description) ]
+          [ Experiment.Description.value experiment.description
+            |> HttpUtils.add_line_breaks
+          ]
       ; div
           [ a
               ~a:
@@ -27,7 +29,7 @@ let index experiment_list Pool_context.{ language; _ } =
       ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -44,7 +46,7 @@ let show
     sessions
     session_user_is_assigned
     user_is_enlisted
-    Pool_context.{ language; _ }
+    Pool_context.{ language; csrf; _ }
   =
   let open Experiment.Public in
   let form_action =
@@ -60,33 +62,36 @@ let show
     | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
     | false -> Pool_common.Message.(AddToWaitingList), "success"
   in
-  let not_enrolled_html () =
+  let session_list sessions =
     div
       ~a:[ a_class [ "stack-lg" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ txt
-              Pool_common.(Utils.field_to_string language Message.Field.Session)
-          ]
+          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
       ; div [ Session.public_overview sessions experiment language ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string
-                      language
-                      I18n.ExperimentWaitingListTitle)
-              ]
-          ; form
-              ~a:[ a_method `Post; a_action form_action ]
-              [ submit_element
-                  language
-                  form_control
-                  ~classnames:[ submit_class ]
-                  ()
-              ]
+      ]
+  in
+  let waiting_list_form () =
+    div
+      ~a:[ a_class [ "stack" ] ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+          ]
+      ; (if user_is_enlisted
+        then div []
+        else
+          p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.SignUpForWaitingList)
+            ])
+      ; form
+          ~a:[ a_method `Post; a_action form_action ]
+          [ csrf_element csrf ()
+          ; submit_element language form_control ~classnames:[ submit_class ] ()
           ]
       ]
   in
@@ -103,13 +108,27 @@ let show
   let html =
     match session_user_is_assigned with
     | Some session -> enrolled_html session
-    | None -> not_enrolled_html ()
+    | None ->
+      (match
+         Experiment.DirectRegistrationDisabled.value
+           experiment.direct_registration_disabled
+       with
+      | false ->
+        let session_html = session_list sessions in
+        (match experiment.waiting_list_disabled with
+        | false -> [ session_html; waiting_list_form () ]
+        | true -> [ session_html ])
+        |> div ~a:[ a_class [ "stack-lg" ] ]
+      | true -> div [ waiting_list_form () ])
   in
   div
-    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ div
         ~a:[ a_class [ "stack" ] ]
-        [ p [ txt (Experiment.Description.value experiment.description) ]
+        [ p
+            [ Experiment.Description.value experiment.description
+              |> HttpUtils.add_line_breaks
+            ]
         ; html
         ]
     ]

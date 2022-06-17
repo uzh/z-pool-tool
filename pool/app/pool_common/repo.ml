@@ -3,7 +3,26 @@ open Entity
 module Id = struct
   include Id
 
-  let t = Caqti_type.string
+  let t =
+    let encode = Utils.fcn_ok value in
+    let decode = Utils.fcn_ok of_string in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
+end
+
+module Language = struct
+  include Language
+
+  let encode m = m |> show |> CCResult.pure
+
+  let decode m =
+    m
+    |> create
+    |> CCResult.map_err (fun _ ->
+           Locales_en.error_to_string Entity_message.(Decode Field.Language))
+  ;;
+
+  let t = Caqti_type.(custom ~encode ~decode string)
 end
 
 module Version = struct

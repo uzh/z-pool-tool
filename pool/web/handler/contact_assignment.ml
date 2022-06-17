@@ -7,7 +7,8 @@ let create req =
   let experiment_id, id =
     let open Pool_common.Message.Field in
     HttpUtils.(
-      get_field_router_param req Experiment, get_field_router_param req Session)
+      ( get_field_router_param req Experiment |> Pool_common.Id.of_string
+      , get_field_router_param req Session |> Pool_common.Id.of_string ))
   in
   let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
@@ -20,6 +21,32 @@ let create req =
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let* session = Session.find_public tenant_db id contact in
+    let* waiting_list =
+      Waiting_list.find_by_contact_and_experiment tenant_db contact experiment
+    in
+    let* confirmation_email =
+      let* language =
+        let* default = Settings.default_language tenant_db in
+        contact.Contact.language |> CCOption.value ~default |> Lwt_result.return
+      in
+      let* subject =
+        I18n.find_by_key tenant_db I18n.Key.ConfirmationSubject language
+        >|= I18n.content
+      in
+      let* text =
+        I18n.find_by_key tenant_db I18n.Key.ConfirmationText language
+        >|= I18n.content
+      in
+      let session_text =
+        Session.(
+          to_email_text
+            language
+            session.Public.start
+            session.Public.duration
+            session.Public.location)
+      in
+      Lwt_result.return Assignment.{ subject; text; language; session_text }
+    in
     let%lwt already_enrolled =
       let open Lwt.Infix in
       Assignment.find_by_experiment_and_contact_opt
@@ -30,7 +57,10 @@ let create req =
     in
     let events =
       Cqrs_command.Assignment_command.Create.(
-        handle { contact; session; experiment } already_enrolled)
+        handle
+          { contact; session; waiting_list }
+          confirmation_email
+          already_enrolled)
       |> Lwt_result.lift
     in
     let handle events =

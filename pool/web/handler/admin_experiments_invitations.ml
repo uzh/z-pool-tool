@@ -114,9 +114,9 @@ let resend req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, id =
     let open Pool_common.Message.Field in
-    HttpUtils.(
-      ( get_field_router_param req Experiment
-      , get_field_router_param req Invitation ))
+    let open HttpUtils in
+    ( get_field_router_param req Experiment |> Pool_common.Id.of_string
+    , get_field_router_param req Invitation |> Pool_common.Id.of_string )
   in
   let redirect_path =
     Format.asprintf

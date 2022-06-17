@@ -31,10 +31,11 @@ let show req =
     let tenant_db = context.Pool_context.tenant_db in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
+      |> Pool_common.Id.of_string
     in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db id contact in
-    let%lwt sessions =
+    let* sessions =
       Session.find_all_public_for_experiment
         tenant_db
         contact
@@ -55,14 +56,14 @@ let show req =
           assignment.Assignment.Public.id
         |> Lwt_result.map (fun session -> Some session)
     in
-    let%lwt user_is_on_wait_list =
+    let%lwt user_is_on_waiting_list =
       Waiting_list.user_is_enlisted tenant_db contact experiment
     in
     Page.Contact.Experiment.show
       experiment
       sessions
       session_user_is_assigned
-      user_is_on_wait_list
+      user_is_on_waiting_list
       context
     |> Lwt.return_ok
     >>= create_layout req context

@@ -60,30 +60,38 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_by_session
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t list, Pool_common__Entity_message.error) result Lwt.t
-
-val find_uncanceled_by_session
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (t list, Pool_common__Entity_message.error) result Lwt.t
-
 val find_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> Contact.t
   -> Public.t option Lwt.t
 
+val find_by_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
+val find_uncanceled_by_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 type create =
   { contact : Contact.t
   ; session_id : Pool_common.Id.t
   }
 
+type confirmation_email =
+  { subject : I18n.Content.t
+  ; text : I18n.Content.t
+  ; language : Pool_common.Language.t
+  ; session_text : string
+  }
+
 type event =
   | Canceled of t
   | Created of create
+  | ConfirmationSent of confirmation_email * Contact.t
   | Participated of t * Participated.t
   | ShowedUp of t * ShowUp.t
 

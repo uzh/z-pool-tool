@@ -14,19 +14,20 @@ type base =
 
 (* TODO [aerben] experiment ID *)
 type event =
-  | Created of (base * Pool_common.Id.t)
+  | Created of (base * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
-  | Updated of (base * t)
+  | Updated of (base * Pool_location.t * t)
 [@@deriving eq, show]
 
 let handle_event pool = function
-  | Created (session, experiment_id) ->
+  | Created (session, experiment_id, location) ->
     let sess =
       create
         session.start
         session.duration
         session.description
+        location
         session.max_participants
         session.min_participants
         session.overbook
@@ -35,7 +36,7 @@ let handle_event pool = function
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
-    Repo.update pool { session with canceled_at = Some (Ptime_clock.now ()) }
+    { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool
   | Deleted session -> Repo.delete pool session.id
   | Updated
       ( { start
@@ -47,12 +48,14 @@ let handle_event pool = function
         ; reminder_text
         ; reminder_lead_time
         }
+      , location
       , session ) ->
     Repo.update
       pool
       { session with
         start
       ; duration
+      ; location
       ; description
       ; max_participants
       ; min_participants

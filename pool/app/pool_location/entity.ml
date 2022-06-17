@@ -1,79 +1,122 @@
-module Id = Pool_common.Id
+module Mapping = Entity_file_mapping
+module Conformist = Pool_common.Utils.PoolConformist
+module Utils = Pool_common.Utils
+module Message = Pool_common.Message
+module Field = Message.Field
+module Address = Entity_address
 
-module Room = struct
-  type t = string [@@deriving eq, show]
+let create_if_not_empty_string field m =
+  if CCString.is_empty m then Error Message.(Invalid field) else Ok m
+;;
 
-  let value m = m
-
-  let create room =
-    if CCString.is_empty room then Error "Invalid room!" else Ok room
-  ;;
-
-  let to_human room = room
+module Id = struct
+  include Pool_common.Id
 end
 
-module Building = struct
+module Name = struct
   type t = string [@@deriving eq, show]
 
+  let field = Field.Name
+  let create = create_if_not_empty_string field
   let value m = m
-
-  let create building =
-    if CCString.is_empty building
-    then Error "Invalid building!"
-    else Ok building
-  ;;
-
-  let to_human building = building
+  let of_string m = m
+  let schema () = Utils.schema_decoder create value field
 end
 
-module Street = struct
+module Description = struct
   type t = string [@@deriving eq, show]
 
+  let field = Field.Description
+  let create = create_if_not_empty_string field
   let value m = m
-
-  let create street =
-    if CCString.is_empty street then Error "Invalid street!" else Ok street
-  ;;
-
-  let to_human street = street
+  let of_string m = m
+  let schema () = Utils.schema_decoder create value field
 end
 
-module Zip = struct
+module Link = struct
   type t = string [@@deriving eq, show]
 
+  let field = Field.Link
+  let create = create_if_not_empty_string field
   let value m = m
-
-  let create zip =
-    let regex =
-      Re.(
-        seq [ repn (alt [ digit; set "_-" ]) 4 (Some 10) ]
-        |> whole_string
-        |> compile)
-    in
-    if Re.execp regex zip then Ok zip else Error "Invalid zip code!"
-  ;;
-
-  let to_human zip = zip
+  let of_string m = m
+  let schema () = Utils.schema_decoder create value field
 end
 
-module City = struct
-  type t = string [@@deriving eq, show]
+module Status = struct
+  let field = Pool_common.Message.Field.Status
+  let go m fmt _ = Format.pp_print_string fmt m
 
-  let value m = m
+  type t =
+    | Active [@name "active"] [@printer go "active"]
+    | Maintenance [@name "maintenance"] [@printer go "maintenance"]
+    | Closed [@name "closed"] [@printer go "closed"]
+  [@@deriving enum, eq, show { with_path = false }, yojson, sexp_of]
 
-  let create city =
-    if CCString.is_empty city then Error "Invalid city!" else Ok city
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
   ;;
 
-  let to_human city = city
+  let create m =
+    try Ok (read m) with
+    | _ -> Error Pool_common.Message.(Invalid field)
+  ;;
+
+  let init = Active
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "Location Status: Could not create list of all keys!"
+  ;;
+
+  let schema () = Utils.schema_decoder create show field
 end
 
 type t =
   { id : Id.t
-  ; room : Room.t
-  ; building : Building.t
-  ; street : Street.t
-  ; zip : Zip.t
-  ; city : City.t
+  ; name : Name.t
+  ; description : Description.t option
+  ; address : Address.t
+  ; link : Link.t option
+  ; status : Status.t
+  ; files : Mapping.file list
+  ; created_at : Pool_common.CreatedAt.t
+  ; updated_at : Pool_common.UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving show]
+
+let to_string language location =
+  CCString.concat
+    ", "
+    (Address.address_rows_human language location.address
+    |> fun (room, street, city) ->
+    [ room; street; city ]
+    |> CCList.filter (fun m -> m |> CCString.is_empty |> not))
+;;
+
+let equal m k =
+  Id.equal m.id k.id
+  && Name.equal m.name k.name
+  && Address.equal m.address k.address
+  && Status.equal m.status k.status
+;;
+
+let create ?(id = Id.create ()) name description address link status files =
+  let open CCResult in
+  let* name = Name.create name in
+  let* description = description |> CCResult.opt_map Description.create in
+  let* link = link |> CCResult.opt_map Link.create in
+  Ok
+    { id
+    ; name
+    ; description
+    ; address
+    ; link
+    ; status
+    ; files
+    ; created_at = Pool_common.CreatedAt.create ()
+    ; updated_at = Pool_common.UpdatedAt.create ()
+    }
+;;

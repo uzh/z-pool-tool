@@ -54,7 +54,7 @@ let header ?(children = []) title =
       [ a_class
           [ "inset"
           ; "flexrow"
-          ; "space-between"
+          ; "justify-between"
           ; "align-center"
           ; "bg-grey-light"
           ; "border-bottom"
@@ -76,56 +76,6 @@ let footer title =
           ]
       ]
     [ p [ txt title ] ]
-;;
-
-(* TODO [aerben] maybe extract? *)
-let datepicker lang =
-  lang
-  |> Pool_common.Language.code
-  |> CCString.lowercase_ascii
-  |> Format.asprintf
-       (* TODO [aerben] add locale first day of week *)
-       {js|
-function initDatepicker() {
-    document.querySelectorAll('.datepicker').forEach(e => {
-        flatpickr(e, {
-            locale: "%s",
-            altInput: true,
-            altFormat: "d.m.Y H:i",
-            minDate: new Date(),
-            enableTime: true,
-            dateFormat: "Z"
-        })
-    });
-    document.querySelectorAll('.spanpicker').forEach(e => {
-        flatpickr(e, {
-            enableTime: true,
-            noCalendar: true,
-            altFormat: "H:i",
-            dateFormat: "H:i",
-            onChange: (selectedDates, dateStr, instance) => {
-              [hours, minutes] = dateStr.split(":");
-              const seconds = (hours * 3600) + (minutes * 60);
-              console.log(instance);
-              },
-            time_24hr: true
-        })
-    });
-}
-       |js}
-;;
-
-let onload =
-  {js|
-    window.onload = function () {
-      initDatepicker();
-    }
-  |js}
-;;
-
-let other_scripts lang =
-  let scripts = CCString.concat "\n" [ datepicker lang; onload ] in
-  script (Unsafe.data scripts)
 ;;
 
 let build_nav_link (url, title) language query_language active_navigation =
@@ -158,7 +108,7 @@ module Tenant = struct
       ~a:[ a_class [ "main-nav" ] ]
       (CCList.map
          (fun tenant_language ->
-           let label = Pool_common.Language.code tenant_language in
+           let label = Pool_common.Language.show tenant_language in
            if Pool_common.Language.equal tenant_language active_lang
            then
              span
@@ -173,7 +123,7 @@ module Tenant = struct
                          add_field_query_params
                            ""
                            [ ( Field.Language
-                             , Language.code tenant_language
+                             , Language.show tenant_language
                                |> CCString.lowercase_ascii )
                            ]))
                  ; a_class link_classes
@@ -191,9 +141,11 @@ module Tenant = struct
       | `Admin ->
         [ "/admin/dashboard", Dashboard
         ; "/admin/experiments", Experiments
+        ; "/admin/locations", Locations
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
         ])
+      @ [ "/logout", Logout ]
       |> CCList.map (fun item ->
              build_nav_link item language query_language active_navigation)
     in
@@ -229,7 +181,7 @@ module Tenant = struct
       let navigation =
         navigation layout_context active_lang query_language active_navigation
       in
-      (fun html -> [ div ~a:[ a_class [ "flexrow flex-gap" ] ] html ])
+      (fun html -> [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] html ])
       @@
       match layout_context with
       | `Admin -> [ navigation ]
@@ -246,7 +198,6 @@ module Tenant = struct
          ; content
          ; footer title_text
          ; scripts
-         ; other_scripts Pool_common.Language.En
          ])
   ;;
 end
@@ -279,6 +230,5 @@ let create_root_layout children message lang ?active_navigation () =
        ; content
        ; footer title_text
        ; scripts
-       ; other_scripts lang
        ])
 ;;

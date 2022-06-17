@@ -79,6 +79,7 @@ val delete_unverified_by_user
 
 module TemplateLabel : sig
   type t =
+    | Boilerplate
     | EmailVerification
     | Invitation
     | PasswordChange

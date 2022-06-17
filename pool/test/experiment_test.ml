@@ -1,10 +1,40 @@
 module ExperimentCommand = Cqrs_command.Experiment_command
 module Common = Pool_common
 
+let experiment_boolean_fields =
+  Pool_common.Message.Field.
+    [ WaitingListDisabled |> show
+    ; DirectRegistrationDisabled |> show
+    ; RegistrationDisabled |> show
+    ]
+;;
+
 module Data = struct
   let title = "New experiment"
   let description = "Description"
   let filter = "1=1"
+
+  let experiment =
+    let open CCResult in
+    let id = Pool_common.Id.create () in
+    let* title = title |> Experiment.Title.create in
+    let* description = description |> Experiment.Description.create in
+    Ok
+      Experiment.
+        { id
+        ; title
+        ; description
+        ; filter
+        ; waiting_list_disabled = true |> WaitingListDisabled.create
+        ; session_reminder_text = None
+        ; session_reminder_lead_time = None
+        ; direct_registration_disabled =
+            false |> DirectRegistrationDisabled.create
+        ; registration_disabled = false |> RegistrationDisabled.create
+        ; created_at = Common.CreatedAt.create ()
+        ; updated_at = Common.UpdatedAt.create ()
+        }
+  ;;
 end
 
 let database_label = Test_utils.Data.database_label
@@ -15,7 +45,9 @@ let create () =
     Pool_common.Message.Field.
       [ Title |> show, [ Data.title ]
       ; Description |> show, [ Data.description ]
+      ; WaitingListDisabled |> show, [ "on" ]
       ]
+    |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
@@ -24,14 +56,19 @@ let create () =
     let open Experiment in
     let* title = Title.create Data.title in
     let* description = Description.create Data.description in
-    let* session_reminder_lead_time =
-      Ptime.Span.of_int_s @@ (60 * 60) |> Pool_common.Reminder.LeadTime.create
+    let waiting_list_disabled = true |> WaitingListDisabled.create in
+    let direct_registration_disabled =
+      false |> DirectRegistrationDisabled.create
     in
+    let registration_disabled = false |> RegistrationDisabled.create in
     let create =
       { title
       ; description
       ; session_reminder_text = None
-      ; session_reminder_lead_time
+      ; session_reminder_lead_time = None
+      ; waiting_list_disabled
+      ; direct_registration_disabled
+      ; registration_disabled
       }
     in
     Ok [ Experiment.Created create |> Pool_event.experiment ]
@@ -49,12 +86,35 @@ let create_without_title () =
     let open CCResult.Infix in
     Pool_common.Message.Field.
       [ Title |> show, [ "" ]; Description |> show, [ Data.description ] ]
+    |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
   let expected =
     Error Common.Message.(Conformist [ Field.Title, Invalid Field.Title ])
   in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let create_with_mutually_exclusive_options () =
+  let events =
+    let open CCResult.Infix in
+    Pool_common.Message.Field.
+      [ Title |> show, [ Data.title ]
+      ; Description |> show, [ Data.description ]
+      ; WaitingListDisabled |> show, [ "on" ]
+      ; DirectRegistrationDisabled |> show, [ "on" ]
+      ]
+    |> Http_utils.format_request_boolean_values experiment_boolean_fields
+    |> ExperimentCommand.Create.decode
+    >>= ExperimentCommand.Create.handle
+  in
+  let expected = Error Common.Message.(WaitingListFlagsMutuallyExclusive) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

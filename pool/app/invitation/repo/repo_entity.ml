@@ -36,23 +36,15 @@ let of_entity (experiment_id : Pool_common.Id.t) (m : Entity.t) : t =
 let t =
   let encode m =
     Ok
-      ( Pool_common.Id.value m.id
-      , ( Pool_common.Id.value m.experiment_id
-        , ( Pool_common.Id.value m.contact_id
-          , (m.resent_at, (m.created_at, m.updated_at)) ) ) )
+      ( m.id
+      , ( m.experiment_id
+        , (m.contact_id, (m.resent_at, (m.created_at, m.updated_at))) ) )
   in
   let decode
       (id, (experiment_id, (contact_id, (resent_at, (created_at, updated_at)))))
     =
     let open CCResult in
-    Ok
-      { id = Pool_common.Id.of_string id
-      ; experiment_id = Pool_common.Id.of_string experiment_id
-      ; contact_id = Pool_common.Id.of_string contact_id
-      ; resent_at
-      ; created_at
-      ; updated_at
-      }
+    Ok { id; experiment_id; contact_id; resent_at; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -78,9 +70,7 @@ module Update = struct
     }
 
   let t =
-    let encode (m : Entity.t) =
-      Ok (Pool_common.Id.value m.Entity.id, m.Entity.resent_at)
-    in
+    let encode (m : Entity.t) = Ok (m.Entity.id, m.Entity.resent_at) in
     let decode _ = failwith "Write model only" in
     Caqti_type.(
       custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (option ResentAt.t)))

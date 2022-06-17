@@ -8,8 +8,11 @@ let default_schema command =
       Field.
         [ Title.schema ()
         ; Description.schema ()
+        ; WaitingListDisabled.schema ()
+        ; DirectRegistrationDisabled.schema ()
+        ; RegistrationDisabled.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
-        ; Pool_common.Reminder.LeadTime.schema ()
         ]
       command)
 ;;
@@ -17,16 +20,36 @@ let default_schema command =
 let default_command
     title
     description
-    session_reminder_text
+    waiting_list_disabled
+    direct_registration_disabled
+    registration_disabled
     session_reminder_lead_time
+    session_reminder_text
   =
-  { title; description; session_reminder_text; session_reminder_lead_time }
+  { title
+  ; description
+  ; waiting_list_disabled
+  ; direct_registration_disabled
+  ; registration_disabled
+  ; session_reminder_text
+  ; session_reminder_lead_time
+  }
+;;
+
+let validate_waiting_list_flags
+    ({ waiting_list_disabled; direct_registration_disabled; _ } : create)
+  =
+  let open Experiment in
+  if direct_registration_disabled |> DirectRegistrationDisabled.value
+     && waiting_list_disabled |> WaitingListDisabled.value
+  then Error Pool_common.Message.WaitingListFlagsMutuallyExclusive
+  else Ok ()
 ;;
 
 module Create : sig
   type t = create
 
-  val handle : t -> (Pool_event.t list, 'a) result
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -37,14 +60,7 @@ end = struct
   type t = create
 
   let handle (command : t) =
-    let t =
-      { title = command.title
-      ; description = command.description
-      ; session_reminder_text = command.session_reminder_text
-      ; session_reminder_lead_time = command.session_reminder_lead_time
-      }
-    in
-    Ok [ Experiment.Created t |> Pool_event.experiment ]
+    Ok [ Experiment.Created command |> Pool_event.experiment ]
   ;;
 
   let decode data =
@@ -60,7 +76,10 @@ end
 module Update : sig
   type t = create
 
-  val handle : Experiment.t -> t -> (Pool_event.t list, 'a) result
+  val handle
+    :  Experiment.t
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -71,14 +90,7 @@ end = struct
   type t = create
 
   let handle experiment (command : t) =
-    let update =
-      { title = command.title
-      ; description = command.description
-      ; session_reminder_text = command.session_reminder_text
-      ; session_reminder_lead_time = command.session_reminder_lead_time
-      }
-    in
-    Ok [ Experiment.Updated (experiment, update) |> Pool_event.experiment ]
+    Ok [ Experiment.Updated (experiment, command) |> Pool_event.experiment ]
   ;;
 
   let decode data =

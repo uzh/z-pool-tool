@@ -56,7 +56,7 @@ let sortable =
   |js}
 ;;
 
-let show
+let[@warning "-21"] show
     tenant_languages
     email_suffixes
     contact_email
@@ -64,7 +64,9 @@ let show
     inactive_user_warning
     terms_and_conditions
     Pool_context.{ language; csrf; _ }
+    _
   =
+  failwith "Show";
   let action_path action =
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
@@ -72,11 +74,10 @@ let show
   let form_attrs action =
     [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
   in
-  let input_element = input_element language in
   let languages_html =
     let all_languages =
       [ tenant_languages |> CCList.map (fun k -> k, true)
-      ; Pool_common.Language.all ()
+      ; Pool_common.Language.all
         |> CCList.filter_map (fun k ->
                match CCList.mem k tenant_languages with
                | true -> None
@@ -94,7 +95,7 @@ let show
            (fun (language, selected) ->
              let attrs =
                [ a_input_type `Checkbox
-               ; a_name (Pool_common.Language.code language)
+               ; a_name (Pool_common.Language.show language)
                ]
              in
              let selected =
@@ -115,7 +116,7 @@ let show
              let checkbox = input ~a:(attrs @ selected @ disabled) () in
              div
                ~a:[ a_user_data "sortable-item" "" ]
-               [ checkbox; label [ txt (Pool_common.Language.code language) ] ])
+               [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
            all_languages)
     in
     div
@@ -138,17 +139,25 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateTenantEmailSuffixes)
-              (CCList.map
-                 (fun suffix ->
-                   input_element
-                     `Text
-                     Message.Field.EmailSuffix
-                     (suffix |> Settings.EmailSuffix.value))
-                 email_suffixes
+              ([ Component.csrf_element csrf () ]
+              @ CCList.map
+                  (fun suffix ->
+                    Component.input_element
+                      language
+                      `Text
+                      Message.Field.EmailSuffix
+                      ~required:true
+                      ~value:(suffix |> Settings.EmailSuffix.value))
+                  email_suffixes
               @ [ submit_element language Message.(Update None) () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
-              [ input_element `Text Message.Field.EmailSuffix ""
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
+                  language
+                  `Text
+                  Message.Field.EmailSuffix
+                  ~required:true
               ; submit_element language Message.(Add None) ()
               ]
           ; div
@@ -161,8 +170,15 @@ let show
                              ~a:
                                [ a_method `Post
                                ; a_action (action_path `DeleteTenantEmailSuffix)
+                               ; a_user_data
+                                   "confirmable"
+                                   Pool_common.(
+                                     Utils.confirmable_to_string
+                                       language
+                                       I18n.DeleteEmailSuffix)
                                ]
-                             [ input
+                             [ Component.csrf_element csrf ()
+                             ; input
                                  ~a:
                                    [ a_input_type `Hidden
                                    ; a_name "email_suffix"
@@ -179,7 +195,7 @@ let show
                          ]
                      ])
                  email_suffixes
-              |> table ~a:[ a_class [ "width-auto" ] ]
+              |> table ~a:[ a_class [ "table" ] ]
               |> CCList.pure)
           ]
       ]
@@ -189,10 +205,13 @@ let show
       [ h2 [ txt "Contact Email" ]
       ; form
           ~a:(form_attrs `UpdateTenantContactEmail)
-          [ input_element
+          [ Component.csrf_element csrf ()
+          ; Component.input_element
+              language
               `Text
               Message.Field.ContactEmail
-              (contact_email |> Settings.ContactEmail.value)
+              ~value:(contact_email |> Settings.ContactEmail.value)
+              ~required:true
           ; submit_element language Message.(Add None) ()
           ]
       ]
@@ -205,24 +224,30 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-              [ Component.input_element
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
                   ~help:Pool_common.I18n.NumberIsWeeksHint
+                  ~required:true
                   language
                   `Number
                   Message.Field.InactiveUserDisableAfter
-                  (inactive_user_disable_after
-                  |> DisableAfter.value
-                  |> CCInt.to_string)
+                  ~value:
+                    (inactive_user_disable_after
+                    |> DisableAfter.value
+                    |> CCInt.to_string)
               ; submit_element language Message.(Update None) ()
               ]
           ; form
               ~a:(form_attrs `UpdateInactiveUserWarning)
-              [ Component.input_element
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
+                  ~required:true
                   ~help:Pool_common.I18n.NumberIsDaysHint
                   language
                   `Number
                   Message.Field.InactiveUserWarning
-                  (inactive_user_warning |> Warning.value |> CCInt.to_string)
+                  ~value:
+                    (inactive_user_warning |> Warning.value |> CCInt.to_string)
               ; submit_element language Message.(Update None) ()
               ]
           ]
@@ -244,7 +269,7 @@ let show
                       |> Utils.field_to_string language)
                 ]
             ; textarea
-                ~a:[ a_name (Pool_common.Language.code sys_language) ]
+                ~a:[ a_name (Pool_common.Language.show sys_language) ]
                 (txt
                    (CCList.assoc_opt
                       ~eq:Pool_common.Language.equal
@@ -253,13 +278,14 @@ let show
                    |> CCOption.map Settings.TermsAndConditions.Terms.value
                    |> CCOption.value ~default:""))
             ])
-        (Pool_common.Language.all ())
+        Pool_common.Language.all
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]
       ; form
           ~a:(form_attrs `UpdateTermsAndConditions)
-          (terms_and_conditions_textareas
+          ([ Component.csrf_element csrf () ]
+          @ terms_and_conditions_textareas
           @ [ submit_element language Message.(Update None) () ])
       ]
   in

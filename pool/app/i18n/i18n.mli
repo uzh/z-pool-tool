@@ -1,24 +1,24 @@
 module Key : sig
   type t =
-    | ConfirmationContact
+    | ConfirmationSubject
     | ConfirmationText
-    | ConfirmationWithoutSelfRegistrationContact
+    | ConfirmationWithoutSelfRegistrationSubject
     | ConfirmationWithoutSelfRegistrationText
     | CreditsText
-    | ExperimentFinishContact
+    | ExperimentFinishSubject
     | ExperimentFinishText
     | GreetingsText
-    | ImportInvitationContact
+    | ImportInvitationSubject
     | ImportInvitationText
-    | InvitationContact
+    | InvitationSubject
     | InvitationText
-    | InvitationWithoutSelfRegistrationContact
+    | InvitationWithoutSelfRegistrationSubject
     | InvitationWithoutSelfRegistrationText
     | PasswordPolicyText
     | ReminderSubject
     | ReminderSmsText
     | ReminderText
-    | SessionFinishContact
+    | SessionFinishSubject
     | SessionFinishText
     | WelcomeText
 
@@ -38,6 +38,7 @@ module Content : sig
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, Pool_common.Message.error) result
+  val pp : Format.formatter -> t -> unit
 
   val schema
     :  unit

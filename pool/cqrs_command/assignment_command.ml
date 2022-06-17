@@ -4,11 +4,12 @@ module Create : sig
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
-    ; experiment : Experiment.Public.t
+    ; waiting_list : Waiting_list.t option
     }
 
   val handle
     :  t
+    -> Assignment.confirmation_email
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -17,27 +18,38 @@ end = struct
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
-    ; experiment : Experiment.Public.t
+    ; waiting_list : Waiting_list.t option
     }
 
-  let handle (command : t) already_enrolled =
+  let handle (command : t) confirmation_email already_enrolled =
+    let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
-    else (
+    else
+      let* _ =
+        Session.Public.is_fully_booked command.session
+        |> function
+        | true -> Error Pool_common.Message.(SessionFullyBooked)
+        | false -> Ok ()
+      in
       let create =
         Assignment.
           { contact = command.contact
           ; session_id = command.session.Session.Public.id
           }
       in
-      let wait_list =
-        Waiting_list.
-          { contact = command.contact; experiment = command.experiment }
+      let delete_events =
+        match command.waiting_list with
+        | None -> []
+        | Some waiting_list ->
+          [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
       Ok
-        [ Waiting_list.Deleted wait_list |> Pool_event.waiting_list
-        ; Assignment.Created create |> Pool_event.assignment
-        ])
+        (delete_events
+        @ [ Assignment.Created create |> Pool_event.assignment
+          ; Assignment.ConfirmationSent (confirmation_email, command.contact)
+            |> Pool_event.assignment
+          ])
   ;;
 
   let can user _ =
@@ -122,5 +134,63 @@ end = struct
         [ Permission.Update
             (Permission.Assignment, Some assignment.Assignment.id)
         ]
+  ;;
+end
+
+module CreateFromWaitingList : sig
+  type t =
+    { session : Session.t
+    ; waiting_list : Waiting_list.t
+    ; already_enrolled : bool
+    }
+
+  val handle
+    :  t
+    -> Assignment.confirmation_email
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t =
+    { session : Session.t
+    ; waiting_list : Waiting_list.t
+    ; already_enrolled : bool
+    }
+
+  let handle (command : t) confirmation_email =
+    let open CCResult in
+    if command.already_enrolled
+    then Error Pool_common.Message.(AlreadySignedUpForExperiment)
+    else
+      let* _ =
+        Session.is_fully_booked command.session
+        |> function
+        | true -> Error Pool_common.Message.(SessionFullyBooked)
+        | false -> Ok ()
+      in
+      match
+        command.waiting_list.Waiting_list.experiment
+        |> Experiment.registration_disabled_value
+      with
+      | true -> Error Pool_common.Message.(RegistrationDisabled)
+      | false ->
+        let create =
+          let open Waiting_list in
+          Assignment.
+            { contact = command.waiting_list.contact
+            ; session_id = command.session.Session.id
+            }
+        in
+        Ok
+          [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
+          ; Assignment.Created create |> Pool_event.assignment
+          ; Assignment.ConfirmationSent
+              (confirmation_email, command.waiting_list.Waiting_list.contact)
+            |> Pool_event.assignment
+          ]
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Create Permission.Assignment ]
   ;;
 end

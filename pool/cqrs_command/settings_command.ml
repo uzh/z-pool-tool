@@ -78,8 +78,11 @@ end = struct
   let handle suffixes =
     let open CCResult in
     let* suffixes =
-      CCList.map
-        (fun (_, v) -> Settings.EmailSuffix.create (CCList.hd v))
+      CCList.filter_map
+        (fun (key, v) ->
+          if CCString.equal key "_csrf"
+          then None
+          else Some (Settings.EmailSuffix.create (CCList.hd v)))
         suffixes
       |> CCResult.flatten_l
     in
@@ -247,9 +250,9 @@ end = struct
     let open CCResult in
     let ignore_emtpy =
       CCList.filter_map (fun (lang, terms) ->
-          match terms with
-          | None | Some "" -> None
-          | Some terms -> Some (lang, terms))
+          match lang, terms with
+          | _, None | _, Some "" | "_csrf", _ -> None
+          | _, Some terms -> Some (lang, terms))
     in
     let tenant_languages_are_set terms =
       let result =
@@ -258,7 +261,7 @@ end = struct
              (fun tenant_language ->
                CCList.assoc_opt
                  ~eq:CCString.equal
-                 (tenant_language |> Pool_common.Language.code)
+                 (tenant_language |> Pool_common.Language.show)
                  terms
                |> CCOption.to_result ())
              tenant_languages

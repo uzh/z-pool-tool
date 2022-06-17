@@ -33,7 +33,7 @@ module Start : sig
   include Base
 
   val value : t -> Ptime.t
-  val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create : Ptime.t -> t
 end
 
 module Duration : sig
@@ -54,16 +54,27 @@ type base =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
+module AssignmentCount : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val value : t -> int
+  val create : int -> (t, Pool_common.Message.error) result
+end
+
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
+  ; location : Pool_location.t
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
      * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
@@ -79,14 +90,17 @@ type t =
 
 val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
+val show : t -> string
+val is_fully_booked : t -> bool
+val session_date_to_human : t -> string
 
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
-  | Created of (base * Pool_common.Id.t)
+  | Created of (base * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
-  | Updated of (base * t)
+  | Updated of (base * Pool_location.t * t)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -98,12 +112,18 @@ module Public : sig
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
+    ; location : Pool_location.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
     ; canceled_at : Ptime.t option
     }
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val is_fully_booked : t -> bool
 end
 
 (* TODO [aerben] this should be experiment id type *)
@@ -118,24 +138,35 @@ val find_public
   -> Contact.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
+val find_all_public_by_location
+  :  Pool_database.Label.t
+  -> Pool_location.Id.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> t list Lwt.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Public.t list, Pool_common.Message.error) result Lwt.t
 
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
-module Repo : sig
-  module Public : sig
-    val t : Public.t Caqti_type.t
-  end
-end
+val find_experiment_id_and_title
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
+
+val to_email_text
+  :  Pool_common.Language.t
+  -> Start.t
+  -> Duration.t
+  -> Pool_location.t
+  -> string

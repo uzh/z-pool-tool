@@ -31,13 +31,70 @@ module Description = struct
   ;;
 end
 
+module WaitingListDisabled = struct
+  type t = bool [@@deriving eq, show]
+
+  let create m = m
+  let value m = m
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Common.Message.Field.WaitingListDisabled
+  ;;
+end
+
+module DirectRegistrationDisabled = struct
+  type t = bool [@@deriving eq, show]
+
+  let create m = m
+  let value m = m
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Common.Message.Field.DirectRegistrationDisabled
+  ;;
+end
+
+module RegistrationDisabled = struct
+  type t = bool [@@deriving eq, show]
+
+  let create m = m
+  let value m = m
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Common.Message.Field.RegistrationDisabled
+  ;;
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
   ; description : Description.t
-  ; session_reminder_text : Pool_common.Reminder.Text.t option
-  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t
   ; filter : string
+  ; waiting_list_disabled : WaitingListDisabled.t
+  ; direct_registration_disabled : DirectRegistrationDisabled.t
+  ; registration_disabled : RegistrationDisabled.t
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -47,15 +104,21 @@ let create
     ?id
     title
     description
-    session_reminder_text
+    waiting_list_disabled
+    direct_registration_disabled
+    registration_disabled
     session_reminder_lead_time
+    session_reminder_text
   =
   { id = id |> CCOption.value ~default:(Id.create ())
   ; title
   ; description
-  ; session_reminder_text
-  ; session_reminder_lead_time
   ; filter = "1=1"
+  ; waiting_list_disabled
+  ; direct_registration_disabled
+  ; registration_disabled
+  ; session_reminder_lead_time
+  ; session_reminder_text
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()
   }
@@ -68,6 +131,8 @@ module Public = struct
   type t =
     { id : Pool_common.Id.t
     ; description : Description.t
+    ; waiting_list_disabled : WaitingListDisabled.t
+    ; direct_registration_disabled : DirectRegistrationDisabled.t
     }
   [@@deriving eq, show]
 end
@@ -77,5 +142,18 @@ let session_reminder_text_value m =
 ;;
 
 let session_reminder_lead_time_value m =
-  Pool_common.Reminder.LeadTime.value m.session_reminder_lead_time
+  m.session_reminder_lead_time
+  |> CCOption.map Pool_common.Reminder.LeadTime.value
+;;
+
+let waiting_list_disabled_value (m : t) =
+  WaitingListDisabled.value m.waiting_list_disabled
+;;
+
+let direct_registration_disabled_value (m : t) =
+  DirectRegistrationDisabled.value m.direct_registration_disabled
+;;
+
+let registration_disabled_value (m : t) =
+  RegistrationDisabled.value m.registration_disabled
 ;;

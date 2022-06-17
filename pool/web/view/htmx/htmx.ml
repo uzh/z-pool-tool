@@ -2,6 +2,14 @@ open Tyxml.Html
 module Version = Pool_common.Version
 module User = Pool_user
 
+let hx_trigger = a_user_data "hx-trigger"
+let hx_post = a_user_data "hx-post"
+let hx_get = a_user_data "hx-get"
+let hx_target = a_user_data "hx-target"
+let hx_swap = a_user_data "hx-swap"
+let hx_params = a_user_data "hx-params"
+let hx_vals = a_user_data "hx-vals"
+
 type t =
   | Firstname of Version.t * User.Firstname.t
   | Lastname of Version.t * User.Lastname.t
@@ -13,28 +21,40 @@ let hx_base_params = [ "_csrf"; "version"; "field" ]
 
 let hx_attributes field version ?action () =
   let name = Pool_common.Message.Field.(field |> show) in
-  [ a_user_data "hx-swap" "outerHTML"
-  ; a_user_data
-      "hx-params"
-      (CCString.concat ", " (CCList.cons name hx_base_params))
-  ; a_user_data "hx-target" "closest div"
-  ; a_user_data
-      "hx-vals"
+  [ hx_swap "outerHTML"
+  ; hx_params (CCString.concat ", " (CCList.cons name hx_base_params))
+  ; hx_target "closest div"
+  ; hx_vals
       (Format.asprintf
          {|{"version": "%i", "field": "%s"}|}
          (version |> Pool_common.Version.value)
          name)
   ]
-  @ CCOption.(CCList.filter_map CCFun.id [ action >|= a_user_data "hx-post" ])
+  @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
 
-let create m language ?(classnames = []) ?hx_post ?error () =
+let create m language ?(classnames = []) ?hx_post ?error ?success () =
   let open Pool_common in
   let field_to_string = Utils.field_to_string language in
+  let input_class =
+    match error, success with
+    | Some _, None -> [ "has-error" ]
+    | None, Some _ -> [ "success" ]
+    | _, _ -> []
+  in
+  let error_msg =
+    match error with
+    | None -> span []
+    | Some error ->
+      span
+        ~a:[ a_class [ "help"; "error-message" ] ]
+        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  in
   let base_input_attributes input_type field version =
     [ a_input_type input_type
     ; a_name Message.Field.(field |> show)
     ; a_placeholder (field_to_string field)
+    ; a_class input_class
     ]
     @ hx_attributes field version ?action:hx_post ()
   in
@@ -72,17 +92,12 @@ let create m language ?(classnames = []) ?hx_post ?error () =
           ()
       , field )
   in
-  let error =
-    match error with
-    | None -> span []
-    | Some error ->
-      span
-        ~a:[ a_class [ "help"; "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
-  in
   div
     ~a:[ a_class ([ "form-group" ] @ classnames) ]
-    [ label [ txt (field_to_string field) ]; input; error ]
+    [ label [ txt (field_to_string field |> CCString.capitalize_ascii) ]
+    ; input
+    ; error_msg
+    ]
 ;;
 
 (* Use this CSRF element as HTMX response in POSTs*)

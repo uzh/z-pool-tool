@@ -29,6 +29,18 @@ let create_tenant_table =
     |sql}
 ;;
 
+let change_description_column_type =
+  Sihl.Database.Migration.create_step
+    ~label:"change description column type"
+    {sql|
+      ALTER TABLE pool_tenant
+        MODIFY description text
+    |sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "tenant" |> add_step create_tenant_table)
+  Sihl.Database.Migration.(
+    empty "tenant"
+    |> add_step create_tenant_table
+    |> add_step change_description_column_type)
 ;;

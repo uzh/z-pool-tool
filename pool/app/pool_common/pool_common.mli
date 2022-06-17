@@ -11,6 +11,11 @@ module Id : sig
   val of_string : string -> t
   val value : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_sexp : Sexplib0.Sexp.t -> t
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Language : sig
@@ -23,9 +28,7 @@ module Language : sig
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val code : t -> string
-  val of_string : string -> (t, Message.error) result
-  val t : t Caqti_type.t
+  val create : string -> (t, Message.error) result
   val label : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
@@ -33,8 +36,8 @@ module Language : sig
     :  unit
     -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 
-  val all : unit -> t list
-  val all_codes : unit -> string list
+  val all : t list
+  val all_codes : string list
   val field_of_t : t -> Message.Field.t
 end
 
@@ -93,6 +96,7 @@ module File : sig
       | Gif
       | Ico
       | Jpeg
+      | Pdf
       | Png
       | Svg
       | Webp
@@ -129,7 +133,7 @@ module Reminder : sig
 
     val equal : t -> t -> bool
     val show : t -> t
-    val create : unit -> t
+    val create : string -> (t, Message.error) result
     val of_string : string -> t
     val value : t -> string
     val pp : Format.formatter -> t -> unit
@@ -158,7 +162,13 @@ module Repo : sig
   module Id : sig
     type t = Id.t
 
-    val t : string Caqti_type.t
+    val t : t Caqti_type.t
+  end
+
+  module Language : sig
+    type t = Language.t
+
+    val t : t Caqti_type.t
   end
 
   module Version : sig
@@ -202,7 +212,16 @@ end
 
 module Utils : sig
   module PoolConformist = Pool_common_utils.PoolConformist
-  module Time = Utils_time
+
+  module Time : sig
+    val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
+    val formatted_date_time : Ptime.t -> string
+    val formatted_timespan : Ptime.span -> string
+    val timespan_spanpicker : Ptime.span -> string
+    val parse_time : string -> (Ptime.t, Message.error) result
+    val parse_time_span : string -> (Ptime.Span.t, Message.error) result
+    val print_time_span : Ptime.Span.t -> string
+  end
 
   val schema_decoder
     :  (string -> ('b, Message.error) result)
@@ -222,11 +241,15 @@ module Utils : sig
   val warning_to_string : Language.t -> Message.warning -> string
   val error_to_string : Language.t -> Message.error -> string
   val field_to_string : Language.t -> Message.Field.t -> string
+  val field_to_string_capitalized : Language.t -> Message.Field.t -> string
   val control_to_string : Language.t -> Message.control -> string
+  val confirmable_to_string : Language.t -> I18n.confirmable -> string
   val text_to_string : Language.t -> Entity_i18n.t -> string
   val nav_link_to_string : Language.t -> Entity_i18n.nav_link -> string
+  val hint_to_string : Language.t -> Entity_i18n.hint -> string
   val with_log_info : ?level:Logs.level -> Message.info -> Message.info
   val with_log_success : ?level:Logs.level -> Message.success -> Message.success
+  val bool_to_string : Language.t -> bool -> string
 
   val with_log_warning
     :  ?level:Logs.level
@@ -244,7 +267,14 @@ module Utils : sig
     -> ('b, 'a) result
 
   val get_or_failwith : ('a, Message.error) result -> 'a
-  val parse_time : string -> (Ptime.t, Message.error) result
-  val parse_time_span : string -> (Ptime.Span.t, Message.error) result
-  val print_time_span : Ptime.Span.t -> string
+
+  module type BaseSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : string -> (t, Entity_message.error) result
+    val schema : unit -> (Message.error, t) PoolConformist.Field.t
+  end
 end

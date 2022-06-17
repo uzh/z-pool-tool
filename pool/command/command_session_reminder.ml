@@ -28,7 +28,7 @@ let send_reminder pool session =
     | Some text -> Some text
     | None -> experiment.Experiment.session_reminder_text
   in
-  let sys_languages = Pool_common.Language.all () in
+  let sys_languages = Pool_common.Language.all in
   let (default_texts : (Pool_common.Language.t, I18n.t * I18n.t) Hashtbl.t) =
     Hashtbl.create ~random:true (CCList.length sys_languages)
   in

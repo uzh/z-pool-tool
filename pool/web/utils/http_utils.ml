@@ -17,7 +17,6 @@ let get_current_contact tenant_db req =
 
 let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
-  |> Pool_common.Id.of_string
 ;;
 
 let find_query_lang req =
@@ -26,7 +25,7 @@ let find_query_lang req =
   >>= fun l ->
   l
   |> CCString.uppercase_ascii
-  |> Pool_common.Language.of_string
+  |> Pool_common.Language.create
   |> CCOption.of_result
 ;;
 
@@ -37,7 +36,7 @@ let path_with_language lang path =
          Message.add_field_query_params
            path
            [ ( Message.Field.Language
-             , lang |> Language.code |> CCString.lowercase_ascii )
+             , lang |> Language.show |> CCString.lowercase_ascii )
            ])
   |> CCOption.value ~default:path
 ;;
@@ -201,9 +200,7 @@ let multi_html_to_plain_text_response html_els =
 
 let browser_language_from_req req =
   let open CCOption in
-  let to_lang lang =
-    lang |> Pool_common.Language.of_string |> CCResult.to_opt
-  in
+  let to_lang lang = lang |> Pool_common.Language.create |> of_result in
   req
   |> Opium.Request.header "Accept-Language"
   >|= CCString.split ~by:","
@@ -216,4 +213,17 @@ let browser_language_from_req req =
 
 let externalize_path_with_lang lang path =
   path_with_language lang path |> Sihl.Web.externalize_path
+;;
+
+let add_line_breaks str =
+  let open Tyxml.Html in
+  span
+  @@
+  match str |> CCString.split ~by:"\n" with
+  | [] -> []
+  | head :: tail ->
+    CCList.fold_left
+      (fun html str -> html @ [ br (); txt str ])
+      [ txt head ]
+      tail
 ;;

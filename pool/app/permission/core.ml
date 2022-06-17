@@ -7,6 +7,7 @@ type thing =
   | Experiment_session
   | Invitation
   | Location
+  | Mailing
   | Participant
   | System
   | Tenant

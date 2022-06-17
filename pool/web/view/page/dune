@@ -8,6 +8,8 @@
   http_utils
   i18n
   invitation
+  mailing
+  pool_location
   pool_tenant
   root
   service

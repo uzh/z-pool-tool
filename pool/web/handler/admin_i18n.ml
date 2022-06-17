@@ -43,6 +43,7 @@ let update req =
   let open Utils.Lwt_result.Infix in
   let id =
     HttpUtils.get_field_router_param req Pool_common.Message.Field.i18n
+    |> Pool_common.Id.of_string
   in
   let redirect_path = Format.asprintf "/admin/i18n" in
   let result { Pool_context.tenant_db; _ } =

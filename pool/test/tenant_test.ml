@@ -199,7 +199,7 @@ let[@warning "-4"] create_tenant () =
         Write.
           { server; port; username; password; authentication_method; protocol }
     in
-    let* default_language = default_language |> Common.Language.of_string in
+    let* default_language = default_language |> Common.Language.create in
     let create : Pool_tenant.Write.t =
       Pool_tenant.Write.
         { id = tenant_id
@@ -281,7 +281,7 @@ let[@warning "-4"] update_tenant_details () =
         let* protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
         Ok { server; port; username; authentication_method; protocol }
       in
-      let* default_language = default_language |> Common.Language.of_string in
+      let* default_language = default_language |> Common.Language.create in
       let disabled = false |> Disabled.create in
       let update : update =
         { title; description; url; smtp_auth; default_language; disabled }
