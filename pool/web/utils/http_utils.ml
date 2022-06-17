@@ -217,12 +217,13 @@ let externalize_path_with_lang lang path =
 
 let add_line_breaks str =
   let open Tyxml.Html in
-  let str = str |> CCString.split ~by:"\n" in
-  CCList.foldi
-    (fun html index str ->
-      let str = str |> txt in
-      if index = 0 then [ str ] else html @ [ br (); str ])
-    []
-    str
-  |> span
+  span
+  @@
+  match str |> CCString.split ~by:"\n" with
+  | [] -> []
+  | head :: tail ->
+    CCList.fold_left
+      (fun html str -> html @ [ br (); txt str ])
+      [ txt head ]
+      tail
 ;;

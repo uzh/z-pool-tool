@@ -68,10 +68,13 @@ let csrf_attibs ?id csrf =
 ;;
 
 module Elements = struct
-  let input_label language name label_field =
-    CCOption.value ~default:name label_field
-    |> Pool_common.Utils.field_to_string language
-    |> CCString.capitalize_ascii
+  let input_label language name label_field required =
+    let base =
+      CCOption.value ~default:name label_field
+      |> Pool_common.Utils.field_to_string language
+      |> CCString.capitalize_ascii
+    in
+    if required then Format.asprintf "%s *" base else base
   ;;
 
   let attributes input_type name id additional_attributes =
@@ -141,10 +144,7 @@ let input_element
     input_type
     name
   =
-  let input_label =
-    let base = Elements.input_label language name label_field in
-    if required then Format.asprintf "%s *" base else base
-  in
+  let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
   let id = Elements.identifier ?identifier language name in
   let attributes =
@@ -165,6 +165,7 @@ let input_element
 let flatpicker_element
     ?(orientation = `Vertical)
     ?(classnames = [])
+    ?label_field
     ?help
     ?identifier
     ?(required = false)
@@ -176,10 +177,7 @@ let flatpicker_element
     input_type
     name
   =
-  let input_label =
-    let base = Elements.input_label language name None in
-    if required then Format.asprintf "%s *" base else base
-  in
+  let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
   let flat_picker_help =
     span ~a:[ a_class [ "help"; "datepicker-msg"; "error-message" ] ] []
@@ -235,7 +233,7 @@ let checkbox_element
     language
     name
   =
-  let input_label = Elements.input_label language name label_field in
+  let input_label = Elements.input_label language name label_field required in
   let value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
         name |> Pool_common.Message.Field.show |> flash_fetcher)
@@ -269,14 +267,11 @@ let input_element_file
     ?(allow_multiple = false)
     ?(has_icon = true)
     ?(required = false)
+    ?label_field
     language
     field
   =
-  let field_label =
-    Pool_common.Utils.field_to_string language field
-    |> CCString.capitalize_ascii
-    |> fun label -> if required then Format.asprintf "%s *" label else label
-  in
+  let input_label = Elements.input_label language field label_field required in
   let name = Pool_common.Message.Field.(field |> show) in
   let visible_part =
     let placeholder =
@@ -305,7 +300,7 @@ let input_element_file
   in
   div
     ~a:[ a_class (Elements.group_class [] orientation) ]
-    [ label ~a:[ a_label_for name ] [ txt field_label ]
+    [ label ~a:[ a_label_for name ] [ txt input_label ]
     ; label
         ~a:[ a_label_for name; a_class [ "file-input" ] ]
         [ input ~a:input_attributes (); visible_part ]
@@ -316,19 +311,13 @@ let textarea_element
     ?(classnames = [])
     ?(attributes = [])
     ?(required = false)
+    ?label_field
     ?value
     ?flash_fetcher
     language
     name
   =
-  let input_label =
-    let base =
-      name
-      |> Pool_common.Utils.field_to_string language
-      |> CCString.capitalize_ascii
-    in
-    if required then Format.asprintf "%s *" base else base
-  in
+  let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
     let base =
       [ a_name (name |> Pool_common.Message.Field.show); a_class classnames ]
