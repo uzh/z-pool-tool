@@ -117,26 +117,26 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         ~flash_fetcher
     ; checkbox_element
         language
-        `Checkbox
         Pool_common.Message.Field.WaitingListDisabled
-        (experiment
-        |> CCOption.map_or ~default:false waiting_list_disabled_value)
+        ~value:
+          (experiment
+          |> CCOption.map_or ~default:false waiting_list_disabled_value)
         ~flash_fetcher
     ; checkbox_element
         language
-        `Checkbox
         ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
-        (experiment
-        |> CCOption.map_or ~default:false direct_registration_disabled_value)
+        ~value:
+          (experiment
+          |> CCOption.map_or ~default:false direct_registration_disabled_value)
         ~flash_fetcher
     ; checkbox_element
         language
-        `Checkbox
         ~help:Pool_common.I18n.RegistrationDisabled
         Pool_common.Message.Field.RegistrationDisabled
-        (experiment
-        |> CCOption.map_or ~default:false registration_disabled_value)
+        ~value:
+          (experiment
+          |> CCOption.map_or ~default:false registration_disabled_value)
         ~flash_fetcher
     ; submit_element
         language
@@ -229,7 +229,11 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
              label, fnc experiment |> bool_to_string |> txt)
     in
     div
-      [ p [ txt (experiment.description |> Description.value) ]
+      [ p
+          [ experiment.description
+            |> Description.value
+            |> Http_utils.add_line_breaks
+          ]
       ; Table.vertical_table `Striped language rows
       ; p
           [ a
@@ -302,7 +306,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
                 |> Utils.Time.formatted_date_time)
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
-            |> txt
+            |> Http_utils.add_line_breaks
           ; a
               ~a:
                 [ a_href

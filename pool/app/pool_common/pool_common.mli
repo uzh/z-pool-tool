@@ -167,7 +167,16 @@ end
 
 module Utils : sig
   module PoolConformist = Pool_common_utils.PoolConformist
-  module Time = Utils_time
+
+  module Time : sig
+    val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
+    val formatted_date_time : Ptime.t -> string
+    val formatted_timespan : Ptime.span -> string
+    val timespan_spanpicker : Ptime.span -> string
+    val parse_time : string -> (Ptime.t, Message.error) result
+    val parse_time_span : string -> (Ptime.Span.t, Message.error) result
+    val print_time_span : Ptime.Span.t -> string
+  end
 
   val schema_decoder
     :  (string -> ('b, Message.error) result)
@@ -213,9 +222,6 @@ module Utils : sig
     -> ('b, 'a) result
 
   val get_or_failwith : ('a, Message.error) result -> 'a
-  val parse_time : string -> (Ptime.t, Message.error) result
-  val parse_time_span : string -> (Ptime.Span.t, Message.error) result
-  val print_time_span : Ptime.Span.t -> string
 
   module type BaseSig = sig
     type t

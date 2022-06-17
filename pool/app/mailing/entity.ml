@@ -13,7 +13,7 @@ module StartAt = struct
   let schema ?(field = field) () =
     let decode str =
       let open CCResult in
-      Pool_common.(Utils.parse_time str >>= create)
+      Pool_common.(Utils.Time.parse_time str >>= create)
     in
     Pool_common.Utils.schema_decoder decode Ptime.to_rfc3339 field
   ;;
@@ -131,6 +131,8 @@ let equal m1 m2 =
 
 let create ?(id = Id.create ()) start_at end_at rate distribution =
   if Ptime.is_later ~than:end_at start_at
+  then Error Pool_common.Message.EndBeforeStart
+  else if Ptime.is_earlier ~than:(Ptime_clock.now ()) start_at
   then Error Pool_common.Message.TimeInPast
   else
     Ok

@@ -55,20 +55,19 @@ let create csrf language experiment_id locations ~flash_fetcher =
               |> Sihl.Web.externalize_path)
           ]
         [ Component.csrf_element csrf ()
-        ; input_element
+        ; flatpicker_element
             language
-            `Datetime
+            `Datetime_local
             Pool_common.Message.Field.Start
             ~required:true
             ~flash_fetcher
-        ; input_element
+            ~warn_past:true
+        ; flatpicker_element
             language
-            (* TODO [aerben] make this `Time and convert span from flatpickr to
-               seconds *)
             ~required:true
-            `Number
+            `Time
             Pool_common.Message.Field.Duration
-            ~help:Pool_common.I18n.NumberIsSecondsHint
+            ~help:Pool_common.I18n.TimeSpanPickerHint
             ~flash_fetcher
         ; textarea_element
             language
@@ -212,8 +211,7 @@ let detail
   let session_overview =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ (* TODO [aerben] use better formatted date *)
-        (let rows =
+      [ (let rows =
            let amount amt = amt |> ParticipantAmount.value |> string_of_int in
            let open Message in
            [ ( Field.Start
@@ -228,7 +226,7 @@ let detail
                |> txt )
            ; ( Field.Description
              , CCOption.map_or ~default:"" Description.value session.description
-               |> txt )
+               |> Http_utils.add_line_breaks )
            ; ( Field.Location
              , Pool_location.to_string language session.Session.location |> txt
              )
@@ -318,23 +316,23 @@ let edit
              ]
            [ Component.csrf_element csrf ()
              (* TODO [aerben] use better formatted date *)
-           ; input_element
+           ; flatpicker_element
                language
-               `Datetime
+               `Datetime_local
                Pool_common.Message.Field.Start
                ~required:true
-               ~value:
-                 (session.start |> Start.value |> Ptime.to_rfc3339 ~space:true)
+               ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
                ~flash_fetcher
-           ; input_element
+               ~warn_past:true
+           ; flatpicker_element
                language
-               `Number
+               `Time
                Pool_common.Message.Field.Duration
-               ~help:Pool_common.I18n.NumberIsSecondsHint
+               ~help:Pool_common.I18n.TimeSpanPickerHint
                ~value:
                  (session.duration
                  |> Duration.value
-                 |> Pool_common.Utils.print_time_span)
+                 |> Pool_common.Utils.Time.timespan_spanpicker)
                ~required:true
                ~flash_fetcher
            ; textarea_element

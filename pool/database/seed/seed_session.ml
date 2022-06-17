@@ -44,7 +44,7 @@ let create pool =
         let open Pool_common.Utils in
         let session =
           Session.
-            { start = Start.create start |> get_or_failwith
+            { start = Start.create start
             ; duration = Duration.create duration |> get_or_failwith
             ; description =
                 (description

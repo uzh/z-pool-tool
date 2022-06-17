@@ -211,9 +211,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
   let disabled =
     checkbox_element
       language
-      `Checkbox
       Message.Field.TenantDisabledFlag
-      (tenant.disabled |> Pool_tenant.Disabled.value)
+      ~value:(tenant.disabled |> Pool_tenant.Disabled.value)
   in
   let delete_img_form files =
     div

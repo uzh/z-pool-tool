@@ -103,8 +103,8 @@ let field_to_string =
   | TenantId -> "tenant identifier"
   | TenantLogos -> "tenant logos"
   | TenantMaintenanceFlag -> "maintenance flag"
-  | TenantPool -> "Tenant pool"
-  | TermsAccepted -> "terms accepted"
+  | TenantPool -> "tenant pool"
+  | TermsAccepted -> "accept"
   | TermsAndConditions -> "terms and conditions"
   | Time -> "time"
   | TimeSpan -> "time span"
@@ -186,7 +186,7 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
-  | EndBeforeStart -> "End before or equal to start"
+  | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
   | HtmxVersionNotFound field ->

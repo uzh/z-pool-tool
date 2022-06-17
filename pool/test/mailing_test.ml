@@ -14,7 +14,10 @@ let check_result expected generated =
 
 module Data = struct
   let norm_ptime m =
-    m |> Ptime.to_rfc3339 |> Pool_common.Utils.parse_time |> get_or_failwith
+    m
+    |> Ptime.to_rfc3339
+    |> Pool_common.Utils.Time.parse_time
+    |> get_or_failwith
   ;;
 
   module Mailing = struct
@@ -22,6 +25,8 @@ module Data = struct
 
     let start_at =
       Ptime_clock.now ()
+      |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s 1800)
+      |> CCOption.get_exn_or "Mailing Test: Could not create end_at timestamp."
       |> norm_ptime
       |> Mailing.StartAt.create
       |> get_or_failwith
@@ -114,6 +119,6 @@ let create_end_before_start () =
     |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
   in
-  let expected = Error Pool_common.Message.TimeInPast in
+  let expected = Error Pool_common.Message.EndBeforeStart in
   check_result expected events
 ;;

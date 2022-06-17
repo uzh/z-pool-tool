@@ -33,7 +33,7 @@ module Start : sig
   include Base
 
   val value : t -> Ptime.t
-  val create : Ptime.t -> (t, Pool_common.Message.error) result
+  val create : Ptime.t -> t
 end
 
 module Duration : sig

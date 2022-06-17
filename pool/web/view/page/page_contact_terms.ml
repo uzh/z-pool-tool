@@ -11,24 +11,28 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.text_to_string language I18n.TermsAndConditionsTitle) ]
-    ; p [ txt (terms |> Settings.TermsAndConditions.Terms.value) ]
+    ; p
+        [ terms
+          |> Settings.TermsAndConditions.Terms.value
+          |> Http_utils.add_line_breaks
+        ]
     ; form
-        ~a:[ a_action submit_url; a_method `Post ]
+        ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
         [ Component.csrf_element csrf ()
-        ; input
-            ~a:
-              [ a_input_type `Checkbox
-              ; a_name Message.Field.(TermsAccepted |> show)
-              ; a_required ()
-              ]
-            ()
-        ; a
-            ~a:[ a_href ("/logout" |> externalize) ]
-            [ txt (Utils.control_to_string language Message.Decline) ]
-        ; Component.submit_element
+        ; Component.checkbox_element
             language
-            Message.(Accept (Some Field.termsandconditions))
-            ()
+            Pool_common.Message.Field.TermsAccepted
+            ~required:true
+        ; div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+            [ Component.submit_element
+                language
+                Message.(Accept (Some Field.termsandconditions))
+                ()
+            ; a
+                ~a:[ a_href ("/logout" |> externalize) ]
+                [ txt (Utils.control_to_string language Message.Decline) ]
+            ]
         ]
     ]
 ;;
