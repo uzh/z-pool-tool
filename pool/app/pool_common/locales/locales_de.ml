@@ -201,6 +201,8 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | LanguageRequiredIfTextProvided ->
+    "Bitte geben Sie die Sprache des Erinnerungstextes an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message

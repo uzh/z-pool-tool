@@ -83,7 +83,6 @@ let hint_to_string = function
      versendet werden. Z.B. mit Name aufsteigend und E-Mail Adresse \
      absteigend: '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'  (Zur Zeit \
      nur als Json Array Objekte.)"
-  | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | Overbook ->
@@ -105,6 +104,9 @@ let hint_to_string = function
     "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | SessionReminderLanguageHint ->
+    "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
+     Sprache hier."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \

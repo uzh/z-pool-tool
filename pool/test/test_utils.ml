@@ -155,6 +155,7 @@ let create_experiment () =
         |> Pool_common.Reminder.LeadTime.create
         |> CCResult.map_err show_error
         |> CCResult.to_opt
+    ; session_reminder_language = Some Pool_common.Language.En
     ; waiting_list_disabled = true |> WaitingListDisabled.create
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create

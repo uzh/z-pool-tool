@@ -194,6 +194,8 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | LanguageRequiredIfTextProvided ->
+    "Please provide the language of the reminder text."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"

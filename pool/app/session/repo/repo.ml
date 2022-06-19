@@ -286,7 +286,7 @@ module Sql = struct
         overbook = $8,
         reminder_text = $9,
         reminder_lead_time = $10,
-        canceled_at = $10
+        canceled_at = $11
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

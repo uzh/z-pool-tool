@@ -178,7 +178,11 @@ module Admin = struct
             ]
         in
         Session.
-          [ get "" list; post "" create; choose ~scope:"/:session" specific ]
+          [ get "" list
+          ; get "create" new_form
+          ; post "" create
+          ; choose ~scope:"/:session" specific
+          ]
       in
       let waiting_list =
         let specific =

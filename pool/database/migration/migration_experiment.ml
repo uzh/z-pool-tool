@@ -50,7 +50,8 @@ let add_session_reminder_columns =
     {sql|
      ALTER TABLE pool_experiments
      ADD COLUMN session_reminder_lead_time INTEGER DEFAULT NULL AFTER description,
-     ADD COLUMN session_reminder_text TEXT DEFAULT NULL AFTER session_reminder_lead_time
+     ADD COLUMN session_reminder_text TEXT DEFAULT NULL AFTER session_reminder_lead_time,
+     ADD COLUMN session_reminder_language varchar(128) AFTER session_reminder_text
   |sql}
 ;;
 

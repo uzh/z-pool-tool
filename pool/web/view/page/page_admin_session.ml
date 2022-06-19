@@ -35,7 +35,7 @@ let location_select options selected ?(attributes = []) () =
     ]
 ;;
 
-let session_form csrf language experiment_id ?session locations ~flash_fetcher =
+let session_form csrf language experiment ?session locations ~flash_fetcher =
   let open Session in
   let value = CCFun.flip (CCOption.map_or ~default:"") session in
   let amount fnc =
@@ -44,12 +44,18 @@ let session_form csrf language experiment_id ?session locations ~flash_fetcher =
       (fun s -> s |> fnc |> ParticipantAmount.value |> CCInt.to_string)
       session
   in
+  let lead_time_value time =
+    time
+    |> CCOption.map_or ~default:"" (fun lead ->
+           Pool_common.(
+             lead |> Reminder.LeadTime.value |> Utils.Time.timespan_spanpicker))
+  in
   let action, submit =
     let open Pool_common in
     let base =
       Format.asprintf
         "/admin/experiments/%s/sessions"
-        (Pool_common.Id.value experiment_id)
+        (Pool_common.Id.value experiment.Experiment.id)
     in
     match session with
     | None -> base, Message.(Create (Some Field.Session))
@@ -125,13 +131,7 @@ let session_form csrf language experiment_id ?session locations ~flash_fetcher =
                 `Number
                 Pool_common.Message.Field.LeadTime
                 ~value:
-                  (value (fun s ->
-                       s.reminder_lead_time
-                       |> CCOption.map_or ~default:"" (fun lead ->
-                              Pool_common.(
-                                lead
-                                |> Reminder.LeadTime.value
-                                |> Utils.Time.timespan_spanpicker))))
+                  (value (fun s -> s.reminder_lead_time |> lead_time_value))
                 ~flash_fetcher
             ; textarea_element
                 language
@@ -273,12 +273,7 @@ let new_form
     (Page_admin_experiments.Control
        Pool_common.Message.(Create (Some Field.Session)))
     experiment.Experiment.id
-    (session_form
-       csrf
-       language
-       experiment.Experiment.id
-       locations
-       ~flash_fetcher)
+    (session_form csrf language experiment locations ~flash_fetcher)
 ;;
 
 let detail
@@ -368,18 +363,18 @@ let detail
 
 let edit
     Pool_context.{ language; csrf; _ }
-    experiment_id
+    experiment
     (session : Session.t)
     locations
     flash_fetcher
   =
   let html =
-    session_form csrf language experiment_id ~session locations ~flash_fetcher
+    session_form csrf language experiment ~session locations ~flash_fetcher
   in
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.Control
        Pool_common.Message.(Edit (Some Field.Session)))
-    experiment_id
+    experiment.Experiment.id
     html
 ;;

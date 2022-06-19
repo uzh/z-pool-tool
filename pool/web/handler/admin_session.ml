@@ -20,11 +20,30 @@ let list req =
     let experiment_id = id req Pool_common.Message.Field.Experiment in
     let* experiment = Experiment.find tenant_db experiment_id in
     let* sessions = Session.find_all_for_experiment tenant_db experiment_id in
-    let%lwt locations = Pool_location.find_all tenant_db in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Session.index context experiment sessions locations flash_fetcher
+    Page.Admin.Session.index context experiment sessions
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let new_form req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = id req Pool_common.Message.Field.Experiment in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions"
+      (experiment_id |> Pool_common.Id.value)
+  in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_err (fun err -> err, error_path)
+    @@ let* experiment = Experiment.find tenant_db experiment_id in
+       let%lwt locations = Pool_location.find_all tenant_db in
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       Page.Admin.Session.new_form context experiment locations flash_fetcher
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -43,7 +62,9 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Lwt_result.map_err (fun err ->
-        err, path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+        ( err
+        , Format.asprintf "%s/%s" path "create"
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location =
@@ -98,12 +119,8 @@ let detail req page =
     | `Edit ->
       let flash_fetcher key = Sihl.Web.Flash.find key req in
       let%lwt locations = Pool_location.find_all tenant_db in
-      Page.Admin.Session.edit
-        context
-        experiment_id
-        session
-        locations
-        flash_fetcher
+      let* experiment = Experiment.find tenant_db experiment_id in
+      Page.Admin.Session.edit context experiment session locations flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html

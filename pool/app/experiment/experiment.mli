@@ -80,6 +80,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_language : Pool_common.Language.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -97,7 +98,8 @@ val create
   -> RegistrationDisabled.t
   -> Pool_common.Reminder.LeadTime.t option
   -> Pool_common.Reminder.Text.t option
-  -> t
+  -> Pool_common.Language.t option
+  -> (t, Pool_common.Message.error) result
 
 type create =
   { title : Title.t
@@ -107,6 +109,7 @@ type create =
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_language : Pool_common.Language.t option
   }
 
 val equal_create : create -> create -> bool
@@ -127,8 +130,8 @@ module Public : sig
 end
 
 type event =
-  | Created of create
-  | Updated of t * create
+  | Created of t
+  | Updated of t
   | Destroyed of Pool_common.Id.t
   | ExperimenterAssigned of t * Admin__Entity.experimenter Admin__Entity.t
   | ExperimenterDivested of t * Admin__Entity.experimenter Admin__Entity.t

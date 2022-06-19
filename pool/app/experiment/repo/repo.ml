@@ -12,9 +12,11 @@ module Sql = struct
         direct_registration_disabled,
         registration_disabled,
         session_reminder_lead_time,
-        session_reminder_text
+        session_reminder_text,
+        session_reminder_language
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -55,6 +57,7 @@ module Sql = struct
           registration_disabled,
           session_reminder_lead_time,
           session_reminder_text,
+          session_reminder_language,
           created_at,
           updated_at
         FROM pool_experiments
@@ -120,19 +123,12 @@ module Sql = struct
         direct_registration_disabled = $6,
         registration_disabled = $7,
         session_reminder_lead_time = $8,
-        session_reminder_text = $9
+        session_reminder_text = $9,
+        session_reminder_language = $10
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Repo_entity.Write.t ->. Caqti_type.unit
-  ;;
-
-  let format_update (t : Entity.t) =
-    let open Entity in
-    ( t.id |> Pool_common.Id.value
-    , t.title |> Title.value
-    , t.description |> Description.value
-    , t.filter )
   ;;
 
   let update pool =

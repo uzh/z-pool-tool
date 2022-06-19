@@ -60,7 +60,6 @@ type hint =
   | DirectRegistrationDisbled
   | Distribution
   | NumberIsDaysHint
-  | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
   | Rate
@@ -69,6 +68,7 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SelectedDateIsPast
+  | SessionReminderLanguageHint
   | SignUpForWaitingList
   | TimeSpanPickerHint
 

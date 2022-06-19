@@ -35,8 +35,10 @@ let add_reminder_columns =
     ~label:"add field versioning for participants"
     {sql|
      ALTER TABLE pool_sessions
-     ADD COLUMN reminder_text TEXT DEFAULT NULL AFTER overbook,
-     ADD COLUMN reminder_lead_time INTEGER DEFAULT NULL AFTER reminder_text
+      ADD COLUMN reminder_text TEXT DEFAULT NULL AFTER overbook,
+      ADD COLUMN reminder_lead_time INTEGER DEFAULT NULL AFTER reminder_text,
+      ADD COLUMN session_reminder_language varchar(128) AFTER reminder_lead_time,
+      ADD COLUMN reminder_sent timestamp AFTER reminder_lead_time
      |sql}
 ;;
 

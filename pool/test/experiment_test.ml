@@ -26,11 +26,12 @@ module Data = struct
         ; description
         ; filter
         ; waiting_list_disabled = true |> WaitingListDisabled.create
-        ; session_reminder_text = None
-        ; session_reminder_lead_time = None
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
+        ; session_reminder_text = None
+        ; session_reminder_lead_time = None
+        ; session_reminder_language = None
         ; created_at = Common.CreatedAt.create ()
         ; updated_at = Common.UpdatedAt.create ()
         }
@@ -61,15 +62,16 @@ let create () =
       false |> DirectRegistrationDisabled.create
     in
     let registration_disabled = false |> RegistrationDisabled.create in
-    let create =
-      { title
-      ; description
-      ; session_reminder_text = None
-      ; session_reminder_lead_time = None
-      ; waiting_list_disabled
-      ; direct_registration_disabled
-      ; registration_disabled
-      }
+    let* create =
+      Experiment.create
+        title
+        description
+        waiting_list_disabled
+        direct_registration_disabled
+        registration_disabled
+        None
+        None
+        None
     in
     Ok [ Experiment.Created create |> Pool_event.experiment ]
   in

@@ -34,7 +34,6 @@ let to_string = function
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
-
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionReminder -> "Session reminder"
@@ -81,7 +80,6 @@ let hint_to_string = function
      first. E.g. with name ascending and email address descending: \
      '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'. (Currently only as \
      json array objects.)"
-  | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"
   | Overbook ->
@@ -103,6 +101,8 @@ let hint_to_string = function
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
   | SelectedDateIsPast -> "The selected date is in the past."
+  | SessionReminderLanguageHint ->
+    "If you provide a custom reminder text, select its language here."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."

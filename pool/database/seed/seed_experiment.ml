@@ -2,11 +2,16 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let experiments pool =
   let data =
-    [ "The Twenty pound auction", "It was great fun.", Some (60 * 60), None
+    [ ( "The Twenty pound auction"
+      , "It was great fun."
+      , Some (60 * 60)
+      , None
+      , None )
     ; ( "The Wallet Game"
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
+      , None
       , None
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
@@ -14,7 +19,8 @@ let experiments pool =
          discussed in most microeconomics lectures or lectures on public \
          economics."
       , Some (60 * 60)
-      , Some "Don't forget your session." )
+      , Some "Don't forget your session."
+      , Some Pool_common.Language.En )
     ]
   in
   let events =
@@ -22,7 +28,8 @@ let experiments pool =
       (fun ( title
            , description
            , session_reminder_lead_time
-           , session_reminder_text ) ->
+           , session_reminder_text
+           , session_reminder_language ) ->
         let experiment =
           let title = Experiment.Title.create title |> get_or_failwith in
           let description =
@@ -49,15 +56,16 @@ let experiments pool =
           let registration_disabled =
             Experiment.RegistrationDisabled.create false
           in
-          Experiment.
-            { title
-            ; description
-            ; session_reminder_lead_time
-            ; session_reminder_text
-            ; waiting_list_disabled
-            ; direct_registration_disabled
-            ; registration_disabled
-            }
+          Experiment.create
+            title
+            description
+            waiting_list_disabled
+            direct_registration_disabled
+            registration_disabled
+            session_reminder_lead_time
+            session_reminder_text
+            session_reminder_language
+          |> get_or_failwith
         in
         Experiment.Created experiment)
       data

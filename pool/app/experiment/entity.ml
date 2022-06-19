@@ -95,6 +95,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
+  ; session_reminder_language : Pool_common.Language.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -109,19 +110,29 @@ let create
     registration_disabled
     session_reminder_lead_time
     session_reminder_text
+    session_reminder_language
   =
-  { id = id |> CCOption.value ~default:(Id.create ())
-  ; title
-  ; description
-  ; filter = "1=1"
-  ; waiting_list_disabled
-  ; direct_registration_disabled
-  ; registration_disabled
-  ; session_reminder_lead_time
-  ; session_reminder_text
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
-  }
+  let open CCResult in
+  let* session_reminder_language =
+    match session_reminder_text, session_reminder_language with
+    | Some _, None -> Error Pool_common.Message.LanguageRequiredIfTextProvided
+    | Some _, Some _ -> Ok session_reminder_language
+    | _ -> Ok None
+  in
+  Ok
+    { id = id |> CCOption.value ~default:(Id.create ())
+    ; title
+    ; description
+    ; filter = "1=1"
+    ; waiting_list_disabled
+    ; direct_registration_disabled
+    ; registration_disabled
+    ; session_reminder_lead_time
+    ; session_reminder_text
+    ; session_reminder_language
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
 ;;
 
 let title_value (m : t) = Title.value m.title

@@ -95,6 +95,20 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         (experiment.id |> Pool_common.Id.value)
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
+  let language_select =
+    let open Pool_common.Language in
+    selector
+      language
+      Message.Field.Language
+      equal
+      show
+      all
+      ~help:Pool_common.I18n.SessionReminderLanguageHint
+      ~add_empty:true
+      (CCOption.bind experiment (fun (e : Experiment.t) ->
+           e.Experiment.session_reminder_language))
+      ()
+  in
   form
     ~a:
       [ a_method `Post
@@ -141,25 +155,31 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3
-            ~a:[ a_class [ "heading-3" ] ]
+            ~a:[ a_class [ "heading-2" ] ]
             [ txt
                 Pool_common.(Utils.text_to_string language I18n.SessionReminder)
             ]
         ; div
             ~a:[ a_class [ "stack" ] ]
-            [ input_element
+            [ p
+                [ txt
+                    Pool_common.(
+                      Utils.text_to_string
+                        language
+                        I18n.ExperimentSessionReminderHint)
+                ]
+            ; flatpicker_element
                 language
-                `Number
+                `Time
                 Pool_common.Message.Field.LeadTime
-                ~help:Pool_common.I18n.NumberIsSecondsHint
+                ~help:Pool_common.I18n.TimeSpanPickerHint
+                  (* TODO[timhub]: update hint *)
                 ~value:
                   (value (fun e ->
                        session_reminder_lead_time_value e
-                       |> CCOption.map_or ~default:"" (fun t ->
-                              t
-                              |> Ptime.Span.to_int_s
-                              |> CCOption.map_or ~default:"" CCInt.to_string)))
-                ~required:true
+                       |> CCOption.map_or
+                            ~default:""
+                            Pool_common.Utils.Time.timespan_spanpicker))
                 ~flash_fetcher
             ; textarea_element
                 language
@@ -169,6 +189,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                        session_reminder_text_value e
                        |> CCOption.value ~default:""))
                 ~flash_fetcher
+            ; language_select
             ]
         ]
     ; submit_element

@@ -13,6 +13,7 @@ let default_schema command =
         ; RegistrationDisabled.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Language.schema ()
         ]
       command)
 ;;
@@ -25,6 +26,7 @@ let default_command
     registration_disabled
     session_reminder_lead_time
     session_reminder_text
+    session_reminder_language
   =
   { title
   ; description
@@ -33,6 +35,7 @@ let default_command
   ; registration_disabled
   ; session_reminder_text
   ; session_reminder_lead_time
+  ; session_reminder_language
   }
 ;;
 
@@ -60,7 +63,19 @@ end = struct
   type t = create
 
   let handle (command : t) =
-    Ok [ Experiment.Created command |> Pool_event.experiment ]
+    let open CCResult in
+    let* experiment =
+      Experiment.create
+        command.title
+        command.description
+        command.waiting_list_disabled
+        command.direct_registration_disabled
+        command.registration_disabled
+        command.session_reminder_lead_time
+        command.session_reminder_text
+        command.session_reminder_language
+    in
+    Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
 
   let decode data =
@@ -90,7 +105,20 @@ end = struct
   type t = create
 
   let handle experiment (command : t) =
-    Ok [ Experiment.Updated (experiment, command) |> Pool_event.experiment ]
+    let open CCResult in
+    let* experiment =
+      Experiment.create
+        ~id:experiment.Experiment.id
+        command.title
+        command.description
+        command.waiting_list_disabled
+        command.direct_registration_disabled
+        command.registration_disabled
+        command.session_reminder_lead_time
+        command.session_reminder_text
+        command.session_reminder_language
+    in
+    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;
 
   let decode data =

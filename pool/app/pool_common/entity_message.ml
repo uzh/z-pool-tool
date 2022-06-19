@@ -174,6 +174,7 @@ type error =
   | ExperimentSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | LanguageRequiredIfTextProvided
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
