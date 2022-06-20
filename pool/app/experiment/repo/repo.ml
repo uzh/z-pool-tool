@@ -43,23 +43,23 @@ module Sql = struct
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
-          title,
-          description,
-          filter,
-          waiting_list_disabled,
-          direct_registration_disabled,
-          registration_disabled,
-          session_reminder_lead_time,
-          session_reminder_text,
-          session_reminder_language,
-          created_at,
-          updated_at
+          pool_experiments.title,
+          pool_experiments.description,
+          pool_experiments.filter,
+          pool_experiments.waiting_list_disabled,
+          pool_experiments.direct_registration_disabled,
+          pool_experiments.registration_disabled,
+          pool_experiments.session_reminder_lead_time,
+          pool_experiments.session_reminder_text,
+          pool_experiments.session_reminder_language,
+          pool_experiments.created_at,
+          pool_experiments.updated_at
         FROM pool_experiments
       |sql}
     in
@@ -78,7 +78,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_experiments_sql
     |> Caqti_type.string ->! Repo_entity.t
@@ -96,7 +96,9 @@ module Sql = struct
   let find_of_session =
     let open Caqti_request.Infix in
     {sql|
-      WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+      INNER JOIN pool_sessions
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_experiments_sql
     |> Caqti_type.string ->! Repo_entity.t

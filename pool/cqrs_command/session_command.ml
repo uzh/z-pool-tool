@@ -43,6 +43,12 @@ let session_schema =
       session_command)
 ;;
 
+let define_reminder_language (command : Session.base) =
+  match command.Session.reminder_text with
+  | None -> Session.{ command with reminder_language = None }
+  | Some _ -> command
+;;
+
 (* TODO [aerben] create sigs *)
 module Create = struct
   type t = Session.base
@@ -82,6 +88,7 @@ module Create = struct
           ; reminder_lead_time
           ; reminder_language
           }
+        |> define_reminder_language
       in
       Ok
         [ Session.Created (session, experiment_id, location)
@@ -139,6 +146,7 @@ module Update = struct
           ; reminder_lead_time
           ; reminder_language
           }
+        |> define_reminder_language
       in
       Ok
         [ Session.Updated (session_cmd, location, session) |> Pool_event.session

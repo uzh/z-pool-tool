@@ -233,6 +233,40 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  (* TODO[timhub]: use session lead time -> experiment lead time -> default lead
+     time
+
+     *
+     https://stackoverflow.com/questions/1262497/how-to-convert-seconds-to-hhmmss-using-t-sql *)
+  let find_sessions_to_remind_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_experiments
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      WHERE
+        pool_sessions.reminder_sent_at IS NULL
+      AND
+        pool_sessions.start <= DATE_ADD(DATE_ADD(NOW(), INTERVAL $2 MINUTE), INTERVAL $1 HOUR)
+    |sql}
+    |> find_sql
+    |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+  ;;
+
+  let find_sessions_to_remind pool default_lead_time =
+    let open Lwt_result.Syntax in
+    let* hours, minutes, _ =
+      default_lead_time
+      |> Pool_common.Reminder.LeadTime.value
+      |> Pool_common.Utils.Time.timespan_to_time_units
+      |> Lwt_result.lift
+    in
+    Lwt_result.ok
+    @@ Utils.Database.collect
+         (Database.Label.value pool)
+         find_sessions_to_remind_request
+         CCInt.(to_string hours, to_string minutes)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
@@ -374,6 +408,14 @@ let find_public_by_assignment pool assignment_id =
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
+
+let find_sessions_to_remind pool default_lead_time =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_sessions_to_remind pool default_lead_time
+  >>= fun sessions ->
+  Lwt_list.map_s (location_to_repo_entity pool) sessions ||> CCResult.flatten_l
+;;
+
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

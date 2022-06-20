@@ -1,3 +1,12 @@
+let default_reminder_lead_time () =
+  14400
+  |> Ptime.Span.of_int_s
+  |> Pool_common.Reminder.LeadTime.create
+  |> CCResult.map_err (fun err ->
+         Pool_common.(Utils.error_to_string Language.En err))
+  |> CCResult.get_or_failwith
+;;
+
 type reminder_text =
   | I18nText of I18n.t
   | SpecificText of Pool_common.Reminder.Text.t
@@ -17,31 +26,40 @@ let create_reminder pool language contact content subject =
     Email.TemplateLabel.SessionReminder
     subject
     (email |> Pool_user.EmailAddress.value)
-    [ "name", name; "content", content ]
+    [ "name", name; "textContent", content ]
 ;;
 
-let send_reminder pool session =
+let send_reminder pool session default_language sys_languages =
   let open Lwt_result.Syntax in
   let* experiment = Experiment.find_of_session pool session.Session.id in
-  let specific_reminder_text =
-    match session.Session.reminder_text with
-    | Some text -> Some text
-    | None -> experiment.Experiment.session_reminder_text
+  (* Find custom reminder text, if available *)
+  let custom_reminder_text =
+    let open CCOption in
+    session.Session.reminder_text
+    <+> experiment.Experiment.session_reminder_text
   in
-  let sys_languages = Pool_common.Language.all in
-  let (default_texts : (Pool_common.Language.t, I18n.t * I18n.t) Hashtbl.t) =
+  let default_texts =
     Hashtbl.create ~random:true (CCList.length sys_languages)
   in
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in
-  let* default_language = Settings.default_language pool in
   let%lwt emails =
     Lwt_list.map_s
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
         let message_language =
-          CCOption.value ~default:default_language contact.Contact.language
+          (* If custom_text is available, find custom langauge, user language,
+             else system default *)
+          let open CCOption in
+          CCOption.value
+            ~default:default_language
+            (match custom_reminder_text with
+            | Some _ ->
+              session.Session.reminder_language
+              <+> experiment.Experiment.session_reminder_language
+              <+> contact.Contact.language
+            | None -> contact.Contact.language)
         in
         let* text, subject =
           CCOption.map_lazy
@@ -61,13 +79,11 @@ let send_reminder pool session =
                 in
                 (I18nText i18n_text, subject) |> Lwt_result.return)
             (fun specific_text ->
-              (* TODO [timhub]: how to determine subject of customized text?
-                 Which language is it saved in? *)
               let* subject =
                 I18n.(find_by_key pool Key.ReminderSubject message_language)
               in
               Ok (SpecificText specific_text, subject) |> Lwt_result.lift)
-            specific_reminder_text
+            custom_reminder_text
         in
         Lwt_result.ok
         @@ create_reminder pool message_language contact text subject)
@@ -86,30 +102,33 @@ let test_reminder =
     ~description:"Test reminder"
     (fun args ->
       match args with
-      | [ session_id ] ->
+      | [ pool ] ->
         let open Lwt_result.Syntax in
+        let open Utils.Lwt_result.Infix in
+        let%lwt _ = Database.Tenant.setup () in
         let%lwt result =
-          let session_id = Pool_common.Id.of_string session_id in
-          let%lwt selections = Pool_tenant.Selection.find_all () in
-          let* pool =
-            CCList.assoc_opt
-              ~eq:(fun url label -> CCString.prefix ~pre:url label)
-              "localhost:3017"
-              (selections
-              |> CCList.map (fun sel ->
-                     Pool_tenant.Selection.(url sel, label sel)))
-            |> CCOption.to_result
-                 Pool_common.Message.(NotFound Field.TenantPool)
-            |> CCResult.map_err
-                 (CCFun.const Pool_common.Message.SessionTenantNotFound)
-            |> Lwt_result.lift
+          let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
+          let* sessions =
+            Session.find_sessions_to_remind pool (default_reminder_lead_time ())
           in
-          Logs.info (fun m -> m "%s" (pool |> Pool_database.Label.value));
-          let* session = Session.find pool session_id in
-          send_reminder pool session
+          let sys_languages = Pool_common.Language.all in
+          let* default_language = Settings.default_language pool in
+          let* res =
+            Lwt_list.map_s
+              (fun session ->
+                send_reminder pool session default_language sys_languages)
+              sessions
+            ||> CCResult.flatten_l
+          in
+          res |> Lwt_result.return
         in
         (match result with
-        | Ok _ -> Lwt.return_some ()
-        | Error _ -> failwith "Something went wrong")
-      | _ -> failwith "Arguments do not match")
+        | Error err ->
+          (* TODO[timhub]: How to deal with errors? *)
+          failwith
+            (Format.asprintf
+               "Error while sending reminder: %s"
+               Pool_common.(Utils.error_to_string Language.En err))
+        | Ok _ -> Lwt.return_some ())
+      | _ -> failwith "Argument missmatch")
 ;;

@@ -27,15 +27,26 @@ let formatted_timespan timespan =
   Format.flush_str_formatter ()
 ;;
 
-let timespan_spanpicker timespan =
+let timespan_to_time_units timespan =
+  let open CCResult in
   timespan
   |> Ptime.Span.to_int_s
-  |> CCOption.map_or ~default:"" (fun timespan ->
-         let h = timespan / 3600 in
-         let timespan = timespan - (h * 3600) in
-         let min = timespan / 60 in
-         let timespan = timespan - (min * 60) in
-         let s = timespan in
+  |> of_opt
+  >|= (fun timespan ->
+        let h = timespan / 3600 in
+        let timespan = timespan - (h * 3600) in
+        let min = timespan / 60 in
+        let timespan = timespan - (min * 60) in
+        let s = timespan in
+        h, min, s)
+  |> map_err (fun _ -> Entity_message.(Invalid Field.TimeSpan))
+;;
+
+let timespan_spanpicker timespan =
+  timespan
+  |> timespan_to_time_units
+  |> CCOption.of_result
+  |> CCOption.map_or ~default:"" (fun (h, min, s) ->
          Format.asprintf
            "%s:%s:%s"
            (h |> decimal)
