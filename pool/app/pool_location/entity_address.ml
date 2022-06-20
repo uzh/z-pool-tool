@@ -116,51 +116,12 @@ module Mail = struct
           ]
         command)
   ;;
-
-  let to_html ?(highlight_first_line = true) mail =
-    let open Tyxml.Html in
-    let { institution; room; building; street; zip; city } = mail in
-    let building_room =
-      match building with
-      | Some building -> Format.asprintf "%s %s" room building
-      | None -> room
-    in
-    let city_zip = Format.asprintf "%s %s" city zip in
-    let base = [ building_room; street; city_zip ] in
-    (match institution with
-    | Some institution -> CCList.cons institution base
-    | None -> base)
-    |> CCList.foldi
-         (fun html index str ->
-           let str = str |> txt in
-           match index with
-           | 0 ->
-             CCList.pure (if highlight_first_line then strong [ str ] else str)
-           | _ -> html @ [ br (); str ])
-         []
-    |> span
-  ;;
 end
 
 type t =
   | Virtual
   | Physical of Mail.t
 [@@deriving eq, show, variants]
-
-let to_html ?(highlight_first_line = true) language =
-  let open Tyxml.Html in
-  function
-  | Virtual ->
-    [ txt
-        (Pool_common.(Utils.field_to_string language Field.Virtual)
-        |> CCString.capitalize_ascii)
-    ]
-    |> fun html ->
-    (match highlight_first_line with
-    | true -> strong html
-    | false -> span html)
-  | Physical mail -> Mail.to_html ~highlight_first_line mail
-;;
 
 let address_rows_human language address =
   match address with

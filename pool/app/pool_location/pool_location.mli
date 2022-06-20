@@ -79,11 +79,6 @@ module Address : sig
            -> t
          , t )
          Pool_common.Utils.PoolConformist.t
-
-    val to_html
-      :  ?highlight_first_line:bool
-      -> t
-      -> [> `Span | `Strong ] Tyxml_html.elt
   end
 
   type t =
@@ -95,12 +90,6 @@ module Address : sig
   val show : t -> string
   val physical : Mail.t -> t
   val virtual_ : t
-
-  val to_html
-    :  ?highlight_first_line:bool
-    -> Pool_common.Language.t
-    -> t
-    -> [> `Span | `Strong ] Tyxml_html.elt
 end
 
 module Mapping : sig
@@ -260,12 +249,6 @@ val create
   -> (t, Pool_common.Message.error) result
 
 val to_string : Pool_common.Language.t -> t -> string
-
-val to_html
-  :  ?public:bool
-  -> Pool_common.Language.t
-  -> t
-  -> [> Html_types.div ] Tyxml_html.elt
 
 type update =
   { name : Name.t

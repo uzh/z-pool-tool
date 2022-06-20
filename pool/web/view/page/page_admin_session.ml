@@ -228,7 +228,7 @@ let detail
              , CCOption.map_or ~default:"" Description.value session.description
                |> Http_utils.add_line_breaks )
            ; ( Field.Location
-             , Pool_location.to_html language session.Session.location )
+             , Partials.location_to_html language session.Session.location )
            ; Field.MaxParticipants, amount session.max_participants |> txt
            ; Field.MinParticipants, amount session.min_participants |> txt
            ; Field.Overbook, amount session.overbook |> txt

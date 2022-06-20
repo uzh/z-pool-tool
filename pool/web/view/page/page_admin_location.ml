@@ -24,7 +24,7 @@ module List = struct
           |> CCOption.map_or ~default:"" Description.value
           |> first_n_characters
           |> txt
-        ; Pool_location.Address.to_html language location.address
+        ; Partials.address_to_html language location.address
         ; a
             ~a:
               [ a_href
@@ -478,7 +478,7 @@ let detail
         , location.description
           |> CCOption.map_or ~default:"" Description.value
           |> txt )
-      ; Field.Location, Address.to_html language location.address
+      ; Field.Location, Partials.address_to_html language location.address
       ; ( Field.Link
         , location.link |> CCOption.map_or ~default:"" Link.value |> txt )
       ; ( Field.Status

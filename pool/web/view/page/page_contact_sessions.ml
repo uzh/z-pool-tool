@@ -60,7 +60,7 @@ let public_detail (session : Session.Public.t) language =
         |> txt )
     ; ( Field.Location
       , session.Session.Public.location
-        |> Pool_location.to_html ~public:true language )
+        |> Component.Partials.location_to_html ~public:true language )
     ; ( Field.CanceledAt
       , CCOption.map_or
           ~default:"Not canceled"
