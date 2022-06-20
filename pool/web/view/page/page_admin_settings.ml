@@ -56,7 +56,7 @@ let sortable =
   |js}
 ;;
 
-let[@warning "-21"] show
+let show
     tenant_languages
     email_suffixes
     contact_email
@@ -66,7 +66,6 @@ let[@warning "-21"] show
     Pool_context.{ language; csrf; _ }
     _
   =
-  failwith "Show";
   let action_path action =
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))

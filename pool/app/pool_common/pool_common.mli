@@ -156,6 +156,17 @@ module Reminder : sig
       :  unit
       -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
+
+  module SentAt : sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : Ptime.t option -> t
+    val create_now : unit -> t
+    val value : t -> Ptime.t option
+  end
 end
 
 module Repo : sig
@@ -204,6 +215,12 @@ module Repo : sig
 
     module LeadTime : sig
       type t = Reminder.LeadTime.t
+
+      val t : t Caqti_type.t
+    end
+
+    module SentAt : sig
+      type t = Reminder.SentAt.t
 
       val t : t Caqti_type.t
     end

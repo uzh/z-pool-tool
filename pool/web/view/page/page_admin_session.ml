@@ -35,7 +35,14 @@ let location_select options selected ?(attributes = []) () =
     ]
 ;;
 
-let session_form csrf language experiment ?session locations ~flash_fetcher =
+let session_form
+    csrf
+    language
+    (experiment : Experiment.t)
+    ?(session : Session.t option)
+    locations
+    ~flash_fetcher
+  =
   let open Session in
   let value = CCFun.flip (CCOption.map_or ~default:"") session in
   let amount fnc =
@@ -49,6 +56,28 @@ let session_form csrf language experiment ?session locations ~flash_fetcher =
     |> CCOption.map_or ~default:"" (fun lead ->
            Pool_common.(
              lead |> Reminder.LeadTime.value |> Utils.Time.timespan_spanpicker))
+  in
+  let language_select =
+    let open Pool_common.Language in
+    selector
+      language
+      Message.Field.Language
+      equal
+      show
+      all
+      ~help:Pool_common.I18n.SessionReminderLanguageHint
+      ~add_empty:true
+      (CCOption.bind session (fun s -> s.Session.reminder_language))
+      ()
+  in
+  let to_default_value html =
+    (* TODO[timhub]: use class *)
+    div
+      ~a:
+        [ a_class [ "gap"; "inset-sm" ]
+        ; a_style "border-left: 1px solid #b5b5b5"
+        ]
+      [ html ]
   in
   let action, submit =
     let open Pool_common in
@@ -126,23 +155,58 @@ let session_form csrf language experiment ?session locations ~flash_fetcher =
             [ txt Pool_common.(Utils.text_to_string language I18n.Reminder) ]
         ; div
             ~a:[ a_class [ "stack" ] ]
-            [ input_element
-                language
-                `Number
-                Pool_common.Message.Field.LeadTime
-                ~value:
-                  (value (fun s -> s.reminder_lead_time |> lead_time_value))
-                ~flash_fetcher
-            ; textarea_element
-                language
-                Pool_common.Message.Field.ReminderText
-                ~value:
-                  (value (fun s ->
-                       s.reminder_text
-                       |> CCOption.map_or
-                            ~default:""
-                            Pool_common.Reminder.Text.value))
-                ~flash_fetcher
+            [ div
+                [ flatpicker_element
+                    language
+                    `Time
+                    Pool_common.Message.Field.LeadTime
+                    ~help:Pool_common.I18n.TimeSpanPickerHint
+                    ~value:
+                      (value (fun s -> s.reminder_lead_time |> lead_time_value))
+                    ~flash_fetcher
+                ; experiment.Experiment.session_reminder_lead_time
+                  |> CCOption.map_or ~default:(txt "") (fun leadtime ->
+                         Pool_common.(
+                           Utils.text_to_string
+                             language
+                             (I18n.SessionReminderDefaultLeadTime
+                                (leadtime |> Reminder.LeadTime.value)))
+                         |> txt
+                         |> to_default_value)
+                ]
+            ; div
+                [ textarea_element
+                    language
+                    Pool_common.Message.Field.ReminderText
+                    ~value:
+                      (value (fun s ->
+                           s.reminder_text
+                           |> CCOption.map_or
+                                ~default:""
+                                Pool_common.Reminder.Text.value))
+                    ~flash_fetcher
+                ; experiment.Experiment.session_reminder_text
+                  |> CCOption.map_or ~default:(txt "") (fun text ->
+                         Pool_common.(
+                           Utils.text_to_string
+                             language
+                             (I18n.SessionReminderDefaultText
+                                (text |> Reminder.Text.value)))
+                         |> HttpUtils.add_line_breaks
+                         |> to_default_value)
+                ]
+            ; div
+                [ language_select
+                ; experiment.Experiment.session_reminder_text
+                  |> CCOption.map_or ~default:(txt "") (fun text ->
+                         Pool_common.(
+                           Utils.text_to_string
+                             language
+                             (I18n.SessionReminderDefaultText
+                                (text |> Reminder.Text.value)))
+                         |> HttpUtils.add_line_breaks
+                         |> to_default_value)
+                ]
             ]
         ]
     ; submit_element language submit ()

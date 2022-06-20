@@ -9,6 +9,7 @@ let session_command
     overbook
     reminder_text
     reminder_lead_time
+    reminder_language
   =
   Session.
     { start
@@ -19,6 +20,7 @@ let session_command
     ; overbook
     ; reminder_text
     ; reminder_lead_time
+    ; reminder_language
     }
 ;;
 
@@ -36,6 +38,7 @@ let session_schema =
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Conformist.optional @@ Pool_common.Language.schema ()
         ]
       session_command)
 ;;
@@ -60,9 +63,11 @@ module Create = struct
            overbook
          ; reminder_text
          ; reminder_lead_time
+         ; reminder_language
          } :
         Session.base)
     =
+    (* TODO: Validate session reminder info*)
     if max_participants >= min_participants
     then (
       let (session : Session.base) =
@@ -75,6 +80,7 @@ module Create = struct
           ; overbook
           ; reminder_text
           ; reminder_lead_time
+          ; reminder_language
           }
       in
       Ok
@@ -115,6 +121,7 @@ module Update = struct
          ; overbook
          ; reminder_text
          ; reminder_lead_time
+         ; reminder_language
          } :
         Session.base)
     =
@@ -130,6 +137,7 @@ module Update = struct
           ; overbook
           ; reminder_text
           ; reminder_lead_time
+          ; reminder_language
           }
       in
       Ok

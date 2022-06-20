@@ -173,7 +173,6 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                 `Time
                 Pool_common.Message.Field.LeadTime
                 ~help:Pool_common.I18n.TimeSpanPickerHint
-                  (* TODO[timhub]: update hint *)
                 ~value:
                   (value (fun e ->
                        session_reminder_lead_time_value e

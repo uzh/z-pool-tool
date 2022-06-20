@@ -9,6 +9,7 @@ type base =
   ; overbook : ParticipantAmount.t
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; reminder_language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
 
@@ -33,6 +34,7 @@ let handle_event pool = function
         session.overbook
         session.reminder_text
         session.reminder_lead_time
+        session.reminder_language
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
@@ -47,6 +49,7 @@ let handle_event pool = function
         ; overbook
         ; reminder_text
         ; reminder_lead_time
+        ; reminder_language
         }
       , location
       , session ) ->
@@ -62,5 +65,6 @@ let handle_event pool = function
       ; overbook
       ; reminder_text
       ; reminder_lead_time
+      ; reminder_language
       }
 ;;

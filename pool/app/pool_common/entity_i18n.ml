@@ -25,6 +25,8 @@ type t =
   | RateTotalSent of int
   | Reminder
   | SessionDetailTitle of Ptime.t
+  | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
+  | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionReminder
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions

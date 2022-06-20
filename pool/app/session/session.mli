@@ -52,6 +52,7 @@ type base =
   ; overbook : ParticipantAmount.t
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; reminder_language : Pool_common.Language.t option
   }
 
 module AssignmentCount : sig
@@ -74,6 +75,8 @@ type t =
   ; overbook : ParticipantAmount.t
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; reminder_language : Pool_common.Language.t option
+  ; reminder_sent_at : Pool_common.Reminder.SentAt.t
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
      * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions

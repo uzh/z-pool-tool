@@ -39,6 +39,14 @@ let to_string = function
   | Reminder -> "Erinnerung"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionReminderDefaultLeadTime leadtime ->
+    Format.asprintf
+      "Die Standardvorlaufzeit dieses Experiments ist: %s"
+      (leadtime |> Pool_common_utils.Time.formatted_timespan)
+  | SessionReminderDefaultText text ->
+    Format.asprintf
+      "Die Standarderinnerungstext dieses Experiments ist:\n %s"
+      text
   | SessionReminder -> "Sessionerinnerung"
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."

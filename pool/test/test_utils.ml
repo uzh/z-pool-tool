@@ -206,6 +206,8 @@ let create_session () =
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
     ; reminder_lead_time = None
     ; reminder_text = None
+    ; reminder_language = None
+    ; reminder_sent_at = Pool_common.Reminder.SentAt.create None
     ; assignment_count =
         0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None

@@ -36,6 +36,12 @@ let to_string = function
   | Reminder -> "Reminder"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
+  | SessionReminderDefaultLeadTime leadtime ->
+    Format.asprintf
+      "The experiment default lead time is: %s"
+      (leadtime |> Pool_common_utils.Time.formatted_timespan)
+  | SessionReminderDefaultText text ->
+    Format.asprintf "The experiment default reminder text is:\n\n %s" text
   | SessionReminder -> "Session reminder"
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
