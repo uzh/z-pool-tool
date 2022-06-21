@@ -28,7 +28,7 @@ end = struct
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
-      let* _ =
+      let* () =
         match
           command.experiment.Experiment.Public.direct_registration_disabled
           |> Experiment.DirectRegistrationDisabled.value
@@ -172,7 +172,7 @@ end = struct
     if command.already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
-      let* _ =
+      let* () =
         Session.is_fully_booked command.session
         |> function
         | true -> Error Pool_common.Message.(SessionFullyBooked)

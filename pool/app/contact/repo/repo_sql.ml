@@ -118,7 +118,9 @@ let find_filtered_request filter =
         WHERE
             pool_invitations.contact_id = pool_contacts.id
           AND
-            pool_invitations.experiment_id = (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', ''))))
+            pool_invitations.experiment_id IN (
+              SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', '')))
+            )
         AND NOT EXISTS
         (SELECT 1
         FROM pool_assignments

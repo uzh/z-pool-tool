@@ -26,7 +26,7 @@ let layout_class = function
 let table_classes layout align_top =
   let base = [ "table"; layout_class layout ] in
   match align_top with
-  | true -> CCList.cons "align-top" base
+  | true -> "align-top" :: base
   | false -> base
 ;;
 

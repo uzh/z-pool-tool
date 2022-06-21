@@ -19,26 +19,24 @@ end = struct
     }
 
   let handle (command : t) language =
-    let events, errors =
-      CCList.fold_left
-        (fun (events, errors) contact ->
-          match
-            CCList.mem
-              ~eq:Pool_common.Id.equal
-              (Contact.id contact)
-              command.invited_contacts
-          with
-          | true -> events, errors @ [ Contact.fullname contact ]
-          | false ->
-            let create =
-              Invitation.{ experiment = command.experiment; contact }
-            in
-            ( events
-              @ [ (Invitation.Created create, language) |> Pool_event.invitation
-                ]
-            , errors ))
-        ([], [])
+    let errors, events =
+      CCList.partition
+        (fun contact ->
+          CCList.mem
+            ~eq:Pool_common.Id.equal
+            (Contact.id contact)
+            command.invited_contacts)
         command.contacts
+    in
+    let errors = CCList.map Contact.fullname errors in
+    let events =
+      CCList.map
+        (fun contact ->
+          let create =
+            Invitation.{ experiment = command.experiment; contact }
+          in
+          (Invitation.Created create, language) |> Pool_event.invitation)
+        events
     in
     if CCList.is_empty errors
     then Ok events
