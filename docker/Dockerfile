@@ -31,7 +31,7 @@ RUN apt-get update \
 RUN bash -c 'echo "http		80/tcp	www		# WorldWideWeb HTTP" >> /etc/services' && \
   bash -c 'echo "https		443/tcp	www		# WorldWideWeb HTTPS" >> /etc/services'
 
-ENV SIHL_ENV production
+ENV SIHL_ENV development
 ENV LOG_LEVEL info
 ENV ROOT_PATH /app
 
