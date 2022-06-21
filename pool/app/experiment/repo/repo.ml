@@ -6,9 +6,9 @@ module Sql = struct
       INSERT INTO pool_experiments (
         uuid,
         title,
+        public_title,
         description,
         filter,
-        waiting_list_disabled,
         direct_registration_disabled,
         registration_disabled
       ) VALUES (
@@ -44,9 +44,9 @@ module Sql = struct
             SUBSTR(HEX(uuid), 21)
           )),
           title,
+          public_title,
           description,
           filter,
-          waiting_list_disabled,
           direct_registration_disabled,
           registration_disabled,
           created_at,
@@ -90,9 +90,9 @@ module Sql = struct
       UPDATE pool_experiments
       SET
         title = $2,
-        description = $3,
-        filter = $4,
-        waiting_list_disabled = $5,
+        public_title = $3,
+        description = $4,
+        filter = $5,
         direct_registration_disabled = $6,
         registration_disabled = $7
       WHERE
@@ -105,6 +105,7 @@ module Sql = struct
     let open Entity in
     ( t.id |> Pool_common.Id.value
     , t.title |> Title.value
+    , t.public_title |> PublicTitle.value
     , t.description |> Description.value
     , t.filter )
   ;;

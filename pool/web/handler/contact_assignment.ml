@@ -58,7 +58,7 @@ let create req =
     let events =
       Cqrs_command.Assignment_command.Create.(
         handle
-          { contact; session; waiting_list }
+          { contact; session; waiting_list; experiment }
           confirmation_email
           already_enrolled)
       |> Lwt_result.lift

@@ -3,14 +3,12 @@ module Common = Pool_common
 
 let experiment_boolean_fields =
   Pool_common.Message.Field.
-    [ WaitingListDisabled |> show
-    ; DirectRegistrationDisabled |> show
-    ; RegistrationDisabled |> show
-    ]
+    [ DirectRegistrationDisabled |> show; RegistrationDisabled |> show ]
 ;;
 
 module Data = struct
   let title = "New experiment"
+  let public_title = "public_experiment_title"
   let description = "Description"
   let filter = "1=1"
 
@@ -18,14 +16,15 @@ module Data = struct
     let open CCResult in
     let id = Pool_common.Id.create () in
     let* title = title |> Experiment.Title.create in
+    let* public_title = public_title |> Experiment.PublicTitle.create in
     let* description = description |> Experiment.Description.create in
     Ok
       Experiment.
         { id
         ; title
+        ; public_title
         ; description
         ; filter
-        ; waiting_list_disabled = true |> WaitingListDisabled.create
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
@@ -42,8 +41,8 @@ let create () =
     let open CCResult.Infix in
     Pool_common.Message.Field.
       [ Title |> show, [ Data.title ]
+      ; PublicTitle |> show, [ Data.public_title ]
       ; Description |> show, [ Data.description ]
-      ; WaitingListDisabled |> show, [ "on" ]
       ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
@@ -53,16 +52,16 @@ let create () =
     let open CCResult in
     let open Experiment in
     let* title = Title.create Data.title in
+    let* public_title = PublicTitle.create Data.public_title in
     let* description = Description.create Data.description in
-    let waiting_list_disabled = true |> WaitingListDisabled.create in
     let direct_registration_disabled =
       false |> DirectRegistrationDisabled.create
     in
     let registration_disabled = false |> RegistrationDisabled.create in
     let create =
       { title
+      ; public_title
       ; description
-      ; waiting_list_disabled
       ; direct_registration_disabled
       ; registration_disabled
       }
@@ -81,7 +80,10 @@ let create_without_title () =
   let events =
     let open CCResult.Infix in
     Pool_common.Message.Field.
-      [ Title |> show, [ "" ]; Description |> show, [ Data.description ] ]
+      [ Title |> show, [ "" ]
+      ; PublicTitle |> show, [ "public_title" ]
+      ; Description |> show, [ Data.description ]
+      ]
     |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
@@ -89,28 +91,6 @@ let create_without_title () =
   let expected =
     Error Common.Message.(Conformist [ Field.Title, Invalid Field.Title ])
   in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
-;;
-
-let create_with_mutually_exclusive_options () =
-  let events =
-    let open CCResult.Infix in
-    Pool_common.Message.Field.
-      [ Title |> show, [ Data.title ]
-      ; Description |> show, [ Data.description ]
-      ; WaitingListDisabled |> show, [ "on" ]
-      ; DirectRegistrationDisabled |> show, [ "on" ]
-      ]
-    |> Http_utils.format_request_boolean_values experiment_boolean_fields
-    |> ExperimentCommand.Create.decode
-    >>= ExperimentCommand.Create.handle
-  in
-  let expected = Error Common.Message.(WaitingListFlagsMutuallyExclusive) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

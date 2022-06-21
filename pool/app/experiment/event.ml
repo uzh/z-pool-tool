@@ -2,8 +2,8 @@ open Entity
 
 type create =
   { title : Title.t
+  ; public_title : PublicTitle.t
   ; description : Description.t
-  ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   }
@@ -22,16 +22,16 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created create_t ->
     create
       create_t.title
+      create_t.public_title
       create_t.description
-      create_t.waiting_list_disabled
       create_t.direct_registration_disabled
       create_t.registration_disabled
     |> Repo.insert pool
   | Updated (experiment, update_t) ->
     { experiment with
       title = update_t.title
+    ; public_title = update_t.public_title
     ; description = update_t.description
-    ; waiting_list_disabled = update_t.waiting_list_disabled
     ; direct_registration_disabled = update_t.direct_registration_disabled
     ; registration_disabled = update_t.registration_disabled
     ; updated_at =

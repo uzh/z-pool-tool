@@ -13,17 +13,21 @@ let check_result expected generated =
 let create () =
   let open Waiting_list in
   let experiment = Test_utils.create_public_experiment () in
+  let experiment =
+    Experiment.Public.
+      { experiment with
+        direct_registration_disabled =
+          true |> Experiment.DirectRegistrationDisabled.create
+      }
+  in
   let contact = Test_utils.create_contact () in
+  let command = { experiment; contact } in
   let events =
     let open WaitingListCommand in
-    let command = { experiment; contact } in
     Create.handle command
   in
   let expected =
-    Ok
-      [ Waiting_list.(Created { experiment; contact })
-        |> Pool_event.waiting_list
-      ]
+    Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
   in
   check_result expected events
 ;;
@@ -40,19 +44,20 @@ let delete () =
   check_result expected events
 ;;
 
-let create_with_waiting_list_disabled () =
+let create_with_direct_registration_enabled () =
   let open Waiting_list in
   let experiment = Test_utils.create_public_experiment () in
   let experiment =
     Experiment.Public.
       { experiment with
-        waiting_list_disabled = true |> Experiment.WaitingListDisabled.create
+        direct_registration_disabled =
+          false |> Experiment.DirectRegistrationDisabled.create
       }
   in
   let contact = Test_utils.create_contact () in
+  let command = { experiment; contact } in
   let events =
     let open WaitingListCommand in
-    let command = { experiment; contact } in
     Create.handle command
   in
   let expected = Error Pool_common.Message.NotEligible in

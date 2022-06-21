@@ -13,6 +13,5 @@ let possible_participants _ = Lwt.return []
 
 module Repo = struct
   module Description = Repo_entity.Description
-  module WaitingListDisabled = Repo_entity.WaitingListDisabled
   module DirectRegistrationDisabled = Repo_entity.DirectRegistrationDisabled
 end

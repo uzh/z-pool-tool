@@ -20,6 +20,12 @@ module Address = struct
   module Mail = struct
     include Mail
 
+    module Institution = struct
+      include Institution
+
+      let t = Caqti_type.string
+    end
+
     module Room = struct
       include Room
 
@@ -51,17 +57,21 @@ module Address = struct
     end
 
     let t =
-      let encode m = Ok (m.room, (m.building, (m.street, (m.zip, m.city)))) in
-      let decode (room, (building, (street, (zip, city)))) =
-        Ok { room; building; street; zip; city }
+      let encode m =
+        Ok (m.institution, (m.room, (m.building, (m.street, (m.zip, m.city)))))
+      in
+      let decode (institution, (room, (building, (street, (zip, city))))) =
+        Ok { institution; room; building; street; zip; city }
       in
       Caqti_type.(
         custom
           ~encode
           ~decode
           (tup2
-             Room.t
-             (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t)))))
+             (option Institution.t)
+             (tup2
+                Room.t
+                (tup2 (option Building.t) (tup2 Street.t (tup2 Zip.t City.t))))))
     ;;
   end
 

@@ -18,6 +18,16 @@ module Mail = struct
     let schema () = Utils.schema_decoder create value field
   end
 
+  module Institution = struct
+    type t = string [@@deriving eq, show]
+
+    let field = Field.Institution
+    let create = create_if_not_empty_string field
+    let value m = m
+    let of_string m = m
+    let schema () = Utils.schema_decoder create value field
+  end
+
   module Building = struct
     type t = string [@@deriving eq, show]
 
@@ -69,7 +79,8 @@ module Mail = struct
   end
 
   type t =
-    { room : Room.t
+    { institution : Institution.t option
+    ; room : Room.t
     ; building : Building.t option
     ; street : Street.t
     ; zip : Zip.t
@@ -77,25 +88,27 @@ module Mail = struct
     }
   [@@deriving eq, show]
 
-  let create room building street zip city =
+  let create institution room building street zip city =
     let open CCResult in
+    let* institution = institution |> CCResult.opt_map Institution.create in
     let* room = Room.create room in
     let* building = building |> CCResult.opt_map Building.create in
     let* street = Street.create street in
     let* zip = Zip.create zip in
     let* city = City.create city in
-    Ok { room; building; street; zip; city }
+    Ok { institution; room; building; street; zip; city }
   ;;
 
-  let command room building street zip city =
-    { room; building; street; zip; city }
+  let command institution room building street zip city =
+    { institution; room; building; street; zip; city }
   ;;
 
   let schema () =
     Conformist.(
       make
         Field.
-          [ Room.schema ()
+          [ Conformist.optional @@ Institution.schema ()
+          ; Room.schema ()
           ; Conformist.optional @@ Building.schema ()
           ; Street.schema ()
           ; Zip.schema ()
@@ -120,11 +133,11 @@ let address_rows_human language address =
   | Physical address ->
     let open Mail in
     let building_room =
-      match address.building with
-      | None -> Room.value address.room
-      | Some building ->
-        [ Building.value building; Room.value address.room ]
-        |> CCString.concat " "
+      [ address.building |> CCOption.map Building.value
+      ; Some (Room.value address.room)
+      ]
+      |> CCList.filter_map CCFun.id
+      |> CCString.concat " "
     in
     let zip_city =
       [ Zip.value address.zip; City.value address.city ] |> CCString.concat " "

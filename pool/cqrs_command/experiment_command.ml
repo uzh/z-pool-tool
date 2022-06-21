@@ -7,8 +7,8 @@ let default_schema command =
     make
       Field.
         [ Title.schema ()
+        ; PublicTitle.schema ()
         ; Description.schema ()
-        ; WaitingListDisabled.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ]
@@ -17,27 +17,17 @@ let default_schema command =
 
 let default_command
     title
+    public_title
     description
-    waiting_list_disabled
     direct_registration_disabled
     registration_disabled
   =
   { title
+  ; public_title
   ; description
-  ; waiting_list_disabled
   ; direct_registration_disabled
   ; registration_disabled
   }
-;;
-
-let validate_waiting_list_flags
-    ({ waiting_list_disabled; direct_registration_disabled; _ } : create)
-  =
-  let open Experiment in
-  if direct_registration_disabled |> DirectRegistrationDisabled.value
-     && waiting_list_disabled |> WaitingListDisabled.value
-  then Error Pool_common.Message.WaitingListFlagsMutuallyExclusive
-  else Ok ()
 ;;
 
 module Create : sig
@@ -55,7 +45,6 @@ end = struct
 
   let handle command =
     let open CCResult in
-    let* () = validate_waiting_list_flags command in
     Ok [ Experiment.Created command |> Pool_event.experiment ]
   ;;
 
@@ -87,7 +76,6 @@ end = struct
 
   let handle experiment command =
     let open CCResult in
-    let* () = validate_waiting_list_flags command in
     Ok [ Experiment.Updated (experiment, command) |> Pool_event.experiment ]
   ;;
 

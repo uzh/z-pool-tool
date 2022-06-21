@@ -8,19 +8,6 @@ let first_n_characters ?(n = 47) m : string =
   else m
 ;;
 
-let show_address language (location : Pool_location.t) =
-  let open Pool_location in
-  let room, street, city =
-    Address.address_rows_human language location.address
-  in
-  let mail =
-    if street |> CCString.is_empty |> not
-    then [ [ ""; street; city ] |> CCString.concat ", " |> txt ]
-    else []
-  in
-  span ([ strong [ txt room ] ] @ mail)
-;;
-
 module List = struct
   open Pool_location
 
@@ -37,7 +24,7 @@ module List = struct
           |> CCOption.map_or ~default:"" Description.value
           |> first_n_characters
           |> txt
-        ; show_address language location
+        ; Partials.address_to_html language location.address
         ; a
             ~a:
               [ a_href
@@ -54,7 +41,7 @@ module List = struct
 
   let create language locations =
     let rows = rows language locations in
-    Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped language ~thead ~align_top:true rows
   ;;
 end
 
@@ -222,7 +209,8 @@ let form
          ]
         @ status_select_opt
         @ [ div
-              [ label
+              [ h4
+                  ~a:[ a_class [ "heading-4" ] ]
                   [ txt
                       (Message.Field.Location
                       |> Pool_common.Utils.field_to_string language
@@ -237,55 +225,69 @@ let form
                             Virtual |> show |> CCString.capitalize_ascii)
                       ]
                   ; div
-                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
+                      ~a:[ a_class [ "toggled"; "stack"; "flexcolumn" ] ]
                       [ input_element
                           language
                           `Text
-                          Message.Field.Room
-                          ~value:
-                            (address_value
-                               Address.Mail.(fun { room; _ } -> Room.value room))
-                          ~flash_fetcher
-                      ; input_element
-                          language
-                          `Text
-                          Message.Field.Building
+                          Message.Field.Institution
                           ~value:
                             (address_value
                                Address.Mail.(
-                                 fun { building; _ } ->
-                                   building
-                                   |> CCOption.map_or ~default:"" Building.value))
-                          ~flash_fetcher
-                      ]
-                  ; input_element
-                      ~classnames:[ "toggled" ]
-                      language
-                      `Text
-                      Message.Field.Street
-                      ~value:
-                        Address.Mail.(
-                          address_value (fun { street; _ } ->
-                              Street.value street))
-                      ~flash_fetcher
-                  ; div
-                      ~a:[ a_class [ "toggled"; "switcher"; "flex-gap" ] ]
-                      [ input_element
-                          language
-                          `Text
-                          Message.Field.Zip
-                          ~value:
-                            Address.Mail.(
-                              address_value (fun { zip; _ } -> Zip.value zip))
-                          ~flash_fetcher
+                                 fun { institution; _ } ->
+                                   institution
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Institution.value))
+                      ; div
+                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                          [ input_element
+                              language
+                              `Text
+                              Message.Field.Room
+                              ~value:
+                                (address_value
+                                   Address.Mail.(
+                                     fun { room; _ } -> Room.value room))
+                          ; input_element
+                              language
+                              `Text
+                              Message.Field.Building
+                              ~value:
+                                (address_value
+                                   Address.Mail.(
+                                     fun { building; _ } ->
+                                       building
+                                       |> CCOption.map_or
+                                            ~default:""
+                                            Building.value))
+                          ]
                       ; input_element
                           language
                           `Text
-                          Message.Field.City
+                          Message.Field.Street
                           ~value:
                             Address.Mail.(
-                              address_value (fun { city; _ } -> City.value city))
-                          ~flash_fetcher
+                              address_value (fun { street; _ } ->
+                                  Street.value street))
+                      ; div
+                          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+                          [ input_element
+                              language
+                              `Text
+                              Message.Field.Zip
+                              ~value:
+                                Address.Mail.(
+                                  address_value (fun { zip; _ } ->
+                                      Zip.value zip))
+                          ; input_element
+                              language
+                              `Text
+                              Message.Field.City
+                              ~value:
+                                Address.Mail.(
+                                  address_value (fun { city; _ } ->
+                                      City.value city))
+                          ]
                       ]
                   ]
               ]
@@ -476,13 +478,13 @@ let detail
         , location.description
           |> CCOption.map_or ~default:"" Description.value
           |> txt )
-      ; Field.Location, show_address language location
+      ; Field.Location, Partials.address_to_html language location.address
       ; ( Field.Link
         , location.link |> CCOption.map_or ~default:"" Link.value |> txt )
       ; ( Field.Status
         , location.status |> Status.show |> txt (* TODO: Show files *) )
       ]
-      |> Table.vertical_table `Striped language
+      |> Table.vertical_table `Striped ~align_top:true language
     in
     div
       ~a:[ a_class [ "stack" ] ]

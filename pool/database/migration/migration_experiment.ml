@@ -44,11 +44,41 @@ let add_disable_registration =
     |sql}
 ;;
 
+let merge_waiting_list_flags =
+  Sihl.Database.Migration.create_step
+    ~label:"merge waiting list flags"
+    {sql|
+      ALTER TABLE pool_experiments
+        DROP COLUMN waiting_list_disabled
+    |sql}
+;;
+
+let add_public_title =
+  Sihl.Database.Migration.create_step
+    ~label:"add public title"
+    {sql|
+      ALTER TABLE pool_experiments
+        ADD COLUMN public_title varchar(255) NOT NULL AFTER title
+    |sql}
+;;
+
+let set_default_public_title =
+  Sihl.Database.Migration.create_step
+    ~label:"set default public title"
+    {sql|
+      UPDATE pool_experiments SET public_title = title
+        WHERE public_title is NULL OR public_title = ''
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
     |> add_step create_pool_experiments_table
     |> add_step add_waiting_list_flags_to_experiment
     |> add_step change_description_column_type
-    |> add_step add_disable_registration)
+    |> add_step add_disable_registration
+    |> add_step merge_waiting_list_flags
+    |> add_step add_public_title
+    |> add_step set_default_public_title)
 ;;

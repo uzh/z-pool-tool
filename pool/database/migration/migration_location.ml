@@ -23,6 +23,18 @@ let create_location_table =
     |sql}
 ;;
 
+let add_institution_to_address =
+  Sihl.Database.Migration.create_step
+    ~label:"add institution to address"
+    {sql|
+      ALTER TABLE pool_locations
+        ADD COLUMN institution varchar(255) AFTER is_virtual
+    |sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "location" |> add_step create_location_table)
+  Sihl.Database.Migration.(
+    empty "location"
+    |> add_step create_location_table
+    |> add_step add_institution_to_address)
 ;;
