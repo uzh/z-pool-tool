@@ -117,3 +117,61 @@ let create pool =
            , location ))
     experiments
 ;;
+
+(* TODO maybe private constructor needed *)
+type single
+type multi
+
+type _ val' =
+  | Str : string -> single val'
+  | Nr : float -> single val'
+  | Bool : bool -> single val'
+  | Date : Ptime.t -> single val'
+  | Empty : single val'
+  (* TODO maybe problematic when pattern matching (constructor would escape its
+     scope *)
+  | Lst : 'a list -> multi val'
+
+type key = string
+
+type _ operator =
+  | LT : single operator
+  | LE : single operator
+  | GT : single operator
+  | GE : single operator
+  | EQ : single operator
+  (* TODO maybe redundant cause have Not and EQ? *)
+  | NEQ : single operator
+  | SOME : multi operator
+  | NONE : multi operator
+  | ALL : multi operator
+
+type 'a predicate = key * 'a operator * 'a val'
+
+(* TODO turn into infix constructors *)
+type filter =
+  | And of filter * filter
+  | Or of filter * filter
+  | Not of filter
+  | PredS of single predicate
+  | PredM of multi predicate
+
+let ( &.& ) a b = And (a, b)
+let ( |.| ) a b = Or (a, b)
+
+(* TODO make this prefix *)
+let ( --. ) a = Not a
+
+(* role: only participant is shown by default
+ * unverified email: only users with confirmed email are shown by default
+ * paused: hidden by default
+ * deactivated: hidden by default
+ * tags: empty by default, depends on #23 *)
+
+let foo : filter =
+  PredS ("role", EQ, Str "participant") &.& Not (PredS ("verified", EQ, Empty))
+;;
+
+let bla : filter = PredS ("paused", EQ, Bool false)
+let bar : filter = PredM ("tags", SOME, Lst [ "pregnant" ])
+let baz : filter = PredM ("experiment_id", NONE, Lst [ 2, 3 ])
