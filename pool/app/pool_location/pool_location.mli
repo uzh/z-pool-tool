@@ -1,5 +1,11 @@
 module Address : sig
   module Mail : sig
+    module Institution : sig
+      include Pool_common.Utils.BaseSig
+
+      val value : t -> string
+    end
+
     module Room : sig
       include Pool_common.Utils.BaseSig
 
@@ -31,7 +37,8 @@ module Address : sig
     end
 
     type t =
-      { room : Room.t
+      { institution : Institution.t option
+      ; room : Room.t
       ; building : Building.t option
       ; street : Street.t
       ; zip : Zip.t
@@ -43,7 +50,8 @@ module Address : sig
     val show : t -> string
 
     val create
-      :  string
+      :  string option
+      -> string
       -> string option
       -> string
       -> string
@@ -51,7 +59,8 @@ module Address : sig
       -> (t, Pool_common.Message.error) result
 
     val command
-      :  Room.t
+      :  Institution.t option
+      -> Room.t
       -> Building.t option
       -> Street.t
       -> Zip.t
@@ -61,7 +70,13 @@ module Address : sig
     val schema
       :  unit
       -> ( Pool_common.Message.error
-         , Room.t -> Building.t option -> Street.t -> Zip.t -> City.t -> t
+         , Institution.t option
+           -> Room.t
+           -> Building.t option
+           -> Street.t
+           -> Zip.t
+           -> City.t
+           -> t
          , t )
          Pool_common.Utils.PoolConformist.t
   end
@@ -75,11 +90,6 @@ module Address : sig
   val show : t -> string
   val physical : Mail.t -> t
   val virtual_ : t
-
-  val address_rows_human
-    :  Pool_common.Language.t
-    -> t
-    -> string * string * string
 end
 
 module Mapping : sig

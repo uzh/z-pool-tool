@@ -63,7 +63,11 @@ val find_multiple
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
-val find_filtered : Pool_database.Label.t -> string -> unit -> t list Lwt.t
+val find_filtered
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> string
+  -> t list Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t

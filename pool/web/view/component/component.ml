@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Table = Component_table
 module Navigation = Component_nav
+module Partials = Component_partials
 open Tyxml.Html
 
 let icon icon_type =

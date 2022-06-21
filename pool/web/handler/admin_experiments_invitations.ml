@@ -18,7 +18,10 @@ let index req =
     Lwt_result.map_err (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt filtered_contacts =
-         Contact.find_filtered tenant_db experiment.Experiment.filter ()
+         Contact.find_filtered
+           tenant_db
+           experiment.Experiment.id
+           experiment.Experiment.filter
        in
        let* invitations =
          Invitation.find_by_experiment tenant_db experiment.Experiment.id
@@ -84,12 +87,16 @@ let create req =
            Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
        in
        let* default_language = Settings.default_language tenant_db in
+       let%lwt invited_contacts =
+         Invitation.find_multiple_by_experiment_and_contacts
+           tenant_db
+           (CCList.map Contact.id contacts)
+           experiment
+       in
        let%lwt events =
-         let event contact =
-           Cqrs_command.Invitation_command.Create.(
-             handle { experiment; contact } default_language |> Lwt_result.lift)
-         in
-         Lwt_list.map_s event contacts
+         Cqrs_command.Invitation_command.Create.(
+           handle { experiment; contacts; invited_contacts } default_language
+           |> Lwt_result.lift)
        in
        let handle events =
          let%lwt (_ : unit list) =
@@ -101,11 +108,7 @@ let create req =
                ~success:[ Pool_common.Message.(SentList Field.Invitations) ]
            ]
        in
-       events
-       |> CCResult.flatten_l
-       |> Lwt_result.lift
-       >|= CCList.flatten
-       |>> handle
+       events |> Lwt_result.lift |>> handle
   in
   result |> HttpUtils.extract_happy_path req
 ;;

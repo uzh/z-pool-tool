@@ -25,7 +25,10 @@ let create () =
   let experiment = Test_utils.create_experiment () in
   let contact = Test_utils.create_contact () in
   let events =
-    let command = InvitationCommand.Create.{ experiment; contact } in
+    let command =
+      InvitationCommand.Create.
+        { experiment; contacts = [ contact ]; invited_contacts = [] }
+    in
     InvitationCommand.Create.handle command Pool_common.Language.En
   in
   let expected =

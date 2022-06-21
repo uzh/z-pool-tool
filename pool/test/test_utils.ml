@@ -126,11 +126,14 @@ let create_public_experiment () =
   let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
   Experiment.Public.
     { id = Pool_common.Id.create ()
+    ; public_title =
+        Experiment.PublicTitle.create "public_title"
+        |> CCResult.map_err show_error
+        |> CCResult.get_or_failwith
     ; description =
         Experiment.Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; waiting_list_disabled = false |> Experiment.WaitingListDisabled.create
     ; direct_registration_disabled =
         false |> Experiment.DirectRegistrationDisabled.create
     }
@@ -142,6 +145,10 @@ let create_experiment () =
     { id = Pool_common.Id.create ()
     ; title =
         Title.create "An Experiment"
+        |> CCResult.map_err show_error
+        |> CCResult.get_or_failwith
+    ; public_title =
+        PublicTitle.create "public_title"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; description =
@@ -156,11 +163,20 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.to_opt
     ; session_reminder_language = Some Pool_common.Language.En
-    ; waiting_list_disabled = true |> WaitingListDisabled.create
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
+    }
+;;
+
+let experiment_to_public_experiment (experiment : Experiment.t) =
+  Experiment.Public.
+    { id = experiment.Experiment.id
+    ; public_title = experiment.Experiment.public_title
+    ; description = experiment.Experiment.description
+    ; direct_registration_disabled =
+        experiment.Experiment.direct_registration_disabled
     }
 ;;
 

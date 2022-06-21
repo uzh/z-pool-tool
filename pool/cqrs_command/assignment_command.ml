@@ -5,6 +5,7 @@ module Create : sig
     { contact : Contact.t
     ; session : Session.Public.t
     ; waiting_list : Waiting_list.t option
+    ; experiment : Experiment.Public.t
     }
 
   val handle
@@ -19,6 +20,7 @@ end = struct
     { contact : Contact.t
     ; session : Session.Public.t
     ; waiting_list : Waiting_list.t option
+    ; experiment : Experiment.Public.t
     }
 
   let handle (command : t) confirmation_email already_enrolled =
@@ -26,6 +28,14 @@ end = struct
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
+      let* () =
+        match
+          command.experiment.Experiment.Public.direct_registration_disabled
+          |> Experiment.DirectRegistrationDisabled.value
+        with
+        | true -> Error Pool_common.Message.(DirectRegistrationIsDisabled)
+        | false -> Ok ()
+      in
       let* _ =
         Session.Public.is_fully_booked command.session
         |> function
@@ -162,7 +172,7 @@ end = struct
     if command.already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
     else
-      let* _ =
+      let* () =
         Session.is_fully_booked command.session
         |> function
         | true -> Error Pool_common.Message.(SessionFullyBooked)

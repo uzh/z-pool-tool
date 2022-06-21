@@ -5,9 +5,9 @@ let field_to_string =
   function
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
-  | Assignments -> "Assignments"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "No. Assignments"
+  | Assignments -> "Anmeldungen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
@@ -47,6 +47,7 @@ let field_to_string =
   | Id -> "ID"
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
+  | Institution -> "Institution"
   | Invitation -> "Einladung"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
@@ -74,10 +75,11 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
-  | ReminderText -> "Erinnerungstext"
   | RegistrationDisabled -> "Registrierung deaktiviert"
+  | ReminderText -> "Erinnerungstext"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -117,7 +119,6 @@ let field_to_string =
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
-  | WaitingListDisabled -> "Warteliste deaktivieren"
   | Zip -> "PLZ"
 ;;
 
@@ -167,6 +168,11 @@ let rec error_to_string = function
     "Sie haben sich für dieses Experiment bereits angemeldet."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
+  | AlreadyInvitedToExperiment names ->
+    Format.asprintf
+      "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
+       %s"
+      (CCString.concat ", " names)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -186,6 +192,8 @@ let rec error_to_string = function
       (field_to_string field)
       "konnte nicht entschlüsselt werden."
   | DecodeAction -> "Die Aktion konnte nicht gefunden werden."
+  | DirectRegistrationIsDisabled ->
+    "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
   | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."

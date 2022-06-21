@@ -16,6 +16,7 @@ services:
       - SMTP_SENDER
       - SMTP_START_TLS
       - SMTP_USERNAME
+      - TEST_EMAIL
       - VERSION
       - CI_JOB_TOKEN
       - CI_API_V4_URL

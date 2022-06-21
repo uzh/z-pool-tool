@@ -8,10 +8,13 @@ module Create : sig
 end = struct
   type t = Waiting_list.create
 
+  (* TODO[timhub]: correct way? *)
   let handle (command : Waiting_list.create) =
-    if command.Waiting_list.experiment.Experiment.Public.waiting_list_disabled
-    then Error Pool_common.Message.NotEligible
-    else Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
+    if command.Waiting_list.experiment
+         .Experiment.Public.direct_registration_disabled
+       |> Experiment.DirectRegistrationDisabled.value
+    then Ok [ Waiting_list.Created command |> Pool_event.waiting_list ]
+    else Error Pool_common.Message.NotEligible
   ;;
 
   let can user =

@@ -7,8 +7,8 @@ let default_schema command =
     make
       Field.
         [ Title.schema ()
+        ; PublicTitle.schema ()
         ; Description.schema ()
-        ; WaitingListDisabled.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
@@ -20,8 +20,8 @@ let default_schema command =
 
 let default_command
     title
+    public_title
     description
-    waiting_list_disabled
     direct_registration_disabled
     registration_disabled
     session_reminder_lead_time
@@ -29,24 +29,14 @@ let default_command
     session_reminder_language
   =
   { title
+  ; public_title
   ; description
-  ; waiting_list_disabled
   ; direct_registration_disabled
   ; registration_disabled
-  ; session_reminder_text
   ; session_reminder_lead_time
+  ; session_reminder_text
   ; session_reminder_language
   }
-;;
-
-let validate_waiting_list_flags
-    ({ waiting_list_disabled; direct_registration_disabled; _ } : create)
-  =
-  let open Experiment in
-  if direct_registration_disabled |> DirectRegistrationDisabled.value
-     && waiting_list_disabled |> WaitingListDisabled.value
-  then Error Pool_common.Message.WaitingListFlagsMutuallyExclusive
-  else Ok ()
 ;;
 
 module Create : sig
@@ -67,8 +57,8 @@ end = struct
     let* experiment =
       Experiment.create
         command.title
+        command.public_title
         command.description
-        command.waiting_list_disabled
         command.direct_registration_disabled
         command.registration_disabled
         command.session_reminder_lead_time
@@ -110,8 +100,8 @@ end = struct
       Experiment.create
         ~id:experiment.Experiment.id
         command.title
+        command.public_title
         command.description
-        command.waiting_list_disabled
         command.direct_registration_disabled
         command.registration_disabled
         command.session_reminder_lead_time

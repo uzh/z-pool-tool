@@ -9,8 +9,8 @@ let default_values =
   |> CCList.map (fun (label, description, address, link, status) ->
          let address =
            match address with
-           | Some (room, building, street, zip, city) ->
-             Address.Mail.create room building street zip city
+           | Some (institution, room, building, street, zip, city) ->
+             Address.Mail.create institution room building street zip city
              |> get_or_failwith
              |> Address.physical
            | None -> Address.Virtual

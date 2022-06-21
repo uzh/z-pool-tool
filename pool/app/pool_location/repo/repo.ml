@@ -18,6 +18,7 @@ module Sql = struct
         pool_locations.name,
         pool_locations.description,
         pool_locations.is_virtual,
+        pool_locations.institution,
         pool_locations.room,
         pool_locations.building,
         pool_locations.street,
@@ -68,6 +69,7 @@ module Sql = struct
         name,
         description,
         is_virtual,
+        institution,
         room,
         building,
         street,
@@ -79,6 +81,7 @@ module Sql = struct
         updated_at
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?,
         ?,
         ?,
@@ -108,13 +111,14 @@ module Sql = struct
         name = $2,
         description = $3,
         is_virtual = $4,
-        room = $5,
-        building = $6,
-        street = $7,
-        zip = $8,
-        city = $9,
-        link = $10,
-        status = $11
+        institution = $5,
+        room = $6,
+        building = $7,
+        street = $8,
+        zip = $9,
+        city = $10,
+        link = $11,
+        status = $12
       WHERE
         pool_locations.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

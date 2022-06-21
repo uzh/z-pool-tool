@@ -17,17 +17,17 @@ type t =
   | LocationNoFiles
   | LocationNoSessions
   | LoginTitle
-  | NoEntries of Entity_message.Field.t
-  | ResetPasswordLink
-  | ResetPasswordTitle
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
+  | NoEntries of Entity_message.Field.t
   | RateTotalSent of int
   | Reminder
+  | ResetPasswordLink
+  | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
+  | SessionReminder
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionReminderDefaultText of Entity.Reminder.Text.t
-  | SessionReminder
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
@@ -62,6 +62,7 @@ type hint =
   | DirectRegistrationDisbled
   | Distribution
   | NumberIsDaysHint
+  | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
   | Rate

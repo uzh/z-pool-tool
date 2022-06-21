@@ -7,23 +7,29 @@ let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.Public.t) =
     let open Experiment.Public in
     div
-      ~a:[ a_class [ "flexrow"; "justify-between"; "inset-sm"; "flex-gap" ] ]
-      [ div
-          ~a:[ a_class [ "grow" ] ]
-          [ Experiment.Description.value experiment.description
-            |> HttpUtils.add_line_breaks
+      ~a:[ a_class [ "stack-sm"; "inset-sm" ] ]
+      [ p
+          [ strong
+              [ txt (Experiment.PublicTitle.value experiment.public_title) ]
           ]
       ; div
-          [ a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/experiments/%s"
-                          (experiment.id |> Pool_common.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(Message.More |> Utils.control_to_string language)
+          ~a:[ a_class [ "flexrow"; "space-between"; "flex-gap" ] ]
+          [ div
+              ~a:[ a_class [ "grow" ] ]
+              [ txt (Experiment.Description.value experiment.description) ]
+          ; div
+              [ a
+                  ~a:
+                    [ a_href
+                        (Sihl.Web.externalize_path
+                           (Format.asprintf
+                              "/experiments/%s"
+                              (experiment.id |> Pool_common.Id.value)))
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Message.More |> Utils.control_to_string language)
+                  ]
               ]
           ]
       ]
@@ -113,17 +119,15 @@ let show
          Experiment.DirectRegistrationDisabled.value
            experiment.direct_registration_disabled
        with
-      | false ->
-        let session_html = session_list sessions in
-        (match experiment.waiting_list_disabled with
-        | false -> [ session_html; waiting_list_form () ]
-        | true -> [ session_html ])
-        |> div ~a:[ a_class [ "stack-lg" ] ]
+      | false -> session_list sessions
       | true -> div [ waiting_list_form () ])
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
-    [ div
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (Experiment.PublicTitle.value experiment.public_title) ]
+    ; div
         ~a:[ a_class [ "stack" ] ]
         [ p
             [ Experiment.Description.value experiment.description

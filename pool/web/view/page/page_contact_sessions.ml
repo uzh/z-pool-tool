@@ -48,32 +48,26 @@ let public_detail (session : Session.Public.t) language =
     [ ( Field.Start
       , session.Public.start
         |> Start.value
-        |> Pool_common.Utils.Time.formatted_date_time )
+        |> Pool_common.Utils.Time.formatted_date_time
+        |> txt )
     ; ( Field.Duration
       , session.Public.duration
         |> Duration.value
-        |> Pool_common.Utils.Time.formatted_timespan )
+        |> Pool_common.Utils.Time.formatted_timespan
+        |> txt )
     ; ( Field.Description
       , CCOption.map_or ~default:"" Description.value session.Public.description
-      )
+        |> txt )
     ; ( Field.Location
-      , session.Session.Public.location |> Pool_location.to_string language )
+      , session.Session.Public.location
+        |> Component.Partials.location_to_html ~public:true language )
     ; ( Field.CanceledAt
       , CCOption.map_or
           ~default:"Not canceled"
           (Ptime.to_rfc3339 ~space:true)
-          session.Public.canceled_at )
+          session.Public.canceled_at
+        |> txt )
     ]
-    |> CCList.map (fun (field, value) ->
-           tr
-             [ th
-                 [ txt
-                     (field
-                     |> Pool_common.Utils.field_to_string language
-                     |> CCString.capitalize_ascii)
-                 ]
-             ; td [ txt value ]
-             ])
   in
-  table ~a:[ a_class [ "table"; "striped" ] ] rows
+  Component.Table.vertical_table `Striped language ~align_top:true rows
 ;;

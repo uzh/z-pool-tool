@@ -112,16 +112,35 @@ let find_filtered_request filter =
       %s
       AND user_users.admin = 0
       AND user_users.confirmed = 1
+      AND NOT EXISTS
+        (SELECT 1
+        FROM pool_invitations
+        WHERE
+            pool_invitations.contact_id = pool_contacts.id
+          AND
+            pool_invitations.experiment_id IN (
+              SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', '')))
+            )
+        AND NOT EXISTS
+        (SELECT 1
+        FROM pool_assignments
+        WHERE
+            pool_assignments.contact_id = pool_contacts.id
+          AND
+            pool_assignments.session_id IN (
+              SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', '')))
+            )
     |sql}
     filter
   |> find_request_sql
-  |> Caqti_type.unit ->* Repo_model.t
+  |> Caqti_type.string ->* Repo_model.t
 ;;
 
-let find_filtered pool filter =
+let find_filtered pool experiment_id filter =
   Utils.Database.collect
     (Pool_database.Label.value pool)
     (find_filtered_request filter)
+    (experiment_id |> Pool_common.Id.value)
 ;;
 
 let find_multiple_request ids =

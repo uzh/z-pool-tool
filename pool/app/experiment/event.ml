@@ -2,8 +2,8 @@ open Entity
 
 type create =
   { title : Title.t
+  ; public_title : PublicTitle.t
   ; description : Description.t
-  ; waiting_list_disabled : WaitingListDisabled.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option

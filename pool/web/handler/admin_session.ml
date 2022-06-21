@@ -118,8 +118,8 @@ let detail req page =
       |> Lwt.return_ok
     | `Edit ->
       let flash_fetcher key = Sihl.Web.Flash.find key req in
-      let%lwt locations = Pool_location.find_all tenant_db in
       let* experiment = Experiment.find tenant_db experiment_id in
+      let%lwt locations = Pool_location.find_all tenant_db in
       Page.Admin.Session.edit context experiment session locations flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context

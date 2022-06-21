@@ -3,8 +3,8 @@ let waiting_list pool =
   let to_public_experiment (experiment : Experiment.t) =
     Experiment.Public.
       { id = experiment.Experiment.id
+      ; public_title = experiment.Experiment.public_title
       ; description = experiment.Experiment.description
-      ; waiting_list_disabled = experiment.Experiment.waiting_list_disabled
       ; direct_registration_disabled =
           experiment.Experiment.direct_registration_disabled
       }
@@ -13,7 +13,10 @@ let waiting_list pool =
     Lwt_list.map_s
       (fun experiment ->
         let%lwt filtered_contacts =
-          Contact.find_filtered pool experiment.Experiment.filter ()
+          Contact.find_filtered
+            pool
+            experiment.Experiment.id
+            experiment.Experiment.filter
         in
         let n = Random.int (CCList.length filtered_contacts) in
         let contact = CCList.nth filtered_contacts n in

@@ -15,8 +15,8 @@ module Title = struct
   ;;
 end
 
-module Description = struct
-  include Description
+module PublicTitle = struct
+  include PublicTitle
 
   let t =
     let encode = Utils.fcn_ok value in
@@ -27,10 +27,16 @@ module Description = struct
   ;;
 end
 
-module WaitingListDisabled = struct
-  include WaitingListDisabled
+module Description = struct
+  include Description
 
-  let t = Caqti_type.bool
+  let t =
+    let encode = Utils.fcn_ok value in
+    let decode m =
+      m |> create |> CCResult.map_err Common.(Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode string)
+  ;;
 end
 
 module DirectRegistrationDisabled = struct
@@ -50,9 +56,9 @@ let t =
     Ok
       ( m.id
       , ( Title.value m.title
-        , ( m.description
-          , ( m.filter
-            , ( m.waiting_list_disabled
+        , ( PublicTitle.value m.public_title
+          , ( m.description
+            , ( m.filter
               , ( m.direct_registration_disabled
                 , ( m.registration_disabled
                   , ( m.session_reminder_lead_time
@@ -63,9 +69,9 @@ let t =
   let decode
       ( id
       , ( title
-        , ( description
-          , ( filter
-            , ( waiting_list_disabled
+        , ( public_title
+          , ( description
+            , ( filter
               , ( direct_registration_disabled
                 , ( registration_disabled
                   , ( session_reminder_lead_time
@@ -77,9 +83,9 @@ let t =
     Ok
       { id
       ; title
+      ; public_title
       ; description
       ; filter
-      ; waiting_list_disabled
       ; direct_registration_disabled
       ; registration_disabled
       ; session_reminder_lead_time
@@ -98,11 +104,11 @@ let t =
          (tup2
             Title.t
             (tup2
-               Description.t
+               PublicTitle.t
                (tup2
-                  string
+                  Description.t
                   (tup2
-                     WaitingListDisabled.t
+                     string
                      (tup2
                         DirectRegistrationDisabled.t
                         (tup2
@@ -124,9 +130,9 @@ module Write = struct
       Ok
         ( m.id
         , ( Title.value m.title
-          , ( Description.value m.description
-            , ( m.filter
-              , ( m.waiting_list_disabled
+          , ( PublicTitle.value m.public_title
+            , ( Description.value m.description
+              , ( m.filter
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled
                     , ( m.session_reminder_lead_time
@@ -143,11 +149,11 @@ module Write = struct
            (tup2
               Title.t
               (tup2
-                 Description.t
+                 PublicTitle.t
                  (tup2
-                    string
+                    Description.t
                     (tup2
-                       WaitingListDisabled.t
+                       string
                        (tup2
                           DirectRegistrationDisabled.t
                           (tup2
@@ -166,17 +172,11 @@ module Public = struct
   let t =
     let encode (m : t) =
       Ok
-        ( m.id
-        , ( m.description
-          , (m.waiting_list_disabled, m.direct_registration_disabled) ) )
+        (m.id, (m.public_title, (m.description, m.direct_registration_disabled)))
     in
-    let decode
-        ( id
-        , (description, (waiting_list_disabled, direct_registration_disabled))
-        )
+    let decode (id, (public_title, (description, direct_registration_disabled)))
       =
-      Ok
-        { id; description; waiting_list_disabled; direct_registration_disabled }
+      Ok { id; public_title; description; direct_registration_disabled }
     in
     Caqti_type.(
       custom
@@ -185,7 +185,7 @@ module Public = struct
         (tup2
            RepoId.t
            (tup2
-              Description.t
-              (tup2 WaitingListDisabled.t DirectRegistrationDisabled.t))))
+              PublicTitle.t
+              (tup2 Description.t DirectRegistrationDisabled.t))))
   ;;
 end

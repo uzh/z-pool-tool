@@ -27,6 +27,7 @@ let formatted_timespan timespan =
   Format.flush_str_formatter ()
 ;;
 
+(* TODO[timhub]: maybe remove? use sql functions *)
 let timespan_to_time_units timespan =
   let open CCResult in
   timespan

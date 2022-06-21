@@ -5,9 +5,9 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AssetId -> "asset identifier"
-  | Assignments -> "assignments"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
+  | Assignments -> "assignments"
   | Building -> "building"
   | CanceledAt -> "canceled at"
   | City -> "city"
@@ -47,6 +47,7 @@ let field_to_string =
   | Id -> "identifier"
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
+  | Institution -> "institution"
   | Invitation -> "invitation"
   | Invitations -> "invitations"
   | Key -> "key"
@@ -75,9 +76,10 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | PublicTitle -> "public title"
   | Rate -> "rate"
-  | RecruitmentChannel -> "recruitment channel"
   | ReminderText -> "reminder text"
+  | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
   | Role -> "role"
@@ -118,7 +120,6 @@ let field_to_string =
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
-  | WaitingListDisabled -> "waiting list disabled"
   | Zip -> "zip code"
 ;;
 
@@ -166,6 +167,10 @@ let rec error_to_string = function
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
   | AlreadyStarted -> "Already started or ended, action not possible anymore."
+  | AlreadyInvitedToExperiment names ->
+    Format.asprintf
+      "The following contacts have already been invited to this experiment: %s"
+      (CCString.concat ", " names)
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
@@ -180,6 +185,8 @@ let rec error_to_string = function
     "Please provide a valid and unused email address."
   | ContactUnconfirmed -> "Participant isn't confirmed!"
   | Decode field -> field_message "Cannot decode" (field_to_string field) ""
+  | DirectRegistrationIsDisabled ->
+    "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
   | EmailAddressMissingOperator -> "Please provide operator email address."

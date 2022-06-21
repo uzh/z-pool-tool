@@ -6,7 +6,7 @@ module TemplateLabel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
   type t =
-    | Boilerplate [@name "boilerplate"]
+    | Boilerplate [@name "boilerplate"] [@printer go "boilerplate"]
     | EmailVerification [@name "email_verification"]
         [@printer go "email_verification"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
