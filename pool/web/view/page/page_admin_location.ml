@@ -16,7 +16,6 @@ module List = struct
       [ Some Name; Some Description; Some Location; None ]
   ;;
 
-  (* TODO[timhub]: remove? *)
   let rows language locations =
     CCList.map
       (fun (location : Pool_location.t) ->

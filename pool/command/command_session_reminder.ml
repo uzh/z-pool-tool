@@ -24,12 +24,13 @@ let create_reminder pool language contact content subject =
     pool
     language
     Email.TemplateLabel.SessionReminder
+    (* TODO[timhub]: Use boilerplate template? *)
     subject
     (email |> Pool_user.EmailAddress.value)
     [ "name", name; "textContent", content ]
 ;;
 
-let send_reminder pool session default_language sys_languages =
+let create_reminders pool session default_language sys_languages =
   let open Lwt_result.Syntax in
   let* experiment = Experiment.find_of_session pool session.Session.id in
   (* Find custom reminder text, if available *)
@@ -44,7 +45,7 @@ let send_reminder pool session default_language sys_languages =
   let* assignments =
     Assignment.find_uncanceled_by_session pool session.Session.id
   in
-  let%lwt emails =
+  let emails =
     Lwt_list.map_s
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
@@ -89,17 +90,14 @@ let send_reminder pool session default_language sys_languages =
         @@ create_reminder pool message_language contact text subject)
       assignments
   in
-  let open CCResult.Infix in
-  emails
-  |> CCResult.flatten_l
-  >|= Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
-  |> Lwt_result.lift
+  let open Utils.Lwt_result.Infix in
+  emails ||> CCResult.flatten_l
 ;;
 
-let test_reminder =
+let send_session_reminder =
   Sihl.Command.make
-    ~name:"reminder.test"
-    ~description:"Test reminder"
+    ~name:"session_reminder.send"
+    ~description:"Send session reminders"
     (fun args ->
       match args with
       | [ pool ] ->
@@ -108,27 +106,41 @@ let test_reminder =
         let%lwt _ = Database.Tenant.setup () in
         let%lwt result =
           let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
-          let* sessions =
-            Session.find_sessions_to_remind pool (default_reminder_lead_time ())
-          in
-          let sys_languages = Pool_common.Language.all in
-          let* default_language = Settings.default_language pool in
-          let* res =
+          let%lwt data =
+            let* sessions =
+              Session.find_sessions_to_remind
+                pool
+                (default_reminder_lead_time ())
+            in
+            Logs.info (fun m -> m "%s" "session ids in command");
+            let _ =
+              CCList.map
+                (fun s ->
+                  Logs.info (fun m ->
+                      m "%s" (s.Session.id |> Pool_common.Id.value)))
+                sessions
+            in
+            let sys_languages = Pool_common.Language.all in
+            let* default_language = Settings.default_language pool in
             Lwt_list.map_s
               (fun session ->
-                send_reminder pool session default_language sys_languages)
+                let* emails =
+                  create_reminders pool session default_language sys_languages
+                in
+                Lwt_result.return (session, emails))
               sessions
             ||> CCResult.flatten_l
           in
-          res |> Lwt_result.return
+          let* events =
+            let open CCResult.Infix in
+            data
+            >>= Cqrs_command.Session_command.SendReminder.handle
+            |> Lwt_result.lift
+          in
+          Pool_event.handle_events pool events |> Lwt_result.return
         in
         (match result with
-        | Error err ->
-          (* TODO[timhub]: How to deal with errors? *)
-          failwith
-            (Format.asprintf
-               "Error while sending reminder: %s"
-               Pool_common.(Utils.error_to_string Language.En err))
-        | Ok _ -> Lwt.return_some ())
+        | Ok _ -> Lwt.return_some ()
+        | Error _ -> Lwt.return_none)
       | _ -> failwith "Argument missmatch")
 ;;

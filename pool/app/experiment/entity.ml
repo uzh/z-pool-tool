@@ -83,6 +83,9 @@ module RegistrationDisabled = struct
   ;;
 end
 
+(* TODO[timhub]: Replace session_reminder_langauge with custom reminder subject,
+   when text elements for subjects are implemented in Sihl 4.0 *)
+
 type t =
   { id : Id.t
   ; title : Title.t

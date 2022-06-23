@@ -8,7 +8,7 @@ let commands =
   ; Seed.tenant_data_clean
   ; Tenant_pool.create_tenant_pool
   ; Contact.sign_up
-  ; SessionReminder.test_reminder
+  ; SessionReminder.send_session_reminder
   ]
 ;;
 

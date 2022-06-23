@@ -71,13 +71,7 @@ let session_form
       ()
   in
   let to_default_value html =
-    (* TODO[timhub]: use class *)
-    div
-      ~a:
-        [ a_class [ "gap"; "inset-sm" ]
-        ; a_style "border-left: 1px solid #b5b5b5"
-        ]
-      [ html ]
+    div ~a:[ a_class [ "gap"; "inset-sm"; "border-left" ] ] [ html ]
   in
   let action, submit =
     let open Pool_common in

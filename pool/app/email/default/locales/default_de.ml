@@ -212,7 +212,7 @@ let session_reminder =
   let language = Pool_common.Language.De in
   let html =
     let open Tyxml.Html in
-    (* How to deal with i18n reminder subject in html template? *)
+    (* TODO[timhub]: How to deal with i18n reminder subject in html template? *)
     [ salutation; p [ txt "{textContent}" ]; complimentary_close ]
     |> combine_html language (Some "Reminder: Experiment-Session")
     |> html_to_string

@@ -1,5 +1,17 @@
 open Entity
 
+module Sihl_email = struct
+  include Sihl_email
+
+  let equal (e1 : t) (e2 : t) =
+    let open CCString in
+    equal e1.sender e2.sender
+    && equal e1.recipient e2.recipient
+    && equal e1.subject e2.subject
+    && equal e1.text e2.text
+  ;;
+end
+
 type base =
   { start : Start.t
   ; duration : Duration.t
@@ -19,6 +31,7 @@ type event =
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
+  | ReminderSent of (t * Sihl_email.t list)
 [@@deriving eq, show]
 
 let handle_event pool = function
@@ -66,5 +79,23 @@ let handle_event pool = function
       ; reminder_text
       ; reminder_lead_time
       ; reminder_language
+      ; reminder_sent_at = Pool_common.Reminder.SentAt.create_now ()
       }
+  | ReminderSent (session, emails) ->
+    Logs.info (fun m -> m "%s" "=========================");
+    Logs.info (fun m ->
+        m
+          "Session: %s;  Emails: %s"
+          (session.id |> Pool_common.Id.value)
+          (CCList.length emails |> CCInt.to_string));
+    Logs.info (fun m -> m "%s" "=========================");
+    let%lwt () =
+      match CCList.length emails > 0 with
+      | true -> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
+      | false -> Lwt.return_unit
+    in
+    { session with
+      reminder_sent_at = Pool_common.Reminder.SentAt.create_now ()
+    }
+    |> Repo.update pool
 ;;

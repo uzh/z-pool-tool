@@ -213,3 +213,30 @@ end = struct
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
   ;;
 end
+
+module SendReminder : sig
+  type t = (Session.t * Sihl_email.t list) list
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = (Session.t * Sihl_email.t list) list
+
+  let handle command =
+    Logs.info (fun m -> m "In session cqrs command: %i" (CCList.length command));
+    let _ =
+      CCList.map
+        (fun (s, _) ->
+          Logs.info (fun m -> m "%s" (s.Session.id |> Pool_common.Id.value)))
+        command
+    in
+    Ok
+      (CCList.map
+         (fun data -> Session.ReminderSent data |> Pool_event.session)
+         command)
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  ;;
+end

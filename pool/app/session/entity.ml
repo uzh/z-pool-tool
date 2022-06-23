@@ -93,6 +93,8 @@ module AssignmentCount = struct
   ;;
 end
 
+(* TODO[timhub]: Replace reminder_langauge with custom reminder subject, when
+   text elements for subjects are implemented in Sihl 4.0 *)
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
