@@ -26,11 +26,6 @@ let invitation = function
   | En -> Default_en.invitation
 ;;
 
-let session_reminder = function
-  | De -> Default_de.session_reminder
-  | En -> Default_en.session_reminder
-;;
-
 let boilerplate language =
   let salutation, complimentary_close, add_salutation_to_text =
     match language with
@@ -67,7 +62,6 @@ let default_values_tenant =
   ; password_reset
   ; signup_verification
   ; invitation
-  ; session_reminder
   ; boilerplate
   ]
   @@@ [ En; De ]

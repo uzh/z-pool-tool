@@ -202,17 +202,3 @@ Sessions......
   in
   { label; language; text; html }
 ;;
-
-let session_reminder =
-  let label = TemplateLabel.SessionReminder in
-  let language = Pool_common.Language.En in
-  let html =
-    let open Tyxml.Html in
-    (* How to deal with i18n reminder subject in html template? *)
-    [ salutation; p [ txt "{textContent}" ]; complimentary_close ]
-    |> combine_html language (Some "Reminder: Experiment-Session")
-    |> html_to_string
-  in
-  let text = "{textContent}" |> add_salutation_to_text in
-  { label; language; text; html }
-;;

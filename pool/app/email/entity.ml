@@ -12,8 +12,6 @@ module TemplateLabel = struct
     | Invitation [@name "invitation"] [@printer go "invitation"]
     | PasswordChange [@name "password_change"] [@printer go "password_change"]
     | PasswordReset [@name "password_reset"] [@printer go "password_reset"]
-    | SessionReminder [@name "session_reminder"]
-        [@printer go "session_reminder"]
     | SignUpVerification [@name "signup_verification"]
         [@printer go "signup_verification"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
