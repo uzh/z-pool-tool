@@ -101,14 +101,6 @@ let send_session_reminder =
                 pool
                 (default_reminder_lead_time ())
             in
-            Logs.info (fun m -> m "%s" "session ids in command");
-            let _ =
-              CCList.map
-                (fun s ->
-                  Logs.info (fun m ->
-                      m "%s" (s.Session.id |> Pool_common.Id.value)))
-                sessions
-            in
             let sys_languages = Pool_common.Language.all in
             let* default_language = Settings.default_language pool in
             Lwt_list.map_s

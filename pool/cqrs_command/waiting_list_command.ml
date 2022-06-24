@@ -8,7 +8,6 @@ module Create : sig
 end = struct
   type t = Waiting_list.create
 
-  (* TODO[timhub]: correct way? *)
   let handle (command : Waiting_list.create) =
     if command.Waiting_list.experiment
          .Experiment.Public.direct_registration_disabled

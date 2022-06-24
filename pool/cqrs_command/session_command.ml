@@ -67,10 +67,8 @@ module Create = struct
          } :
         Session.base)
     =
-    (* TODO: Validate session reminder info*)
     if max_participants >= min_participants
     then (
-      (* TODO[timhub] add validation *)
       let (session : Session.base) =
         Session.
           { start
@@ -128,7 +126,6 @@ module Update = struct
     =
     if max_participants >= min_participants
     then (
-      (* TODO[timhub] add validation *)
       let (session_cmd : Session.base) =
         Session.
           { start
@@ -217,13 +214,6 @@ end = struct
   type t = (Session.t * Sihl_email.t list) list
 
   let handle command =
-    Logs.info (fun m -> m "In session cqrs command: %i" (CCList.length command));
-    let _ =
-      CCList.map
-        (fun (s, _) ->
-          Logs.info (fun m -> m "%s" (s.Session.id |> Pool_common.Id.value)))
-        command
-    in
     Ok
       (CCList.map
          (fun data -> Session.ReminderSent data |> Pool_event.session)
