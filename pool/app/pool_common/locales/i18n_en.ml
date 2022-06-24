@@ -115,6 +115,8 @@ let hint_to_string = function
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
+  | TemplateTextElementsHint ->
+    "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint -> "Hours and minutes"
 ;;
 

@@ -173,9 +173,5 @@ val find_sessions_to_remind
   -> Pool_common.Reminder.LeadTime.t
   -> (t list, Pool_common__Entity_message.error) result Lwt.t
 
-val to_email_text
-  :  Pool_common.Language.t
-  -> Start.t
-  -> Duration.t
-  -> Pool_location.t
-  -> string
+val to_email_text : Pool_common.Language.t -> t -> string
+val public_to_email_text : Pool_common.Language.t -> Public.t -> string

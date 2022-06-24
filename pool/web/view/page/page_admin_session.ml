@@ -156,48 +156,58 @@ let session_form
                          |> to_default_value)
                 ]
             ; div
-                [ input_element
+                [ h3 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
+                ; Partials.session_reminder_text_element_help
                     language
-                    `Text
-                    Pool_common.Message.Field.ReminderSubject
-                    ~required:true
-                    ~value:
-                      (value (fun s ->
-                           s.reminder_subject
-                           |> CCOption.map_or
-                                ~default:""
-                                Pool_common.Reminder.Subject.value))
-                    ~flash_fetcher
-                ; experiment.Experiment.session_reminder_subject
-                  |> CCOption.map_or ~default:(txt "") (fun text ->
-                         Pool_common.(
-                           Utils.text_to_string
-                             language
-                             (I18n.SessionReminderDefaultSubject
-                                (text |> Reminder.Subject.value)))
-                         |> HttpUtils.add_line_breaks
-                         |> to_default_value)
-                ]
-            ; div
-                [ textarea_element
-                    language
-                    Pool_common.Message.Field.ReminderText
-                    ~value:
-                      (value (fun s ->
-                           s.reminder_text
-                           |> CCOption.map_or
-                                ~default:""
-                                Pool_common.Reminder.Text.value))
-                    ~flash_fetcher
-                ; experiment.Experiment.session_reminder_text
-                  |> CCOption.map_or ~default:(txt "") (fun text ->
-                         Pool_common.(
-                           Utils.text_to_string
-                             language
-                             (I18n.SessionReminderDefaultText
-                                (text |> Reminder.Text.value)))
-                         |> HttpUtils.add_line_breaks
-                         |> to_default_value)
+                    ?session
+                    ()
+                ; div
+                    ~a:[ a_class [ "stack"; "gap-lg" ] ]
+                    [ div
+                        [ input_element
+                            language
+                            `Text
+                            Pool_common.Message.Field.ReminderSubject
+                            ~required:true
+                            ~value:
+                              (value (fun s ->
+                                   s.reminder_subject
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Pool_common.Reminder.Subject.value))
+                            ~flash_fetcher
+                        ; experiment.Experiment.session_reminder_subject
+                          |> CCOption.map_or ~default:(txt "") (fun text ->
+                                 Pool_common.(
+                                   Utils.text_to_string
+                                     language
+                                     (I18n.SessionReminderDefaultSubject
+                                        (text |> Reminder.Subject.value)))
+                                 |> HttpUtils.add_line_breaks
+                                 |> to_default_value)
+                        ]
+                    ; div
+                        [ textarea_element
+                            language
+                            Pool_common.Message.Field.ReminderText
+                            ~value:
+                              (value (fun s ->
+                                   s.reminder_text
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Pool_common.Reminder.Text.value))
+                            ~flash_fetcher
+                        ; experiment.Experiment.session_reminder_text
+                          |> CCOption.map_or ~default:(txt "") (fun text ->
+                                 Pool_common.(
+                                   Utils.text_to_string
+                                     language
+                                     (I18n.SessionReminderDefaultText
+                                        (text |> Reminder.Text.value)))
+                                 |> HttpUtils.add_line_breaks
+                                 |> to_default_value)
+                        ]
+                    ]
                 ]
             ]
         ]

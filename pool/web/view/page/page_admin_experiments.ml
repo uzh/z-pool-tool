@@ -166,23 +166,30 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                             ~default:""
                             Pool_common.Utils.Time.timespan_spanpicker))
                 ~flash_fetcher
-            ; input_element
-                language
-                `Text
-                Pool_common.Message.Field.ReminderSubject
-                ~value:
-                  (value (fun e ->
-                       session_reminder_subject_value e
-                       |> CCOption.value ~default:""))
-                ~flash_fetcher
-            ; textarea_element
-                language
-                Pool_common.Message.Field.ReminderText
-                ~value:
-                  (value (fun e ->
-                       session_reminder_text_value e
-                       |> CCOption.value ~default:""))
-                ~flash_fetcher
+            ; div
+                [ h3 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
+                ; Partials.session_reminder_text_element_help language ()
+                ; div
+                    ~a:[ a_class [ "stack"; "gap-lg" ] ]
+                    [ input_element
+                        language
+                        `Text
+                        Pool_common.Message.Field.ReminderSubject
+                        ~value:
+                          (value (fun e ->
+                               session_reminder_subject_value e
+                               |> CCOption.value ~default:""))
+                        ~flash_fetcher
+                    ; textarea_element
+                        language
+                        Pool_common.Message.Field.ReminderText
+                        ~value:
+                          (value (fun e ->
+                               session_reminder_text_value e
+                               |> CCOption.value ~default:""))
+                        ~flash_fetcher
+                    ]
+                ]
             ]
         ]
     ; submit_element

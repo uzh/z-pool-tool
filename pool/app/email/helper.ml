@@ -39,6 +39,24 @@ let prepare_email pool language label subject email params =
     Sihl_email.Template.email_of_template ~template mail params
 ;;
 
+let prepare_boilerplate_email subject email text params =
+  match Sihl.Configuration.read_string "SMTP_SENDER" with
+  | None -> failwith "SMTP_SENDER not found in configuration"
+  | Some sender ->
+    let mail =
+      Sihl_email.
+        { sender
+        ; recipient = email
+        ; subject
+        ; text
+        ; html = None
+        ; cc = []
+        ; bcc = []
+        }
+    in
+    Sihl_email.Template.email_of_template mail params
+;;
+
 module PasswordReset = struct
   let create pool language ~user =
     let email = user.Sihl_user.email in

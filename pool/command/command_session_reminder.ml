@@ -7,26 +7,16 @@ let default_reminder_lead_time () =
   |> CCResult.get_or_failwith
 ;;
 
-type reminder_text =
-  | I18nText of I18n.t
-  | SpecificText of Pool_common.Reminder.Text.t
-
-let create_reminder pool language contact content subject =
+let create_reminder language contact (session : Session.t) content subject =
+  Logs.info (fun m -> m "content: %s" content);
   let name = Contact.fullname contact in
   let email = Contact.email_address contact in
-  let subject = I18n.content_to_string subject in
-  let content =
-    match content with
-    | I18nText text -> I18n.content_to_string text
-    | SpecificText text -> Pool_common.Reminder.Text.value text
-  in
-  Email.Helper.prepare_email
-    pool
-    language
-    Email.TemplateLabel.SessionReminder
+  let session_overview = Session.(to_email_text language session) in
+  Email.Helper.prepare_boilerplate_email
     subject
     (email |> Pool_user.EmailAddress.value)
-    [ "name", name; "textContent", content ]
+    content
+    [ "name", name; "sessionOverview", session_overview ]
 ;;
 
 let create_reminders pool session default_language sys_languages =
@@ -38,7 +28,15 @@ let create_reminders pool session default_language sys_languages =
     session.Session.reminder_text
     <+> experiment.Experiment.session_reminder_text
   in
+  let custom_reminder_subject =
+    let open CCOption in
+    session.Session.reminder_subject
+    <+> experiment.Experiment.session_reminder_subject
+  in
   let default_texts =
+    Hashtbl.create ~random:true (CCList.length sys_languages)
+  in
+  let default_subjects =
     Hashtbl.create ~random:true (CCList.length sys_languages)
   in
   let* assignments =
@@ -48,41 +46,46 @@ let create_reminders pool session default_language sys_languages =
     Lwt_list.map_s
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
+        (* TODO[timhub]: does an experiment/session have its own language? *)
         let message_language =
           CCOption.value ~default:default_language contact.Contact.language
         in
-        let* text, subject =
-          CCOption.map_lazy
-            (fun _ ->
-              match Hashtbl.find_opt default_texts message_language with
-              | Some (text, subject) ->
-                Ok (I18nText text, subject) |> Lwt_result.lift
-              | None ->
-                let* i18n_text =
-                  I18n.(find_by_key pool Key.ReminderText message_language)
-                in
-                let* subject =
-                  I18n.(find_by_key pool Key.ReminderSubject message_language)
-                in
-                let _ =
-                  Hashtbl.add default_texts message_language (i18n_text, subject)
-                in
-                (I18nText i18n_text, subject) |> Lwt_result.return)
-            (fun specific_text ->
-              let* subject =
-                I18n.(find_by_key pool Key.ReminderSubject message_language)
+        let custom_or_default value str_fnc hash i18n_key =
+          match value with
+          | Some value -> Lwt_result.return (str_fnc value)
+          | None ->
+            (match Hashtbl.find_opt hash message_language with
+            | Some text -> Lwt_result.return I18n.(text |> content_to_string)
+            | None ->
+              let* i18n_text =
+                I18n.(find_by_key pool i18n_key message_language)
               in
-              Ok (SpecificText specific_text, subject) |> Lwt_result.lift)
+              let _ = Hashtbl.add hash message_language i18n_text in
+              Lwt_result.return I18n.(i18n_text |> content_to_string))
+        in
+        let* text =
+          custom_or_default
             custom_reminder_text
+            Pool_common.Reminder.Text.value
+            default_texts
+            I18n.Key.ReminderText
+        in
+        let* subject =
+          custom_or_default
+            custom_reminder_subject
+            Pool_common.Reminder.Subject.value
+            default_subjects
+            I18n.Key.ReminderSubject
         in
         Lwt_result.ok
-        @@ create_reminder pool message_language contact text subject)
+          (create_reminder message_language contact session text subject))
       assignments
   in
   let open Utils.Lwt_result.Infix in
   emails ||> CCResult.flatten_l
 ;;
 
+(* TODO[timhub]: Allow text element to be passed from db to email template *)
 let send_session_reminder =
   Sihl.Command.make
     ~name:"session_reminder.send"

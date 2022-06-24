@@ -74,6 +74,7 @@ type hint =
   | SelectedDateIsPast
   | SessionReminderLanguageHint
   | SignUpForWaitingList
+  | TemplateTextElementsHint
   | TimeSpanPickerHint
 
 type confirmable =

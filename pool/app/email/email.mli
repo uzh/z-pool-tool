@@ -123,6 +123,13 @@ module Helper : sig
     -> (string * string) list
     -> Sihl_email.t Lwt.t
 
+  val prepare_boilerplate_email
+    :  string
+    -> string
+    -> string
+    -> (string * string) list
+    -> Sihl_email.t Lwt.t
+
   module PasswordReset : sig
     val create
       :  Pool_database.Label.t

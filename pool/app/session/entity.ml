@@ -178,7 +178,31 @@ type notification_history =
 
 let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
 
-let to_email_text language start duration location =
+let session_date_to_human (session : t) =
+  session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+;;
+
+module Public = struct
+  type t =
+    { id : Pool_common.Id.t
+    ; start : Start.t
+    ; duration : Ptime.Span.t
+    ; description : Description.t option
+    ; location : Pool_location.t
+    ; max_participants : ParticipantAmount.t
+    ; min_participants : ParticipantAmount.t
+    ; overbook : ParticipantAmount.t
+    ; assignment_count : AssignmentCount.t
+    ; canceled_at : Ptime.t option
+    }
+  [@@deriving eq, show]
+
+  let is_fully_booked (m : t) =
+    m.assignment_count >= m.max_participants + m.overbook
+  ;;
+end
+
+let email_text language start duration location =
   let format label text =
     Format.asprintf
       "%s: %s"
@@ -203,26 +227,13 @@ let to_email_text language start duration location =
   CCString.concat "\n" [ start; duration; location ]
 ;;
 
-let session_date_to_human (session : t) =
-  session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
+let to_email_text language { start; duration; location; _ } =
+  email_text language start duration location
 ;;
 
-module Public = struct
-  type t =
-    { id : Pool_common.Id.t
-    ; start : Start.t
-    ; duration : Ptime.Span.t
-    ; description : Description.t option
-    ; location : Pool_location.t
-    ; max_participants : ParticipantAmount.t
-    ; min_participants : ParticipantAmount.t
-    ; overbook : ParticipantAmount.t
-    ; assignment_count : AssignmentCount.t
-    ; canceled_at : Ptime.t option
-    }
-  [@@deriving eq, show]
-
-  let is_fully_booked (m : t) =
-    m.assignment_count >= m.max_participants + m.overbook
-  ;;
-end
+let public_to_email_text
+    language
+    (Public.{ start; duration; location; _ } : Public.t)
+  =
+  email_text language start duration location
+;;
