@@ -62,9 +62,9 @@ let t =
               , ( m.direct_registration_disabled
                 , ( m.registration_disabled
                   , ( m.session_reminder_lead_time
-                    , ( m.session_reminder_text
-                      , ( m.session_reminder_language
-                        , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+                    , ( m.session_reminder_subject
+                      , (m.session_reminder_text, (m.created_at, m.updated_at))
+                      ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
@@ -75,9 +75,9 @@ let t =
               , ( direct_registration_disabled
                 , ( registration_disabled
                   , ( session_reminder_lead_time
-                    , ( session_reminder_text
-                      , (session_reminder_language, (created_at, updated_at)) )
-                    ) ) ) ) ) ) ) )
+                    , ( session_reminder_subject
+                      , (session_reminder_text, (created_at, updated_at)) ) ) )
+                ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -89,8 +89,8 @@ let t =
       ; direct_registration_disabled
       ; registration_disabled
       ; session_reminder_lead_time
+      ; session_reminder_subject
       ; session_reminder_text
-      ; session_reminder_language
       ; created_at
       ; updated_at
       }
@@ -116,9 +116,9 @@ let t =
                            (tup2
                               (option Pool_common.Repo.Reminder.LeadTime.t)
                               (tup2
-                                 (option Pool_common.Repo.Reminder.Text.t)
+                                 (option Pool_common.Repo.Reminder.Subject.t)
                                  (tup2
-                                    (option Common.Repo.Language.t)
+                                    (option Pool_common.Repo.Reminder.Text.t)
                                     (tup2
                                        Common.Repo.CreatedAt.t
                                        Common.Repo.UpdatedAt.t))))))))))))
@@ -136,8 +136,8 @@ module Write = struct
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled
                     , ( m.session_reminder_lead_time
-                      , (m.session_reminder_text, m.session_reminder_language)
-                      ) ) ) ) ) ) ) )
+                      , (m.session_reminder_subject, m.session_reminder_text) )
+                    ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -161,8 +161,8 @@ module Write = struct
                              (tup2
                                 (option Pool_common.Repo.Reminder.LeadTime.t)
                                 (tup2
-                                   (option Pool_common.Repo.Reminder.Text.t)
-                                   (option Pool_common.Repo.Language.t)))))))))))
+                                   (option Pool_common.Repo.Reminder.Subject.t)
+                                   (option Pool_common.Repo.Reminder.Text.t)))))))))))
   ;;
 end
 

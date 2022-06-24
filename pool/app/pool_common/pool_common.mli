@@ -128,6 +128,21 @@ module File : sig
 end
 
 module Reminder : sig
+  module Subject : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> t
+    val create : string -> (t, Message.error) result
+    val of_string : string -> t
+    val value : t -> string
+    val pp : Format.formatter -> t -> unit
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
   module Text : sig
     type t
 
@@ -207,6 +222,12 @@ module Repo : sig
   end
 
   module Reminder : sig
+    module Subject : sig
+      type t = Reminder.Subject.t
+
+      val t : t Caqti_type.t
+    end
+
     module Text : sig
       type t = Reminder.Text.t
 

@@ -79,8 +79,8 @@ type t =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
-  ; session_reminder_language : Pool_common.Language.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -97,8 +97,8 @@ val create
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> Pool_common.Reminder.LeadTime.t option
+  -> Pool_common.Reminder.Subject.t option
   -> Pool_common.Reminder.Text.t option
-  -> Pool_common.Language.t option
   -> (t, Pool_common.Message.error) result
 
 type create =
@@ -108,8 +108,8 @@ type create =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
-  ; session_reminder_language : Pool_common.Language.t option
   }
 
 val equal_create : create -> create -> bool
@@ -175,6 +175,7 @@ val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string
 val public_title_value : t -> string
 val description_value : t -> string
+val session_reminder_subject_value : t -> string option
 val session_reminder_text_value : t -> string option
 val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool

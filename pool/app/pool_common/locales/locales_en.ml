@@ -79,6 +79,7 @@ let field_to_string =
   | PublicTitle -> "public title"
   | Rate -> "rate"
   | ReminderText -> "reminder text"
+  | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"

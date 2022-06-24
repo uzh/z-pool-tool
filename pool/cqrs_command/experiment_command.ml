@@ -12,8 +12,8 @@ let default_schema command =
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
-        ; Conformist.optional @@ Pool_common.Language.schema ()
         ]
       command)
 ;;
@@ -25,8 +25,8 @@ let default_command
     direct_registration_disabled
     registration_disabled
     session_reminder_lead_time
+    session_reminder_subject
     session_reminder_text
-    session_reminder_language
   =
   { title
   ; public_title
@@ -34,8 +34,8 @@ let default_command
   ; direct_registration_disabled
   ; registration_disabled
   ; session_reminder_lead_time
+  ; session_reminder_subject
   ; session_reminder_text
-  ; session_reminder_language
   }
 ;;
 
@@ -62,8 +62,8 @@ end = struct
         command.direct_registration_disabled
         command.registration_disabled
         command.session_reminder_lead_time
+        command.session_reminder_subject
         command.session_reminder_text
-        command.session_reminder_language
     in
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
@@ -105,8 +105,8 @@ end = struct
         command.direct_registration_disabled
         command.registration_disabled
         command.session_reminder_lead_time
+        command.session_reminder_subject
         command.session_reminder_text
-        command.session_reminder_language
     in
     Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;

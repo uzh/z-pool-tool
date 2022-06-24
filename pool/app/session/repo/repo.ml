@@ -39,9 +39,9 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
+          pool_sessions.reminder_subject,
           pool_sessions.reminder_text,
           pool_sessions.reminder_lead_time,
-          pool_sessions.reminder_language,
           pool_sessions.reminder_sent_at,
           (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
           pool_sessions.canceled_at,
@@ -280,9 +280,9 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
+        reminder_subject,
         reminder_text,
         reminder_lead_time,
-        reminder_language,
         reminder_sent_at,
         canceled_at
       ) VALUES (
@@ -324,9 +324,9 @@ module Sql = struct
         max_participants = $6,
         min_participants = $7,
         overbook = $8,
-        reminder_text = $9,
-        reminder_lead_time = $10,
-        reminder_language = $11,
+        reminder_subject = $9,
+        reminder_text = $10,
+        reminder_lead_time = $11,
         reminder_sent_at = $12,
         canceled_at = $13
       WHERE

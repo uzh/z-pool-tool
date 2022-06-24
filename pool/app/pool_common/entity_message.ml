@@ -97,6 +97,8 @@ module Field = struct
     | RegistrationDisabled [@name "registration_disabled"]
         [@printer go "registration_disabled"]
     | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]
+    | ReminderSubject [@name "reminder_subject"]
+        [@printer go "reminder_subject"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
@@ -176,7 +178,7 @@ type error =
   | ExperimentSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
-  | LanguageRequiredIfTextProvided
+  | LanguageRequiredIfTextProvided (* TODO[timhub]: Update error *)
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount

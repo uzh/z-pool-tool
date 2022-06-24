@@ -83,9 +83,6 @@ module RegistrationDisabled = struct
   ;;
 end
 
-(* TODO[timhub]: Replace session_reminder_langauge with custom reminder subject,
-   when text elements for subjects are implemented in Sihl 4.0 *)
-
 type t =
   { id : Id.t
   ; title : Title.t
@@ -95,8 +92,8 @@ type t =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
-  ; session_reminder_language : Pool_common.Language.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -110,16 +107,10 @@ let create
     direct_registration_disabled
     registration_disabled
     session_reminder_lead_time
+    session_reminder_subject
     session_reminder_text
-    session_reminder_language
   =
   let open CCResult in
-  let* session_reminder_language =
-    match session_reminder_text, session_reminder_language with
-    | Some _, None -> Error Pool_common.Message.LanguageRequiredIfTextProvided
-    | Some _, Some _ -> Ok session_reminder_language
-    | _ -> Ok None
-  in
   Ok
     { id = id |> CCOption.value ~default:(Id.create ())
     ; title
@@ -129,8 +120,8 @@ let create
     ; direct_registration_disabled
     ; registration_disabled
     ; session_reminder_lead_time
+    ; session_reminder_subject
     ; session_reminder_text
-    ; session_reminder_language
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -149,6 +140,10 @@ module Public = struct
     }
   [@@deriving eq, show]
 end
+
+let session_reminder_subject_value m =
+  m.session_reminder_subject |> CCOption.map Pool_common.Reminder.Subject.value
+;;
 
 let session_reminder_text_value m =
   m.session_reminder_text |> CCOption.map Pool_common.Reminder.Text.value

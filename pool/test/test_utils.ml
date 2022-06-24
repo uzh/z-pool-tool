@@ -156,13 +156,13 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
+    ; session_reminder_subject = None
     ; session_reminder_text = None
     ; session_reminder_lead_time =
         Ptime.Span.of_int_s @@ (60 * 60)
         |> Pool_common.Reminder.LeadTime.create
         |> CCResult.map_err show_error
         |> CCResult.to_opt
-    ; session_reminder_language = Some Pool_common.Language.En
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create
     ; created_at = Ptime_clock.now ()
@@ -220,9 +220,9 @@ let create_session () =
     ; min_participants =
         ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+    ; reminder_subject = None
     ; reminder_lead_time = None
     ; reminder_text = None
-    ; reminder_language = None
     ; reminder_sent_at = Pool_common.Reminder.SentAt.create None
     ; assignment_count =
         0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith

@@ -24,7 +24,6 @@ let create_reminder pool language contact content subject =
     pool
     language
     Email.TemplateLabel.SessionReminder
-    (* TODO[timhub]: Use boilerplate template? *)
     subject
     (email |> Pool_user.EmailAddress.value)
     [ "name", name; "textContent", content ]
@@ -50,17 +49,7 @@ let create_reminders pool session default_language sys_languages =
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
         let message_language =
-          (* If custom_text is available, find custom langauge, user language,
-             else system default *)
-          let open CCOption in
-          CCOption.value
-            ~default:default_language
-            (match custom_reminder_text with
-            | Some _ ->
-              session.Session.reminder_language
-              <+> experiment.Experiment.session_reminder_language
-              <+> contact.Contact.language
-            | None -> contact.Contact.language)
+          CCOption.value ~default:default_language contact.Contact.language
         in
         let* text, subject =
           CCOption.map_lazy

@@ -20,8 +20,8 @@ let create pool =
       , 4
       , 4
       , None
-      , Some 3600
-      , None )
+      , None
+      , Some 3600 )
     ; ( ex.Experiment.id |> Pool_common.Id.value
       , Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid time"
@@ -42,8 +42,8 @@ let create pool =
       , 2
       , 5
       , None
-      , Some 7200
-      , None )
+      , None
+      , Some 7200 )
     ]
   in
   let events =
@@ -55,9 +55,9 @@ let create pool =
            , max
            , min
            , overbook
+           , reminder_subject
            , reminder_text
-           , reminder_lead_time
-           , reminder_language ) ->
+           , reminder_lead_time ) ->
         let open CCOption in
         let open Pool_common.Utils in
         let session =
@@ -70,6 +70,7 @@ let create pool =
             ; max_participants = ParticipantAmount.create max |> get_or_failwith
             ; min_participants = ParticipantAmount.create min |> get_or_failwith
             ; overbook = ParticipantAmount.create overbook |> get_or_failwith
+            ; reminder_subject
             ; reminder_text =
                 reminder_text
                 |> CCOption.map (fun t ->
@@ -81,7 +82,6 @@ let create pool =
                        |> Ptime.Span.of_int_s
                        |> Pool_common.Reminder.LeadTime.create
                        |> get_or_failwith)
-            ; reminder_language
             }
         in
         Session.Created

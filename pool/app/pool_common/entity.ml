@@ -176,6 +176,26 @@ module File = struct
 end
 
 module Reminder = struct
+  module Subject = struct
+    type t = string [@@deriving eq, show, sexp_of]
+
+    let create subject =
+      if CCString.is_empty subject
+      then Error PoolError.(Invalid Field.ReminderSubject)
+      else Ok subject
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common_utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        PoolError.Field.ReminderSubject
+    ;;
+  end
+
   module Text = struct
     type t = string [@@deriving eq, show, sexp_of]
 

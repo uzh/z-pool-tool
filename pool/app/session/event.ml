@@ -19,9 +19,9 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
 
@@ -45,9 +45,9 @@ let handle_event pool = function
         session.max_participants
         session.min_participants
         session.overbook
+        session.reminder_subject
         session.reminder_text
         session.reminder_lead_time
-        session.reminder_language
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
@@ -60,9 +60,9 @@ let handle_event pool = function
         ; max_participants
         ; min_participants
         ; overbook
+        ; reminder_subject
         ; reminder_text
         ; reminder_lead_time
-        ; reminder_language
         }
       , location
       , session ) ->
@@ -76,19 +76,12 @@ let handle_event pool = function
       ; max_participants
       ; min_participants
       ; overbook
+      ; reminder_subject
       ; reminder_text
       ; reminder_lead_time
-      ; reminder_language
       ; reminder_sent_at = Pool_common.Reminder.SentAt.create_now ()
       }
   | ReminderSent (session, emails) ->
-    Logs.info (fun m -> m "%s" "=========================");
-    Logs.info (fun m ->
-        m
-          "Session: %s;  Emails: %s"
-          (session.id |> Pool_common.Id.value)
-          (CCList.length emails |> CCInt.to_string));
-    Logs.info (fun m -> m "%s" "=========================");
     let%lwt () =
       match CCList.length emails > 0 with
       | true -> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails

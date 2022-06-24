@@ -22,8 +22,8 @@ let experiments pool =
          discussed in most microeconomics lectures or lectures on public \
          economics."
       , Some (60 * 60)
-      , Some "Don't forget your session."
-      , Some Pool_common.Language.En )
+      , Some "Subject"
+      , Some "Don't forget your session." )
     ]
   in
   let events =
@@ -32,8 +32,8 @@ let experiments pool =
            , public_title
            , description
            , session_reminder_lead_time
-           , session_reminder_text
-           , session_reminder_language ) ->
+           , session_reminder_subject
+           , session_reminder_text ) ->
         let experiment =
           let title = Experiment.Title.create title |> get_or_failwith in
           let public_title =
@@ -54,6 +54,11 @@ let experiments pool =
             |> CCOption.map (fun t ->
                    t |> Pool_common.Reminder.Text.create |> get_or_failwith)
           in
+          let session_reminder_subject =
+            session_reminder_subject
+            |> CCOption.map (fun t ->
+                   t |> Pool_common.Reminder.Subject.create |> get_or_failwith)
+          in
           let direct_registration_disabled =
             Experiment.DirectRegistrationDisabled.create false
           in
@@ -67,8 +72,8 @@ let experiments pool =
             direct_registration_disabled
             registration_disabled
             session_reminder_lead_time
+            session_reminder_subject
             session_reminder_text
-            session_reminder_language
           |> get_or_failwith
         in
         Experiment.Created experiment)

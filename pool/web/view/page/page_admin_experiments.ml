@@ -95,20 +95,6 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         (experiment.id |> Pool_common.Id.value)
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
-  let language_select =
-    let open Pool_common.Language in
-    selector
-      language
-      Message.Field.Language
-      equal
-      show
-      all
-      ~help:Pool_common.I18n.SessionReminderLanguageHint
-      ~add_empty:true
-      (CCOption.bind experiment (fun (e : Experiment.t) ->
-           e.Experiment.session_reminder_language))
-      ()
-  in
   form
     ~a:
       [ a_method `Post
@@ -180,6 +166,15 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                             ~default:""
                             Pool_common.Utils.Time.timespan_spanpicker))
                 ~flash_fetcher
+            ; input_element
+                language
+                `Text
+                Pool_common.Message.Field.ReminderSubject
+                ~value:
+                  (value (fun e ->
+                       session_reminder_subject_value e
+                       |> CCOption.value ~default:""))
+                ~flash_fetcher
             ; textarea_element
                 language
                 Pool_common.Message.Field.ReminderText
@@ -188,7 +183,6 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                        session_reminder_text_value e
                        |> CCOption.value ~default:""))
                 ~flash_fetcher
-            ; language_select
             ]
         ]
     ; submit_element

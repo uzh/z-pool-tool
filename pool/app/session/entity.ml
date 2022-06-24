@@ -93,8 +93,6 @@ module AssignmentCount = struct
   ;;
 end
 
-(* TODO[timhub]: Replace reminder_langauge with custom reminder subject, when
-   text elements for subjects are implemented in Sihl 4.0 *)
 type t =
   { id : Pool_common.Id.t
   ; start : Start.t
@@ -104,9 +102,9 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_language : Pool_common.Language.t option
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?
@@ -135,9 +133,9 @@ let create
     max_participants
     min_participants
     overbook
+    reminder_subject
     reminder_text
     reminder_lead_time
-    reminder_language
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
   ; start
@@ -147,9 +145,9 @@ let create
   ; max_participants
   ; min_participants
   ; overbook
+  ; reminder_subject
   ; reminder_text
   ; reminder_lead_time
-  ; reminder_language
   ; reminder_sent_at = Pool_common.Reminder.SentAt.create None
   ; assignment_count = 0
   ; canceled_at = None

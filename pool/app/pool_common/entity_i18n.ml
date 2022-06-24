@@ -28,6 +28,7 @@ type t =
   | SessionReminder
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionReminderDefaultText of Entity.Reminder.Text.t
+  | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle

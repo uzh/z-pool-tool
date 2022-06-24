@@ -42,6 +42,8 @@ let to_string = function
       (leadtime |> Pool_common_utils.Time.formatted_timespan)
   | SessionReminderDefaultText text ->
     Format.asprintf "The experiment default reminder text is:\n\n %s" text
+  | SessionReminderDefaultSubject text ->
+    Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."

@@ -50,9 +50,9 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_language : Pool_common.Language.t option
   }
 
 module AssignmentCount : sig
@@ -73,9 +73,9 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_language : Pool_common.Language.t option
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] want multiple follow up session?

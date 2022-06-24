@@ -7,9 +7,9 @@ let session_command
     max_participants
     min_participants
     overbook
+    reminder_subject
     reminder_text
     reminder_lead_time
-    reminder_language
   =
   Session.
     { start
@@ -18,9 +18,9 @@ let session_command
     ; max_participants
     ; min_participants
     ; overbook
+    ; reminder_subject
     ; reminder_text
     ; reminder_lead_time
-    ; reminder_language
     }
 ;;
 
@@ -36,17 +36,11 @@ let session_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
-        ; Conformist.optional @@ Pool_common.Language.schema ()
         ]
       session_command)
-;;
-
-let define_reminder_language (command : Session.base) =
-  match command.Session.reminder_text with
-  | None -> Session.{ command with reminder_language = None }
-  | Some _ -> command
 ;;
 
 (* TODO [aerben] create sigs *)
@@ -67,15 +61,16 @@ module Create = struct
          ; min_participants
          ; (* TODO [aerben] find a better name *)
            overbook
+         ; reminder_subject
          ; reminder_text
          ; reminder_lead_time
-         ; reminder_language
          } :
         Session.base)
     =
     (* TODO: Validate session reminder info*)
     if max_participants >= min_participants
     then (
+      (* TODO[timhub] add validation *)
       let (session : Session.base) =
         Session.
           { start
@@ -84,11 +79,10 @@ module Create = struct
           ; max_participants
           ; min_participants
           ; overbook
+          ; reminder_subject
           ; reminder_text
           ; reminder_lead_time
-          ; reminder_language
           }
-        |> define_reminder_language
       in
       Ok
         [ Session.Created (session, experiment_id, location)
@@ -126,14 +120,15 @@ module Update = struct
          ; max_participants
          ; min_participants
          ; overbook
+         ; reminder_subject
          ; reminder_text
          ; reminder_lead_time
-         ; reminder_language
          } :
         Session.base)
     =
     if max_participants >= min_participants
     then (
+      (* TODO[timhub] add validation *)
       let (session_cmd : Session.base) =
         Session.
           { start
@@ -142,11 +137,10 @@ module Update = struct
           ; max_participants
           ; min_participants
           ; overbook
+          ; reminder_subject
           ; reminder_text
           ; reminder_lead_time
-          ; reminder_language
           }
-        |> define_reminder_language
       in
       Ok
         [ Session.Updated (session_cmd, location, session) |> Pool_event.session

@@ -47,6 +47,10 @@ let to_string = function
     Format.asprintf
       "Die Standarderinnerungstext dieses Experiments ist:\n %s"
       text
+  | SessionReminderDefaultSubject text ->
+    Format.asprintf
+      "Der Standarderinnerungsbetreff dieses Experiments ist:\n %s"
+      text
   | SessionReminder -> "Sessionerinnerung"
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."

@@ -10,9 +10,9 @@ type t =
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
   ; overbook : Entity.ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
   ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_language : Pool_common.Language.t option
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t
   ; assignment_count : Entity.AssignmentCount.t
   ; canceled_at : Ptime.t option
@@ -30,9 +30,9 @@ let of_entity (m : Entity.t) =
   ; max_participants = m.Entity.max_participants
   ; min_participants = m.Entity.min_participants
   ; overbook = m.Entity.overbook
+  ; reminder_subject = m.Entity.reminder_subject
   ; reminder_text = m.Entity.reminder_text
   ; reminder_lead_time = m.Entity.reminder_lead_time
-  ; reminder_language = m.Entity.reminder_language
   ; reminder_sent_at = m.Entity.reminder_sent_at
   ; assignment_count = m.Entity.assignment_count
   ; canceled_at = m.Entity.canceled_at
@@ -51,9 +51,9 @@ let to_entity (m : t) location : Entity.t =
     ; max_participants = m.max_participants
     ; min_participants = m.min_participants
     ; overbook = m.overbook
+    ; reminder_subject = m.reminder_subject
     ; reminder_text = m.reminder_text
     ; reminder_lead_time = m.reminder_lead_time
-    ; reminder_language = m.reminder_language
     ; reminder_sent_at = m.reminder_sent_at
     ; assignment_count = m.assignment_count
     ; canceled_at = m.canceled_at
@@ -74,9 +74,9 @@ let t =
               , ( m.max_participants
                 , ( m.min_participants
                   , ( m.overbook
-                    , ( m.reminder_text
-                      , ( m.reminder_lead_time
-                        , ( m.reminder_language
+                    , ( m.reminder_subject
+                      , ( m.reminder_text
+                        , ( m.reminder_lead_time
                           , ( m.reminder_sent_at
                             , ( m.assignment_count
                               , (m.canceled_at, (m.created_at, m.updated_at)) )
@@ -91,9 +91,9 @@ let t =
               , ( max_participants
                 , ( min_participants
                   , ( overbook
-                    , ( reminder_text
-                      , ( reminder_lead_time
-                        , ( reminder_language
+                    , ( reminder_subject
+                      , ( reminder_text
+                        , ( reminder_lead_time
                           , ( reminder_sent_at
                             , ( assignment_count
                               , (canceled_at, (created_at, updated_at)) ) ) ) )
@@ -108,9 +108,9 @@ let t =
       ; max_participants
       ; min_participants
       ; overbook
+      ; reminder_subject
       ; reminder_text
       ; reminder_lead_time
-      ; reminder_language
       ; reminder_sent_at
       ; assignment_count
       ; canceled_at
@@ -139,12 +139,12 @@ let t =
                            (tup2
                               int
                               (tup2
-                                 (option Pool_common.Repo.Reminder.Text.t)
+                                 (option Pool_common.Repo.Reminder.Subject.t)
                                  (tup2
-                                    (option
-                                       Pool_common.Repo.Reminder.LeadTime.t)
+                                    (option Pool_common.Repo.Reminder.Text.t)
                                     (tup2
-                                       (option Pool_common.Repo.Language.t)
+                                       (option
+                                          Pool_common.Repo.Reminder.LeadTime.t)
                                        (tup2
                                           Pool_common.Repo.Reminder.SentAt.t
                                           (tup2
@@ -164,9 +164,9 @@ module Write = struct
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
     ; overbook : Entity.ParticipantAmount.t
+    ; reminder_subject : Pool_common.Reminder.Subject.t option
     ; reminder_text : Pool_common.Reminder.Text.t option
     ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-    ; reminder_language : Pool_common.Language.t option
     ; reminder_sent_at : Pool_common.Reminder.SentAt.t
     ; canceled_at : Ptime.t option
     }
@@ -181,9 +181,9 @@ module Write = struct
          ; max_participants
          ; min_participants
          ; overbook
+         ; reminder_subject
          ; reminder_text
          ; reminder_lead_time
-         ; reminder_language
          ; reminder_sent_at
          ; canceled_at
          ; _
@@ -198,9 +198,9 @@ module Write = struct
     ; max_participants
     ; min_participants
     ; overbook
+    ; reminder_subject
     ; reminder_text
     ; reminder_lead_time
-    ; reminder_language
     ; reminder_sent_at
     ; canceled_at
     }
@@ -217,9 +217,9 @@ module Write = struct
                 , ( m.max_participants
                   , ( m.min_participants
                     , ( m.overbook
-                      , ( m.reminder_text
-                        , ( m.reminder_lead_time
-                          , ( m.reminder_language
+                      , ( m.reminder_subject
+                        , ( m.reminder_text
+                          , ( m.reminder_lead_time
                             , (m.reminder_sent_at, m.canceled_at) ) ) ) ) ) ) )
               ) ) ) )
     in
@@ -232,9 +232,9 @@ module Write = struct
                 , ( max_participants
                   , ( min_participants
                     , ( overbook
-                      , ( reminder_text
-                        , ( reminder_lead_time
-                          , (reminder_language, (reminder_sent_at, canceled_at))
+                      , ( reminder_subject
+                        , ( reminder_text
+                          , (reminder_lead_time, (reminder_sent_at, canceled_at))
                           ) ) ) ) ) ) ) ) ) )
       =
       Ok
@@ -247,8 +247,8 @@ module Write = struct
         ; min_participants
         ; overbook
         ; reminder_lead_time
+        ; reminder_subject
         ; reminder_text
-        ; reminder_language
         ; reminder_sent_at
         ; canceled_at
         }
@@ -274,12 +274,12 @@ module Write = struct
                              (tup2
                                 int
                                 (tup2
-                                   (option Pool_common.Repo.Reminder.Text.t)
+                                   (option Pool_common.Repo.Reminder.Subject.t)
                                    (tup2
-                                      (option
-                                         Pool_common.Repo.Reminder.LeadTime.t)
+                                      (option Pool_common.Repo.Reminder.Text.t)
                                       (tup2
-                                         (option Pool_common.Repo.Language.t)
+                                         (option
+                                            Pool_common.Repo.Reminder.LeadTime.t)
                                          (tup2
                                             Pool_common.Repo.Reminder.SentAt.t
                                             (option ptime))))))))))))))

@@ -28,9 +28,9 @@ module Data = struct
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
+        ; session_reminder_subject = None
         ; session_reminder_text = None
         ; session_reminder_lead_time = None
-        ; session_reminder_language = None
         ; created_at = Common.CreatedAt.create ()
         ; updated_at = Common.UpdatedAt.create ()
         }
