@@ -7,6 +7,7 @@ type t =
   | ExperimentListTitle
   | ExperimentWaitingListTitle
   | Files
+  | FollowUpSessionFor
   | HomeTitle
   | I18nTitle
   | LocationFileNew
@@ -21,7 +22,10 @@ type t =
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
+  | SessionIndent
   | SessionSignUpTitle
+  | SwitchChronological
+  | SwitchGrouped
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle

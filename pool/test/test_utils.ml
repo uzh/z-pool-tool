@@ -201,6 +201,7 @@ let create_session () =
   let hour = Ptime.Span.of_int_s @@ (60 * 60) in
   Session.
     { id = Pool_common.Id.create ()
+    ; follow_up_to = None
     ; start =
         Ptime.add_span (Ptime_clock.now ()) hour
         |> CCOption.get_exn_or "Invalid start"
@@ -224,6 +225,7 @@ let create_session () =
 let create_public_session () =
   let Session.
         { id
+        ; follow_up_to
         ; start
         ; duration
         ; description
@@ -240,6 +242,7 @@ let create_public_session () =
   in
   Session.Public.
     { id
+    ; follow_up_to
     ; start
     ; duration
     ; description
@@ -275,6 +278,10 @@ let fully_book_public_session session =
     ; assignment_count =
         5 |> Session.AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     }
+;;
+
+let create_follow_up_session session main =
+  Session.{ session with follow_up_to = Some main.id }
 ;;
 
 let create_assignment () =

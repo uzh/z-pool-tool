@@ -42,6 +42,7 @@ module Create = struct
   let schema = session_schema
 
   let handle
+      ?parent_session
       experiment_id
       location
       (Session.
@@ -55,7 +56,15 @@ module Create = struct
          } :
         Session.base)
     =
-    if max_participants >= min_participants
+    let follow_up_is_later =
+      let open Session in
+      CCOption.map_or
+        ~default:false
+        (fun (s : Session.t) ->
+          Ptime.is_earlier ~than:(Start.value start) (Start.value s.start))
+        parent_session
+    in
+    if max_participants >= min_participants && follow_up_is_later
     then (
       let (session : Session.base) =
         Session.
@@ -68,7 +77,11 @@ module Create = struct
           }
       in
       Ok
-        [ Session.Created (session, experiment_id, location)
+        [ Session.Created
+            ( session
+            , CCOption.map (fun s -> s.Session.id) parent_session
+            , experiment_id
+            , location )
           |> Pool_event.session
         ])
     else

@@ -41,6 +41,7 @@ let field_to_string =
   | Filename -> "filename"
   | Filesize -> "filesize"
   | Firstname -> "firstname"
+  | FollowUpSession -> "follow-up session"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -60,6 +61,7 @@ let field_to_string =
   | Location -> "location"
   | LogoType -> "logo type"
   | Mailing -> "mailing"
+  | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
   | Name -> "name"
@@ -285,6 +287,7 @@ let control_to_string = function
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
+  | Show -> "show"
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field

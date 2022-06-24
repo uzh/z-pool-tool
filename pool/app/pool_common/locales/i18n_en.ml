@@ -13,6 +13,7 @@ let to_string = function
   | ExperimentListTitle -> "Experiments"
   | ExperimentWaitingListTitle -> "Waiting list"
   | Files -> "Files"
+  | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | LocationFileNew -> "Add file to location"
@@ -29,9 +30,12 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
+  | SessionIndent -> "Indentations mark follow-up sessions."
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
+  | SwitchChronological -> "Switch to chronological view"
+  | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"

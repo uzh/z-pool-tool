@@ -54,6 +54,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
+  ; follow_up_to : Pool_common.Id.t option
   ; start : Start.t
   ; duration : Duration.t
   ; description : Description.t option
@@ -62,14 +63,7 @@ type t =
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
   ; assignment_count : AssignmentCount.t
-  ; (* TODO [aerben] want multiple follow up session?
-     * 1. Ja es gibt immer wieder Sessions mit mehreren Following Sessions
-     * 2. Eigentlich ist es immer eine Hauptsession mit mehreren Following Sessions
-
-     * Could this model as the following, just flatten tail of linked list
-     *  : ; follow_up : t *)
-
-    (* TODO [aerben] make type for canceled_at? *)
+  ; (* TODO [aerben] make type for canceled_at? *)
     canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -93,7 +87,8 @@ type base =
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
-  | Created of (base * Pool_common.Id.t * Pool_location.t)
+  | Created of
+      (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
@@ -105,6 +100,7 @@ val pp_event : Format.formatter -> event -> unit
 module Public : sig
   type t =
     { id : Pool_common.Id.t
+    ; follow_up_to : Pool_common.Id.t option
     ; start : Start.t
     ; duration : Duration.t
     ; description : Description.t option
@@ -121,6 +117,8 @@ module Public : sig
   val show : t -> string
   val is_fully_booked : t -> bool
 end
+
+val group_and_sort : t list -> (t * t list) list
 
 (* TODO [aerben] this should be experiment id type *)
 val find

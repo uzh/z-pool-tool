@@ -10,7 +10,6 @@ module Tenant = struct
   let create db_pools () =
     Lwt_list.iter_s
       (fun pool ->
-        (* TODO [aerben] remove these unit calls? *)
         let%lwt () = Seed_settings.create pool in
         let%lwt () = Seed_i18n.i18n pool in
         let%lwt () = Seed_emails.tenant pool in

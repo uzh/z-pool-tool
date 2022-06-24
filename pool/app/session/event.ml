@@ -12,16 +12,18 @@ type base =
 
 (* TODO [aerben] experiment ID *)
 type event =
-  | Created of (base * Pool_common.Id.t * Pool_location.t)
+  | Created of
+      (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
 [@@deriving eq, show]
 
 let handle_event pool = function
-  | Created (session, experiment_id, location) ->
+  | Created (session, parent_session_id, experiment_id, location) ->
     let sess =
       create
+        ?follow_up_to:parent_session_id
         session.start
         session.duration
         session.description
