@@ -8,7 +8,7 @@ let default_reminder_lead_time () =
 ;;
 
 let create_reminder language contact (session : Session.t) content subject =
-  Logs.info (fun m -> m "content: %s" content);
+  (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let name = Contact.fullname contact in
   let email = Contact.email_address contact in
   let session_overview = Session.(to_email_text language session) in
@@ -22,7 +22,6 @@ let create_reminder language contact (session : Session.t) content subject =
 let create_reminders pool session default_language sys_languages =
   let open Lwt_result.Syntax in
   let* experiment = Experiment.find_of_session pool session.Session.id in
-  (* Find custom reminder text, if available *)
   let custom_reminder_text =
     let open CCOption in
     session.Session.reminder_text

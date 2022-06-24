@@ -178,7 +178,6 @@ type error =
   | ExperimentSessionCountNotZero
   | HtmxVersionNotFound of string
   | Invalid of Field.t
-  | LanguageRequiredIfTextProvided (* TODO[timhub]: Update error *)
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
