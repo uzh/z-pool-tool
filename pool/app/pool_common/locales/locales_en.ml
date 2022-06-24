@@ -198,6 +198,8 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
+  | FollowUpIsEarlierThanMain ->
+    "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"

@@ -31,7 +31,7 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
-  | SessionIndent -> "Einrückungen markieren Folgesessions."
+  | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"

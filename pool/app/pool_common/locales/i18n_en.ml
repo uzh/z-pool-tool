@@ -30,7 +30,7 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
-  | SessionIndent -> "Indentations mark follow-up sessions."
+  | SessionIndent -> "Indentations group follow-up sessions."
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"

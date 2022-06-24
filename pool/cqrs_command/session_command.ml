@@ -56,38 +56,47 @@ module Create = struct
          } :
         Session.base)
     =
-    let follow_up_is_later =
+    let follow_up_is_ealier =
       let open Session in
       CCOption.map_or
         ~default:false
         (fun (s : Session.t) ->
-          Ptime.is_earlier ~than:(Start.value start) (Start.value s.start))
+          Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
         parent_session
     in
-    if max_participants >= min_participants && follow_up_is_later
-    then (
-      let (session : Session.base) =
-        Session.
-          { start
-          ; duration
-          ; description
-          ; max_participants
-          ; min_participants
-          ; overbook
-          }
-      in
-      Ok
-        [ Session.Created
-            ( session
-            , CCOption.map (fun s -> s.Session.id) parent_session
-            , experiment_id
-            , location )
-          |> Pool_event.session
-        ])
-    else
-      Error
-        Pool_common.Message.(
-          Smaller (Field.MaxParticipants, Field.MinParticipants))
+    let validations =
+      [ follow_up_is_ealier, Pool_common.Message.FollowUpIsEarlierThanMain
+      ; ( max_participants < min_participants
+        , Pool_common.Message.(
+            Smaller (Field.MaxParticipants, Field.MinParticipants)) )
+      ]
+    in
+    let open CCResult in
+    let* () =
+      validations
+      |> CCList.filter fst
+      |> CCList.map (fun (_, err) -> Error err)
+      |> flatten_l
+      |> map ignore
+    in
+    let (session : Session.base) =
+      Session.
+        { start
+        ; duration
+        ; description
+        ; max_participants
+        ; min_participants
+        ; overbook
+        }
+    in
+    Ok
+      [ Session.Created
+          ( session
+          , CCOption.map (fun s -> s.Session.id) parent_session
+          , experiment_id
+          , location )
+        |> Pool_event.session
+      ]
   ;;
 
   let decode data =

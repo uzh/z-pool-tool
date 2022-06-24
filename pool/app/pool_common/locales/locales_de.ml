@@ -206,6 +206,8 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
+  | FollowUpIsEarlierThanMain ->
+    "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
