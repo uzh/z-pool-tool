@@ -158,6 +158,11 @@ val find_experiment_id_and_title
   -> Pool_common.Id.t
   -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
 
+val find_follow_ups
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 val to_email_text
   :  Pool_common.Language.t
   -> Start.t

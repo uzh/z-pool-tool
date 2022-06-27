@@ -222,23 +222,26 @@ end
 
 (* Group follow ups into main sessions and sort by start date *)
 let group_and_sort sessions =
-  sessions
+  let parents, follow_ups =
+    sessions
+    |> CCList.partition_filter_map (fun session ->
+           match session.follow_up_to with
+           | None -> `Left (session.id, (session, []))
+           | Some parent -> `Right (parent, session))
+  in
+  follow_ups
   |> CCList.fold_left
-       (fun acc cur ->
-         match cur.follow_up_to with
-         | None -> (cur.id, (cur, [])) :: acc
-         | Some s ->
-           CCList.Assoc.update
-             ~eq:Pool_common.Id.equal
-             ~f:(fun v ->
-               match v with
-               | None -> None
-               | Some (parent, ls) -> Some (parent, ls @ [ cur ]))
-             s
-             acc)
-       []
-  |> CCList.Assoc.values
-  |> CCList.map (fun (p, fs) ->
+       (fun groups (parent, session) ->
+         CCList.Assoc.update
+           ~eq:Pool_common.Id.equal
+           ~f:(fun s ->
+             match s with
+             | None -> None
+             | Some (parent, ls) -> Some (parent, ls @ [ session ]))
+           parent
+           groups)
+       parents
+  |> CCList.map (fun (_, (p, fs)) ->
          ( p
          , CCList.sort
              (fun (f1 : t) (f2 : t) ->

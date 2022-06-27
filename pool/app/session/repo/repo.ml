@@ -248,6 +248,7 @@ module Sql = struct
     (* TODO [aerben] order by what here? *)
     {sql|
         WHERE pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
+        ORDER BY pool_sessions.start
       |sql}
     |> find_sql
     |> Caqti_type.string ->* RepoEntity.t
@@ -359,6 +360,7 @@ let find pool id =
   Sql.find pool id >>= location_to_repo_entity pool
 ;;
 
+(* TODO [aerben] these queries are very inefficient, how to circumvent? *)
 let find_all_public_by_location pool location_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_all_public_by_location pool location_id
@@ -391,7 +393,13 @@ let find_public_by_assignment pool assignment_id =
   >>= location_to_public_repo_entity pool
 ;;
 
-let find_follow_ups = Sql.find_follow_ups
+let find_follow_ups pool parent_session_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_follow_ups pool parent_session_id
+  >|> Lwt_list.map_s (location_to_repo_entity pool)
+  ||> CCResult.flatten_l
+;;
+
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
 let insert = Sql.insert
 let update = Sql.update
