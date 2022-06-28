@@ -106,6 +106,8 @@ let index
     locations
     flash_fetcher
   =
+  (* TODO [aerben] if in chronological view, add a hint which is follow up
+     (icon) *)
   let experiment_id = experiment.Experiment.id in
   let rows =
     CCList.flat_map

@@ -150,8 +150,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
-  | Stoped field ->
-    field_message "" (field_to_string field) "was successfully stoped."
+  | Stopped field ->
+    field_message "" (field_to_string field) "was successfully stopped."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->

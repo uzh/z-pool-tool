@@ -243,7 +243,7 @@ type success =
   | RemovedFromWaitingList
   | SentList of Field.t
   | SettingsUpdated
-  | Stoped of Field.t
+  | Stopped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t

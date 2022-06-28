@@ -56,7 +56,7 @@ let create () =
         , "EN" )
       ])
     else
-      [ ( "Econ uzh"
+      [ ( "Econ UZH"
         , "description"
         , "localhost:3017"
         , "mariadb://root@database-tenant:3306/dev_econ"
