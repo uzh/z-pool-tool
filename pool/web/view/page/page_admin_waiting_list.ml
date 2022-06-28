@@ -48,7 +48,7 @@ let detail
               Pool_common.(
                 Utils.text_to_string
                   language
-                  (I18n.EmtpyList Message.Field.Session))
+                  (I18n.EmtpyList Message.Field.Sessions))
           ]
       else (
         let thead = Pool_common.Message.Field.[ Some Date; None ] in

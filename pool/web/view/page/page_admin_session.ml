@@ -209,7 +209,7 @@ let index
                  Pool_common.(
                    Utils.text_to_string
                      language
-                     (I18n.EmtpyList Message.Field.Session))
+                     (I18n.EmtpyList Message.Field.Sessions))
              ]
          ]
        else
