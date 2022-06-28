@@ -12,6 +12,7 @@ let to_string = function
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
   | Files -> "Dateien"
+  | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Willkommen beim Pool Tool"
@@ -30,9 +31,12 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"
+  | SwitchChronological -> "Zu chronologische Ansicht wechseln"
+  | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"

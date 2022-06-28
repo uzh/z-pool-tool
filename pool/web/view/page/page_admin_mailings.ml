@@ -97,6 +97,8 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
         then
           div
             [ p
+                (* TODO [aerben] this is wrong, should be plural, add a Plural
+                   constructor?*)
                 [ I18n.EmtpyList Field.Mailing
                   |> Utils.text_to_string language
                   |> txt

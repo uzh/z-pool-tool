@@ -41,6 +41,7 @@ let field_to_string =
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
+  | FollowUpSession -> "Folgesession"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -60,6 +61,7 @@ let field_to_string =
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
   | Mailing -> "Versand"
+  | MainSession -> "Hauptsession"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
   | Name -> "Name"
@@ -204,6 +206,8 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
+  | FollowUpIsEarlierThanMain ->
+    "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
@@ -310,6 +314,7 @@ let control_to_string = function
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
+  | Show -> "anzeigen"
   | SignUp -> format_submit "registrieren" None
   | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
