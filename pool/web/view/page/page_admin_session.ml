@@ -79,7 +79,7 @@ let session_form
       , Message.(Create (Some Field.FollowUpSession)) )
     | Some session, _ ->
       ( Format.asprintf "%s/%s" base (session.id |> Pool_common.Id.value)
-      , Message.(Create (Some Field.Session)) )
+      , Message.(Update (Some Field.Session)) )
   in
   form
     ~a:
@@ -164,7 +164,7 @@ let session_form
                          |> to_default_value)
                 ]
             ; div
-                [ h3 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
+                [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
                 ; Partials.session_reminder_text_element_help
                     language
                     ?session:default_value_session

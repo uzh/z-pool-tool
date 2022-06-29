@@ -167,7 +167,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
                             Pool_common.Utils.Time.timespan_spanpicker))
                 ~flash_fetcher
             ; div
-                [ h3 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
+                [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
                 ; Partials.session_reminder_text_element_help language ()
                 ; div
                     ~a:[ a_class [ "stack"; "gap-lg" ] ]

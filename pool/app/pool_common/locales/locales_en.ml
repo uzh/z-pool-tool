@@ -239,6 +239,8 @@ let rec error_to_string = function
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
+  | ReminderSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session reminder."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."
@@ -257,8 +259,6 @@ let rec error_to_string = function
   | TokenAlreadyUsed -> "The token was already used."
   | TokenInvalidFormat -> "Invalid Token Format!"
   | Undefined field -> field_message "Undefined" (field_to_string field) ""
-  | WaitingListFlagsMutuallyExclusive ->
-    "Direct registration can only be disabled when waiting list is enabled."
   | WriteOnlyModel -> "Write only model!"
 ;;
 

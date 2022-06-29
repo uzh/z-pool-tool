@@ -206,6 +206,7 @@ type error =
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
+  | ReminderSubjectAndTextRequired
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
@@ -218,7 +219,6 @@ type error =
   | TokenAlreadyUsed
   | TokenInvalidFormat
   | Undefined of Field.t
-  | WaitingListFlagsMutuallyExclusive
   | WriteOnlyModel
 [@@deriving eq, show, yojson, variants, sexp_of]
 

@@ -45,7 +45,6 @@ let create_reminders pool session default_language sys_languages =
     Lwt_list.map_s
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
-        (* TODO[timhub]: does an experiment/session have its own language? *)
         let message_language =
           CCOption.value ~default:default_language contact.Contact.language
         in
@@ -84,7 +83,6 @@ let create_reminders pool session default_language sys_languages =
   emails ||> CCResult.flatten_l
 ;;
 
-(* TODO[timhub]: Allow text element to be passed from db to email template *)
 let send_session_reminder =
   Sihl.Command.make
     ~name:"session_reminder.send"

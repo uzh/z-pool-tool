@@ -259,6 +259,9 @@ let rec error_to_string = function
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
+  | ReminderSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl einen Betreff als auch einen Text für die Session \
+     Erinnerung an."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
@@ -282,9 +285,6 @@ let rec error_to_string = function
   | TokenInvalidFormat -> "Ungültiges Token Format!"
   | Undefined field ->
     field_message "" (field_to_string field) "ist undefiniert."
-  | WaitingListFlagsMutuallyExclusive ->
-    "Die direkte Registrierung kann nur mit aktivierter Warteliste deaktiviert \
-     werden."
   | WriteOnlyModel -> "Model ausschliesslich zum auf die Datenbank schreiben!"
 ;;
 

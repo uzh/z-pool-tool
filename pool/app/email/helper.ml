@@ -40,6 +40,7 @@ let prepare_email pool language label subject email params =
 ;;
 
 let prepare_boilerplate_email subject email text params =
+  (* TODO[timhub]: Check how it works without html template *)
   match Sihl.Configuration.read_string "SMTP_SENDER" with
   | None -> failwith "SMTP_SENDER not found in configuration"
   | Some sender ->

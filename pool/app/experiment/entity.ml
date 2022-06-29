@@ -111,6 +111,11 @@ let create
     session_reminder_text
   =
   let open CCResult in
+  let* () =
+    match session_reminder_subject, session_reminder_text with
+    | Some _, Some _ | None, None -> Ok ()
+    | _ -> Error Pool_common.Message.ReminderSubjectAndTextRequired
+  in
   Ok
     { id = id |> CCOption.value ~default:(Id.create ())
     ; title
