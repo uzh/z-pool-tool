@@ -141,6 +141,7 @@ let input_element
     ?(required = false)
     ?flash_fetcher
     ?value
+    ?min
     language
     input_type
     name
@@ -149,8 +150,13 @@ let input_element
   let value = flash_fetched_value flash_fetcher value name in
   let id = Elements.identifier ?identifier language name in
   let attributes =
-    Elements.attributes input_type name id [ a_value value ]
-    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
+    let attrs = Elements.attributes input_type name id [ a_value value ] in
+    let attrs =
+      match input_type, min with
+      | `Number, Some min -> a_input_min (`Number min) :: attrs
+      | _ -> attrs
+    in
+    if required then a_required () :: attrs else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()

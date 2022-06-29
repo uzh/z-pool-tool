@@ -223,7 +223,7 @@ let form
                 ; a_class [ "stack" ]
                 ; hx_target "#overlaps"
                 ; hx_trigger "change"
-                ; hx_swap "outerHTML"
+                ; hx_swap "innerHTML"
                 ; hx_post
                     (mailings_path
                        ~suffix:"search-info"
@@ -271,6 +271,7 @@ let form
                          (fun (m : Mailing.t) -> m.Mailing.rate)
                     |> Mailing.Rate.value
                     |> CCInt.to_string)
+                  ~min:1
               ]
           ; input_element
               language
@@ -354,5 +355,5 @@ let overlaps
       ; List.create false context experiment_id mailings
       ]
   in
-  div ~a:[ a_class [ "stack" ]; a_id "overlaps" ] (average @ total @ mailings)
+  div ~a:[ a_class [ "stack" ] ] (average @ total @ mailings)
 ;;
