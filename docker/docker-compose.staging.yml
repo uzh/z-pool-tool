@@ -5,9 +5,17 @@ services:
     image: "${DOCKER_IMAGE_URL}:${VERSION}"
     networks: [webgateway]
     environment:
+      - CHECK_CSRF
+      - CI_API_V4_URL
+      - CI_JOB_TOKEN
+      - CI_PROJECT_ID
+      - CI_PROJECT_NAME
       - DATABASE_URL
+      - EMAIL_BYPASS_INTERCEPT
       - PREFIX_PATH
       - PUBLIC_URL
+      - QUEUE_FORCE_ASYNC
+      - SIHL_ENV
       - SIHL_SECRET
       - SMTP_HOST
       - SMTP_PASSWORD
@@ -18,10 +26,6 @@ services:
       - SMTP_USERNAME
       - TEST_EMAIL
       - VERSION
-      - CI_JOB_TOKEN
-      - CI_API_V4_URL
-      - CI_PROJECT_ID
-      - CI_PROJECT_NAME
     deploy:
       mode: replicated
       replicas: 1

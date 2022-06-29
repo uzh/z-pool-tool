@@ -30,6 +30,16 @@ let add_location =
     |sql}
 ;;
 
+let add_follow_up =
+  Sihl.Database.Migration.create_step
+    ~label:"add follow up for sessions"
+    {sql|
+     ALTER TABLE pool_sessions
+     ADD COLUMN follow_up_to binary(16)
+     AFTER uuid
+    |sql}
+;;
+
 let add_reminder_columns =
   Sihl.Database.Migration.create_step
     ~label:"add field versioning for participants"
@@ -47,5 +57,6 @@ let migration () =
     empty "session"
     |> add_step create_participant_table
     |> add_step add_location
+    |> add_step add_follow_up
     |> add_step add_reminder_columns)
 ;;

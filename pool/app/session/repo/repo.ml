@@ -26,6 +26,13 @@ module Sql = struct
             SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_sessions.uuid), 21)
           )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_sessions.follow_up_to), 1, 8), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 9, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 13, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 17, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 21)
+          )),
           pool_sessions.start,
           pool_sessions.duration,
           pool_sessions.description,
@@ -66,15 +73,22 @@ module Sql = struct
             SUBSTR(HEX(pool_sessions.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_sessions.uuid), 21)
           )),
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_sessions.follow_up_to), 1, 8), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 9, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 13, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 17, 4), '-',
+            SUBSTR(HEX(pool_sessions.follow_up_to), 21)
+          )),
           pool_sessions.start,
           pool_sessions.duration,
           pool_sessions.description,
           LOWER(CONCAT(
-          SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
-          SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
-          SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
-          SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
-          SUBSTR(HEX(pool_locations.uuid), 21)
+            SUBSTR(HEX(pool_locations.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_locations.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_locations.uuid), 21)
           )),
           pool_sessions.max_participants,
           pool_sessions.min_participants,
@@ -267,11 +281,30 @@ module Sql = struct
          CCInt.(to_string hours, to_string minutes)
   ;;
 
+  let find_follow_ups_request =
+    let open Caqti_request.Infix in
+    (* TODO [aerben] order by what here? *)
+    {sql|
+        WHERE pool_sessions.follow_up_to = UNHEX(REPLACE(?, '-', ''))
+        ORDER BY pool_sessions.start
+      |sql}
+    |> find_sql
+    |> Caqti_type.string ->* RepoEntity.t
+  ;;
+
+  let find_follow_ups pool id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_follow_ups_request
+      (Pool_common.Id.value id)
+  ;;
+
   let insert_request =
     let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_sessions (
         uuid,
+        follow_up_to,
         experiment_uuid,
         start,
         duration,
@@ -287,19 +320,20 @@ module Sql = struct
         canceled_at
       ) VALUES (
         UNHEX(REPLACE($2, '-', '')),
+        UNHEX(REPLACE($3, '-', '')),
         UNHEX(REPLACE($1, '-', '')),
-        $3,
         $4,
         $5,
-        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($6, '-', ''))),
-        $7,
+        $6,
+        (SELECT id FROM pool_locations WHERE uuid = UNHEX(REPLACE($7, '-', ''))),
         $8,
         $9,
         $10,
         $11,
         $12,
         $13,
-        $14
+        $14,
+        $15
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -317,18 +351,19 @@ module Sql = struct
     {sql|
       UPDATE pool_sessions
       SET
-        start = $2,
-        duration = $3,
-        description = $4,
-        location_id = (SELECT pool_locations.id FROM pool_locations WHERE pool_locations.uuid = UNHEX(REPLACE($5, '-', ''))),
-        max_participants = $6,
-        min_participants = $7,
-        overbook = $8,
-        reminder_subject = $9,
-        reminder_text = $10,
-        reminder_lead_time = $11,
-        reminder_sent_at = $12,
-        canceled_at = $13
+        follow_up_to = UNHEX(REPLACE($2, '-', '')),
+        start = $3,
+        duration = $4,
+        description = $5,
+        location_id = (SELECT pool_locations.id FROM pool_locations WHERE pool_locations.uuid = UNHEX(REPLACE($6, '-', ''))),
+        max_participants = $7,
+        min_participants = $8,
+        overbook = $9,
+        reminder_subject = $10,
+        reminder_text = $11,
+        reminder_lead_time = $12,
+        reminder_sent_at = $13,
+        canceled_at = $14
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -375,6 +410,7 @@ let find pool id =
   Sql.find pool id >>= location_to_repo_entity pool
 ;;
 
+(* TODO [aerben] these queries are very inefficient, how to circumvent? *)
 let find_all_public_by_location pool location_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_all_public_by_location pool location_id
@@ -405,6 +441,13 @@ let find_public_by_assignment pool assignment_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_public_by_assignment pool assignment_id
   >>= location_to_public_repo_entity pool
+;;
+
+let find_follow_ups pool parent_session_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_follow_ups pool parent_session_id
+  >|> Lwt_list.map_s (location_to_repo_entity pool)
+  ||> CCResult.flatten_l
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title

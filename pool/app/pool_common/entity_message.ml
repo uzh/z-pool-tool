@@ -49,6 +49,8 @@ module Field = struct
     | Filename [@name "filename"] [@printer go "filename"]
     | Filesize [@name "filesize"] [@printer go "filesize"]
     | Firstname [@name "firstname"] [@printer go "firstname"]
+    | FollowUpSession [@name "follow_up_session"]
+        [@printer go "follow_up_session"]
     | Host [@name "host"] [@printer go "host"]
     | I18n [@name "i18n"] [@printer go "i18n"]
     | Icon [@name "icon"] [@printer go "icon"]
@@ -71,6 +73,7 @@ module Field = struct
     | Location [@name "location"] [@printer go "location"]
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
     | Mailing [@name "mailing"] [@printer go "mailing"]
+    | MainSession [@name "main_session"] [@printer go "main_session"]
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MinParticipants [@name "min_participants"]
@@ -176,6 +179,7 @@ type error =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
+  | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | LoginProvideDetails
@@ -236,7 +240,7 @@ type success =
   | RemovedFromWaitingList
   | SentList of Field.t
   | SettingsUpdated
-  | Stoped of Field.t
+  | Stopped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails
   | Updated of Field.t
@@ -284,6 +288,7 @@ type control =
   | Send of Field.t option
   | SendResetLink
   | SelectFilePlaceholder
+  | Show
   | SignUp
   | Stop of Field.t option
   | Update of Field.t option

@@ -3,6 +3,7 @@ module RepoId = Pool_common.Repo.Id
 
 type t =
   { id : Pool_common.Id.t
+  ; follow_up_to : Pool_common.Id.t option
   ; start : Entity.Start.t
   ; duration : Ptime.Span.t
   ; description : Entity.Description.t option
@@ -23,6 +24,7 @@ type t =
 
 let of_entity (m : Entity.t) =
   { id = m.Entity.id
+  ; follow_up_to = m.Entity.follow_up_to
   ; start = m.Entity.start
   ; duration = m.Entity.duration
   ; description = m.Entity.description
@@ -44,6 +46,7 @@ let of_entity (m : Entity.t) =
 let to_entity (m : t) location : Entity.t =
   Entity.
     { id = m.id
+    ; follow_up_to = m.follow_up_to
     ; start = m.start
     ; duration = m.duration
     ; description = m.description
@@ -67,40 +70,43 @@ let t =
   let encode m =
     Ok
       ( m.id
-      , ( m.start
-        , ( m.duration
-          , ( m.description
-            , ( m.location_id
-              , ( m.max_participants
-                , ( m.min_participants
-                  , ( m.overbook
-                    , ( m.reminder_subject
-                      , ( m.reminder_text
-                        , ( m.reminder_lead_time
-                          , ( m.reminder_sent_at
-                            , ( m.assignment_count
-                              , (m.canceled_at, (m.created_at, m.updated_at)) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+      , ( m.follow_up_to
+        , ( m.start
+          , ( m.duration
+            , ( m.description
+              , ( m.location_id
+                , ( m.max_participants
+                  , ( m.min_participants
+                    , ( m.overbook
+                      , ( m.reminder_subject
+                        , ( m.reminder_text
+                          , ( m.reminder_lead_time
+                            , ( m.reminder_sent_at
+                              , ( m.assignment_count
+                                , (m.canceled_at, (m.created_at, m.updated_at))
+                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
-      , ( start
-        , ( duration
-          , ( description
-            , ( location_id
-              , ( max_participants
-                , ( min_participants
-                  , ( overbook
-                    , ( reminder_subject
-                      , ( reminder_text
-                        , ( reminder_lead_time
-                          , ( reminder_sent_at
-                            , ( assignment_count
-                              , (canceled_at, (created_at, updated_at)) ) ) ) )
-                      ) ) ) ) ) ) ) ) )
+      , ( follow_up_to
+        , ( start
+          , ( duration
+            , ( description
+              , ( location_id
+                , ( max_participants
+                  , ( min_participants
+                    , ( overbook
+                      , ( reminder_subject
+                        , ( reminder_text
+                          , ( reminder_lead_time
+                            , ( reminder_sent_at
+                              , ( assignment_count
+                                , (canceled_at, (created_at, updated_at)) ) ) )
+                          ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
+      ; follow_up_to
       ; start
       ; duration
       ; description
@@ -125,38 +131,42 @@ let t =
       (tup2
          RepoId.t
          (tup2
-            ptime
+            (option RepoId.t)
             (tup2
-               ptime_span
+               ptime
                (tup2
-                  (option string)
+                  ptime_span
                   (tup2
-                     Pool_location.Repo.Id.t
+                     (option string)
                      (tup2
-                        int
+                        Pool_location.Repo.Id.t
                         (tup2
                            int
                            (tup2
                               int
                               (tup2
-                                 (option Pool_common.Repo.Reminder.Subject.t)
+                                 int
                                  (tup2
-                                    (option Pool_common.Repo.Reminder.Text.t)
+                                    (option Pool_common.Repo.Reminder.Subject.t)
                                     (tup2
-                                       (option
-                                          Pool_common.Repo.Reminder.LeadTime.t)
+                                       (option Pool_common.Repo.Reminder.Text.t)
                                        (tup2
-                                          Pool_common.Repo.Reminder.SentAt.t
+                                          (option
+                                             Pool_common.Repo.Reminder.LeadTime
+                                             .t)
                                           (tup2
-                                             int
+                                             Pool_common.Repo.Reminder.SentAt.t
                                              (tup2
-                                                (option ptime)
-                                                (tup2 ptime ptime))))))))))))))))
+                                                int
+                                                (tup2
+                                                   (option ptime)
+                                                   (tup2 ptime ptime)))))))))))))))))
 ;;
 
 module Write = struct
   type t =
     { id : Pool_common.Id.t
+    ; follow_up_to : Pool_common.Id.t option
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option
@@ -174,6 +184,7 @@ module Write = struct
   let entity_to_write
       (Entity.
          { id
+         ; follow_up_to
          ; start
          ; duration
          ; description
@@ -191,6 +202,7 @@ module Write = struct
         Entity.t)
     =
     { id
+    ; follow_up_to
     ; start
     ; duration
     ; description
@@ -210,35 +222,39 @@ module Write = struct
     let encode (m : t) =
       Ok
         ( m.id
-        , ( m.start
-          , ( m.duration
-            , ( m.description
-              , ( m.location_id
-                , ( m.max_participants
-                  , ( m.min_participants
-                    , ( m.overbook
-                      , ( m.reminder_subject
-                        , ( m.reminder_text
-                          , ( m.reminder_lead_time
-                            , (m.reminder_sent_at, m.canceled_at) ) ) ) ) ) ) )
-              ) ) ) )
+        , ( m.follow_up_to
+          , ( m.start
+            , ( m.duration
+              , ( m.description
+                , ( m.location_id
+                  , ( m.max_participants
+                    , ( m.min_participants
+                      , ( m.overbook
+                        , ( m.reminder_subject
+                          , ( m.reminder_text
+                            , ( m.reminder_lead_time
+                              , (m.reminder_sent_at, m.canceled_at) ) ) ) ) ) )
+                  ) ) ) ) ) )
     in
     let decode
         ( id
-        , ( start
-          , ( duration
-            , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , ( overbook
-                      , ( reminder_subject
-                        , ( reminder_text
-                          , (reminder_lead_time, (reminder_sent_at, canceled_at))
-                          ) ) ) ) ) ) ) ) ) )
+        , ( follow_up_to
+          , ( start
+            , ( duration
+              , ( description
+                , ( location_id
+                  , ( max_participants
+                    , ( min_participants
+                      , ( overbook
+                        , ( reminder_subject
+                          , ( reminder_text
+                            , ( reminder_lead_time
+                              , (reminder_sent_at, canceled_at) ) ) ) ) ) ) ) )
+              ) ) ) )
       =
       Ok
         { id
+        ; follow_up_to
         ; start
         ; duration
         ; description
@@ -260,35 +276,43 @@ module Write = struct
         (tup2
            RepoId.t
            (tup2
-              ptime
+              (option RepoId.t)
               (tup2
-                 ptime_span
+                 ptime
                  (tup2
-                    (option string)
+                    ptime_span
                     (tup2
-                       Pool_location.Repo.Id.t
+                       (option string)
                        (tup2
-                          int
+                          Pool_location.Repo.Id.t
                           (tup2
                              int
                              (tup2
                                 int
                                 (tup2
-                                   (option Pool_common.Repo.Reminder.Subject.t)
+                                   int
                                    (tup2
-                                      (option Pool_common.Repo.Reminder.Text.t)
+                                      (option
+                                         Pool_common.Repo.Reminder.Subject.t)
                                       (tup2
                                          (option
-                                            Pool_common.Repo.Reminder.LeadTime.t)
+                                            Pool_common.Repo.Reminder.Text.t)
                                          (tup2
-                                            Pool_common.Repo.Reminder.SentAt.t
-                                            (option ptime))))))))))))))
+                                            (option
+                                               Pool_common.Repo.Reminder
+                                               .LeadTime
+                                               .t)
+                                            (tup2
+                                               Pool_common.Repo.Reminder.SentAt
+                                               .t
+                                               (option ptime)))))))))))))))
   ;;
 end
 
 module Public = struct
   type t =
     { id : Pool_common.Id.t
+    ; follow_up_to : Pool_common.Id.t option
     ; start : Entity.Start.t
     ; duration : Ptime.Span.t
     ; description : Entity.Description.t option
@@ -303,6 +327,7 @@ module Public = struct
 
   let of_entity (m : Entity.Public.t) : t =
     { id = m.Entity.Public.id
+    ; follow_up_to = m.Entity.Public.follow_up_to
     ; start = m.Entity.Public.start
     ; duration = m.Entity.Public.duration
     ; description = m.Entity.Public.description
@@ -318,6 +343,7 @@ module Public = struct
   let to_entity (m : t) location : Entity.Public.t =
     Entity.Public.
       { id = m.id
+      ; follow_up_to = m.follow_up_to
       ; start = m.start
       ; duration = m.duration
       ; description = m.description
@@ -334,27 +360,31 @@ module Public = struct
     let encode (m : t) =
       Ok
         ( m.id
-        , ( m.start
-          , ( m.duration
-            , ( m.description
-              , ( m.location_id
-                , ( m.max_participants
-                  , ( m.min_participants
-                    , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) ) )
-            ) ) )
+        , ( m.follow_up_to
+          , ( m.start
+            , ( m.duration
+              , ( m.description
+                , ( m.location_id
+                  , ( m.max_participants
+                    , ( m.min_participants
+                      , (m.overbook, (m.assignment_count, m.canceled_at)) ) ) )
+                ) ) ) ) )
     in
     let decode
         ( id
-        , ( start
-          , ( duration
-            , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) ) )
+        , ( follow_up_to
+          , ( start
+            , ( duration
+              , ( description
+                , ( location_id
+                  , ( max_participants
+                    , ( min_participants
+                      , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) )
+          ) )
       =
       Ok
         { id
+        ; follow_up_to
         ; start
         ; duration
         ; description
@@ -373,15 +403,17 @@ module Public = struct
         (tup2
            RepoId.t
            (tup2
-              ptime
+              (option RepoId.t)
               (tup2
-                 ptime_span
+                 ptime
                  (tup2
-                    (option string)
+                    ptime_span
                     (tup2
-                       Pool_location.Repo.Id.t
+                       (option string)
                        (tup2
-                          int
-                          (tup2 int (tup2 int (tup2 int (option ptime)))))))))))
+                          Pool_location.Repo.Id.t
+                          (tup2
+                             int
+                             (tup2 int (tup2 int (tup2 int (option ptime))))))))))))
   ;;
 end

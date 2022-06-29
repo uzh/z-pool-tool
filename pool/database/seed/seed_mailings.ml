@@ -25,7 +25,9 @@ let generate_events experiments =
     (fun delta ->
       let start =
         Ptime_clock.now ()
-        |> CCFun.flip Ptime.add_span (Ptime.Span.of_int_s (delta * 24 * 3600))
+        |> CCFun.flip
+             Ptime.add_span
+             (Ptime.Span.of_int_s ((delta * 24 * 3600) + 1))
         |> CCOption.get_exn_or
              "Mailing series seed: could not generate mailings."
         |> Mailing.StartAt.create

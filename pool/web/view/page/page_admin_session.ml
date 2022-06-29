@@ -40,16 +40,18 @@ let session_form
     language
     (experiment : Experiment.t)
     ?(session : Session.t option)
+    ?(follow_up_to : Session.t option)
     locations
     ~flash_fetcher
   =
   let open Session in
-  let value = CCFun.flip (CCOption.map_or ~default:"") session in
+  let default_value_session = CCOption.(session <+> follow_up_to) in
+  let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc =
     CCOption.map_or
       ~default:""
       (fun s -> s |> fnc |> ParticipantAmount.value |> CCInt.to_string)
-      session
+      default_value_session
   in
   let lead_time_value time =
     time
@@ -67,11 +69,17 @@ let session_form
         "/admin/experiments/%s/sessions"
         (Pool_common.Id.value experiment.Experiment.id)
     in
-    match session with
-    | None -> base, Message.(Create (Some Field.Session))
-    | Some session ->
+    match session, follow_up_to with
+    | None, None -> base, Message.(Create (Some Field.Session))
+    | None, Some follow_up_to ->
+      ( Format.asprintf
+          "%s/%s/follow-up"
+          base
+          (follow_up_to.Session.id |> Pool_common.Id.value)
+      , Message.(Create (Some Field.FollowUpSession)) )
+    | Some session, _ ->
       ( Format.asprintf "%s/%s" base (session.id |> Pool_common.Id.value)
-      , Message.(Update (Some Field.Session)) )
+      , Message.(Create (Some Field.Session)) )
   in
   form
     ~a:
@@ -159,7 +167,7 @@ let session_form
                 [ h3 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
                 ; Partials.session_reminder_text_element_help
                     language
-                    ?session
+                    ?session:default_value_session
                     ()
                 ; div
                     ~a:[ a_class [ "stack"; "gap-lg" ] ]
@@ -168,7 +176,6 @@ let session_form
                             language
                             `Text
                             Pool_common.Message.Field.ReminderSubject
-                            ~required:true
                             ~value:
                               (value (fun s ->
                                    s.reminder_subject
@@ -215,83 +222,100 @@ let session_form
     ]
 ;;
 
-let index Pool_context.{ language; csrf; _ } experiment sessions =
+let index
+    Pool_context.{ language; csrf; _ }
+    experiment
+    grouped_sessions
+    chronological
+  =
   let experiment_id = experiment.Experiment.id in
   let rows =
-    CCList.map
-      (fun (session : Session.t) ->
+    CCList.flat_map
+      (fun (parent, follow_ups) ->
         let open Session in
-        let cancel_form =
-          match CCOption.is_some session.Session.canceled_at with
-          | true ->
-            submit_element
-              ~submit_type:`Disabled
-              language
-              Message.(Cancel None)
-              ()
-          | false ->
-            form
+        let session_row session =
+          let cancel_form =
+            match CCOption.is_some session.Session.canceled_at with
+            | true ->
+              submit_element
+                ~submit_type:`Disabled
+                language
+                Message.(Cancel None)
+                ()
+            | false ->
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (Format.asprintf
+                         "/admin/experiments/%s/sessions/%s/cancel"
+                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path)
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string language I18n.CancelSession)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element language Message.(Cancel None) ()
+                ]
+          in
+          let indent =
+            if CCOption.is_some session.follow_up_to && not chronological
+            then 30
+            else 0
+          in
+          (* TODO [aerben] replace with econ framework class, once exists *)
+          [ div
+              ~a:[ a_style @@ Format.asprintf "padding-left: %ipx" indent ]
+              [ txt (session |> Session.session_date_to_human) ]
+          ; txt
+              (CCInt.to_string
+                 (session.Session.assignment_count
+                 |> Session.AssignmentCount.value))
+          ; session.Session.canceled_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                   Pool_common.Utils.Time.formatted_date_time t)
+            |> txt
+          ; a
+              ~a:
+                [ a_href
+                    (Format.asprintf
+                       "/admin/experiments/%s/sessions/%s"
+                       (Pool_common.Id.value experiment_id)
+                       (Pool_common.Id.value session.id)
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(Utils.control_to_string language Message.(More))
+              ]
+          ; cancel_form
+          ; form
               ~a:
                 [ a_method `Post
                 ; a_action
                     (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/cancel"
+                       "/admin/experiments/%s/sessions/%s/delete"
                        (Pool_common.Id.value experiment_id)
                        (Pool_common.Id.value session.id)
                     |> Sihl.Web.externalize_path)
                 ; a_user_data
                     "confirmable"
                     Pool_common.(
-                      Utils.confirmable_to_string language I18n.CancelSession)
+                      Utils.confirmable_to_string language I18n.DeleteSession)
                 ]
               [ Component.csrf_element csrf ()
-              ; submit_element language Message.(Cancel None) ()
+              ; submit_element
+                  language
+                  Message.(Delete None)
+                  ~submit_type:`Error
+                  ()
               ]
+          ]
         in
-        [ txt (session |> Session.session_date_to_human)
-        ; txt
-            (CCInt.to_string
-               (session.Session.assignment_count
-               |> Session.AssignmentCount.value))
-        ; session.Session.canceled_at
-          |> CCOption.map_or ~default:"" (fun t ->
-                 Pool_common.Utils.Time.formatted_date_time t)
-          |> txt
-        ; a
-            ~a:
-              [ a_href
-                  (Format.asprintf
-                     "/admin/experiments/%s/sessions/%s"
-                     (Pool_common.Id.value experiment_id)
-                     (Pool_common.Id.value session.id)
-                  |> Sihl.Web.externalize_path)
-              ]
-            [ txt Pool_common.(Utils.control_to_string language Message.(More))
-            ]
-        ; cancel_form
-        ; form
-            ~a:
-              [ a_method `Post
-              ; a_action
-                  (Format.asprintf
-                     "/admin/experiments/%s/sessions/%s/delete"
-                     (Pool_common.Id.value experiment_id)
-                     (Pool_common.Id.value session.id)
-                  |> Sihl.Web.externalize_path)
-              ; a_user_data
-                  "confirmable"
-                  Pool_common.(
-                    Utils.confirmable_to_string language I18n.DeleteSession)
-              ]
-            [ Component.csrf_element csrf ()
-            ; submit_element
-                language
-                Message.(Delete None)
-                ~submit_type:`Error
-                ()
-            ]
-        ])
-      sessions
+        session_row parent :: CCList.map session_row follow_ups)
+      grouped_sessions
   in
   let thead =
     Pool_common.Message.Field.
@@ -352,54 +376,94 @@ let detail
   let session_overview =
     div
       ~a:[ a_class [ "stack" ] ]
-      [ (let rows =
-           let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-           let open Message in
-           [ ( Field.Start
-             , session.start
-               |> Start.value
-               |> Pool_common.Utils.Time.formatted_date_time
-               |> txt )
-           ; ( Field.Duration
-             , session.duration
-               |> Duration.value
-               |> Pool_common.Utils.Time.formatted_timespan
-               |> txt )
-           ; ( Field.Description
-             , CCOption.map_or ~default:"" Description.value session.description
-               |> Http_utils.add_line_breaks )
-           ; ( Field.Location
-             , Pool_location.to_string language session.Session.location |> txt
-             )
-           ; Field.MaxParticipants, amount session.max_participants |> txt
-           ; Field.MinParticipants, amount session.min_participants |> txt
-           ; Field.Overbook, amount session.overbook |> txt
-           ]
-           |> fun rows ->
-           match session.canceled_at with
-           | None -> rows
-           | Some canceled ->
-             rows
-             @ [ ( Field.CanceledAt
-                 , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
-               ]
-         in
-         Table.vertical_table `Striped language rows)
-      ; p
-          [ a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/edit"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ Message.(Edit (Some Field.Session))
-                |> Pool_common.Utils.control_to_string language
-                |> txt
-              ]
+      [ (let open Message in
+        let parent =
+          CCOption.map
+            (fun follow_up_to ->
+              ( Field.MainSession
+              , a
+                  ~a:
+                    [ a_href
+                        (Format.asprintf
+                           "/admin/experiments/%s/sessions/%s"
+                           (Pool_common.Id.value experiment_id)
+                           (Pool_common.Id.value follow_up_to)
+                        |> Sihl.Web.externalize_path)
+                    ]
+                  [ Message.Show
+                    |> Pool_common.Utils.control_to_string language
+                    |> CCString.capitalize_ascii
+                    |> txt
+                  ] ))
+            session.follow_up_to
+        in
+        let rows =
+          let amount amt = amt |> ParticipantAmount.value |> string_of_int in
+          [ ( Field.Start
+            , session.start
+              |> Start.value
+              |> Pool_common.Utils.Time.formatted_date_time
+              |> txt )
+          ; ( Field.Duration
+            , session.duration
+              |> Duration.value
+              |> Pool_common.Utils.Time.formatted_timespan
+              |> txt )
+          ; ( Field.Description
+            , CCOption.map_or ~default:"" Description.value session.description
+              |> Http_utils.add_line_breaks )
+          ; ( Field.Location
+            , Partials.location_to_html language session.Session.location )
+          ; Field.MaxParticipants, amount session.max_participants |> txt
+          ; Field.MinParticipants, amount session.min_participants |> txt
+          ; Field.Overbook, amount session.overbook |> txt
           ]
+          |> fun rows ->
+          match session.canceled_at with
+          | None -> rows
+          | Some canceled ->
+            rows
+            @ [ ( Field.CanceledAt
+                , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
+              ]
+        in
+        Table.vertical_table `Striped language ~align_top:true
+        @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent)
+      ; p
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          ([ a
+               ~a:
+                 [ a_href
+                     (Format.asprintf
+                        "/admin/experiments/%s/sessions/%s/edit"
+                        (Pool_common.Id.value experiment_id)
+                        (Pool_common.Id.value session.id)
+                     |> Sihl.Web.externalize_path)
+                 ]
+               [ Message.(Edit (Some Field.Session))
+                 |> Pool_common.Utils.control_to_string language
+                 |> txt
+               ]
+           ]
+          @
+          (* TODO [aerben] should follow up be created on follow up? *)
+          if CCOption.is_none session.follow_up_to
+          then
+            [ a
+                ~a:
+                  [ a_href
+                      (Format.asprintf
+                         "/admin/experiments/%s/sessions/%s/follow-up"
+                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ Message.(Create (Some Field.FollowUpSession))
+                  |> Pool_common.Utils.control_to_string language
+                  |> txt
+                ]
+            ]
+          else [])
       ]
   in
   let assignments_html =
@@ -434,13 +498,52 @@ let edit
     locations
     flash_fetcher
   =
-  let html =
-    session_form csrf language experiment ~session locations ~flash_fetcher
-  in
-  Page_admin_experiments.experiment_layout
-    language
-    (Page_admin_experiments.Control
-       Pool_common.Message.(Edit (Some Field.Session)))
-    experiment.Experiment.id
-    html
+  div
+    [ p
+        [ txt
+            (session
+            |> session_title
+            |> Pool_common.Utils.text_to_string language)
+        ]
+    ; session_form csrf language experiment ~session locations ~flash_fetcher
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Edit (Some Field.Session)))
+       experiment.Experiment.id
+;;
+
+let follow_up
+    Pool_context.{ language; csrf; _ }
+    experiment
+    (parent_session : Session.t)
+    locations
+    flash_fetcher
+  =
+  div
+    [ p
+        [ txt
+            Pool_common.Utils.(
+              parent_session
+              |> session_title
+              |> text_to_string language
+              |> CCFormat.asprintf
+                   "%s %s"
+                   (Pool_common.I18n.FollowUpSessionFor
+                   |> text_to_string language))
+        ]
+    ; session_form
+        csrf
+        language
+        experiment
+        ~follow_up_to:parent_session
+        locations
+        ~flash_fetcher
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Create (Some Field.FollowUpSession)))
+       experiment.Experiment.id
 ;;

@@ -215,7 +215,7 @@ let disabler command success_handler req =
 ;;
 
 let stop =
-  disabler Cqrs_command.Mailing_command.Stop.handle Pool_common.Message.stoped
+  disabler Cqrs_command.Mailing_command.Stop.handle Pool_common.Message.stopped
 ;;
 
 let delete =

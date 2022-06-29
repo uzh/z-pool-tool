@@ -9,6 +9,7 @@ type t =
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
+  | FollowUpSessionFor
   | HomeTitle
   | I18nTitle
   | LocationFileNew
@@ -29,7 +30,10 @@ type t =
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
+  | SessionIndent
   | SessionSignUpTitle
+  | SwitchChronological
+  | SwitchGrouped
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle

@@ -9,3 +9,4 @@ let find_public = Repo.find_public
 let find_public_by_assignment = Repo.find_public_by_assignment
 let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
+let find_follow_ups = Repo.find_follow_ups

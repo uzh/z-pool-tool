@@ -41,6 +41,7 @@ let field_to_string =
   | Filename -> "filename"
   | Filesize -> "filesize"
   | Firstname -> "firstname"
+  | FollowUpSession -> "follow-up session"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -61,6 +62,7 @@ let field_to_string =
   | LogoType -> "logo type"
   | LeadTime -> "lead time"
   | Mailing -> "mailing"
+  | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
   | Name -> "name"
@@ -151,8 +153,8 @@ let success_to_string : success -> string = function
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
-  | Stoped field ->
-    field_message "" (field_to_string field) "was successfully stoped."
+  | Stopped field ->
+    field_message "" (field_to_string field) "was successfully stopped."
   | TenantUpdateDatabase -> "Database information was successfully updated."
   | TenantUpdateDetails -> "Tenant was successfully updated."
   | Updated field ->
@@ -199,6 +201,8 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
+  | FollowUpIsEarlierThanMain ->
+    "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
@@ -290,6 +294,7 @@ let control_to_string = function
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | SendResetLink -> format_submit "send reset link" None
+  | Show -> "show"
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field

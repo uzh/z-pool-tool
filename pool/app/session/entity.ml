@@ -95,6 +95,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
+  ; follow_up_to : Pool_common.Id.t option
   ; start : Start.t
   ; duration : Ptime.Span.t
   ; description : Description.t option
@@ -126,6 +127,7 @@ type t =
 
 let create
     ?id
+    ?follow_up_to
     start
     duration
     description
@@ -138,6 +140,7 @@ let create
     reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
+  ; follow_up_to
   ; start
   ; duration
   ; description
@@ -185,6 +188,7 @@ let session_date_to_human (session : t) =
 module Public = struct
   type t =
     { id : Pool_common.Id.t
+    ; follow_up_to : Pool_common.Id.t option
     ; start : Start.t
     ; duration : Ptime.Span.t
     ; description : Description.t option
@@ -201,6 +205,37 @@ module Public = struct
     m.assignment_count >= m.max_participants + m.overbook
   ;;
 end
+
+(* Group follow ups into main sessions and sort by start date *)
+let group_and_sort sessions =
+  let parents, follow_ups =
+    sessions
+    |> CCList.partition_filter_map (fun session ->
+           match session.follow_up_to with
+           | None -> `Left (session.id, (session, []))
+           | Some parent -> `Right (parent, session))
+  in
+  follow_ups
+  |> CCList.fold_left
+       (fun groups (parent, session) ->
+         CCList.Assoc.update
+           ~eq:Pool_common.Id.equal
+           ~f:(fun s ->
+             match s with
+             | None -> None
+             | Some (parent, ls) -> Some (parent, ls @ [ session ]))
+           parent
+           groups)
+       parents
+  |> CCList.map (fun (_, (p, fs)) ->
+         ( p
+         , CCList.sort
+             (fun (f1 : t) (f2 : t) ->
+               Ptime.compare (Start.value f1.start) (Start.value f2.start))
+             fs ))
+  |> CCList.sort (fun ((f1 : t), _) ((f2 : t), _) ->
+         Ptime.compare (Start.value f1.start) (Start.value f2.start))
+;;
 
 let email_text language start duration location =
   let format label text =
@@ -235,5 +270,4 @@ let public_to_email_text
     language
     (Public.{ start; duration; location; _ } : Public.t)
   =
-  email_text language start duration location
-;;
+  email_text language start duration location;;

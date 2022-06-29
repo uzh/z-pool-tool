@@ -16,11 +16,12 @@ let to_string = function
   | ExperimentSessionReminderHint ->
     "There are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
+  | Files -> "Files"
+  | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
-  | Files -> "Files"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -45,9 +46,12 @@ let to_string = function
   | SessionReminderDefaultSubject text ->
     Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
+  | SessionIndent -> "Indentations group follow-up sessions."
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
+  | SwitchChronological -> "Switch to chronological view"
+  | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"

@@ -173,6 +173,8 @@ module Admin = struct
             [ get "" show
             ; post "" update
             ; get "/edit" edit
+            ; get "/follow-up" follow_up
+            ; post "/follow-up" create_follow_up
             ; post "/cancel" cancel
             ; post "/delete" delete
             ]
