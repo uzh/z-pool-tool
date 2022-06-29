@@ -467,7 +467,6 @@ let edit (Pool_context.{ language; _ } as ctx) experiment (session : Session.t) 
         "/admin/experiments/%s/sessions/%s"
         (Pool_common.Id.value experiment.Experiment.id)
         (Pool_common.Id.value session.Session.id)
-      |> Sihl.Web.externalize_path
     , Message.(Update (Some Field.Session)) )
     ctx
     experiment
@@ -492,7 +491,6 @@ let follow_up
         "/admin/experiments/%s/sessions/%s/follow-up"
         (Pool_common.Id.value experiment.Experiment.id)
         (Pool_common.Id.value session.Session.id)
-      |> Sihl.Web.externalize_path
     , Message.(Create (Some Field.Session)) )
     ctx
     experiment

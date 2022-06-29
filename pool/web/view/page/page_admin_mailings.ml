@@ -204,11 +204,7 @@ let form
     div
       ~a:[ a_class [ "stack" ] ]
       [ form
-          ~a:
-            [ a_class [ "stack" ]
-            ; a_method `Post
-            ; a_action (action |> Sihl.Web.externalize_path)
-            ]
+          ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
           [ Component.csrf_element csrf ()
           ; input
               ~a:
