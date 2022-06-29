@@ -110,12 +110,12 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.NavLink I18n.Mailings)
-    experiment.Experiment.id
+    experiment
     ~active:I18n.Mailings
     html
 ;;
 
-let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
+let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
   let open Mailing in
   let mailing_overview =
     div
@@ -149,7 +149,10 @@ let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
         [ p
             [ a
                 ~a:
-                  [ detail_mailing_path ~suffix:"edit" experiment_id mailing
+                  [ detail_mailing_path
+                      ~suffix:"edit"
+                      experiment.Experiment.id
+                      mailing
                     |> a_href
                   ]
                 [ Message.(Edit (Some Field.Mailing))
@@ -164,14 +167,14 @@ let detail Pool_context.{ language; _ } experiment_id (mailing : Mailing.t) =
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.I18n (mailing_title mailing))
-    experiment_id
+    experiment
     html
 ;;
 
 let form
     ?(mailing : Mailing.t option)
     Pool_context.{ language; csrf; _ }
-    experiment_id
+    experiment
     flash_fetcher
   =
   let functions =
@@ -189,9 +192,11 @@ let form
   in
   let action, submit =
     match mailing with
-    | None -> mailings_path experiment_id, Message.(Create (Some Field.Mailing))
+    | None ->
+      ( mailings_path experiment.Experiment.id
+      , Message.(Create (Some Field.Mailing)) )
     | Some m ->
-      ( m |> detail_mailing_path experiment_id
+      ( m |> detail_mailing_path experiment.Experiment.id
       , Message.(Edit (Some Field.Mailing)) )
   in
   let html =
@@ -223,7 +228,10 @@ let form
                 ; hx_target "#overlaps"
                 ; hx_trigger "change"
                 ; hx_swap "outerHTML"
-                ; hx_post (mailings_path ~suffix:"search-info" experiment_id)
+                ; hx_post
+                    (mailings_path
+                       ~suffix:"search-info"
+                       experiment.Experiment.id)
                 ]
               [ flatpicker_element
                   language
@@ -290,7 +298,7 @@ let form
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.Control submit)
-    experiment_id
+    experiment
     html
 ;;
 

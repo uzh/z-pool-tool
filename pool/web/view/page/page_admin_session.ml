@@ -37,8 +37,8 @@ let location_select options selected ?(attributes = []) () =
 
 let create csrf language experiment_id locations ~flash_fetcher =
   div
-    [ h1
-        ~a:[ a_class [ "heading-2" ] ]
+    [ h3
+        ~a:[ a_class [ "heading-3" ] ]
         [ txt
             Pool_common.(
               Utils.control_to_string
@@ -141,15 +141,12 @@ let index
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
-          let indent =
+          let attrs =
             if CCOption.is_some session.follow_up_to && not chronological
-            then 30
-            else 0
+            then [ a_class [ "inset"; "left" ] ]
+            else []
           in
-          (* TODO [aerben] replace with econ framework class, once exists *)
-          [ div
-              ~a:[ a_style @@ Format.asprintf "padding-left: %ipx" indent ]
-              [ txt (session |> Session.session_date_to_human) ]
+          [ div ~a:attrs [ txt (session |> Session.session_date_to_human) ]
           ; txt
               (CCInt.to_string
                  (session.Session.assignment_count
@@ -215,37 +212,40 @@ let index
              ]
          ]
        else
-         [ p
-             [ Pool_common.I18n.SessionIndent
-               |> Pool_common.Utils.text_to_string language
-               |> txt
-             ]
-         ; a
-             ~a:
-               [ a_href
-                   (Format.asprintf
-                      "/admin/experiments/%s/sessions%s"
-                      (Pool_common.Id.value experiment_id)
-                      (if chronological then "" else "?chronological=true")
-                   |> Sihl.Web.externalize_path)
-               ]
+         [ div
+             ~a:[ a_class [ "stack" ] ]
              [ p
-                 [ (if chronological
-                   then Pool_common.I18n.SwitchGrouped
-                   else Pool_common.I18n.SwitchChronological)
+                 [ Pool_common.I18n.SessionIndent
                    |> Pool_common.Utils.text_to_string language
                    |> txt
                  ]
+             ; a
+                 ~a:
+                   [ a_href
+                       (Format.asprintf
+                          "/admin/experiments/%s/sessions%s"
+                          (Pool_common.Id.value experiment_id)
+                          (if chronological then "" else "?chronological=true")
+                       |> Sihl.Web.externalize_path)
+                   ]
+                 [ p
+                     [ (if chronological
+                       then Pool_common.I18n.SwitchGrouped
+                       else Pool_common.I18n.SwitchChronological)
+                       |> Pool_common.Utils.text_to_string language
+                       |> txt
+                     ]
+                 ]
+               (* TODO [aerben] allow tables to be sorted generally? *)
+             ; Table.horizontal_table `Striped language ~thead rows
              ]
-           (* TODO [aerben] allow tables to be sorted generally? *)
-         ; Table.horizontal_table `Striped language ~thead rows
          ])
       @ [ create csrf language experiment_id locations ~flash_fetcher ])
   in
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Sessions)
-    experiment.Experiment.id
+    experiment
     ~active:Pool_common.I18n.Sessions
     html
 ;;
@@ -253,7 +253,7 @@ let index
 (* TODO [aerben] in parent session, link to follow up session *)
 let detail
     (Pool_context.{ language; _ } as context)
-    experiment_id
+    experiment
     (session : Session.t)
     assignments
   =
@@ -271,7 +271,7 @@ let detail
                     [ a_href
                         (Format.asprintf
                            "/admin/experiments/%s/sessions/%s"
-                           (Pool_common.Id.value experiment_id)
+                           (Pool_common.Id.value experiment.Experiment.id)
                            (Pool_common.Id.value follow_up_to)
                         |> Sihl.Web.externalize_path)
                     ]
@@ -321,7 +321,7 @@ let detail
                  [ a_href
                      (Format.asprintf
                         "/admin/experiments/%s/sessions/%s/edit"
-                        (Pool_common.Id.value experiment_id)
+                        (Pool_common.Id.value experiment.Experiment.id)
                         (Pool_common.Id.value session.id)
                      |> Sihl.Web.externalize_path)
                  ]
@@ -339,7 +339,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s/follow-up"
-                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
@@ -355,7 +355,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.Partials.overview_list
         context
-        experiment_id
+        experiment.Experiment.id
         assignments
     in
     div
@@ -372,7 +372,7 @@ let detail
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.I18n (session_title session))
-    experiment_id
+    experiment
     html
 ;;
 
@@ -459,22 +459,26 @@ let edit_helper
     html
 ;;
 
-let edit (Pool_context.{ language; _ } as ctx) eid (session : Session.t) =
+let edit (Pool_context.{ language; _ } as ctx) experiment (session : Session.t) =
   edit_helper
     ( Pool_common.Message.(Edit (Some Field.Session))
     , session |> session_title |> Pool_common.Utils.text_to_string language
     , Format.asprintf
         "/admin/experiments/%s/sessions/%s"
-        (Pool_common.Id.value eid)
+        (Pool_common.Id.value experiment.Experiment.id)
         (Pool_common.Id.value session.Session.id)
       |> Sihl.Web.externalize_path
     , Message.(Update (Some Field.Session)) )
     ctx
-    eid
+    experiment
     session
 ;;
 
-let follow_up (Pool_context.{ language; _ } as ctx) eid (session : Session.t) =
+let follow_up
+    (Pool_context.{ language; _ } as ctx)
+    experiment
+    (session : Session.t)
+  =
   edit_helper
     ( Message.(Create (Some Field.FollowUpSession))
     , Pool_common.Utils.(
@@ -486,11 +490,11 @@ let follow_up (Pool_context.{ language; _ } as ctx) eid (session : Session.t) =
              (Pool_common.I18n.FollowUpSessionFor |> text_to_string language))
     , Format.asprintf
         "/admin/experiments/%s/sessions/%s/follow-up"
-        (Pool_common.Id.value eid)
+        (Pool_common.Id.value experiment.Experiment.id)
         (Pool_common.Id.value session.Session.id)
       |> Sihl.Web.externalize_path
     , Message.(Create (Some Field.Session)) )
     ctx
-    eid
+    experiment
     session
 ;;

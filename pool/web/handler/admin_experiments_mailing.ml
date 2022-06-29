@@ -35,14 +35,17 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
-    @@ (Page.Admin.Mailing.form
-          context
-          experiment_id
-          (CCFun.flip Sihl.Web.Flash.find req)
-       |> create_layout req context
-       >|= Sihl.Web.Response.of_html)
+    @@
+    let open Lwt_result.Syntax in
+    let* experiment = Experiment.find tenant_db experiment_id in
+    Page.Admin.Mailing.form
+      context
+      experiment
+      (CCFun.flip Sihl.Web.Flash.find req)
+    |> create_layout req context
+    >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -99,13 +102,14 @@ let detail edit req =
          then Error Pool_common.Message.AlreadyStarted
          else Ok m
        in
+       let* experiment = Experiment.find tenant_db experiment_id in
        (match edit with
-       | false -> Page.Admin.Mailing.detail context experiment_id mailing
+       | false -> Page.Admin.Mailing.detail context experiment mailing
        | true ->
          Page.Admin.Mailing.form
            ~mailing
            context
-           experiment_id
+           experiment
            (CCFun.flip Sihl.Web.Flash.find req))
        |> create_layout req context
        >|= Sihl.Web.Response.of_html

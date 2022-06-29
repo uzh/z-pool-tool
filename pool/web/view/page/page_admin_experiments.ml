@@ -15,7 +15,7 @@ let title_to_string language text =
   | I18n text -> text_to_string language text
 ;;
 
-let experiment_layout language title experiment_id ?active html =
+let experiment_layout language title experiment ?active html =
   let subnav_links =
     Pool_common.I18n.
       [ Overview, "/"
@@ -27,12 +27,18 @@ let experiment_layout language title experiment_id ?active html =
       ]
   in
   let base_url =
-    Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value experiment_id)
+    Format.asprintf
+      "/admin/experiments/%s"
+      (Pool_common.Id.value experiment.Experiment.id)
   in
+  let open Experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Component.Navigation.subnav language subnav_links base_url active
-    ; h1 ~a:[ a_class [ "heading-1" ] ] [ txt (title_to_string language title) ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (experiment.title |> Title.value) ]
+    ; Component.Navigation.subnav language subnav_links base_url active
+    ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
 ;;
@@ -168,7 +174,7 @@ let edit experiment (Pool_context.{ language; _ } as context) flash_fetcher =
   experiment_layout
     language
     (Control Pool_common.Message.(Edit (Some Field.Experiment)))
-    experiment.Experiment.id
+    experiment
     html
 ;;
 
@@ -253,8 +259,8 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
   in
   experiment_layout
     language
-    (NavLink Pool_common.I18n.Experiments)
-    experiment.Experiment.id
+    (NavLink Pool_common.I18n.Overview)
+    experiment
     ~active:Pool_common.I18n.Overview
     html
 ;;
@@ -278,7 +284,7 @@ let invitations
   experiment_layout
     language
     (NavLink Pool_common.I18n.Invitations)
-    experiment.Experiment.id
+    experiment
     ~active:Pool_common.I18n.Invitations
     html
 ;;

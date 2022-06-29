@@ -144,6 +144,6 @@ let detail
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.WaitingList)
-    experiment.Experiment.id
+    experiment
     html
 ;;
