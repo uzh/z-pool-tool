@@ -58,7 +58,9 @@ let create () =
     let email =
       let open Pool_common.Language in
       let subject, text = CCList.assoc ~eq:equal En i18n_templates in
-      (contact, I18n.(content_to_string subject, content_to_string text))
+      ( contact
+      , Email.CustomTemplate.
+          { subject = Subject.I18n subject; content = Content.I18n text } )
       |> CCList.pure
     in
     Ok
@@ -80,7 +82,13 @@ let resend () =
   in
   let expected =
     Ok
-      [ Invitation.(Resent (resent, ("Subject", "Text")))
+      [ Invitation.(
+          Resent
+            ( resent
+            , Email.CustomTemplate.
+                { subject = Subject.String "Subject"
+                ; content = Content.String "Content"
+                } ))
         |> Pool_event.invitation
       ]
   in

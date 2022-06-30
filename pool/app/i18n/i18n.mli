@@ -47,6 +47,9 @@ end
 
 type t
 
+val show : t -> string
+val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
 val create : Key.t -> Pool_common.Language.t -> Content.t -> t
 
 type create =

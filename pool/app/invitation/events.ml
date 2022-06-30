@@ -1,6 +1,6 @@
 open Entity
 
-let create_invitation (experiment : Experiment.t) contact subject content =
+let create_invitation (experiment : Experiment.t) contact template =
   (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let open Experiment in
   let name = Contact.fullname contact in
@@ -9,9 +9,8 @@ let create_invitation (experiment : Experiment.t) contact subject content =
     experiment.description |> Experiment.Description.value
   in
   Email.Helper.prepare_boilerplate_email
-    subject
+    template
     (email |> Pool_user.EmailAddress.value)
-    content
     [ "name", name; "experimentDescription", experiment_description ]
 ;;
 
@@ -29,8 +28,8 @@ type resent =
 
 type event =
   | Created of create
-  | Resent of resent * (string * string)
-  | InvitationsSent of Experiment.t * (Contact.t * (string * string)) list
+  | Resent of (resent * Email.CustomTemplate.t)
+  | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
     (* TODO[timhub]: ensure type safety, see reminder command *)
 [@@deriving eq, show]
 
@@ -39,20 +38,18 @@ let handle_event pool event =
   (* TODO[timhub]: bulk insert *)
   | Created { experiment; contact } ->
     create contact |> Repo.insert pool experiment.Experiment.id
-  | Resent ({ invitation; experiment }, (subject, text)) ->
+  | Resent ({ invitation; experiment }, template) ->
     let%lwt () =
       Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
     in
-    let%lwt email =
-      create_invitation experiment invitation.contact subject text
-    in
+    let%lwt email = create_invitation experiment invitation.contact template in
     Service.Email.send ~ctx:(Pool_tenant.to_ctx pool) email
   | InvitationsSent (experiment, data) ->
     let%lwt emails =
       Lwt_list.map_s
         (fun email ->
-          let contact, (subject, text) = email in
-          create_invitation experiment contact subject text)
+          let contact, template = email in
+          create_invitation experiment contact template)
         data
     in
     Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails

@@ -47,8 +47,8 @@ val show_create : create -> string
 
 type event =
   | Created of create
-  | Resent of resent * (string * string)
-  | InvitationsSent of Experiment.t * (Contact.t * (string * string)) list
+  | Resent of (resent * Email.CustomTemplate.t)
+  | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -13,10 +13,19 @@ let invitation_template_elements
   let open Experiment in
   match experiment.invitation_template with
   | Some template ->
-    let open InvitationTemplate in
-    let subject = template.subject |> Subject.value in
-    let text = template.text |> Text.value in
-    Ok (subject, text)
+    let subject =
+      let open InvitationTemplate in
+      template.subject
+      |> Subject.value
+      |> fun s -> Email.CustomTemplate.Subject.String s
+    in
+    let content =
+      let open InvitationTemplate in
+      template.text
+      |> Text.value
+      |> fun s -> Email.CustomTemplate.Content.String s
+    in
+    Ok Email.CustomTemplate.{ subject; content }
   | None ->
     let language =
       contact_langauge
@@ -29,7 +38,9 @@ let invitation_template_elements
       CCList.Assoc.get ~eq:Pool_common.Language.equal language i18n_texts
       |> CCOption.to_result Pool_common.Message.(NotFound Field.I18n)
     in
-    Ok I18n.(content_to_string subject, content_to_string text)
+    Ok
+      Email.CustomTemplate.
+        { subject = Subject.I18n subject; content = Content.I18n text }
 ;;
 
 module Create : sig
