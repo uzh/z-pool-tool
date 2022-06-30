@@ -5,6 +5,8 @@ let experiments pool =
     [ ( "The Twenty pound auction"
       , "the_twenty_pound_auction"
       , "It was great fun."
+      , None
+      , None
       , Some (60 * 60)
       , None
       , None )
@@ -13,6 +15,8 @@ let experiments pool =
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
+      , Some "Invitation subject"
+      , Some "Invitation text"
       , None
       , None
       , None )
@@ -21,6 +25,8 @@ let experiments pool =
       , "The experiment illustrates the problem of public good provision as \
          discussed in most microeconomics lectures or lectures on public \
          economics."
+      , None
+      , None
       , Some (60 * 60)
       , Some "Subject"
       , Some "Don't forget your session." )
@@ -31,6 +37,8 @@ let experiments pool =
       (fun ( title
            , public_title
            , description
+           , invitation_subject
+           , invitation_text
            , session_reminder_lead_time
            , session_reminder_subject
            , session_reminder_text ) ->
@@ -41,6 +49,20 @@ let experiments pool =
           in
           let description =
             Experiment.Description.create description |> get_or_failwith
+          in
+          let invitation_subject =
+            invitation_subject
+            |> CCOption.map (fun t ->
+                   t
+                   |> Experiment.InvitationTemplate.Subject.create
+                   |> get_or_failwith)
+          in
+          let invitation_text =
+            invitation_text
+            |> CCOption.map (fun t ->
+                   t
+                   |> Experiment.InvitationTemplate.Text.create
+                   |> get_or_failwith)
           in
           let session_reminder_lead_time =
             session_reminder_lead_time
@@ -71,6 +93,8 @@ let experiments pool =
             description
             direct_registration_disabled
             registration_disabled
+            invitation_subject
+            invitation_text
             session_reminder_lead_time
             session_reminder_subject
             session_reminder_text

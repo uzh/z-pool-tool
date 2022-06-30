@@ -51,6 +51,37 @@ module RegistrationDisabled = struct
   let t = Caqti_type.bool
 end
 
+module InvitationTemplate = struct
+  include InvitationTemplate
+
+  module Subject = struct
+    include Subject
+
+    let t = Caqti_type.(string)
+  end
+
+  module Text = struct
+    include Text
+
+    let t = Caqti_type.(string)
+  end
+
+  let t =
+    let encode (m : t) =
+      match m with
+      | Some m -> Ok (Some m.subject, Some m.text)
+      | None -> Ok (None, None)
+    in
+    let decode (subject, text) =
+      create subject text
+      |> CCResult.map_err (fun err ->
+             Pool_common.(Utils.error_to_string Language.En err))
+    in
+    Caqti_type.(
+      custom ~encode ~decode (tup2 (option Subject.t) (option Text.t)))
+  ;;
+end
+
 let t =
   let encode (m : t) =
     Ok
@@ -61,10 +92,11 @@ let t =
             , ( m.filter
               , ( m.direct_registration_disabled
                 , ( m.registration_disabled
-                  , ( m.session_reminder_lead_time
-                    , ( m.session_reminder_subject
-                      , (m.session_reminder_text, (m.created_at, m.updated_at))
-                      ) ) ) ) ) ) ) ) )
+                  , ( m.invitation_template
+                    , ( m.session_reminder_lead_time
+                      , ( m.session_reminder_subject
+                        , (m.session_reminder_text, (m.created_at, m.updated_at))
+                        ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( id
@@ -74,10 +106,11 @@ let t =
             , ( filter
               , ( direct_registration_disabled
                 , ( registration_disabled
-                  , ( session_reminder_lead_time
-                    , ( session_reminder_subject
-                      , (session_reminder_text, (created_at, updated_at)) ) ) )
-                ) ) ) ) ) )
+                  , ( invitation_template
+                    , ( session_reminder_lead_time
+                      , ( session_reminder_subject
+                        , (session_reminder_text, (created_at, updated_at)) ) )
+                    ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -88,6 +121,7 @@ let t =
       ; filter
       ; direct_registration_disabled
       ; registration_disabled
+      ; invitation_template
       ; session_reminder_lead_time
       ; session_reminder_subject
       ; session_reminder_text
@@ -114,14 +148,16 @@ let t =
                         (tup2
                            RegistrationDisabled.t
                            (tup2
-                              (option Pool_common.Repo.Reminder.LeadTime.t)
+                              InvitationTemplate.t
                               (tup2
-                                 (option Pool_common.Repo.Reminder.Subject.t)
+                                 (option Pool_common.Repo.Reminder.LeadTime.t)
                                  (tup2
-                                    (option Pool_common.Repo.Reminder.Text.t)
+                                    (option Pool_common.Repo.Reminder.Subject.t)
                                     (tup2
-                                       Common.Repo.CreatedAt.t
-                                       Common.Repo.UpdatedAt.t))))))))))))
+                                       (option Pool_common.Repo.Reminder.Text.t)
+                                       (tup2
+                                          Common.Repo.CreatedAt.t
+                                          Common.Repo.UpdatedAt.t)))))))))))))
 ;;
 
 module Write = struct
@@ -135,9 +171,10 @@ module Write = struct
               , ( m.filter
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled
-                    , ( m.session_reminder_lead_time
-                      , (m.session_reminder_subject, m.session_reminder_text) )
-                    ) ) ) ) ) ) )
+                    , ( m.invitation_template
+                      , ( m.session_reminder_lead_time
+                        , (m.session_reminder_subject, m.session_reminder_text)
+                        ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -159,10 +196,13 @@ module Write = struct
                           (tup2
                              RegistrationDisabled.t
                              (tup2
-                                (option Pool_common.Repo.Reminder.LeadTime.t)
+                                InvitationTemplate.t
                                 (tup2
-                                   (option Pool_common.Repo.Reminder.Subject.t)
-                                   (option Pool_common.Repo.Reminder.Text.t)))))))))))
+                                   (option Pool_common.Repo.Reminder.LeadTime.t)
+                                   (tup2
+                                      (option
+                                         Pool_common.Repo.Reminder.Subject.t)
+                                      (option Pool_common.Repo.Reminder.Text.t))))))))))))
   ;;
 end
 

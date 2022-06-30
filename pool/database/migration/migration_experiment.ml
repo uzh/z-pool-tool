@@ -73,12 +73,22 @@ let set_default_public_title =
 
 let add_session_reminder_columns =
   Sihl.Database.Migration.create_step
-    ~label:"add field versioning for participants"
+    ~label:"add session reminder columns"
     {sql|
      ALTER TABLE pool_experiments
      ADD COLUMN session_reminder_lead_time INTEGER DEFAULT NULL AFTER description,
      ADD COLUMN session_reminder_subject TEXT DEFAULT NULL AFTER session_reminder_lead_time,
      ADD COLUMN session_reminder_text TEXT DEFAULT NULL AFTER session_reminder_subject
+  |sql}
+;;
+
+let add_invitation_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"add invitation columns"
+    {sql|
+     ALTER TABLE pool_experiments
+     ADD COLUMN invitation_subject TEXT DEFAULT NULL AFTER description,
+     ADD COLUMN invitation_text TEXT DEFAULT NULL AFTER invitation_subject
   |sql}
 ;;
 
@@ -92,5 +102,6 @@ let migration () =
     |> add_step merge_waiting_list_flags
     |> add_step add_public_title
     |> add_step set_default_public_title
-    |> add_step add_session_reminder_columns)
+    |> add_step add_session_reminder_columns
+    |> add_step add_invitation_columns)
 ;;

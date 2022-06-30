@@ -6,6 +6,8 @@ type create =
   ; description : Description.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; invitation_subject : InvitationTemplate.Subject.t option
+  ; invitation_text : InvitationTemplate.Text.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option

@@ -156,6 +156,7 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
+    ; invitation_template = None
     ; session_reminder_subject = None
     ; session_reminder_text = None
     ; session_reminder_lead_time =

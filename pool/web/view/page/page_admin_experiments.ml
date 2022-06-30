@@ -143,6 +143,36 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         [ h3
             ~a:[ a_class [ "heading-2" ] ]
             [ txt
+                Pool_common.(
+                  Utils.field_to_string language Message.Field.Invitation
+                  |> CCString.capitalize_ascii)
+            ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ input_element
+                language
+                `Text
+                Pool_common.Message.Field.InvitationSubject
+                ~value:
+                  (value (fun e ->
+                       InvitationTemplate.subject_value e.invitation_template
+                       |> CCOption.value ~default:""))
+                ~flash_fetcher
+            ; textarea_element
+                language
+                Pool_common.Message.Field.InvitationText
+                ~value:
+                  (value (fun e ->
+                       InvitationTemplate.text_value e.invitation_template
+                       |> CCOption.value ~default:""))
+                ~flash_fetcher
+            ]
+        ]
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h3
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
                 Pool_common.(Utils.text_to_string language I18n.SessionReminder)
             ]
         ; div

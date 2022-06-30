@@ -70,6 +70,53 @@ module RegistrationDisabled : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module InvitationTemplate : sig
+  module Subject : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> t
+    val create : string -> (t, Pool_common.Message.error) result
+    val of_string : string -> t
+    val value : t -> string
+    val pp : Format.formatter -> t -> unit
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  module Text : sig
+    type t
+
+    val equal : t -> t -> bool
+    val show : t -> t
+    val create : string -> (t, Pool_common.Message.error) result
+    val of_string : string -> t
+    val value : t -> string
+    val pp : Format.formatter -> t -> unit
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  type template =
+    { subject : Subject.t
+    ; text : Text.t
+    }
+
+  type t = template option
+
+  val create
+    :  string option
+    -> string option
+    -> (t, Pool_common.Message.error) result
+
+  val subject_value : t -> string option
+  val text_value : t -> string option
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -78,6 +125,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; invitation_template : InvitationTemplate.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
@@ -96,6 +144,8 @@ val create
   -> Description.t
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
+  -> InvitationTemplate.Subject.t option
+  -> InvitationTemplate.Text.t option
   -> Pool_common.Reminder.LeadTime.t option
   -> Pool_common.Reminder.Subject.t option
   -> Pool_common.Reminder.Text.t option
@@ -107,6 +157,8 @@ type create =
   ; description : Description.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; invitation_subject : InvitationTemplate.Subject.t option
+  ; invitation_text : InvitationTemplate.Text.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option

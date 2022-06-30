@@ -83,6 +83,73 @@ module RegistrationDisabled = struct
   ;;
 end
 
+module InvitationTemplate = struct
+  module Subject = struct
+    type t = string [@@deriving eq, show]
+
+    let create subject =
+      if CCString.is_empty subject
+      then Error Pool_common.Message.(Invalid Field.InvitationSubject)
+      else Ok subject
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common.Utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        Pool_common.Message.Field.InvitationSubject
+    ;;
+  end
+
+  module Text = struct
+    type t = string [@@deriving eq, show]
+
+    let create text =
+      if CCString.is_empty text
+      then Error Pool_common.Message.(Invalid Field.InvitationText)
+      else Ok text
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common.Utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        Pool_common.Message.Field.InvitationText
+    ;;
+  end
+
+  type template =
+    { subject : Subject.t
+    ; text : Text.t
+    }
+  [@@deriving eq, show]
+
+  type t = template option [@@deriving eq, show]
+
+  let create subject text : (t, Common.Message.error) result =
+    let open CCResult in
+    match subject, text with
+    | Some subject, Some text ->
+      let* subject = Subject.create subject in
+      let* text = Subject.create text in
+      Ok (Some { subject; text })
+    | None, None -> Ok None
+    | _ -> Error Pool_common.Message.InvitationSubjectAndTextRequired
+  ;;
+
+  let subject_value (m : t) =
+    m |> CCOption.map (fun m -> m.subject |> Subject.value)
+  ;;
+
+  let text_value (m : t) = m |> CCOption.map (fun m -> m.text |> Text.value)
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -91,6 +158,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; invitation_template : InvitationTemplate.t
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
@@ -106,6 +174,8 @@ let create
     description
     direct_registration_disabled
     registration_disabled
+    invitation_subject
+    invitation_text
     session_reminder_lead_time
     session_reminder_subject
     session_reminder_text
@@ -116,6 +186,9 @@ let create
     | Some _, Some _ | None, None -> Ok ()
     | _ -> Error Pool_common.Message.ReminderSubjectAndTextRequired
   in
+  let* invitation_template =
+    InvitationTemplate.create invitation_subject invitation_text
+  in
   Ok
     { id = id |> CCOption.value ~default:(Id.create ())
     ; title
@@ -124,6 +197,7 @@ let create
     ; filter = "1=1"
     ; direct_registration_disabled
     ; registration_disabled
+    ; invitation_template
     ; session_reminder_lead_time
     ; session_reminder_subject
     ; session_reminder_text

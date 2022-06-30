@@ -61,6 +61,9 @@ module Field = struct
         [@printer go "inactive_user_warning"]
     | Institution [@name "institution"] [@printer go "institution"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
+    | InvitationSubject [@name "invitation_subject"]
+        [@printer go "invitation_subject"]
+    | InvitationText [@name "invitation_text"] [@printer go "invitation_text"]
     | Invitations [@name "invitations"] [@printer go "invitations"]
     | Key [@name "key"] [@printer go "key"]
     | Label [@name "label"] [@printer go "label"]
@@ -182,6 +185,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount

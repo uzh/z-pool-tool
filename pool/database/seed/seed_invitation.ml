@@ -12,7 +12,7 @@ let invitations pool =
         let n = Random.int (CCList.length filtered_contacts) in
         let contact = CCList.nth filtered_contacts n in
         let invitation = Invitation.{ contact; experiment } in
-        (Invitation.Created invitation, Pool_common.Language.En) |> Lwt.return)
+        Invitation.Created invitation |> Lwt.return)
       experiments
   in
   let%lwt () = Lwt_list.iter_s (Invitation.handle_event pool) events in

@@ -28,6 +28,7 @@ module Data = struct
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
+        ; invitation_template = None
         ; session_reminder_subject = None
         ; session_reminder_text = None
         ; session_reminder_lead_time = None
@@ -117,4 +118,42 @@ let delete_with_sessions () =
       "succeeds"
       expected
       events)
+;;
+
+let urlencoded =
+  [ "title", [ "The Wallet Game" ]
+  ; "public_title", [ "the_wallet_game" ]
+  ; "description", [ "Description." ]
+  ]
+;;
+
+let create_with_missing_text_element additional error =
+  let open CCResult in
+  let events =
+    let open CCResult.Infix in
+    urlencoded @ additional
+    |> Http_utils.format_request_boolean_values
+         [ "direct_registration_disabled"; "registration_disabled" ]
+    |> Cqrs_command.Experiment_command.Create.decode
+    >>= Cqrs_command.Experiment_command.Create.handle
+  in
+  let expected = Error error in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let with_missing_invitation_text () =
+  create_with_missing_text_element
+    [ "invitation_subject", [ "Invitation Subject" ] ]
+    Pool_common.Message.InvitationSubjectAndTextRequired
+;;
+
+let with_missing_reminder_subject () =
+  create_with_missing_text_element
+    [ "reminder_text", [ "Session reminder text" ] ]
+    Pool_common.Message.ReminderSubjectAndTextRequired
 ;;

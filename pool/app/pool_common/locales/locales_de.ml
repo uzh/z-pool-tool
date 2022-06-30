@@ -50,6 +50,8 @@ let field_to_string =
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Institution -> "Institution"
   | Invitation -> "Einladung"
+  | InvitationSubject -> "Einladungsbetreff"
+  | InvitationText -> "Einladungstext"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
   | Label -> "Label"
@@ -214,6 +216,8 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvitationSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
@@ -260,7 +264,7 @@ let rec error_to_string = function
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | ReminderSubjectAndTextRequired ->
-    "Bitte geben Sie sowohl einen Betreff als auch einen Text für die Session \
+    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
      Erinnerung an."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \

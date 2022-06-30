@@ -11,6 +11,8 @@ let default_schema command =
         ; Description.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
+        ; Conformist.optional @@ InvitationTemplate.Subject.schema ()
+        ; Conformist.optional @@ InvitationTemplate.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
@@ -24,6 +26,8 @@ let default_command
     description
     direct_registration_disabled
     registration_disabled
+    invitation_subject
+    invitation_text
     session_reminder_lead_time
     session_reminder_subject
     session_reminder_text
@@ -33,6 +37,8 @@ let default_command
   ; description
   ; direct_registration_disabled
   ; registration_disabled
+  ; invitation_subject
+  ; invitation_text
   ; session_reminder_lead_time
   ; session_reminder_subject
   ; session_reminder_text
@@ -61,6 +67,8 @@ end = struct
         command.description
         command.direct_registration_disabled
         command.registration_disabled
+        command.invitation_subject
+        command.invitation_text
         command.session_reminder_lead_time
         command.session_reminder_subject
         command.session_reminder_text
@@ -104,6 +112,8 @@ end = struct
         command.description
         command.direct_registration_disabled
         command.registration_disabled
+        command.invitation_subject
+        command.invitation_text
         command.session_reminder_lead_time
         command.session_reminder_subject
         command.session_reminder_text
