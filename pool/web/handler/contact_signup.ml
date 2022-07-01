@@ -8,7 +8,7 @@ let sign_up req =
     let open Lwt_result.Syntax in
     let open Lwt_result.Infix in
     let open Pool_common.Message in
-    Lwt_result.map_err (fun err -> err, "/index")
+    Lwt_result.map_error (fun err -> err, "/index")
     @@
     let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
     let channels = Contact.RecruitmentChannel.(all |> CCList.map show) in
@@ -41,7 +41,7 @@ let sign_up_create req =
   in
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun msg ->
+    Lwt_result.map_error (fun msg ->
         msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* () =
          CCList.assoc ~eq:( = ) terms_key urlencoded
@@ -122,7 +122,7 @@ let email_verification req =
        ||> CCOption.to_result TokenInvalidFormat
        >== Pool_user.EmailAddress.create
        >>= Email.find_unverified_by_address tenant_db
-       |> Lwt_result.map_err (fun _ -> Field.(Invalid Token))
+       |> Lwt_result.map_error (fun _ -> Field.(Invalid Token))
      in
      let* contact = Contact.find tenant_db (Email.user_id email) in
      let* events =
@@ -137,7 +137,7 @@ let email_verification req =
          (path_with_language query_language redirect_path)
          [ Message.set ~success:[ EmailVerified ] ])
      |> Lwt_result.ok)
-    |> Lwt_result.map_err (fun msg -> msg, redirect_path)
+    |> Lwt_result.map_error (fun msg -> msg, redirect_path)
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -146,7 +146,7 @@ let terms req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; language; _ } as context) =
-    Lwt_result.map_err (fun err -> err, "/login")
+    Lwt_result.map_error (fun err -> err, "/login")
     @@ let* user =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
@@ -161,7 +161,7 @@ let terms req =
 
 let terms_accept req =
   let result { Pool_context.tenant_db; query_language; _ } =
-    Lwt_result.map_err (fun msg -> msg, "/login")
+    Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Lwt_result.Syntax in
     let id =

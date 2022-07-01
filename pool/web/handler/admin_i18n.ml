@@ -13,7 +13,7 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let sort translations =
       let update m t =
@@ -47,7 +47,7 @@ let update req =
   in
   let redirect_path = Format.asprintf "/admin/i18n" in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let property () = I18n.find tenant_db id in
     let events property =

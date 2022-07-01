@@ -27,7 +27,7 @@ let list req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
     let experiment_id = id req Pool_common.Message.Field.Experiment in
@@ -66,7 +66,7 @@ let create req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         err, path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
@@ -97,7 +97,7 @@ let detail req page =
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
@@ -143,7 +143,7 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf "%s/edit" path
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -177,7 +177,7 @@ let update req =
 let disabler req command ctor =
   let error_path = "/admin/experiments/%s/sessions" in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Utils.Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
@@ -219,7 +219,7 @@ let follow_up req =
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
@@ -255,7 +255,7 @@ let create_follow_up req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf "%s/follow-up" path
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))

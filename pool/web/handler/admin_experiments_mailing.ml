@@ -20,7 +20,7 @@ let index req =
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, experiment_path experiment_id)
+    Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt mailings =
          Mailing.find_by_experiment tenant_db experiment.Experiment.id
@@ -36,7 +36,7 @@ let new_form req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let result context =
-    Lwt_result.map_err (fun err -> err, experiment_path experiment_id)
+    Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
     @@ (Page.Admin.Mailing.form
           context
           experiment_id
@@ -55,7 +55,7 @@ let create req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , experiment_path ~suffix:"mailings/create" experiment_id
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -89,7 +89,7 @@ let detail edit req =
   let id = id req Field.Mailing Mailing.Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         err, experiment_path ~suffix:"mailings" experiment_id)
     @@ let* mailing =
          Mailing.find tenant_db id
@@ -131,7 +131,7 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* mailing = Mailing.find tenant_db id in
        let events =
@@ -200,7 +200,7 @@ let disabler command success_handler req =
   let mailing_id = id req Field.Mailing Mailing.Id.of_string in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* mailing = Mailing.find tenant_db mailing_id in
        let* events = command mailing |> Lwt_result.lift in
        let%lwt () = Pool_event.handle_events tenant_db events in

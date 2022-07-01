@@ -11,7 +11,7 @@ let id req field encode =
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, "/admin/dashboard")
+    Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let%lwt location_list = Pool_location.find_all tenant_db in
        Page.Admin.Location.index location_list context
        |> create_layout ~active_navigation:"/admin/locations" req context
@@ -23,7 +23,7 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let result context =
-    Lwt_result.map_err (fun err -> err, "/admin/locations")
+    Lwt_result.map_error (fun err -> err, "/admin/locations")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Location.form context flash_fetcher
@@ -37,7 +37,7 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , "/admin/locations/create"
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -69,7 +69,7 @@ let new_file req =
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create" ))
     @@
@@ -94,7 +94,8 @@ let add_file req =
     id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, Format.asprintf "%s/files/create" path)
+    Lwt_result.map_error (fun err ->
+        err, Format.asprintf "%s/files/create" path)
     @@
     let open Lwt_result.Syntax in
     let* location = Pool_location.find tenant_db id in
@@ -158,7 +159,7 @@ let detail edit req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/locations" in
   let result ({ Pool_context.tenant_db; language; _ } as context) =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
     let id = id req Field.Location Pool_location.Id.of_string in
@@ -205,7 +206,7 @@ let update req =
     let detail_path =
       id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf "%s/edit" detail_path
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -245,7 +246,7 @@ let delete req =
       |> Pool_location.Id.value
       |> Format.asprintf "/admin/locations/%s"
     in
-    Lwt_result.map_err (fun err -> err, path)
+    Lwt_result.map_error (fun err -> err, path)
     @@
     let open Utils.Lwt_result.Syntax in
     let* events =

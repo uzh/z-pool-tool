@@ -23,7 +23,7 @@ let index req =
       let open Lwt_result.Syntax in
       let open Lwt_result.Infix in
       let error_path = Http_utils.path_with_language query_language "/error" in
-      Lwt_result.map_err (fun err -> err, error_path)
+      Lwt_result.map_error (fun err -> err, error_path)
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
          let* welcome_text =
            I18n.find_by_key tenant_db I18n.Key.WelcomeText language
@@ -70,7 +70,7 @@ let index_css req =
 let email_confirmation_note req =
   let result ({ Pool_context.language; _ } as context) =
     let open Lwt_result.Infix in
-    Lwt_result.map_err (fun err -> err, "/")
+    Lwt_result.map_error (fun err -> err, "/")
     @@
     let txt_to_string m = Common.Utils.text_to_string language m in
     Common.I18n.(
@@ -96,7 +96,7 @@ let not_found req =
       |> Sihl.Web.Response.of_html
       |> Lwt_result.return
     | false ->
-      Lwt_result.map_err (fun err ->
+      Lwt_result.map_error (fun err ->
           err, Http_utils.path_with_language query_language "/error")
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
          let%lwt tenant_languages = Settings.find_languages tenant_db in

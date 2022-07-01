@@ -8,14 +8,14 @@ let show usage req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, "/login")
+    Lwt_result.map_error (fun err -> err, "/login")
     @@ let* user =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
        in
        let* contact =
          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-         |> Lwt_result.map_err (fun err -> err)
+         |> Lwt_result.map_error (fun err -> err)
        in
        match usage with
        | `Overview ->
@@ -67,12 +67,12 @@ let update req =
     in
     let* contact =
       Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_err (fun err -> err, path_with_lang "/login")
+      |> Lwt_result.map_error (fun err -> err, path_with_lang "/login")
     in
     let* { Pool_context.Tenant.tenant_languages; _ } =
       Pool_context.Tenant.find req
       |> Lwt_result.lift
-      |> Lwt_result.map_err (fun err ->
+      |> Lwt_result.map_error (fun err ->
              err, path_with_lang "/user/personal-details")
     in
     let version =
@@ -146,7 +146,7 @@ let update req =
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       let* contact =
         Contact.(contact |> id |> find tenant_db)
-        |> Lwt_result.map_err (fun err -> err, "/login")
+        |> Lwt_result.map_error (fun err -> err, "/login")
       in
       htmx_element contact [ "success" ] ()
     | Error err -> htmx_element contact [ "error" ] ~error:err ()
@@ -166,7 +166,7 @@ let update_email req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun msg ->
+    Lwt_result.map_error (fun msg ->
         HttpUtils.(
           msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
@@ -207,7 +207,7 @@ let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun msg ->
+    Lwt_result.map_error (fun msg ->
         HttpUtils.(
           msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
