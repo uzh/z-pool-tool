@@ -102,22 +102,18 @@ let detail req page =
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
+    let* experiment = Experiment.find tenant_db experiment_id in
     (match page with
     | `Detail ->
       let* assignments =
         Assignment.find_by_session tenant_db session.Session.id
       in
-      Page.Admin.Session.detail context experiment_id session assignments
+      Page.Admin.Session.detail context experiment session assignments
       |> Lwt.return_ok
     | `Edit ->
       let flash_fetcher key = Sihl.Web.Flash.find key req in
       let%lwt locations = Pool_location.find_all tenant_db in
-      Page.Admin.Session.edit
-        context
-        experiment_id
-        session
-        locations
-        flash_fetcher
+      Page.Admin.Session.edit context experiment session locations flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -224,11 +220,12 @@ let follow_up req =
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
+    let* experiment = Experiment.find tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let%lwt locations = Pool_location.find_all tenant_db in
     Page.Admin.Session.follow_up
       context
-      experiment_id
+      experiment
       session
       locations
       flash_fetcher
