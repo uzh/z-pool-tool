@@ -81,16 +81,15 @@ let resend () =
     InvitationCommand.Resend.handle resent languages i18n_templates
   in
   let expected =
-    Ok
-      [ Invitation.(
-          Resent
-            ( resent
-            , Email.CustomTemplate.
-                { subject = Subject.String "Subject"
-                ; content = Content.String "Content"
-                } ))
-        |> Pool_event.invitation
-      ]
+    let open CCResult in
+    let* email =
+      InvitationCommand.invitation_template_elements
+        languages
+        i18n_templates
+        experiment
+        invitation.Invitation.contact.Contact.language
+    in
+    Ok [ Invitation.(Resent (resent, email)) |> Pool_event.invitation ]
   in
   check_result expected events
 ;;

@@ -30,7 +30,6 @@ type event =
   | Created of create
   | Resent of (resent * Email.CustomTemplate.t)
   | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
-    (* TODO[timhub]: ensure type safety, see reminder command *)
 [@@deriving eq, show]
 
 let handle_event pool event =
