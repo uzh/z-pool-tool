@@ -271,7 +271,7 @@ let form
                          (fun (m : Mailing.t) -> m.Mailing.rate)
                     |> Mailing.Rate.value
                     |> CCInt.to_string)
-                  ~min:1
+                  ~additional_attributes:[ a_input_min (`Number 1) ]
               ]
           ; input_element
               language
