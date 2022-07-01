@@ -6,7 +6,7 @@ let create_layout req = General.create_tenant_layout `Admin req
 let show req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Infix in
-    Lwt_result.map_err (fun err -> err, "/")
+    Lwt_result.map_error (fun err -> err, "/")
     @@ let%lwt languages = Settings.find_languages tenant_db in
        let%lwt email_suffixes = Settings.find_email_suffixes tenant_db in
        let%lwt contact_email = Settings.find_contact_email tenant_db in
@@ -42,7 +42,7 @@ let update_settings req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let redirect_path = "/admin/settings" in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =

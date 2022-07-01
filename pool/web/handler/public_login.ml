@@ -12,7 +12,7 @@ let redirect_to_dashboard tenant_db user =
 let login_get req =
   let open Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, "/index")
+    Lwt_result.map_error (fun err -> err, "/index")
     @@ let%lwt user =
          Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
        in
@@ -32,7 +32,7 @@ let login_post req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     let open Pool_common.Message in
-    Lwt_result.map_err (fun err -> err, "/login")
+    Lwt_result.map_error (fun err -> err, "/login")
     @@ let* params =
          Field.[ Email; Password ]
          |> CCList.map Field.show
@@ -44,7 +44,7 @@ let login_post req =
        let password = List.assoc Field.(Password |> show) params in
        let* user =
          Service.User.login ~ctx:(to_ctx tenant_db) email ~password
-         |> Lwt_result.map_err handle_sihl_login_error
+         |> Lwt_result.map_error handle_sihl_login_error
        in
        let%lwt dashboard = General.dashboard_path tenant_db user in
        HttpUtils.(
@@ -58,7 +58,7 @@ let login_post req =
 
 let request_reset_password_get req =
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, "/index")
+    Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
@@ -113,7 +113,7 @@ let reset_password_get req =
   let result context =
     let open Lwt_result.Infix in
     let error_path = "/request-reset-password/" in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let token =
       Sihl.Web.Request.query Pool_common.Message.Field.(Token |> show) req
@@ -152,7 +152,7 @@ let reset_password_post req =
         ~token
         (go Field.Password)
         (go Field.PasswordConfirmation)
-      |> Lwt_result.map_err
+      |> Lwt_result.map_error
            (CCFun.const
               ( passwordresetinvaliddata
               , [ Field.Token, token ]

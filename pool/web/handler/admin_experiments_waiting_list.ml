@@ -19,7 +19,7 @@ let index req =
   in
   let result context =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment.find tenant_db id in
@@ -49,7 +49,7 @@ let detail req =
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@ let* waiting_list = Waiting_list.find tenant_db id in
        let* sessions =
          Session.find_all_for_experiment tenant_db experiment_id
@@ -85,7 +85,7 @@ let update req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result context =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
@@ -123,7 +123,7 @@ let assign_contact req =
     Format.asprintf "/admin/experiments/%s/waiting-list" (experiment_id |> value)
   in
   let result context =
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf
             "%s/%s"

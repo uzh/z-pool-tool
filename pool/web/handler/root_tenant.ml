@@ -20,7 +20,7 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
     let events () =
-      Lwt_result.map_err (fun err -> err, "/root/tenants")
+      Lwt_result.map_error (fun err -> err, "/root/tenants")
       @@
       let open Lwt_result.Syntax in
       let%lwt multipart_encoded =
@@ -99,7 +99,7 @@ let create_operator req =
     >>= find_tenant
     >> events
     >>= handle
-    |> Lwt_result.map_err (fun err ->
+    |> Lwt_result.map_error (fun err ->
            err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
     |>> return_to_overview
   in
@@ -110,7 +110,7 @@ let tenant_detail req =
   let open Lwt_result.Syntax in
   let open Sihl.Web in
   let result context =
-    Lwt_result.map_err (fun err -> err, "/root/tenants")
+    Lwt_result.map_error (fun err -> err, "/root/tenants")
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant

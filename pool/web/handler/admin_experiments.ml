@@ -20,7 +20,7 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@ let%lwt expermient_list = Experiment.find_all tenant_db () in
        Page.Admin.Experiments.index expermient_list context
        |> create_layout ~active_navigation:"/admin/experiments" req context
@@ -33,7 +33,7 @@ let new_form req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/experiments" in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     Page.Admin.Experiments.create context flash_fetcher
@@ -50,7 +50,7 @@ let create req =
     ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , "/admin/experiments/create"
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -80,7 +80,7 @@ let create req =
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_err (fun err -> err, "/admin/experiments")
+    Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
     let open Lwt_result.Syntax in
     let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
@@ -114,7 +114,7 @@ let update req =
     let detail_path =
       Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)
     in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf "%s/edit" detail_path
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -147,7 +147,7 @@ let delete req =
       Pool_common.(id req Pool_common.Message.Field.Experiment Id.of_string)
     in
     let experiments_path = "/admin/experiments" in
-    Lwt_result.map_err (fun err ->
+    Lwt_result.map_error (fun err ->
         ( err
         , Format.asprintf
             "%s/%s"

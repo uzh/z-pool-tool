@@ -14,7 +14,7 @@ let handle req action =
   in
   let result context =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* contact =

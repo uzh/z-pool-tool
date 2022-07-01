@@ -150,7 +150,7 @@ let login_after_terms_update _ () =
       | false -> Lwt.return_error TermsAndConditionsNotAccepted
     in
     contact
-    |> Lwt_result.map_err (CCFun.const (NotFound Field.Contact))
+    |> Lwt_result.map_error (CCFun.const (NotFound Field.Contact))
     >>= terms_agreed
   in
   let expected = Error TermsAndConditionsNotAccepted in

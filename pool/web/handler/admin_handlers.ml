@@ -10,7 +10,7 @@ let create_layout req = General.create_tenant_layout `Admin req
 let dashboard req =
   let result context =
     let open Lwt_result.Infix in
-    Lwt_result.map_err (fun err -> err, "/error")
+    Lwt_result.map_error (fun err -> err, "/error")
     @@ (Page.Admin.dashboard context
        |> create_layout req ~active_navigation:"/admin/dashboard" context
        >|= Sihl.Web.Response.of_html)
