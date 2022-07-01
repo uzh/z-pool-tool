@@ -168,7 +168,6 @@ val find_experiment_id_and_title
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
-  -> Pool_common.Reminder.LeadTime.t
   -> (t list, Pool_common__Entity_message.error) result Lwt.t
 
 val find_follow_ups

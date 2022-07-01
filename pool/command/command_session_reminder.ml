@@ -89,12 +89,7 @@ let send_session_reminder =
         let%lwt result =
           let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
           let%lwt data =
-            let%lwt default_reminder_lead_time =
-              Settings.find_default_reminder_lead_time pool
-            in
-            let* sessions =
-              Session.find_sessions_to_remind pool default_reminder_lead_time
-            in
+            let* sessions = Session.find_sessions_to_remind pool in
             let%lwt sys_languages = Settings.find_languages pool in
             let* default_language =
               CCList.head_opt sys_languages

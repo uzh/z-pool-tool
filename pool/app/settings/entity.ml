@@ -193,3 +193,7 @@ let stringify_action = function
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
   | `UpdateTermsAndConditions -> "update_terms_and_conditions"
 ;;
+
+let default_session_reminder_lead_time_key_yojson =
+  yojson_of_setting_key ReminderLeadTime
+;;

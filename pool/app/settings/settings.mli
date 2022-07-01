@@ -162,3 +162,5 @@ val terms_and_conditions
 val find_default_reminder_lead_time
   :  Pool_database.Label.t
   -> Pool_common.Reminder.LeadTime.t Lwt.t
+
+val default_session_reminder_lead_time_key_yojson : Yojson.Safe.t

@@ -247,38 +247,32 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
-  (* TODO[timhub]: use session lead time -> experiment lead time -> default lead
-     time
-
-     *
-     https://stackoverflow.com/questions/1262497/how-to-convert-seconds-to-hhmmss-using-t-sql *)
   let find_sessions_to_remind_request =
     let open Caqti_request.Infix in
     {sql|
-      INNER JOIN pool_experiments
-        ON pool_experiments.uuid = pool_sessions.experiment_uuid
-      WHERE
-        pool_sessions.reminder_sent_at IS NULL
-      AND
-        pool_sessions.start <= DATE_ADD(DATE_ADD(NOW(), INTERVAL $2 MINUTE), INTERVAL $1 HOUR)
+    INNER JOIN pool_experiments
+      ON pool_experiments.uuid = pool_sessions.experiment_uuid
+    WHERE
+      pool_sessions.reminder_sent_at IS NULL
+    AND
+      pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
+        COALESCE(
+          pool_sessions.reminder_lead_time,
+          pool_experiments.session_reminder_lead_time,
+          (SELECT value FROM pool_system_settings WHERE settings_key = $1))
+        SECOND)
     |sql}
     |> find_sql
-    |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+    |> Caqti_type.(string) ->* RepoEntity.t
   ;;
 
-  let find_sessions_to_remind pool default_lead_time =
-    let open Lwt_result.Syntax in
-    let* hours, minutes, _ =
-      default_lead_time
-      |> Pool_common.Reminder.LeadTime.value
-      |> Pool_common.Utils.Time.timespan_to_time_units
-      |> Lwt_result.lift
-    in
+  let find_sessions_to_remind pool =
+    let settings_key = Settings.default_session_reminder_lead_time_key_yojson in
     Lwt_result.ok
     @@ Utils.Database.collect
          (Database.Label.value pool)
          find_sessions_to_remind_request
-         CCInt.(to_string hours, to_string minutes)
+         (settings_key |> Yojson.Safe.to_string)
   ;;
 
   let find_follow_ups_request =
@@ -452,9 +446,9 @@ let find_follow_ups pool parent_session_id =
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
 
-let find_sessions_to_remind pool default_lead_time =
+let find_sessions_to_remind pool =
   let open Utils.Lwt_result.Infix in
-  Sql.find_sessions_to_remind pool default_lead_time
+  Sql.find_sessions_to_remind pool
   >>= fun sessions ->
   Lwt_list.map_s (location_to_repo_entity pool) sessions ||> CCResult.flatten_l
 ;;
