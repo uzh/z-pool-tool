@@ -3,6 +3,9 @@ open Entity
 let encode_key_value value =
   (let open Value in
   match value with
+  | DefaultReminderLeadTime v ->
+    ( yojson_of_setting_key ReminderLeadTime
+    , yojson_of_default_reminder_lead_time v )
   | TenantLanguages v ->
     yojson_of_setting_key Languages, yojson_of_tenant_languages v
   | TenantEmailSuffixes v ->
@@ -30,6 +33,8 @@ let t =
       let open Value in
       let value = value |> Yojson.Safe.from_string in
       match key with
+      | ReminderLeadTime ->
+        value |> default_reminder_lead_time_of_yojson |> defaultreminderleadtime
       | Languages -> value |> tenant_languages_of_yojson |> tenantlanguages
       | EmailSuffixes ->
         value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes

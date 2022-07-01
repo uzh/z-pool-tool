@@ -74,7 +74,8 @@ module TermsAndConditions : sig
 end
 
 type default =
-  { tenant_languages : Pool_common.Language.t list
+  { default_reminder_lead_time : Pool_common.Reminder.LeadTime.t
+  ; tenant_languages : Pool_common.Language.t list
   ; tenant_email_suffixes : EmailSuffix.t list
   ; tenant_contact_email : ContactEmail.t
   ; inactive_user_disable_after : InactiveUser.DisableAfter.t
@@ -94,6 +95,7 @@ val action_of_param
   :  string
   -> ( [> `CreateTenantEmailSuffix
        | `DeleteTenantEmailSuffix
+       | `UpdateDefaultLeadTime
        | `UpdateInactiveUserDisableAfter
        | `UpdateInactiveUserWarning
        | `UpdateTenantContactEmail
@@ -107,6 +109,7 @@ val action_of_param
 val stringify_action
   :  [< `CreateTenantEmailSuffix
      | `DeleteTenantEmailSuffix
+     | `UpdateDefaultLeadTime
      | `UpdateInactiveUserDisableAfter
      | `UpdateInactiveUserWarning
      | `UpdateTenantContactEmail
@@ -119,6 +122,7 @@ val stringify_action
 type event =
   | LanguagesUpdated of Pool_common.Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
+  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
@@ -154,3 +158,7 @@ val terms_and_conditions
   :  Pool_database.Label.t
   -> Pool_common.Language.t
   -> (TermsAndConditions.Terms.t, Pool_common.Message.error) result Lwt.t
+
+val find_default_reminder_lead_time
+  :  Pool_database.Label.t
+  -> Pool_common.Reminder.LeadTime.t Lwt.t

@@ -166,6 +166,8 @@ module Reminder : sig
     val create : Ptime.Span.t -> (t, Message.error) result
     val value : t -> Ptime.Span.t
     val pp : Format.formatter -> t -> unit
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
 
     val schema
       :  unit

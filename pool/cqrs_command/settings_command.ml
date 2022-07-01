@@ -311,3 +311,37 @@ end = struct
         ]
   ;;
 end
+
+module UpdateDefaultLeadTime : sig
+  type t = Pool_common.Reminder.LeadTime.t
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Pool_common.Reminder.LeadTime.t
+
+  let command contact_email = contact_email
+
+  let schema =
+    Conformist.(make Field.[ Pool_common.Reminder.LeadTime.schema () ] command)
+  ;;
+
+  let handle contact_email =
+    Ok
+      [ Settings.DefaultReminderLeadTimeUpdated contact_email
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let can = Utils.todo
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+end

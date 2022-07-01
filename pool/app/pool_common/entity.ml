@@ -225,6 +225,8 @@ module Reminder = struct
       else Error PoolError.NegativeAmount
     ;;
 
+    let t_of_yojson = Utils_time.ptime_span_of_yojson
+    let yojson_of_t = Utils_time.yojson_of_ptime_span
     let value m = m
 
     let schema () =

@@ -63,6 +63,7 @@ let show
     inactive_user_disable_after
     inactive_user_warning
     terms_and_conditions
+    default_reminder_lead_time
     Pool_context.{ language; csrf; _ }
     flash_fetcher
   =
@@ -288,6 +289,27 @@ let show
           @ [ submit_element language Message.(Update None) () ])
       ]
   in
+  let default_lead_time =
+    div
+      [ h2 [ txt "Default reminder lead time" ]
+      ; form
+          ~a:(form_attrs `UpdateDefaultLeadTime)
+          [ Component.csrf_element csrf ()
+          ; Component.flatpicker_element
+              language
+              `Time
+              Message.Field.LeadTime
+              ~value:
+                Pool_common.(
+                  default_reminder_lead_time
+                  |> Reminder.LeadTime.value
+                  |> Utils.Time.timespan_spanpicker)
+              ~required:true
+              ~flash_fetcher
+          ; submit_element language Message.(Update None) ()
+          ]
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Settings" ]
@@ -298,6 +320,7 @@ let show
         ; contact_email_html
         ; inactive_user_html
         ; terms_and_conditions_html
+        ; default_lead_time
         ]
     ; script (Unsafe.data sortable)
     ]

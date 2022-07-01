@@ -1,13 +1,3 @@
-(* TODO[timhub]: Add default lead time to settings *)
-let default_reminder_lead_time () =
-  14400
-  |> Ptime.Span.of_int_s
-  |> Pool_common.Reminder.LeadTime.create
-  |> CCResult.map_err (fun err ->
-         Pool_common.(Utils.error_to_string Language.En err))
-  |> CCResult.get_or_failwith
-;;
-
 let create_reminder sys_languages contact (session : Session.t) template =
   (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let name = Contact.fullname contact in
@@ -99,10 +89,11 @@ let send_session_reminder =
         let%lwt result =
           let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
           let%lwt data =
+            let%lwt default_reminder_lead_time =
+              Settings.find_default_reminder_lead_time pool
+            in
             let* sessions =
-              Session.find_sessions_to_remind
-                pool
-                (default_reminder_lead_time ())
+              Session.find_sessions_to_remind pool default_reminder_lead_time
             in
             let%lwt sys_languages = Settings.find_languages pool in
             let* default_language =
