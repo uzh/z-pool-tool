@@ -53,6 +53,7 @@ let to_string = function
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
+  | TextTemplates -> "text templates"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
   | UserProfilePausedNote ->

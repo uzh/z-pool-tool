@@ -1,3 +1,4 @@
+(* TODO[timhub]: Add default lead time to settings *)
 let default_reminder_lead_time () =
   14400
   |> Ptime.Span.of_int_s
@@ -7,17 +8,20 @@ let default_reminder_lead_time () =
   |> CCResult.get_or_failwith
 ;;
 
-let create_reminder contact (_ : Session.t) template =
+let create_reminder sys_languages contact (session : Session.t) template =
   (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let name = Contact.fullname contact in
   let email = Contact.email_address contact in
-  (* TODO[timhub]: Which text elements are required? *)
-  (* let session_overview = Session.(to_email_text language session) in *)
-  let session_overview = "Test" in
+  let session_overview =
+    (CCList.map (fun lang ->
+         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+         , Session.(to_email_text lang session) )))
+      sys_languages
+  in
   Email.Helper.prepare_boilerplate_email
     template
     (email |> Pool_user.EmailAddress.value)
-    [ "name", name; "sessionOverview", session_overview ]
+    (("name", name) :: session_overview)
 ;;
 
 let create_reminders pool session default_language sys_languages =
@@ -53,14 +57,15 @@ let create_reminders pool session default_language sys_languages =
         let contact = assignment.Assignment.contact in
         match custom_template with
         | Some template ->
-          Lwt_result.ok (create_reminder contact session template)
+          Lwt_result.ok (create_reminder sys_languages contact session template)
         | None ->
           let message_language =
             CCOption.value ~default:default_language contact.Contact.language
           in
           (match Hashtbl.find_opt i18n_texts message_language with
           | Some template ->
-            Lwt_result.ok (create_reminder contact session template)
+            Lwt_result.ok
+              (create_reminder sys_languages contact session template)
           | None ->
             let* subject =
               I18n.(find_by_key pool Key.InvitationSubject message_language)
@@ -73,7 +78,8 @@ let create_reminders pool session default_language sys_languages =
                 { subject = Subject.I18n subject; content = Content.I18n text }
             in
             let () = Hashtbl.add i18n_texts message_language template in
-            Lwt_result.ok (create_reminder contact session template)))
+            Lwt_result.ok
+              (create_reminder sys_languages contact session template)))
       assignments
   in
   let open Utils.Lwt_result.Infix in
@@ -98,8 +104,13 @@ let send_session_reminder =
                 pool
                 (default_reminder_lead_time ())
             in
-            let sys_languages = Pool_common.Language.all in
-            let* default_language = Settings.default_language pool in
+            let%lwt sys_languages = Settings.find_languages pool in
+            let* default_language =
+              CCList.head_opt sys_languages
+              |> CCOption.to_result
+                   Pool_common.Message.(Retrieve Field.Language)
+              |> Lwt_result.lift
+            in
             Lwt_list.map_s
               (fun session ->
                 let* emails =

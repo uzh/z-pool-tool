@@ -2,34 +2,9 @@ module HttpUtils = Http_utils
 module Table = Component_table
 module Navigation = Component_nav
 module Partials = Component_partials
+module MessageTextElements = Component_message_text_elements
+module Icon = Component_icon
 open Tyxml.Html
-
-let icon icon_type =
-  (match icon_type with
-  | `CalendarOutline -> "calendar-outline"
-  | `Calendar -> "calendar"
-  | `CreateOutline -> "create-outline"
-  | `Create -> "create"
-  | `EarthOutline -> "earth-outline"
-  | `Earth -> "earth"
-  | `LeafOutline -> "leaf-outline"
-  | `Leaf -> "leaf"
-  | `LocationOutline -> "location-outline"
-  | `Location -> "location"
-  | `MailOutline -> "mail-outline"
-  | `Mail -> "mail"
-  | `PersonOutline -> "person-outline"
-  | `Person -> "person"
-  | `SaveOutline -> "save-outline"
-  | `Save -> "save"
-  | `SchoolOutline -> "school-outline"
-  | `School -> "school"
-  | `TrashOutline -> "trash-outline"
-  | `Trash -> "trash"
-  | `UploadOutline -> "upload-outline")
-  |> fun icon_class ->
-  i ~a:[ a_class [ Format.asprintf "icon-%s" icon_class ] ] []
-;;
 
 let language_select
     options
@@ -283,7 +258,9 @@ let input_element_file
     match has_icon with
     | false -> placeholder
     | true ->
-      span ~a:[ a_class [ "has-icon" ] ] [ icon `UploadOutline; placeholder ]
+      span
+        ~a:[ a_class [ "has-icon" ] ]
+        [ Icon.icon `UploadOutline; placeholder ]
   in
   let input_attributes =
     let attributes =
@@ -361,7 +338,7 @@ let submit_element
   let content =
     CCOption.map_or
       ~default:[ text_content ]
-      (fun i -> [ icon i; text_content ])
+      (fun i -> [ Icon.icon i; text_content ])
       has_icon
   in
   button
@@ -372,7 +349,7 @@ let submit_element
 let submit_icon ?(classnames = []) icon_type =
   button
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
-    [ icon icon_type ]
+    [ Icon.icon icon_type ]
 ;;
 
 let selector

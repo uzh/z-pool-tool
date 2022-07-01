@@ -241,7 +241,8 @@ let email_text language start duration location =
   let format label text =
     Format.asprintf
       "%s: %s"
-      Pool_common.(Utils.field_to_string language label)
+      (Pool_common.(Utils.field_to_string language label)
+      |> CCString.capitalize_ascii)
       text
   in
   let start =
@@ -270,4 +271,5 @@ let public_to_email_text
     language
     (Public.{ start; duration; location; _ } : Public.t)
   =
-  email_text language start duration location;;
+  email_text language start duration location
+;;

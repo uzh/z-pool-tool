@@ -1,44 +1,5 @@
 open Tyxml.Html
 
-let session_reminder_text_element_help language ?session () =
-  let session_overview_preview =
-    match session with
-    | Some session ->
-      Session.to_email_text language session
-      |> Http_utils.add_line_breaks
-      |> CCList.pure
-      |> div
-    | None -> div [] (* TODO[timhub]: create some dummy session? *)
-  in
-  let open Pool_common.Language in
-  let name_hint = function
-    | En -> "first and last name"
-    | De -> "Vor- und Nachname"
-  in
-  let session_overview_hint = function
-    | En -> "displays start, duration and location of the session"
-    | De -> "Zeigt Startzeit, Dauer und Location der Session"
-  in
-  let wrap_hints html =
-    div
-      ~a:[ a_class [ "flexcolumn" ] ]
-      [ p
-          [ txt
-              Pool_common.(
-                Utils.hint_to_string language I18n.TemplateTextElementsHint)
-          ]
-      ; html
-      ]
-  in
-  [ "name", name_hint, div [ txt "John Doe" ]
-  ; "sessionOverview", session_overview_hint, session_overview_preview
-  ]
-  |> CCList.map (fun (elm, hint, example) ->
-         [ txt (Format.asprintf "{%s}" elm); txt (hint language); example ])
-  |> Component_table.horizontal_table `Simple language ~align_top:true
-  |> wrap_hints
-;;
-
 let mail_to_html ?(highlight_first_line = true) mail =
   let open Pool_location.Address.Mail in
   let { institution; room; building; street; zip; city } = mail in

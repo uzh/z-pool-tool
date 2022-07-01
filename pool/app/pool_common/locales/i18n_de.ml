@@ -60,6 +60,7 @@ let to_string = function
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
+  | TextTemplates -> "Textelemente"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->

@@ -42,6 +42,7 @@ let session_form
     ?(session : Session.t option)
     ?(follow_up_to : Session.t option)
     locations
+    sys_languages
     ~flash_fetcher
   =
   let open Session in
@@ -164,9 +165,9 @@ let session_form
                          |> to_default_value)
                 ]
             ; div
-                [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Text templates" ]
-                ; Partials.session_reminder_text_element_help
+                [ MessageTextElements.session_reminder_help
                     language
+                    sys_languages
                     ?session:default_value_session
                     ()
                 ; div
@@ -356,6 +357,7 @@ let new_form
     Pool_context.{ language; csrf; _ }
     experiment
     locations
+    sys_languages
     flash_fetcher
   =
   Page_admin_experiments.experiment_layout
@@ -363,7 +365,13 @@ let new_form
     (Page_admin_experiments.Control
        Pool_common.Message.(Create (Some Field.Session)))
     experiment.Experiment.id
-    (session_form csrf language experiment locations ~flash_fetcher)
+    (session_form
+       csrf
+       language
+       experiment
+       locations
+       sys_languages
+       ~flash_fetcher)
 ;;
 
 let detail
@@ -496,6 +504,7 @@ let edit
     experiment
     (session : Session.t)
     locations
+    sys_languages
     flash_fetcher
   =
   div
@@ -505,7 +514,14 @@ let edit
             |> session_title
             |> Pool_common.Utils.text_to_string language)
         ]
-    ; session_form csrf language experiment ~session locations ~flash_fetcher
+    ; session_form
+        csrf
+        language
+        experiment
+        ~session
+        locations
+        sys_languages
+        ~flash_fetcher
     ]
   |> Page_admin_experiments.experiment_layout
        language
@@ -519,6 +535,7 @@ let follow_up
     experiment
     (parent_session : Session.t)
     locations
+    sys_languages
     flash_fetcher
   =
   div
@@ -539,6 +556,7 @@ let follow_up
         experiment
         ~follow_up_to:parent_session
         locations
+        sys_languages
         ~flash_fetcher
     ]
   |> Page_admin_experiments.experiment_layout

@@ -59,7 +59,13 @@ let new_form req =
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt locations = Pool_location.find_all tenant_db in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       Page.Admin.Session.new_form context experiment locations flash_fetcher
+       let%lwt sys_languages = Settings.find_languages tenant_db in
+       Page.Admin.Session.new_form
+         context
+         experiment
+         locations
+         sys_languages
+         flash_fetcher
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -128,7 +134,14 @@ let detail req page =
       let flash_fetcher key = Sihl.Web.Flash.find key req in
       let* experiment = Experiment.find tenant_db experiment_id in
       let%lwt locations = Pool_location.find_all tenant_db in
-      Page.Admin.Session.edit context experiment session locations flash_fetcher
+      let%lwt sys_languages = Settings.find_languages tenant_db in
+      Page.Admin.Session.edit
+        context
+        experiment
+        session
+        locations
+        sys_languages
+        flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -237,12 +250,14 @@ let follow_up req =
     let* parent_session = Session.find tenant_db session_id in
     let* experiment = Experiment.find tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let%lwt sys_languages = Settings.find_languages tenant_db in
     let%lwt locations = Pool_location.find_all tenant_db in
     Page.Admin.Session.follow_up
       context
       experiment
       parent_session
       locations
+      sys_languages
       flash_fetcher
     |> Lwt.return_ok
     >>= create_layout req context
