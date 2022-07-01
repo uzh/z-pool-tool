@@ -14,7 +14,7 @@ let create req =
     Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
   in
   let result context =
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in

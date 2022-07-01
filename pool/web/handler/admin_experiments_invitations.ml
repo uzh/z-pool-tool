@@ -34,7 +34,7 @@ let index req =
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt filtered_contacts =
          Contact.find_filtered
@@ -70,7 +70,7 @@ let create req =
   in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact_ids =
          let open Lwt.Infix in
          Sihl.Web.Request.urlencoded_list
@@ -150,7 +150,7 @@ let resend req =
   in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* invitation = Invitation.find tenant_db id in
        let* experiment = Experiment.find tenant_db experiment_id in
        let* system_languages, i18n_texts = invitation_templte_data tenant_db in

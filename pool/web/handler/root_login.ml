@@ -23,7 +23,7 @@ let login_get req =
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result _ =
-    Lwt_result.map_err (fun err -> err, root_login_path)
+    Lwt_result.map_error (fun err -> err, root_login_path)
     @@
     let open Lwt_result.Syntax in
     let* params =
@@ -35,7 +35,7 @@ let login_post req =
     let password = List.assoc "password" params in
     let* user =
       Service.User.login ~ctx email ~password
-      |> Lwt_result.map_err Pool_common.Message.handle_sihl_login_error
+      |> Lwt_result.map_error Pool_common.Message.handle_sihl_login_error
     in
     HttpUtils.redirect_to_with_actions
       root_entrypoint_path
@@ -47,7 +47,7 @@ let login_post req =
 
 let request_reset_password_get req =
   let result context =
-    Lwt_result.map_err (fun err -> err, root_entrypoint_path)
+    Lwt_result.map_error (fun err -> err, root_entrypoint_path)
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
@@ -93,7 +93,7 @@ let reset_password_get req =
   let result context =
     let open Sihl.Web in
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, "/root/request-reset-password/")
+    Lwt_result.map_error (fun err -> err, "/root/request-reset-password/")
     @@ let* token =
          let open Pool_common.Message in
          Request.query Field.(Token |> show) req
@@ -127,7 +127,7 @@ let reset_password_post req =
         ~token
         (go Field.Password)
         (go Field.PasswordConfirmation)
-      |> Lwt_result.map_err (fun _ ->
+      |> Lwt_result.map_error (fun _ ->
              ( PasswordResetInvalidData
              , Format.asprintf "/root/reset-password/?token=%s" token ))
     in

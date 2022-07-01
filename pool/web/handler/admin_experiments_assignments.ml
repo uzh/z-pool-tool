@@ -15,7 +15,7 @@ let index req =
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let* sessions =
          Session.find_all_for_experiment tenant_db experiment.Experiment.id
@@ -52,7 +52,7 @@ let cancel req =
   in
   let result { Pool_context.tenant_db; _ } =
     let open Lwt_result.Syntax in
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* assignment = Assignment.find tenant_db id in
        let events =
          Cqrs_command.Assignment_command.Cancel.handle assignment |> Lwt.return

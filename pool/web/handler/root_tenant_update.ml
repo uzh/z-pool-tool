@@ -62,7 +62,7 @@ let update req command success_message =
     id
     |> Pool_tenant.find_full
     >>= events
-    |> Lwt_result.map_err (fun err -> err, redirect_path)
+    |> Lwt_result.map_error (fun err -> err, redirect_path)
     |>> handle
     |>> return_to_overview
   in
@@ -87,7 +87,7 @@ let delete_asset req =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_err (fun err -> err, redirect_path)
+    Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
     let ctx = tenant_db |> Pool_tenant.to_ctx in

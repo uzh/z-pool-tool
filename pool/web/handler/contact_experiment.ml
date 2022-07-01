@@ -7,7 +7,7 @@ let index req =
   let open Lwt_result.Syntax in
   let error_path = "/dashboard" in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* contact = HttpUtils.get_current_contact tenant_db req in
@@ -25,7 +25,7 @@ let show req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/experiments" in
   let result context =
-    Lwt_result.map_err (fun err -> err, error_path)
+    Lwt_result.map_error (fun err -> err, error_path)
     @@
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
