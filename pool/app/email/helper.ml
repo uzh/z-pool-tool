@@ -2,6 +2,22 @@ open Entity
 module User = Pool_user
 module Database = Pool_database
 
+let string_to_html str =
+  let open Tyxml.Html in
+  let add_line_breaks str =
+    match str |> CCString.split ~by:"\n" with
+    | [] -> []
+    | head :: tail ->
+      CCList.fold_left
+        (fun html str -> html @ [ br (); txt str ])
+        [ txt head ]
+        tail
+  in
+  str
+  |> CCString.split ~by:"\n\n"
+  |> CCList.map (fun html -> html |> add_line_breaks |> p)
+;;
+
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
@@ -40,18 +56,27 @@ let prepare_email pool language label subject email params =
 ;;
 
 let prepare_boilerplate_email template email params =
-  (* TODO[timhub]: Check how it works without html template *)
   match Sihl.Configuration.read_string "SMTP_SENDER" with
   | None -> failwith "SMTP_SENDER not found in configuration"
   | Some sender ->
     let CustomTemplate.{ subject; content } = template in
+    let subject = subject |> CustomTemplate.Subject.value in
+    let text = content |> CustomTemplate.Content.value in
+    let html =
+      Default_utils.(
+        combine_html
+          Pool_common.Language.En
+          (Some subject)
+          (text |> string_to_html)
+        |> html_to_string)
+    in
     let mail =
       Sihl_email.
         { sender
         ; recipient = email
-        ; subject = subject |> CustomTemplate.Subject.value
-        ; text = content |> CustomTemplate.Content.value
-        ; html = None
+        ; subject
+        ; text
+        ; html = Some html
         ; cc = []
         ; bcc = []
         }
