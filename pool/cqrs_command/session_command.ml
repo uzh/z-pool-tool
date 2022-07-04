@@ -1,15 +1,16 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
-let session_command
-  start
-  duration
-  description
-  max_participants
-  min_participants
-  overbook
-  reminder_subject
-  reminder_text
-  reminder_lead_time
+let create_command
+    start
+    duration
+    description
+    max_participants
+    min_participants
+    overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
+    : Session.base
   =
   Session.
     { start
@@ -24,7 +25,7 @@ let session_command
     }
 ;;
 
-let session_schema =
+let create_schema =
   Conformist.(
     make
       Field.
@@ -40,33 +41,77 @@ let session_schema =
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
-      session_command)
+      create_command)
+;;
+
+let update_command
+    start
+    duration
+    description
+    max_participants
+    min_participants
+    overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
+    : Session.update
+  =
+  Session.
+    { start
+    ; duration
+    ; description
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; reminder_subject
+    ; reminder_text
+    ; reminder_lead_time
+    }
+;;
+
+let update_schema =
+  Conformist.(
+    make
+      Field.
+        [ Conformist.optional @@ Session.Start.schema ()
+        ; Conformist.optional @@ Session.Duration.schema ()
+        ; Conformist.optional @@ Session.Description.schema ()
+        ; Session.ParticipantAmount.schema
+            Pool_common.Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema
+            Pool_common.Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ]
+      update_command)
 ;;
 
 (* TODO [aerben] create sigs *)
 module Create = struct
   type t = Session.base
 
-  let command = session_command
-  let schema = session_schema
+  let command = create_command
+  let schema = create_schema
 
   let handle
-    ?parent_session
-    experiment_id
-    location
-    (Session.
-       { start
-       ; duration
-       ; description
-       ; max_participants
-       ; min_participants
-       ; (* TODO [aerben] find a better name *)
-         overbook
-       ; reminder_subject
-       ; reminder_text
-       ; reminder_lead_time
-       } :
-      Session.base)
+      ?parent_session
+      experiment_id
+      location
+      (Session.
+         { start
+         ; duration
+         ; description
+         ; max_participants
+         ; min_participants
+         ; (* TODO [aerben] find a better name *)
+           overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
+         } :
+        Session.base)
     =
     (* If session is follow-up, make sure it's later than parent *)
     let follow_up_is_ealier =
@@ -125,32 +170,65 @@ module Create = struct
   ;;
 end
 
-module Update = struct
-  type t = Session.base
+module Update : sig
+  type t = Session.update
 
-  let command = session_command
-  let schema = session_schema
+  val handle
+    :  ?parent_session:Session.t
+    -> Session.t list
+    -> Session.t
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Session.update
+
+  let schema = update_schema
 
   let handle
-    ?parent_session
-    follow_up_sessions
-    session
-    location
-    (Session.
-       { start
-       ; duration
-       ; description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; reminder_subject
-       ; reminder_text
-       ; reminder_lead_time
-       } :
-      Session.base)
+      ?parent_session
+      follow_up_sessions
+      session
+      location
+      (Session.
+         { start
+         ; duration
+         ; description
+         ; max_participants
+         ; min_participants
+         ; overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
+         } :
+        Session.update)
     =
     (* If session has follow-ups, make sure they are all later *)
     let open Session in
+    let open CCResult in
+    let has_assignments =
+      session.assignment_count |> AssignmentCount.value |> fun i -> i > 0
+    in
+    let* start, duration =
+      let open Pool_common.Message in
+      let is_some f (field : Pool_common.Message.Field.t) =
+        match f with
+        | Some f -> Ok f
+        | None -> Error (Conformist [ field, Pool_common.Message.NoValue ])
+      in
+      match has_assignments with
+      | false ->
+        CCResult.both
+          (is_some start Field.Start)
+          (is_some duration Field.Duration)
+      | true -> Ok (session.start, session.duration)
+    in
     let follow_ups_are_ealier =
       CCList.exists
         (fun (follow_up : Session.t) ->
@@ -175,7 +253,6 @@ module Update = struct
             Smaller (Field.MaxParticipants, Field.MinParticipants)) )
       ]
     in
-    let open CCResult in
     let* () =
       validations
       |> CCList.filter fst

@@ -147,6 +147,7 @@ let flatpicker_element
     ?value
     ?(warn_past = false)
     ?(disable_past = false)
+    ?(additional_attributes = [])
     language
     input_type
     name
@@ -166,6 +167,7 @@ let flatpicker_element
     [ a_class input_classes
     ; a_user_data "language" (Pool_common.Language.show language)
     ]
+    @ additional_attributes
     @ CCList.filter_map
         (fun (flag, key, value) ->
           if flag then Some (a_user_data key value) else None)

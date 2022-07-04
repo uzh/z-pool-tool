@@ -48,6 +48,11 @@ let session_form
   let open CCFun in
   let open Session in
   let default_value_session = CCOption.(session <+> follow_up_to) in
+  let has_assignments =
+    default_value_session
+    |> CCOption.map_or ~default:false (fun s ->
+           s.Session.assignment_count |> Session.AssignmentCount.value > 0)
+  in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
   let lead_time_value time =
@@ -93,6 +98,8 @@ let session_form
         ~flash_fetcher
         ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
         ~warn_past:true
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
     ; flatpicker_element
         language
         ~required:true
@@ -105,6 +112,8 @@ let session_form
                |> Duration.value
                |> Pool_common.Utils.Time.timespan_spanpicker))
         ~flash_fetcher
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
     ; textarea_element
         language
         Pool_common.Message.Field.Description

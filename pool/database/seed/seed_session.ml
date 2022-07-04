@@ -54,7 +54,7 @@ let create pool =
                  , reminder_text
                  , reminder_lead_time ) ->
               let open CCOption in
-              let session =
+              let (session : Session.base) =
                 Session.
                   { start = Start.create start
                   ; duration = Duration.create duration |> get_or_failwith
@@ -91,7 +91,7 @@ let create pool =
         |> Lwt.map CCResult.get_exn
       in
       let parent = CCList.hd sessions in
-      let follow_up =
+      let (follow_up : Session.base) =
         let open CCOption in
         Session.
           { start =
