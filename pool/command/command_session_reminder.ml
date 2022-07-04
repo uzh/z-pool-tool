@@ -1,4 +1,4 @@
-let create_reminder sys_languages contact (session : Session.t) template =
+let reminder_email sys_languages contact (session : Session.t) template =
   (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let name = Contact.fullname contact in
   let email = Contact.email_address contact in
@@ -47,7 +47,7 @@ let create_reminders pool session default_language sys_languages =
         let contact = assignment.Assignment.contact in
         match custom_template with
         | Some template ->
-          Lwt_result.ok (create_reminder sys_languages contact session template)
+          Lwt_result.ok (reminder_email sys_languages contact session template)
         | None ->
           let message_language =
             CCOption.value ~default:default_language contact.Contact.language
@@ -55,7 +55,7 @@ let create_reminders pool session default_language sys_languages =
           (match Hashtbl.find_opt i18n_texts message_language with
           | Some template ->
             Lwt_result.ok
-              (create_reminder sys_languages contact session template)
+              (reminder_email sys_languages contact session template)
           | None ->
             let* subject =
               I18n.(find_by_key pool Key.InvitationSubject message_language)
@@ -69,53 +69,81 @@ let create_reminders pool session default_language sys_languages =
             in
             let () = Hashtbl.add i18n_texts message_language template in
             Lwt_result.ok
-              (create_reminder sys_languages contact session template)))
+              (reminder_email sys_languages contact session template)))
       assignments
   in
   let open Utils.Lwt_result.Infix in
   emails ||> CCResult.flatten_l
 ;;
 
-let send_session_reminder =
+let send_tenant_reminder pool =
+  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
+  let%lwt result =
+    let%lwt data =
+      let* sessions = Session.find_sessions_to_remind pool in
+      let%lwt sys_languages = Settings.find_languages pool in
+      let* default_language =
+        CCList.head_opt sys_languages
+        |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
+        |> Lwt_result.lift
+      in
+      Lwt_list.map_s
+        (fun session ->
+          let* emails =
+            create_reminders pool session default_language sys_languages
+          in
+          Lwt_result.return (session, emails))
+        sessions
+      ||> CCResult.flatten_l
+    in
+    let* events =
+      let open CCResult.Infix in
+      data
+      >>= Cqrs_command.Session_command.SendReminder.handle
+      |> Lwt_result.lift
+    in
+    Pool_event.handle_events pool events |> Lwt_result.return
+  in
+  match result with
+  | Ok _ -> Lwt_result.return ()
+  | Error err -> Pool_common.Utils.with_log_error err |> Lwt_result.fail
+;;
+
+let tenant_specific_session_reminder =
   Sihl.Command.make
     ~name:"session_reminder.send"
-    ~description:"Send session reminders"
+    ~description:"Send session reminders of specified tenant"
     (fun args ->
       match args with
       | [ pool ] ->
         let open Lwt_result.Syntax in
-        let open Utils.Lwt_result.Infix in
         let%lwt _ = Database.Tenant.setup () in
         let%lwt result =
           let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
-          let%lwt data =
-            let* sessions = Session.find_sessions_to_remind pool in
-            let%lwt sys_languages = Settings.find_languages pool in
-            let* default_language =
-              CCList.head_opt sys_languages
-              |> CCOption.to_result
-                   Pool_common.Message.(Retrieve Field.Language)
-              |> Lwt_result.lift
-            in
-            Lwt_list.map_s
-              (fun session ->
-                let* emails =
-                  create_reminders pool session default_language sys_languages
-                in
-                Lwt_result.return (session, emails))
-              sessions
-            ||> CCResult.flatten_l
-          in
-          let* events =
-            let open CCResult.Infix in
-            data
-            >>= Cqrs_command.Session_command.SendReminder.handle
-            |> Lwt_result.lift
-          in
-          Pool_event.handle_events pool events |> Lwt_result.return
+          send_tenant_reminder pool
         in
         (match result with
         | Ok _ -> Lwt.return_some ()
         | Error _ -> Lwt.return_none)
+      | _ -> failwith "Argument missmatch")
+;;
+
+let all_tenants_session_reminder =
+  Sihl.Command.make
+    ~name:"session_reminder.send_all"
+    ~description:"Send session reminders of all tenants"
+    (fun args ->
+      match args with
+      | [] ->
+        let open Lwt.Infix in
+        let%lwt pools = Database.Tenant.setup () in
+        Lwt_list.map_s (fun pool -> send_tenant_reminder pool) pools
+        >|= fun res ->
+        res
+        |> CCList.all_ok
+        |> (function
+        | Ok _ -> Some ()
+        | Error _ -> None)
       | _ -> failwith "Argument missmatch")
 ;;
