@@ -74,8 +74,8 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
     CCList.map
       (fun (session, assignments) ->
         div
-          [ h2
-              ~a:[ a_class [ "heading-2" ] ]
+          [ h3
+              ~a:[ a_class [ "heading-3" ] ]
               [ txt (session |> Session.session_date_to_human) ]
           ; Partials.overview_list context experiment.Experiment.id assignments
           ])
@@ -85,7 +85,7 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Assignments)
-    experiment.Experiment.id
+    experiment
     ~active:Pool_common.I18n.Assignments
     html
 ;;

@@ -101,10 +101,6 @@ let flash_fetched_value fetcher value name =
 
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
-(* TODO [aerben] add way to provide additional attributes (min for numbers,
-   required) *)
-(* TODO [aerben] make this value arg optional *)
-
 let input_element
     ?(orientation = `Vertical)
     ?(classnames = [])
@@ -114,6 +110,7 @@ let input_element
     ?(required = false)
     ?flash_fetcher
     ?value
+    ?(additional_attributes = [])
     language
     input_type
     name
@@ -122,8 +119,11 @@ let input_element
   let value = flash_fetched_value flash_fetcher value name in
   let id = Elements.identifier ?identifier language name in
   let attributes =
-    Elements.attributes input_type name id [ a_value value ]
-    |> fun attrs -> if required then attrs @ [ a_required () ] else attrs
+    let attrs =
+      Elements.attributes input_type name id [ a_value value ]
+      @ additional_attributes
+    in
+    if required then a_required () :: attrs else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()

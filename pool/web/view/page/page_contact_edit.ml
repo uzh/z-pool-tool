@@ -61,11 +61,11 @@ let personal_details
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let action = externalize "/user/update" in
   let form_attrs action =
-    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
+    [ a_method `Post; a_action action; a_class [ "stack" ] ]
   in
   let details_form =
-    let action = "/user/update" in
     form
       ~a:(form_attrs action)
       (CCList.flatten

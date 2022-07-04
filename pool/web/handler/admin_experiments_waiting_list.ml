@@ -24,10 +24,7 @@ let index req =
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment.find tenant_db id in
     let* waiting_list = Waiting_list.find_by_experiment tenant_db id in
-    Page.Admin.Experiments.waiting_list
-      waiting_list
-      experiment.Experiment.id
-      context
+    Page.Admin.Experiments.waiting_list waiting_list experiment context
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in

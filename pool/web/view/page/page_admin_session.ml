@@ -262,15 +262,12 @@ let index
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
-          let indent =
+          let attrs =
             if CCOption.is_some session.follow_up_to && not chronological
-            then 30
-            else 0
+            then [ a_class [ "inset"; "left" ] ]
+            else []
           in
-          (* TODO [aerben] replace with econ framework class, once exists *)
-          [ div
-              ~a:[ a_style @@ Format.asprintf "padding-left: %ipx" indent ]
-              [ txt (session |> Session.session_date_to_human) ]
+          [ div ~a:attrs [ txt (session |> Session.session_date_to_human) ]
           ; txt
               (CCInt.to_string
                  (session.Session.assignment_count
@@ -324,31 +321,63 @@ let index
   in
   let html =
     div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ div
-          ~a:[ a_class [ "stack" ] ]
-          [ a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/create"
-                       (experiment.Experiment.id |> Pool_common.Id.value)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(
-                    Utils.control_to_string
-                      language
-                      Message.(Create (Some Field.Session)))
+      ~a:[ a_class [ "stack" ] ]
+      (a
+         ~a:
+           [ a_href
+               (Format.asprintf
+                  "/admin/experiments/%s/sessions/create"
+                  (experiment.Experiment.id |> Pool_common.Id.value)
+               |> Sihl.Web.externalize_path)
+           ]
+         [ txt
+             Pool_common.(
+               Utils.control_to_string
+                 language
+                 Message.(Create (Some Field.Session)))
+         ]
+      ::
+      (if CCList.is_empty rows
+      then
+        [ p
+            [ txt
+                Pool_common.(
+                  Utils.text_to_string
+                    language
+                    (I18n.EmtpyList Message.Field.Sessions))
+            ]
+        ]
+      else
+        [ p
+            [ Pool_common.I18n.SessionIndent
+              |> Pool_common.Utils.text_to_string language
+              |> txt
+            ]
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions%s"
+                     (Pool_common.Id.value experiment_id)
+                     (if chronological then "" else "?chronological=true")
+                  |> Sihl.Web.externalize_path)
               ]
-          ; Table.horizontal_table `Striped language ~thead rows
-          ]
-      ]
+            [ p
+                [ (if chronological
+                  then Pool_common.I18n.SwitchGrouped
+                  else Pool_common.I18n.SwitchChronological)
+                  |> Pool_common.Utils.text_to_string language
+                  |> txt
+                ]
+            ]
+          (* TODO [aerben] allow tables to be sorted generally? *)
+        ; Table.horizontal_table `Striped language ~thead rows
+        ]))
   in
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Sessions)
-    experiment.Experiment.id
+    experiment
     ~active:Pool_common.I18n.Sessions
     html
 ;;
@@ -364,7 +393,7 @@ let new_form
     language
     (Page_admin_experiments.Control
        Pool_common.Message.(Create (Some Field.Session)))
-    experiment.Experiment.id
+    experiment
     (session_form
        csrf
        language
@@ -376,7 +405,7 @@ let new_form
 
 let detail
     (Pool_context.{ language; _ } as context)
-    experiment_id
+    experiment
     (session : Session.t)
     assignments
   =
@@ -394,7 +423,7 @@ let detail
                     [ a_href
                         (Format.asprintf
                            "/admin/experiments/%s/sessions/%s"
-                           (Pool_common.Id.value experiment_id)
+                           (Pool_common.Id.value experiment.Experiment.id)
                            (Pool_common.Id.value follow_up_to)
                         |> Sihl.Web.externalize_path)
                     ]
@@ -444,7 +473,7 @@ let detail
                  [ a_href
                      (Format.asprintf
                         "/admin/experiments/%s/sessions/%s/edit"
-                        (Pool_common.Id.value experiment_id)
+                        (Pool_common.Id.value experiment.Experiment.id)
                         (Pool_common.Id.value session.id)
                      |> Sihl.Web.externalize_path)
                  ]
@@ -462,7 +491,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s/follow-up"
-                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
@@ -478,7 +507,7 @@ let detail
     let assignment_list =
       Page_admin_assignments.Partials.overview_list
         context
-        experiment_id
+        experiment.Experiment.id
         assignments
     in
     div
@@ -495,7 +524,7 @@ let detail
   Page_admin_experiments.experiment_layout
     language
     (Page_admin_experiments.I18n (session_title session))
-    experiment_id
+    experiment
     html
 ;;
 
@@ -527,7 +556,7 @@ let edit
        language
        (Page_admin_experiments.Control
           Pool_common.Message.(Edit (Some Field.Session)))
-       experiment.Experiment.id
+       experiment
 ;;
 
 let follow_up
@@ -563,5 +592,5 @@ let follow_up
        language
        (Page_admin_experiments.Control
           Pool_common.Message.(Create (Some Field.FollowUpSession)))
-       experiment.Experiment.id
+       experiment
 ;;
