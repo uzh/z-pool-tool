@@ -258,6 +258,9 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionHasAssignments ->
+    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
+     gelöscht werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | ReminderSubjectAndTextRequired ->

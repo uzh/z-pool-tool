@@ -167,7 +167,6 @@ module Update = struct
           Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
         parent_session
     in
-    print_endline @@ string_of_bool follow_up_is_ealier;
     let validations =
       [ ( follow_up_is_ealier || follow_ups_are_ealier
         , Pool_common.Message.FollowUpIsEarlierThanMain )
@@ -223,9 +222,12 @@ end = struct
   type t = { session : Session.t }
 
   let handle session =
-    (* TODO [aerben] only when no assignments added *)
-    (* TODO [aerben] how to deal with follow-ups? currently they just disappear *)
-    Ok [ Session.Deleted session |> Pool_event.session ]
+    (* TODO [aerben] how to deal with follow-ups? currently they just
+       disappear *)
+    if not
+         (session.Session.assignment_count |> Session.AssignmentCount.value == 0)
+    then Error Pool_common.Message.SessionHasAssignments
+    else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
   let can user _ =

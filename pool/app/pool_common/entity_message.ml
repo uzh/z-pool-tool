@@ -207,6 +207,7 @@ type error =
   | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionHasAssignments
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound

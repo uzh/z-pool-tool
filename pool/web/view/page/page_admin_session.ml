@@ -258,6 +258,39 @@ let index
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
+          let delete_form =
+            if session.Session.assignment_count
+               |> Session.AssignmentCount.value
+               == 0
+            then
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (Format.asprintf
+                         "/admin/experiments/%s/sessions/%s/delete"
+                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path)
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string language I18n.DeleteSession)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element
+                    language
+                    Message.(Delete None)
+                    ~submit_type:`Error
+                    ()
+                ]
+            else
+              submit_element
+                language
+                Message.(Delete None)
+                ~submit_type:`Disabled
+                ()
+          in
           let attrs =
             if CCOption.is_some session.follow_up_to && not chronological
             then [ a_class [ "inset"; "left" ] ]
@@ -285,27 +318,7 @@ let index
                   Pool_common.(Utils.control_to_string language Message.(More))
               ]
           ; cancel_form
-          ; form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/delete"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ; a_user_data
-                    "confirmable"
-                    Pool_common.(
-                      Utils.confirmable_to_string language I18n.DeleteSession)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
-              ]
+          ; delete_form
           ]
         in
         session_row parent :: CCList.map session_row follow_ups)

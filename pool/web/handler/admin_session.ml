@@ -200,7 +200,12 @@ let update req =
 ;;
 
 let disabler req command ctor =
-  let error_path = "/admin/experiments/%s/sessions" in
+  let experiment_id = id req Pool_common.Message.Field.Experiment in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions"
+      (Pool_common.Id.value experiment_id)
+  in
   let result context =
     Lwt_result.map_error (fun err -> err, error_path)
     @@
@@ -210,11 +215,8 @@ let disabler req command ctor =
     let* session = Session.find tenant_db session_id in
     let* events = session |> command |> Lwt_result.lift in
     let%lwt () = Pool_event.handle_events tenant_db events in
-    let experiment_id = id req Pool_common.Message.Field.Experiment in
     Http_utils.redirect_to_with_actions
-      (Format.asprintf
-         "/admin/experiments/%s/sessions"
-         (Pool_common.Id.value experiment_id))
+      error_path
       [ Message.set ~success:[ Pool_common.Message.(ctor Field.Session) ] ]
     |> Lwt_result.ok
   in

@@ -240,6 +240,8 @@ let rec error_to_string = function
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionHasAssignments ->
+    "There are already assignments for this session. It cannot be deleted."
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
   | ReminderSubjectAndTextRequired ->
