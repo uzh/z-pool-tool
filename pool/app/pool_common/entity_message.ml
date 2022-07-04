@@ -243,6 +243,7 @@ type success =
   | PasswordReset
   | PasswordResetSuccessMessage
   | RemovedFromWaitingList
+  | Rescheduled of Field.t
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -288,6 +289,7 @@ type control =
   | Login
   | More
   | RemoveFromWaitingList
+  | Reschedule of Field.t option
   | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option

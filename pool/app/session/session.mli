@@ -67,6 +67,11 @@ type update =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
+type reschedule =
+  { start : Start.t
+  ; duration : Duration.t
+  }
+
 module AssignmentCount : sig
   type t
 
@@ -112,6 +117,7 @@ type event =
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
   | ReminderSent of t
+  | Rescheduled of (t * reschedule)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

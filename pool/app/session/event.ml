@@ -26,6 +26,12 @@ type update =
   }
 [@@deriving eq, show]
 
+type reschedule =
+  { start : Start.t
+  ; duration : Duration.t
+  }
+[@@deriving eq, show]
+
 (* TODO [aerben] experiment ID *)
 type event =
   | Created of
@@ -34,6 +40,7 @@ type event =
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
   | ReminderSent of t
+  | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
 let handle_event pool = function
@@ -88,4 +95,6 @@ let handle_event pool = function
       reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
+  | Rescheduled (session, { start; duration }) ->
+    { session with start; duration } |> Repo.update pool
 ;;

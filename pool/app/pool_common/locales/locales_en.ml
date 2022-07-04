@@ -152,6 +152,8 @@ let success_to_string : success -> string = function
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "was successfully rescheduled."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
@@ -298,6 +300,7 @@ let control_to_string = function
   | Save field -> format_submit "save" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
+  | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
   | Show -> "show"
   | SignUp -> format_submit "sign up" None

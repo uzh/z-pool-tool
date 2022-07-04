@@ -88,6 +88,27 @@ let update_schema =
       update_command)
 ;;
 
+let validate_start follow_up_sessions parent_session start =
+  let open Session in
+  let follow_ups_are_ealier =
+    CCList.exists
+      (fun (follow_up : Session.t) ->
+        Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
+      follow_up_sessions
+  in
+  (* If session is follow-up, make sure it's later than parent *)
+  let follow_up_is_ealier =
+    CCOption.map_or
+      ~default:false
+      (fun (s : Session.t) ->
+        Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+      parent_session
+  in
+  if follow_up_is_ealier || follow_ups_are_ealier
+  then Error Pool_common.Message.FollowUpIsEarlierThanMain
+  else Ok ()
+;;
+
 (* TODO [aerben] create sigs *)
 module Create = struct
   type t = Session.base
@@ -189,8 +210,6 @@ module Update : sig
 end = struct
   type t = Session.update
 
-  let schema = update_schema
-
   let handle
       ?parent_session
       follow_up_sessions
@@ -229,36 +248,14 @@ end = struct
           (is_some duration Field.Duration)
       | true -> Ok (session.start, session.duration)
     in
-    let follow_ups_are_ealier =
-      CCList.exists
-        (fun (follow_up : Session.t) ->
-          Ptime.is_earlier
-            ~than:(Start.value start)
-            (Start.value follow_up.start))
-        follow_up_sessions
-    in
-    (* If session is follow-up, make sure it's later than parent *)
-    let follow_up_is_ealier =
-      CCOption.map_or
-        ~default:false
-        (fun (s : Session.t) ->
-          Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-        parent_session
-    in
-    let validations =
-      [ ( follow_up_is_ealier || follow_ups_are_ealier
-        , Pool_common.Message.FollowUpIsEarlierThanMain )
-      ; ( max_participants < min_participants
-        , Pool_common.Message.(
-            Smaller (Field.MaxParticipants, Field.MinParticipants)) )
-      ]
-    in
+    let* () = validate_start follow_up_sessions parent_session start in
     let* () =
-      validations
-      |> CCList.filter fst
-      |> CCList.map (fun (_, err) -> Error err)
-      |> flatten_l
-      |> map ignore
+      if max_participants < min_participants
+      then
+        Error
+          Pool_common.Message.(
+            Smaller (Field.MaxParticipants, Field.MinParticipants))
+      else Ok ()
     in
     let (session_cmd : Session.base) =
       Session.
@@ -275,6 +272,59 @@ end = struct
     in
     Ok
       [ Session.Updated (session_cmd, location, session) |> Pool_event.session ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate update_schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  ;;
+end
+
+module Reschedule : sig
+  type t = Session.reschedule
+
+  val handle
+    :  ?parent_session:Session.t
+    -> Session.t list
+    -> Session.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Session.reschedule
+
+  let command start duration : Session.reschedule = Session.{ start; duration }
+
+  let schema =
+    Conformist.(
+      make Field.[ Session.Start.schema (); Session.Duration.schema () ] command)
+  ;;
+
+  let handle
+      ?parent_session
+      follow_up_sessions
+      session
+      (Session.{ start; _ } as reschedule : Session.reschedule)
+    =
+    let open CCResult in
+    let* () = validate_start follow_up_sessions parent_session start in
+    let* () =
+      if Ptime.is_earlier
+           ~than:(Ptime_clock.now ())
+           (start |> Session.Start.value)
+      then Error Pool_common.Message.TimeInPast
+      else Ok ()
+    in
+    Ok [ Session.Rescheduled (session, reschedule) |> Pool_event.session ]
   ;;
 
   let decode data =

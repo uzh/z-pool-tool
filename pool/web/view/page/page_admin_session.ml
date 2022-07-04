@@ -53,6 +53,25 @@ let session_form
     |> CCOption.map_or ~default:false (fun s ->
            s.Session.assignment_count |> Session.AssignmentCount.value > 0)
   in
+  let reschedule_hint () =
+    match session, has_assignments with
+    | Some session, true ->
+      let action =
+        let open Pool_common.Id in
+        Format.asprintf
+          "/admin/experiments/%s/sessions/%s/reschedule"
+          (value experiment.Experiment.id)
+          (value session.Session.id)
+        |> Sihl.Web.externalize_path
+      in
+      p
+        [ txt "There are assignments for this session. Please use the "
+        ; a
+            ~a:[ a_href action ]
+            [ txt "form provided to reschedule a session." ]
+        ]
+    | _ -> txt ""
+  in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
   let lead_time_value time =
@@ -114,6 +133,7 @@ let session_form
         ~flash_fetcher
         ~additional_attributes:
           (if has_assignments then [ a_disabled () ] else [])
+    ; reschedule_hint ()
     ; textarea_element
         language
         Pool_common.Message.Field.Description
@@ -226,6 +246,58 @@ let session_form
         ]
     ; submit_element language submit ()
     ]
+;;
+
+let reschedule_session
+    Pool_context.{ csrf; language; _ }
+    experiment
+    (session : Session.t)
+    flash_fetcher
+  =
+  let open Session in
+  let action =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/reschedule"
+      (value experiment.Experiment.id)
+      (value session.Session.id)
+  in
+  form
+    ~a:
+      [ a_class [ "stack" ]
+      ; a_method `Post
+      ; a_action (action |> Sihl.Web.externalize_path)
+      ]
+    [ Component.csrf_element csrf ()
+    ; flatpicker_element
+        language
+        `Datetime_local
+        Pool_common.Message.Field.Start
+        ~required:true
+        ~flash_fetcher
+        ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
+        ~disable_past:true
+    ; flatpicker_element
+        language
+        ~required:true
+        `Time
+        Pool_common.Message.Field.Duration
+        ~help:Pool_common.I18n.TimeSpanPickerHint
+        ~value:
+          (session.duration
+          |> Duration.value
+          |> Pool_common.Utils.Time.timespan_spanpicker)
+        ~flash_fetcher
+    ; submit_element
+        language
+        Pool_common.Message.(Reschedule (Some Field.Session))
+        ()
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Reschedule (Some Field.Session)))
+       experiment
 ;;
 
 let index
@@ -486,34 +558,51 @@ let detail
         @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent)
       ; p
           ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-          ([ a
-               ~a:
-                 [ a_href
-                     (Format.asprintf
-                        "/admin/experiments/%s/sessions/%s/edit"
-                        (Pool_common.Id.value experiment.Experiment.id)
-                        (Pool_common.Id.value session.id)
-                     |> Sihl.Web.externalize_path)
+          ((a
+              ~a:
+                [ a_href
+                    (Format.asprintf
+                       "/admin/experiments/%s/sessions/%s/edit"
+                       (Pool_common.Id.value experiment.Experiment.id)
+                       (Pool_common.Id.value session.id)
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ Message.(Edit (Some Field.Session))
+                |> Pool_common.Utils.control_to_string language
+                |> txt
+              ]
+           ::
+           (* TODO [aerben] should follow up be created on follow up? *)
+           (if CCOption.is_none session.follow_up_to
+           then
+             [ a
+                 ~a:
+                   [ a_href
+                       (Format.asprintf
+                          "/admin/experiments/%s/sessions/%s/follow-up"
+                          (Pool_common.Id.value experiment.Experiment.id)
+                          (Pool_common.Id.value session.id)
+                       |> Sihl.Web.externalize_path)
+                   ]
+                 [ Message.(Create (Some Field.FollowUpSession))
+                   |> Pool_common.Utils.control_to_string language
+                   |> txt
                  ]
-               [ Message.(Edit (Some Field.Session))
-                 |> Pool_common.Utils.control_to_string language
-                 |> txt
-               ]
-           ]
+             ]
+           else []))
           @
-          (* TODO [aerben] should follow up be created on follow up? *)
-          if CCOption.is_none session.follow_up_to
+          if session.assignment_count |> AssignmentCount.value > 0
           then
             [ a
                 ~a:
                   [ a_href
                       (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/follow-up"
+                         "/admin/experiments/%s/sessions/%s/reschedule"
                          (Pool_common.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
-                [ Message.(Create (Some Field.FollowUpSession))
+                [ Message.(Reschedule (Some Field.Session))
                   |> Pool_common.Utils.control_to_string language
                   |> txt
                 ]

@@ -177,6 +177,8 @@ module Admin = struct
             ; post "/follow-up" create_follow_up
             ; post "/cancel" cancel
             ; post "/delete" delete
+            ; get "/reschedule" reschedule_form
+            ; post "/reschedule" reschedule
             ]
         in
         Session.

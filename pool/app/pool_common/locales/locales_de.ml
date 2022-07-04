@@ -150,6 +150,8 @@ let success_to_string : success -> string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -319,6 +321,7 @@ let control_to_string = function
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

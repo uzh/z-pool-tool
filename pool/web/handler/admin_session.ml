@@ -143,6 +143,15 @@ let detail req page =
         locations
         sys_languages
         flash_fetcher
+      |> Lwt.return_ok
+    | `Reschedule ->
+      let flash_fetcher key = Sihl.Web.Flash.find key req in
+      let* experiment = Experiment.find tenant_db experiment_id in
+      Page.Admin.Session.reschedule_session
+        context
+        experiment
+        session
+        flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -152,8 +161,9 @@ let detail req page =
 
 let show req = detail req `Detail
 let edit req = detail req `Edit
+let reschedule_form req = detail req `Reschedule
 
-let update req =
+let update_handler action req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
   let session_id = id req Pool_common.Message.Field.session in
   let path =
@@ -161,6 +171,12 @@ let update req =
       "/admin/experiments/%s/sessions/%s"
       (Pool_common.Id.value experiment_id)
       (Pool_common.Id.value session_id)
+  in
+  let error_path, success_msg =
+    let open Pool_common.Message in
+    match action with
+    | `Update -> "edit", Updated Field.session
+    | `Reschedule -> "reschedule", Rescheduled Field.session
   in
   let result context =
     let open Utils.Lwt_result.Syntax in
@@ -170,11 +186,10 @@ let update req =
     in
     Lwt_result.map_error (fun err ->
         ( err
-        , Format.asprintf "%s/edit" path
+        , Format.asprintf "%s/%s" path error_path
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
-    let* location = location urlencoded tenant_db in
     let* session = Session.find tenant_db session_id in
     let* follow_ups = Session.find_follow_ups tenant_db session.Session.id in
     let* parent =
@@ -183,21 +198,34 @@ let update req =
       | Some parent_id -> parent_id |> Session.find tenant_db >|= CCOption.some
     in
     let* events =
-      let open CCResult.Infix in
-      Cqrs_command.Session_command.Update.(
-        urlencoded
-        |> decode
-        >>= handle ?parent_session:parent follow_ups session location)
-      |> Lwt_result.lift
+      match action with
+      | `Update ->
+        let* location = location urlencoded tenant_db in
+        let open CCResult.Infix in
+        Cqrs_command.Session_command.Update.(
+          urlencoded
+          |> decode
+          >>= handle ?parent_session:parent follow_ups session location
+          |> Lwt_result.lift)
+      | `Reschedule ->
+        let open CCResult.Infix in
+        Cqrs_command.Session_command.Reschedule.(
+          urlencoded
+          |> decode
+          >>= handle ?parent_session:parent follow_ups session)
+        |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events tenant_db events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Updated Field.Session) ] ]
+      [ Message.set ~success:[ success_msg ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
+
+let update = update_handler `Update
+let reschedule = update_handler `Reschedule
 
 let disabler req command ctor =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
