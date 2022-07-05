@@ -124,13 +124,11 @@ module InvitationTemplate = struct
     ;;
   end
 
-  type template =
+  type t =
     { subject : Subject.t
     ; text : Text.t
     }
   [@@deriving eq, show]
-
-  type t = template [@@deriving eq, show]
 
   let create subject text : (t, Common.Message.error) result =
     let open CCResult in

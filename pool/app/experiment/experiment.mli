@@ -101,12 +101,10 @@ module InvitationTemplate : sig
       -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
-  type template =
+  type t =
     { subject : Subject.t
     ; text : Text.t
     }
-
-  type t = template
 
   val create : string -> string -> (t, Pool_common.Message.error) result
   val subject_value : t -> string
