@@ -291,6 +291,7 @@ module Reschedule : sig
     :  ?parent_session:Session.t
     -> Session.t list
     -> Session.t
+    -> Sihl_email.t list
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -313,6 +314,7 @@ end = struct
       ?parent_session
       follow_up_sessions
       session
+      emails
       (Session.{ start; _ } as reschedule : Session.reschedule)
     =
     let open CCResult in
@@ -324,7 +326,12 @@ end = struct
       then Error Pool_common.Message.TimeInPast
       else Ok ()
     in
-    Ok [ Session.Rescheduled (session, reschedule) |> Pool_event.session ]
+    Ok
+      ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
+      ::
+      (if emails |> CCList.is_empty |> not
+      then [ Email.BulkSent emails |> Pool_event.email ]
+      else []))
   ;;
 
   let decode data =

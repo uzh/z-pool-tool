@@ -286,6 +286,7 @@ let input_element_file
 ;;
 
 let textarea_element
+    ?(orientation = `Vertical)
     ?(classnames = [])
     ?(attributes = [])
     ?(required = false)
@@ -297,9 +298,7 @@ let textarea_element
   =
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
-    let base =
-      [ a_name (name |> Pool_common.Message.Field.show); a_class classnames ]
-    in
+    let base = [ a_name (name |> Pool_common.Message.Field.show) ] in
     match required with
     | true -> base @ [ a_required () ]
     | false -> base
@@ -310,8 +309,15 @@ let textarea_element
         name |> Pool_common.Message.Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
-  let input = textarea ~a:(textarea_attributes @ attributes) (txt value) in
-  div ~a:[ a_class [ "form-group" ] ] [ label [ txt input_label ]; input ]
+  let textarea =
+    let base = textarea ~a:(textarea_attributes @ attributes) (txt value) in
+    match orientation with
+    | `Vertical -> base
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ base ]
+  in
+  div
+    ~a:[ a_class (Elements.group_class [] orientation @ classnames) ]
+    [ label [ txt input_label ]; textarea ]
 ;;
 
 let submit_element

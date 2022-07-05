@@ -15,7 +15,6 @@ services:
       - ${HOME}${USERPROFILE}/.gitconfig:/home/opam/.gitconfig
       - ${HOME}${USERPROFILE}/.gitignore_global:/home/opam/.gitignore_global
       - /var/run/docker.sock:/var/run/docker.sock
-      # - /Users/timohuber/Documents/01_UZH/03_Tutorials/OCaml/sihl:/sihl
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true

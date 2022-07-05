@@ -21,7 +21,7 @@ let reschedule_to_past () =
       ; duration = session.Session.duration
       }
   in
-  let events = SessionCommand.Reschedule.handle [] session command in
+  let events = SessionCommand.Reschedule.handle [] session [] command in
   let expected = Error Pool_common.Message.TimeInPast in
   check_result expected events
 ;;

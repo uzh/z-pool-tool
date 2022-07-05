@@ -80,6 +80,18 @@ let default_values =
     , [ "EN", "Please complete the participants data."
       ; "DE", "Bitte vervollständigen Sie noch die Teilnahmedaten."
       ] )
+  ; ( "reschedule_session_subject"
+    , [ "EN", "Your session was rescheduled."
+      ; "DE", "Ihre Session wurde verschoben."
+      ] )
+  ; ( "reschedule_session_text"
+    , [ "EN", {|Dear {name}
+
+Your session was rescheduled.|}
+      ; "DE", {|Liebe*r {name},
+
+Ihre Session wurde verschoben.|}
+      ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
     , [ "EN", "Password must be at least 8 characters in length."
