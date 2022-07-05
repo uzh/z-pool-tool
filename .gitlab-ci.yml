@@ -69,9 +69,13 @@ workflow:
 
 variables:
   DOCKER_FOLDER: docker
-  DOCKER_STACK_NAME: pool
   DOCKER_SERVICE_NAME: app
+  DOCKER_STACK_NAME: pool
   EXPECTED_STATUS_CODE: 302
+  GITLAB_API_BASE: ${CI_API_V4_URL}
+  GITLAB_PROJECT_ID: ${CI_PROJECT_ID}
+  GITLAB_PROJECT_NAME: ${CI_PROJECT_NAME}
+  GITLAB_TOKEN: ${CI_JOB_TOKEN}
   SIHL_SECRET: ${ECON_POOL_SIHL_SECRET}
   SMTP_HOST: smtp.uzh.ch
   SMTP_PASSWORD: ${ECON_SMTP_APP_PASSWORD}
@@ -82,11 +86,6 @@ variables:
   SMTP_USERNAME: ecserv
   TEST_EMAIL: test@econ.uzh.ch
   VERSION: ${CI_COMMIT_TAG} # set to "latest" in docker tasks by default
-  # all needed for exception notifier
-  CI_JOB_TOKEN: ${ECON_CI_JOB_TOKEN}
-  CI_API_V4_URL: ${ECON_CI_API_V4_URL}
-  CI_PROJECT_ID: ${ECON_CI_PROJECT_ID}
-  CI_PROJECT_NAME: ${ECON_CI_PROJECT_NAME}
 
 stages:
   - test
@@ -135,7 +134,7 @@ compile-and-test:
     - opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
 
     # pin custom libraries hosted on the UZH gitlab
-    - opam pin add -yn canary https://github.com/chrismamo1/canary.git
+    - opam pin add -yn canary https://github.com/uzh/canary.git
     - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
 
     # pin payout and install system dependencies

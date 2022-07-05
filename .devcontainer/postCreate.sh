@@ -19,7 +19,7 @@ opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
 opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
 
 # pin custom libraries hosted on the UZH gitlab
-opam pin add -yn canary https://github.com/chrismamo1/canary.git
+opam pin add -yn canary https://github.com/uzh/canary.git
 opam pin add -yn conformist https://github.com/oxidizing/conformist.git
 
 opam pin add -yn pool .

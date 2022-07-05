@@ -29,6 +29,8 @@ let () =
   Sihl.App.(
     empty
     |> with_services services
-    |> before_start (fun () -> Printexc.record_backtrace true |> Lwt.return)
+    |> before_start (fun () ->
+           let () = Middleware.Error.before_start () in
+           Printexc.record_backtrace true |> Lwt.return)
     |> run ~commands)
 ;;
