@@ -27,16 +27,15 @@ type resent =
 [@@deriving eq, show]
 
 type event =
-  | Created of create
+  | Created of Contact.t list * Experiment.t
   | Resent of (resent * Email.CustomTemplate.t)
   | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
 [@@deriving eq, show]
 
 let handle_event pool event =
   match event with
-  (* TODO[timhub]: bulk insert *)
-  | Created { experiment; contact } ->
-    create contact |> Repo.insert pool experiment.Experiment.id
+  | Created (contacts, experiment) ->
+    Repo.bulk_insert pool contacts experiment.Experiment.id
   | Resent ({ invitation; experiment }, template) ->
     let%lwt () =
       Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }

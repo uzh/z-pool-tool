@@ -72,13 +72,9 @@ end = struct
         command.contacts
     in
     let errors = CCList.map Contact.fullname errors in
-    let events, emails =
+    let emails =
       CCList.fold_left
-        (fun (events, emails) contact ->
-          let create =
-            Invitation.{ experiment = command.experiment; contact }
-          in
-          let event = Invitation.Created create |> Pool_event.invitation in
+        (fun emails (contact : Contact.t) ->
           let email =
             invitation_template_elements
               system_languages
@@ -87,8 +83,8 @@ end = struct
               contact.Contact.language
             |> CCResult.map (fun template -> contact, template)
           in
-          event :: events, email :: emails)
-        ([], [])
+          email :: emails)
+        []
         contacts
     in
     if not (CCList.is_empty errors)
@@ -97,10 +93,11 @@ end = struct
       match CCList.all_ok emails with
       | Ok emails ->
         Ok
-          (events
-          @ [ Invitation.InvitationsSent (command.experiment, emails)
-              |> Pool_event.invitation
-            ])
+          [ Invitation.Created (contacts, command.experiment)
+            |> Pool_event.invitation
+          ; Invitation.InvitationsSent (command.experiment, emails)
+            |> Pool_event.invitation
+          ]
       | Error err -> Error err)
   ;;
 

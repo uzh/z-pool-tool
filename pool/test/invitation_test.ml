@@ -64,7 +64,7 @@ let create () =
       |> CCList.pure
     in
     Ok
-      [ Invitation.(Created { experiment; contact }) |> Pool_event.invitation
+      [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
       ; Invitation.InvitationsSent (experiment, email) |> Pool_event.invitation
       ]
   in

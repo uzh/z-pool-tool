@@ -46,7 +46,7 @@ val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
 type event =
-  | Created of create
+  | Created of Contact.t list * Experiment.t
   | Resent of (resent * Email.CustomTemplate.t)
   | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
 
