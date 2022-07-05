@@ -30,10 +30,6 @@ let suite =
               `Quick
               update_terms_and_conditions
           ; test_case "login after terms update" `Quick login_after_terms_update
-          ; test_case
-              "read environment variables for failure reporting"
-              `Quick
-              read_env_vars
           ] )
     ; ( "dev/test"
       , [ test_case "intercept email" `Quick Common_test.validate_email ] )
