@@ -258,11 +258,6 @@ module Utils : sig
     val formatted_date_time : Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
     val timespan_spanpicker : Ptime.span -> string
-
-    val timespan_to_time_units
-      :  Ptime.span
-      -> (int * int * int, Message.error) result
-
     val parse_time : string -> (Ptime.t, Message.error) result
     val parse_time_span : string -> (Ptime.Span.t, Message.error) result
     val print_time_span : Ptime.Span.t -> string
