@@ -3,15 +3,14 @@ let reminder_email sys_languages contact (session : Session.t) template =
   let name = Contact.fullname contact in
   let email = Contact.email_address contact in
   let session_overview =
-    (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , Session.(to_email_text lang session) )))
-      sys_languages
+    CCList.map (fun lang ->
+        ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+        , Session.(to_email_text lang session) ))
   in
   Email.Helper.prepare_boilerplate_email
     template
     (email |> Pool_user.EmailAddress.value)
-    (("name", name) :: session_overview)
+    (("name", name) :: session_overview sys_languages)
 ;;
 
 let create_reminders pool session default_language sys_languages =
@@ -57,12 +56,9 @@ let create_reminders pool session default_language sys_languages =
             Lwt_result.ok
               (reminder_email sys_languages contact session template)
           | None ->
-            let* subject =
-              I18n.(find_by_key pool Key.InvitationSubject message_language)
-            in
-            let* text =
-              I18n.(find_by_key pool Key.InvitationText message_language)
-            in
+            let find = CCFun.flip (I18n.find_by_key pool) message_language in
+            let* subject = find I18n.Key.InvitationSubject in
+            let* text = find I18n.Key.InvitationText in
             let template =
               Email.CustomTemplate.
                 { subject = Subject.I18n subject; content = Content.I18n text }
@@ -117,15 +113,14 @@ let tenant_specific_session_reminder =
     (fun args ->
       match args with
       | [ pool ] ->
-        let open Lwt_result.Syntax in
+        let open Lwt.Infix in
         let%lwt _ = Database.Tenant.setup () in
-        let%lwt result =
+        let result =
+          let open Lwt_result.Syntax in
           let* pool = pool |> Pool_database.Label.create |> Lwt_result.lift in
           send_tenant_reminder pool
         in
-        (match result with
-        | Ok _ -> Lwt.return_some ()
-        | Error _ -> Lwt.return_none)
+        result >|= CCOption.of_result
       | _ -> failwith "Argument missmatch")
 ;;
 

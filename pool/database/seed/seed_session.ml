@@ -1,4 +1,5 @@
 let create pool =
+  let open CCFun in
   let%lwt experiments = Experiment.find_all pool () in
   let%lwt location = Pool_location.find_all pool in
   let location =
@@ -65,24 +66,19 @@ let create pool =
           Session.
             { start = Start.create start
             ; duration = Duration.create duration |> get_or_failwith
-            ; description =
-                (description
-                >>= fun d -> d |> Description.create |> CCResult.to_opt)
+            ; description = description >>= Description.create %> of_result
             ; max_participants = ParticipantAmount.create max |> get_or_failwith
             ; min_participants = ParticipantAmount.create min |> get_or_failwith
             ; overbook = ParticipantAmount.create overbook |> get_or_failwith
             ; reminder_subject
             ; reminder_text =
                 reminder_text
-                |> CCOption.map (fun t ->
-                       t |> Pool_common.Reminder.Text.create |> get_or_failwith)
+                >|= Pool_common.Reminder.Text.create %> get_or_failwith
             ; reminder_lead_time =
                 reminder_lead_time
-                |> CCOption.map (fun lead_time ->
-                       lead_time
-                       |> Ptime.Span.of_int_s
-                       |> Pool_common.Reminder.LeadTime.create
-                       |> get_or_failwith)
+                >|= Ptime.Span.of_int_s
+                    %> Pool_common.Reminder.LeadTime.create
+                    %> get_or_failwith
             }
         in
         Session.Created (session, None, experiment_id, location))
@@ -101,9 +97,7 @@ let create pool =
             (Ptime.add_span (Ptime_clock.now ()) hour
             |> CCOption.get_exn_or "Invalid time")
       ; duration = Duration.create halfhour |> get_or_failwith
-      ; description =
-          (Some "MRI Study"
-          >>= fun d -> d |> Description.create |> CCResult.to_opt)
+      ; description = Some "MRI Study" >>= Description.create %> of_result
       ; max_participants = ParticipantAmount.create 10 |> get_or_failwith
       ; min_participants = ParticipantAmount.create 2 |> get_or_failwith
       ; overbook = ParticipantAmount.create 3 |> get_or_failwith

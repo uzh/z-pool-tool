@@ -169,16 +169,20 @@ let experiment_form
                 Pool_common.Message.Field.InvitationSubject
                 ~value:
                   (value (fun e ->
-                       InvitationTemplate.subject_value e.invitation_template
-                       |> CCOption.value ~default:""))
+                       e.invitation_template
+                       |> CCOption.map_or
+                            ~default:""
+                            InvitationTemplate.subject_value))
                 ~flash_fetcher
             ; textarea_element
                 language
                 Pool_common.Message.Field.InvitationText
                 ~value:
                   (value (fun e ->
-                       InvitationTemplate.text_value e.invitation_template
-                       |> CCOption.value ~default:""))
+                       e.invitation_template
+                       |> CCOption.map_or
+                            ~default:""
+                            InvitationTemplate.text_value))
                 ~flash_fetcher
             ]
         ]

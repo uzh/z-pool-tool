@@ -26,7 +26,7 @@ module CustomTemplate = struct
     type t =
       | I18n of I18n.t
       | String of string
-    [@@deriving eq, show]
+    [@@deriving eq, show, variants]
 
     let value = function
       | I18n s -> I18n.content_to_string s
@@ -38,7 +38,7 @@ module CustomTemplate = struct
     type t =
       | I18n of I18n.t
       | String of string
-    [@@deriving eq, show]
+    [@@deriving eq, show, variants]
 
     let value = function
       | I18n c -> I18n.content_to_string c

@@ -131,11 +131,12 @@ let create_with_missing_text_element additional error =
   let open CCResult in
   let events =
     let open CCResult.Infix in
+    let open Cqrs_command.Experiment_command.Create in
     urlencoded @ additional
     |> Http_utils.format_request_boolean_values
          [ "direct_registration_disabled"; "registration_disabled" ]
-    |> Cqrs_command.Experiment_command.Create.decode
-    >>= Cqrs_command.Experiment_command.Create.handle
+    |> decode
+    >>= handle
   in
   let expected = Error error in
   Alcotest.(

@@ -8,6 +8,8 @@ module CustomTemplate : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
     val value : t -> string
+    val i18n : I18n.t -> t
+    val string : string -> t
   end
 
   module Content : sig
@@ -19,6 +21,8 @@ module CustomTemplate : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
     val value : t -> string
+    val i18n : I18n.t -> t
+    val string : string -> t
   end
 
   type t =

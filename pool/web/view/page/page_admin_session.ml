@@ -45,20 +45,16 @@ let session_form
     sys_languages
     ~flash_fetcher
   =
+  let open CCFun in
   let open Session in
   let default_value_session = CCOption.(session <+> follow_up_to) in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
-  let amount fnc =
-    CCOption.map_or
-      ~default:""
-      (fun s -> s |> fnc |> ParticipantAmount.value |> CCInt.to_string)
-      default_value_session
-  in
+  let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
   let lead_time_value time =
     time
-    |> CCOption.map_or ~default:"" (fun lead ->
-           Pool_common.(
-             lead |> Reminder.LeadTime.value |> Utils.Time.timespan_spanpicker))
+    |> CCOption.map_or
+         ~default:""
+         Pool_common.(Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
   in
   let to_default_value html =
     div ~a:[ a_class [ "gap"; "inset-sm"; "border-left" ] ] [ html ]

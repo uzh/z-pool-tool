@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-module Data = struct
+module DummyData = struct
   let location =
     let open Pool_location in
     let open CCResult in
@@ -138,23 +138,23 @@ let build_help language toggle_id help =
 ;;
 
 let session_reminder_help language sys_languages ?session () =
-  let session = CCOption.value ~default:Data.session session in
+  let session = CCOption.value ~default:DummyData.session session in
   let session_overview =
     (CCList.map (fun lang ->
          ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
          , Session.(to_email_text lang session) |> Http_utils.add_line_breaks )))
       sys_languages
   in
-  Data.name_element :: session_overview
+  DummyData.name_element :: session_overview
   |> build_help language "session-reminder-help"
 ;;
 
 let experiment_invitation_help language ?experiment () =
-  let experiment = CCOption.value ~default:Data.experiment experiment in
+  let experiment = CCOption.value ~default:DummyData.experiment experiment in
   let experiment_description =
     ( "experimentDescription"
     , div [ txt Experiment.(Description.value experiment.description) ] )
   in
-  [ Data.name_element; experiment_description ]
+  [ DummyData.name_element; experiment_description ]
   |> build_help language "experiment-invitation-help"
 ;;

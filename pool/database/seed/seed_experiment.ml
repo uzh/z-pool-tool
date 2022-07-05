@@ -1,6 +1,10 @@
+module Reminder = Pool_common.Reminder
+
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let experiments pool =
+  let open CCFun in
+  let open CCOption.Infix in
   let data =
     [ ( "The Twenty pound auction"
       , "the_twenty_pound_auction"
@@ -43,51 +47,38 @@ let experiments pool =
            , session_reminder_subject
            , session_reminder_text ) ->
         let experiment =
-          let title = Experiment.Title.create title |> get_or_failwith in
+          let open Experiment in
+          let title = Title.create title |> get_or_failwith in
           let public_title =
-            Experiment.PublicTitle.create public_title |> get_or_failwith
+            PublicTitle.create public_title |> get_or_failwith
           in
-          let description =
-            Experiment.Description.create description |> get_or_failwith
-          in
+          let description = Description.create description |> get_or_failwith in
           let invitation_subject =
             invitation_subject
-            |> CCOption.map (fun t ->
-                   t
-                   |> Experiment.InvitationTemplate.Subject.create
-                   |> get_or_failwith)
+            >|= InvitationTemplate.Subject.create %> get_or_failwith
           in
           let invitation_text =
             invitation_text
-            |> CCOption.map (fun t ->
-                   t
-                   |> Experiment.InvitationTemplate.Text.create
-                   |> get_or_failwith)
+            >|= InvitationTemplate.Text.create %> get_or_failwith
           in
           let session_reminder_lead_time =
             session_reminder_lead_time
-            |> CCOption.map (fun t ->
-                   Ptime.Span.of_int_s @@ t
-                   |> Pool_common.Reminder.LeadTime.create
-                   |> get_or_failwith)
+            >|= Ptime.Span.of_int_s
+                %> Reminder.LeadTime.create
+                %> get_or_failwith
           in
           let session_reminder_text =
-            session_reminder_text
-            |> CCOption.map (fun t ->
-                   t |> Pool_common.Reminder.Text.create |> get_or_failwith)
+            session_reminder_text >|= Reminder.Text.create %> get_or_failwith
           in
           let session_reminder_subject =
             session_reminder_subject
-            |> CCOption.map (fun t ->
-                   t |> Pool_common.Reminder.Subject.create |> get_or_failwith)
+            >|= Reminder.Subject.create %> get_or_failwith
           in
           let direct_registration_disabled =
-            Experiment.DirectRegistrationDisabled.create false
+            DirectRegistrationDisabled.create false
           in
-          let registration_disabled =
-            Experiment.RegistrationDisabled.create false
-          in
-          Experiment.create
+          let registration_disabled = RegistrationDisabled.create false in
+          create
             title
             public_title
             description

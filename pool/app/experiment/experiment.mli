@@ -106,15 +106,11 @@ module InvitationTemplate : sig
     ; text : Text.t
     }
 
-  type t = template option
+  type t = template
 
-  val create
-    :  string option
-    -> string option
-    -> (t, Pool_common.Message.error) result
-
-  val subject_value : t -> string option
-  val text_value : t -> string option
+  val create : string -> string -> (t, Pool_common.Message.error) result
+  val subject_value : t -> string
+  val text_value : t -> string
 end
 
 type t =
@@ -125,7 +121,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
-  ; invitation_template : InvitationTemplate.t
+  ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option

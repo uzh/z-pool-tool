@@ -2,20 +2,10 @@ open Entity
 module User = Pool_user
 module Database = Pool_database
 
-let string_to_html str =
-  let open Tyxml.Html in
-  let add_line_breaks str =
-    match str |> CCString.split ~by:"\n" with
-    | [] -> []
-    | head :: tail ->
-      CCList.fold_left
-        (fun html str -> html @ [ br (); txt str ])
-        [ txt head ]
-        tail
-  in
-  str
-  |> CCString.split ~by:"\n\n"
-  |> CCList.map (fun html -> html |> add_line_breaks |> p)
+let string_to_html =
+  let open CCFun in
+  CCString.split ~by:"\n\n"
+  %> CCList.map (Utils.Html.handle_line_breaks Tyxml.Html.p)
 ;;
 
 let create_public_url pool_url path =

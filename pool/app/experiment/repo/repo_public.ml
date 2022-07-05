@@ -8,7 +8,7 @@ let contact_was_invited_join =
     |sql}
 ;;
 
-let where_registration_not_disabled =
+let condition_registration_not_disabled =
   "pool_experiments.registration_disabled = 0"
 ;;
 
@@ -38,7 +38,7 @@ let find_all_public_by_contact_request =
   Format.asprintf
     "%s WHERE %s"
     contact_was_invited_join
-    where_registration_not_disabled
+    condition_registration_not_disabled
   |> select_from_experiments_sql
   |> Caqti_type.string ->* RepoEntity.Public.t
 ;;
@@ -59,7 +59,7 @@ let find_request =
         WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
         AND %s
       |sql}
-      where_registration_not_disabled
+      condition_registration_not_disabled
   in
   Format.asprintf "%s %s" contact_was_invited_join where_fragment
   |> select_from_experiments_sql

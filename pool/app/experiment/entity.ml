@@ -130,24 +130,17 @@ module InvitationTemplate = struct
     }
   [@@deriving eq, show]
 
-  type t = template option [@@deriving eq, show]
+  type t = template [@@deriving eq, show]
 
   let create subject text : (t, Common.Message.error) result =
     let open CCResult in
-    match subject, text with
-    | Some subject, Some text ->
-      let* subject = Subject.create subject in
-      let* text = Subject.create text in
-      Ok (Some { subject; text })
-    | None, None -> Ok None
-    | _ -> Error Pool_common.Message.InvitationSubjectAndTextRequired
+    let* subject = Subject.create subject in
+    let* text = Subject.create text in
+    Ok { subject; text }
   ;;
 
-  let subject_value (m : t) =
-    m |> CCOption.map (fun m -> m.subject |> Subject.value)
-  ;;
-
-  let text_value (m : t) = m |> CCOption.map (fun m -> m.text |> Text.value)
+  let subject_value (m : t) = m.subject |> Subject.value
+  let text_value (m : t) = m.text |> Text.value
 end
 
 type t =
@@ -158,7 +151,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
-  ; invitation_template : InvitationTemplate.t
+  ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
   ; session_reminder_text : Pool_common.Reminder.Text.t option
@@ -187,7 +180,11 @@ let create
     | _ -> Error Pool_common.Message.ReminderSubjectAndTextRequired
   in
   let* invitation_template =
-    InvitationTemplate.create invitation_subject invitation_text
+    match invitation_subject, invitation_text with
+    | Some subject, Some text ->
+      InvitationTemplate.create subject text |> CCResult.map CCOption.pure
+    | None, None -> Ok None
+    | _ -> Error Pool_common.Message.InvitationSubjectAndTextRequired
   in
   Ok
     { id = id |> CCOption.value ~default:(Id.create ())

@@ -215,15 +215,4 @@ let externalize_path_with_lang lang path =
   path_with_language lang path |> Sihl.Web.externalize_path
 ;;
 
-let add_line_breaks str =
-  let open Tyxml.Html in
-  span
-  @@
-  match str |> CCString.split ~by:"\n" with
-  | [] -> []
-  | head :: tail ->
-    CCList.fold_left
-      (fun html str -> html @ [ br (); txt str ])
-      [ txt head ]
-      tail
-;;
+let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span

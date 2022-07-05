@@ -8,10 +8,9 @@ let invitation_templte_data tenant_db =
     let%lwt res =
       Lwt_list.map_s
         (fun lang ->
-          let* subject =
-            I18n.(find_by_key tenant_db Key.InvitationSubject lang)
-          in
-          let* text = I18n.(find_by_key tenant_db Key.InvitationText lang) in
+          let find = CCFun.flip (I18n.find_by_key tenant_db) lang in
+          let* subject = find I18n.Key.InvitationSubject in
+          let* text = find I18n.Key.InvitationText in
           Lwt_result.return (lang, (subject, text)))
         system_languages
     in

@@ -82,15 +82,15 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let find_by_session_request ?where_fragment () =
+  let find_by_session_request ?where_condition () =
     let open Caqti_request.Infix in
     let id_fragment =
       {sql|
-      WHERE
-        session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
-    |sql}
+        WHERE
+          session_id = (SELECT id FROM pool_sessions WHERE uuid = UNHEX(REPLACE(?, '-', '')))
+      |sql}
     in
-    where_fragment
+    where_condition
     |> CCOption.map_or
          ~default:id_fragment
          (Format.asprintf "%s AND %s" id_fragment)
@@ -98,10 +98,10 @@ module Sql = struct
     |> Caqti_type.string ->* RepoEntity.t
   ;;
 
-  let find_by_session ?where_fragment pool id =
+  let find_by_session ?where_condition pool id =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      (find_by_session_request ?where_fragment ())
+      (find_by_session_request ?where_condition ())
       (Pool_common.Id.value id)
   ;;
 
@@ -218,7 +218,7 @@ let find pool id =
   Sql.find pool id >>= contact_to_assignment pool
 ;;
 
-let where_uncanceled_fragment = "pool_assignments.canceled_at IS NULL"
+let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
 
 let find_by_session filter pool id =
   let open Lwt.Infix in
@@ -227,7 +227,7 @@ let find_by_session filter pool id =
     match filter with
     | `All -> Sql.find_by_session pool id
     | `Uncanceled ->
-      Sql.find_by_session ~where_fragment:where_uncanceled_fragment pool id
+      Sql.find_by_session ~where_condition:uncanceled_condition pool id
   in
   sql >>= Lwt_list.map_s (contact_to_assignment pool) |> Lwt.map CCList.all_ok
 ;;

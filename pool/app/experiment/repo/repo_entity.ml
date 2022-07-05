@@ -67,18 +67,12 @@ module InvitationTemplate = struct
   end
 
   let t =
-    let encode (m : t) =
-      match m with
-      | Some m -> Ok (Some m.subject, Some m.text)
-      | None -> Ok (None, None)
-    in
+    let encode (m : t) = Ok (m.subject, m.text) in
     let decode (subject, text) =
       create subject text
-      |> CCResult.map_err (fun err ->
-             Pool_common.(Utils.error_to_string Language.En err))
+      |> CCResult.map_err Common.(Utils.error_to_string Language.En)
     in
-    Caqti_type.(
-      custom ~encode ~decode (tup2 (option Subject.t) (option Text.t)))
+    Caqti_type.(custom ~encode ~decode (tup2 Subject.t Text.t))
   ;;
 end
 
@@ -148,7 +142,7 @@ let t =
                         (tup2
                            RegistrationDisabled.t
                            (tup2
-                              InvitationTemplate.t
+                              (option InvitationTemplate.t)
                               (tup2
                                  (option Pool_common.Repo.Reminder.LeadTime.t)
                                  (tup2
@@ -196,7 +190,7 @@ module Write = struct
                           (tup2
                              RegistrationDisabled.t
                              (tup2
-                                InvitationTemplate.t
+                                (option InvitationTemplate.t)
                                 (tup2
                                    (option Pool_common.Repo.Reminder.LeadTime.t)
                                    (tup2

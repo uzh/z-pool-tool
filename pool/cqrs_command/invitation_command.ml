@@ -15,15 +15,11 @@ let invitation_template_elements
   | Some template ->
     let subject =
       let open InvitationTemplate in
-      template.subject
-      |> Subject.value
-      |> fun s -> Email.CustomTemplate.Subject.String s
+      template.subject |> Subject.value |> Email.CustomTemplate.Subject.string
     in
     let content =
       let open InvitationTemplate in
-      template.text
-      |> Text.value
-      |> fun s -> Email.CustomTemplate.Content.String s
+      template.text |> Text.value |> Email.CustomTemplate.Content.string
     in
     Ok Email.CustomTemplate.{ subject; content }
   | None ->
