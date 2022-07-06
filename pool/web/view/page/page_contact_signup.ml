@@ -21,7 +21,7 @@ let signup
              try Some (read field) with
              | _ -> None)
     in
-    Component.selector field equal show all selected ()
+    Component.selector language field equal show all selected ()
   in
   let open Component in
   div
