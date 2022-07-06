@@ -7,24 +7,11 @@ let sign_up req =
   let result ({ Pool_context.tenant_db; language; _ } as context) =
     let open Lwt_result.Syntax in
     let open Lwt_result.Infix in
-    let open Pool_common.Message in
     Lwt_result.map_error (fun err -> err, "/index")
     @@
-    let go field = field |> Field.show |> CCFun.flip Sihl.Web.Flash.find req in
-    let channels = Contact.RecruitmentChannel.(all |> CCList.map show) in
-    let email = go Field.Email in
-    let firstname = go Field.Firstname in
-    let lastname = go Field.Lastname in
-    let recruitment_channel = go Field.RecruitmentChannel in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* terms = Settings.terms_and_conditions tenant_db language in
-    Page.Contact.sign_up
-      channels
-      email
-      firstname
-      lastname
-      recruitment_channel
-      terms
-      context
+    Page.Contact.sign_up terms context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|= Sihl.Web.Response.of_html
   in

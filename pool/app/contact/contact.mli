@@ -10,6 +10,7 @@ module RecruitmentChannel : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 
   val show : t -> string
+  val equal : t -> t -> bool
   val read : string -> t
   val all : t list
 end
