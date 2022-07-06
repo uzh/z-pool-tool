@@ -50,6 +50,8 @@ let field_to_string =
   | InactiveUserWarning -> "warn inactive user"
   | Institution -> "institution"
   | Invitation -> "invitation"
+  | InvitationSubject -> "invitation subject"
+  | InvitationText -> "invitation text"
   | Invitations -> "invitations"
   | Key -> "key"
   | Label -> "label"
@@ -60,6 +62,7 @@ let field_to_string =
   | Link -> "link"
   | Location -> "location"
   | LogoType -> "logo type"
+  | LeadTime -> "lead time"
   | Mailing -> "mailing"
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
@@ -77,8 +80,10 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
-  | Rate -> "rate"
   | PublicTitle -> "public title"
+  | Rate -> "rate"
+  | ReminderText -> "reminder text"
+  | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
@@ -203,6 +208,8 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | InvitationSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session invitation."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
@@ -235,6 +242,8 @@ let rec error_to_string = function
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
+  | ReminderSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session reminder."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."

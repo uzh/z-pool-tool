@@ -7,6 +7,9 @@ let session_command
     max_participants
     min_participants
     overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
   =
   Session.
     { start
@@ -15,6 +18,9 @@ let session_command
     ; max_participants
     ; min_participants
     ; overbook
+    ; reminder_subject
+    ; reminder_text
+    ; reminder_lead_time
     }
 ;;
 
@@ -30,6 +36,9 @@ let session_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       session_command)
 ;;
@@ -53,6 +62,9 @@ module Create = struct
          ; min_participants
          ; (* TODO [aerben] find a better name *)
            overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
          } :
         Session.base)
     =
@@ -88,6 +100,9 @@ module Create = struct
         ; max_participants
         ; min_participants
         ; overbook
+        ; reminder_subject
+        ; reminder_text
+        ; reminder_lead_time
         }
     in
     Ok
@@ -128,6 +143,9 @@ module Update = struct
          ; max_participants
          ; min_participants
          ; overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
          } :
         Session.base)
     =
@@ -174,6 +192,9 @@ module Update = struct
         ; max_participants
         ; min_participants
         ; overbook
+        ; reminder_subject
+        ; reminder_text
+        ; reminder_lead_time
         }
     in
     Ok
@@ -232,6 +253,26 @@ end = struct
     }
 
   let handle session = Ok [ Session.Canceled session |> Pool_event.session ]
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  ;;
+end
+
+module SendReminder : sig
+  type t = (Session.t * Sihl_email.t list) list
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = (Session.t * Sihl_email.t list) list
+
+  let handle command =
+    Ok
+      (CCList.map
+         (fun data -> Session.ReminderSent data |> Pool_event.session)
+         command)
+  ;;
 
   let can user _ =
     Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]

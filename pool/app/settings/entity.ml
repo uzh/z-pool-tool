@@ -120,6 +120,9 @@ module TermsAndConditions = struct
 end
 
 module Value = struct
+  type default_reminder_lead_time = Pool_common.Reminder.LeadTime.t
+  [@@deriving eq, show, yojson]
+
   type tenant_languages = Pool_common.Language.t list
   [@@deriving eq, show, yojson]
 
@@ -136,6 +139,7 @@ module Value = struct
   [@@deriving eq, show, yojson]
 
   type t =
+    | DefaultReminderLeadTime of default_reminder_lead_time
     | TenantLanguages of tenant_languages
     | TenantEmailSuffixes of tenant_email_suffixes
     | TenantContactEmail of tenant_contact_email
@@ -146,6 +150,7 @@ module Value = struct
 end
 
 type setting_key =
+  | ReminderLeadTime [@name "default_reminder_lead_time"]
   | Languages [@name "languages"]
   | EmailSuffixes [@name "email_suffixes"]
   | ContactEmail [@name "contact_email"]
@@ -165,6 +170,7 @@ module Write = struct
 end
 
 let action_of_param = function
+  | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
   | "update_tenant_languages" -> Ok `UpdateTenantLanguages
   | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
   | "create_tenant_emailsuffix" -> Ok `CreateTenantEmailSuffix
@@ -177,6 +183,7 @@ let action_of_param = function
 ;;
 
 let stringify_action = function
+  | `UpdateDefaultLeadTime -> "update_default_lead_time"
   | `UpdateTenantLanguages -> "update_tenant_languages"
   | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
   | `CreateTenantEmailSuffix -> "create_tenant_emailsuffix"
@@ -185,4 +192,8 @@ let stringify_action = function
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
   | `UpdateTermsAndConditions -> "update_terms_and_conditions"
+;;
+
+let default_session_reminder_lead_time_key_yojson =
+  yojson_of_setting_key ReminderLeadTime
 ;;

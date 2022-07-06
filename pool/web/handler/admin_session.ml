@@ -38,17 +38,36 @@ let list req =
       | Some "true" -> CCList.map (fun s -> s, []) sessions, true
       | None | Some _ -> Session.group_and_sort sessions, false
     in
-    let%lwt locations = Pool_location.find_all tenant_db in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Session.index
-      context
-      experiment
-      grouped_sessions
-      chronological
-      locations
-      flash_fetcher
+    Page.Admin.Session.index context experiment grouped_sessions chronological
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let new_form req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = id req Pool_common.Message.Field.Experiment in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions"
+      (experiment_id |> Pool_common.Id.value)
+  in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_error (fun err -> err, error_path)
+    @@ let* experiment = Experiment.find tenant_db experiment_id in
+       let%lwt locations = Pool_location.find_all tenant_db in
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       let%lwt sys_languages = Settings.find_languages tenant_db in
+       Page.Admin.Session.new_form
+         context
+         experiment
+         locations
+         sys_languages
+         flash_fetcher
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -67,7 +86,9 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Lwt_result.map_error (fun err ->
-        err, path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+        ( err
+        , Format.asprintf "%s/%s" path "create"
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in
@@ -112,8 +133,16 @@ let detail req page =
       |> Lwt.return_ok
     | `Edit ->
       let flash_fetcher key = Sihl.Web.Flash.find key req in
+      let* experiment = Experiment.find tenant_db experiment_id in
       let%lwt locations = Pool_location.find_all tenant_db in
-      Page.Admin.Session.edit context experiment session locations flash_fetcher
+      let%lwt sys_languages = Settings.find_languages tenant_db in
+      Page.Admin.Session.edit
+        context
+        experiment
+        session
+        locations
+        sys_languages
+        flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -219,15 +248,17 @@ let follow_up req =
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.session in
-    let* session = Session.find tenant_db session_id in
+    let* parent_session = Session.find tenant_db session_id in
     let* experiment = Experiment.find tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let%lwt sys_languages = Settings.find_languages tenant_db in
     let%lwt locations = Pool_location.find_all tenant_db in
     Page.Admin.Session.follow_up
       context
       experiment
-      session
+      parent_session
       locations
+      sys_languages
       flash_fetcher
     |> Lwt.return_ok
     >>= create_layout req context

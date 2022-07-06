@@ -6,8 +6,8 @@ let field_to_string =
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
-  | Assignments -> "Anmeldungen"
   | AssignmentCount -> "No. Assignments"
+  | Assignments -> "Anmeldungen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
@@ -50,6 +50,8 @@ let field_to_string =
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Institution -> "Institution"
   | Invitation -> "Einladung"
+  | InvitationSubject -> "Einladungsbetreff"
+  | InvitationText -> "Einladungstext"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
   | Label -> "Label"
@@ -57,6 +59,7 @@ let field_to_string =
   | LanguageDe -> "Deutsch"
   | LanguageEn -> "Englisch"
   | Lastname -> "Nachname"
+  | LeadTime -> "Vorlaufzeit"
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
@@ -76,10 +79,12 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
-  | Rate -> "Rate"
   | PublicTitle -> "Öffentlicher Titel"
+  | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
+  | ReminderText -> "Erinnerungstext"
+  | ReminderSubject -> "Erinnerungsbetreff"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -211,6 +216,8 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvitationSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
@@ -253,6 +260,9 @@ let rec error_to_string = function
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
+  | ReminderSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
+     Erinnerung an."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \

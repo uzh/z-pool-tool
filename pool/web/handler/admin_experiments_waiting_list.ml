@@ -169,10 +169,7 @@ let assign_contact req =
           language
         >|= I18n.content
       in
-      let session_text =
-        Session.(
-          to_email_text language session.start session.duration session.location)
-      in
+      let session_text = Session.(to_email_text language session) in
       Lwt_result.return Assignment.{ subject; text; language; session_text }
     in
     let events =

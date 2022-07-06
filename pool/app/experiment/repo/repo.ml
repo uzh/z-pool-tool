@@ -10,9 +10,19 @@ module Sql = struct
         description,
         filter,
         direct_registration_disabled,
-        registration_disabled
+        registration_disabled,
+        invitation_subject,
+        invitation_text,
+        session_reminder_lead_time,
+        session_reminder_subject,
+        session_reminder_text
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -37,20 +47,25 @@ module Sql = struct
       {sql|
         SELECT
           LOWER(CONCAT(
-            SUBSTR(HEX(uuid), 1, 8), '-',
-            SUBSTR(HEX(uuid), 9, 4), '-',
-            SUBSTR(HEX(uuid), 13, 4), '-',
-            SUBSTR(HEX(uuid), 17, 4), '-',
-            SUBSTR(HEX(uuid), 21)
+            SUBSTR(HEX(pool_experiments.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.uuid), 21)
           )),
-          title,
-          public_title,
-          description,
-          filter,
-          direct_registration_disabled,
-          registration_disabled,
-          created_at,
-          updated_at
+          pool_experiments.title,
+          pool_experiments.public_title,
+          pool_experiments.description,
+          pool_experiments.filter,
+          pool_experiments.direct_registration_disabled,
+          pool_experiments.registration_disabled,
+          pool_experiments.invitation_subject,
+          pool_experiments.invitation_text,
+          pool_experiments.session_reminder_lead_time,
+          pool_experiments.session_reminder_subject,
+          pool_experiments.session_reminder_text,
+          pool_experiments.created_at,
+          pool_experiments.updated_at
         FROM pool_experiments
       |sql}
     in
@@ -69,7 +84,7 @@ module Sql = struct
   let find_request =
     let open Caqti_request.Infix in
     {sql|
-      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
     |> select_from_experiments_sql
     |> Caqti_type.string ->! Repo_entity.t
@@ -84,6 +99,26 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
+  let find_of_session =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_sessions
+        ON pool_experiments.uuid = pool_sessions.experiment_uuid
+      WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_experiments_sql
+    |> Caqti_type.string ->! Repo_entity.t
+  ;;
+
+  let find_of_session pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_of_session
+      (id |> Pool_common.Id.value)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ;;
+
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -94,20 +129,16 @@ module Sql = struct
         description = $4,
         filter = $5,
         direct_registration_disabled = $6,
-        registration_disabled = $7
+        registration_disabled = $7,
+        invitation_subject = $8,
+        invitation_text = $9,
+        session_reminder_lead_time = $10,
+        session_reminder_subject = $11,
+        session_reminder_text = $12
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
     |> Repo_entity.Write.t ->. Caqti_type.unit
-  ;;
-
-  let format_update (t : Entity.t) =
-    let open Entity in
-    ( t.id |> Pool_common.Id.value
-    , t.title |> Title.value
-    , t.public_title |> PublicTitle.value
-    , t.description |> Description.value
-    , t.filter )
   ;;
 
   let update pool =
@@ -133,6 +164,7 @@ end
 
 let find = Sql.find
 let find_all = Sql.find_all
+let find_of_session = Sql.find_of_session
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy

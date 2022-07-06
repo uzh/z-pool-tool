@@ -5,6 +5,10 @@ let to_string = function
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
+  | ExperimentNewTitle -> "Neues Experiment erstellen"
+  | ExperimentSessionReminderHint ->
+    "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \
+     Einstellungen können pro Session angepasst werden."
   | EmtpyList field ->
     Format.asprintf
       "Es sind keine %s vorhanden."
@@ -17,6 +21,10 @@ let to_string = function
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Willkommen beim Pool Tool"
   | I18nTitle -> "Übersetzungen"
+  | NoEntries field ->
+    Format.asprintf
+      "Es existiert noch keine %s."
+      (Locales_de.field_to_string field)
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
@@ -29,8 +37,22 @@ let to_string = function
   | RateTotalSent number ->
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
+  | Reminder -> "Erinnerung"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionReminderDefaultLeadTime leadtime ->
+    Format.asprintf
+      "Die Standardvorlaufzeit dieses Experiments ist: %s"
+      (leadtime |> Pool_common_utils.Time.formatted_timespan)
+  | SessionReminderDefaultText text ->
+    Format.asprintf
+      "Die Standarderinnerungstext dieses Experiments ist:\n %s"
+      text
+  | SessionReminderDefaultSubject text ->
+    Format.asprintf
+      "Der Standarderinnerungsbetreff dieses Experiments ist:\n %s"
+      text
+  | SessionReminder -> "Sessionerinnerung"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
@@ -38,12 +60,14 @@ let to_string = function
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
+  | TextTemplates -> "Textelemente"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | UserProfileTitle -> "Benutzerprofil"
+  | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
 let nav_link_to_string = function
@@ -99,10 +123,15 @@ let hint_to_string = function
     "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | SessionReminderLanguageHint ->
+    "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
+     Sprache hier."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
      einen Termin zuzuweisen, wenn ein freier Platz vorhanden ist."
+  | TemplateTextElementsHint ->
+    "Die folgenden Textbausteine können in den Templates verwendet werden:"
   | TimeSpanPickerHint -> "Stunden und Minuten"
 ;;
 

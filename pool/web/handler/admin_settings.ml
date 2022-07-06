@@ -19,6 +19,9 @@ let show req =
        let%lwt terms_and_conditions =
          Settings.find_terms_and_conditions tenant_db
        in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time tenant_db
+       in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.Settings.show
          languages
@@ -27,6 +30,7 @@ let show req =
          inactive_user_disable_after
          inactive_user_warning
          terms_and_conditions
+         default_reminder_lead_time
          context
          flash_fetcher
        |> create_layout req ~active_navigation:"/admin/settings" context
@@ -72,6 +76,8 @@ let update_settings req =
           fun m ->
             let%lwt suffixes = Settings.find_email_suffixes tenant_db in
             DeleteEmailSuffix.(m |> decode >>= handle suffixes) |> lift
+        | `UpdateDefaultLeadTime ->
+          fun m -> UpdateDefaultLeadTime.(m |> decode >>= handle) |> lift
         | `UpdateTenantContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle) |> lift
         | `UpdateInactiveUserDisableAfter ->

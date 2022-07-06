@@ -130,6 +130,14 @@ let () =
             "delete experiment with sessions"
             `Quick
             Experiment_test.delete_with_sessions
+        ; test_case
+            "create with missing invitation text"
+            `Quick
+            Experiment_test.with_missing_invitation_text
+        ; test_case
+            "create with missing reminder subject"
+            `Quick
+            Experiment_test.with_missing_reminder_subject
         ] )
     ; ( "waiting list"
       , [ test_case "sign up" `Quick Waiting_list_test.create

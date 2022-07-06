@@ -49,6 +49,21 @@ let ptime_to_sexp p =
   Sexplib0.Sexp.Atom formatted
 ;;
 
+let ptime_span_of_yojson m =
+  m
+  |> Yojson.Safe.to_string
+  |> CCInt.of_string
+  |> CCOption.map Ptime.Span.of_int_s
+  |> CCOption.get_exn_or "Invalid timespan provided"
+;;
+
+let yojson_of_ptime_span m =
+  m
+  |> Ptime.Span.to_int_s
+  |> CCOption.map (fun i -> i |> CCInt.to_string |> Yojson.Safe.from_string)
+  |> CCOption.get_exn_or "Invalid timespan provided"
+;;
+
 (* Parsing *)
 let parse_time str =
   let open CCResult in

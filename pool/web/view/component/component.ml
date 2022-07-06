@@ -2,34 +2,9 @@ module HttpUtils = Http_utils
 module Table = Component_table
 module Navigation = Component_nav
 module Partials = Component_partials
+module MessageTextElements = Component_message_text_elements
+module Icon = Component_icon
 open Tyxml.Html
-
-let icon icon_type =
-  (match icon_type with
-  | `CalendarOutline -> "calendar-outline"
-  | `Calendar -> "calendar"
-  | `CreateOutline -> "create-outline"
-  | `Create -> "create"
-  | `EarthOutline -> "earth-outline"
-  | `Earth -> "earth"
-  | `LeafOutline -> "leaf-outline"
-  | `Leaf -> "leaf"
-  | `LocationOutline -> "location-outline"
-  | `Location -> "location"
-  | `MailOutline -> "mail-outline"
-  | `Mail -> "mail"
-  | `PersonOutline -> "person-outline"
-  | `Person -> "person"
-  | `SaveOutline -> "save-outline"
-  | `Save -> "save"
-  | `SchoolOutline -> "school-outline"
-  | `School -> "school"
-  | `TrashOutline -> "trash-outline"
-  | `Trash -> "trash"
-  | `UploadOutline -> "upload-outline")
-  |> fun icon_class ->
-  i ~a:[ a_class [ Format.asprintf "icon-%s" icon_class ] ] []
-;;
 
 let language_select
     options
@@ -40,25 +15,23 @@ let language_select
   =
   let open Pool_common in
   let name = Message.Field.show field in
+  let options =
+    CCList.map
+      (fun l ->
+        let is_selected =
+          selected
+          |> CCOption.map (fun selected ->
+                 if Language.equal selected l then [ a_selected () ] else [])
+          |> CCOption.value ~default:[]
+        in
+        option
+          ~a:([ a_value (Language.show l) ] @ is_selected)
+          (txt (Language.show l)))
+      options
+  in
   div
     ~a:[ a_class [ "select" ] ]
-    [ select
-        ~a:([ a_name name ] @ attributes)
-        (CCList.map
-           (fun l ->
-             let is_selected =
-               selected
-               |> CCOption.map (fun selected ->
-                      if Language.equal selected l
-                      then [ a_selected () ]
-                      else [])
-               |> CCOption.value ~default:[]
-             in
-             option
-               ~a:([ a_value (Language.show l) ] @ is_selected)
-               (txt (Language.show l)))
-           options)
-    ]
+    [ select ~a:([ a_name name ] @ attributes) options ]
 ;;
 
 let csrf_attibs ?id csrf =
@@ -285,7 +258,9 @@ let input_element_file
     match has_icon with
     | false -> placeholder
     | true ->
-      span ~a:[ a_class [ "has-icon" ] ] [ icon `UploadOutline; placeholder ]
+      span
+        ~a:[ a_class [ "has-icon" ] ]
+        [ Icon.icon `UploadOutline; placeholder ]
   in
   let input_attributes =
     let attributes =
@@ -363,7 +338,7 @@ let submit_element
   let content =
     CCOption.map_or
       ~default:[ text_content ]
-      (fun i -> [ icon i; text_content ])
+      (fun i -> [ Icon.icon i; text_content ])
       has_icon
   in
   button
@@ -374,29 +349,55 @@ let submit_element
 let submit_icon ?(classnames = []) icon_type =
   button
     ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
-    [ icon icon_type ]
+    [ Icon.icon icon_type ]
 ;;
 
-let selector field equal show options selected ?(attributes = []) () =
+let selector
+    language
+    field
+    equal
+    show
+    options
+    selected
+    ?help
+    ?(attributes = [])
+    ?(add_empty = false)
+    ()
+  =
   let name = Pool_common.Message.Field.(show field) in
+  let options =
+    CCList.map
+      (fun l ->
+        let is_selected =
+          selected
+          |> CCOption.map_or ~default:[] (fun selected ->
+                 if equal selected l then [ a_selected () ] else [])
+        in
+        option
+          ~a:((l |> show |> a_value) :: is_selected)
+          (l |> show |> CCString.capitalize_ascii |> txt))
+      options
+  in
+  let options =
+    match add_empty with
+    | true ->
+      let base_attrs = [ a_hidden (); a_disabled () ] in
+      let attrs =
+        if CCOption.is_none selected
+        then CCList.cons (a_selected ()) base_attrs
+        else base_attrs
+      in
+      let default = option ~a:attrs (txt "Please select") in
+      [ default ] @ options
+    | false -> options
+  in
+  let help = Elements.help language help in
   div
     ~a:[ a_class (Elements.group_class [] `Vertical) ]
     [ label [ name |> CCString.capitalize_ascii |> txt ]
     ; div
         ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:(a_name name :: attributes)
-            (CCList.map
-               (fun l ->
-                 let is_selected =
-                   selected
-                   |> CCOption.map_or ~default:[] (fun selected ->
-                          if equal selected l then [ a_selected () ] else [])
-                 in
-                 option
-                   ~a:((l |> show |> a_value) :: is_selected)
-                   (l |> show |> CCString.capitalize_ascii |> txt))
-               options)
-        ]
+        [ select ~a:(a_name name :: attributes) options ]
+    ; div help
     ]
 ;;

@@ -174,3 +174,75 @@ module File = struct
       (Format.asprintf "/custom/assets/%s/%s" m.id m.name)
   ;;
 end
+
+module Reminder = struct
+  module Subject = struct
+    type t = string [@@deriving eq, show, sexp_of]
+
+    let create subject =
+      if CCString.is_empty subject
+      then Error PoolError.(Invalid Field.ReminderSubject)
+      else Ok subject
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common_utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        PoolError.Field.ReminderSubject
+    ;;
+  end
+
+  module Text = struct
+    type t = string [@@deriving eq, show, sexp_of]
+
+    let create text =
+      if CCString.is_empty text
+      then Error PoolError.(Invalid Field.ReminderText)
+      else Ok text
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common_utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        PoolError.Field.ReminderText
+    ;;
+  end
+
+  module LeadTime = struct
+    type t = Ptime.Span.t [@@deriving eq, show]
+
+    let create m =
+      if Ptime.Span.abs m |> Ptime.Span.equal m
+      then Ok m
+      else Error PoolError.NegativeAmount
+    ;;
+
+    let t_of_yojson = Utils_time.ptime_span_of_yojson
+    let yojson_of_t = Utils_time.yojson_of_ptime_span
+    let value m = m
+
+    let schema () =
+      let open CCResult in
+      let decode str = Pool_common_utils.Time.parse_time_span str >>= create in
+      let encode span = Pool_common_utils.Time.print_time_span span in
+      Pool_common_utils.schema_decoder decode encode PoolError.Field.LeadTime
+    ;;
+  end
+
+  module SentAt = struct
+    type t = Ptime.t [@@deriving eq, show]
+
+    let create m = m
+    let create_now () = Ptime_clock.now ()
+    let value m = m
+    let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
+  end
+end

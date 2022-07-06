@@ -43,6 +43,18 @@ module Duration : sig
   val create : Ptime.Span.t -> (t, Pool_common.Message.error) result
 end
 
+type base =
+  { start : Start.t
+  ; duration : Duration.t
+  ; description : Description.t option
+  ; max_participants : ParticipantAmount.t
+  ; min_participants : ParticipantAmount.t
+  ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  }
+
 module AssignmentCount : sig
   type t
 
@@ -62,6 +74,10 @@ type t =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] make type for canceled_at? *)
     canceled_at : Ptime.t option
@@ -75,15 +91,6 @@ val show : t -> string
 val is_fully_booked : t -> bool
 val session_date_to_human : t -> string
 
-type base =
-  { start : Start.t
-  ; duration : Duration.t
-  ; description : Description.t option
-  ; max_participants : ParticipantAmount.t
-  ; min_participants : ParticipantAmount.t
-  ; overbook : ParticipantAmount.t
-  }
-
 (* TODO [aerben] this should be experiment id type *)
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
@@ -92,6 +99,7 @@ type event =
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
+  | ReminderSent of (t * Sihl_email.t list)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -158,14 +166,14 @@ val find_experiment_id_and_title
   -> Pool_common.Id.t
   -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
 
+val find_sessions_to_remind
+  :  Pool_database.Label.t
+  -> (t list, Pool_common__Entity_message.error) result Lwt.t
+
 val find_follow_ups
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
-val to_email_text
-  :  Pool_common.Language.t
-  -> Start.t
-  -> Duration.t
-  -> Pool_location.t
-  -> string
+val to_email_text : Pool_common.Language.t -> t -> string
+val public_to_email_text : Pool_common.Language.t -> Public.t -> string

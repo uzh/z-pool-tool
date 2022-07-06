@@ -68,7 +68,7 @@ let context user () =
         Pool_common.Message.Collection.of_string
     in
     let%lwt context =
-      let* query_lang, langauge, tenant_db =
+      let* query_lang, language, tenant_db =
         match user with
         | `Root ->
           Lwt_result.return (None, Pool_common.Language.En, Pool_database.root)
@@ -81,7 +81,7 @@ let context user () =
           Lwt_result.return (query_lang, language, tenant_db)
       in
       Lwt_result.return
-        (Pool_context.create (query_lang, langauge, tenant_db, message, csrf))
+        (Pool_context.create (query_lang, language, tenant_db, message, csrf))
     in
     match context with
     | Ok context -> context |> Pool_context.set req |> handler

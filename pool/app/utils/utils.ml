@@ -40,3 +40,25 @@ module Bool = struct
     | false -> Error err
   ;;
 end
+
+module Html = struct
+  (* placed here due to circular dependency between email and http_utils
+     library *)
+  let handle_line_breaks finally_fcn str =
+    let open Tyxml.Html in
+    finally_fcn
+    @@
+    match
+      str
+      |> CCString.split ~by:"\n"
+      |> CCList.map (CCString.split ~by:"\\n")
+      |> CCList.flatten
+    with
+    | [] -> []
+    | head :: tail ->
+      CCList.fold_left
+        (fun html str -> html @ [ br (); txt str ])
+        [ txt head ]
+        tail
+  ;;
+end

@@ -71,6 +71,11 @@ val find_by_session
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
+val find_uncanceled_by_session
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t list, Pool_common.Message.error) result Lwt.t
+
 type create =
   { contact : Contact.t
   ; session_id : Pool_common.Id.t

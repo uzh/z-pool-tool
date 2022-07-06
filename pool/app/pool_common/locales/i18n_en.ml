@@ -10,12 +10,18 @@ let to_string = function
       "There are no %s available."
       (Locales_en.field_to_string field)
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
+  | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
   | ExperimentWaitingListTitle -> "Waiting list"
+  | ExperimentSessionReminderHint ->
+    "There are default settings for the sessions of this experiment. These \
+     settings can be overwritten for each session."
   | Files -> "Files"
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "Welcome to the Pool Tool"
   | I18nTitle -> "Translations"
+  | NoEntries field ->
+    Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -28,8 +34,18 @@ let to_string = function
   | RateTotalSent number ->
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
+  | Reminder -> "Reminder"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
+  | SessionReminderDefaultLeadTime leadtime ->
+    Format.asprintf
+      "The experiment default lead time is: %s"
+      (leadtime |> Pool_common_utils.Time.formatted_timespan)
+  | SessionReminderDefaultText text ->
+    Format.asprintf "The experiment default reminder text is:\n\n %s" text
+  | SessionReminderDefaultSubject text ->
+    Format.asprintf "The experiment default subject is:\n\n %s" text
+  | SessionReminder -> "Session reminder"
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
@@ -37,12 +53,14 @@ let to_string = function
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
+  | TextTemplates -> "text templates"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
   | UserProfilePausedNote ->
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | UserProfileTitle -> "User Profile"
+  | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
 let nav_link_to_string = function
@@ -98,9 +116,13 @@ let hint_to_string = function
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
   | SelectedDateIsPast -> "The selected date is in the past."
+  | SessionReminderLanguageHint ->
+    "If you provide a custom reminder text, select its language here."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
+  | TemplateTextElementsHint ->
+    "The following text elements can be used inside the templates:"
   | TimeSpanPickerHint -> "Hours and minutes"
 ;;
 

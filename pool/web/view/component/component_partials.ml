@@ -1,5 +1,6 @@
+open Tyxml.Html
+
 let mail_to_html ?(highlight_first_line = true) mail =
-  let open Tyxml.Html in
   let open Pool_location.Address.Mail in
   let { institution; room; building; street; zip; city } = mail in
   let building_room =
@@ -31,7 +32,6 @@ let address_to_html
     language
     (location_address : Pool_location.Address.t)
   =
-  let open Tyxml.Html in
   let open Pool_location.Address in
   match location_address with
   | Virtual ->
@@ -48,7 +48,6 @@ let address_to_html
 ;;
 
 let location_to_html ?(public = false) language (location : Pool_location.t) =
-  let open Tyxml.Html in
   let open Pool_location in
   let title =
     [ strong [ txt (location.name |> Name.show) ] ] |> p |> CCOption.pure

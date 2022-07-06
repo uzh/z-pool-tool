@@ -89,7 +89,11 @@ let index experiment_list Pool_context.{ language; _ } =
     ]
 ;;
 
-let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
+let experiment_form
+    ?experiment
+    Pool_context.{ language; csrf; _ }
+    sys_languages
+    flash_fetcher
   =
   let open Experiment in
   let action =
@@ -130,6 +134,7 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
         ~flash_fetcher
     ; checkbox_element
         language
+        ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
         ~value:
           (experiment
@@ -143,6 +148,98 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
           (experiment
           |> CCOption.map_or ~default:false registration_disabled_value)
         ~flash_fetcher
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h3
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
+                Pool_common.(
+                  Utils.field_to_string language Message.Field.Invitation
+                  |> CCString.capitalize_ascii)
+            ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ MessageTextElements.experiment_invitation_help
+                language
+                ?experiment
+                ()
+            ; input_element
+                language
+                `Text
+                Pool_common.Message.Field.InvitationSubject
+                ~value:
+                  (value (fun e ->
+                       e.invitation_template
+                       |> CCOption.map_or
+                            ~default:""
+                            InvitationTemplate.subject_value))
+                ~flash_fetcher
+            ; textarea_element
+                language
+                Pool_common.Message.Field.InvitationText
+                ~value:
+                  (value (fun e ->
+                       e.invitation_template
+                       |> CCOption.map_or
+                            ~default:""
+                            InvitationTemplate.text_value))
+                ~flash_fetcher
+            ]
+        ]
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h3
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt
+                Pool_common.(Utils.text_to_string language I18n.SessionReminder)
+            ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ p
+                [ txt
+                    Pool_common.(
+                      Utils.text_to_string
+                        language
+                        I18n.ExperimentSessionReminderHint)
+                ]
+            ; flatpicker_element
+                language
+                `Time
+                Pool_common.Message.Field.LeadTime
+                ~help:Pool_common.I18n.TimeSpanPickerHint
+                ~value:
+                  (value (fun e ->
+                       session_reminder_lead_time_value e
+                       |> CCOption.map_or
+                            ~default:""
+                            Pool_common.Utils.Time.timespan_spanpicker))
+                ~flash_fetcher
+            ; div
+                ~a:[ a_class [ "stack" ] ]
+                [ MessageTextElements.session_reminder_help
+                    language
+                    sys_languages
+                    ()
+                ; input_element
+                    language
+                    `Text
+                    Pool_common.Message.Field.ReminderSubject
+                    ~value:
+                      (value (fun e ->
+                           session_reminder_subject_value e
+                           |> CCOption.value ~default:""))
+                    ~flash_fetcher
+                ; textarea_element
+                    language
+                    Pool_common.Message.Field.ReminderText
+                    ~value:
+                      (value (fun e ->
+                           session_reminder_text_value e
+                           |> CCOption.value ~default:""))
+                    ~flash_fetcher
+                ]
+            ]
+        ]
     ; submit_element
         language
         Message.(
@@ -155,7 +252,8 @@ let experiment_form ?experiment Pool_context.{ language; csrf; _ } flash_fetcher
     ]
 ;;
 
-let create (Pool_context.{ language; _ } as context) flash_fetcher =
+let create (Pool_context.{ language; _ } as context) sys_languages flash_fetcher
+  =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
     [ h1
@@ -165,12 +263,17 @@ let create (Pool_context.{ language; _ } as context) flash_fetcher =
                 language
                 Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context flash_fetcher
+    ; experiment_form context sys_languages flash_fetcher
     ]
 ;;
 
-let edit experiment (Pool_context.{ language; _ } as context) flash_fetcher =
-  let html = experiment_form ~experiment context flash_fetcher in
+let edit
+    experiment
+    (Pool_context.{ language; _ } as context)
+    sys_languages
+    flash_fetcher
+  =
+  let html = experiment_form ~experiment context sys_languages flash_fetcher in
   experiment_layout
     language
     (Control Pool_common.Message.(Edit (Some Field.Experiment)))

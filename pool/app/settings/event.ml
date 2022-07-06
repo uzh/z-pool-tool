@@ -4,6 +4,7 @@ open Default
 type event =
   | LanguagesUpdated of Pool_common.Language.t list
   | EmailSuffixesUpdated of EmailSuffix.t list
+  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
   | ContactEmailUpdated of ContactEmail.t
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
@@ -17,6 +18,9 @@ let handle_event pool : event -> unit Lwt.t = function
     Lwt.return_unit
   | EmailSuffixesUpdated email_suffixes ->
     let%lwt () = Repo.update pool (Value.TenantEmailSuffixes email_suffixes) in
+    Lwt.return_unit
+  | DefaultReminderLeadTimeUpdated lead_time ->
+    let%lwt () = Repo.update pool (Value.DefaultReminderLeadTime lead_time) in
     Lwt.return_unit
   | ContactEmailUpdated contact_email ->
     let%lwt () = Repo.update pool (Value.TenantContactEmail contact_email) in
@@ -39,7 +43,8 @@ let handle_event pool : event -> unit Lwt.t = function
     in
     Lwt.return_unit
   | DefaultRestored
-      { tenant_languages
+      { default_reminder_lead_time
+      ; tenant_languages
       ; tenant_email_suffixes
       ; tenant_contact_email
       ; inactive_user_disable_after
@@ -47,7 +52,8 @@ let handle_event pool : event -> unit Lwt.t = function
       ; terms_and_conditions
       } ->
     let%lwt () =
-      [ Languages
+      [ ReminderLeadTime
+      ; Languages
       ; EmailSuffixes
       ; ContactEmail
       ; InactiveUserDisableAfter
@@ -58,7 +64,8 @@ let handle_event pool : event -> unit Lwt.t = function
     in
     let%lwt () =
       Value.
-        [ TenantLanguages tenant_languages
+        [ DefaultReminderLeadTime default_reminder_lead_time
+        ; TenantLanguages tenant_languages
         ; TenantEmailSuffixes tenant_email_suffixes
         ; TenantContactEmail tenant_contact_email
         ; InactiveUserDisableAfter inactive_user_disable_after

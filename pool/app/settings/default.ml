@@ -1,7 +1,8 @@
 open Entity
 
 type default =
-  { tenant_languages : Value.tenant_languages
+  { default_reminder_lead_time : Value.default_reminder_lead_time
+  ; tenant_languages : Value.tenant_languages
   ; tenant_email_suffixes : Value.tenant_email_suffixes
   ; tenant_contact_email : Value.tenant_contact_email
   ; inactive_user_disable_after : Value.inactive_user_disable_after
@@ -12,6 +13,13 @@ type default =
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 let tenant_languages = Pool_common.Language.[ En; De ]
+
+let default_reminder_lead_time =
+  14400
+  |> Ptime.Span.of_int_s
+  |> Pool_common.Reminder.LeadTime.create
+  |> get_or_failwith
+;;
 
 let tenant_email_suffixes =
   CCList.map
@@ -40,7 +48,8 @@ let terms_and_conditions =
 ;;
 
 let default_values =
-  { tenant_languages
+  { default_reminder_lead_time
+  ; tenant_languages
   ; tenant_email_suffixes
   ; tenant_contact_email
   ; inactive_user_disable_after

@@ -1,5 +1,17 @@
 open Entity
 
+module Sihl_email = struct
+  include Sihl_email
+
+  let equal (e1 : t) (e2 : t) =
+    let open CCString in
+    equal e1.sender e2.sender
+    && equal e1.recipient e2.recipient
+    && equal e1.subject e2.subject
+    && equal e1.text e2.text
+  ;;
+end
+
 type base =
   { start : Start.t
   ; duration : Duration.t
@@ -7,6 +19,9 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
 
@@ -17,6 +32,7 @@ type event =
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
+  | ReminderSent of (t * Sihl_email.t list)
 [@@deriving eq, show]
 
 let handle_event pool = function
@@ -31,6 +47,9 @@ let handle_event pool = function
         session.max_participants
         session.min_participants
         session.overbook
+        session.reminder_subject
+        session.reminder_text
+        session.reminder_lead_time
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
@@ -43,17 +62,34 @@ let handle_event pool = function
         ; max_participants
         ; min_participants
         ; overbook
+        ; reminder_subject
+        ; reminder_text
+        ; reminder_lead_time
         }
       , location
       , session ) ->
+    Repo.update
+      pool
+      { session with
+        start
+      ; duration
+      ; location
+      ; description
+      ; max_participants
+      ; min_participants
+      ; overbook
+      ; reminder_subject
+      ; reminder_text
+      ; reminder_lead_time
+      }
+  | ReminderSent (session, emails) ->
+    let%lwt () =
+      match CCList.length emails > 0 with
+      | true -> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
+      | false -> Lwt.return_unit
+    in
     { session with
-      start
-    ; duration
-    ; description
-    ; location
-    ; max_participants
-    ; min_participants
-    ; overbook
+      reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
 ;;

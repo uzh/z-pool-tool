@@ -1,6 +1,24 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let invitation_templte_data tenant_db =
+  let open Lwt_result.Syntax in
+  let%lwt system_languages = Settings.find_languages tenant_db in
+  let* i18n_texts =
+    let%lwt res =
+      Lwt_list.map_s
+        (fun lang ->
+          let find = CCFun.flip (I18n.find_by_key tenant_db) lang in
+          let* subject = find I18n.Key.InvitationSubject in
+          let* text = find I18n.Key.InvitationText in
+          Lwt_result.return (lang, (subject, text)))
+        system_languages
+    in
+    CCList.all_ok res |> Lwt.return
+  in
+  Lwt.return_ok (system_languages, i18n_texts)
+;;
+
 let create_layout req = General.create_tenant_layout `Admin req
 
 let index req =
@@ -86,7 +104,7 @@ let create req =
            |> fun ids ->
            Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
        in
-       let* default_language = Settings.default_language tenant_db in
+       let* system_languages, i18n_texts = invitation_templte_data tenant_db in
        let%lwt invited_contacts =
          Invitation.find_multiple_by_experiment_and_contacts
            tenant_db
@@ -95,7 +113,10 @@ let create req =
        in
        let%lwt events =
          Cqrs_command.Invitation_command.Create.(
-           handle { experiment; contacts; invited_contacts } default_language
+           handle
+             { experiment; contacts; invited_contacts }
+             system_languages
+             i18n_texts
            |> Lwt_result.lift)
        in
        let handle events =
@@ -131,11 +152,12 @@ let resend req =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* invitation = Invitation.find tenant_db id in
        let* experiment = Experiment.find tenant_db experiment_id in
-       let* default_language = Settings.default_language tenant_db in
+       let* system_languages, i18n_texts = invitation_templte_data tenant_db in
        let events =
          Cqrs_command.Invitation_command.Resend.handle
            Invitation.{ invitation; experiment }
-           default_language
+           system_languages
+           i18n_texts
          |> Lwt.return
        in
        let handle events =

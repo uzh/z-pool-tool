@@ -21,6 +21,38 @@ module TemplateLabel = struct
   ;;
 end
 
+module CustomTemplate = struct
+  module Subject = struct
+    type t =
+      | I18n of I18n.t
+      | String of string
+    [@@deriving eq, show, variants]
+
+    let value = function
+      | I18n s -> I18n.content_to_string s
+      | String s -> s
+    ;;
+  end
+
+  module Content = struct
+    type t =
+      | I18n of I18n.t
+      | String of string
+    [@@deriving eq, show, variants]
+
+    let value = function
+      | I18n c -> I18n.content_to_string c
+      | String c -> c
+    ;;
+  end
+
+  type t =
+    { subject : Subject.t
+    ; content : Content.t
+    }
+  [@@deriving eq, show]
+end
+
 module Token = struct
   type t = string [@@deriving eq, show]
 

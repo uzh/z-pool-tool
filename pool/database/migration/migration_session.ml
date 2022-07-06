@@ -40,10 +40,23 @@ let add_follow_up =
     |sql}
 ;;
 
+let add_reminder_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"add field versioning for participants"
+    {sql|
+     ALTER TABLE pool_sessions
+      ADD COLUMN reminder_subject TEXT DEFAULT NULL AFTER overbook,
+      ADD COLUMN reminder_text TEXT DEFAULT NULL AFTER reminder_subject,
+      ADD COLUMN reminder_lead_time INTEGER DEFAULT NULL AFTER reminder_text,
+      ADD COLUMN reminder_sent_at timestamp NULL AFTER reminder_lead_time
+     |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "session"
     |> add_step create_participant_table
     |> add_step add_location
-    |> add_step add_follow_up)
+    |> add_step add_follow_up
+    |> add_step add_reminder_columns)
 ;;

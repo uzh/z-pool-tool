@@ -1,3 +1,40 @@
+module CustomTemplate : sig
+  module Subject : sig
+    type t =
+      | I18n of I18n.t
+      | String of string
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val value : t -> string
+    val i18n : I18n.t -> t
+    val string : string -> t
+  end
+
+  module Content : sig
+    type t =
+      | I18n of I18n.t
+      | String of string
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val value : t -> string
+    val i18n : I18n.t -> t
+    val string : string -> t
+  end
+
+  type t =
+    { subject : Subject.t
+    ; content : Content.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 module Token : sig
   type t
 
@@ -118,6 +155,12 @@ module Helper : sig
     -> Pool_common.Language.t
     -> TemplateLabel.t
     -> string
+    -> string
+    -> (string * string) list
+    -> Sihl_email.t Lwt.t
+
+  val prepare_boilerplate_email
+    :  CustomTemplate.t
     -> string
     -> (string * string) list
     -> Sihl_email.t Lwt.t
