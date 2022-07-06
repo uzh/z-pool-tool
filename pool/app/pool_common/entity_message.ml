@@ -192,7 +192,7 @@ type error =
   | NotInTimeRange
   | NoValue
   | PasswordConfirmationDoesNotMatch
-  | PasswordPolicy of string
+  | PasswordPolicy
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound

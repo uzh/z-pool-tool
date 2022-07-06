@@ -104,6 +104,7 @@ let personal_details
 let login_information
     (contact : Contact.t)
     Pool_context.{ language; query_language; csrf; _ }
+    password_policy
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
@@ -123,16 +124,33 @@ let login_information
       ]
   in
   let password_form =
+    let open Message in
     form
       ~a:(form_attrs "/user/update-password")
-      ([ csrf_element csrf () ]
-      @ CCList.map
-          (fun m -> input_element language `Password ~value:"" m)
-          [ Message.Field.CurrentPassword
-          ; Message.Field.NewPassword
-          ; Message.Field.PasswordConfirmation
-          ]
-      @ [ submit_element language Message.(Update (Some Field.password)) () ])
+      [ csrf_element csrf ()
+      ; input_element
+          language
+          `Password
+          ~value:""
+          Field.CurrentPassword
+          ~required:true
+      ; input_element
+          language
+          ~help:
+            Pool_common.I18n.(
+              I18nText (password_policy |> I18n.content_to_string))
+          `Password
+          ~value:""
+          Field.NewPassword
+          ~required:true
+      ; input_element
+          language
+          `Password
+          ~value:""
+          Field.PasswordConfirmation
+          ~required:true
+      ; submit_element language Message.(Update (Some Field.password)) ()
+      ]
   in
   div
     [ div ~a:[ a_class [ "stack-lg" ] ] [ email_form; password_form ]

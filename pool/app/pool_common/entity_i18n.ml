@@ -57,6 +57,7 @@ type hint =
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
   | Distribution
+  | I18nText of string
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint

@@ -224,8 +224,7 @@ let rec error_to_string = function
   | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
-  | PasswordPolicy msg ->
-    Format.asprintf "Password doesn't match the required policy! %s" msg
+  | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."

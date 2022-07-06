@@ -312,9 +312,7 @@ let update_password_wrong_policy () =
       |> Pool_common.Utils.get_or_failwith
       |> handle contact)
   in
-  let expected =
-    Error Message.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
-  in
+  let expected = Error Message.PasswordPolicy in
   check_result expected events
 ;;
 

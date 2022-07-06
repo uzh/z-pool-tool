@@ -5,7 +5,7 @@ let create_layout = Contact_general.create_layout
 let user_update_csrf = "_user_update_csrf"
 
 let show usage req =
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.tenant_db; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err -> err, "/login")
@@ -23,7 +23,10 @@ let show usage req =
          |> create_layout ~active_navigation:"/user" req context
          >|= Sihl.Web.Response.of_html
        | `LoginInformation ->
-         Page.Contact.login_information contact context
+         let* password_policy =
+           I18n.find_by_key tenant_db I18n.Key.PasswordPolicyText language
+         in
+         Page.Contact.login_information contact context password_policy
          |> create_layout ~active_navigation:"/user" req context
          >|= Sihl.Web.Response.of_html
        | `PersonalDetails ->

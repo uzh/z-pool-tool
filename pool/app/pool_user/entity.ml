@@ -32,11 +32,7 @@ module Password = struct
   ;;
 
   let default_password_policy p =
-    if CCString.length p < 8
-    then
-      Error
-        PoolError.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
-    else Ok ()
+    if CCString.length p < 8 then Error PoolError.PasswordPolicy else Ok ()
   ;;
 
   let validate ?(password_policy = default_password_policy) password =

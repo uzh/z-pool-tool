@@ -241,10 +241,7 @@ let rec error_to_string = function
   | NoValue -> "Kein Wert angegeben"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
-  | PasswordPolicy msg ->
-    Format.asprintf
-      "Passwort stimmt nicht mit der benötigten Policy überein! %s"
-      msg
+  | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
   | PasswordResetFailMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
