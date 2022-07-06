@@ -25,7 +25,14 @@ let suite =
               "has terms and conditions"
               `Quick
               check_terms_and_conditions
+          ; test_case
+              "update terms and conditions"
+              `Quick
+              update_terms_and_conditions
+          ; test_case "login after terms update" `Quick login_after_terms_update
           ] )
+    ; ( "dev/test"
+      , [ test_case "intercept email" `Quick Common_test.validate_email ] )
     ]
 ;;
 

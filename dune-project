@@ -30,34 +30,34 @@
   (ocaml
    (>= 4.12.0))
   (conformist
-   (>= 0.6.0))
+   (>= 0.8.1))
   (sihl
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-cache
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-email
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-queue
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-storage
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-token
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (sihl-user
    (and
-    (>= 3.0.1)
+    (>= 3.0.3)
     (< 4.0.0)))
   (lwt
    (>= 5.4.1))
@@ -65,8 +65,12 @@
    (>= 0.7.0))
   (containers
    (>= 3.6))
+  (mariadb
+   (= 1.1.4))
   (caqti-driver-mariadb
-   (>= 1.6.0))
+   (>= 1.8.0))
+  (caqti
+   (>= 1.8.0))
   (ocamlformat
    (>= 0.18.0))
   (ppx_deriving
@@ -74,7 +78,8 @@
   (ppx_yojson_conv
    (>= 0.14.0))
   (ppx_variants_conv
-   (>= 0.14.1))
+   (= v0.14.2))
+  canary
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))

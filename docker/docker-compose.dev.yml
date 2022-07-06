@@ -1,26 +1,28 @@
 version: '3.7'
 services:
   database-root:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     environment:
       # default user is "root"
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: dev
+      MYSQL_DATABASE: development
     ports:
       - 3306:3306
+    volumes:
+      - ../.devcontainer/init_root:/docker-entrypoint-initdb.d
 
   database-tenant:
-    image: mariadb:10.4
+    image: mariadb:10.6
     command: --max_allowed_packet=629145600
     environment:
       # default user is "root"
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: test_econ
+      MYSQL_DATABASE: dev_econ
     ports:
       - 3307:3306
     volumes:
-      - ./init_tenant:/docker-entrypoint-initdb.d
+      - ../.devcontainer/init_tenant:/docker-entrypoint-initdb.d
 
   adminer:
     image: adminer:4.7.6-standalone

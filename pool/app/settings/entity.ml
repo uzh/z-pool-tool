@@ -1,3 +1,6 @@
+module Message = Pool_common.Message
+
+(* TODO [aerben] maybe move to pool common *)
 module Day = struct
   type t = int [@@deriving eq, show, yojson]
 
@@ -15,17 +18,15 @@ module ContactEmail = struct
 
   let value m = m
 
+  (* TODO: email address validation *)
   let create email =
     if CCString.length email <= 0
-    then Error Pool_common.Message.(Invalid EmailAddress)
+    then Error Message.(Invalid Field.EmailAddress)
     else Ok email
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.EmailAddress)
-      CCList.pure
-      "contact_email"
+    Pool_common.Utils.schema_decoder create value Message.Field.EmailAddress
   ;;
 end
 
@@ -36,15 +37,12 @@ module EmailSuffix = struct
 
   let create suffix =
     if CCString.length suffix <= 0
-    then Error Pool_common.Message.(Invalid EmailSuffix)
+    then Error Pool_common.Message.(Invalid Field.EmailSuffix)
     else Ok suffix
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.EmailSuffix)
-      CCList.pure
-      "email_suffix"
+    Pool_common.Utils.schema_decoder create value Message.Field.EmailSuffix
   ;;
 end
 
@@ -56,7 +54,7 @@ module InactiveUser = struct
       let open CCResult.Infix in
       week
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.TimeSpan)
       >>= fun week ->
       if week < 0 then Error Pool_common.Message.TimeSpanPositive else Ok week
     ;;
@@ -65,11 +63,10 @@ module InactiveUser = struct
     let to_timespan = Week.to_timespan
 
     let schema () =
-      Conformist.custom
-        Pool_common.(
-          Utils.schema_decoder create Message.InactiveUserDisableAfter)
-        (fun l -> l |> CCInt.to_string |> CCList.pure)
-        "inactive_user_disable_after"
+      Pool_common.Utils.schema_decoder
+        create
+        CCInt.to_string
+        Message.Field.InactiveUserDisableAfter
     ;;
   end
 
@@ -78,42 +75,48 @@ module InactiveUser = struct
 
     let create day =
       let open CCResult.Infix in
+      let open Pool_common.Message in
       day
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(Invalid TimeSpan)
-      >>= fun day ->
-      if day < 0 then Error Pool_common.Message.TimeSpanPositive else Ok day
+      |> CCOption.to_result (Invalid Field.TimeSpan)
+      >>= fun day -> if day < 0 then Error TimeSpanPositive else Ok day
     ;;
 
     let value m = m
     let to_timespan = Day.to_timespan
 
     let schema () =
-      Conformist.custom
-        Pool_common.(Utils.schema_decoder create Message.InactiveUserWarning)
-        (fun l -> l |> CCInt.to_string |> CCList.pure)
-        "inactive_user_warning"
+      Pool_common.Utils.schema_decoder
+        create
+        CCInt.to_string
+        Message.Field.InactiveUserWarning
     ;;
   end
 end
 
 module TermsAndConditions = struct
-  type t = string [@@deriving eq, show, yojson]
+  module Terms = struct
+    type t = string [@@deriving eq, show, yojson]
 
-  let create terms =
-    if CCString.length terms > 0
-    then Ok terms
-    else Error Pool_common.Message.(Invalid TermsAndConditions)
+    let create terms =
+      if CCString.length terms > 0
+      then Ok terms
+      else Error Pool_common.Message.(Invalid Field.TermsAndConditions)
+    ;;
+
+    let value m = m
+  end
+
+  type t = Pool_common.Language.t * Terms.t [@@deriving eq, show, yojson]
+
+  let create language content =
+    let open CCResult in
+    let* language = Pool_common.Language.create language in
+    let* content = Terms.create content in
+    Ok (language, content)
   ;;
 
   let value m = m
-
-  let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.TermsAndConditions)
-      CCList.pure
-      "terms_and_conditions"
-  ;;
 end
 
 module Value = struct
@@ -129,7 +132,8 @@ module Value = struct
   type inactive_user_warning = InactiveUser.DisableAfter.t
   [@@deriving eq, show, yojson]
 
-  type terms_and_conditions = TermsAndConditions.t [@@deriving eq, show, yojson]
+  type terms_and_conditions = TermsAndConditions.t list
+  [@@deriving eq, show, yojson]
 
   type t =
     | TenantLanguages of tenant_languages

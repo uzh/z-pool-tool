@@ -6,7 +6,12 @@ services:
     networks: [webgateway]
     environment:
       - DATABASE_URL
+      - GITLAB_API_BASE
+      - GITLAB_PROJECT_ID
+      - GITLAB_PROJECT_NAME
+      - GITLAB_TOKEN
       - PUBLIC_URL
+      - SIHL_ENV
       - SIHL_SECRET
       - SMTP_HOST
       - SMTP_PASSWORD

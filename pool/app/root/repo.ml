@@ -27,6 +27,7 @@ module Sql = struct
   ;;
 
   let find_all_request =
+    let open Caqti_request.Infix in
     {sql|
       WHERE
         confirmed = 1
@@ -34,7 +35,7 @@ module Sql = struct
         admin = 1
       |sql}
     |> select_from_users_sql
-    |> Caqti_request.collect Caqti_type.unit Pool_user.Repo.user_caqti
+    |> Caqti_type.unit ->* Pool_user.Repo.user_caqti
   ;;
 
   let find_all pool =

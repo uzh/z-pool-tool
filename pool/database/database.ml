@@ -90,6 +90,24 @@ module Tenant = struct
   ;;
 end
 
+type event =
+  | Added of Pool_database.t
+  | Migrated of Pool_database.Label.t
+[@@deriving eq, show]
+
+let handle_event _ : event -> unit Lwt.t = function
+  | Added pool ->
+    Pool_database.add_pool pool;
+    Lwt.return_unit
+  | Migrated label ->
+    let%lwt () =
+      match Pool_database.Label.equal Pool_database.root label with
+      | true -> Migration.Root.run ()
+      | false -> Migration.Tenant.run [ label ] ()
+    in
+    Lwt.return_unit
+;;
+
 let start () =
   Logs.info (fun m -> m "Start database %s" Root.label);
   Root.setup ();

@@ -3,31 +3,45 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
+let create_layout req = General.create_tenant_layout `Contact req
+
+let root_redirect req =
+  Http_utils.redirect_to
+  @@
+  match Http_utils.is_req_from_root_host req with
+  | true -> "/root"
+  | false -> "/index"
+;;
+
 let index req =
   if Http_utils.is_req_from_root_host req
   then Http_utils.redirect_to "/root"
   else (
-    let%lwt result =
+    let result
+        ({ Pool_context.tenant_db; language; query_language; _ } as context)
+      =
       let open Lwt_result.Syntax in
-      let message =
-        CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
-      in
-      let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-      let* tenant = Pool_tenant.find_by_label tenant_db in
-      Page.Public.index tenant message ()
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
+      let open Lwt_result.Infix in
+      let error_path = Http_utils.path_with_language query_language "/error" in
+      Lwt_result.map_error (fun err -> err, error_path)
+      @@ let* tenant = Pool_tenant.find_by_label tenant_db in
+         let* welcome_text =
+           I18n.find_by_key tenant_db I18n.Key.WelcomeText language
+         in
+         Page.Public.index tenant context welcome_text
+         |> create_layout req context
+         >|= Sihl.Web.Response.of_html
     in
-    result
-    |> CCResult.map_err (fun err -> err, "/error")
-    |> Http_utils.extract_happy_path)
+    result |> Http_utils.extract_happy_path req)
 ;;
 
 let index_css req =
   let%lwt result =
     let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
+    let* { Pool_context.tenant_db; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
     let* styles = Pool_tenant.find_styles tenant_db in
     let%lwt file =
       Service.Storage.find
@@ -54,22 +68,51 @@ let index_css req =
 ;;
 
 let email_confirmation_note req =
-  let open Sihl.Web in
-  let message = CCOption.bind (Flash.find_alert req) Message.of_string in
-  let html =
-    Common.Message.I18n.EmailConfirmation.(Page.Utils.note title note)
+  let result ({ Pool_context.language; _ } as context) =
+    let open Lwt_result.Infix in
+    Lwt_result.map_error (fun err -> err, "/")
+    @@
+    let txt_to_string m = Common.Utils.text_to_string language m in
+    Common.I18n.(
+      Page.Utils.note
+        (txt_to_string EmailConfirmationTitle)
+        (txt_to_string EmailConfirmationNote))
+    |> create_layout req context
+    >|= Sihl.Web.Response.of_html
   in
-  message |> html |> Response.of_html |> Lwt.return
+  result |> Http_utils.extract_happy_path req
 ;;
 
-let not_found _ =
-  let html = Page.Utils.error_page_not_found () in
-  Sihl.Web.Response.of_html html |> Lwt.return
+let not_found req =
+  let result
+      ({ Pool_context.language; query_language; tenant_db; _ } as context)
+    =
+    let open Lwt_result.Infix in
+    let open Lwt_result.Syntax in
+    let html = Page.Utils.error_page_not_found language () in
+    match Http_utils.is_req_from_root_host req with
+    | true ->
+      Page.Layout.create_root_layout html None language ()
+      |> Sihl.Web.Response.of_html
+      |> Lwt_result.return
+    | false ->
+      Lwt_result.map_error (fun err ->
+          err, Http_utils.path_with_language query_language "/error")
+      @@ let* tenant = Pool_tenant.find_by_label tenant_db in
+         let%lwt tenant_languages = Settings.find_languages tenant_db in
+         let req =
+           Pool_context.Tenant.set
+             req
+             (Pool_context.Tenant.create tenant tenant_languages)
+         in
+         html |> create_layout req context >|= Sihl.Web.Response.of_html
+  in
+  result |> Http_utils.extract_happy_path req
 ;;
 
 let asset req =
   let open Sihl.Contract.Storage in
-  let asset_id = Sihl.Web.Router.param req "id" in
+  let asset_id = Sihl.Web.Router.param req Common.Message.Field.(Id |> show) in
   let%lwt file =
     Service.Storage.find ~ctx:(Pool_tenant.to_ctx Database.root) asset_id
   in
@@ -82,26 +125,28 @@ let asset req =
 ;;
 
 let error req =
-  let%lwt tenant_error =
-    let open Lwt_result.Syntax in
-    let* tenant_db = Middleware.Tenant.tenant_db_of_request req in
-    let* _ = Pool_tenant.find_by_label tenant_db in
-    Ok
-      ( Common.Message.TerminatoryTenantErrorTitle
-      , Common.Message.TerminatoryTenantError )
-    |> Lwt.return
-  in
-  let root_error =
-    ( Common.Message.TerminatoryRootErrorTitle
-    , Common.Message.TerminatoryRootError )
-  in
   let error_page (title, note) =
     Page.Utils.error_page_terminatory title note ()
   in
+  let%lwt tenant_error =
+    let open Lwt_result.Syntax in
+    let* ({ Pool_context.tenant_db; _ } as context) =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let* _ = Pool_tenant.find_by_label tenant_db in
+    ( Common.Message.TerminatoryTenantErrorTitle
+    , Common.Message.TerminatoryTenantError )
+    |> error_page
+    |> General.create_tenant_layout `Contact req context
+  in
   (match tenant_error with
   | Ok tenant_error -> tenant_error
-  | Error _ -> root_error)
-  |> error_page
+  | Error _ ->
+    ( Common.Message.TerminatoryRootErrorTitle
+    , Common.Message.TerminatoryRootError )
+    |> error_page
+    |> fun html ->
+    Page.Layout.create_root_layout html None Pool_common.Language.En ())
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

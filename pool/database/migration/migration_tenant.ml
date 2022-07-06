@@ -25,10 +25,22 @@ let create_tenant_table =
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
       UNIQUE KEY `unique_uuid` (`uuid`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    |sql}
+;;
+
+let change_description_column_type =
+  Sihl.Database.Migration.create_step
+    ~label:"change description column type"
+    {sql|
+      ALTER TABLE pool_tenant
+        MODIFY description text
     |sql}
 ;;
 
 let migration () =
-  Sihl.Database.Migration.(empty "tenant" |> add_step create_tenant_table)
+  Sihl.Database.Migration.(
+    empty "tenant"
+    |> add_step create_tenant_table
+    |> add_step change_description_column_type)
 ;;

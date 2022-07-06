@@ -15,15 +15,16 @@ let extract : type a. a Entity.carrier -> a Entity.t Caqti_type.t * string =
 
 module Sql = struct
   let update_request =
+    let open Caqti_request.Infix in
     {sql|
       UPDATE pool_person
         SET
           role = $1,
           created_at = $3,
           updated_at = $4
-        WHERE sihl_user_uuid = UNHEX(REPLACE($2, '-', ''));
+        WHERE sihl_user_uuid = UNHEX(REPLACE($2, '-', ''))
     |sql}
-    |> Caqti_request.exec RepoPerson.Write.caqti
+    |> RepoPerson.Write.caqti ->. Caqti_type.unit
   ;;
 
   let update pool t =
@@ -65,12 +66,13 @@ module Sql = struct
   ;;
 
   let find_all_by_role_request caqti_type =
+    let open Caqti_request.Infix in
     {sql|
       WHERE pool_person.role = ?
       AND user_users.confirmed = 1
     |sql}
     |> select_from_persons_sql
-    |> Caqti_request.collect Caqti_type.string caqti_type
+    |> Caqti_type.string ->* caqti_type
   ;;
 
   let find_all_by_role pool role =
@@ -82,15 +84,14 @@ module Sql = struct
   ;;
 
   let find_request caqti_type =
+    let open Caqti_request.Infix in
     {sql|
       WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
       AND pool_person.role = ?
       AND user_users.confirmed = 1
     |sql}
     |> select_from_persons_sql
-    |> Caqti_request.find
-         Caqti_type.(tup2 Pool_common.Repo.Id.t string)
-         caqti_type
+    |> Caqti_type.(tup2 Pool_common.Repo.Id.t string) ->! caqti_type
   ;;
 
   let find pool role id =
@@ -100,10 +101,11 @@ module Sql = struct
       (Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Admin)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
 
   let find_role_by_user_request =
+    let open Caqti_request.Infix in
     {sql|
       SELECT
         pool_person.role
@@ -111,7 +113,7 @@ module Sql = struct
       INNER JOIN user_users ON pool_person.sihl_user_uuid = user_users.uuid
       AND user_users.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_request.find Caqti_type.string Caqti_type.string
+    |> Caqti_type.(string ->! string)
   ;;
 
   let find_role_by_user pool user =
@@ -120,7 +122,7 @@ module Sql = struct
       (Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Admin))
+    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.Admin))
     >>= fun role -> role |> Stringify.person_from_string |> Lwt_result.lift
   ;;
 
@@ -136,11 +138,14 @@ module Sql = struct
         UNHEX(REPLACE(?, '-', '')),
         ?,
         ?
-      );
+      )
     |sql}
   ;;
 
-  let insert_request = Caqti_request.exec RepoPerson.Write.caqti insert_sql
+  let insert_request =
+    let open Caqti_request.Infix in
+    insert_sql |> RepoPerson.Write.caqti ->. Caqti_type.unit
+  ;;
 
   let insert pool (t : 'a t) =
     Utils.Database.exec
@@ -158,14 +163,12 @@ let update = Sql.update
 
 let find_any_admin_by_user_id pool id =
   let open Lwt_result.Infix in
-  let find_admin carrier =
-    find pool carrier (Pool_common.Id.value id) >|= fun m -> Any m
-  in
+  let find_admin carrier = find pool carrier id >|= fun m -> Any m in
   let user =
     Service.User.find_opt
       ~ctx:(Pool_tenant.to_ctx pool)
       (Pool_common.Id.value id)
-    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound User))
+    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.User))
   in
   user
   >>= find_role_by_user pool
@@ -176,6 +179,7 @@ let find_any_admin_by_user_id pool id =
   | `Recruiter -> find_admin RecruiterC
   | `Operator -> find_admin OperatorC
   | _ ->
-    Pool_common.(Message.(Invalid Role) |> Utils.error_to_string Language.En)
+    Pool_common.(
+      Message.(Invalid Field.Role) |> Utils.error_to_string Language.En)
     |> failwith
 ;;

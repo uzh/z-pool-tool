@@ -1,118 +1,252 @@
-module ConformistError = struct
-  type t = string * string list * string [@@deriving eq, show, yojson]
+open Sexplib.Conv
 
-  let to_string err =
-    CCString.concat
-      "\n"
-      (List.map (fun (m, _, k) -> Format.asprintf "%s: %s" m k) err)
+module Field = struct
+  let go m fmt _ = Format.pp_print_string fmt m
+
+  type t =
+    | Admin [@name "admin"] [@printer go "admin"]
+    | AssetId [@name "asset_id"] [@printer go "asset_id"]
+    | Assignment [@name "assignment"] [@printer go "assignment"]
+    | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
+    | AssignmentCount [@name "assignment_count"]
+        [@printer go "assignment_count"]
+    | Building [@name "building"] [@printer go "building"]
+    | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
+    | City [@name "city"] [@printer go "city"]
+    | Comment [@name "comment"] [@printer go "comment"]
+    | Contact [@name "contact"] [@printer go "contact"]
+    | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
+    | Contacts [@name "contacts"] [@printer go "contacts"]
+    | CreatedAt [@name "created_at"] [@printer go "created_at"]
+    | CurrentPassword [@name "current_password"]
+        [@printer go "current_password"]
+    | Database [@name "database"] [@printer go "database"]
+    | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
+    | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
+    | Date [@name "date"] [@printer go "date"]
+    | DateTime [@name "date_time"] [@printer go "date_time"]
+    | DefaultLanguage [@name "default_language"]
+        [@printer go "default_language"]
+    | Description [@name "description"] [@printer go "description"]
+    | DirectRegistrationDisabled [@name "direct_registration_disabled"]
+        [@printer go "direct_registration_disabled"]
+    | Disabled [@name "disabled"] [@printer go "disabled"]
+    | Distribution [@name "distribution"] [@printer go "distribution"]
+    | Duration [@name "duration"] [@printer go "duration"]
+    | Email [@name "email"] [@printer go "email"]
+    | EmailAddress [@name "email_address"] [@printer go "email_address"]
+        [@printer go "default_language"]
+    | EmailAddressUnverified [@name "email_address_unverified"]
+        [@printer go "email_address_unverified"]
+    | EmailAddressVerified [@name "email_address_verified"]
+        [@printer go "email_address_verified"]
+    | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
+    | End [@name "end"] [@printer go "end"]
+    | Experiment [@name "experiment"] [@printer go "experiment"]
+    | File [@name "file"] [@printer go "file"]
+    | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
+    | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
+    | Filename [@name "filename"] [@printer go "filename"]
+    | Filesize [@name "filesize"] [@printer go "filesize"]
+    | Firstname [@name "firstname"] [@printer go "firstname"]
+    | FollowUpSession [@name "follow_up_session"]
+        [@printer go "follow_up_session"]
+    | Host [@name "host"] [@printer go "host"]
+    | I18n [@name "i18n"] [@printer go "i18n"]
+    | Icon [@name "icon"] [@printer go "icon"]
+    | Id [@name "id"] [@printer go "id"]
+    | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
+        [@printer go "inactive_user_disable_after"]
+    | InactiveUserWarning [@name "inactive_user_warning"]
+        [@printer go "inactive_user_warning"]
+    | Institution [@name "institution"] [@printer go "institution"]
+    | Invitation [@name "invitation"] [@printer go "invitation"]
+    | Invitations [@name "invitations"] [@printer go "invitations"]
+    | Key [@name "key"] [@printer go "key"]
+    | Label [@name "label"] [@printer go "label"]
+    | Language [@name "language"] [@printer go "language"]
+    | LanguageDe [@name "DE"] [@printer go "DE"]
+    | LanguageEn [@name "EN"] [@printer go "EN"]
+    | Lastname [@name "lastname"] [@printer go "lastname"]
+    | Link [@name "link"] [@printer go "link"]
+    | Location [@name "location"] [@printer go "location"]
+    | LogoType [@name "logo_type"] [@printer go "logo_type"]
+    | Mailing [@name "mailing"] [@printer go "mailing"]
+    | MainSession [@name "main_session"] [@printer go "main_session"]
+    | MaxParticipants [@name "max_participants"]
+        [@printer go "max_participants"]
+    | MinParticipants [@name "min_participants"]
+        [@printer go "min_participants"]
+    | Name [@name "name"] [@printer go "name"]
+    | NewPassword [@name "new_password"] [@printer go "new_password"]
+    | Operator [@name "operator"] [@printer go "operator"]
+    | Overbook [@name "overbook"] [@printer go "overbook"]
+    | Page [@name "page"] [@printer go "page"]
+    | Participant [@name "participant"] [@printer go "participant"]
+    | ParticipantCount [@name "participant_count"]
+        [@printer go "participant_count"]
+    | Participants [@name "participants"] [@printer go "participants"]
+    | Participated [@name "participated"] [@printer go "participated"]
+    | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
+    | Password [@name "password"] [@printer go "password"]
+    | PasswordConfirmation [@name "password_confirmation"]
+        [@printer go "password_confirmation"]
+    | Paused [@name "paused"] [@printer go "paused"]
+    | Rate [@name "rate"] [@printer go "rate"]
+    | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | RecruitmentChannel [@name "recruitment_channel"]
+        [@printer go "recruitment_channel"]
+    | RegistrationDisabled [@name "registration_disabled"]
+        [@printer go "registration_disabled"]
+    | ResentAt [@name "resent_at"] [@printer go "resent_at"]
+    | Role [@name "role"] [@printer go "role"]
+    | Room [@name "room"] [@printer go "room"]
+    | Root [@name "root"] [@printer go "root"]
+    | Session [@name "session"] [@printer go "session"]
+    | Sessions [@name "sessions"] [@printer go "sessions"]
+    | Setting [@name "setting"] [@printer go "setting"]
+    | ShowUp [@name "show_up"] [@printer go "show_up"]
+    | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
+    | SmtpAuthServer [@name "smtp_auth_server"] [@printer go "smtp_auth_server"]
+    | SmtpPassword [@name "smtp_password"] [@printer go "smtp_password"]
+    | SmtpPort [@name "smtp_port"] [@printer go "smtp_port"]
+    | SmtpProtocol [@name "smtp_protocol"] [@printer go "smtp_protocol"]
+    | SmtpReadModel [@name "smtp_read_model"] [@printer go "smtp_read_model"]
+    | SmtpUsername [@name "smtp_username"] [@printer go "smtp_username"]
+    | SmtpWriteModel [@name "smtp_write_model"] [@printer go "smtp_write_model"]
+    | SortOrder [@name "sort_order"] [@printer go "sort_order"]
+    | Start [@name "start"] [@printer go "start"]
+    | Status [@name "status"] [@printer go "status"]
+    | Street [@name "street"] [@printer go "street"]
+    | Styles [@name "styles"] [@printer go "styles"]
+    | Tenant [@name "tenant"] [@printer go "tenant"]
+    | TenantDisabledFlag [@name "tenant_disabled_flag"]
+        [@printer go "tenant_disabled_flag"]
+    | TenantId [@name "tenant_id"] [@printer go "tenant_id"]
+    | TenantLogos [@name "tenant_logos"] [@printer go "tenant_logos"]
+    | TenantMaintenanceFlag [@name "tenant_maintenance_flag"]
+        [@printer go "tenant_maintenance_flag"]
+    | TenantPool [@name "tenant_pool"] [@printer go "tenant_pool"]
+    | TermsAccepted [@name "terms_accepted"] [@printer go "terms_accepted"]
+    | TermsAndConditions [@name "terms_and_conditions"]
+        [@printer go "terms_and_conditions"]
+    | Time [@name "time"] [@printer go "time"]
+    | TimeSpan [@name "timespan"] [@printer go "timespan"]
+    | Title [@name "title"] [@printer go "title"]
+    | Token [@name "token"] [@printer go "token"]
+    | Translation [@name "translation"] [@printer go "translation"]
+    | Url [@name "url"] [@printer go "url"]
+    | User [@name "user"] [@printer go "user"]
+    | Version [@name "version"] [@printer go "version"]
+    | Virtual [@name "virtual"] [@printer go "virtual"]
+    | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
+    | Zip [@name "zip"] [@printer go "zip"]
+        [@printer field_name "terms_and_conditions"]
+  [@@deriving eq, show { with_path = false }, yojson, variants, sexp_of]
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
   ;;
+
+  let url_key m = m |> show |> Format.asprintf ":%s"
+  let array_key m = m |> show |> Format.asprintf "%s[]"
 end
 
-type field =
-  | Admin
-  | ContactEmail
-  | DatabaseLabel
-  | DatabaseUrl
-  | Description
-  | Email
-  | EmailAddress
-  | EmailSuffix
-  | FileMimeType
-  | Filename
-  | Filesize
-  | Firstname
-  | Host
-  | Icon
-  | InactiveUserDisableAfter
-  | InactiveUserWarning
-  | Language
-  | Lastname
-  | LogoType
-  | Operator
-  | Page
-  | Participant
-  | Password
-  | Paused
-  | RecruitmentChannel
-  | Role
-  | Root
-  | Setting
-  | SmtpAuthMethod
-  | SmtpAuthServer
-  | SmtpPassword
-  | SmtpPort
-  | SmtpProtocol
-  | SmtpUsername
-  | Styles
-  | Tenant
-  | TenantDisabledFlag
-  | TenantLogos
-  | TenantMaintenanceFlag
-  | TenantPool
-  | TermsAndConditions
-  | TimeSpan
-  | Title
-  | Token
-  | Url
-  | User
-[@@deriving eq, show, yojson, variants]
-
+(* TODO [aerben] make these general, compare what fields exist already, whenever
+   pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
+   Field.t *)
 type error =
-  | Conformist of ConformistError.t list
+  | AlreadySignedUpForExperiment
+  | AlreadyInPast
+  | AlreadyStarted
+  | AlreadyInvitedToExperiment of string list
+  | Conformist of (Field.t * error) list
+  | ConformistModuleErrorType
+  | ContactSignupInvalidEmail
+  | ContactUnconfirmed
+  | Decode of Field.t
   | DecodeAction
+  | DirectRegistrationIsDisabled
+  | Disabled of Field.t
   | EmailAddressMissingOperator
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
+  | EmailDeleteAlreadyVerified
   | EmailMalformed
-  | Invalid of field
+  | EndBeforeStart
+  | ExperimentSessionCountNotZero
+  | FollowUpIsEarlierThanMain
+  | HtmxVersionNotFound of string
+  | Invalid of Field.t
   | LoginProvideDetails
-  | MeantimeUpdate of field
-  | NoOptionSelected of field
+  | MeantimeUpdate of Field.t
+  | NegativeAmount
+  | NoOptionSelected of Field.t
+  | NotADatetime of (string * string)
+  | NotANumber of string
   | NoTenantsRegistered
-  | NotFound of field
-  | ParticipantSignupInvalidEmail
-  | ParticipantUnconfirmed
-  | PasswordPolicy of string
-  | PasswordResetInvalidData
+  | NotEligible
+  | NotFound of Field.t
+  | NotFoundList of Field.t * string list
+  | NotHandled of string
+  | NotInTimeRange
+  | NoValue
+  | PasswordConfirmationDoesNotMatch
+  | PasswordPolicy
   | PasswordResetFailMessage
+  | PasswordResetInvalidData
+  | PoolContextNotFound
+  | RegistrationDisabled
   | RequestRequiredFields
-  | Retrieve of field
+  | Retrieve of Field.t
+  | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
-  | TerminatoryTenantError
+  | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
-  | TerminatoryTenantErrorTitle
   | TerminatoryRootErrorTitle
+  | TerminatoryTenantError
+  | TerminatoryTenantErrorTitle
+  | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
+  | TimeInPast
   | TimeSpanPositive
-  | TokenInvalidFormat
   | TokenAlreadyUsed
-  | Undefined of field
+  | TokenInvalidFormat
+  | Undefined of Field.t
   | WriteOnlyModel
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
-type warning = Warning of string [@@deriving eq, show, yojson, variants]
+type warning = Warning of string
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 type success =
-  | Created of field
-  | EmailVerified
+  | AddedToWaitingList
+  | AssignmentCreated
+  | Canceled of Field.t
+  | Created of Field.t
+  | Deleted of Field.t
   | EmailConfirmationMessage
+  | EmailVerified
   | FileDeleted
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | RemovedFromWaitingList
+  | SentList of Field.t
   | SettingsUpdated
+  | Stopped of Field.t
   | TenantUpdateDatabase
   | TenantUpdateDetails
-  | Updated of field
-[@@deriving eq, show, yojson, variants]
+  | Updated of Field.t
+[@@deriving eq, show, yojson, variants, sexp_of]
 
-type info = Info of string [@@deriving eq, show, yojson, variants]
+type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string
   | PageNotFoundMessage
-[@@deriving eq, show, yojson, variants]
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 let field_message prefix field suffix =
   Format.asprintf "%s %s %s" prefix field suffix
@@ -121,12 +255,75 @@ let field_message prefix field suffix =
 ;;
 
 let handle_sihl_login_error = function
-  | `Incorrect_password | `Does_not_exist -> Invalid Password
+  | `Incorrect_password | `Does_not_exist -> Invalid Field.Password
 ;;
 
-module I18n = struct
-  module EmailConfirmation = struct
-    let title = "Email confirmation"
-    let note = "Please check your emails and confirm your address first."
-  end
+type control =
+  | Accept of Field.t option
+  | Add of Field.t option
+  | AddToWaitingList
+  | Ascending
+  | Assign of Field.t option
+  | Back
+  | Cancel of Field.t option
+  | Choose of Field.t option
+  | Create of Field.t option
+  | Decline
+  | Delete of Field.t option
+  | Descending
+  | Disable
+  | Edit of Field.t option
+  | Enable
+  | Enroll
+  | Login
+  | More
+  | RemoveFromWaitingList
+  | Resend of Field.t option
+  | Save of Field.t option
+  | Send of Field.t option
+  | SendResetLink
+  | SelectFilePlaceholder
+  | Show
+  | SignUp
+  | Stop of Field.t option
+  | Update of Field.t option
+[@@deriving eq, show, yojson, variants, sexp_of]
+
+let to_conformist_error error_list =
+  CCList.map (fun (name, _, msg) -> name |> Field.read, msg) error_list
+  |> conformist
+;;
+
+let add_field_query_params path params =
+  CCList.map (CCPair.map_fst Field.show) params
+  |> Uri.add_query_params' (Uri.of_string path)
+  |> Uri.to_string
+;;
+
+module Collection = struct
+  type t =
+    { error : error list
+    ; warning : warning list
+    ; success : success list
+    ; info : info list
+    }
+  [@@deriving eq, show, yojson, sexp_of]
+
+  let empty = { error = []; warning = []; success = []; info = [] }
+  let set_success txts message = { message with success = txts }
+  let set_warning txts message = { message with warning = txts }
+  let set_error txts message = { message with error = txts }
+  let set_info txts message = { message with info = txts }
+
+  let of_string str =
+    let json =
+      try Some (Yojson.Safe.from_string str) with
+      | _ -> None
+    in
+    match json with
+    | Some json -> Some (t_of_yojson json)
+    | None -> None
+  ;;
+
+  let to_string t = yojson_of_t t |> Yojson.Safe.to_string
 end

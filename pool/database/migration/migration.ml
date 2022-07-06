@@ -66,7 +66,6 @@ module Root = struct
     extend_migrations
       [ Migration_tenant.migration ()
       ; Migration_tenant_logo_mappings.migration ()
-      ; Migration_email_templates.migration_root ()
       ]
   ;;
 
@@ -81,11 +80,18 @@ module Tenant = struct
   let steps =
     extend_migrations
       [ Migration_person.migration ()
-      ; Migration_participant.migration ()
-      ; Migration_email.migration ()
-      ; Migration_email_templates.migration_tenant ()
+      ; Migration_contact.migration ()
+      ; Migration_email_address.migration ()
       ; Migration_settings.migration ()
-      ; Migration_email_templates.migration_signup ()
+      ; Migration_i18n.migration ()
+      ; Migration_assignment.migration ()
+      ; Migration_session.migration ()
+      ; Migration_invitation.migration ()
+      ; Migration_experiment.migration ()
+      ; Migration_waiting_list.migration ()
+      ; Migration_location.migration ()
+      ; Migration_location_file_mapping.migration ()
+      ; Migration_mailing.migration ()
       ]
   ;;
 

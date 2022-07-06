@@ -21,8 +21,9 @@ module Url = struct
   let t = Caqti_type.string
 
   let find_url_request =
+    let open Caqti_request.Infix in
     {sql| SELECT url FROM pool_tenant WHERE database_label = ? |sql}
-    |> Caqti_request.find Database.Repo.Label.t t
+    |> Database.Repo.Label.t ->! t
   ;;
 
   let of_pool pool =
@@ -79,7 +80,7 @@ let t =
   let open Entity.Read in
   let encode m =
     Ok
-      ( Id.value m.Read.id
+      ( m.Read.id
       , ( m.title
         , ( m.description
           , ( Url.value m.url
@@ -111,7 +112,7 @@ let t =
        let* description = Description.create description in
        let* url = Url.create url in
        Ok
-         { id = Id.of_string id
+         { id
          ; title
          ; description
          ; url
@@ -151,7 +152,7 @@ let t =
                                  (tup2
                                     Disabled.t
                                     (tup2
-                                       Pool_common.Language.t
+                                       Pool_common.Repo.Language.t
                                        (tup2
                                           Common.Repo.CreatedAt.t
                                           Common.Repo.UpdatedAt.t)))))))))))))
@@ -163,7 +164,7 @@ module Write = struct
   let t =
     let encode m =
       Ok
-        ( Id.value m.Write.id
+        ( m.Write.id
         , ( m.title
           , ( m.description
             , ( Url.value m.url
@@ -196,7 +197,7 @@ module Write = struct
          let* description = Description.create description in
          let* url = Url.create url in
          Ok
-           { id = Id.of_string id
+           { id
            ; title
            ; description
            ; url
@@ -236,7 +237,7 @@ module Write = struct
                                    (tup2
                                       Disabled.t
                                       (tup2
-                                         Pool_common.Language.t
+                                         Pool_common.Repo.Language.t
                                          (tup2
                                             Common.Repo.CreatedAt.t
                                             Common.Repo.UpdatedAt.t)))))))))))))

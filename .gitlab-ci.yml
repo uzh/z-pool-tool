@@ -7,9 +7,11 @@ include:
 
 .assets:
   stage: assets
-  image: node:14
+  image: node:16
   artifacts:
     paths: [public/]
+  variables:
+    - ECON_PACKAGE_REGISTRY_READ_TOKEN: ${ECON_PACKAGE_REGISTRY_READ_TOKEN}
   script:
     - yarn install
     - yarn build
@@ -34,10 +36,14 @@ include:
     name: staging
     url: https://pool-root.econ.uzh.ch/staging/
   variables:
+    CHECK_CSRF: "true"
     DATABASE_URL: ${ECON_POOL_DATABASE_URL_STAGING}
+    EMAIL_BYPASS_INTERCEPT: "true"
     IP_ALLOWLIST: "${ECON_IP_ECON_ALL},${ECON_IP_UZH_VPN}"
     PREFIX_PATH: /staging
     PUBLIC_URL: https://pool-root.econ.uzh.ch
+    QUEUE_FORCE_ASYNC: "true"
+    SIHL_ENV: staging
   rules:
     - if: $CI_COMMIT_TAG
       when: never
@@ -51,6 +57,7 @@ include:
   variables:
     DATABASE_URL: ${ECON_POOL_DATABASE_URL}
     PUBLIC_URL: https://pool-root.econ.uzh.ch
+    SIHL_ENV: production
   rules:
     - if: $CI_COMMIT_TAG
 
@@ -62,9 +69,13 @@ workflow:
 
 variables:
   DOCKER_FOLDER: docker
-  DOCKER_STACK_NAME: pool
   DOCKER_SERVICE_NAME: app
+  DOCKER_STACK_NAME: pool
   EXPECTED_STATUS_CODE: 302
+  GITLAB_API_BASE: ${CI_API_V4_URL}
+  GITLAB_PROJECT_ID: ${CI_PROJECT_ID}
+  GITLAB_PROJECT_NAME: ${CI_PROJECT_NAME}
+  GITLAB_TOKEN: ${CI_JOB_TOKEN}
   SIHL_SECRET: ${ECON_POOL_SIHL_SECRET}
   SMTP_HOST: smtp.uzh.ch
   SMTP_PASSWORD: ${ECON_SMTP_APP_PASSWORD}
@@ -73,6 +84,7 @@ variables:
   SMTP_SENDER: it@econ.uzh.ch
   SMTP_START_TLS: "true"
   SMTP_USERNAME: ecserv
+  TEST_EMAIL: test@econ.uzh.ch
   VERSION: ${CI_COMMIT_TAG} # set to "latest" in docker tasks by default
 
 stages:
@@ -113,13 +125,17 @@ compile-and-test:
     - opam remote add default https://opam.ocaml.org
 
     # pin sihl to quickly receive updates without having to wait for opam community repo
-    - opam pin add -yn sihl git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-cache git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-email git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-queue git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-storage git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-token git://github.com/oxidizing/sihl.git
-    - opam pin add -yn sihl-user git://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
+    - opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
+
+    # pin custom libraries hosted on the UZH gitlab
+    - opam pin add -yn canary https://github.com/uzh/canary.git
+    - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
 
     # pin payout and install system dependencies
     - opam pin add -yn pool .

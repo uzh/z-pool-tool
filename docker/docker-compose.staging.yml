@@ -5,9 +5,17 @@ services:
     image: "${DOCKER_IMAGE_URL}:${VERSION}"
     networks: [webgateway]
     environment:
+      - CHECK_CSRF
       - DATABASE_URL
+      - EMAIL_BYPASS_INTERCEPT
+      - GITLAB_API_BASE
+      - GITLAB_PROJECT_ID
+      - GITLAB_PROJECT_NAME
+      - GITLAB_TOKEN
       - PREFIX_PATH
       - PUBLIC_URL
+      - QUEUE_FORCE_ASYNC
+      - SIHL_ENV
       - SIHL_SECRET
       - SMTP_HOST
       - SMTP_PASSWORD
@@ -16,6 +24,7 @@ services:
       - SMTP_SENDER
       - SMTP_START_TLS
       - SMTP_USERNAME
+      - TEST_EMAIL
       - VERSION
     deploy:
       mode: replicated
@@ -34,7 +43,6 @@ services:
         - "traefik.pool.frontend.rule=Host:pool.econ.uzh.ch;PathPrefix:/staging/"
         - "traefik.pool-root.frontend.rule=Host:pool-root.econ.uzh.ch;PathPrefix:/staging/"
         - "traefik.tenant.frontend.rule=Host:tenant.econ.uzh.ch;PathPrefix:/staging/"
-        - "traefik.frontend.whiteList.sourceRange=${IP_ALLOWLIST}"
 
 networks:
   webgateway:

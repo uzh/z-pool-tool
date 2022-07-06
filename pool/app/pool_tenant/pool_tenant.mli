@@ -7,7 +7,10 @@ module SmtpAuth : sig
     val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Port : sig
@@ -16,7 +19,10 @@ module SmtpAuth : sig
     val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Username : sig
@@ -25,7 +31,10 @@ module SmtpAuth : sig
     val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Password : sig
@@ -33,7 +42,10 @@ module SmtpAuth : sig
 
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module AuthenticationMethod : sig
@@ -42,7 +54,10 @@ module SmtpAuth : sig
     val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Protocol : sig
@@ -51,7 +66,10 @@ module SmtpAuth : sig
     val value : t -> string
     val equal : t -> t -> bool
     val create : string -> (t, Pool_common.Message.error) result
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type t =
@@ -92,7 +110,10 @@ module Title : sig
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Description : sig
@@ -101,7 +122,10 @@ module Description : sig
   val value : t -> string
   val equal : t -> t -> bool
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Url : sig
@@ -111,7 +135,11 @@ module Url : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val create : string -> (t, Pool_common.Message.error) result
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
   val of_pool : Database.Label.t -> t Lwt.t
 end
 
@@ -128,7 +156,10 @@ module Styles : sig
 
     val create : string -> (t, Pool_common.Message.error) result
     val value : t -> string
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 end
 
@@ -143,7 +174,10 @@ module Icon : sig
 
     val create : string -> (t, Pool_common.Message.error) result
     val value : t -> string
-    val schema : unit -> ('a, t) Conformist.Field.t
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 end
 
@@ -152,7 +186,12 @@ module Logos : sig
 
   val value : t -> Pool_common.File.t list
   val equal : t -> t -> bool
-  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> ( Pool_common.Message.error
+       , Pool_common.Id.t list )
+       Pool_common.Utils.PoolConformist.Field.t
 end
 
 module PartnerLogos : sig
@@ -160,7 +199,12 @@ module PartnerLogos : sig
 
   val value : t -> Pool_common.File.t list
   val equal : t -> t -> bool
-  val schema : unit -> ('a, Pool_common.Id.t list) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> ( Pool_common.Message.error
+       , Pool_common.Id.t list )
+       Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Maintenance : sig
@@ -168,7 +212,10 @@ module Maintenance : sig
 
   val equal : t -> t -> bool
   val create : bool -> t
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Disabled : sig
@@ -177,7 +224,10 @@ module Disabled : sig
   val equal : t -> t -> bool
   val create : bool -> t
   val value : t -> bool
-  val schema : unit -> ('a, t) Conformist.Field.t
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module LogoMapping : sig
@@ -188,7 +238,8 @@ module LogoMapping : sig
 
     val of_string : string -> (t, Pool_common.Message.error) result
     val to_string : t -> string
-    val all : unit -> string list
+    val all : t list
+    val all_fields : Pool_common.Message.Field.t list
   end
 
   module Write : sig
@@ -222,6 +273,9 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
+
+val id : t -> Pool_common.Id.t
+val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 
 module Write : sig
   type t =

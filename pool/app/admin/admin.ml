@@ -31,15 +31,3 @@ let find_all pool () =
     []
     all_admin_roles
 ;;
-
-(* TODO: implement customized permissions *)
-let roles_authorized_to_edit admin =
-  match admin with
-  | Any (Assistant _) -> [ `Assistant ]
-  | Any (Experimenter _) -> [ `Assistant; `Experimenter ]
-  | Any (LocationManager _) -> [ `Assistant; `Experimenter; `LocationManager ]
-  | Any (Recruiter _) ->
-    [ `Assistant; `Experimenter; `LocationManager; `Recruiter ]
-  | Any (Operator _) ->
-    [ `Assistant; `Experimenter; `LocationManager; `Recruiter; `Operator ]
-;;

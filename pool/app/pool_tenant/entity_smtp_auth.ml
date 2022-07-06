@@ -1,116 +1,99 @@
+open Sexplib.Conv
 module PoolError = Pool_common.Message
 
 module Server = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create server =
     if CCString.is_empty server
-    then Error PoolError.(Invalid SmtpAuthServer)
+    then Error PoolError.(Invalid Field.SmtpAuthServer)
     else Ok server
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpAuthServer)
-      CCList.pure
-      "smtp_auth_server"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthServer
   ;;
 end
 
 module Port = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create port =
     if CCString.is_empty port && CCInt.of_string port |> CCOption.is_none
-    then Error PoolError.(Invalid SmtpPort)
+    then Error PoolError.(Invalid Field.SmtpPort)
     else Ok port
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpPort)
-      CCList.pure
-      "smtp_auth_port"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpPort
   ;;
 end
 
 module Username = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create username =
     if CCString.is_empty username
-    then Error PoolError.(Invalid SmtpUsername)
+    then Error PoolError.(Invalid Field.SmtpUsername)
     else Ok username
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpUsername)
-      CCList.pure
-      "smtp_auth_username"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpUsername
   ;;
 end
 
 module Password = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let show m = CCString.repeat "*" @@ CCString.length m
 
   let create password =
     if CCString.is_empty password
-    then Error PoolError.(Invalid SmtpPassword)
+    then Error PoolError.(Invalid Field.SmtpPassword)
     else Ok password
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpPassword)
-      CCList.pure
-      "smtp_auth_password"
+    Pool_common.Utils.schema_decoder create show PoolError.Field.SmtpPassword
   ;;
 end
 
 module AuthenticationMethod = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create authentication_method =
     if CCString.is_empty authentication_method
-    then Error PoolError.(Invalid SmtpAuthMethod)
+    then Error PoolError.(Invalid Field.SmtpAuthMethod)
     else Ok authentication_method
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpAuthMethod)
-      CCList.pure
-      "smtp_auth_authentication_method"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthMethod
   ;;
 end
 
 module Protocol = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
     then Ok protocol
-    else Error PoolError.(Invalid SmtpProtocol)
+    else Error PoolError.(Invalid Field.SmtpProtocol)
   ;;
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.SmtpProtocol)
-      CCList.pure
-      "smtp_auth_protocol"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpProtocol
   ;;
 end
 
@@ -121,7 +104,7 @@ type t =
   ; authentication_method : AuthenticationMethod.t
   ; protocol : Protocol.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, sexp_of]
 
 module Write = struct
   type t =

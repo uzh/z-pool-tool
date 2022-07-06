@@ -1,4 +1,4 @@
-FROM node:14 AS node_base
+FROM node:16 AS node_base
 FROM hadolint/hadolint:latest-alpine AS hadolint
 FROM ocaml/opam:debian-ocaml-4.12
 
@@ -63,6 +63,7 @@ USER opam
 # install oh-my-zsh
 RUN wget https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -q -O - | zsh \
   && cp ~/.oh-my-zsh/templates/zshrc.zsh-template ~/.zshrc \
+  && sed -i "/^plugins=/c\plugins=(git dotenv)" ~/.zshrc \
   #
   # link make to devcontainer makefile
   && echo 'alias make="make -f /workspace/.devcontainer/Makefile"' >> ~/.zshrc

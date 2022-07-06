@@ -109,8 +109,3 @@ module Any : sig
        | `Recruiter
        ]
 end
-
-val roles_authorized_to_edit
-  :  any
-  -> [> `Assistant | `Experimenter | `LocationManager | `Operator | `Recruiter ]
-     list

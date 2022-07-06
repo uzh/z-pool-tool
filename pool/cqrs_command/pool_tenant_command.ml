@@ -1,5 +1,5 @@
+module Conformist = Pool_common.Utils.PoolConformist
 module Id = Pool_common.Id
-module Database = Pool_database
 module User = Pool_user
 module File = Pool_common.File
 
@@ -17,8 +17,8 @@ module Create : sig
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t
     ; url : Pool_tenant.Url.t
-    ; database_url : Database.Url.t
-    ; database_label : Database.Label.t
+    ; database_url : Pool_database.Url.t
+    ; database_label : Pool_database.Label.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
@@ -45,8 +45,8 @@ end = struct
     { title : Pool_tenant.Title.t
     ; description : Pool_tenant.Description.t
     ; url : Pool_tenant.Url.t
-    ; database_url : Database.Url.t
-    ; database_label : Database.Label.t
+    ; database_url : Pool_database.Url.t
+    ; database_label : Pool_database.Label.t
     ; smtp_auth_server : Pool_tenant.SmtpAuth.Server.t
     ; smtp_auth_port : Pool_tenant.SmtpAuth.Port.t
     ; smtp_auth_username : Pool_tenant.SmtpAuth.Username.t
@@ -105,8 +105,8 @@ end = struct
           [ Pool_tenant.Title.schema ()
           ; Pool_tenant.Description.schema ()
           ; Pool_tenant.Url.schema ()
-          ; Database.Url.schema ()
-          ; Database.Label.schema ()
+          ; Pool_database.Url.schema ()
+          ; Pool_database.Label.schema ()
           ; Pool_tenant.SmtpAuth.Server.schema ()
           ; Pool_tenant.SmtpAuth.Port.schema ()
           ; Pool_tenant.SmtpAuth.Username.schema ()
@@ -123,14 +123,17 @@ end = struct
   ;;
 
   let handle (command : t) =
-    let open Pool_tenant in
+    let database =
+      Pool_database.
+        { url = command.database_url; label = command.database_label }
+    in
     let tenant =
       Pool_tenant.Write.create
         command.title
         command.description
         command.url
-        Database.{ url = command.database_url; label = command.database_label }
-        SmtpAuth.Write.
+        database
+        Pool_tenant.SmtpAuth.Write.
           { server = command.smtp_auth_server
           ; port = command.smtp_auth_port
           ; username = command.smtp_auth_username
@@ -154,6 +157,12 @@ end = struct
     Ok
       [ Pool_tenant.Created tenant |> Pool_event.pool_tenant
       ; Pool_tenant.LogosUploaded logo_mappings |> Pool_event.pool_tenant
+      ; Database.Added database |> Pool_event.database
+      ; Database.Migrated command.database_label |> Pool_event.database
+      ; Settings.(DefaultRestored default_values) |> Pool_event.settings
+      ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
+      ; Email.(
+          DefaultRestored default_values_tenant |> Pool_event.email_address)
       ]
   ;;
 
@@ -163,7 +172,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
 
@@ -296,7 +305,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user (tenant : Pool_tenant.t) =
@@ -309,8 +318,8 @@ end
 
 module EditDatabase : sig
   type t =
-    { database_url : Database.Url.t
-    ; database_label : Database.Label.t
+    { database_url : Pool_database.Url.t
+    ; database_label : Pool_database.Label.t
     }
 
   val handle
@@ -325,20 +334,23 @@ module EditDatabase : sig
   val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
 end = struct
   type t =
-    { database_url : Database.Url.t
-    ; database_label : Database.Label.t
+    { database_url : Pool_database.Url.t
+    ; database_label : Pool_database.Label.t
     }
 
   let command database_url database_label = { database_url; database_label }
 
   let schema =
     Conformist.(
-      make Field.[ Database.Url.schema (); Database.Label.schema () ] command)
+      make
+        Field.[ Pool_database.Url.schema (); Pool_database.Label.schema () ]
+        command)
   ;;
 
   let handle (tenant : Pool_tenant.Write.t) (command : t) =
     let database =
-      Database.{ url = command.database_url; label = command.database_label }
+      Pool_database.
+        { url = command.database_url; label = command.database_label }
     in
     Ok
       [ Pool_tenant.DatabaseEdited (tenant, database) |> Pool_event.pool_tenant
@@ -347,7 +359,7 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let can user (tenant : Pool_tenant.t) =

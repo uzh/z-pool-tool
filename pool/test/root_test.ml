@@ -12,11 +12,12 @@ let create_root () =
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
-         [ "email", [ email ]
-         ; "password", [ password ]
-         ; "firstname", [ firstname ]
-         ; "lastname", [ lastname ]
-         ]
+         Pool_common.Message.
+           [ Field.(Email |> show), [ email ]
+           ; Field.(Password |> show), [ password ]
+           ; Field.(Firstname |> show), [ firstname ]
+           ; Field.(Lastname |> show), [ lastname ]
+           ]
   in
   let events = Root_command.Create.handle command in
   let expected =
@@ -43,16 +44,15 @@ let create_root_with_invalid_password () =
   let command =
     CCResult.get_exn
     @@ Root_command.Create.decode
-         [ "email", [ email ]
-         ; "password", [ password ]
-         ; "firstname", [ firstname ]
-         ; "lastname", [ lastname ]
-         ]
+         Pool_common.Message.
+           [ Field.(Email |> show), [ email ]
+           ; Field.(Password |> show), [ password ]
+           ; Field.(Firstname |> show), [ firstname ]
+           ; Field.(Lastname |> show), [ lastname ]
+           ]
   in
   let events = Root_command.Create.handle command in
-  let expected =
-    Error (Pool_common.Message.PasswordPolicy "password_policy_text")
-  in
+  let expected = Error Pool_common.Message.PasswordPolicy in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

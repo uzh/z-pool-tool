@@ -1,36 +1,5 @@
 module PoolError = Pool_common.Message
 
-module Password = struct
-  type t = string [@@deriving eq]
-
-  let default_password_policy p =
-    if CCString.length p < 8 then Error "password_policy_text" else Ok ()
-  ;;
-
-  let validate ?(password_policy = default_password_policy) password =
-    let open CCResult in
-    let* () =
-      password_policy password |> map_err Pool_common.Message.passwordpolicy
-    in
-    Ok ()
-  ;;
-
-  let create password = Ok password
-  let to_sihl m = m
-  let show m = CCString.repeat "*" @@ CCString.length m
-
-  let pp (formatter : Format.formatter) (m : t) : unit =
-    Format.fprintf formatter "%s" m
-  ;;
-
-  let schema name =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Password)
-      CCList.pure
-      name
-  ;;
-end
-
 module PasswordConfirmed = struct
   type t = string [@@deriving eq]
 
@@ -42,14 +11,49 @@ module PasswordConfirmed = struct
     m |> show |> Format.fprintf formatter "%s"
   ;;
 
-  let schema name =
-    Conformist.custom
-      Pool_common.(
-        Utils.schema_decoder
-          (fun m -> m |> create |> CCResult.pure)
-          Message.Password)
-      CCList.pure
-      name
+  let schema ?(field = PoolError.Field.PasswordConfirmation) () =
+    Pool_common.Utils.schema_decoder (fun m -> Ok (create m)) show field
+  ;;
+end
+
+module Password = struct
+  type t = string [@@deriving eq]
+
+  let create password = Ok password
+  let to_sihl m = m
+  let show m = CCString.repeat "*" @@ CCString.length m
+
+  let pp (formatter : Format.formatter) (m : t) : unit =
+    Format.fprintf formatter "%s" m
+  ;;
+
+  let schema ?(field = PoolError.Field.Password) () =
+    Pool_common.Utils.schema_decoder create show field
+  ;;
+
+  let default_password_policy p =
+    if CCString.length p < 8 then Error PoolError.PasswordPolicy else Ok ()
+  ;;
+
+  let validate ?(password_policy = default_password_policy) password =
+    (* TODO: Consider checking against old password *)
+    password |> password_policy
+  ;;
+
+  let validate_current_password
+      ?(field = PoolError.Field.CurrentPassword)
+      user
+      password
+    =
+    if Sihl_user.matches_password (password |> to_sihl) user
+    then Ok ()
+    else Error PoolError.(Invalid field)
+  ;;
+
+  let validate_password_confirmation new_password password_confirmation =
+    if equal new_password (PasswordConfirmed.to_sihl password_confirmation)
+    then Ok ()
+    else Error PoolError.PasswordConfirmationDoesNotMatch
   ;;
 end
 
@@ -72,7 +76,7 @@ module EmailAddress = struct
     in
     if Re.execp regex email
     then Ok email
-    else Error PoolError.(Invalid EmailAddress)
+    else Error PoolError.(Invalid Field.EmailAddress)
   ;;
 
   let strip_email_suffix email =
@@ -99,7 +103,7 @@ module EmailAddress = struct
              suffix
              allowed_email_suffixes
         then Ok ()
-        else Error PoolError.(Invalid EmailSuffix))
+        else Error PoolError.(Invalid Field.EmailSuffix))
   ;;
 
   let validate = validate_suffix
@@ -108,10 +112,7 @@ module EmailAddress = struct
   let of_string m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create PoolError.EmailAddress)
-      CCList.pure
-      "email"
+    Pool_common.Utils.schema_decoder create show PoolError.Field.Email
   ;;
 end
 
@@ -120,7 +121,7 @@ module Firstname = struct
 
   let create m =
     if CCString.is_empty m
-    then Error Pool_common.Message.(Invalid Firstname)
+    then Error PoolError.(Invalid Field.Firstname)
     else Ok m
   ;;
 
@@ -128,10 +129,7 @@ module Firstname = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Firstname)
-      CCList.pure
-      "firstname"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.Firstname
   ;;
 end
 
@@ -140,7 +138,7 @@ module Lastname = struct
 
   let create m =
     if CCString.is_empty m
-    then Error Pool_common.Message.(Invalid Lastname)
+    then Error PoolError.(Invalid Field.Lastname)
     else Ok m
   ;;
 
@@ -148,10 +146,7 @@ module Lastname = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      Pool_common.(Utils.schema_decoder create Message.Lastname)
-      CCList.pure
-      "lastname"
+    Pool_common.Utils.schema_decoder create value PoolError.Field.Lastname
   ;;
 end
 
@@ -162,16 +157,14 @@ module Paused = struct
   let value m = m
 
   let schema () =
-    Conformist.custom
-      (Pool_common.Utils.schema_decoder
-         (fun m ->
-           m
-           |> bool_of_string_opt
-           |> CCOption.get_or ~default:false
-           |> CCResult.pure)
-         Pool_common.Message.Paused)
-      (fun l -> l |> string_of_bool |> CCList.pure)
-      "paused"
+    Pool_common.Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      PoolError.Field.Paused
   ;;
 end
 
@@ -196,4 +189,13 @@ module Verified = struct
   let create m = m
   let create_now () = Some (Ptime_clock.now ())
   let value m = m
+end
+
+module EmailVerified = struct
+  type t = Ptime.t option [@@deriving eq, show]
+
+  let create m = m
+  let create_now () = Some (Ptime_clock.now ())
+  let value m = m
+  let is_some m = m |> CCOption.is_some
 end

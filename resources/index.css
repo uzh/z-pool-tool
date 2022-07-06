@@ -1,0 +1,7 @@
+.toggled {
+    display: flex;
+}
+
+.toggle-address:checked~.toggled {
+    display: none;
+}

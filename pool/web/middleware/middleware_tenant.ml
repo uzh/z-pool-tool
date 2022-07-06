@@ -1,22 +1,24 @@
-let tenant_db_of_request req
-    : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
-  =
-  (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
-     host cannot be handled at the moment *)
-  let open Lwt_result.Syntax in
-  let* host =
-    req
-    |> Sihl.Web.Request.header "host"
-    |> CCOption.to_result Pool_common.Message.(NotFound Host)
-    |> Lwt_result.lift
+let valid_tenant () =
+  let filter handler req =
+    let%lwt result =
+      let open Lwt_result.Syntax in
+      let* tenant_db =
+        let open CCResult.Infix in
+        req
+        |> Pool_context.find
+        >|= (fun { Pool_context.tenant_db; _ } -> tenant_db)
+        |> Lwt_result.lift
+      in
+      let* tenant = Pool_tenant.find_by_label tenant_db in
+      let%lwt tenant_languages = Settings.find_languages tenant_db in
+      match Pool_tenant.(Disabled.value tenant.disabled) with
+      | false ->
+        Lwt.return_ok (Pool_context.Tenant.create tenant tenant_languages)
+      | true -> Lwt.return_error Pool_common.Message.(Disabled Field.Tenant)
+    in
+    match result with
+    | Ok context -> context |> Pool_context.Tenant.set req |> handler
+    | Error _ -> Http_utils.redirect_to "/not-found"
   in
-  let%lwt selections = Pool_tenant.Selection.find_all () in
-  CCList.assoc_opt
-    ~eq:(fun m k -> CCString.prefix ~pre:m k)
-    host
-    (selections
-    |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
-  |> CCOption.to_result Pool_common.Message.(NotFound TenantPool)
-  |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
-  |> Lwt_result.lift
+  Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;

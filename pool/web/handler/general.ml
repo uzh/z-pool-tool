@@ -6,12 +6,11 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
 let admin_from_session db_pool req =
   let open Utils.Lwt_result.Infix in
   user_from_session db_pool req
-  ||> CCOption.to_result Pool_common.Message.(NotFound User, "/login")
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
   >>= fun user ->
   user.Sihl.Contract.User.id
   |> Pool_common.Id.of_string
   |> Admin.find_any_admin_by_user_id db_pool
-  |> Lwt_result.map_err (fun err -> err, "/login")
 ;;
 
 let dashboard_path tenant_db user =
@@ -20,4 +19,24 @@ let dashboard_path tenant_db user =
   >|= function
   | true -> "/admin/dashboard"
   | false -> "/dashboard"
+;;
+
+let create_tenant_layout
+    layout_context
+    req
+    ?active_navigation
+    Pool_context.{ language; query_language; message; _ }
+    children
+  =
+  let open Lwt_result.Syntax in
+  let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
+  Page.Layout.Tenant.create_layout
+    layout_context
+    children
+    tenant_context
+    message
+    language
+    query_language
+    active_navigation
+  |> Lwt_result.return
 ;;

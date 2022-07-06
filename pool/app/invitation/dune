@@ -1,0 +1,14 @@
+(library
+ (name invitation)
+ (libraries
+  contact
+  experiment
+  pool_common
+  pool_context
+  sihl
+  sihl-email
+  tenant)
+ (preprocess
+  (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
+
+(include_subdirs unqualified)

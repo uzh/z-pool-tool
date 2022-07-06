@@ -6,6 +6,7 @@ module LogoMappingRepo = Repo_logo_mapping
 
 module Sql = struct
   let update_request =
+    let open Caqti_request.Infix in
     {sql|
       UPDATE pool_tenant
       SET
@@ -28,9 +29,9 @@ module Sql = struct
         created_at = $18,
         updated_at = $19
       WHERE
-      pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''));
+      pool_tenant.uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_request.exec RepoEntity.Write.t
+    |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
   let update pool =
@@ -169,8 +170,9 @@ module Sql = struct
   ;;
 
   let find_request =
+    let open Caqti_request.Infix in
     select_from_tenants_sql find_fragment false
-    |> Caqti_request.find Caqti_type.string RepoEntity.t
+    |> Caqti_type.string ->! RepoEntity.t
   ;;
 
   let find pool id =
@@ -179,12 +181,13 @@ module Sql = struct
       (Database.Label.value pool)
       find_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_full_request =
+    let open Caqti_request.Infix in
     select_from_tenants_sql find_fragment true
-    |> Caqti_request.find Caqti_type.string RepoEntity.Write.t
+    |> Caqti_type.string ->! RepoEntity.Write.t
   ;;
 
   let find_full pool id =
@@ -193,14 +196,15 @@ module Sql = struct
       (Database.Label.value pool)
       find_full_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
+    let open Caqti_request.Infix in
     select_from_tenants_sql
       {sql| WHERE pool_tenant.database_label = ? |sql}
       false
-    |> Caqti_request.find Caqti_type.string RepoEntity.t
+    |> Caqti_type.string ->! RepoEntity.t
   ;;
 
   let find_by_label pool label =
@@ -209,12 +213,12 @@ module Sql = struct
       (Database.Label.value pool)
       find_by_label_request
       (Database.Label.value label)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Tenant)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_all_request =
-    select_from_tenants_sql "" false
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.t
+    let open Caqti_request.Infix in
+    select_from_tenants_sql "" false |> Caqti_type.unit ->* RepoEntity.t
   ;;
 
   let find_all pool =
@@ -222,6 +226,7 @@ module Sql = struct
   ;;
 
   let find_databases_request =
+    let open Caqti_request.Infix in
     {sql|
         SELECT
           database_url,
@@ -229,7 +234,7 @@ module Sql = struct
         FROM pool_tenant
         WHERE NOT disabled
       |sql}
-    |> Caqti_request.collect Caqti_type.unit Database.Repo.t
+    |> Caqti_type.unit ->* Database.Repo.t
   ;;
 
   let find_databases pool =
@@ -237,6 +242,7 @@ module Sql = struct
   ;;
 
   let insert_request =
+    let open Caqti_request.Infix in
     {sql|
       INSERT INTO pool_tenant (
         uuid,
@@ -278,9 +284,9 @@ module Sql = struct
         ?,
         ?,
         ?
-      );
+      )
     |sql}
-    |> Caqti_request.exec RepoEntity.Write.t
+    |> RepoEntity.Write.t ->. Caqti_type.unit
   ;;
 
   let insert pool =
@@ -288,13 +294,14 @@ module Sql = struct
   ;;
 
   let find_selectable_request =
+    let open Caqti_request.Infix in
     {sql|
       SELECT
         url,
         database_label
       FROM pool_tenant
     |sql}
-    |> Caqti_request.collect Caqti_type.unit RepoEntity.Selection.t
+    |> Caqti_type.unit ->* RepoEntity.Selection.t
   ;;
 
   let find_selectable pool =

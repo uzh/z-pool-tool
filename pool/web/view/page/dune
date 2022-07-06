@@ -1,13 +1,21 @@
 (library
  (name page)
  (libraries
-  tyxml
-  sihl
-  service
-  http_utils
-  participant
   component
+  contact
+  experiment
+  htmx
+  http_utils
+  i18n
+  invitation
+  mailing
+  pool_location
   pool_tenant
-  tenant
   root
-  utils))
+  service
+  session
+  sihl
+  tenant
+  tyxml
+  utils
+  waiting_list))

@@ -1,3 +1,4 @@
+module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
@@ -11,8 +12,8 @@ module CreateOperator : sig
 
   val handle
     :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> ?password_policy:(string -> (unit, string) result)
-    -> Pool_tenant.Write.t
+    -> ?password_policy:
+         (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -34,23 +35,18 @@ end = struct
   ;;
 
   let schema =
-    Conformist.(
+    Pool_common.Utils.PoolConformist.(
       make
         Field.
           [ User.EmailAddress.schema ()
-          ; User.Password.schema "password"
+          ; User.Password.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
           ]
         command)
   ;;
 
-  let handle
-      ?allowed_email_suffixes
-      ?password_policy
-      (_ : Pool_tenant.Write.t)
-      command
-    =
+  let handle ?allowed_email_suffixes ?password_policy command =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
@@ -75,6 +71,6 @@ end = struct
 
   let decode data =
     Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.conformist
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end

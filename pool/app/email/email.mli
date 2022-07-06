@@ -77,23 +77,55 @@ val delete_unverified_by_user
   -> Pool_common.Id.t
   -> unit Lwt.t
 
+module TemplateLabel : sig
+  type t =
+    | Boilerplate
+    | EmailVerification
+    | Invitation
+    | PasswordChange
+    | PasswordReset
+    | SignUpVerification
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val read : string -> t
+end
+
+type default
+
+val default_values_root : default
+val default_values_tenant : default
+
 type event =
   | Created of
       Pool_user.EmailAddress.t
       * Pool_common.Id.t
       * Pool_user.Firstname.t
       * Pool_user.Lastname.t
-  | Updated of Pool_user.EmailAddress.t * Sihl_user.t
+      * Pool_common.Language.t
+  | Updated of Pool_user.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
+  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 
 module Helper : sig
+  val prepare_email
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> TemplateLabel.t
+    -> string
+    -> string
+    -> (string * string) list
+    -> Sihl_email.t Lwt.t
+
   module PasswordReset : sig
     val create
       :  Pool_database.Label.t
+      -> Pool_common.Language.t
       -> user:Sihl_user.t
       -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
   end
@@ -101,7 +133,8 @@ module Helper : sig
   module PasswordChange : sig
     val create
       :  Pool_database.Label.t
-      -> verified t
+      -> Pool_common.Language.t
+      -> Pool_user.EmailAddress.t
       -> Pool_user.Firstname.t
       -> Pool_user.Lastname.t
       -> Sihl_email.t Lwt.t
@@ -110,10 +143,11 @@ module Helper : sig
   module ConfirmationEmail : sig
     val create
       :  Pool_database.Label.t
+      -> Pool_common.Language.t
       -> unverified t
       -> Pool_user.Firstname.t option
       -> Pool_user.Lastname.t option
-      -> [< `EmailUpdate | `SignUp ]
+      -> TemplateLabel.t
       -> Sihl_email.t Lwt.t
   end
 end

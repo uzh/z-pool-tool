@@ -1,10 +1,21 @@
+module I18n = Admin_i18n
 module Message = Http_utils.Message
 module Settings = Admin_settings
-module Users = Admin_users
+module Contacts = Admin_contacts
+module Admin = Admin_admins
+module Session = Admin_session
+module Experiments = Admin_experiments
+module Location = Admin_location
+
+let create_layout req = General.create_tenant_layout `Admin req
 
 let dashboard req =
-  let message =
-    CCOption.bind (Sihl.Web.Flash.find_alert req) Message.of_string
+  let result context =
+    let open Lwt_result.Infix in
+    Lwt_result.map_error (fun err -> err, "/error")
+    @@ (Page.Admin.dashboard context
+       |> create_layout req ~active_navigation:"/admin/dashboard" context
+       >|= Sihl.Web.Response.of_html)
   in
-  Page.Admin.dashboard message () |> Sihl.Web.Response.of_html |> Lwt.return
+  result |> Http_utils.extract_happy_path req
 ;;

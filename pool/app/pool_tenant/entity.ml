@@ -1,3 +1,4 @@
+open Sexplib.Conv
 module Common = Pool_common
 module Database = Pool_database
 module Id = Common.Id
@@ -9,62 +10,51 @@ module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
 module Title = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create title =
     if CCString.is_empty title
-    then Error PoolError.(Invalid Title)
+    then Error PoolError.(Invalid Field.Title)
     else Ok title
   ;;
 
-  let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create Message.Title)
-      CCList.pure
-      "title"
-  ;;
+  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Title
 end
 
 module Description = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create description =
     if CCString.is_empty description
-    then Error PoolError.(Invalid Description)
+    then Error PoolError.(Invalid Field.Description)
     else Ok description
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create Message.Description)
-      CCList.pure
-      "description"
+    Common.Utils.schema_decoder create value PoolError.Field.Description
   ;;
 end
 
 module Url = struct
-  type t = string [@@deriving eq, show]
+  type t = string [@@deriving eq, show, sexp_of]
 
   let value m = m
 
   let create url =
-    if CCString.is_empty url then Error PoolError.(Invalid Url) else Ok url
+    if CCString.is_empty url
+    then Error PoolError.(Invalid Field.Url)
+    else Ok url
   ;;
 
-  let schema () =
-    Conformist.custom
-      Common.(Utils.schema_decoder create PoolError.Url)
-      CCList.pure
-      "url"
-  ;;
+  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Url
 end
 
 module Styles = struct
-  type t = File.t [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show, sexp_of]
 
   let value m = m
   let id m = m.File.id
@@ -77,21 +67,18 @@ module Styles = struct
 
     let create styles =
       if CCString.is_empty styles
-      then Error PoolError.(Invalid Styles)
+      then Error PoolError.(Invalid Field.Styles)
       else Ok styles
     ;;
 
     let schema () =
-      Conformist.custom
-        Common.(Utils.schema_decoder create Message.Styles)
-        CCList.pure
-        "styles"
+      Common.Utils.schema_decoder create value PoolError.Field.Styles
     ;;
   end
 end
 
 module Icon = struct
-  type t = File.t [@@deriving eq, show]
+  type t = File.t [@@deriving eq, show, sexp_of]
 
   let value m = m
 
@@ -101,48 +88,47 @@ module Icon = struct
     let value m = m
 
     let create icon =
-      if CCString.is_empty icon then Error PoolError.(Invalid Icon) else Ok icon
+      if CCString.is_empty icon
+      then Error PoolError.(Invalid Field.Icon)
+      else Ok icon
     ;;
 
     let schema () =
-      Conformist.custom
-        Common.(Utils.schema_decoder create Message.Icon)
-        CCList.pure
-        "icon"
+      Common.Utils.schema_decoder create value PoolError.Field.Icon
     ;;
   end
 end
 
 module Logos = struct
-  type t = File.t list [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show, sexp_of]
 
   let value m = m
   let create m = Ok (CCList.map Common.Id.of_string m)
 
   let schema () =
-    Conformist.custom
-      (fun l -> l |> create)
-      (fun l -> l |> CCList.map Common.Id.value)
-      "tenant_logo"
+    Common.Utils.schema_list_decoder
+      create
+      (CCList.map Common.Id.value)
+      PoolError.Field.TenantLogos
   ;;
 end
 
 module PartnerLogos = struct
-  type t = File.t list [@@deriving eq, show]
+  type t = File.t list [@@deriving eq, show, sexp_of]
 
   let create m = Ok (CCList.map Common.Id.of_string m)
   let value m = m
 
   let schema () =
-    Conformist.custom
-      (fun l -> l |> create)
+    Common.Utils.schema_list_decoder
+      create
       (fun l -> l |> CCList.map Common.Id.value)
-      "partner_logo"
+      PoolError.Field.PartnerLogos
   ;;
 end
 
 module Maintenance = struct
-  type t = bool [@@deriving eq, show]
+  type t = bool [@@deriving eq, show, sexp_of]
 
   let create t = t
 
@@ -157,18 +143,15 @@ module Maintenance = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(
-        Utils.schema_decoder
-          (fun m -> m |> of_string |> CCResult.pure)
-          Message.TenantMaintenanceFlag)
-      (fun l -> l |> stringify |> CCList.pure)
-      "maintenance"
+    Common.Utils.schema_decoder
+      (fun m -> Ok (of_string m))
+      stringify
+      PoolError.Field.TenantMaintenanceFlag
   ;;
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, show]
+  type t = bool [@@deriving eq, show, sexp_of]
 
   let create t = t
   let value m = m
@@ -184,13 +167,10 @@ module Disabled = struct
   ;;
 
   let schema () =
-    Conformist.custom
-      Common.(
-        Utils.schema_decoder
-          (fun m -> m |> of_string |> CCResult.pure)
-          Message.TenantDisabledFlag)
-      (fun l -> l |> stringify |> CCList.pure)
-      "disabled"
+    Common.Utils.schema_decoder
+      (fun m -> Ok (of_string m))
+      stringify
+      PoolError.Field.TenantDisabledFlag
   ;;
 end
 
@@ -211,7 +191,9 @@ type t =
   ; created_at : CreatedAt.t
   ; updated_at : UpdatedAt.t
   }
-[@@deriving eq, show]
+[@@deriving eq, show, sexp_of]
+
+let id { id; _ } = id
 
 module Read = struct
   type t =

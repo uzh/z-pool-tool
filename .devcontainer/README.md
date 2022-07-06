@@ -2,6 +2,13 @@
 
 [Back to main README](../README.md)
 
+When using a DevContainer, the `opam` packages and database files are mounted as volumes into the DevContainer.
+
+- `.devcontainer/data/db-root/`: development mariadb data (root)
+- `.devcontainer/data/db-tenant/`: development mariadb data (tenants)
+- Docker volume `opam`: opam packages
+- Docker volume `build`: cached build directory to speed up development
+
 ## Requirements
 
 This project is setup to run in a DevContainer. Ensure requirements to run in a DevContainer:
