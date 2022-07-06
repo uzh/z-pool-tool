@@ -10,13 +10,14 @@ opam remote remove --all default
 opam remote add default https://opam.ocaml.org
 
 # ensure all system dependencies are installed
-opam pin add -yn sihl https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
-opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
+repo=https://github.com/oxidizing/sihl.git
+opam pin add -yn sihl $repo
+opam pin add -yn sihl-cache $repo
+opam pin add -yn sihl-email $repo
+opam pin add -yn sihl-queue $repo
+opam pin add -yn sihl-storage $repo
+opam pin add -yn sihl-token $repo
+opam pin add -yn sihl-user $repo
 
 # pin custom libraries hosted on the UZH gitlab
 opam pin add -yn canary https://github.com/uzh/canary.git
