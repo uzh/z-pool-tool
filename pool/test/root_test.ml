@@ -52,11 +52,7 @@ let create_root_with_invalid_password () =
            ]
   in
   let events = Root_command.Create.handle command in
-  let expected =
-    Error
-      Pool_common.Message.(
-        PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
-  in
+  let expected = Error Pool_common.Message.PasswordPolicy in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

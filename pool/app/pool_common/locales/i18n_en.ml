@@ -75,6 +75,7 @@ let hint_to_string = function
      first. E.g. with name ascending and email address descending: \
      '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'. (Currently only as \
      json array objects.)"
+  | I18nText str -> str
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
   | NumberIsWeeksHint -> "Nr. of weeks"

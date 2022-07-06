@@ -76,6 +76,7 @@ let hint_to_string = function
      versendet werden. Z.B. mit Name aufsteigend und E-Mail Adresse \
      absteigend: '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'  (Zur Zeit \
      nur als Json Array Objekte.)"
+  | I18nText str -> str
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
