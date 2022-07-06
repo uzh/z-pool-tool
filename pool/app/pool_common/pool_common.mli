@@ -180,9 +180,9 @@ module Reminder : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val create : Ptime.t option -> t
+    val create : Ptime.t -> t
     val create_now : unit -> t
-    val value : t -> Ptime.t option
+    val value : t -> Ptime.t
   end
 end
 

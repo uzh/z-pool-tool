@@ -81,7 +81,6 @@ let handle_event pool = function
       ; reminder_subject
       ; reminder_text
       ; reminder_lead_time
-      ; reminder_sent_at = Pool_common.Reminder.SentAt.create_now ()
       }
   | ReminderSent (session, emails) ->
     let%lwt () =
@@ -90,7 +89,7 @@ let handle_event pool = function
       | false -> Lwt.return_unit
     in
     { session with
-      reminder_sent_at = Pool_common.Reminder.SentAt.create_now ()
+      reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
 ;;

@@ -77,7 +77,7 @@ type t =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; reminder_subject : Pool_common.Reminder.Subject.t option
   ; reminder_text : Pool_common.Reminder.Text.t option
-  ; reminder_sent_at : Pool_common.Reminder.SentAt.t
+  ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] make type for canceled_at? *)
     canceled_at : Ptime.t option

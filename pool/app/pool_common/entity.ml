@@ -238,10 +238,10 @@ module Reminder = struct
   end
 
   module SentAt = struct
-    type t = Ptime.t option [@@deriving eq, show]
+    type t = Ptime.t [@@deriving eq, show]
 
     let create m = m
-    let create_now () = Some (Ptime_clock.now ())
+    let create_now () = Ptime_clock.now ()
     let value m = m
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
   end

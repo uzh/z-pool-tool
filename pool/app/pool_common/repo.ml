@@ -109,6 +109,6 @@ module Reminder = struct
   module SentAt = struct
     include Reminder.SentAt
 
-    let t = Caqti_type.(option ptime)
+    let t = Caqti_type.ptime
   end
 end

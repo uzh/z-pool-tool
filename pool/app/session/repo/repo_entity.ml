@@ -1,5 +1,7 @@
 module Id = Pool_common.Id
 module RepoId = Pool_common.Repo.Id
+module Reminder = Pool_common.Reminder
+module RepoReminder = Pool_common.Repo.Reminder
 
 type t =
   { id : Pool_common.Id.t
@@ -11,10 +13,10 @@ type t =
   ; max_participants : Entity.ParticipantAmount.t
   ; min_participants : Entity.ParticipantAmount.t
   ; overbook : Entity.ParticipantAmount.t
-  ; reminder_subject : Pool_common.Reminder.Subject.t option
-  ; reminder_text : Pool_common.Reminder.Text.t option
-  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; reminder_sent_at : Pool_common.Reminder.SentAt.t
+  ; reminder_subject : Reminder.Subject.t option
+  ; reminder_text : Reminder.Text.t option
+  ; reminder_lead_time : Reminder.LeadTime.t option
+  ; reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
   ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -147,15 +149,13 @@ let t =
                               (tup2
                                  int
                                  (tup2
-                                    (option Pool_common.Repo.Reminder.Subject.t)
+                                    (option RepoReminder.Subject.t)
                                     (tup2
-                                       (option Pool_common.Repo.Reminder.Text.t)
+                                       (option RepoReminder.Text.t)
                                        (tup2
-                                          (option
-                                             Pool_common.Repo.Reminder.LeadTime
-                                             .t)
+                                          (option RepoReminder.LeadTime.t)
                                           (tup2
-                                             Pool_common.Repo.Reminder.SentAt.t
+                                             (option RepoReminder.SentAt.t)
                                              (tup2
                                                 int
                                                 (tup2
@@ -174,10 +174,10 @@ module Write = struct
     ; max_participants : Entity.ParticipantAmount.t
     ; min_participants : Entity.ParticipantAmount.t
     ; overbook : Entity.ParticipantAmount.t
-    ; reminder_subject : Pool_common.Reminder.Subject.t option
-    ; reminder_text : Pool_common.Reminder.Text.t option
-    ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-    ; reminder_sent_at : Pool_common.Reminder.SentAt.t
+    ; reminder_subject : Reminder.Subject.t option
+    ; reminder_text : Reminder.Text.t option
+    ; reminder_lead_time : Reminder.LeadTime.t option
+    ; reminder_sent_at : Reminder.SentAt.t option
     ; canceled_at : Ptime.t option
     }
 
@@ -292,19 +292,19 @@ module Write = struct
                                 (tup2
                                    int
                                    (tup2
-                                      (option
-                                         Pool_common.Repo.Reminder.Subject.t)
+                                      (option RepoReminder.Subject.t)
                                       (tup2
-                                         (option
-                                            Pool_common.Repo.Reminder.Text.t)
+                                         (option RepoReminder.Text.t)
                                          (tup2
                                             (option
                                                Pool_common.Repo.Reminder
                                                .LeadTime
                                                .t)
                                             (tup2
-                                               Pool_common.Repo.Reminder.SentAt
-                                               .t
+                                               (option
+                                                  Pool_common.Repo.Reminder
+                                                  .SentAt
+                                                  .t)
                                                (option ptime)))))))))))))))
   ;;
 end

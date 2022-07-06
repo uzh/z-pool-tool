@@ -225,7 +225,7 @@ let create_session () =
     ; reminder_subject = None
     ; reminder_lead_time = None
     ; reminder_text = None
-    ; reminder_sent_at = Pool_common.Reminder.SentAt.create None
+    ; reminder_sent_at = None
     ; assignment_count =
         0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None
