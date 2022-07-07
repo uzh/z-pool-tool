@@ -22,6 +22,38 @@ let contact_profile_layout language title ?active html =
     ]
 ;;
 
+let personal_details_form
+    csrf
+    user_update_csrf
+    language
+    action
+    tenant_languages
+    contact
+  =
+  let open Contact in
+  let form_attrs action =
+    [ a_method `Post
+    ; a_action (Sihl.Web.externalize_path action)
+    ; a_class [ "stack" ]
+    ]
+  in
+  form
+    ~a:(form_attrs action)
+    (CCList.flatten
+       [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
+       ; CCList.map
+           (fun htmx_element ->
+             Htmx.create htmx_element language ~hx_post:action ())
+           Htmx.
+             [ Firstname (contact.firstname_version, contact |> firstname)
+             ; Lastname (contact.lastname_version, contact |> lastname)
+             ; Paused (contact.paused_version, contact.paused)
+             ; Language
+                 (contact.language_version, contact.language, tenant_languages)
+             ]
+       ])
+;;
+
 let detail contact Pool_context.{ language; query_language; _ } =
   let open Contact in
   let text_to_string = Pool_common.Utils.text_to_string language in
@@ -59,33 +91,17 @@ let personal_details
     tenant_languages
     Pool_context.{ language; query_language; csrf; _ }
   =
-  let open Contact in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let action = externalize "/user/update" in
-  let form_attrs action =
-    [ a_method `Post; a_action action; a_class [ "stack" ] ]
-  in
-  let details_form =
-    form
-      ~a:(form_attrs action)
-      (CCList.flatten
-         [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
-         ; CCList.map
-             (fun htmx_element ->
-               Htmx.create htmx_element language ~hx_post:action ())
-             Htmx.
-               [ Firstname (contact.firstname_version, contact |> firstname)
-               ; Lastname (contact.lastname_version, contact |> lastname)
-               ; Paused (contact.paused_version, contact.paused)
-               ; Language
-                   (contact.language_version, contact.language, tenant_languages)
-               ]
-         ])
-  in
+  let action = HttpUtils.path_with_language query_language "/user/update" in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ details_form
+        [ personal_details_form
+            csrf
+            user_update_csrf
+            language
+            action
+            tenant_languages
+            contact
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/user") ]

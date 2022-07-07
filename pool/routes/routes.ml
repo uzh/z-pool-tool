@@ -234,7 +234,10 @@ module Admin = struct
         [ get "" index; choose ~scope:(Admin |> url_key) specific ]
     in
     let contacts =
-      let specific = Handler.Admin.Contacts.[ get "" detail ] in
+      let specific =
+        Handler.Admin.Contacts.
+          [ get "" detail; post "" update; get "/edit" edit ]
+      in
       Handler.Admin.Contacts.
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in

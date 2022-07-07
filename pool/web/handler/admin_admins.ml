@@ -16,6 +16,7 @@ let index req =
 ;;
 
 let admin_detail req is_edit =
+  (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
@@ -27,7 +28,6 @@ let admin_detail req is_edit =
     in
     let* admin = id |> Admin.find_any_admin_by_user_id tenant_db in
     let* () =
-      (* TODO[timhub]: Impelement authorization *)
       let* _ = General.admin_from_session tenant_db req in
       Lwt.return_ok ()
     in
