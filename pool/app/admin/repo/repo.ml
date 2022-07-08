@@ -117,13 +117,13 @@ module Sql = struct
   ;;
 
   let find_role_by_user pool user =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    >|= CCOption.map Stringify.person_from_string
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+    >>= fun role -> role |> Stringify.person_from_string |> Lwt_result.lift
   ;;
 
   let insert_sql =
@@ -160,3 +160,26 @@ let find_role_by_user = Sql.find_role_by_user
 let find_all_by_role = Sql.find_all_by_role
 let insert = Sql.insert
 let update = Sql.update
+
+let find_any_admin_by_user_id pool id =
+  let open Utils.Lwt_result.Infix in
+  let find_admin carrier = find pool carrier id >|= fun m -> Any m in
+  let user =
+    Service.User.find_opt
+      ~ctx:(Pool_tenant.to_ctx pool)
+      (Pool_common.Id.value id)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+  in
+  user
+  >>= find_role_by_user pool
+  >>= function
+  | `Assistant -> find_admin AssistantC
+  | `Experimenter -> find_admin ExperimenterC
+  | `LocationManager -> find_admin LocationManagerC
+  | `Recruiter -> find_admin RecruiterC
+  | `Operator -> find_admin OperatorC
+  | _ ->
+    Pool_common.(
+      Message.(Invalid Field.Role) |> Utils.error_to_string Language.En)
+    |> failwith
+;;

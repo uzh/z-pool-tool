@@ -45,7 +45,9 @@ type t =
   | WaitingListIsDisabled
 
 type nav_link =
+  | Admins
   | Assignments
+  | Contacts
   | Dashboard
   | Experiments
   | I18n

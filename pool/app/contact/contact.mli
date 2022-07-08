@@ -80,6 +80,7 @@ val find_by_user
   -> Sihl_user.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =

@@ -60,6 +60,10 @@ type _ carrier =
   | RecruiterC : recruiter carrier
   | OperatorC : operator carrier
 
+let all_admin_roles =
+  [ `Assistant; `Experimenter; `LocationManager; `Recruiter; `Operator ]
+;;
+
 let equal : type person. person t -> person t -> bool =
  fun p1 p2 ->
   match p1, p2 with
@@ -108,4 +112,24 @@ module Duplicate = struct
     ; ignored_at : Ptime.t option
     }
   [@@deriving eq, show]
+end
+
+module Any = struct
+  let user admin =
+    match admin with
+    | Any (Assistant _ as admin) -> user admin
+    | Any (Experimenter _ as admin) -> user admin
+    | Any (LocationManager _ as admin) -> user admin
+    | Any (Recruiter _ as admin) -> user admin
+    | Any (Operator _ as admin) -> user admin
+  ;;
+
+  let role admin =
+    match admin with
+    | Any (Assistant _) -> `Assistant
+    | Any (Experimenter _) -> `Experimenter
+    | Any (LocationManager _) -> `LocationManager
+    | Any (Recruiter _) -> `Recruiter
+    | Any (Operator _) -> `Operator
+  ;;
 end

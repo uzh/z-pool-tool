@@ -64,7 +64,9 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | Admins -> "Admins"
   | Assignments -> "Assignments"
+  | Contacts -> "Contacts"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
   | I18n -> "Translations"

@@ -170,6 +170,14 @@ let find_multiple pool ids =
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
+let find_all_request =
+  find_request_sql "" |> Caqti_request.collect Caqti_type.unit Repo_model.t
+;;
+
+let find_all pool =
+  Utils.Database.collect (Database.Label.value pool) find_all_request
+;;
+
 let insert_request =
   let open Caqti_request.Infix in
   {sql|

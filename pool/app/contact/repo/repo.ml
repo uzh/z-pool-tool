@@ -2,6 +2,7 @@ let find = Repo_sql.find
 let find_multiple = Repo_sql.find_multiple
 let find_filtered = Repo_sql.find_filtered
 let find_by_email = Repo_sql.find_by_email
+let find_all = Repo_sql.find_all
 let insert = Repo_sql.insert
 let update = Repo_sql.update
 let update_paused = Repo_sql.Paused.update

@@ -71,7 +71,9 @@ let to_string = function
 ;;
 
 let nav_link_to_string = function
+  | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
+  | Contacts -> "Konktakte"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
