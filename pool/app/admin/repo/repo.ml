@@ -117,12 +117,12 @@ module Sql = struct
   ;;
 
   let find_role_by_user pool user =
-    let open Lwt_result.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_role_by_user_request
       user.Sihl.Contract.User.id
-    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.Admin))
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
     >>= fun role -> role |> Stringify.person_from_string |> Lwt_result.lift
   ;;
 
@@ -162,13 +162,13 @@ let insert = Sql.insert
 let update = Sql.update
 
 let find_any_admin_by_user_id pool id =
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let find_admin carrier = find pool carrier id >|= fun m -> Any m in
   let user =
     Service.User.find_opt
       ~ctx:(Pool_tenant.to_ctx pool)
       (Pool_common.Id.value id)
-    |> Lwt.map (CCOption.to_result Pool_common.Message.(NotFound Field.User))
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
   in
   user
   >>= find_role_by_user pool
