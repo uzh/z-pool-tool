@@ -133,6 +133,9 @@ compile-and-test:
     - opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
     - opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
 
+    # pin ocamlformat temporarily (Issue #120)
+    - opam pin add -yn ocamlformat https://github.com/ocaml-ppx/ocamlformat.git
+
     # pin custom libraries hosted on the UZH gitlab
     - opam pin add -yn canary https://github.com/uzh/canary.git
     - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
