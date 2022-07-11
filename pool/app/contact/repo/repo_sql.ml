@@ -171,7 +171,8 @@ let find_multiple pool ids =
 ;;
 
 let find_all_request =
-  find_request_sql "" |> Caqti_request.collect Caqti_type.unit Repo_model.t
+  let open Caqti_request.Infix in
+  find_request_sql "" |> Caqti_type.unit ->* Repo_model.t
 ;;
 
 let find_all pool =
