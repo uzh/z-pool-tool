@@ -23,7 +23,7 @@ let hx_attributes field version ?action () =
   let name = Pool_common.Message.Field.(field |> show) in
   [ hx_swap "outerHTML"
   ; hx_params (CCString.concat ", " (CCList.cons name hx_base_params))
-  ; hx_target "closest div"
+  ; hx_target "closest .form-group"
   ; hx_vals
       (Format.asprintf
          {|{"version": "%i", "field": "%s"}|}
@@ -33,9 +33,25 @@ let hx_attributes field version ?action () =
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
 
-let create m language ?(classnames = []) ?hx_post ?error ?success () =
+(* TODO[timhub]:
+
+   - Create multiple htmx input types? - Text - Checkbox - Select? *)
+let create
+    field
+    language
+    version
+    ?value
+    ?checked
+    ?(classnames = [])
+    ?hx_post
+    ?error
+    ?success
+    ()
+  =
   let open Pool_common in
   let field_to_string = Utils.field_to_string language in
+  let value = CCOption.value ~default:"" value in
+  let checked = CCOption.value ~default:false checked in
   let input_class =
     match error, success with
     | Some _, None -> [ "has-error" ]
@@ -59,38 +75,36 @@ let create m language ?(classnames = []) ?hx_post ?error ?success () =
     @ hx_attributes field version ?action:hx_post ()
   in
   let input, field =
-    match m with
-    | Firstname (version, value) ->
+    let open Pool_common.Message in
+    match[@warning "-4"] field with
+    | Field.Firstname ->
       let field = Message.Field.Firstname in
       ( input
-          ~a:
-            (base_input_attributes `Text field version
-            @ [ a_value (User.Firstname.value value) ])
+          ~a:(base_input_attributes `Text field version @ [ a_value value ])
           ()
       , field )
-    | Lastname (version, value) ->
+    | Field.Lastname ->
       let field = Message.Field.Lastname in
       ( input
-          ~a:
-            (base_input_attributes `Text field version
-            @ [ a_value (User.Lastname.value value) ])
+          ~a:(base_input_attributes `Text field version @ [ a_value value ])
           ()
       , field )
-    | Paused (version, value) ->
+    | Field.Paused ->
       let field = Message.Field.Paused in
-      let is_checked =
-        if value |> User.Paused.value then [ a_checked () ] else []
-      in
+      let is_checked = if checked then [ a_checked () ] else [] in
       ( input ~a:(base_input_attributes `Checkbox field version @ is_checked) ()
       , field )
-    | Language (version, value, tenant_languages) ->
+    | Field.Language ->
       let field = Message.Field.Language in
       ( Component.language_select
-          tenant_languages
-          value
+          Pool_common.Language.all (* TODO[timhub]: Use correct languages *)
+          (value |> Pool_common.Language.create |> CCResult.to_opt)
+          ~field
           ~attributes:(hx_attributes field version ?action:hx_post ())
           ()
       , field )
+    | Field.Custom _ -> failwith "Todo"
+    | _ -> failwith "Todo"
   in
   div
     ~a:[ a_class ([ "form-group" ] @ classnames) ]

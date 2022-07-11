@@ -20,6 +20,7 @@ module Field = struct
     | CreatedAt [@name "created_at"] [@printer go "created_at"]
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
+    | Custom of string [@name "custom"] [@printer go "custom"]
     | Database [@name "database"] [@printer go "database"]
     | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
@@ -178,6 +179,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidHtmxRequest
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount

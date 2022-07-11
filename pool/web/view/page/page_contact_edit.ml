@@ -56,7 +56,7 @@ let detail contact Pool_context.{ language; query_language; _ } =
 let personal_details
     user_update_csrf
     (contact : Contact.t)
-    tenant_languages
+    _
     Pool_context.{ language; query_language; csrf; _ }
   =
   let open Contact in
@@ -71,15 +71,29 @@ let personal_details
       (CCList.flatten
          [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
          ; CCList.map
-             (fun htmx_element ->
-               Htmx.create htmx_element language ~hx_post:action ())
-             Htmx.
-               [ Firstname (contact.firstname_version, contact |> firstname)
-               ; Lastname (contact.lastname_version, contact |> lastname)
-               ; Paused (contact.paused_version, contact.paused)
-               ; Language
-                   (contact.language_version, contact.language, tenant_languages)
+             (fun (field, version, value) ->
+               Htmx.create field language version ~value ~hx_post:action ())
+             Pool_common.Message.
+               [ ( Field.Firstname
+                 , contact.firstname_version
+                 , contact |> firstname |> Pool_user.Firstname.value )
+               ; ( Field.Lastname
+                 , contact.lastname_version
+                 , contact |> lastname |> Pool_user.Lastname.value )
+               ; ( Field.Language
+                 , contact.language_version
+                 , contact.language
+                   |> CCOption.map Pool_common.Language.show
+                   |> CCOption.value ~default:"" )
                ]
+         ; [ Htmx.create
+               Pool_common.Message.Field.Paused
+               language
+               contact.Contact.paused_version
+               ~checked:(contact.Contact.paused |> Pool_user.Paused.value)
+               ~hx_post:action
+               ()
+           ]
          ])
   in
   div

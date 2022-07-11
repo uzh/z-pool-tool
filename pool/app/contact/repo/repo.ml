@@ -4,6 +4,7 @@ let find_filtered = Repo_sql.find_filtered
 let find_by_email = Repo_sql.find_by_email
 let insert = Repo_sql.insert
 let update = Repo_sql.update
+let partial_update = Repo_partial_update.partial_update
 let update_paused = Repo_sql.Paused.update
 let update_language = Repo_sql.Language.update
 let update_version_for = Repo_sql.update_version_for

@@ -45,6 +45,21 @@ type t =
   ; updated_at : Ptime.t
   }
 
+module Field : sig
+  type htmx_field =
+    | Firstname of Pool_user.Firstname.t
+    | Lastname of Pool_user.Lastname.t
+    | Paused of Pool_user.Paused.t
+    | Language of Pool_common.Language.t option
+    | Custom of string * string
+
+  type t = htmx_field * Pool_common.Version.t
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end
+
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
@@ -92,15 +107,9 @@ type create =
   ; language : Pool_common.Language.t option
   }
 
-type update = Event.update =
-  { firstname : Pool_user.Firstname.t
-  ; lastname : Pool_user.Lastname.t
-  ; paused : Pool_user.Paused.t
-  ; language : Pool_common.Language.t option
-  }
-
 type event =
   | Created of create
+  | Updated of Field.t * t
   | FirstnameUpdated of t * Pool_user.Firstname.t
   | LastnameUpdated of t * Pool_user.Lastname.t
   | PausedUpdated of t * Pool_user.Paused.t
@@ -121,6 +130,8 @@ type event =
   | ShowUpIncreased of t
 
 val created : create -> event
+
+(* TODO[timhub]: remove *)
 val firstnameupdated : t -> Pool_user.Firstname.t -> event
 val lastnameupdated : t -> Pool_user.Lastname.t -> event
 val pausedupdated : t -> Pool_user.Paused.t -> event

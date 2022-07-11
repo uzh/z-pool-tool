@@ -15,14 +15,6 @@ type create =
   }
 [@@deriving eq, show]
 
-type update =
-  { firstname : User.Firstname.t
-  ; lastname : User.Lastname.t
-  ; paused : User.Paused.t
-  ; language : Pool_common.Language.t option
-  }
-[@@deriving eq, show]
-
 let set_password
     : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
@@ -59,6 +51,7 @@ let has_terms_accepted pool (contact : t) =
 
 type event =
   | Created of create
+  | Updated of Field.t * t
   | FirstnameUpdated of t * User.Firstname.t
   | LastnameUpdated of t * User.Lastname.t
   | PausedUpdated of t * User.Paused.t
@@ -111,6 +104,7 @@ let handle_event pool : event -> unit Lwt.t =
     }
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
+  | Updated (update, contact) -> Repo.partial_update pool update contact
   | FirstnameUpdated (contact, firstname) ->
     let%lwt _ =
       Service.User.update

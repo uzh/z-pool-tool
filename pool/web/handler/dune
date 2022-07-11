@@ -6,6 +6,7 @@
   cqrs_command
   email
   http_utils
+  htmx
   mailing
   middleware
   page

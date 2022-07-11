@@ -165,3 +165,68 @@ module Preview = struct
     m.user.Sihl_user.email |> Common.EmailAddress.of_string
   ;;
 end
+
+module Field = struct
+  module Conformist = Pool_common.Utils.PoolConformist
+
+
+  type htmx_field =
+    | Firstname of Common.Firstname.t
+    | Lastname of Common.Lastname.t
+    | Paused of Common.Paused.t
+    | Language of Pool_common.Language.t option
+    | Custom of string * string
+  [@@deriving eq, show]
+
+  type t = htmx_field * Pool_common.Version.t [@@deriving eq, show]
+
+  let decode data =
+    let decode_and_validate schema =
+      let schema =
+        Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
+      in
+      Conformist.decode_and_validate schema data
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    in
+    let open CCResult in
+    let find name err =
+      let open CCOption in
+      CCList.assoc_opt ~eq:CCString.equal name data
+      >>= CCList.head_opt
+      |> to_result err
+    in
+    let open Pool_common.Message in
+    let* field_str = find "field" InvalidHtmxRequest in
+    let* value = find field_str InvalidHtmxRequest in
+    let* version =
+      find "version" (HtmxVersionNotFound field_str)
+      >>= fun i ->
+      i
+      |> CCInt.of_string
+      |> CCOption.map Pool_common.Version.of_int
+      |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
+    in
+    let custom () = Custom (field_str, value) in
+    let field =
+      try Some (Pool_common.Message.Field.read field_str) with
+      | _ -> None
+    in
+    (match field with
+    | None -> Ok (custom ())
+    | Some field ->
+      let open Pool_common.Message in
+      (match[@warning "-4"] field with
+      | Field.Firstname ->
+        Common.Firstname.schema |> decode_and_validate >|= fun m -> Firstname m
+      | Field.Lastname ->
+        Common.Lastname.schema |> decode_and_validate >|= fun m -> Lastname m
+      | Field.Paused ->
+        Common.Paused.schema |> decode_and_validate >|= fun m -> Paused m
+      | Field.Language ->
+        (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+        |> decode_and_validate
+        >|= fun m -> Language m
+      | _ -> custom () |> return))
+    >|= fun field -> field, version
+  ;;
+end
