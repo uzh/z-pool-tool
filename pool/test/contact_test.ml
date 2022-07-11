@@ -270,9 +270,12 @@ let update_password () =
           , new_password
             |> Pool_user.Password.create
             |> Pool_common.Utils.get_or_failwith
-          , new_password |> Pool_user.PasswordConfirmed.create
-          , language |> CCOption.get_or ~default:Language.En )
+          , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
+      ; Email.ChangedPassword
+          ( contact.Contact.user
+          , language |> CCOption.get_or ~default:Language.En )
+        |> Pool_event.email_address
       ]
   in
   check_result expected events

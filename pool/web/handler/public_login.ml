@@ -78,35 +78,26 @@ let request_reset_password_get req =
 ;;
 
 let request_reset_password_post req =
-  let query_lang = HttpUtils.find_query_lang req in
-  let%lwt result =
-    let open Lwt_result.Syntax in
-    let* { Pool_context.tenant_db; language; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
+  let open HttpUtils in
+  let open Cqrs_command.Common_command.ResetPassword in
+  let query_lang = find_query_lang req in
+  let result { Pool_context.tenant_db; language; _ } =
     let open Utils.Lwt_result.Infix in
-    let* email =
-      let open Pool_common.Message in
-      Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result (NotFound Field.Email)
-      >|= Pool_user.EmailAddress.of_string
-    in
-    let ctx = to_ctx tenant_db in
-    let* contact = Contact.find_by_email tenant_db email in
-    Email.Helper.PasswordReset.create
-      tenant_db
-      language
-      ~user:contact.Contact.user
-    >|= Service.Email.send ~ctx
-  in
-  match result with
-  | Ok _ | Error _ ->
-    HttpUtils.(
+    Sihl.Web.Request.to_urlencoded req
+    ||> decode
+    >>= Contact.find_by_email tenant_db
+    >== (fun { Contact.user; _ } -> handle user language)
+    |>> Pool_event.handle_events tenant_db
+    >|> function
+    | Ok _ | Error _ ->
       redirect_to_with_actions
         (path_with_language query_lang "/request-reset-password")
         [ Message.set
             ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
-        ])
+        ]
+      >|> Lwt.return_ok
+  in
+  result |> extract_happy_path_with_actions req
 ;;
 
 let reset_password_get req =

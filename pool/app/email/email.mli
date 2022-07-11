@@ -144,6 +144,8 @@ type event =
   | Updated of Pool_user.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
   | DefaultRestored of default
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -164,24 +166,6 @@ module Helper : sig
     -> string
     -> (string * string) list
     -> Sihl_email.t Lwt.t
-
-  module PasswordReset : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> user:Sihl_user.t
-      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-  end
-
-  module PasswordChange : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> Pool_user.EmailAddress.t
-      -> Pool_user.Firstname.t
-      -> Pool_user.Lastname.t
-      -> Sihl_email.t Lwt.t
-  end
 
   module ConfirmationEmail : sig
     val create

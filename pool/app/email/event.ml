@@ -29,13 +29,15 @@ type event =
   | Updated of User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
   | DefaultRestored of Default.default
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
 
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
+  let ctx = Pool_tenant.to_ctx pool in
   let create_email language user_id address firstname lastname label
-      : unit Lwt.t
+    : unit Lwt.t
     =
-    let ctx = Pool_tenant.to_ctx pool in
     let%lwt token = create_token pool address in
     user_id
     |> Pool_common.Id.value
@@ -81,7 +83,7 @@ let handle_event pool : event -> unit Lwt.t =
         let%lwt () = Repo.delete_email_template pool label language in
         let%lwt _ =
           Service.EmailTemplate.create
-            ~ctx:(Pool_tenant.to_ctx pool)
+            ~ctx
             ~label:(TemplateLabel.show label)
             ~language:(Pool_common.Language.show language)
             ~html
@@ -89,6 +91,21 @@ let handle_event pool : event -> unit Lwt.t =
         in
         Lwt.return_unit)
       default_values
+  | ResetPassword (user, language) ->
+    Helper.PasswordReset.create pool language user
+    |> Lwt_result.map_error Pool_common.Utils.with_log_error
+    >>= (function
+    | Ok email -> Service.Email.send ~ctx email
+    | Error (_ : PoolError.error) -> Lwt.return_unit)
+  | ChangedPassword ({ Sihl_user.email; given_name; name; _ }, language) ->
+    let default = CCOption.get_or ~default:"" in
+    Helper.PasswordChange.create
+      pool
+      language
+      (Pool_user.EmailAddress.of_string email)
+      (given_name |> default |> Pool_user.Firstname.of_string)
+      (name |> default |> Pool_user.Lastname.of_string)
+    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
@@ -103,6 +120,10 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
     && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
   | EmailVerified m, EmailVerified p -> equal m p
   | DefaultRestored one, DefaultRestored two -> Default.equal_default one two
+  | ResetPassword (u1, l1), ResetPassword (u2, l2)
+  | ChangedPassword (u1, l1), ChangedPassword (u2, l2) ->
+    CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
+    && Pool_common.Language.equal l1 l2
   | _ -> false
 ;;
 
@@ -121,4 +142,7 @@ let pp_event formatter (event : event) : unit =
     Pool_common.Language.pp formatter language
   | EmailVerified m -> pp formatter m
   | DefaultRestored m -> Default.pp_default formatter m
+  | ResetPassword (u, language) | ChangedPassword (u, language) ->
+    Sihl_user.pp formatter u;
+    Pool_common.Language.pp formatter language
 ;;

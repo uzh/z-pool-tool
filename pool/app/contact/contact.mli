@@ -112,7 +112,6 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-      * Pool_common.Language.t
   | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t

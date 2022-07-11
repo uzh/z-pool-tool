@@ -63,30 +63,29 @@ let request_reset_password_get req =
 ;;
 
 let request_reset_password_post req =
-  let%lwt result =
-    let open Lwt_result.Syntax in
+  let open HttpUtils in
+  let open Cqrs_command.Common_command.ResetPassword in
+  let result { Pool_context.tenant_db; language; _ } =
     let open Utils.Lwt_result.Infix in
-    let open Pool_common.Message in
-    let* { Pool_context.language; _ } =
-      Pool_context.find req |> Lwt_result.lift
-    in
-    let* email =
-      Sihl.Web.Request.urlencoded Field.(Email |> show) req
-      ||> CCOption.to_result (NotFound Field.Email)
-    in
-    let* user =
-      Service.User.find_by_email_opt ~ctx email
-      ||> CCOption.to_result PasswordResetFailMessage
-    in
-    Email.Helper.PasswordReset.create Database.root language ~user
-    >|= Service.Email.send ~ctx
+    Sihl.Web.Request.to_urlencoded req
+    ||> decode
+    >>= (fun email ->
+          email
+          |> Pool_user.EmailAddress.value
+          |> Service.User.find_by_email_opt ~ctx
+          ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
+    >== CCFun.flip handle language
+    |>> Pool_event.handle_events tenant_db
+    >|> function
+    | Ok _ | Error _ ->
+      redirect_to_with_actions
+        "/root/request-reset-password"
+        [ Message.set
+            ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
+        ]
+      >|> Lwt.return_ok
   in
-  match result with
-  | Ok _ | Error _ ->
-    HttpUtils.redirect_to_with_actions
-      "/root/request-reset-password"
-      [ Message.set ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
-      ]
+  result |> extract_happy_path_with_actions req
 ;;
 
 let reset_password_get req =
@@ -128,8 +127,8 @@ let reset_password_post req =
         (go Field.Password)
         (go Field.PasswordConfirmation)
       |> Lwt_result.map_error (fun _ ->
-             ( PasswordResetInvalidData
-             , Format.asprintf "/root/reset-password/?token=%s" token ))
+           ( PasswordResetInvalidData
+           , Format.asprintf "/root/reset-password/?token=%s" token ))
     in
     HttpUtils.redirect_to_with_actions
       root_login_path

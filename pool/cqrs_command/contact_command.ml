@@ -51,12 +51,12 @@ end = struct
   ;;
 
   let handle
-      ?allowed_email_suffixes
-      ?password_policy
-      ?(user_id = Id.create ())
-      ?(terms_accepted_at = User.TermsAccepted.create_now ())
-      default_language
-      command
+    ?allowed_email_suffixes
+    ?password_policy
+    ?(user_id = Id.create ())
+    ?(terms_accepted_at = User.TermsAccepted.create_now ())
+    default_language
+    command
     =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
@@ -248,10 +248,13 @@ end = struct
           ( contact
           , command.current_password
           , command.new_password
-          , command.password_confirmation
+          , command.password_confirmation )
+        |> Pool_event.contact
+      ; Email.ChangedPassword
+          ( contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.contact
+        |> Pool_event.email_address
       ]
   ;;
 
