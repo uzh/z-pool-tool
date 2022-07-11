@@ -85,12 +85,26 @@ let default_values =
       ; "DE", "Ihre Session wurde verschoben."
       ] )
   ; ( "reschedule_session_text"
-    , [ "EN", {|Dear {name}
+    , [ ( "EN"
+        , {|Dear {name}
 
-Your session was rescheduled.|}
-      ; "DE", {|Liebe*r {name},
+Your session was rescheduled.
 
-Ihre Session wurde verschoben.|}
+{sessionOverviewEN}
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Ihre Session wurde verschoben.
+
+{sessionOverviewDE}
+
+Freundliche Grüsse,
+Pool Tool|}
+        )
       ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
