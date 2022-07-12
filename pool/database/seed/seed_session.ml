@@ -77,7 +77,7 @@ let create pool =
                           %> get_or_failwith
                   }
               in
-              let location = Seed_utils.get_random locations in
+              let location = CCList.hd locations in
               Session.Created (session, None, experiment.Experiment.id, location))
             session_data
         in
@@ -90,7 +90,7 @@ let create pool =
         Session.find_all_for_experiment pool experiment.Experiment.id
         |> Lwt.map CCResult.get_exn
       in
-      let parent = Seed_utils.get_random sessions in
+      let parent = CCList.hd sessions in
       let follow_up =
         let open CCOption in
         Session.
@@ -108,7 +108,7 @@ let create pool =
           ; reminder_text = None
           }
       in
-      let location = Seed_utils.get_random locations in
+      let location = CCList.hd locations in
       Session.handle_event pool
       @@ Session.Created
            ( follow_up

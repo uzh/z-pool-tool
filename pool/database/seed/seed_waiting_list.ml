@@ -18,7 +18,7 @@ let waiting_list pool =
             experiment.Experiment.id
             experiment.Experiment.filter
         in
-        let n = Random.int (CCList.length filtered_contacts) in
+        let n = CCList.length filtered_contacts / 2 in
         let contact = CCList.nth filtered_contacts n in
         let experiment = to_public_experiment experiment in
         let waiting_list = Waiting_list.{ contact; experiment } in

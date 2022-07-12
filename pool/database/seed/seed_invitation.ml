@@ -9,7 +9,7 @@ let invitations pool =
             experiment.Experiment.id
             experiment.Experiment.filter
         in
-        let n = Random.int (CCList.length filtered_contacts) in
+        let n = CCList.length filtered_contacts / 2 in
         let contacts = CCList.take n filtered_contacts in
         Lwt.return
           (events
