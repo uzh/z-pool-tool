@@ -50,8 +50,7 @@ let session_form
   let default_value_session = CCOption.(session <+> follow_up_to) in
   let has_assignments =
     default_value_session
-    |> CCOption.map_or ~default:false (fun s ->
-           s.Session.assignment_count |> Session.AssignmentCount.value > 0)
+    |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
   in
   let reschedule_hint () =
     match session, has_assignments with

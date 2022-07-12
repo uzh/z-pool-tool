@@ -90,21 +90,22 @@ let update_schema =
 
 let validate_start follow_up_sessions parent_session start =
   let open Session in
-  let follow_ups_are_ealier =
+  (* If session has follow-ups, make sure they are all later *)
+  let starts_after_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
         Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
       follow_up_sessions
   in
   (* If session is follow-up, make sure it's later than parent *)
-  let follow_up_is_ealier =
+  let starts_before_parent =
     CCOption.map_or
       ~default:false
       (fun (s : Session.t) ->
         Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
       parent_session
   in
-  if follow_up_is_ealier || follow_ups_are_ealier
+  if starts_before_parent || starts_after_followups
   then Error Pool_common.Message.FollowUpIsEarlierThanMain
   else Ok ()
 ;;
@@ -228,24 +229,19 @@ end = struct
          } :
         Session.update)
     =
-    (* If session has follow-ups, make sure they are all later *)
     let open Session in
     let open CCResult in
-    let has_assignments =
-      session.assignment_count |> AssignmentCount.value |> fun i -> i > 0
-    in
+    let has_assignments = Session.has_assignments session in
     let* start, duration =
       let open Pool_common.Message in
-      let is_some f (field : Pool_common.Message.Field.t) =
-        match f with
-        | Some f -> Ok f
-        | None -> Error (Conformist [ field, Pool_common.Message.NoValue ])
+      let to_result field =
+        CCOption.to_result (Conformist [ field, Pool_common.Message.NoValue ])
       in
       match has_assignments with
       | false ->
         CCResult.both
-          (is_some start Field.Start)
-          (is_some duration Field.Duration)
+          (to_result Field.Start start)
+          (to_result Field.Duration duration)
       | true -> Ok (session.start, session.duration)
     in
     let* () = validate_start follow_up_sessions parent_session start in
