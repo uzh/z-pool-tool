@@ -134,7 +134,7 @@ type default
 val default_values_root : default
 val default_values_tenant : default
 
-type event =
+type verification_event =
   | Created of
       Pool_user.EmailAddress.t
       * Pool_common.Id.t
@@ -143,6 +143,16 @@ type event =
       * Pool_common.Language.t
   | Updated of Pool_user.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
+
+val handle_verification_event
+  :  Pool_database.Label.t
+  -> verification_event
+  -> unit Lwt.t
+
+val equal_verification_event : verification_event -> verification_event -> bool
+val pp_verification_event : Format.formatter -> verification_event -> unit
+
+type event =
   | DefaultRestored of default
   | ResetPassword of Sihl_user.t * Pool_common.Language.t
   | ChangedPassword of Sihl_user.t * Pool_common.Language.t

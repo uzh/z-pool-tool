@@ -82,7 +82,7 @@ end = struct
           , command.lastname
           , default_language |> CCOption.get_or ~default:Pool_common.Language.En
           )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -254,7 +254,7 @@ end = struct
           ( contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email
       ]
   ;;
 
@@ -306,7 +306,7 @@ end = struct
           , contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -348,7 +348,7 @@ end = struct
     Ok
       [ Contact.EmailUpdated (contact, Email.address email)
         |> Pool_event.contact
-      ; Email.EmailVerified email |> Pool_event.email_address
+      ; Email.EmailVerified email |> Pool_event.email_verification
       ]
   ;;
 
@@ -392,7 +392,7 @@ end = struct
   let handle contact command =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified command.email |> Pool_event.email_address
+      ; Email.EmailVerified command.email |> Pool_event.email_verification
       ]
   ;;
 end

@@ -155,7 +155,7 @@ let sign_up () =
           , firstname
           , lastname
           , language |> CCOption.get_exn_or "Test failed" )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -275,7 +275,7 @@ let update_password () =
       ; Email.ChangedPassword
           ( contact.Contact.user
           , language |> CCOption.get_or ~default:Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email
       ]
   in
   check_result expected events
@@ -363,7 +363,7 @@ let request_email_validation () =
           , contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -415,7 +415,7 @@ let update_email () =
     Ok
       [ Contact.EmailUpdated (contact, Email.address email_unverified)
         |> Pool_event.contact
-      ; Email.EmailVerified email_unverified |> Pool_event.email_address
+      ; Email.EmailVerified email_unverified |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -439,7 +439,7 @@ let verify_email () =
   let expected =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified email_unverified |> Pool_event.email_address
+      ; Email.EmailVerified email_unverified |> Pool_event.email_verification
       ]
   in
   check_result expected events

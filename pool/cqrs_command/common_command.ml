@@ -10,7 +10,7 @@ module ResetPassword = struct
   ;;
 
   let handle user language =
-    Ok [ Email.ResetPassword (user, language) |> Pool_event.email_address ]
+    Ok [ Email.ResetPassword (user, language) |> Pool_event.email ]
   ;;
 
   let decode data =

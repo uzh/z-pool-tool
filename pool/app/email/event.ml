@@ -19,7 +19,7 @@ let send_confirmation_email pool language email firstname lastname event =
   >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
-type event =
+type verification_event =
   | Created of
       User.EmailAddress.t
       * Pool_common.Id.t
@@ -28,11 +28,8 @@ type event =
       * Pool_common.Language.t
   | Updated of User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
-  | DefaultRestored of Default.default
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
 
-let handle_event pool : event -> unit Lwt.t =
+let handle_verification_event pool : verification_event -> unit Lwt.t =
   let open Lwt.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   let create_email language user_id address firstname lastname label
@@ -77,6 +74,51 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () = deactivate_token pool token in
     let%lwt () = Repo.verify pool @@ verify email in
     Lwt.return_unit
+;;
+
+let[@warning "-4"] equal_verification_event
+  (one : verification_event)
+  (two : verification_event)
+  : bool
+  =
+  match one, two with
+  | Created (a1, id1, f1, l1, _), Created (a2, id2, f2, l2, _) ->
+    User.EmailAddress.equal a1 a2
+    && Pool_common.Id.equal id1 id2
+    && User.Firstname.equal f1 f2
+    && User.Lastname.equal l1 l2
+  | Updated (a1, u1, _), Updated (a2, u2, _) ->
+    User.EmailAddress.equal a1 a2
+    && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
+  | EmailVerified m, EmailVerified p -> equal m p
+  | _ -> false
+;;
+
+let pp_verification_event formatter (event : verification_event) : unit =
+  let pp_address = User.EmailAddress.pp formatter in
+  match event with
+  | Created (m, id, f, l, language) ->
+    pp_address m;
+    Pool_common.Id.pp formatter id;
+    User.Firstname.pp formatter f;
+    User.Lastname.pp formatter l;
+    Pool_common.Language.pp formatter language
+  | Updated (m, u, language) ->
+    pp_address m;
+    Sihl_user.pp formatter u;
+    Pool_common.Language.pp formatter language
+  | EmailVerified m -> pp formatter m
+;;
+
+type event =
+  | DefaultRestored of Default.default
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
+
+let handle_event pool : event -> unit Lwt.t =
+  let open Lwt.Infix in
+  let ctx = Pool_tenant.to_ctx pool in
+  function
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->
@@ -110,15 +152,6 @@ let handle_event pool : event -> unit Lwt.t =
 
 let[@warning "-4"] equal_event (one : event) (two : event) : bool =
   match one, two with
-  | Created (a1, id1, f1, l1, _), Created (a2, id2, f2, l2, _) ->
-    User.EmailAddress.equal a1 a2
-    && Pool_common.Id.equal id1 id2
-    && User.Firstname.equal f1 f2
-    && User.Lastname.equal l1 l2
-  | Updated (a1, u1, _), Updated (a2, u2, _) ->
-    User.EmailAddress.equal a1 a2
-    && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
-  | EmailVerified m, EmailVerified p -> equal m p
   | DefaultRestored one, DefaultRestored two -> Default.equal_default one two
   | ResetPassword (u1, l1), ResetPassword (u2, l2)
   | ChangedPassword (u1, l1), ChangedPassword (u2, l2) ->
@@ -128,19 +161,7 @@ let[@warning "-4"] equal_event (one : event) (two : event) : bool =
 ;;
 
 let pp_event formatter (event : event) : unit =
-  let pp_address = User.EmailAddress.pp formatter in
   match event with
-  | Created (m, id, f, l, language) ->
-    pp_address m;
-    Pool_common.Id.pp formatter id;
-    User.Firstname.pp formatter f;
-    User.Lastname.pp formatter l;
-    Pool_common.Language.pp formatter language
-  | Updated (m, u, language) ->
-    pp_address m;
-    Sihl_user.pp formatter u;
-    Pool_common.Language.pp formatter language
-  | EmailVerified m -> pp formatter m
   | DefaultRestored m -> Default.pp_default formatter m
   | ResetPassword (u, language) | ChangedPassword (u, language) ->
     Sihl_user.pp formatter u;
