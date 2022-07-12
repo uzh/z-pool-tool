@@ -62,7 +62,7 @@ let contacts db_pool =
       , Some (Ptime_clock.now ())
       , false
       , false
-      , false )
+      , true )
     ; ( Id.create ()
       , "John"
       , "Dorrian"
@@ -82,7 +82,7 @@ let contacts db_pool =
       , Some (Ptime_clock.now ())
       , true
       , false
-      , false )
+      , true )
     ; ( Id.create ()
       , "Hello"
       , "Kitty"
