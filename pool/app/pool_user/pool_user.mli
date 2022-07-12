@@ -180,3 +180,7 @@ module Repo : sig
 
   val user_caqti : Sihl_user.t Caqti_type.t
 end
+
+val user_firstname : Sihl_user.t -> Firstname.t
+val user_lastname : Sihl_user.t -> Lastname.t
+val user_fullname : Sihl_user.t -> string

@@ -99,7 +99,7 @@ type event =
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of (t * Sihl_email.t list)
+  | ReminderSent of t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

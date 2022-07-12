@@ -1,6 +1,40 @@
 open Entity
 module User = Pool_user
 
+type confirmation_email =
+  { subject : I18n.Content.t
+  ; text : I18n.Content.t
+  ; language : Pool_common.Language.t
+  ; session_text : string
+  }
+[@@deriving eq, show]
+
+let send_conformation
+  pool
+  { Sihl_user.email; given_name; name; _ }
+  { subject; text; language; session_text }
+  =
+  let empty_default = CCOption.get_or ~default:"" in
+  let%lwt email_template =
+    let content =
+      Format.asprintf "%s\n%s" (text |> I18n.Content.value) session_text
+    in
+    Helper.prepare_email
+      pool
+      language
+      TemplateLabel.Boilerplate
+      (subject |> I18n.Content.value)
+      email
+      [ ( "name"
+        , CCString.concat
+            " "
+            [ given_name |> empty_default; name |> empty_default ] )
+      ; "content", content
+      ]
+  in
+  email_template |> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+;;
+
 let create_token pool address =
   let open Lwt.Infix in
   Service.Token.create
@@ -60,7 +94,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t =
       (Some lastname)
       TemplateLabel.SignUpVerification
   | Updated (address, user, language) ->
-    let open Sihl.Contract.User in
+    let open Sihl_user in
     let user_id = user.id |> Pool_common.Id.of_string in
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     create_email
@@ -89,7 +123,7 @@ let[@warning "-4"] equal_verification_event
     && User.Lastname.equal l1 l2
   | Updated (a1, u1, _), Updated (a2, u2, _) ->
     User.EmailAddress.equal a1 a2
-    && CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
+    && CCString.equal u1.Sihl_user.id u2.Sihl_user.id
   | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
@@ -111,14 +145,54 @@ let pp_verification_event formatter (event : verification_event) : unit =
 ;;
 
 type event =
-  | DefaultRestored of Default.default
+  | Sent of Sihl_email.t
+  | BulkSent of Sihl_email.t list
   | ResetPassword of Sihl_user.t * Pool_common.Language.t
   | ChangedPassword of Sihl_user.t * Pool_common.Language.t
+  | AssignmentConfirmationSent of Sihl_user.t * confirmation_email
+  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
+  | InvitationBulkSent of
+      (Sihl_user.t * text_component list * CustomTemplate.t) list
+  | DefaultRestored of Default.default
+[@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
   let open Lwt.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   function
+  | Sent email -> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool) email
+  | BulkSent emails ->
+    Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
+  | ResetPassword (user, language) ->
+    Helper.PasswordReset.create pool language user
+    |> Lwt_result.map_error Pool_common.Utils.with_log_error
+    >>= (function
+    | Ok email -> Service.Email.send ~ctx email
+    | Error (_ : PoolError.error) -> Lwt.return_unit)
+  | ChangedPassword (({ Sihl_user.email; _ } as user), language) ->
+    Helper.PasswordChange.create
+      pool
+      language
+      (Pool_user.EmailAddress.of_string email)
+      (user |> User.user_firstname)
+      (user |> User.user_lastname)
+    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+  | AssignmentConfirmationSent (user, confirmation_email) ->
+    send_conformation pool user confirmation_email
+  | InvitationSent (user, data, template) ->
+    Helper.prepare_boilerplate_email
+      template
+      user.Sihl_user.email
+      ([ "name", User.user_fullname user ] @ data)
+    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+  | InvitationBulkSent multi_data ->
+    multi_data
+    |> Lwt_list.map_s (fun (user, data, template) ->
+         Helper.prepare_boilerplate_email
+           template
+           user.Sihl_user.email
+           ([ "name", User.user_fullname user ] @ data))
+    >>= Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->
@@ -133,37 +207,4 @@ let handle_event pool : event -> unit Lwt.t =
         in
         Lwt.return_unit)
       default_values
-  | ResetPassword (user, language) ->
-    Helper.PasswordReset.create pool language user
-    |> Lwt_result.map_error Pool_common.Utils.with_log_error
-    >>= (function
-    | Ok email -> Service.Email.send ~ctx email
-    | Error (_ : PoolError.error) -> Lwt.return_unit)
-  | ChangedPassword ({ Sihl_user.email; given_name; name; _ }, language) ->
-    let default = CCOption.get_or ~default:"" in
-    Helper.PasswordChange.create
-      pool
-      language
-      (Pool_user.EmailAddress.of_string email)
-      (given_name |> default |> Pool_user.Firstname.of_string)
-      (name |> default |> Pool_user.Lastname.of_string)
-    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
-;;
-
-let[@warning "-4"] equal_event (one : event) (two : event) : bool =
-  match one, two with
-  | DefaultRestored one, DefaultRestored two -> Default.equal_default one two
-  | ResetPassword (u1, l1), ResetPassword (u2, l2)
-  | ChangedPassword (u1, l1), ChangedPassword (u2, l2) ->
-    CCString.equal u1.Sihl.Contract.User.id u2.Sihl.Contract.User.id
-    && Pool_common.Language.equal l1 l2
-  | _ -> false
-;;
-
-let pp_event formatter (event : event) : unit =
-  match event with
-  | DefaultRestored m -> Default.pp_default formatter m
-  | ResetPassword (u, language) | ChangedPassword (u, language) ->
-    Sihl_user.pp formatter u;
-    Pool_common.Language.pp formatter language
 ;;

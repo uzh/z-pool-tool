@@ -1,15 +1,15 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
 let session_command
-    start
-    duration
-    description
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
+  start
+  duration
+  description
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
   =
   Session.
     { start
@@ -51,22 +51,22 @@ module Create = struct
   let schema = session_schema
 
   let handle
-      ?parent_session
-      experiment_id
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; (* TODO [aerben] find a better name *)
-           overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.base)
+    ?parent_session
+    experiment_id
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; (* TODO [aerben] find a better name *)
+         overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.base)
     =
     (* If session is follow-up, make sure it's later than parent *)
     let follow_up_is_ealier =
@@ -132,22 +132,22 @@ module Update = struct
   let schema = session_schema
 
   let handle
-      ?parent_session
-      follow_up_sessions
-      session
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.base)
+    ?parent_session
+    follow_up_sessions
+    session
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.base)
     =
     (* If session has follow-ups, make sure they are all later *)
     let open Session in
@@ -269,8 +269,13 @@ end = struct
 
   let handle command =
     Ok
-      (CCList.map
-         (fun data -> Session.ReminderSent data |> Pool_event.session)
+      (CCList.flat_map
+         (fun (session, emails) ->
+           (Session.ReminderSent session |> Pool_event.session)
+           ::
+           (if emails |> CCList.is_empty |> not
+           then [ Email.BulkSent emails |> Pool_event.email ]
+           else []))
          command)
   ;;
 

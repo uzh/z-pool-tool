@@ -20,35 +20,15 @@ type create =
   }
 [@@deriving eq, show]
 
-type resent =
-  { invitation : t
-  ; experiment : Experiment.t
-  }
-[@@deriving eq, show]
-
 type event =
   | Created of Contact.t list * Experiment.t
-  | Resent of (resent * Email.CustomTemplate.t)
-  | InvitationsSent of Experiment.t * (Contact.t * Email.CustomTemplate.t) list
+  | Resent of t
 [@@deriving eq, show]
 
 let handle_event pool event =
   match event with
   | Created (contacts, experiment) ->
     Repo.bulk_insert pool contacts experiment.Experiment.id
-  | Resent ({ invitation; experiment }, template) ->
-    let%lwt () =
-      Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
-    in
-    let%lwt email = create_invitation experiment invitation.contact template in
-    Service.Email.send ~ctx:(Pool_tenant.to_ctx pool) email
-  | InvitationsSent (experiment, data) ->
-    let%lwt emails =
-      Lwt_list.map_s
-        (fun email ->
-          let contact, template = email in
-          create_invitation experiment contact template)
-        data
-    in
-    Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
+  | Resent invitation ->
+    Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
 ;;

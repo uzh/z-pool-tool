@@ -38,7 +38,7 @@ let create req =
         >|= I18n.content
       in
       let session_text = Session.(public_to_email_text language session) in
-      Lwt_result.return Assignment.{ subject; text; language; session_text }
+      Lwt_result.return Email.{ subject; text; language; session_text }
     in
     let%lwt already_enrolled =
       let open Lwt.Infix in

@@ -129,6 +129,7 @@ module TemplateLabel : sig
   val read : string -> t
 end
 
+type text_component = (string, string) CCPair.t
 type default
 
 val default_values_root : default
@@ -152,10 +153,23 @@ val handle_verification_event
 val equal_verification_event : verification_event -> verification_event -> bool
 val pp_verification_event : Format.formatter -> verification_event -> unit
 
+type confirmation_email =
+  { subject : I18n.Content.t
+  ; text : I18n.Content.t
+  ; language : Pool_common.Language.t
+  ; session_text : string
+  }
+
 type event =
-  | DefaultRestored of default
+  | Sent of Sihl_email.t
+  | BulkSent of Sihl_email.t list
   | ResetPassword of Sihl_user.t * Pool_common.Language.t
   | ChangedPassword of Sihl_user.t * Pool_common.Language.t
+  | AssignmentConfirmationSent of Sihl_user.t * confirmation_email
+  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
+  | InvitationBulkSent of
+      (Sihl_user.t * text_component list * CustomTemplate.t) list
+  | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
