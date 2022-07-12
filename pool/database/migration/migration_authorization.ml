@@ -11,8 +11,9 @@ let create_authorization_tables =
     |sql}
 ;;
 
-let _create_rule_table =
+let create_rule_table =
   Sihl.Database.Migration.create_step
+    ~label:"Create table for authorization rules"
     {sql|
     CREATE TABLE IF NOT EXISTS rules (
       `actor_id` TEXT,
@@ -42,5 +43,7 @@ let _create_rule_table =
 
 let migration () =
   Sihl.Database.Migration.(
-    empty "authorization" |> add_step create_authorization_tables)
+    empty "authorization"
+    |> add_step create_authorization_tables
+    |> add_step create_rule_table)
 ;;
