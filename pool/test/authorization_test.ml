@@ -12,6 +12,7 @@ let update_language_as ~actor =
   let* effects =
     Cqrs_command.Contact_command.Update.get_effects tenant subject
   in
+  let* _ = Ocauth.Pool_tenant.to_authorizable tenant in
   let* _ = Ocauth.Contact.to_authorizable subject in
   let* () =
     let* rules = Ocauth.Persistence.collect_rules effects in
