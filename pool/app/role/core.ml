@@ -63,10 +63,16 @@ let all =
   ; `Experiment
   ; `System
   ; `User
+  ; `Participant
   ; `Contact
   ; `Waiting_list
   ; `Assignment
   ; `Mailing
   ; `Assignment
+  ; `Assistant Ocaml_authorize.Uuidm.nil
+  ; `Experimenter Ocaml_authorize.Uuidm.nil
+  ; `Location_manager Ocaml_authorize.Uuidm.nil
+  ; `Operator Ocaml_authorize.Uuidm.nil
+  ; `Recruiter Ocaml_authorize.Uuidm.nil
   ]
 ;;

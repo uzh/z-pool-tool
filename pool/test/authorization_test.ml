@@ -40,3 +40,46 @@ let guest_cannot_update_language _switch () =
        actual)
   |> Lwt.return
 ;;
+
+let operator_works _switch () =
+  let%lwt actual =
+    let open Lwt_result.Syntax in
+    let target =
+      "chris@gmail.com"
+      |> Contact_test.contact_info
+      |> Contact_test.create_contact true
+    in
+    let* target' = Ocauth.Contact.to_authorizable target in
+    let subject =
+      "john@gmail.com"
+      |> Contact_test.contact_info
+      |> Contact_test.create_contact true
+    in
+    let* actor = Ocauth.Contact.to_authorizable subject in
+    let* () =
+      Ocauth.Persistence.grant_roles
+        actor.Ocauth.Authorizable.uuid
+        (Ocauth.Role_set.singleton (`Operator target'.Ocauth.Authorizable.uuid))
+      |> Lwt_result.map_error Pool_common.Message.authorization
+    in
+    let* actor = Ocauth.Contact.to_authorizable subject in
+    let* () =
+      Ocauth.Persistence.put_perm
+        ( `Role (`Operator target'.Ocauth.Authorizable.uuid)
+        , `Manage
+        , `Uniq target'.Ocauth.Authorizable.uuid )
+      |> Lwt_result.map_error Pool_common.Message.authorization
+    in
+    let effects = [ `Manage, `Uniq target'.Ocauth.Authorizable.uuid ] in
+    let* () =
+      (Ocauth.Persistence.checker_of_effects effects) ~actor
+      |> Lwt_result.map_error Pool_common.Message.authorization
+    in
+    Lwt_result.return ()
+  in
+  Alcotest.(check (result unit Test_utils.error))
+    "Parametric roles work."
+    (Ok ())
+    actual
+  |> Lwt.return
+;;

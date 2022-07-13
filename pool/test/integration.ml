@@ -40,6 +40,7 @@ let suite =
               "deny invalid operation"
               `Quick
               guest_cannot_update_language
+          ; test_case "use parametric roles" `Quick operator_works
           ] )
     ]
 ;;
