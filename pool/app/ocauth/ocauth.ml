@@ -72,6 +72,8 @@ module Contact = struct
           ~typ:`User
           (Uuid.of_string_exn (Pool_common.Id.value (Contact.id t))))
       t
+    |> Lwt_result.map_error (fun s ->
+           Format.asprintf "Failed to convert Contact to authorizable: %s" s)
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
 end

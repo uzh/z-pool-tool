@@ -35,9 +35,9 @@ let suite =
       , [ test_case "intercept email" `Quick Common_test.validate_email ] )
     ; ( "authorization"
       , Authorization_test.
-          [ test_case "update language of user" `Quick admin_can_update_language
+          [ test_case "permit valid operation" `Quick admin_can_update_language
           ; test_case
-              "update language of user"
+              "deny invalid operation"
               `Quick
               guest_cannot_update_language
           ] )
