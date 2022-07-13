@@ -65,6 +65,7 @@ module Root = struct
   let steps =
     extend_migrations
       [ Migration_tenant.migration ()
+      ; Migration_authorization.migration ()
       ; Migration_tenant_logo_mappings.migration ()
       ]
   ;;
