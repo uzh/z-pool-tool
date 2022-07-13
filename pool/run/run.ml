@@ -37,8 +37,12 @@ let () =
               to clear the root database first in order to make sure new
               [root_permissions] items end up in the database *)
            let%lwt () =
-             Lwt_list.iter_s
-               Ocauth.Persistence.delete_perm_exn
+             (* TODO: Handle errors *)
+             Lwt_list.fold_left_s
+               (fun _acc perm ->
+                 let%lwt _rv = Ocauth.Persistence.delete_perm perm in
+                 Lwt.return ())
+               ()
                Ocauth.root_permissions
            in
            let%lwt _ = Ocauth.(Persistence.put_perms root_permissions) in
