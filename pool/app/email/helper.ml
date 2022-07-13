@@ -75,7 +75,7 @@ let prepare_boilerplate_email template email params =
 ;;
 
 module PasswordReset = struct
-  let create pool language { Sihl_user.email; given_name; name; _ } =
+  let create pool language ({ Sihl_user.email; _ } as user) =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
@@ -98,17 +98,13 @@ module PasswordReset = struct
         |> Sihl.Web.externalize_path
         |> create_public_url url
       in
-      let given_name = given_name |> CCOption.value ~default:"" in
-      let name = name |> CCOption.value ~default:"" in
       prepare_email
         pool
         language
         TemplateLabel.PasswordReset
         subject
         email
-        [ "resetUrl", reset_url
-        ; "name", Format.asprintf "%s %s" given_name name
-        ]
+        [ "resetUrl", reset_url; "name", user |> User.user_fullname ]
       |> Lwt_result.ok
   ;;
 end

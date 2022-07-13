@@ -11,10 +11,9 @@ type confirmation_email =
 
 let send_conformation
   pool
-  { Sihl_user.email; given_name; name; _ }
+  ({ Sihl_user.email; _ } as user)
   { subject; text; language; session_text }
   =
-  let empty_default = CCOption.get_or ~default:"" in
   let%lwt email_template =
     let content =
       Format.asprintf "%s\n%s" (text |> I18n.Content.value) session_text
@@ -28,7 +27,9 @@ let send_conformation
       [ ( "name"
         , CCString.concat
             " "
-            [ given_name |> empty_default; name |> empty_default ] )
+            [ user |> User.user_firstname |> User.Firstname.value
+            ; user |> User.user_lastname |> User.Lastname.value
+            ] )
       ; "content", content
       ]
   in
@@ -197,7 +198,7 @@ let handle_event pool : event -> unit Lwt.t =
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->
         let%lwt () = Repo.delete_email_template pool label language in
-        let%lwt _ =
+        let%lwt (_ : Sihl_email.Template.t) =
           Service.EmailTemplate.create
             ~ctx
             ~label:(TemplateLabel.show label)

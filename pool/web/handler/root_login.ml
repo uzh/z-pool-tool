@@ -77,7 +77,7 @@ let request_reset_password_post req =
     >== CCFun.flip handle language
     |>> Pool_event.handle_events tenant_db
     >|> function
-    | Ok _ | Error _ ->
+    | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions
         "/root/request-reset-password"
         [ Message.set

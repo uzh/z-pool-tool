@@ -89,7 +89,7 @@ let request_reset_password_post req =
     >== (fun { Contact.user; _ } -> handle user language)
     |>> Pool_event.handle_events tenant_db
     >|> function
-    | Ok _ | Error _ ->
+    | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions
         (path_with_language query_lang "/request-reset-password")
         [ Message.set
