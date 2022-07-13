@@ -7,7 +7,7 @@ let create_authorization_tables =
       `roles` TEXT NOT NULL,
       `parent` TEXT,
       UNIQUE KEY `unique_id` (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;
 
@@ -37,7 +37,7 @@ let create_rule_table =
       UNIQUE(actor_role, act, target_id),
       UNIQUE(actor_id, act, target_role),
       UNIQUE(actor_id, act, target_id)
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;;
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;
 
