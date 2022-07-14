@@ -10,7 +10,7 @@ module Create : sig
 
   val handle
     :  t
-    -> Assignment.confirmation_email
+    -> Email.confirmation_email
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -57,8 +57,9 @@ end = struct
       Ok
         (delete_events
         @ [ Assignment.Created create |> Pool_event.assignment
-          ; Assignment.ConfirmationSent (confirmation_email, command.contact)
-            |> Pool_event.assignment
+          ; Email.AssignmentConfirmationSent
+              (command.contact.Contact.user, confirmation_email)
+            |> Pool_event.email
           ])
   ;;
 
@@ -76,7 +77,7 @@ end = struct
   type t = Assignment.t
 
   let handle (command : t)
-      : (Pool_event.t list, Pool_common.Message.error) result
+    : (Pool_event.t list, Pool_common.Message.error) result
     =
     Ok [ Assignment.Canceled command |> Pool_event.assignment ]
   ;;
@@ -156,7 +157,7 @@ module CreateFromWaitingList : sig
 
   val handle
     :  t
-    -> Assignment.confirmation_email
+    -> Email.confirmation_email
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : Sihl_user.t -> t -> bool Lwt.t
@@ -194,9 +195,10 @@ end = struct
         Ok
           [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
           ; Assignment.Created create |> Pool_event.assignment
-          ; Assignment.ConfirmationSent
-              (confirmation_email, command.waiting_list.Waiting_list.contact)
-            |> Pool_event.assignment
+          ; Email.AssignmentConfirmationSent
+              ( command.waiting_list.Waiting_list.contact.Contact.user
+              , confirmation_email )
+            |> Pool_event.email
           ]
   ;;
 

@@ -129,12 +129,13 @@ module TemplateLabel : sig
   val read : string -> t
 end
 
+type text_component = (string, string) CCPair.t
 type default
 
 val default_values_root : default
 val default_values_tenant : default
 
-type event =
+type verification_event =
   | Created of
       Pool_user.EmailAddress.t
       * Pool_common.Id.t
@@ -143,6 +144,31 @@ type event =
       * Pool_common.Language.t
   | Updated of Pool_user.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
+
+val handle_verification_event
+  :  Pool_database.Label.t
+  -> verification_event
+  -> unit Lwt.t
+
+val equal_verification_event : verification_event -> verification_event -> bool
+val pp_verification_event : Format.formatter -> verification_event -> unit
+
+type confirmation_email =
+  { subject : I18n.Content.t
+  ; text : I18n.Content.t
+  ; language : Pool_common.Language.t
+  ; session_text : string
+  }
+
+type event =
+  | Sent of Sihl_email.t
+  | BulkSent of Sihl_email.t list
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
+  | AssignmentConfirmationSent of Sihl_user.t * confirmation_email
+  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
+  | InvitationBulkSent of
+      (Sihl_user.t * text_component list * CustomTemplate.t) list
   | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
@@ -164,24 +190,6 @@ module Helper : sig
     -> string
     -> (string * string) list
     -> Sihl_email.t Lwt.t
-
-  module PasswordReset : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> user:Sihl_user.t
-      -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-  end
-
-  module PasswordChange : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> Pool_user.EmailAddress.t
-      -> Pool_user.Firstname.t
-      -> Pool_user.Lastname.t
-      -> Sihl_email.t Lwt.t
-  end
 
   module ConfirmationEmail : sig
     val create

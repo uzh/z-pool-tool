@@ -51,12 +51,12 @@ end = struct
   ;;
 
   let handle
-      ?allowed_email_suffixes
-      ?password_policy
-      ?(user_id = Id.create ())
-      ?(terms_accepted_at = User.TermsAccepted.create_now ())
-      default_language
-      command
+    ?allowed_email_suffixes
+    ?password_policy
+    ?(user_id = Id.create ())
+    ?(terms_accepted_at = User.TermsAccepted.create_now ())
+    default_language
+    command
     =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
@@ -82,7 +82,7 @@ end = struct
           , command.lastname
           , default_language |> CCOption.get_or ~default:Pool_common.Language.En
           )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -248,10 +248,13 @@ end = struct
           ( contact
           , command.current_password
           , command.new_password
-          , command.password_confirmation
+          , command.password_confirmation )
+        |> Pool_event.contact
+      ; Email.ChangedPassword
+          ( contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.contact
+        |> Pool_event.email
       ]
   ;;
 
@@ -303,7 +306,7 @@ end = struct
           , contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -345,7 +348,7 @@ end = struct
     Ok
       [ Contact.EmailUpdated (contact, Email.address email)
         |> Pool_event.contact
-      ; Email.EmailVerified email |> Pool_event.email_address
+      ; Email.EmailVerified email |> Pool_event.email_verification
       ]
   ;;
 
@@ -389,7 +392,7 @@ end = struct
   let handle contact command =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified command.email |> Pool_event.email_address
+      ; Email.EmailVerified command.email |> Pool_event.email_verification
       ]
   ;;
 end

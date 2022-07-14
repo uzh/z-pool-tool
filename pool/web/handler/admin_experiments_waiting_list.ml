@@ -83,7 +83,7 @@ let update req =
   let result context =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err ->
-        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
@@ -121,11 +121,11 @@ let assign_contact req =
   in
   let result context =
     Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf
-            "%s/%s"
-            redirect_path
-            (Pool_common.Id.value waiting_list_id) ))
+      ( err
+      , Format.asprintf
+          "%s/%s"
+          redirect_path
+          (Pool_common.Id.value waiting_list_id) ))
     @@
     let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
@@ -170,7 +170,7 @@ let assign_contact req =
         >|= I18n.content
       in
       let session_text = Session.(to_email_text language session) in
-      Lwt_result.return Assignment.{ subject; text; language; session_text }
+      Lwt_result.return Email.{ subject; text; language; session_text }
     in
     let events =
       Cqrs_command.Assignment_command.CreateFromWaitingList.(

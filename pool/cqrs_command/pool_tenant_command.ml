@@ -62,22 +62,22 @@ end = struct
     }
 
   let command
-      title
-      description
-      url
-      database_url
-      database_label
-      smtp_auth_server
-      smtp_auth_port
-      smtp_auth_username
-      smtp_auth_password
-      smtp_auth_authentication_method
-      smtp_auth_protocol
-      styles
-      icon
-      default_language
-      tenant_logos
-      partner_logos
+    title
+    description
+    url
+    database_url
+    database_label
+    smtp_auth_server
+    smtp_auth_port
+    smtp_auth_username
+    smtp_auth_password
+    smtp_auth_authentication_method
+    smtp_auth_protocol
+    styles
+    icon
+    default_language
+    tenant_logos
+    partner_logos
     =
     { title
     ; description
@@ -161,8 +161,7 @@ end = struct
       ; Database.Migrated command.database_label |> Pool_event.database
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-      ; Email.(
-          DefaultRestored default_values_tenant |> Pool_event.email_address)
+      ; Email.(DefaultRestored default_values_tenant |> Pool_event.email)
       ]
   ;;
 
@@ -221,18 +220,18 @@ end = struct
     }
 
   let command
-      title
-      description
-      url
-      smtp_auth_server
-      smtp_auth_port
-      smtp_auth_username
-      smtp_auth_authentication_method
-      smtp_auth_protocol
-      disabled
-      default_language
-      tenant_logos
-      partner_logos
+    title
+    description
+    url
+    smtp_auth_server
+    smtp_auth_port
+    smtp_auth_username
+    smtp_auth_authentication_method
+    smtp_auth_protocol
+    disabled
+    default_language
+    tenant_logos
+    partner_logos
     =
     { title
     ; description

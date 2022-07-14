@@ -58,28 +58,29 @@ let create () =
     let email =
       let open Pool_common.Language in
       let subject, text = CCList.assoc ~eq:equal En i18n_templates in
-      ( contact
+      ( contact.Contact.user
+      , [ ( "experimentDescription"
+          , experiment.Experiment.description |> Experiment.Description.value )
+        ]
       , Email.CustomTemplate.
           { subject = Subject.I18n subject; content = Content.I18n text } )
       |> CCList.pure
     in
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
-      ; Invitation.InvitationsSent (experiment, email) |> Pool_event.invitation
+      ; Email.InvitationBulkSent email |> Pool_event.email
       ]
   in
   check_result expected events
 ;;
 
 let resend () =
+  let open InvitationCommand.Resend in
   let invitation = create_invitation () in
   let experiment = Test_utils.create_experiment () in
   let languages = Pool_common.Language.all in
   let i18n_templates = i18n_templates languages in
-  let resent = Invitation.{ invitation; experiment } in
-  let events =
-    InvitationCommand.Resend.handle resent languages i18n_templates
-  in
+  let events = handle { invitation; experiment } languages i18n_templates in
   let expected =
     let open CCResult in
     let* email =
@@ -89,7 +90,17 @@ let resend () =
         experiment
         invitation.Invitation.contact.Contact.language
     in
-    Ok [ Invitation.(Resent (resent, email)) |> Pool_event.invitation ]
+    Ok
+      [ Invitation.(Resent invitation) |> Pool_event.invitation
+      ; Email.InvitationSent
+          ( invitation.Invitation.contact.Contact.user
+          , [ ( "experimentDescription"
+              , experiment.Experiment.description
+                |> Experiment.Description.value )
+            ]
+          , email )
+        |> Pool_event.email
+      ]
   in
   check_result expected events
 ;;

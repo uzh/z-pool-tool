@@ -154,10 +154,8 @@ let resend req =
        let* experiment = Experiment.find tenant_db experiment_id in
        let* system_languages, i18n_texts = invitation_templte_data tenant_db in
        let events =
-         Cqrs_command.Invitation_command.Resend.handle
-           Invitation.{ invitation; experiment }
-           system_languages
-           i18n_texts
+         let open Cqrs_command.Invitation_command.Resend in
+         handle { invitation; experiment } system_languages i18n_texts
          |> Lwt.return
        in
        let handle events =

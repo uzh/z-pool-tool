@@ -29,7 +29,7 @@ let confirmation_email =
   let subject = "Confirmation" |> I18n.Content.create |> CCResult.get_exn in
   let text = "Text" |> I18n.Content.create |> CCResult.get_exn in
   let session_text = "Session info" in
-  Assignment.{ subject; text; language; session_text }
+  Email.{ subject; text; language; session_text }
 ;;
 
 let create () =
@@ -52,10 +52,10 @@ let create () =
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
-      ; Assignment.(
-          ConfirmationSent
-            (confirmation_email, waiting_list.Waiting_list.contact))
-        |> Pool_event.assignment
+      ; Email.(
+          AssignmentConfirmationSent
+            (waiting_list.Waiting_list.contact.Contact.user, confirmation_email))
+        |> Pool_event.email
       ]
   in
   check_result expected events
@@ -185,10 +185,10 @@ let assign_contact_from_waiting_list () =
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.Created create |> Pool_event.assignment
-      ; Assignment.(
-          ConfirmationSent
-            (confirmation_email, waiting_list.Waiting_list.contact))
-        |> Pool_event.assignment
+      ; Email.(
+          AssignmentConfirmationSent
+            (waiting_list.Waiting_list.contact.Contact.user, confirmation_email))
+        |> Pool_event.email
       ]
   in
   check_result expected events

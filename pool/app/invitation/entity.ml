@@ -34,9 +34,9 @@ let equal_queue_entry (mail1, queue1) (mail2, queue2) =
 type notification_history =
   { invitation : t
   ; queue_entries : (Sihl_email.t * Sihl_queue.instance) list
-        [@equal
-          fun queue_entries1 queue_entries2 ->
-            CCList.map2 equal_queue_entry queue_entries1 queue_entries2
-            |> CCList.for_all CCFun.id]
+       [@equal
+         fun queue_entries1 queue_entries2 ->
+           CCList.map2 equal_queue_entry queue_entries1 queue_entries2
+           |> CCList.for_all CCFun.id]
   }
 [@@deriving eq, show]
