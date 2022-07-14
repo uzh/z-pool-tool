@@ -26,7 +26,8 @@ let select_from_experiments_sql where_fragment =
           pool_experiments.public_title,
           pool_experiments.description,
           pool_experiments.direct_registration_disabled,
-          pool_experiments.registration_disabled
+          pool_experiments.registration_disabled,
+          pool_experiments.experiment_type,
         FROM pool_experiments
       |sql}
   in

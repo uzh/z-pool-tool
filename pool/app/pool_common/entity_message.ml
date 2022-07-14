@@ -43,6 +43,7 @@ module Field = struct
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
+    | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
@@ -288,6 +289,7 @@ type control =
   | Enroll
   | Login
   | More
+  | PleaseSelect
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option

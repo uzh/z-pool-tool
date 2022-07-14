@@ -35,6 +35,7 @@ let field_to_string =
   | EmailSuffix -> "email suffix"
   | End -> "end"
   | Experiment -> "experiment"
+  | ExperimentType -> "experiment type"
   | File -> "file"
   | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
@@ -295,6 +296,7 @@ let control_to_string = function
   | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
   | More -> "more"
+  | PleaseSelect -> "please select"
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field

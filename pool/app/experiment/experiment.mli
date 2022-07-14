@@ -70,6 +70,21 @@ module RegistrationDisabled : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
+module ExperimentType : sig
+  type t =
+    | Lab
+    | Online
+
+  val schema
+    :  unit
+    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
+  val show : t -> string
+  val equal : t -> t -> bool
+  val read : string -> t
+  val all : t list
+end
+
 module InvitationTemplate : sig
   module Subject : sig
     type t
@@ -119,6 +134,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; experiment_type : ExperimentType.t option
   ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
@@ -138,6 +154,7 @@ val create
   -> Description.t
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
+  -> ExperimentType.t option
   -> InvitationTemplate.Subject.t option
   -> InvitationTemplate.Text.t option
   -> Pool_common.Reminder.LeadTime.t option
@@ -151,6 +168,7 @@ type create =
   ; description : Description.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; experiment_type : ExperimentType.t option
   ; invitation_subject : InvitationTemplate.Subject.t option
   ; invitation_text : InvitationTemplate.Text.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
@@ -168,6 +186,7 @@ module Public : sig
     ; public_title : PublicTitle.t
     ; description : Description.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
+    ; experiment_type : ExperimentType.t option
     }
 
   val equal : t -> t -> bool

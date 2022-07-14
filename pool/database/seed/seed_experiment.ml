@@ -84,6 +84,7 @@ let experiments pool =
             description
             direct_registration_disabled
             registration_disabled
+            (Some ExperimentType.Lab)
             invitation_subject
             invitation_text
             session_reminder_lead_time
