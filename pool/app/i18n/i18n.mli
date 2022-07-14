@@ -22,6 +22,8 @@ module Key : sig
     | RescheduleSessionText
     | SessionFinishSubject
     | SessionFinishText
+    | TriggerProfileUpdateSubject
+    | TriggerProfileUpdateText
     | WelcomeText
 
   val to_string : t -> string

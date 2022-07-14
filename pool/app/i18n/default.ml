@@ -106,6 +106,14 @@ Freundliche Grüsse,
 Pool Tool|}
         )
       ] )
+  ; ( "trigger_profile_update_subject"
+    , [ "EN", "Please check your profile."
+      ; "DE", "Bitte kontrollieren Sie Ihr Profil."
+      ] )
+  ; ( "trigger_profile_update_text"
+    , [ "EN", "Your profile has not been updated in a while."
+      ; "DE", "Ihr Profil wurde bereits eine Weile nicht aktualisiert."
+      ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
     , [ "EN", "Password must be at least 8 characters in length."
