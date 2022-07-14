@@ -106,7 +106,6 @@ let experiment_form
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
-    (* TODO[timhub]: refactor selector, add flash fetcher *)
     let open Pool_common.ExperimentType in
     Component.selector
       language
