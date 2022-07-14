@@ -143,6 +143,8 @@ module Field = struct
     | Title [@name "title"] [@printer go "title"]
     | Token [@name "token"] [@printer go "token"]
     | Translation [@name "translation"] [@printer go "translation"]
+    | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+        [@printer go "trigger_profile_update_after"]
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
     | Version [@name "version"] [@printer go "version"]
