@@ -55,6 +55,23 @@ type base =
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 
+type update =
+  { start : Start.t option
+  ; duration : Duration.t option
+  ; description : Description.t option
+  ; max_participants : ParticipantAmount.t
+  ; min_participants : ParticipantAmount.t
+  ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  }
+
+type reschedule =
+  { start : Start.t
+  ; duration : Duration.t
+  }
+
 module AssignmentCount : sig
   type t
 
@@ -89,6 +106,7 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 val is_fully_booked : t -> bool
+val has_assignments : t -> bool
 val session_date_to_human : t -> string
 
 (* TODO [aerben] this should be experiment id type *)
@@ -100,6 +118,7 @@ type event =
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
   | ReminderSent of t
+  | Rescheduled of (t * reschedule)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

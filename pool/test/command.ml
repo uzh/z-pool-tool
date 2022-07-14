@@ -156,5 +156,11 @@ let () =
             `Quick
             Mailing_test.create_end_before_start
         ] )
+    ; ( "session"
+      , [ test_case
+            "reschedule session to past"
+            `Quick
+            Session_test.reschedule_to_past
+        ] )
     ]
 ;;

@@ -48,6 +48,29 @@ let session_form
   let open CCFun in
   let open Session in
   let default_value_session = CCOption.(session <+> follow_up_to) in
+  let has_assignments =
+    default_value_session
+    |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
+  in
+  let reschedule_hint () =
+    match session, has_assignments with
+    | Some session, true ->
+      let action =
+        let open Pool_common.Id in
+        Format.asprintf
+          "/admin/experiments/%s/sessions/%s/reschedule"
+          (value experiment.Experiment.id)
+          (value session.Session.id)
+        |> Sihl.Web.externalize_path
+      in
+      p
+        [ txt "There are assignments for this session. Please use the "
+        ; a
+            ~a:[ a_href action ]
+            [ txt "form provided to reschedule a session." ]
+        ]
+    | _ -> txt ""
+  in
   let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
   let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
   let lead_time_value time =
@@ -93,6 +116,8 @@ let session_form
         ~flash_fetcher
         ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
         ~warn_past:true
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
     ; flatpicker_element
         language
         ~required:true
@@ -105,6 +130,9 @@ let session_form
                |> Duration.value
                |> Pool_common.Utils.Time.timespan_spanpicker))
         ~flash_fetcher
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
+    ; reschedule_hint ()
     ; textarea_element
         language
         Pool_common.Message.Field.Description
@@ -219,6 +247,58 @@ let session_form
     ]
 ;;
 
+let reschedule_session
+    Pool_context.{ csrf; language; _ }
+    experiment
+    (session : Session.t)
+    flash_fetcher
+  =
+  let open Session in
+  let action =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/reschedule"
+      (value experiment.Experiment.id)
+      (value session.Session.id)
+  in
+  form
+    ~a:
+      [ a_class [ "stack" ]
+      ; a_method `Post
+      ; a_action (action |> Sihl.Web.externalize_path)
+      ]
+    [ Component.csrf_element csrf ()
+    ; flatpicker_element
+        language
+        `Datetime_local
+        Pool_common.Message.Field.Start
+        ~required:true
+        ~flash_fetcher
+        ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
+        ~disable_past:true
+    ; flatpicker_element
+        language
+        ~required:true
+        `Time
+        Pool_common.Message.Field.Duration
+        ~help:Pool_common.I18n.TimeSpanPickerHint
+        ~value:
+          (session.duration
+          |> Duration.value
+          |> Pool_common.Utils.Time.timespan_spanpicker)
+        ~flash_fetcher
+    ; submit_element
+        language
+        Pool_common.Message.(Reschedule (Some Field.Session))
+        ()
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Reschedule (Some Field.Session)))
+       experiment
+;;
+
 let index
     Pool_context.{ language; csrf; _ }
     experiment
@@ -258,6 +338,39 @@ let index
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
+          let delete_form =
+            if session.Session.assignment_count
+               |> Session.AssignmentCount.value
+               == 0
+            then
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (Format.asprintf
+                         "/admin/experiments/%s/sessions/%s/delete"
+                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path)
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string language I18n.DeleteSession)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element
+                    language
+                    Message.(Delete None)
+                    ~submit_type:`Error
+                    ()
+                ]
+            else
+              submit_element
+                language
+                Message.(Delete None)
+                ~submit_type:`Disabled
+                ()
+          in
           let attrs =
             if CCOption.is_some session.follow_up_to && not chronological
             then [ a_class [ "inset"; "left" ] ]
@@ -285,27 +398,7 @@ let index
                   Pool_common.(Utils.control_to_string language Message.(More))
               ]
           ; cancel_form
-          ; form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/delete"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ; a_user_data
-                    "confirmable"
-                    Pool_common.(
-                      Utils.confirmable_to_string language I18n.DeleteSession)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
-              ]
+          ; delete_form
           ]
         in
         session_row parent :: CCList.map session_row follow_ups)
@@ -464,34 +557,51 @@ let detail
         @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent)
       ; p
           ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-          ([ a
-               ~a:
-                 [ a_href
-                     (Format.asprintf
-                        "/admin/experiments/%s/sessions/%s/edit"
-                        (Pool_common.Id.value experiment.Experiment.id)
-                        (Pool_common.Id.value session.id)
-                     |> Sihl.Web.externalize_path)
+          ((a
+              ~a:
+                [ a_href
+                    (Format.asprintf
+                       "/admin/experiments/%s/sessions/%s/edit"
+                       (Pool_common.Id.value experiment.Experiment.id)
+                       (Pool_common.Id.value session.id)
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ Message.(Edit (Some Field.Session))
+                |> Pool_common.Utils.control_to_string language
+                |> txt
+              ]
+           ::
+           (* TODO [aerben] should follow up be created on follow up? *)
+           (if CCOption.is_none session.follow_up_to
+           then
+             [ a
+                 ~a:
+                   [ a_href
+                       (Format.asprintf
+                          "/admin/experiments/%s/sessions/%s/follow-up"
+                          (Pool_common.Id.value experiment.Experiment.id)
+                          (Pool_common.Id.value session.id)
+                       |> Sihl.Web.externalize_path)
+                   ]
+                 [ Message.(Create (Some Field.FollowUpSession))
+                   |> Pool_common.Utils.control_to_string language
+                   |> txt
                  ]
-               [ Message.(Edit (Some Field.Session))
-                 |> Pool_common.Utils.control_to_string language
-                 |> txt
-               ]
-           ]
+             ]
+           else []))
           @
-          (* TODO [aerben] should follow up be created on follow up? *)
-          if CCOption.is_none session.follow_up_to
+          if session.assignment_count |> AssignmentCount.value > 0
           then
             [ a
                 ~a:
                   [ a_href
                       (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/follow-up"
+                         "/admin/experiments/%s/sessions/%s/reschedule"
                          (Pool_common.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
-                [ Message.(Create (Some Field.FollowUpSession))
+                [ Message.(Reschedule (Some Field.Session))
                   |> Pool_common.Utils.control_to_string language
                   |> txt
                 ]

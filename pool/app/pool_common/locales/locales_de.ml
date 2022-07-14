@@ -150,6 +150,8 @@ let success_to_string : success -> string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -258,6 +260,9 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionHasAssignments ->
+    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
+     gelöscht werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | ReminderSubjectAndTextRequired ->
@@ -316,6 +321,7 @@ let control_to_string = function
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

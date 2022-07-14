@@ -163,6 +163,8 @@ let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
 
+let has_assignments m = AssignmentCount.value m.assignment_count > 0
+
 type assignments =
   { session : t
   ; assignments : Assignment.t list
