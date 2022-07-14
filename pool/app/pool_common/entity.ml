@@ -246,3 +246,31 @@ module Reminder = struct
     let sexp_of_t = Pool_common_utils.Time.ptime_to_sexp
   end
 end
+
+module ExperimentType = struct
+  let go m fmt _ = Format.pp_print_string fmt m
+
+  type t =
+    | Lab [@name "lab"] [@printer go "lab"]
+    | Online [@name "online"] [@printer go "online"]
+  [@@deriving eq, show { with_path = false }, enum, yojson]
+
+  let read m =
+    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+  ;;
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "Experiment types: Could not create list of all keys!"
+  ;;
+
+  let schema () =
+    Pool_common_utils.schema_decoder
+      (fun m -> m |> read |> CCResult.pure)
+      show
+      PoolError.Field.ExperimentType
+  ;;
+end

@@ -7,7 +7,7 @@ let waiting_list pool =
       ; description = experiment.Experiment.description
       ; direct_registration_disabled =
           experiment.Experiment.direct_registration_disabled
-      ; experiment_type = Some Experiment.ExperimentType.Lab
+      ; experiment_type = Some Pool_common.ExperimentType.Lab
       }
   in
   let%lwt events =

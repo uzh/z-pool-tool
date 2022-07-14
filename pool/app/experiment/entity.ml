@@ -83,34 +83,6 @@ module RegistrationDisabled = struct
   ;;
 end
 
-module ExperimentType = struct
-  let go m fmt _ = Format.pp_print_string fmt m
-
-  type t =
-    | Lab [@name "lab"] [@printer go "lab"]
-    | Online [@name "online"] [@printer go "online"]
-  [@@deriving eq, show { with_path = false }, enum, yojson]
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
-  ;;
-
-  let schema () =
-    Pool_common.(
-      Utils.schema_decoder
-        (fun m -> m |> read |> CCResult.pure)
-        show
-        Message.Field.ExperimentType)
-  ;;
-end
-
 module InvitationTemplate = struct
   module Subject = struct
     type t = string [@@deriving eq, show]
@@ -177,7 +149,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
-  ; experiment_type : ExperimentType.t option
+  ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
@@ -242,7 +214,7 @@ module Public = struct
     ; public_title : PublicTitle.t
     ; description : Description.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
-    ; experiment_type : ExperimentType.t option
+    ; experiment_type : Pool_common.ExperimentType.t option
     }
   [@@deriving eq, show]
 end

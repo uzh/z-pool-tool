@@ -186,6 +186,22 @@ module Reminder : sig
   end
 end
 
+module ExperimentType : sig
+  type t =
+    | Lab
+    | Online
+
+  val schema
+    :  unit
+    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
+  val read : string -> t
+  val all : t list
+end
+
 module Repo : sig
   module Id : sig
     type t = Id.t
@@ -247,6 +263,12 @@ module Repo : sig
 
       val t : t Caqti_type.t
     end
+  end
+
+  module ExperimentType : sig
+    type t = ExperimentType.t
+
+    val t : t Caqti_type.t
   end
 end
 

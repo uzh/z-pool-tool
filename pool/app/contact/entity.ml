@@ -62,6 +62,7 @@ type t =
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : User.TermsAccepted.t
   ; language : Pool_common.Language.t option
+  ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : User.Paused.t
   ; disabled : User.Disabled.t
   ; verified : User.Verified.t
@@ -72,6 +73,7 @@ type t =
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
+  ; experiment_type_preference_version : Pool_common.Version.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -83,6 +85,7 @@ module Write = struct
     ; recruitment_channel : RecruitmentChannel.t
     ; terms_accepted_at : User.TermsAccepted.t
     ; language : Pool_common.Language.t option
+    ; experiment_type_preference : Pool_common.ExperimentType.t option
     ; paused : User.Paused.t
     ; disabled : User.Disabled.t
     ; verified : User.Verified.t
@@ -93,6 +96,7 @@ module Write = struct
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
     ; language_version : Pool_common.Version.t
+    ; experiment_type_preference_version : Pool_common.Version.t
     }
   [@@deriving eq, show]
 
@@ -101,6 +105,7 @@ module Write = struct
     ; recruitment_channel = m.recruitment_channel
     ; terms_accepted_at = m.terms_accepted_at
     ; language = m.language
+    ; experiment_type_preference = m.experiment_type_preference
     ; paused = m.paused
     ; disabled = m.disabled
     ; verified = m.verified
@@ -111,6 +116,7 @@ module Write = struct
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version
     ; language_version = m.paused_version
+    ; experiment_type_preference_version = m.experiment_type_preference_version
     }
   ;;
 end

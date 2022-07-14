@@ -81,6 +81,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; recruitment_channel = contact.recruitment_channel
     ; terms_accepted_at = contact.terms_accepted_at
     ; language = contact.language
+    ; experiment_type_preference = None
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
@@ -91,6 +92,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
     ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

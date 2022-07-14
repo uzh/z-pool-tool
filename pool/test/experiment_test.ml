@@ -28,7 +28,7 @@ module Data = struct
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
-        ; experiment_type = Some ExperimentType.Lab
+        ; experiment_type = Some Pool_common.ExperimentType.Lab
         ; invitation_template = None
         ; session_reminder_subject = None
         ; session_reminder_text = None

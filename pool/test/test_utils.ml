@@ -91,6 +91,7 @@ let create_contact () =
     ; recruitment_channel = RecruitmentChannel.Friend
     ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
     ; language = Some Pool_common.Language.En
+    ; experiment_type_preference = None
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
     ; verified = Pool_user.Verified.create None
@@ -102,6 +103,7 @@ let create_contact () =
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
     ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
@@ -137,7 +139,7 @@ let create_public_experiment () =
           |> CCResult.get_or_failwith
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
-      ; experiment_type = Some ExperimentType.Lab
+      ; experiment_type = Some Pool_common.ExperimentType.Lab
       })
 ;;
 
@@ -168,7 +170,7 @@ let create_experiment () =
         |> CCResult.to_opt
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create
-    ; experiment_type = Some ExperimentType.Lab
+    ; experiment_type = Some Pool_common.ExperimentType.Lab
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }

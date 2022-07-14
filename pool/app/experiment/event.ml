@@ -6,7 +6,7 @@ type create =
   ; description : Description.t
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
-  ; experiment_type : ExperimentType.t option
+  ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_subject : InvitationTemplate.Subject.t option
   ; invitation_text : InvitationTemplate.Text.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option

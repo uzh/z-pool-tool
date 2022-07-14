@@ -51,19 +51,6 @@ module RegistrationDisabled = struct
   let t = Caqti_type.bool
 end
 
-module ExperimentType = struct
-  include ExperimentType
-
-  let t =
-    let open CCResult in
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
-        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
-        string)
-  ;;
-end
-
 module InvitationTemplate = struct
   include InvitationTemplate
 
@@ -159,7 +146,7 @@ let t =
                         (tup2
                            RegistrationDisabled.t
                            (tup2
-                              (option ExperimentType.t)
+                              (option Pool_common.Repo.ExperimentType.t)
                               (tup2
                                  (option InvitationTemplate.t)
                                  (tup2
@@ -213,7 +200,7 @@ module Write = struct
                           (tup2
                              RegistrationDisabled.t
                              (tup2
-                                (option ExperimentType.t)
+                                (option Pool_common.Repo.ExperimentType.t)
                                 (tup2
                                    (option InvitationTemplate.t)
                                    (tup2
@@ -261,6 +248,8 @@ module Public = struct
               PublicTitle.t
               (tup2
                  Description.t
-                 (tup2 DirectRegistrationDisabled.t (option ExperimentType.t))))))
+                 (tup2
+                    DirectRegistrationDisabled.t
+                    (option Pool_common.Repo.ExperimentType.t))))))
   ;;
 end

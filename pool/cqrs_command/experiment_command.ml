@@ -11,7 +11,7 @@ let default_schema command =
         ; Description.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
-        ; Conformist.optional @@ ExperimentType.schema ()
+        ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
         ; Conformist.optional @@ InvitationTemplate.Subject.schema ()
         ; Conformist.optional @@ InvitationTemplate.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()

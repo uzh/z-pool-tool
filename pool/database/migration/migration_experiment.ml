@@ -94,7 +94,7 @@ let add_invitation_columns =
 
 let add_experiment_type_column =
   Sihl.Database.Migration.create_step
-    ~label:"add invitation columns"
+    ~label:"add experiment_type columns"
     {sql|
      ALTER TABLE pool_experiments
      ADD COLUMN experiment_type varchar(128) DEFAULT NULL AFTER registration_disabled
