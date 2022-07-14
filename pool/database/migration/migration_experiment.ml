@@ -92,6 +92,15 @@ let add_invitation_columns =
   |sql}
 ;;
 
+let add_experiment_type_column =
+  Sihl.Database.Migration.create_step
+    ~label:"add experiment_type columns"
+    {sql|
+     ALTER TABLE pool_experiments
+     ADD COLUMN experiment_type varchar(128) DEFAULT NULL AFTER registration_disabled
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
@@ -103,5 +112,6 @@ let migration () =
     |> add_step add_public_title
     |> add_step set_default_public_title
     |> add_step add_session_reminder_columns
-    |> add_step add_invitation_columns)
+    |> add_step add_invitation_columns
+    |> add_step add_experiment_type_column)
 ;;

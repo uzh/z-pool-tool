@@ -21,7 +21,7 @@ let signup
              try Some (read field) with
              | _ -> None)
     in
-    Component.selector language field equal show all selected ()
+    Component.selector language field show all selected ~flash_fetcher ()
   in
   let open Component in
   div

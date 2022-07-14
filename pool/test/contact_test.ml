@@ -62,6 +62,7 @@ let create_contact verified contact_info =
   ; recruitment_channel = Contact.RecruitmentChannel.read recruitment_channel
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
   ; language
+  ; experiment_type_preference = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = Pool_user.Verified.create None
@@ -74,6 +75,7 @@ let create_contact verified contact_info =
   ; lastname_version = Pool_common.Version.create ()
   ; paused_version = Pool_common.Version.create ()
   ; language_version = Pool_common.Version.create ()
+  ; experiment_type_preference_version = Pool_common.Version.create ()
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

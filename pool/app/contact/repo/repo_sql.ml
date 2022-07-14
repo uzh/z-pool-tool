@@ -27,6 +27,7 @@ let find_request_sql where_fragment =
         pool_contacts.recruitment_channel,
         pool_contacts.terms_accepted_at,
         pool_contacts.language,
+        pool_contacts.experiment_type_preference,
         pool_contacts.paused,
         pool_contacts.disabled,
         pool_contacts.verified,
@@ -37,6 +38,7 @@ let find_request_sql where_fragment =
         pool_contacts.lastname_version,
         pool_contacts.paused_version,
         pool_contacts.language_version,
+        pool_contacts.experiment_type_preference_version,
         pool_contacts.created_at,
         pool_contacts.updated_at
       FROM pool_contacts
@@ -187,6 +189,7 @@ let insert_request =
         recruitment_channel,
         terms_accepted_at,
         language,
+        experiment_type_preference,
         paused,
         disabled,
         verified,
@@ -197,6 +200,7 @@ let insert_request =
         lastname_version,
         paused_version,
         language_version,
+        experiment_type_preference_version,
         created_at,
         updated_at
       ) VALUES (
@@ -215,7 +219,9 @@ let insert_request =
         $13,
         $14,
         $15,
-        $16
+        $16,
+        $17,
+        $18
       )
     |sql}
   |> Repo_model.contact ->. Caqti_type.unit
@@ -301,16 +307,18 @@ let update_request =
         recruitment_channel = $2,
         terms_accepted_at = $3,
         language = $4,
-        paused = $5,
-        disabled = $6,
-        verified = $7,
-        email_verified = $8,
-        num_invitations = $9,
-        num_assignments = $10,
-        firstname_version = $11,
-        lastname_version = $12,
-        paused_version = $13,
-        language_version = $14
+        experiment_type_preference = $5,
+        paused = $6,
+        disabled = $7,
+        verified = $8,
+        email_verified = $9,
+        num_invitations = $10,
+        num_assignments = $11,
+        firstname_version = $12,
+        lastname_version = $13,
+        paused_version = $14,
+        language_version = $15,
+        experiment_type_preference_version = $16
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

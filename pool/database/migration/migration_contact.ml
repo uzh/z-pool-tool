@@ -77,6 +77,16 @@ let rename_subjects_to_contacts_table =
     |sql}
 ;;
 
+let add_experiment_type_preference =
+  Sihl.Database.Migration.create_step
+    ~label:"add experiment_type_preference"
+    {sql|
+     ALTER TABLE pool_contacts
+     ADD COLUMN experiment_type_preference varchar(128) DEFAULT NULL AFTER language,
+     ADD COLUMN experiment_type_preference_version bigint(20) NOT NULL DEFAULT 0 AFTER language_version
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -86,5 +96,6 @@ let migration () =
     |> add_step add_user_language_version
     |> add_step add_user_email_verified_counts
     |> add_step rename_participants_to_subjects_table
-    |> add_step rename_subjects_to_contacts_table)
+    |> add_step rename_subjects_to_contacts_table
+    |> add_step add_experiment_type_preference)
 ;;

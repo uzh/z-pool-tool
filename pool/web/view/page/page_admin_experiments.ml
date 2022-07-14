@@ -105,6 +105,18 @@ let experiment_form
         (experiment.id |> Pool_common.Id.value)
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
+  let experiment_type_select =
+    let open Pool_common.ExperimentType in
+    Component.selector
+      language
+      Pool_common.Message.Field.ExperimentType
+      show
+      all
+      (CCOption.bind experiment (fun (e : Experiment.t) -> e.experiment_type))
+      ~add_empty:true
+      ~flash_fetcher
+      ()
+  in
   form
     ~a:
       [ a_method `Post
@@ -132,6 +144,7 @@ let experiment_form
         ~value:(value description_value)
         ~required:true
         ~flash_fetcher
+    ; div ~a:[ a_class [ "switcher" ] ] [ experiment_type_select; div [] ]
     ; checkbox_element
         language
         ~help:Pool_common.I18n.DirectRegistrationDisbled

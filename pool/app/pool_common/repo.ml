@@ -112,3 +112,16 @@ module Reminder = struct
     let t = Caqti_type.ptime
   end
 end
+
+module ExperimentType = struct
+  include ExperimentType
+
+  let t =
+    let open CCResult in
+    Caqti_type.(
+      custom
+        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
+        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
+        string)
+  ;;
+end

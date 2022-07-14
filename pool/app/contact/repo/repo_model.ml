@@ -34,35 +34,41 @@ let t =
       , ( m.recruitment_channel
         , ( TermsAccepted.value m.terms_accepted_at
           , ( m.language
-            , ( Paused.value m.paused
-              , ( Disabled.value m.disabled
-                , ( Verified.value m.verified
-                  , ( EmailVerified.value m.email_verified
-                    , ( NumberOfInvitations.value m.num_invitations
-                      , ( NumberOfAssignments.value m.num_assignments
-                        , ( Version.value m.firstname_version
-                          , ( Version.value m.lastname_version
-                            , ( Version.value m.paused_version
-                              , ( Version.value m.language_version
-                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
-                ) ) ) ) ) )
+            , ( m.experiment_type_preference
+              , ( Paused.value m.paused
+                , ( Disabled.value m.disabled
+                  , ( Verified.value m.verified
+                    , ( EmailVerified.value m.email_verified
+                      , ( NumberOfInvitations.value m.num_invitations
+                        , ( NumberOfAssignments.value m.num_assignments
+                          , ( Version.value m.firstname_version
+                            , ( Version.value m.lastname_version
+                              , ( Version.value m.paused_version
+                                , ( Version.value m.language_version
+                                  , ( Version.value
+                                        m.experiment_type_preference_version
+                                    , (m.created_at, m.updated_at) ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) ) )
   in
   let decode
       ( user
       , ( recruitment_channel
         , ( terms_accepted_at
           , ( language
-            , ( paused
-              , ( disabled
-                , ( verified
-                  , ( email_verified
-                    , ( num_invitations
-                      , ( num_assignments
-                        , ( firstname_version
-                          , ( lastname_version
-                            , ( paused_version
-                              , (language_version, (created_at, updated_at)) )
-                            ) ) ) ) ) ) ) ) ) ) ) )
+            , ( experiment_type_preference
+              , ( paused
+                , ( disabled
+                  , ( verified
+                    , ( email_verified
+                      , ( num_invitations
+                        , ( num_assignments
+                          , ( firstname_version
+                            , ( lastname_version
+                              , ( paused_version
+                                , ( language_version
+                                  , ( experiment_type_preference_version
+                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
@@ -72,6 +78,7 @@ let t =
         ; recruitment_channel
         ; terms_accepted_at = TermsAccepted.create terms_accepted_at
         ; language
+        ; experiment_type_preference
         ; paused = Paused.create paused
         ; disabled = Disabled.create disabled
         ; verified = Verified.create verified
@@ -82,6 +89,8 @@ let t =
         ; lastname_version = of_int lastname_version
         ; paused_version = of_int paused_version
         ; language_version = of_int language_version
+        ; experiment_type_preference_version =
+            of_int experiment_type_preference_version
         ; created_at
         ; updated_at
         })
@@ -101,26 +110,32 @@ let t =
                (tup2
                   (option Language.t)
                   (tup2
-                     Paused.t
+                     (option Pool_common.Repo.ExperimentType.t)
                      (tup2
-                        Disabled.t
+                        Paused.t
                         (tup2
-                           Verified.t
+                           Disabled.t
                            (tup2
-                              EmailVerified.t
+                              Verified.t
                               (tup2
-                                 NumberOfInvitations.t
+                                 EmailVerified.t
                                  (tup2
-                                    NumberOfAssignments.t
+                                    NumberOfInvitations.t
                                     (tup2
-                                       Pool_common.Repo.Version.t
+                                       NumberOfAssignments.t
                                        (tup2
                                           Pool_common.Repo.Version.t
                                           (tup2
                                              Pool_common.Repo.Version.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
-                                                (tup2 CreatedAt.t UpdatedAt.t))))))))))))))))
+                                                (tup2
+                                                   Pool_common.Repo.Version.t
+                                                   (tup2
+                                                      Pool_common.Repo.Version.t
+                                                      (tup2
+                                                         CreatedAt.t
+                                                         UpdatedAt.t))))))))))))))))))
 ;;
 
 let contact =
@@ -132,18 +147,21 @@ let contact =
       , ( m.recruitment_channel
         , ( TermsAccepted.value m.terms_accepted_at
           , ( m.language
-            , ( Paused.value m.paused
-              , ( Disabled.value m.disabled
-                , ( Verified.value m.verified
-                  , ( EmailVerified.value m.email_verified
-                    , ( NumberOfInvitations.value m.num_invitations
-                      , ( NumberOfAssignments.value m.num_assignments
-                        , ( Version.value m.firstname_version
-                          , ( Version.value m.lastname_version
-                            , ( Version.value m.paused_version
-                              , ( Version.value m.language_version
-                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
-                ) ) ) ) ) )
+            , ( m.experiment_type_preference
+              , ( Paused.value m.paused
+                , ( Disabled.value m.disabled
+                  , ( Verified.value m.verified
+                    , ( EmailVerified.value m.email_verified
+                      , ( NumberOfInvitations.value m.num_invitations
+                        , ( NumberOfAssignments.value m.num_assignments
+                          , ( Version.value m.firstname_version
+                            , ( Version.value m.lastname_version
+                              , ( Version.value m.paused_version
+                                , ( Version.value m.language_version
+                                  , ( Version.value
+                                        m.experiment_type_preference_version
+                                    , (m.created_at, m.updated_at) ) ) ) ) ) )
+                        ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -164,26 +182,32 @@ let contact =
                (tup2
                   (option Language.t)
                   (tup2
-                     Paused.t
+                     (option Pool_common.Repo.ExperimentType.t)
                      (tup2
-                        Disabled.t
+                        Paused.t
                         (tup2
-                           Verified.t
+                           Disabled.t
                            (tup2
-                              EmailVerified.t
+                              Verified.t
                               (tup2
-                                 NumberOfInvitations.t
+                                 EmailVerified.t
                                  (tup2
-                                    NumberOfAssignments.t
+                                    NumberOfInvitations.t
                                     (tup2
-                                       Pool_common.Repo.Version.t
+                                       NumberOfAssignments.t
                                        (tup2
                                           Pool_common.Repo.Version.t
                                           (tup2
                                              Pool_common.Repo.Version.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
-                                                (tup2 CreatedAt.t UpdatedAt.t))))))))))))))))
+                                                (tup2
+                                                   Pool_common.Repo.Version.t
+                                                   (tup2
+                                                      Pool_common.Repo.Version.t
+                                                      (tup2
+                                                         CreatedAt.t
+                                                         UpdatedAt.t))))))))))))))))))
 ;;
 
 module Write = struct
@@ -198,17 +222,20 @@ module Write = struct
         , ( m.recruitment_channel
           , ( TermsAccepted.value m.terms_accepted_at
             , ( m.language
-              , ( Paused.value m.paused
-                , ( Disabled.value m.disabled
-                  , ( Verified.value m.verified
-                    , ( EmailVerified.value m.email_verified
-                      , ( NumberOfInvitations.value m.num_invitations
-                        , ( NumberOfAssignments.value m.num_assignments
-                          , ( Version.value m.firstname_version
-                            , ( Version.value m.lastname_version
+              , ( m.experiment_type_preference
+                , ( Paused.value m.paused
+                  , ( Disabled.value m.disabled
+                    , ( Verified.value m.verified
+                      , ( EmailVerified.value m.email_verified
+                        , ( NumberOfInvitations.value m.num_invitations
+                          , ( NumberOfAssignments.value m.num_assignments
+                            , ( Version.value m.firstname_version
                               , ( Version.value m.lastname_version
-                                , Version.value m.paused_version ) ) ) ) ) ) )
-                  ) ) ) ) ) )
+                                , ( Version.value m.lastname_version
+                                  , ( Version.value m.paused_version
+                                    , Version.value
+                                        m.experiment_type_preference_version )
+                                  ) ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -230,24 +257,28 @@ module Write = struct
                  (tup2
                     (option Language.t)
                     (tup2
-                       Paused.t
+                       (option Pool_common.Repo.ExperimentType.t)
                        (tup2
-                          Disabled.t
+                          Paused.t
                           (tup2
-                             Verified.t
+                             Disabled.t
                              (tup2
-                                EmailVerified.t
+                                Verified.t
                                 (tup2
-                                   NumberOfInvitations.t
+                                   EmailVerified.t
                                    (tup2
-                                      NumberOfAssignments.t
+                                      NumberOfInvitations.t
                                       (tup2
-                                         Pool_common.Repo.Version.t
+                                         NumberOfAssignments.t
                                          (tup2
                                             Pool_common.Repo.Version.t
                                             (tup2
                                                Pool_common.Repo.Version.t
-                                               Pool_common.Repo.Version.t))))))))))))))
+                                               (tup2
+                                                  Pool_common.Repo.Version.t
+                                                  (tup2
+                                                     Pool_common.Repo.Version.t
+                                                     Pool_common.Repo.Version.t))))))))))))))))
   ;;
 end
 

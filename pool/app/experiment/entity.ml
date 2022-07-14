@@ -149,6 +149,7 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   ; session_reminder_subject : Pool_common.Reminder.Subject.t option
@@ -165,6 +166,7 @@ let create
     description
     direct_registration_disabled
     registration_disabled
+    experiment_type
     invitation_subject
     invitation_text
     session_reminder_lead_time
@@ -192,6 +194,7 @@ let create
     ; filter = "1=1"
     ; direct_registration_disabled
     ; registration_disabled
+    ; experiment_type
     ; invitation_template
     ; session_reminder_lead_time
     ; session_reminder_subject
@@ -211,6 +214,7 @@ module Public = struct
     ; public_title : PublicTitle.t
     ; description : Description.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
+    ; experiment_type : Pool_common.ExperimentType.t option
     }
   [@@deriving eq, show]
 end

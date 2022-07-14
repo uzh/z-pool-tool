@@ -363,23 +363,33 @@ let submit_icon ?(classnames = []) icon_type =
 let selector
     language
     field
-    equal
     show
     options
     selected
+    ?flash_fetcher
+    ?(required = false)
     ?help
     ?(attributes = [])
     ?(add_empty = false)
     ()
   =
   let name = Pool_common.Message.Field.(show field) in
+  let input_label = Elements.input_label language field None required in
+  let selected =
+    let open CCOption in
+    bind flash_fetcher (fun flash_fetcher ->
+        field |> Pool_common.Message.Field.show |> flash_fetcher)
+    <+> map show selected
+  in
   let options =
     CCList.map
       (fun l ->
         let is_selected =
-          selected
-          |> CCOption.map_or ~default:[] (fun selected ->
-                 if equal selected l then [ a_selected () ] else [])
+          CCOption.map
+            (fun flash ->
+              if CCString.equal flash (show l) then [ a_selected () ] else [])
+            selected
+          |> CCOption.value ~default:[]
         in
         option
           ~a:((l |> show |> a_value) :: is_selected)
@@ -389,23 +399,38 @@ let selector
   let options =
     match add_empty with
     | true ->
-      let base_attrs = [ a_hidden (); a_disabled () ] in
+      let base_attr = a_value "" in
       let attrs =
         if CCOption.is_none selected
-        then CCList.cons (a_selected ()) base_attrs
-        else base_attrs
+        then [ a_selected (); base_attr ]
+        else [ base_attr ]
       in
-      let default = option ~a:attrs (txt "Please select") in
+      let attrs =
+        if required then [ a_disabled (); a_hidden () ] @ attrs else attrs
+      in
+      let default =
+        option
+          ~a:attrs
+          (txt
+             (Pool_common.(
+                Utils.control_to_string language Message.PleaseSelect)
+             |> CCString.capitalize_ascii))
+      in
       [ default ] @ options
     | false -> options
   in
   let help = Elements.help language help in
   div
     ~a:[ a_class (Elements.group_class [] `Vertical) ]
-    [ label [ name |> CCString.capitalize_ascii |> txt ]
+    [ label [ input_label |> txt ]
     ; div
         ~a:[ a_class [ "select" ] ]
-        [ select ~a:(a_name name :: attributes) options ]
+        [ select
+            ~a:
+              ((a_name name :: attributes)
+              @ if required then [ a_required () ] else [])
+            options
+        ]
     ; div help
     ]
 ;;

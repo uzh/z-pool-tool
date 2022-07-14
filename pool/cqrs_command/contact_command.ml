@@ -110,6 +110,7 @@ module Update : sig
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
     ; language : Pool_common.Language.t option
+    ; experiment_type_preference : Pool_common.ExperimentType.t option
     }
 
   val handle
@@ -132,10 +133,11 @@ end = struct
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
     ; language : Pool_common.Language.t option
+    ; experiment_type_preference : Pool_common.ExperimentType.t option
     }
 
-  let command firstname lastname paused language =
-    { firstname; lastname; paused; language }
+  let command firstname lastname paused language experiment_type_preference =
+    { firstname; lastname; paused; language; experiment_type_preference }
   ;;
 
   let schema =
@@ -146,6 +148,7 @@ end = struct
           ; Conformist.optional @@ User.Lastname.schema ()
           ; Conformist.optional @@ User.Paused.schema ()
           ; Conformist.optional @@ Pool_common.Language.schema ()
+          ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
           ]
         command)
   ;;
