@@ -121,6 +121,7 @@ let field_to_string =
   | Title -> "title"
   | Token -> "token"
   | Translation -> "translation"
+  | TriggerProfileUpdateAfter -> "request to check the profile"
   | Url -> "url"
   | User -> "user"
   | Version -> "version"

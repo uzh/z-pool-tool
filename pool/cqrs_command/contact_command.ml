@@ -51,12 +51,12 @@ end = struct
   ;;
 
   let handle
-    ?allowed_email_suffixes
-    ?password_policy
-    ?(user_id = Id.create ())
-    ?(terms_accepted_at = User.TermsAccepted.create_now ())
-    default_language
-    command
+      ?allowed_email_suffixes
+      ?password_policy
+      ?(user_id = Id.create ())
+      ?(terms_accepted_at = User.TermsAccepted.create_now ())
+      default_language
+      command
     =
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
@@ -396,6 +396,27 @@ end = struct
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
       ; Email.EmailVerified command.email |> Pool_event.email_verification
+      ]
+  ;;
+end
+
+module SendProfileUpdateTrigger : sig
+  type t =
+    { contacts : Contact.t list
+    ; emails : Sihl_email.t list
+    }
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t =
+    { contacts : Contact.t list
+    ; emails : Sihl_email.t list
+    }
+
+  let handle ({ contacts; emails } : t) =
+    Ok
+      [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
+      ; Email.BulkSent emails |> Pool_event.email
       ]
   ;;
 end

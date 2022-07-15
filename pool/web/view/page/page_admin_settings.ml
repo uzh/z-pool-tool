@@ -62,6 +62,7 @@ let show
     contact_email
     inactive_user_disable_after
     inactive_user_warning
+    trigger_profile_update_after
     terms_and_conditions
     default_reminder_lead_time
     Pool_context.{ language; csrf; _ }
@@ -253,6 +254,36 @@ let show
           ]
       ]
   in
+  let trigger_profile_update_after_html =
+    let open Settings.TriggerProfileUpdateAfter in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ Pool_common.(
+              Utils.field_to_string
+                language
+                Message.Field.TriggerProfileUpdateAfter)
+            |> CCString.capitalize_ascii
+            |> txt
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
+                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  ~required:true
+                  language
+                  `Number
+                  Message.Field.TriggerProfileUpdateAfter
+                  ~value:
+                    (trigger_profile_update_after |> value |> CCInt.to_string)
+              ; submit_element language Message.(Update None) ()
+              ]
+          ]
+      ]
+  in
   let terms_and_conditions_html =
     let terms_and_conditions =
       CCList.map Settings.TermsAndConditions.value terms_and_conditions
@@ -319,6 +350,7 @@ let show
         ; email_suffixes_html
         ; contact_email_html
         ; inactive_user_html
+        ; trigger_profile_update_after_html
         ; terms_and_conditions_html
         ; default_lead_time
         ]

@@ -25,6 +25,8 @@ module Key = struct
     | RescheduleSessionText
     | SessionFinishSubject
     | SessionFinishText
+    | TriggerProfileUpdateSubject
+    | TriggerProfileUpdateText
     | WelcomeText
   [@@deriving eq, show, enum]
 
@@ -62,6 +64,8 @@ module Key = struct
     | RescheduleSessionText -> "reschedule_session_text"
     | SessionFinishSubject -> "session_finish_subject"
     | SessionFinishText -> "session_finish_text"
+    | TriggerProfileUpdateSubject -> "trigger_profile_update_subject"
+    | TriggerProfileUpdateText -> "trigger_profile_update_text"
     | WelcomeText -> "welcome_text"
   ;;
 
@@ -92,6 +96,8 @@ module Key = struct
     | "reschedule_session_text" -> Ok RescheduleSessionText
     | "session_finish_subject" -> Ok SessionFinishSubject
     | "session_finish_text" -> Ok SessionFinishText
+    | "trigger_profile_update_subject" -> Ok TriggerProfileUpdateSubject
+    | "trigger_profile_update_text" -> Ok TriggerProfileUpdateText
     | "welcome_text" -> Ok WelcomeText
     | _ -> Error PoolError.(Invalid Field.Key)
   ;;
@@ -110,6 +116,7 @@ module Key = struct
     | ReminderText
     | RescheduleSessionText
     | SessionFinishText
+    | TriggerProfileUpdateText
     | WelcomeText -> true
     | ConfirmationSubject
     | ConfirmationWithoutSelfRegistrationSubject
@@ -119,7 +126,8 @@ module Key = struct
     | ImportInvitationSubject
     | ReminderSubject
     | RescheduleSessionSubject
-    | SessionFinishSubject -> false
+    | SessionFinishSubject
+    | TriggerProfileUpdateSubject -> false
   ;;
 
   let schema () =

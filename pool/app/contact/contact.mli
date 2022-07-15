@@ -83,6 +83,11 @@ val find_by_user
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_to_trigger_profile_update
+  :  Pool_database.Label.t
+  -> (t list, 'a) Lwt_result.t
+
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =
@@ -122,6 +127,7 @@ type event =
   | UnverifiedDeleted of t
   | AssignmentIncreased of t
   | ShowUpIncreased of t
+  | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
 val firstnameupdated : t -> Pool_user.Firstname.t -> event
