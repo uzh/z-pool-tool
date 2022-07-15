@@ -24,7 +24,7 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-  : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
+    : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
@@ -62,6 +62,7 @@ type event =
   | UnverifiedDeleted of t
   | AssignmentIncreased of t
   | ShowUpIncreased of t
+  | ProfileUpdateTriggeredAtUpdated of t list
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -198,4 +199,6 @@ let handle_event pool : event -> unit Lwt.t =
         num_assignments =
           contact.num_assignments |> NumberOfAssignments.increment
       }
+  | ProfileUpdateTriggeredAtUpdated contacts ->
+    contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
 ;;

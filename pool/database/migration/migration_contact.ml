@@ -87,6 +87,16 @@ let add_experiment_type_preference =
     |sql}
 ;;
 
+let add_profile_update_triggered_timestamp =
+  Sihl.Database.Migration.create_step
+    ~label:"add profile update triggered timestamp"
+    {sql|
+      ALTER TABLE pool_contacts
+      ADD COLUMN profile_updated_at timestamp DEFAULT CURRENT_TIMESTAMP AFTER experiment_type_preference_version,
+      ADD COLUMN profile_update_triggered_at timestamp NULL AFTER profile_updated_at
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -97,5 +107,6 @@ let migration () =
     |> add_step add_user_email_verified_counts
     |> add_step rename_participants_to_subjects_table
     |> add_step rename_subjects_to_contacts_table
-    |> add_step add_experiment_type_preference)
+    |> add_step add_experiment_type_preference
+    |> add_step add_profile_update_triggered_timestamp)
 ;;

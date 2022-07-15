@@ -237,10 +237,11 @@ module Paused = struct
       UPDATE pool_contacts
       SET
         paused = $2,
-        paused_version = $3
+        paused_version = $3,
+        profile_updated_at = $4
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup3 Id.t Pool_user.Repo.Paused.t Version.t)
+    |> Caqti_type.(tup4 Id.t Pool_user.Repo.Paused.t Version.t ptime)
        ->. Caqti_type.unit
   ;;
 
@@ -250,7 +251,8 @@ module Paused = struct
       update_request
       ( contact |> Entity.id
       , paused |> Pool_user.Paused.value
-      , paused_version |> Pool_common.Version.value )
+      , paused_version |> Pool_common.Version.value
+      , Ptime_clock.now () )
   ;;
 end
 
@@ -262,10 +264,11 @@ module Language = struct
       UPDATE pool_contacts
       SET
         language = $2,
-        language_version = $3
+        language_version = $3,
+        profile_updated_at = $4
       WHERE user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
-    |> Caqti_type.(tup3 Id.t (option Language.t) Version.t ->. unit)
+    |> Caqti_type.(tup4 Id.t (option Language.t) Version.t ptime ->. unit)
   ;;
 
   let update pool (Entity.{ language; language_version; _ } as contact) =
@@ -274,7 +277,8 @@ module Language = struct
       update_request
       ( contact |> Entity.id
       , language
-      , language_version |> Pool_common.Version.value )
+      , language_version |> Pool_common.Version.value
+      , Ptime_clock.now () )
   ;;
 end
 
@@ -287,15 +291,16 @@ let update_version_for_request field =
   in
   let update = {sql| UPDATE pool_contacts SET |sql} in
   let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
-  Format.asprintf "%s\n%s = $2\n%s" update field where
-  |> Caqti_type.(Pool_common.Repo.(tup2 Id.t Version.t)) ->. Caqti_type.unit
+  Format.asprintf "%s\n%s = $2, profile_updated_at = $3 \n%s" update field where
+  |> Caqti_type.(Pool_common.Repo.(tup3 Id.t Version.t Caqti_type.ptime))
+     ->. Caqti_type.unit
 ;;
 
 let update_version_for pool field (id, version) =
   Utils.Database.exec
     (Database.Label.value pool)
     (field |> update_version_for_request)
-    (id, version |> Pool_common.Version.value)
+    (id, version |> Pool_common.Version.value, Ptime_clock.now ())
 ;;
 
 let update_request =
@@ -369,4 +374,68 @@ let delete_unverified pool id =
   let%lwt _ = exec delete_unverified_user_request in
   let%lwt _ = exec delete_unverified_email_verifications_request in
   exec delete_unverified_contact_request
+;;
+
+let find_to_trigger_profile_update_request =
+  let open Caqti_request.Infix in
+  {sql|
+    WHERE
+      pool_contacts.paused = 0
+    AND
+      pool_contacts.disabled = 0
+    AND
+      pool_contacts.email_verified IS NOT NULL
+    AND
+      pool_contacts.profile_updated_at <= DATE_SUB(NOW(), INTERVAL
+        (SELECT value FROM pool_system_settings WHERE settings_key = $1)
+        DAY)
+    AND
+      (pool_contacts.profile_update_triggered_at <= DATE_SUB(NOW(), INTERVAL
+        (SELECT value FROM pool_system_settings WHERE settings_key = $1)
+        DAY)
+      OR
+        pool_contacts.profile_update_triggered_at IS NULL)
+    |sql}
+  |> find_request_sql
+  |> Caqti_type.(string) ->* Repo_model.t
+;;
+
+let find_to_trigger_profile_update pool =
+  let settings_key = Settings.trigger_profile_update_after_key_yojson in
+  Lwt_result.ok
+  @@ Utils.Database.collect
+       (Database.Label.value pool)
+       find_to_trigger_profile_update_request
+       (settings_key |> Yojson.Safe.to_string)
+;;
+
+let update_profile_updated_triggered_request ids =
+  Format.asprintf
+    {sql|
+    UPDATE pool_contacts
+      SET
+      profile_update_triggered_at = $1
+      WHERE user_uuid IN ( %s )
+   |sql}
+    (CCList.mapi
+       (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 2))
+       ids
+    |> CCString.concat ",")
+;;
+
+let update_profile_updated_triggered pool ids =
+  let open Caqti_request.Infix in
+  let dyn =
+    CCList.fold_left
+      (fun dyn id ->
+        dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+      (Dynparam.empty |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ()))
+      ids
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let request =
+    update_profile_updated_triggered_request ids
+    |> (pt ->. Caqti_type.unit) ~oneshot:true
+  in
+  Utils.Database.exec (pool |> Pool_database.Label.value) request pv
 ;;

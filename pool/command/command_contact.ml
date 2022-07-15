@@ -73,3 +73,96 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
         print_endline help_text;
         return)
 ;;
+
+let create_message contact template =
+  (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
+  let name = Contact.fullname contact in
+  let email = Contact.email_address contact in
+  Email.Helper.prepare_boilerplate_email
+    template
+    (email |> Pool_user.EmailAddress.value)
+    [ "name", name ]
+;;
+
+let trigger_profile_update_by_tenant pool =
+  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
+  let* contacts = Contact.find_to_trigger_profile_update pool in
+  match contacts with
+  | [] -> Lwt_result.return ()
+  | contacts ->
+    let* default_language = Settings.default_language pool in
+    let template (msg_language : Pool_common.Language.t) =
+      let i18n_texts =
+        Hashtbl.create ~random:true (CCList.length Pool_common.Language.all)
+      in
+      match Hashtbl.find_opt i18n_texts msg_language with
+      | Some template -> Lwt_result.return template
+      | None ->
+        let* subject =
+          I18n.(find_by_key pool Key.TriggerProfileUpdateSubject msg_language)
+          >|= fun s -> Email.CustomTemplate.Subject.I18n s
+        in
+        let* content =
+          I18n.(find_by_key pool Key.TriggerProfileUpdateText msg_language)
+          >|= fun t -> Email.CustomTemplate.Content.I18n t
+        in
+        let template = Email.CustomTemplate.{ subject; content } in
+        let () = Hashtbl.add i18n_texts msg_language template in
+        Lwt_result.return template
+    in
+    let messages =
+      Lwt_list.map_s
+        (fun (contact : Contact.t) ->
+          let* template =
+            template
+              (CCOption.value
+                 ~default:default_language
+                 contact.Contact.language)
+          in
+          create_message contact template |> Lwt_result.ok)
+        contacts
+      ||> CCResult.flatten_l
+    in
+    messages
+    >>= fun emails ->
+    Cqrs_command.Contact_command.SendProfileUpdateTrigger.(
+      { contacts; emails }
+      |> handle
+      |> Lwt_result.lift
+      |>> Pool_event.handle_events pool)
+;;
+
+let tenant_specific_profile_update_trigger =
+  Sihl.Command.make
+    ~name:"trigger_profile_update.send"
+    ~description:"Send profile update triggers of all tenants"
+    (fun args ->
+      match args with
+      | [ pool ] ->
+        let open Utils.Lwt_result.Infix in
+        let%lwt _ = Command_utils.setup_databases () in
+        pool
+        |> Pool_database.Label.create
+        |> Lwt_result.lift
+        >>= trigger_profile_update_by_tenant
+        ||> CCOption.of_result
+      | _ -> failwith "Argument missmatch")
+;;
+
+let all_profile_update_triggers =
+  Sihl.Command.make
+    ~name:"trigger_profile_update.send_all"
+    ~description:"Send profile update triggers of all tenants"
+    (fun args ->
+      match args with
+      | [] ->
+        Logs.info (fun m -> m "%s" "all_profile_update_triggers");
+        let open CCFun in
+        let open Lwt.Infix in
+        Command_utils.setup_databases ()
+        >>= Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
+        >|= CCList.all_ok
+        >|= (fun _ -> Ok ()) %> CCOption.of_result
+      | _ -> failwith "Argument missmatch")
+;;

@@ -111,8 +111,22 @@ Pool Tool|}
       ; "DE", "Bitte kontrollieren Sie Ihr Profil."
       ] )
   ; ( "trigger_profile_update_text"
-    , [ "EN", "Your profile has not been updated in a while."
-      ; "DE", "Ihr Profil wurde bereits eine Weile nicht aktualisiert."
+    , [ ( "EN"
+        , {|Dear {name}
+
+Your profile has not been updated in a while.
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Ihr Profil wurde bereits eine Weile nicht aktualisiert.
+
+Freundliche Grüsse,
+Pool Tool|}
+        )
       ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
