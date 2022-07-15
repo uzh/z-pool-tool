@@ -97,15 +97,15 @@ let trigger_profile_update_by_tenant pool =
         Hashtbl.create ~random:true (CCList.length Pool_common.Language.all)
       in
       match Hashtbl.find_opt i18n_texts msg_language with
-      | Some template -> Lwt_result.return template
+      | Some template -> Lwt.return_ok template
       | None ->
         let* subject =
           I18n.(find_by_key pool Key.TriggerProfileUpdateSubject msg_language)
-          >|= fun s -> Email.CustomTemplate.Subject.I18n s
+          >|= Email.CustomTemplate.Subject.i18n
         in
         let* content =
           I18n.(find_by_key pool Key.TriggerProfileUpdateText msg_language)
-          >|= fun t -> Email.CustomTemplate.Content.I18n t
+          >|= Email.CustomTemplate.Content.i18n
         in
         let template = Email.CustomTemplate.{ subject; content } in
         let () = Hashtbl.add i18n_texts msg_language template in
@@ -157,7 +157,6 @@ let all_profile_update_triggers =
     (fun args ->
       match args with
       | [] ->
-        Logs.info (fun m -> m "%s" "all_profile_update_triggers");
         let open CCFun in
         let open Lwt.Infix in
         Command_utils.setup_databases ()

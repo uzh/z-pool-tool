@@ -292,7 +292,7 @@ let update_version_for_request field =
   let update = {sql| UPDATE pool_contacts SET |sql} in
   let where = {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql} in
   Format.asprintf "%s\n%s = $2, profile_updated_at = $3 \n%s" update field where
-  |> Caqti_type.(Pool_common.Repo.(tup3 Id.t Version.t Caqti_type.ptime))
+  |> Caqti_type.(Pool_common.Repo.(tup3 Id.t Version.t ptime))
      ->. Caqti_type.unit
 ;;
 
@@ -390,11 +390,11 @@ let find_to_trigger_profile_update_request =
         (SELECT value FROM pool_system_settings WHERE settings_key = $1)
         DAY)
     AND
+      pool_contacts.profile_update_triggered_at IS NULL
+      OR
       (pool_contacts.profile_update_triggered_at <= DATE_SUB(NOW(), INTERVAL
         (SELECT value FROM pool_system_settings WHERE settings_key = $1)
-        DAY)
-      OR
-        pool_contacts.profile_update_triggered_at IS NULL)
+        DAY))
     |sql}
   |> find_request_sql
   |> Caqti_type.(string) ->* Repo_model.t
