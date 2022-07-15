@@ -51,6 +51,18 @@ module RegistrationDisabled = struct
   let t = Caqti_type.bool
 end
 
+module AllowUninvitedSignup = struct
+  include AllowUninvitedSignup
+
+  let t = Caqti_type.bool
+end
+
+module PubliclyVisible = struct
+  include PubliclyVisible
+
+  let t = Caqti_type.bool
+end
+
 module InvitationTemplate = struct
   include InvitationTemplate
 
@@ -86,13 +98,15 @@ let t =
             , ( m.filter
               , ( m.direct_registration_disabled
                 , ( m.registration_disabled
-                  , ( m.experiment_type
-                    , ( m.invitation_template
-                      , ( m.session_reminder_lead_time
-                        , ( m.session_reminder_subject
-                          , ( m.session_reminder_text
-                            , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
-        ) )
+                  , ( m.allow_uninvited_signup
+                    , ( m.publicly_visible
+                      , ( m.experiment_type
+                        , ( m.invitation_template
+                          , ( m.session_reminder_lead_time
+                            , ( m.session_reminder_subject
+                              , ( m.session_reminder_text
+                                , (m.created_at, m.updated_at) ) ) ) ) ) ) ) )
+                ) ) ) ) ) )
   in
   let decode
       ( id
@@ -102,12 +116,14 @@ let t =
             , ( filter
               , ( direct_registration_disabled
                 , ( registration_disabled
-                  , ( experiment_type
-                    , ( invitation_template
-                      , ( session_reminder_lead_time
-                        , ( session_reminder_subject
-                          , (session_reminder_text, (created_at, updated_at)) )
-                        ) ) ) ) ) ) ) ) ) )
+                  , ( allow_uninvited_signup
+                    , ( publicly_visible
+                      , ( experiment_type
+                        , ( invitation_template
+                          , ( session_reminder_lead_time
+                            , ( session_reminder_subject
+                              , (session_reminder_text, (created_at, updated_at))
+                              ) ) ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -118,6 +134,8 @@ let t =
       ; filter
       ; direct_registration_disabled
       ; registration_disabled
+      ; allow_uninvited_signup
+      ; publicly_visible
       ; experiment_type
       ; invitation_template
       ; session_reminder_lead_time
@@ -146,21 +164,30 @@ let t =
                         (tup2
                            RegistrationDisabled.t
                            (tup2
-                              (option Pool_common.Repo.ExperimentType.t)
+                              AllowUninvitedSignup.t
                               (tup2
-                                 (option InvitationTemplate.t)
+                                 PubliclyVisible.t
                                  (tup2
-                                    (option
-                                       Pool_common.Repo.Reminder.LeadTime.t)
+                                    (option Pool_common.Repo.ExperimentType.t)
                                     (tup2
-                                       (option
-                                          Pool_common.Repo.Reminder.Subject.t)
+                                       (option InvitationTemplate.t)
                                        (tup2
                                           (option
-                                             Pool_common.Repo.Reminder.Text.t)
+                                             Pool_common.Repo.Reminder.LeadTime
+                                             .t)
                                           (tup2
-                                             Common.Repo.CreatedAt.t
-                                             Common.Repo.UpdatedAt.t))))))))))))))
+                                             (option
+                                                Pool_common.Repo.Reminder
+                                                .Subject
+                                                .t)
+                                             (tup2
+                                                (option
+                                                   Pool_common.Repo.Reminder
+                                                   .Text
+                                                   .t)
+                                                (tup2
+                                                   Common.Repo.CreatedAt.t
+                                                   Common.Repo.UpdatedAt.t))))))))))))))))
 ;;
 
 module Write = struct
@@ -174,11 +201,14 @@ module Write = struct
               , ( m.filter
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled
-                    , ( m.experiment_type
-                      , ( m.invitation_template
-                        , ( m.session_reminder_lead_time
-                          , (m.session_reminder_subject, m.session_reminder_text)
-                          ) ) ) ) ) ) ) ) ) )
+                    , ( m.allow_uninvited_signup
+                      , ( m.publicly_visible
+                        , ( m.experiment_type
+                          , ( m.invitation_template
+                            , ( m.session_reminder_lead_time
+                              , ( m.session_reminder_subject
+                                , m.session_reminder_text ) ) ) ) ) ) ) ) ) ) )
+          ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -200,17 +230,26 @@ module Write = struct
                           (tup2
                              RegistrationDisabled.t
                              (tup2
-                                (option Pool_common.Repo.ExperimentType.t)
+                                AllowUninvitedSignup.t
                                 (tup2
-                                   (option InvitationTemplate.t)
+                                   PubliclyVisible.t
                                    (tup2
-                                      (option
-                                         Pool_common.Repo.Reminder.LeadTime.t)
+                                      (option Pool_common.Repo.ExperimentType.t)
                                       (tup2
-                                         (option
-                                            Pool_common.Repo.Reminder.Subject.t)
-                                         (option
-                                            Pool_common.Repo.Reminder.Text.t)))))))))))))
+                                         (option InvitationTemplate.t)
+                                         (tup2
+                                            (option
+                                               Pool_common.Repo.Reminder
+                                               .LeadTime
+                                               .t)
+                                            (tup2
+                                               (option
+                                                  Pool_common.Repo.Reminder
+                                                  .Subject
+                                                  .t)
+                                               (option
+                                                  Pool_common.Repo.Reminder.Text
+                                                  .t)))))))))))))))
   ;;
 end
 

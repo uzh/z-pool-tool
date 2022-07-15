@@ -85,6 +85,9 @@ let nav_link_to_string = function
 ;;
 
 let hint_to_string = function
+  | AllowUninvitedSignup ->
+    "Contacts who have not been invited will be able to sign up for the \
+     experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
   | DirectRegistrationDisbled ->
@@ -102,6 +105,10 @@ let hint_to_string = function
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
+  | PubliclyVisible ->
+    "Public information of the experiment will be visible to not logged in \
+     visitors. To sign up for the experiment, registration will still be \
+     required."
   | Rate -> "Generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \

@@ -104,6 +104,14 @@ let experiment_form
         "/admin/experiments/%s"
         (experiment.id |> Pool_common.Id.value)
   in
+  let checkbox_element ?help ?(default = false) field fnc =
+    checkbox_element
+      language
+      ?help
+      field
+      ~value:(experiment |> CCOption.map_or ~default fnc)
+      ~flash_fetcher
+  in
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
     let open Pool_common.ExperimentType in
@@ -146,21 +154,21 @@ let experiment_form
         ~flash_fetcher
     ; div ~a:[ a_class [ "switcher" ] ] [ experiment_type_select; div [] ]
     ; checkbox_element
-        language
         ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
-        ~value:
-          (experiment
-          |> CCOption.map_or ~default:false direct_registration_disabled_value)
-        ~flash_fetcher
+        direct_registration_disabled_value
     ; checkbox_element
-        language
         ~help:Pool_common.I18n.RegistrationDisabled
         Pool_common.Message.Field.RegistrationDisabled
-        ~value:
-          (experiment
-          |> CCOption.map_or ~default:false registration_disabled_value)
-        ~flash_fetcher
+        registration_disabled_value
+    ; checkbox_element
+        ~help:Pool_common.I18n.AllowUninvitedSignup
+        Pool_common.Message.Field.AllowUninvitedSignup
+        allow_uninvited_signup_value
+    ; checkbox_element
+        ~help:Pool_common.I18n.PubliclyVisible
+        Pool_common.Message.Field.PubliclyVisible
+        publicly_visible_value
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3

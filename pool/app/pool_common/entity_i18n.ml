@@ -66,6 +66,7 @@ type nav_link =
 [@@deriving eq]
 
 type hint =
+  | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
   | Distribution
@@ -74,6 +75,7 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
+  | PubliclyVisible
   | Rate
   | RateDependencyWith
   | RateDependencyWithout

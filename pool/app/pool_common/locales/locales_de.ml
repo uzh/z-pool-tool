@@ -4,6 +4,7 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "No. Assignments"
@@ -80,6 +81,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | PubliclyVisible -> "Offentlich ersichtlich"
   | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
