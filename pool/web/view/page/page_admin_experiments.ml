@@ -346,23 +346,97 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
   in
   let bool_to_string = Pool_common.Utils.bool_to_string language in
   let open Experiment in
+  let vertical_table =
+    Table.vertical_table
+      ~classnames:[ "even" ]
+      ~align_top:true
+      `Striped
+      language
+  in
   let html =
-    let rows =
-      let open Experiment in
-      Message.Field.
-        [ DirectRegistrationDisabled, direct_registration_disabled_value
-        ; RegistrationDisabled, registration_disabled_value
+    let experiment_table =
+      let boolean_value fnc = fnc experiment |> bool_to_string |> txt in
+      Message.
+        [ Field.PublicTitle, experiment.public_title |> PublicTitle.value |> txt
+        ; ( Field.ExperimentType
+          , experiment.experiment_type
+            |> CCOption.map_or ~default:"" Pool_common.ExperimentType.show
+            |> txt )
+        ; ( Field.Description
+          , experiment.description
+            |> Description.value
+            |> Http_utils.add_line_breaks )
+        ; ( Field.DirectRegistrationDisabled
+          , direct_registration_disabled_value |> boolean_value )
+        ; ( Field.RegistrationDisabled
+          , registration_disabled_value |> boolean_value )
+        ; ( Field.AllowUninvitedSignup
+          , allow_uninvited_signup_value |> boolean_value )
+        ; Field.PubliclyVisible, publicly_visible_value |> boolean_value
         ]
-      |> CCList.map (fun (label, fnc) ->
-             label, fnc experiment |> bool_to_string |> txt)
+      |> vertical_table
+    in
+    let invitation_rows InvitationTemplate.{ subject; text } =
+      let open InvitationTemplate in
+      let table =
+        Message.
+          [ Field.InvitationSubject, subject |> Subject.value |> txt
+          ; ( Field.InvitationText
+            , text |> Text.value |> HttpUtils.add_line_breaks )
+          ]
+        |> vertical_table
+      in
+      div
+        [ h3
+            ~a:[ a_class [ "heading-3" ] ]
+            [ txt
+                (Pool_common.(
+                   Utils.field_to_string language Message.Field.Invitation)
+                |> CCString.capitalize_ascii)
+            ]
+        ; table
+        ]
+    in
+    let session_reminder_rows =
+      let open Pool_common.Reminder in
+      let open CCFun in
+      let table =
+        Message.
+          [ ( Field.LeadTime
+            , experiment.session_reminder_lead_time
+              |> CCOption.map_or
+                   ~default:""
+                   (LeadTime.value %> Pool_common.Utils.Time.formatted_timespan)
+              |> txt )
+          ; ( Field.ReminderSubject
+            , experiment.session_reminder_subject
+              |> CCOption.map_or ~default:"" Subject.value
+              |> txt )
+          ; ( Field.ReminderText
+            , experiment.session_reminder_text
+              |> CCOption.map_or
+                   ~default:(txt "")
+                   (Text.value %> HttpUtils.add_line_breaks) )
+          ]
+        |> vertical_table
+      in
+      div
+        [ h3
+            ~a:[ a_class [ "heading-3" ] ]
+            [ txt
+                (Pool_common.(
+                   Utils.text_to_string language I18n.SessionReminder)
+                |> CCString.capitalize_ascii)
+            ]
+        ; table
+        ]
     in
     div
-      [ p
-          [ experiment.description
-            |> Description.value
-            |> Http_utils.add_line_breaks
-          ]
-      ; Table.vertical_table `Striped language rows
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ experiment_table
+      ; experiment.invitation_template
+        |> CCOption.map_or ~default:(txt "") invitation_rows
+      ; session_reminder_rows
       ; p
           [ a
               ~a:

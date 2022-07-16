@@ -5,9 +5,7 @@ let charset = meta ~a:[ a_charset "utf8" ] ()
 let body_tag_classnames = [ "height-100"; "flexcolumn" ]
 
 let main_tag children =
-  main
-    ~a:[ a_class [ "safety-margin" ] ]
-    [ div ~a:[ a_class [ "inset-xl"; "vertical" ] ] children ]
+  main [ div ~a:[ a_class [ "inset-xl"; "vertical" ] ] children ]
 ;;
 
 let viewport =

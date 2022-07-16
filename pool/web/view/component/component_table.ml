@@ -39,10 +39,10 @@ let horizontal_table layout language ?thead ?(align_top = false) rows =
     (CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows)
 ;;
 
-let vertical_table layout language ?(align_top = false) rows =
+let vertical_table layout language ?(align_top = false) ?(classnames = []) rows =
   let classes = table_classes layout align_top in
   table
-    ~a:[ a_class classes ]
+    ~a:[ a_class (classes @ classnames) ]
     (CCList.map
        (fun (label, value) ->
          [ th
