@@ -9,14 +9,12 @@ let update_language_as ~actor =
     |> Contact_test.create_contact true
   in
   let* tenant = Pool_tenant.find_by_label database_label in
-  let* effects =
-    Cqrs_command.Contact_command.Update.get_effects tenant subject
-  in
+  let effects = Cqrs_command.Contact_command.Update.effects tenant subject in
   let* _ = Ocauth.Pool_tenant.to_authorizable tenant in
   let* _ = Ocauth.Contact.to_authorizable subject in
   let* () =
-    let* rules = Ocauth.Persistence.collect_rules effects in
-    (Ocauth.checker_of_rules rules) ~actor |> Lwt_result.lift
+    (Ocauth.Persistence.checker_of_effects effects) ~actor
+    |> Lwt_result.map_error Pool_common.Message.authorization
   in
   Lwt.return_ok ()
 ;;

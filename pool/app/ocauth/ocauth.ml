@@ -141,24 +141,3 @@ let checker_of_rules rules =
   let f = Authorizer.checker_of_rules rules in
   fun ~actor -> f ~actor |> CCResult.map_err Pool_common.Message.authorization
 ;;
-
-(* module UpdatePassword : sig type t = unit * unit
-
-   val handle : ?password_policy:_ -> Subject.t -> t -> ('event list,
-   Pool_common.Message.error) result
-
-   val handle' : actor:_ Authorizable.t -> rules:Authorizer.auth_rule list ->
-   ?password_policy:unit -> Subject.t -> t -> ('event list,
-   Pool_common.Message.error) result
-
-   val get_rules : 'pool_tenant -> Subject.t -> t -> (Authorizer.auth_rule list,
-   Pool_common.Message.error) Lwt_result.t end = struct type t = unit * unit
-
-   let handle ?password_policy:_ _subject _command = CCResult.return []
-
-   let handle' ~actor ~rules ?password_policy subject command = wrap_handler
-   ~actor ~rules (handle ?password_policy subject) command ;;
-
-   let get_rules db_label subject _t = let open Lwt_result.Syntax in let effects
-   = [ `Update, `Uniq (Uuid.of_string_exn "some uuid") ; ( `Update , `Uniq
-   (Uuid.of_string_exn "some uuid") ) ] in collect_rules effects ;; end *)

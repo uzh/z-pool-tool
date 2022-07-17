@@ -24,6 +24,8 @@ module SignUp : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -90,12 +92,16 @@ end = struct
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = [ `Create, `Role `Contact ]
 end
 
 module DeleteUnverified : sig
   val handle
     :  Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.t -> Ocauth.Authorizer.effect list
 end = struct
   let handle contact =
     if contact.Contact.email_verified |> User.EmailVerified.is_some
@@ -103,10 +109,9 @@ end = struct
     else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
   ;;
 
-  (* let _build_checker subject = let open Lwt_result.Syntax in let effects = [
-     `Delete, `Uniq (Subject.id subject |> Pool_common.Id.to_uuidm) ] in let*
-     rules = Ocauth.collect_rules effects in Lwt.return_ok (Ocauth.make_checker
-     rules [@warning "-5"]) ;; *)
+  let effects contact =
+    [ `Delete, `Uniq (Contact.id contact |> Pool_common.Id.to_uuidm) ]
+  ;;
 end
 
 module Update : sig
@@ -122,17 +127,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val get_effects
-    :  Pool_tenant.t
-    -> Contact.t
-    -> (Ocauth.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
-
-  (* val handle' : rules:Ocauth.Authorizer.auth_rule list -> actor:_
-     Ocauth.Authorizable.t -> Subject.t -> t -> (Pool_event.t list,
-     Pool_common.Message.error) result *)
-
-  (* val get_rules : Subject.t -> ( Ocauth.Authorizer.auth_rule list ,
-     Pool_common.Message.error ) Lwt_result.t *)
+  val effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
 
   val decode
     :  (string * string list) list
@@ -173,20 +168,11 @@ end = struct
     |> CCResult.pure
   ;;
 
-  let get_effects pool subject =
-    Lwt.return_ok
-      [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
-      ; `Update, `Uniq (Pool_tenant.id pool |> Pool_common.Id.to_uuidm)
-      ]
+  let effects pool subject =
+    [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Pool_tenant.id pool |> Pool_common.Id.to_uuidm)
+    ]
   ;;
-
-  (* let handle' ~rules ~actor subject command = Ocauth.wrap_handler ~actor
-     ~rules (handle subject) command ;; *)
-
-  (* let get_rules subject = let open Lwt_result.Syntax in let* _ =
-     Ocauth.Subject.to_authorizable subject in let effects = [ `Update, `Uniq
-     (Subject.id subject |> Pool_common.Id.to_uuidm) ] in Ocauth.collect_rules
-     effects ;; *)
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -208,7 +194,7 @@ module UpdatePassword : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val get_effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
+  val effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
 
   val decode
     :  (string * string list) list
@@ -261,11 +247,7 @@ end = struct
       ]
   ;;
 
-  (* let handle' ~actor ~rules ?password_policy subject command =
-     Ocauth.wrap_handler ~actor ~rules (handle ?password_policy subject) command
-     ;; *)
-
-  let get_effects tenant subject =
+  let effects tenant subject =
     [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
     ; `Update, `Uniq (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
     ]
@@ -286,10 +268,7 @@ module RequestEmailValidation : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val get_effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
-  (* val build_checker : Pool_tenant.Database.Label.t -> Subject.t -> t -> (
-     actor:[ `User | `Admin ] Ocauth.Authorizable.t -> (unit,
-     Conformist.error_msg) result , Pool_common.Message.error ) Lwt_result.t *)
+  val effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -306,7 +285,7 @@ end = struct
       ]
   ;;
 
-  let get_effects tenant subject =
+  let effects tenant subject =
     [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
     ; `Update, `Uniq (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
     ]
@@ -322,9 +301,7 @@ module UpdateEmail : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  (* val build_checker : Pool_tenant.Database.Label.t -> Subject.t -> t -> (
-     actor:[ `User | `Admin ] Ocauth.Authorizable.t -> (unit,
-     Conformist.error_msg) result , Pool_common.Message.error ) Lwt_result.t *)
+  val effects : Contact.t -> Pool_tenant.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Email.unverified Email.t
 
@@ -340,19 +317,28 @@ end = struct
       ]
   ;;
 
-  (* let build_checker tenant subject _command = let open Lwt_result.Syntax in
-     let* rules = Ocauth.collect_rules [ `Update, `Uniq (Subject.id subject |>
-     Pool_common.Id.to_uuidm); `Update, `Uniq tenant.Pool_tenant.id ] in
-     Lwt.return_ok (Ocauth.make_checker rules [@warning "-5"]) ;; *)
+  let effects contact tenant =
+    [ `Update, `Uniq (Contact.id contact |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Pool_common.Id.to_uuidm tenant.Pool_tenant.id)
+    ]
+  ;;
 end
 
 module AcceptTermsAndConditions : sig
   val handle
     :  Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.t -> Ocauth.Authorizer.effect list
 end = struct
   let handle contact =
     Ok [ Contact.TermsAccepted contact |> Pool_event.contact ]
+  ;;
+
+  let effects contact =
+    [ ( `Update
+      , `Uniq (Ocauth.Uuid.of_string_exn contact.Contact.user.Sihl_user.id) )
+    ]
   ;;
 end
 
@@ -363,6 +349,8 @@ module VerifyEmail : sig
     :  Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Contact.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = { email : Email.unverified Email.t }
 
@@ -371,6 +359,12 @@ end = struct
       [ Contact.EmailVerified contact |> Pool_event.contact
       ; Email.EmailVerified command.email |> Pool_event.email_address
       ]
+  ;;
+
+  let effects contact =
+    [ ( `Update
+      , `Uniq (Ocauth.Uuid.of_string_exn contact.Contact.user.Sihl_user.id) )
+    ]
   ;;
 end
 

@@ -10,6 +10,8 @@ module AssignOperator : sig
     :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -20,7 +22,11 @@ end = struct
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let _effects = [ `Manage, `Role `System; `Manage, `Uniq "command.tenant_id" ]
+  let effects t =
+    [ `Manage, `Uniq (t.user_id |> Id.to_uuidm)
+    ; `Manage, `Uniq (t.tenant_id |> Id.to_uuidm)
+    ]
+  ;;
 end
 
 module DivestOperator : sig
@@ -33,6 +39,8 @@ module DivestOperator : sig
     :  Id.t
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : string
@@ -43,7 +51,11 @@ end = struct
     Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let _effects = [ `Manage, `Role `System; `Manage, `Uniq "command.tenant_id" ]
+  let effects t =
+    [ `Manage, `Uniq (t.user_id |> Ocauth.Uuid.of_string_exn)
+    ; `Manage, `Uniq (t.tenant_id |> Ocauth.Uuid.of_string_exn)
+    ]
+  ;;
 end
 
 module GenerateStatusReport : sig
@@ -66,9 +78,11 @@ module AddRoot : sig
     :  t
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = { user_id : string }
 
   let handle = Utils.todo
-  let _effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Role `System ]
 end

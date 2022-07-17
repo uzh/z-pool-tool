@@ -282,11 +282,16 @@ module RestoreDefault : sig
   type t = Pool_tenant.t
 
   val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
   let handle () =
     Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
+  ;;
+
+  let effects t =
+    [ `Delete, `Uniq (t.Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 

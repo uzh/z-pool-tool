@@ -20,6 +20,8 @@ module Create : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -65,12 +67,15 @@ end = struct
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = [ `Manage, `Role `System ]
 end
 
 module ToggleStatus : sig
   type t = Root.t
 
   val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = Root.t
 
@@ -81,4 +86,6 @@ end = struct
     | Active -> Ok [ Root.Disabled root |> Pool_event.root ]
     | Inactive -> Ok [ Root.Enabled root |> Pool_event.root ]
   ;;
+
+  let effects = [ `Manage, `Role `System ]
 end
