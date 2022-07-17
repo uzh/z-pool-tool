@@ -13,8 +13,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  (** TODO *)
-  val build_checker : 'a -> 'b
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { key : I18n.Key.t
@@ -51,10 +50,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let build_checker _ =
-    let _effects = [ `Update, `Uniq "some_tenant_id" ] in
-    Utils.todo [%here]
-  ;;
+  let effects = [ `Update, `Uniq (Utils.todo ()) ]
 end
 
 module Update : sig
@@ -69,8 +65,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  (** TODO *)
-  val build_checker : 'a -> 'b
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -87,8 +82,5 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let build_checker _ =
-    let _effects = [ `Update, `Uniq "some_tenant_id" ] in
-    Utils.todo [%here]
-  ;;
+  let effects = [ `Update, `Uniq (Utils.todo ()) ]
 end
