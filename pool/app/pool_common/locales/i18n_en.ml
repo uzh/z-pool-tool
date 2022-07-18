@@ -111,9 +111,9 @@ let hint_to_string = function
     "There are currently no other mailings running in the specified time range."
   | RateNumberPerMinutes (per_n_minutes, number) ->
     Format.asprintf
-      "Generates every %d minutes %.2f new invitations."
+      "Generates max %i new invitations every %d minutes"
+      (number +. 0.5 |> CCFloat.round |> CCInt.of_float)
       per_n_minutes
-      number
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."

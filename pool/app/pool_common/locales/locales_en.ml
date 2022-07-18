@@ -82,7 +82,7 @@ let field_to_string =
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | PublicTitle -> "public title"
-  | Rate -> "rate"
+  | Rate -> "rate limit"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"

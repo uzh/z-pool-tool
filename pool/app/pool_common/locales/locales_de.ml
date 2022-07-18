@@ -81,7 +81,7 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | PublicTitle -> "Öffentlicher Titel"
-  | Rate -> "Rate"
+  | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
