@@ -141,23 +141,20 @@ module Sql = struct
 
   let find_public_request =
     let open Caqti_request.Infix in
-    let where_fragment =
-      {sql|
+    {sql|
         WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
         ORDER BY start
       |sql}
-    in
-    Format.asprintf "%s %s" contact_was_invited_join where_fragment
     |> find_public_sql
-    |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
+    |> Caqti_type.string ->! RepoEntity.Public.t
   ;;
 
-  let find_public pool id contact =
+  let find_public pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_public_request
-      (Contact.id contact |> Pool_common.Id.value, Pool_common.Id.value id)
+      (Pool_common.Id.value id)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
@@ -183,22 +180,19 @@ module Sql = struct
 
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
-    let where_fragment =
-      {sql|
+    {sql|
         WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
         ORDER BY start
       |sql}
-    in
-    Format.asprintf "%s %s" contact_was_invited_join where_fragment
     |> find_public_sql
-    |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
+    |> Caqti_type.string ->* RepoEntity.Public.t
   ;;
 
-  let find_all_public_for_experiment pool contact id =
+  let find_all_public_for_experiment pool id =
     Utils.Database.collect
       (Database.Label.value pool)
       find_all_public_for_experiment_request
-      (Contact.id contact |> Pool_common.Id.value, Pool_common.Id.value id)
+      (Pool_common.Id.value id)
   ;;
 
   let find_all_public_by_location_request =
@@ -412,9 +406,9 @@ let find_all_public_by_location pool location_id =
   ||> CCResult.flatten_l
 ;;
 
-let find_public pool id contact =
+let find_public pool id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_public pool id contact >>= location_to_public_repo_entity pool
+  id |> Sql.find_public pool >>= location_to_public_repo_entity pool
 ;;
 
 let find_all_for_experiment pool experiment_id =
@@ -426,7 +420,10 @@ let find_all_for_experiment pool experiment_id =
 
 let find_all_public_for_experiment pool contact experiment_id =
   let open Utils.Lwt_result.Infix in
-  Sql.find_all_public_for_experiment pool contact experiment_id
+  Experiment.find_public pool experiment_id contact
+  >>= fun experiment ->
+  experiment.Experiment.Public.id
+  |> Sql.find_all_public_for_experiment pool
   >|> Lwt_list.map_s (location_to_public_repo_entity pool)
   ||> CCResult.flatten_l
 ;;

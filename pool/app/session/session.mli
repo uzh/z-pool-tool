@@ -156,7 +156,6 @@ val find
 val find_public
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Contact.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
 val find_all_public_by_location

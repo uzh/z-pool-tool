@@ -20,7 +20,7 @@ let create req =
     let tenant_db = context.Pool_context.tenant_db in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
-    let* session = Session.find_public tenant_db id contact in
+    let* session = Session.find_public tenant_db id in
     let* waiting_list =
       Waiting_list.find_by_contact_and_experiment tenant_db contact experiment
     in

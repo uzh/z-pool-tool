@@ -348,7 +348,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
   let open Experiment in
   let vertical_table =
     Table.vertical_table
-      ~classnames:[ "even" ]
+      ~classnames:[ "layout-fixed" ]
       ~align_top:true
       `Striped
       language
