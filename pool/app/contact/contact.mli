@@ -119,16 +119,12 @@ type create =
 type event =
   | Created of create
   | Updated of Field.t * t
-  | FirstnameUpdated of t * Pool_user.Firstname.t
-  | LastnameUpdated of t * Pool_user.Lastname.t
-  | PausedUpdated of t * Pool_user.Paused.t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -139,12 +135,6 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
-
-(* TODO[timhub]: remove *)
-val firstnameupdated : t -> Pool_user.Firstname.t -> event
-val lastnameupdated : t -> Pool_user.Lastname.t -> event
-val pausedupdated : t -> Pool_user.Paused.t -> event
-val languageupdated : t -> Pool_common.Language.t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

@@ -41,13 +41,9 @@ let has_terms_accepted pool (contact : t) =
 type event =
   | Created of create
   | Updated of Field.t * t
-  | FirstnameUpdated of t * User.Firstname.t
-  | LastnameUpdated of t * User.Lastname.t
-  | PausedUpdated of t * User.Paused.t
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
       t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
-  | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -93,38 +89,6 @@ let handle_event pool : event -> unit Lwt.t =
     |> Repo.insert pool
     |> CCFun.const Lwt.return_unit
   | Updated (update, contact) -> Repo.partial_update pool update contact
-  | FirstnameUpdated (contact, firstname) ->
-    let%lwt _ =
-      Service.User.update
-        ~ctx
-        ~given_name:(firstname |> User.Firstname.value)
-        contact.user
-    in
-    Repo.update_version_for
-      pool
-      `Firstname
-      (id contact, Pool_common.Version.increment contact.firstname_version)
-  | LastnameUpdated (contact, lastname) ->
-    let%lwt _ =
-      Service.User.update
-        ~ctx
-        ~name:(lastname |> User.Lastname.value)
-        contact.user
-    in
-    Repo.update_version_for
-      pool
-      `Lastname
-      (id contact, Pool_common.Version.increment contact.lastname_version)
-  | PausedUpdated (contact, paused) ->
-    let%lwt () =
-      Repo.update_paused
-        pool
-        { contact with
-          paused
-        ; paused_version = Pool_common.Version.increment contact.paused_version
-        }
-    in
-    Lwt.return_unit
   | EmailUpdated (contact, email) ->
     let%lwt _ =
       Service.User.update
@@ -147,17 +111,6 @@ let handle_event pool : event -> unit Lwt.t =
         ~new_password
         ~new_password_confirmation
         person.user
-    in
-    Lwt.return_unit
-  | LanguageUpdated (contact, language) ->
-    let%lwt () =
-      Repo.update_language
-        pool
-        { contact with
-          language = Some language
-        ; language_version =
-            Pool_common.Version.increment contact.language_version
-        }
     in
     Lwt.return_unit
   | Verified contact ->

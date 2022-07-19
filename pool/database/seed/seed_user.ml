@@ -170,7 +170,11 @@ let contacts db_pool =
       let%lwt contact = Contact.find db_pool user_id in
       match contact with
       | Ok contact ->
-        [ Contact.PausedUpdated (contact, paused |> User.Paused.create) ]
+        [ Contact.Updated
+            ( ( Contact.Field.Paused (paused |> Pool_user.Paused.create)
+              , Pool_common.Version.create () )
+            , contact )
+        ]
         @ (if disabled then [ Contact.Disabled contact ] else [])
         @ (if verified then [ Contact.EmailVerified contact ] else [])
         @ contacts

@@ -190,7 +190,13 @@ let update_language () =
       |> handle contact)
   in
   let expected =
-    Ok [ Contact.LanguageUpdated (contact, language) |> Pool_event.contact ]
+    Ok
+      [ Contact.Updated
+          ( ( Contact.Field.Language (Some language)
+            , contact.Contact.language_version )
+          , contact )
+        |> Pool_event.contact
+      ]
   in
   check_result expected events
 ;;
@@ -206,10 +212,9 @@ let update_paused () =
       |> handle contact)
   in
   let expected =
-    Ok
-      [ Contact.PausedUpdated (contact, paused |> Pool_user.Paused.create)
-        |> Pool_event.contact
-      ]
+    ( Contact.Field.Paused (paused |> Pool_user.Paused.create)
+    , Pool_common.Version.create () )
+    |> Contact_command.Update.handle contact
   in
   check_result expected events
 ;;
@@ -232,16 +237,16 @@ let update_full () =
       |> handle contact)
   in
   let expected =
-    Ok
-      (CCList.map
-         Pool_event.contact
-         [ Contact.FirstnameUpdated
-             (contact, firstname |> Pool_user.Firstname.of_string)
-         ; Contact.LastnameUpdated
-             (contact, lastname |> Pool_user.Lastname.of_string)
-         ; Contact.PausedUpdated (contact, paused |> Pool_user.Paused.create)
-         ; Contact.LanguageUpdated (contact, language)
-         ])
+    let open Contact.Field in
+    let create_version = Pool_common.Version.create in
+    [ Firstname (firstname |> Pool_user.Firstname.of_string), create_version ()
+    ; Lastname (lastname |> Pool_user.Lastname.of_string), create_version ()
+    ; Paused (paused |> Pool_user.Paused.create), create_version ()
+    ; Language (Some language), create_version ()
+    ]
+    |> CCList.map (fun htmx ->
+           Contact.Updated (htmx, contact) |> Pool_event.contact)
+    |> CCResult.return
   in
   check_result expected events
 ;;
