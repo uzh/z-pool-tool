@@ -100,7 +100,9 @@ let create
           Pool_common.Language.all (* TODO[timhub]: Use correct languages *)
           (value |> Pool_common.Language.create |> CCResult.to_opt)
           ~field
-          ~attributes:(hx_attributes field version ?action:hx_post ())
+          ~attributes:
+            (a_class input_class
+            :: hx_attributes field version ?action:hx_post ())
           ()
       , field )
     | Field.Custom _ -> failwith "Todo"

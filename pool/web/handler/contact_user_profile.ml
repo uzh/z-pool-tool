@@ -136,7 +136,7 @@ let update req =
     in
     let events =
       let open CCResult in
-      decode_and_validate urlencoded field version value
+      Contact.Field.decode_and_validate field version value
       >>= Cqrs_command.Contact_command.Update.handle contact
     in
     let htmx_element classnames version ?error () =

@@ -112,8 +112,6 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode : (string * string list) list -> (t, Conformist.error_msg) result
-
   val can
     :  Pool_tenant.Database.Label.t
     -> Sihl_user.t
@@ -143,8 +141,6 @@ end = struct
     in
     Ok [ Contact.Updated (command, contact) |> Pool_event.contact ]
   ;;
-
-  let decode = Contact.Field.decode
 
   let can pool user contact =
     let open Utils.Lwt_result.Infix in

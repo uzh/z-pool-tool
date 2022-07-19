@@ -58,8 +58,10 @@ module Field : sig
 
   type t = htmx_field * Pool_common.Version.t
 
-  val decode
-    :  (string * string list) list
+  val decode_and_validate
+    :  Pool_common.Message.Field.t
+    -> Pool_common.Version.t
+    -> string
     -> (t, Pool_common.Message.error) result
 end
 

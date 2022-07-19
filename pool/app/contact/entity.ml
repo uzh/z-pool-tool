@@ -154,6 +154,7 @@ module Preview = struct
 end
 
 module Field = struct
+  module PoolField = Pool_common.Message.Field
   module Conformist = Pool_common.Utils.PoolConformist
 
   type htmx_field =
@@ -166,53 +167,30 @@ module Field = struct
 
   type t = htmx_field * Pool_common.Version.t [@@deriving eq, show]
 
-  let decode data =
-    let decode_and_validate schema =
+  let decode_and_validate field version value =
+    let open CCResult in
+    let validate schema =
       let schema =
         Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
       in
-      Conformist.decode_and_validate schema data
+      Conformist.decode_and_validate
+        schema
+        [ field |> Pool_common.Message.Field.show, [ value ] ]
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     in
-    let open CCResult in
-    let find name err =
-      let open CCOption in
-      CCList.assoc_opt ~eq:CCString.equal name data
-      >>= CCList.head_opt
-      |> to_result err
-    in
-    let open Pool_common.Message in
-    let* field_str = find "field" InvalidHtmxRequest in
-    let* value = find field_str InvalidHtmxRequest in
-    let* version =
-      find "version" (HtmxVersionNotFound field_str)
-      >>= fun i ->
-      i
-      |> CCInt.of_string
-      |> CCOption.map Pool_common.Version.of_int
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
-    in
-    let custom () = Custom (field_str, value) in
-    let field =
-      try Some (Pool_common.Message.Field.read field_str) with
-      | _ -> None
-    in
-    (match field with
-    | None -> Ok (custom ())
-    | Some field ->
-      let open Pool_common.Message in
-      (match[@warning "-4"] field with
-      | Field.Firstname ->
-        User.Firstname.schema |> decode_and_validate >|= fun m -> Firstname m
-      | Field.Lastname ->
-        User.Lastname.schema |> decode_and_validate >|= fun m -> Lastname m
-      | Field.Paused ->
-        User.Paused.schema |> decode_and_validate >|= fun m -> Paused m
-      | Field.Language ->
-        (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
-        |> decode_and_validate
-        >|= fun m -> Language m
-      | _ -> custom () |> return))
-    >|= fun field -> field, version
+    let custom label = Ok (Custom (label, value)) in
+    (match[@warning "-4"] field with
+    | PoolField.Firstname ->
+      User.Firstname.schema |> validate >|= fun m -> Firstname m
+    | PoolField.Lastname ->
+      User.Lastname.schema |> validate >|= fun m -> Lastname m
+    | PoolField.Paused -> User.Paused.schema |> validate >|= fun m -> Paused m
+    | PoolField.Language ->
+      (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+      |> validate
+      >|= fun m -> Language m
+    | PoolField.Custom str -> custom str
+    | _ -> failwith "Todo")
+    >|= fun htmx -> htmx, version
   ;;
 end

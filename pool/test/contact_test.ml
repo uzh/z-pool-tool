@@ -180,14 +180,15 @@ let delete_verified () =
 ;;
 
 let update_language () =
+  let open CCResult in
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let language = Language.De in
   let events =
-    Contact_command.Update.(
-      [ Field.(Language |> show), [ language |> Language.show ] ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact)
+    Contact.Field.decode_and_validate
+      Pool_common.Message.Field.Language
+      contact.Contact.language_version
+      (Pool_common.Language.show language)
+    >>= Contact_command.Update.handle contact
   in
   let expected =
     Ok
@@ -202,14 +203,15 @@ let update_language () =
 ;;
 
 let update_paused () =
+  let open CCResult in
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let paused = true in
   let events =
-    Contact_command.Update.(
-      [ Field.(Paused |> show), [ paused |> string_of_bool ] ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact)
+    Contact.Field.decode_and_validate
+      Pool_common.Message.Field.Paused
+      contact.Contact.language_version
+      (string_of_bool paused)
+    >>= Contact_command.Update.handle contact
   in
   let expected =
     ( Contact.Field.Paused (paused |> Pool_user.Paused.create)
@@ -219,35 +221,24 @@ let update_paused () =
   check_result expected events
 ;;
 
-let update_full () =
+let update_with_false_version () =
+  let open CCResult in
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let firstname = "Max" in
-  let lastname = "Muster" in
-  let paused = true in
   let language = Language.De in
+  let field = Pool_common.Message.Field.Language in
   let events =
-    Contact_command.Update.(
-      [ Field.(Firstname |> show), [ firstname ]
-      ; Field.(Lastname |> show), [ lastname ]
-      ; Field.(Paused |> show), [ paused |> string_of_bool ]
-      ; Field.(Language |> show), [ language |> Language.show ]
-      ]
-      |> decode
-      |> Pool_common.Utils.get_or_failwith
-      |> handle contact)
+    Contact.Field.decode_and_validate
+      field
+      contact.Contact.language_version
+      (Pool_common.Language.show language)
+    >>= Contact_command.Update.handle
+          Contact.
+            { contact with
+              language_version =
+                Pool_common.Version.increment contact.language_version
+            }
   in
-  let expected =
-    let open Contact.Field in
-    let create_version = Pool_common.Version.create in
-    [ Firstname (firstname |> Pool_user.Firstname.of_string), create_version ()
-    ; Lastname (lastname |> Pool_user.Lastname.of_string), create_version ()
-    ; Paused (paused |> Pool_user.Paused.create), create_version ()
-    ; Language (Some language), create_version ()
-    ]
-    |> CCList.map (fun htmx ->
-           Contact.Updated (htmx, contact) |> Pool_event.contact)
-    |> CCResult.return
-  in
+  let expected = Error Pool_common.Message.(MeantimeUpdate field) in
   check_result expected events
 ;;
 
