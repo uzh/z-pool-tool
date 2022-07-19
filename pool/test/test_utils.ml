@@ -91,6 +91,7 @@ let create_contact () =
     ; recruitment_channel = RecruitmentChannel.Friend
     ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
     ; language = Some Pool_common.Language.En
+    ; experiment_type_preference = None
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
     ; verified = Pool_user.Verified.create None
@@ -102,6 +103,7 @@ let create_contact () =
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
     ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
@@ -124,19 +126,21 @@ let create_location () =
 
 let create_public_experiment () =
   let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
-  Experiment.Public.
-    { id = Pool_common.Id.create ()
-    ; public_title =
-        Experiment.PublicTitle.create "public_title"
-        |> CCResult.map_err show_error
-        |> CCResult.get_or_failwith
-    ; description =
-        Experiment.Description.create "A description for everyone"
-        |> CCResult.map_err show_error
-        |> CCResult.get_or_failwith
-    ; direct_registration_disabled =
-        false |> Experiment.DirectRegistrationDisabled.create
-    }
+  Experiment.(
+    Public.
+      { id = Pool_common.Id.create ()
+      ; public_title =
+          PublicTitle.create "public_title"
+          |> CCResult.map_err show_error
+          |> CCResult.get_or_failwith
+      ; description =
+          Description.create "A description for everyone"
+          |> CCResult.map_err show_error
+          |> CCResult.get_or_failwith
+      ; direct_registration_disabled =
+          false |> DirectRegistrationDisabled.create
+      ; experiment_type = Some Pool_common.ExperimentType.Lab
+      })
 ;;
 
 let create_experiment () =
@@ -156,21 +160,31 @@ let create_experiment () =
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
     ; filter = "1=1"
+    ; invitation_template = None
+    ; session_reminder_subject = None
+    ; session_reminder_text = None
+    ; session_reminder_lead_time =
+        Ptime.Span.of_int_s @@ (60 * 60)
+        |> Pool_common.Reminder.LeadTime.create
+        |> CCResult.map_err show_error
+        |> CCResult.to_opt
     ; direct_registration_disabled = false |> DirectRegistrationDisabled.create
     ; registration_disabled = false |> RegistrationDisabled.create
+    ; experiment_type = Some Pool_common.ExperimentType.Lab
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
 ;;
 
 let experiment_to_public_experiment (experiment : Experiment.t) =
-  Experiment.Public.
-    { id = experiment.Experiment.id
-    ; public_title = experiment.Experiment.public_title
-    ; description = experiment.Experiment.description
-    ; direct_registration_disabled =
-        experiment.Experiment.direct_registration_disabled
-    }
+  Experiment.(
+    Public.
+      { id = experiment.id
+      ; public_title = experiment.public_title
+      ; description = experiment.description
+      ; direct_registration_disabled = experiment.direct_registration_disabled
+      ; experiment_type = experiment.experiment_type
+      })
 ;;
 
 let create_waiting_list () =
@@ -214,6 +228,10 @@ let create_session () =
     ; min_participants =
         ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
     ; overbook = ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
+    ; reminder_subject = None
+    ; reminder_lead_time = None
+    ; reminder_text = None
+    ; reminder_sent_at = None
     ; assignment_count =
         0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
     ; canceled_at = None

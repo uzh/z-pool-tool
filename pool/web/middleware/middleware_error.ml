@@ -1,62 +1,78 @@
-let reporter =
-  let envs =
-    let getenv_result env =
-      Sys.getenv_opt env
-      |> CCOption.to_result
-           (Format.asprintf "Couldn't find environment variable %s" env)
-    in
-    let open CCResult in
-    let* token = getenv_result "CI_JOB_TOKEN" in
-    let* project_id =
-      getenv_result "CI_PROJECT_ID"
-      >>= fun project_id ->
-      CCInt.of_string project_id
-      |> CCOption.to_result
-           (Format.asprintf
-              {|Failed to parse project ID as an integer: "%s"|}
-              project_id)
-    in
-    let* project_name = getenv_result "CI_PROJECT_NAME" in
-    let* uri_base = getenv_result "CI_API_V4_URL" in
-    Ok (token, project_id, project_name, uri_base)
+type config =
+  { token : string
+  ; uri_base : string
+  ; project_id : int
+  ; project_name : string
+  }
+
+let config token uri_base project_id project_name =
+  { token; uri_base; project_id; project_name }
+;;
+
+let schema =
+  Conformist.(
+    make
+      Field.
+        [ string
+            ~meta:
+              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            "GITLAB_TOKEN"
+        ; string
+            ~meta:
+              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            "GITLAB_API_BASE"
+        ; int
+            ~meta:
+              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            "GITLAB_PROJECT_ID"
+        ; string
+            ~meta:
+              "Used by canary (Exception Notifier) to create an issue in GitLab"
+            "GITLAB_PROJECT_NAME"
+        ]
+      config)
+;;
+
+let before_start () =
+  if Sihl.Configuration.is_production ()
+  then (
+    (* Validate configuration variables for production environment*)
+    let _ = Sihl.Configuration.(read schema) in
+    ())
+  else ()
+;;
+
+let reporter req =
+  let config = Sihl.Configuration.(read schema) in
+  let module Gitlab_notify =
+    Canary.Notifier.Gitlab (struct
+      let token = config.token
+      let uri_base = config.uri_base
+      let project_name = config.project_name
+      let project_id = config.project_id
+    end)
   in
-  match envs with
-  | Ok (token, project_id, project_name, uri_base) ->
-    let module Gitlab_notify =
-      Canary.Notifier.Gitlab (struct
-        let token = token
-        let uri_base = uri_base
-        let project_name = project_name
-        let project_id = project_id
-      end)
+  fun exc backtrace ->
+    let additional =
+      let buffer = Buffer.create 4_096 in
+      let formatter = Format.formatter_of_buffer buffer in
+      Format.pp_print_string formatter "```\n";
+      Opium.Request.pp_hum formatter req;
+      Format.pp_print_string formatter "\n```\n\nTrace:\n\n```\n";
+      Format.pp_print_string formatter backtrace;
+      Format.pp_print_string formatter "\n```";
+      Format.pp_print_flush formatter ();
+      Buffer.contents buffer
     in
-    fun req exc backtrace ->
-      let additional =
-        let buffer = Buffer.create 4_096 in
-        let formatter = Format.formatter_of_buffer buffer in
-        Format.pp_print_string formatter "```\n";
-        Opium.Request.pp_hum formatter req;
-        Format.pp_print_string formatter "\n```\n\nTrace:\n\n```\n";
-        Format.pp_print_string formatter backtrace;
-        Format.pp_print_string formatter "\n```";
-        Format.pp_print_flush formatter ();
-        Buffer.contents buffer
-      in
-      let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
-      (match res with
-      | Ok iid ->
-        Logs.info (fun m ->
-            m "Successfully reported error to gitlab as issue %d." iid);
-        Lwt.return_ok iid
-      | Error err ->
-        Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
-        Lwt.return_error err)
-  | Error msg ->
-    fun _req _exc _backtrace ->
-      Lwt.return_error
-        (Format.asprintf
-           {|Unable to get environment variable %s to report error to gitlab.|}
-           msg)
+    let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
+    match res with
+    | Ok iid ->
+      Logs.info (fun m ->
+          m "Successfully reported error to gitlab as issue %d." iid);
+      Lwt.return_ok iid
+    | Error err ->
+      Logs.info (fun m -> m "Unable to report error to gitlab: %s" err);
+      Lwt.return_error err
 ;;
 
 let error () =

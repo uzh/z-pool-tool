@@ -44,6 +44,7 @@ module Field = struct
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
+    | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
@@ -62,6 +63,9 @@ module Field = struct
         [@printer go "inactive_user_warning"]
     | Institution [@name "institution"] [@printer go "institution"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
+    | InvitationSubject [@name "invitation_subject"]
+        [@printer go "invitation_subject"]
+    | InvitationText [@name "invitation_text"] [@printer go "invitation_text"]
     | Invitations [@name "invitations"] [@printer go "invitations"]
     | Key [@name "key"] [@printer go "key"]
     | Label [@name "label"] [@printer go "label"]
@@ -69,6 +73,7 @@ module Field = struct
     | LanguageDe [@name "DE"] [@printer go "DE"]
     | LanguageEn [@name "EN"] [@printer go "EN"]
     | Lastname [@name "lastname"] [@printer go "lastname"]
+    | LeadTime [@name "lead_time"] [@printer go "lead_time"]
     | Link [@name "link"] [@printer go "link"]
     | Location [@name "location"] [@printer go "location"]
     | LogoType [@name "logo_type"] [@printer go "logo_type"]
@@ -99,6 +104,9 @@ module Field = struct
         [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
         [@printer go "registration_disabled"]
+    | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]
+    | ReminderSubject [@name "reminder_subject"]
+        [@printer go "reminder_subject"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
@@ -136,6 +144,8 @@ module Field = struct
     | Title [@name "title"] [@printer go "title"]
     | Token [@name "token"] [@printer go "token"]
     | Translation [@name "translation"] [@printer go "translation"]
+    | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+        [@printer go "trigger_profile_update_after"]
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
     | Version [@name "version"] [@printer go "version"]
@@ -180,6 +190,7 @@ type error =
   | HtmxVersionNotFound of string
   | Invalid of Field.t
   | InvalidHtmxRequest
+  | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
@@ -194,16 +205,18 @@ type error =
   | NotInTimeRange
   | NoValue
   | PasswordConfirmationDoesNotMatch
-  | PasswordPolicy of string
+  | PasswordPolicy
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
   | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionHasAssignments
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
+  | ReminderSubjectAndTextRequired
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
@@ -235,6 +248,7 @@ type success =
   | PasswordReset
   | PasswordResetSuccessMessage
   | RemovedFromWaitingList
+  | Rescheduled of Field.t
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -279,7 +293,9 @@ type control =
   | Enroll
   | Login
   | More
+  | PleaseSelect
   | RemoveFromWaitingList
+  | Reschedule of Field.t option
   | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option

@@ -18,13 +18,18 @@ module Key : sig
     | ReminderSubject
     | ReminderSmsText
     | ReminderText
+    | RescheduleSessionSubject
+    | RescheduleSessionText
     | SessionFinishSubject
     | SessionFinishText
+    | TriggerProfileUpdateSubject
+    | TriggerProfileUpdateText
     | WelcomeText
 
   val to_string : t -> string
   val equal : t -> t -> bool
   val of_string : string -> (t, Pool_common.Message.error) result
+  val is_textarea : t -> bool
   val all : t list
 
   val schema
@@ -47,6 +52,9 @@ end
 
 type t
 
+val show : t -> string
+val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
 val create : Key.t -> Pool_common.Language.t -> Content.t -> t
 
 type create =

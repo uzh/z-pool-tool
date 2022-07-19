@@ -83,6 +83,64 @@ module RegistrationDisabled = struct
   ;;
 end
 
+module InvitationTemplate = struct
+  module Subject = struct
+    type t = string [@@deriving eq, show]
+
+    let create subject =
+      if CCString.is_empty subject
+      then Error Pool_common.Message.(Invalid Field.InvitationSubject)
+      else Ok subject
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common.Utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        Pool_common.Message.Field.InvitationSubject
+    ;;
+  end
+
+  module Text = struct
+    type t = string [@@deriving eq, show]
+
+    let create text =
+      if CCString.is_empty text
+      then Error Pool_common.Message.(Invalid Field.InvitationText)
+      else Ok text
+    ;;
+
+    let of_string m = m
+    let value m = m
+
+    let schema () =
+      Pool_common.Utils.schema_decoder
+        (fun m -> m |> of_string |> CCResult.return)
+        value
+        Pool_common.Message.Field.InvitationText
+    ;;
+  end
+
+  type t =
+    { subject : Subject.t
+    ; text : Text.t
+    }
+  [@@deriving eq, show]
+
+  let create subject text : (t, Common.Message.error) result =
+    let open CCResult in
+    let* subject = Subject.create subject in
+    let* text = Subject.create text in
+    Ok { subject; text }
+  ;;
+
+  let subject_value (m : t) = m.subject |> Subject.value
+  let text_value (m : t) = m.text |> Text.value
+end
+
 type t =
   { id : Id.t
   ; title : Title.t
@@ -91,6 +149,11 @@ type t =
   ; filter : string
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
+  ; experiment_type : Pool_common.ExperimentType.t option
+  ; invitation_template : InvitationTemplate.t option
+  ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
+  ; session_reminder_text : Pool_common.Reminder.Text.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -103,17 +166,42 @@ let create
     description
     direct_registration_disabled
     registration_disabled
+    experiment_type
+    invitation_subject
+    invitation_text
+    session_reminder_lead_time
+    session_reminder_subject
+    session_reminder_text
   =
-  { id = id |> CCOption.value ~default:(Id.create ())
-  ; public_title
-  ; title
-  ; description
-  ; filter = "1=1"
-  ; direct_registration_disabled
-  ; created_at = Ptime_clock.now ()
-  ; updated_at = Ptime_clock.now ()
-  ; registration_disabled
-  }
+  let open CCResult in
+  let* () =
+    match session_reminder_subject, session_reminder_text with
+    | Some _, Some _ | None, None -> Ok ()
+    | _ -> Error Pool_common.Message.ReminderSubjectAndTextRequired
+  in
+  let* invitation_template =
+    match invitation_subject, invitation_text with
+    | Some subject, Some text ->
+      InvitationTemplate.create subject text |> CCResult.map CCOption.pure
+    | None, None -> Ok None
+    | _ -> Error Pool_common.Message.InvitationSubjectAndTextRequired
+  in
+  Ok
+    { id = id |> CCOption.value ~default:(Id.create ())
+    ; title
+    ; public_title
+    ; description
+    ; filter = "1=1"
+    ; direct_registration_disabled
+    ; registration_disabled
+    ; experiment_type
+    ; invitation_template
+    ; session_reminder_lead_time
+    ; session_reminder_subject
+    ; session_reminder_text
+    ; created_at = Ptime_clock.now ()
+    ; updated_at = Ptime_clock.now ()
+    }
 ;;
 
 let title_value (m : t) = Title.value m.title
@@ -126,9 +214,23 @@ module Public = struct
     ; public_title : PublicTitle.t
     ; description : Description.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
+    ; experiment_type : Pool_common.ExperimentType.t option
     }
   [@@deriving eq, show]
 end
+
+let session_reminder_subject_value m =
+  m.session_reminder_subject |> CCOption.map Pool_common.Reminder.Subject.value
+;;
+
+let session_reminder_text_value m =
+  m.session_reminder_text |> CCOption.map Pool_common.Reminder.Text.value
+;;
+
+let session_reminder_lead_time_value m =
+  m.session_reminder_lead_time
+  |> CCOption.map Pool_common.Reminder.LeadTime.value
+;;
 
 let direct_registration_disabled_value (m : t) =
   DirectRegistrationDisabled.value m.direct_registration_disabled

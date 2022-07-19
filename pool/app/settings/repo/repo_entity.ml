@@ -3,6 +3,9 @@ open Entity
 let encode_key_value value =
   (let open Value in
   match value with
+  | DefaultReminderLeadTime v ->
+    ( yojson_of_setting_key ReminderLeadTime
+    , yojson_of_default_reminder_lead_time v )
   | TenantLanguages v ->
     yojson_of_setting_key Languages, yojson_of_tenant_languages v
   | TenantEmailSuffixes v ->
@@ -15,7 +18,10 @@ let encode_key_value value =
   | InactiveUserWarning v ->
     yojson_of_setting_key InactiveUserWarning, yojson_of_inactive_user_warning v
   | TermsAndConditions v ->
-    yojson_of_setting_key TermsAndConditions, yojson_of_terms_and_conditions v)
+    yojson_of_setting_key TermsAndConditions, yojson_of_terms_and_conditions v
+  | TriggerProfileUpdateAfter v ->
+    ( yojson_of_setting_key TriggerProfileUpdateAfter
+    , yojson_of_trigger_profile_update_after v ))
   |> fun (m, k) -> m |> Yojson.Safe.to_string, k |> Yojson.Safe.to_string
 ;;
 
@@ -30,6 +36,8 @@ let t =
       let open Value in
       let value = value |> Yojson.Safe.from_string in
       match key with
+      | ReminderLeadTime ->
+        value |> default_reminder_lead_time_of_yojson |> defaultreminderleadtime
       | Languages -> value |> tenant_languages_of_yojson |> tenantlanguages
       | EmailSuffixes ->
         value |> tenant_email_suffixes_of_yojson |> tenantemailsuffixes
@@ -43,6 +51,10 @@ let t =
         value |> inactive_user_warning_of_yojson |> inactiveuserwarning
       | TermsAndConditions ->
         value |> terms_and_conditions_of_yojson |> termsandconditions
+      | TriggerProfileUpdateAfter ->
+        value
+        |> trigger_profile_update_after_of_yojson
+        |> triggerprofileupdateafter
     in
     Ok { value; created_at; updated_at }
   in

@@ -4,6 +4,7 @@
   cqrs_command
   database
   pool_event
+  pool_user
   service
   settings
   sihl

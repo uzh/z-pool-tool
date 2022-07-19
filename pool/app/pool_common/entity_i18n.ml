@@ -5,6 +5,8 @@ type t =
   | EmtpyList of Entity_message.Field.t
   | ExperimentContactEnrolledNote
   | ExperimentListTitle
+  | ExperimentNewTitle
+  | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
   | FollowUpSessionFor
@@ -18,10 +20,16 @@ type t =
   | LoginTitle
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
+  | NoEntries of Entity_message.Field.t
   | RateTotalSent of int
+  | Reminder
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
+  | SessionReminder
+  | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
+  | SessionReminderDefaultText of Entity.Reminder.Text.t
+  | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
   | SessionIndent
   | SessionSignUpTitle
   | SwitchChronological
@@ -29,13 +37,17 @@ type t =
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
   | TermsAndConditionsTitle
+  | TextTemplates
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | UserProfileTitle
+  | WaitingListIsDisabled
 
 type nav_link =
+  | Admins
   | Assignments
+  | Contacts
   | Dashboard
   | Experiments
   | I18n
@@ -57,6 +69,7 @@ type hint =
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
   | Distribution
+  | I18nText of string
   | NumberIsDaysHint
   | NumberIsSecondsHint
   | NumberIsWeeksHint
@@ -67,7 +80,9 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SelectedDateIsPast
+  | SessionReminderLanguageHint
   | SignUpForWaitingList
+  | TemplateTextElementsHint
   | TimeSpanPickerHint
 
 type confirmable =

@@ -1,29 +1,17 @@
 open Entity
 
-let send_invitation_email
-    pool
-    (contact : Contact.t)
-    (experiment : Experiment.t)
-    default_language
-  =
-  let open Lwt.Infix in
-  let mail_subject = "Experiment Invitation" in
-  let email = Contact.email_address contact in
+let create_invitation (experiment : Experiment.t) contact template =
+  (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
+  let open Experiment in
   let name = Contact.fullname contact in
-  let language =
-    contact.Contact.language |> CCOption.value ~default:default_language
+  let email = Contact.email_address contact in
+  let experiment_description =
+    experiment.description |> Experiment.Description.value
   in
-  Email.Helper.prepare_email
-    pool
-    language
-    Email.TemplateLabel.Invitation
-    mail_subject
+  Email.Helper.prepare_boilerplate_email
+    template
     (email |> Pool_user.EmailAddress.value)
-    [ "name", name
-    ; ( "experimentDescription"
-      , experiment.Experiment.description |> Experiment.Description.value )
-    ]
-  >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+    [ "name", name; "experimentDescription", experiment_description ]
 ;;
 
 type create =
@@ -32,27 +20,15 @@ type create =
   }
 [@@deriving eq, show]
 
-type resent =
-  { invitation : t
-  ; experiment : Experiment.t
-  }
+type event =
+  | Created of Contact.t list * Experiment.t
+  | Resent of t
 [@@deriving eq, show]
 
-type event_type =
-  | Created of create
-  | Resent of resent
-[@@deriving eq, show]
-
-type event = event_type * Pool_common.Language.t [@@deriving eq, show]
-
-let handle_event pool (event, language) =
+let handle_event pool event =
   match event with
-  | Created { experiment; contact } ->
-    let%lwt () = create contact |> Repo.insert pool experiment.Experiment.id in
-    send_invitation_email pool contact experiment language
-  | Resent { invitation; experiment } ->
-    let%lwt () =
-      Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
-    in
-    send_invitation_email pool invitation.contact experiment language
+  | Created (contacts, experiment) ->
+    Repo.bulk_insert pool contacts experiment.Experiment.id
+  | Resent invitation ->
+    Repo.update pool { invitation with resent_at = Some (ResentAt.create ()) }
 ;;

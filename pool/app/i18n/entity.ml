@@ -21,8 +21,12 @@ module Key = struct
     | ReminderSubject
     | ReminderSmsText
     | ReminderText
+    | RescheduleSessionSubject
+    | RescheduleSessionText
     | SessionFinishSubject
     | SessionFinishText
+    | TriggerProfileUpdateSubject
+    | TriggerProfileUpdateText
     | WelcomeText
   [@@deriving eq, show, enum]
 
@@ -56,8 +60,12 @@ module Key = struct
     | ReminderSubject -> "reminder_subject"
     | ReminderSmsText -> "reminder_sms_text"
     | ReminderText -> "reminder_text"
+    | RescheduleSessionSubject -> "reschedule_session_subject"
+    | RescheduleSessionText -> "reschedule_session_text"
     | SessionFinishSubject -> "session_finish_subject"
     | SessionFinishText -> "session_finish_text"
+    | TriggerProfileUpdateSubject -> "trigger_profile_update_subject"
+    | TriggerProfileUpdateText -> "trigger_profile_update_text"
     | WelcomeText -> "welcome_text"
   ;;
 
@@ -84,10 +92,42 @@ module Key = struct
     | "reminder_subject" -> Ok ReminderSubject
     | "reminder_sms_text" -> Ok ReminderSmsText
     | "reminder_text" -> Ok ReminderText
+    | "reschedule_session_subject" -> Ok RescheduleSessionSubject
+    | "reschedule_session_text" -> Ok RescheduleSessionText
     | "session_finish_subject" -> Ok SessionFinishSubject
     | "session_finish_text" -> Ok SessionFinishText
+    | "trigger_profile_update_subject" -> Ok TriggerProfileUpdateSubject
+    | "trigger_profile_update_text" -> Ok TriggerProfileUpdateText
     | "welcome_text" -> Ok WelcomeText
     | _ -> Error PoolError.(Invalid Field.Key)
+  ;;
+
+  let is_textarea = function
+    | ConfirmationText
+    | ConfirmationWithoutSelfRegistrationText
+    | CreditsText
+    | ExperimentFinishText
+    | GreetingsText
+    | ImportInvitationText
+    | InvitationText
+    | InvitationWithoutSelfRegistrationText
+    | PasswordPolicyText
+    | ReminderSmsText
+    | ReminderText
+    | RescheduleSessionText
+    | SessionFinishText
+    | TriggerProfileUpdateText
+    | WelcomeText -> true
+    | ConfirmationSubject
+    | ConfirmationWithoutSelfRegistrationSubject
+    | ExperimentFinishSubject
+    | InvitationSubject
+    | InvitationWithoutSelfRegistrationSubject
+    | ImportInvitationSubject
+    | ReminderSubject
+    | RescheduleSessionSubject
+    | SessionFinishSubject
+    | TriggerProfileUpdateSubject -> false
   ;;
 
   let schema () =

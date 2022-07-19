@@ -177,10 +177,16 @@ module Admin = struct
             ; post "/follow-up" create_follow_up
             ; post "/cancel" cancel
             ; post "/delete" delete
+            ; get "/reschedule" reschedule_form
+            ; post "/reschedule" reschedule
             ]
         in
         Session.
-          [ get "" list; post "" create; choose ~scope:"/:session" specific ]
+          [ get "" list
+          ; get "create" new_form
+          ; post "" create
+          ; choose ~scope:"/:session" specific
+          ]
       in
       let waiting_list =
         let specific =
@@ -228,6 +234,19 @@ module Admin = struct
         ; choose ~scope:(build_scope "mailings") mailings
         ]
     in
+    let admins =
+      let specific = Handler.Admin.Admin.[ get "" detail; get "/edit" edit ] in
+      Handler.Admin.Admin.
+        [ get "" index; choose ~scope:(Admin |> url_key) specific ]
+    in
+    let contacts =
+      let specific =
+        Handler.Admin.Contacts.
+          [ get "" detail; post "" update; get "/edit" edit ]
+      in
+      Handler.Admin.Contacts.
+        [ get "" index; choose ~scope:(Contact |> url_key) specific ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
@@ -237,6 +256,8 @@ module Admin = struct
       ; post (Format.asprintf "/i18n/%s" (I18n |> url_key)) I18n.update
       ; choose ~scope:"/experiments" experiments
       ; choose ~scope:"/locations" location
+      ; choose ~scope:"/contacts" contacts
+      ; choose ~scope:"/admins" admins
       ]
   ;;
 end

@@ -36,6 +36,7 @@ let field_to_string =
   | EmailSuffix -> "email suffix"
   | End -> "end"
   | Experiment -> "experiment"
+  | ExperimentType -> "experiment type"
   | File -> "file"
   | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
@@ -51,6 +52,8 @@ let field_to_string =
   | InactiveUserWarning -> "warn inactive user"
   | Institution -> "institution"
   | Invitation -> "invitation"
+  | InvitationSubject -> "invitation subject"
+  | InvitationText -> "invitation text"
   | Invitations -> "invitations"
   | Key -> "key"
   | Label -> "label"
@@ -61,6 +64,7 @@ let field_to_string =
   | Link -> "link"
   | Location -> "location"
   | LogoType -> "logo type"
+  | LeadTime -> "lead time"
   | Mailing -> "mailing"
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
@@ -78,8 +82,10 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
-  | Rate -> "rate"
   | PublicTitle -> "public title"
+  | Rate -> "rate"
+  | ReminderText -> "reminder text"
+  | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
@@ -116,6 +122,7 @@ let field_to_string =
   | Title -> "title"
   | Token -> "token"
   | Translation -> "translation"
+  | TriggerProfileUpdateAfter -> "request to check the profile"
   | Url -> "url"
   | User -> "user"
   | Version -> "version"
@@ -148,6 +155,8 @@ let success_to_string : success -> string = function
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "was successfully rescheduled."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
@@ -205,6 +214,8 @@ let rec error_to_string = function
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
   | InvalidHtmxRequest -> "Invalid request."
+  | InvitationSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session invitation."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
@@ -226,8 +237,7 @@ let rec error_to_string = function
   | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
-  | PasswordPolicy msg ->
-    Format.asprintf "Password doesn't match the required policy! %s" msg
+  | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
@@ -236,8 +246,12 @@ let rec error_to_string = function
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionHasAssignments ->
+    "There are already assignments for this session. It cannot be deleted."
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
+  | ReminderSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session reminder."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."
@@ -285,11 +299,13 @@ let control_to_string = function
   | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
   | More -> "more"
+  | PleaseSelect -> "please select"
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
+  | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
   | Show -> "show"
   | SignUp -> format_submit "sign up" None

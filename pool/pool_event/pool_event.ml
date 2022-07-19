@@ -4,7 +4,8 @@ type t =
   | Assignment of Assignment.event
   | Contact of Contact.event
   | Database of Database.event
-  | EmailAddress of Email.event
+  | Email of Email.event
+  | EmailVerification of Email.verification_event
   | Experiment of Experiment.event
   | I18n of I18n.event
   | Invitation of Invitation.event
@@ -22,7 +23,8 @@ let admin events = Admin events
 let assignment events = Assignment events
 let contact events = Contact events
 let database events = Database events
-let email_address events = EmailAddress events
+let email events = Email events
+let email_verification events = EmailVerification events
 let experiment events = Experiment events
 let i18n events = I18n events
 let invitation events = Invitation events
@@ -41,7 +43,8 @@ let handle_event pool event =
   | Assignment event -> Assignment.handle_event pool event
   | Contact event -> Contact.handle_event pool event
   | Database event -> Database.handle_event pool event
-  | EmailAddress event -> Email.handle_event pool event
+  | Email event -> Email.handle_event pool event
+  | EmailVerification event -> Email.handle_verification_event pool event
   | Experiment event -> Experiment.handle_event pool event
   | I18n event -> I18n.handle_event pool event
   | Invitation event -> Invitation.handle_event pool event

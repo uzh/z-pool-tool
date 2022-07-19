@@ -86,3 +86,42 @@ module File = struct
         (tup2 Id.t (tup2 Name.t (tup2 Size.t (tup2 Mime.t (tup2 ptime ptime))))))
   ;;
 end
+
+module Reminder = struct
+  module Subject = struct
+    include Reminder.Text
+
+    let t = Caqti_type.string
+  end
+
+  module Text = struct
+    include Reminder.Text
+
+    let t = Caqti_type.string
+  end
+
+  module LeadTime = struct
+    include Reminder.LeadTime
+
+    let t = Caqti_type.ptime_span
+  end
+
+  module SentAt = struct
+    include Reminder.SentAt
+
+    let t = Caqti_type.ptime
+  end
+end
+
+module ExperimentType = struct
+  include ExperimentType
+
+  let t =
+    let open CCResult in
+    Caqti_type.(
+      custom
+        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
+        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
+        string)
+  ;;
+end

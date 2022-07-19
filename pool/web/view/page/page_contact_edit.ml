@@ -22,6 +22,51 @@ let contact_profile_layout language title ?active html =
     ]
 ;;
 
+let personal_details_form
+    csrf
+    user_update_csrf
+    language
+    query_language
+    action
+    _
+    contact
+  =
+  let open Contact in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let form_attrs =
+    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
+  in
+  form
+    ~a:form_attrs
+    (CCList.flatten
+       [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
+       ; CCList.map
+           (fun (field, version, value) ->
+             Htmx.create field language version ~value ~hx_post:action ())
+           Pool_common.Message.
+             [ ( Field.Firstname
+               , contact.firstname_version
+               , contact |> firstname |> Pool_user.Firstname.value )
+             ; ( Field.Lastname
+               , contact.lastname_version
+               , contact |> lastname |> Pool_user.Lastname.value )
+             ; ( Field.Language
+               , contact.language_version
+               , contact.language
+                 |> CCOption.map Pool_common.Language.show
+                 |> CCOption.value ~default:"" )
+             ]
+       ; [ Htmx.create
+             Pool_common.Message.Field.Paused
+             language
+             contact.Contact.paused_version
+             ~checked:(contact.Contact.paused |> Pool_user.Paused.value)
+             ~hx_post:action
+             ()
+         ]
+       ])
+;;
+
 let detail contact Pool_context.{ language; query_language; _ } =
   let open Contact in
   let text_to_string = Pool_common.Utils.text_to_string language in
@@ -56,50 +101,21 @@ let detail contact Pool_context.{ language; query_language; _ } =
 let personal_details
     user_update_csrf
     (contact : Contact.t)
-    _
+    tenant_languages
     Pool_context.{ language; query_language; csrf; _ }
   =
-  let open Contact in
-  let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let action = externalize "/user/update" in
-  let form_attrs action =
-    [ a_method `Post; a_action action; a_class [ "stack" ] ]
-  in
-  let details_form =
-    form
-      ~a:(form_attrs action)
-      (CCList.flatten
-         [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
-         ; CCList.map
-             (fun (field, version, value) ->
-               Htmx.create field language version ~value ~hx_post:action ())
-             Pool_common.Message.
-               [ ( Field.Firstname
-                 , contact.firstname_version
-                 , contact |> firstname |> Pool_user.Firstname.value )
-               ; ( Field.Lastname
-                 , contact.lastname_version
-                 , contact |> lastname |> Pool_user.Lastname.value )
-               ; ( Field.Language
-                 , contact.language_version
-                 , contact.language
-                   |> CCOption.map Pool_common.Language.show
-                   |> CCOption.value ~default:"" )
-               ]
-         ; [ Htmx.create
-               Pool_common.Message.Field.Paused
-               language
-               contact.Contact.paused_version
-               ~checked:(contact.Contact.paused |> Pool_user.Paused.value)
-               ~hx_post:action
-               ()
-           ]
-         ])
-  in
+  let action = "/user/update" in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ details_form
+        [ personal_details_form
+            csrf
+            user_update_csrf
+            language
+            query_language
+            action
+            tenant_languages
+            contact
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/user") ]
@@ -118,6 +134,7 @@ let personal_details
 let login_information
     (contact : Contact.t)
     Pool_context.{ language; query_language; csrf; _ }
+    password_policy
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
@@ -137,16 +154,33 @@ let login_information
       ]
   in
   let password_form =
+    let open Message in
     form
       ~a:(form_attrs "/user/update-password")
-      ([ csrf_element csrf () ]
-      @ CCList.map
-          (fun m -> input_element language `Password ~value:"" m)
-          [ Message.Field.CurrentPassword
-          ; Message.Field.NewPassword
-          ; Message.Field.PasswordConfirmation
-          ]
-      @ [ submit_element language Message.(Update (Some Field.password)) () ])
+      [ csrf_element csrf ()
+      ; input_element
+          language
+          `Password
+          ~value:""
+          Field.CurrentPassword
+          ~required:true
+      ; input_element
+          language
+          ~help:
+            Pool_common.I18n.(
+              I18nText (password_policy |> I18n.content_to_string))
+          `Password
+          ~value:""
+          Field.NewPassword
+          ~required:true
+      ; input_element
+          language
+          `Password
+          ~value:""
+          Field.PasswordConfirmation
+          ~required:true
+      ; submit_element language Message.(Update (Some Field.password)) ()
+      ]
   in
   div
     [ div ~a:[ a_class [ "stack-lg" ] ] [ email_form; password_form ]

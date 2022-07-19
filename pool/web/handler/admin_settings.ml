@@ -16,8 +16,14 @@ let show req =
        let%lwt inactive_user_warning =
          Settings.find_inactive_user_warning tenant_db
        in
+       let%lwt trigger_profile_update_after =
+         Settings.find_trigger_profile_update_after tenant_db
+       in
        let%lwt terms_and_conditions =
          Settings.find_terms_and_conditions tenant_db
+       in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time tenant_db
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.Settings.show
@@ -26,7 +32,9 @@ let show req =
          contact_email
          inactive_user_disable_after
          inactive_user_warning
+         trigger_profile_update_after
          terms_and_conditions
+         default_reminder_lead_time
          context
          flash_fetcher
        |> create_layout req ~active_navigation:"/admin/settings" context
@@ -72,6 +80,8 @@ let update_settings req =
           fun m ->
             let%lwt suffixes = Settings.find_email_suffixes tenant_db in
             DeleteEmailSuffix.(m |> decode >>= handle suffixes) |> lift
+        | `UpdateDefaultLeadTime ->
+          fun m -> UpdateDefaultLeadTime.(m |> decode >>= handle) |> lift
         | `UpdateTenantContactEmail ->
           fun m -> UpdateContactEmail.(m |> decode >>= handle) |> lift
         | `UpdateInactiveUserDisableAfter ->
@@ -82,6 +92,9 @@ let update_settings req =
           fun m ->
             let%lwt languages = Settings.find_languages tenant_db in
             UpdateTermsAndConditions.(handle languages m) |> lift
+        | `UpdateTriggerProfileUpdateAfter ->
+          fun m ->
+            UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle) |> lift
       in
       Sihl.Web.Router.param req "action"
       |> Settings.action_of_param

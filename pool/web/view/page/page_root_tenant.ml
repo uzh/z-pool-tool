@@ -74,7 +74,7 @@ let list csrf tenant_list root_list message Pool_context.{ language; _ } =
   let input_fields =
     let language_select =
       let open Pool_common.Language in
-      selector Message.Field.Language equal show all None ()
+      selector language Message.Field.Language show all None ()
     in
     let open Message in
     CCList.map (input_element language `Text) text_fields
@@ -165,8 +165,8 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; message; _ } 
   let language_select =
     let open Pool_common.Language in
     selector
+      language
       Message.Field.Language
-      equal
       show
       all
       (Some tenant.default_language)

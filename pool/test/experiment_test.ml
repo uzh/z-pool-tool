@@ -28,6 +28,11 @@ module Data = struct
         ; direct_registration_disabled =
             false |> DirectRegistrationDisabled.create
         ; registration_disabled = false |> RegistrationDisabled.create
+        ; experiment_type = Some Pool_common.ExperimentType.Lab
+        ; invitation_template = None
+        ; session_reminder_subject = None
+        ; session_reminder_text = None
+        ; session_reminder_lead_time = None
         ; created_at = Common.CreatedAt.create ()
         ; updated_at = Common.UpdatedAt.create ()
         }
@@ -37,36 +42,10 @@ end
 let database_label = Test_utils.Data.database_label
 
 let create () =
-  let events =
-    let open CCResult.Infix in
-    Pool_common.Message.Field.
-      [ Title |> show, [ Data.title ]
-      ; PublicTitle |> show, [ Data.public_title ]
-      ; Description |> show, [ Data.description ]
-      ]
-    |> Http_utils.format_request_boolean_values experiment_boolean_fields
-    |> ExperimentCommand.Create.decode
-    >>= ExperimentCommand.Create.handle
-  in
+  let experiment = Test_utils.create_experiment () in
+  let events = Ok [ Experiment.Created experiment |> Pool_event.experiment ] in
   let expected =
-    let open CCResult in
-    let open Experiment in
-    let* title = Title.create Data.title in
-    let* public_title = PublicTitle.create Data.public_title in
-    let* description = Description.create Data.description in
-    let direct_registration_disabled =
-      false |> DirectRegistrationDisabled.create
-    in
-    let registration_disabled = false |> RegistrationDisabled.create in
-    let create =
-      { title
-      ; public_title
-      ; description
-      ; direct_registration_disabled
-      ; registration_disabled
-      }
-    in
-    Ok [ Experiment.Created create |> Pool_event.experiment ]
+    Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   in
   Alcotest.(
     check
@@ -100,7 +79,7 @@ let create_without_title () =
 ;;
 
 let update () =
-  let experiment = CCResult.get_exn Data.experiment in
+  let experiment = Test_utils.create_experiment () in
   let open CCResult.Infix in
   let events =
     Pool_common.Message.Field.
@@ -127,7 +106,7 @@ let update () =
 ;;
 
 let delete_with_sessions () =
-  let experiment = CCResult.get_exn Data.experiment in
+  let experiment = Test_utils.create_experiment () in
   let events =
     let session_count = 1234 in
     ExperimentCommand.Delete.(
@@ -140,4 +119,43 @@ let delete_with_sessions () =
       "succeeds"
       expected
       events)
+;;
+
+let urlencoded =
+  [ "title", [ "The Wallet Game" ]
+  ; "public_title", [ "the_wallet_game" ]
+  ; "description", [ "Description." ]
+  ]
+;;
+
+let create_with_missing_text_element additional error =
+  let open CCResult in
+  let events =
+    let open CCResult.Infix in
+    let open Cqrs_command.Experiment_command.Create in
+    urlencoded @ additional
+    |> Http_utils.format_request_boolean_values
+         [ "direct_registration_disabled"; "registration_disabled" ]
+    |> decode
+    >>= handle
+  in
+  let expected = Error error in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let with_missing_invitation_text () =
+  create_with_missing_text_element
+    [ "invitation_subject", [ "Invitation Subject" ] ]
+    Pool_common.Message.InvitationSubjectAndTextRequired
+;;
+
+let with_missing_reminder_subject () =
+  create_with_missing_text_element
+    [ "reminder_text", [ "Session reminder text" ] ]
+    Pool_common.Message.ReminderSubjectAndTextRequired
 ;;

@@ -6,8 +6,8 @@ let field_to_string =
   | Admin -> "Administrator"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
-  | Assignments -> "Anmeldungen"
   | AssignmentCount -> "No. Assignments"
+  | Assignments -> "Anmeldungen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
@@ -36,6 +36,7 @@ let field_to_string =
   | EmailSuffix -> "Email Endung"
   | End -> "Ende"
   | Experiment -> "Experiment"
+  | ExperimentType -> "Experimenttyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
@@ -51,6 +52,8 @@ let field_to_string =
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Institution -> "Institution"
   | Invitation -> "Einladung"
+  | InvitationSubject -> "Einladungsbetreff"
+  | InvitationText -> "Einladungstext"
   | Invitations -> "Einladungen"
   | Key -> "Schlüssel"
   | Label -> "Label"
@@ -58,6 +61,7 @@ let field_to_string =
   | LanguageDe -> "Deutsch"
   | LanguageEn -> "Englisch"
   | Lastname -> "Nachname"
+  | LeadTime -> "Vorlaufzeit"
   | Link -> "Link"
   | Location -> "Lokalität"
   | LogoType -> "Logo Typ"
@@ -77,10 +81,12 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
-  | Rate -> "Rate"
   | PublicTitle -> "Öffentlicher Titel"
+  | Rate -> "Rate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
+  | ReminderText -> "Erinnerungstext"
+  | ReminderSubject -> "Erinnerungsbetreff"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -115,6 +121,7 @@ let field_to_string =
   | Title -> "Titel"
   | Token -> "Token"
   | Translation -> "Übersetzung"
+  | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
   | Url -> "Url"
   | User -> "Benutzer"
   | Version -> "Version"
@@ -146,6 +153,8 @@ let success_to_string : success -> string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -213,6 +222,8 @@ let rec error_to_string = function
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | InvalidHtmxRequest -> "Ungültige Anfrage."
+  | InvitationSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
@@ -243,10 +254,7 @@ let rec error_to_string = function
   | NoValue -> "Kein Wert angegeben"
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
-  | PasswordPolicy msg ->
-    Format.asprintf
-      "Passwort stimmt nicht mit der benötigten Policy überein! %s"
-      msg
+  | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
   | PasswordResetFailMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
@@ -256,8 +264,14 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionHasAssignments ->
+    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
+     gelöscht werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
+  | ReminderSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
+     Erinnerung an."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
@@ -310,7 +324,9 @@ let control_to_string = function
   | Enroll -> format_submit "einschreiben" None
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
+  | PleaseSelect -> "bitte wählen"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

@@ -51,17 +51,48 @@ module RegistrationDisabled = struct
   let t = Caqti_type.bool
 end
 
+module InvitationTemplate = struct
+  include InvitationTemplate
+
+  module Subject = struct
+    include Subject
+
+    let t = Caqti_type.(string)
+  end
+
+  module Text = struct
+    include Text
+
+    let t = Caqti_type.(string)
+  end
+
+  let t =
+    let encode (m : t) = Ok (m.subject, m.text) in
+    let decode (subject, text) =
+      create subject text
+      |> CCResult.map_err Common.(Utils.error_to_string Language.En)
+    in
+    Caqti_type.(custom ~encode ~decode (tup2 Subject.t Text.t))
+  ;;
+end
+
 let t =
   let encode (m : t) =
     Ok
       ( m.id
-      , ( m.title
-        , ( m.public_title
+      , ( Title.value m.title
+        , ( PublicTitle.value m.public_title
           , ( m.description
             , ( m.filter
               , ( m.direct_registration_disabled
-                , (m.registration_disabled, (m.created_at, m.updated_at)) ) ) )
-          ) ) )
+                , ( m.registration_disabled
+                  , ( m.experiment_type
+                    , ( m.invitation_template
+                      , ( m.session_reminder_lead_time
+                        , ( m.session_reminder_subject
+                          , ( m.session_reminder_text
+                            , (m.created_at, m.updated_at) ) ) ) ) ) ) ) ) ) )
+        ) )
   in
   let decode
       ( id
@@ -70,7 +101,13 @@ let t =
           , ( description
             , ( filter
               , ( direct_registration_disabled
-                , (registration_disabled, (created_at, updated_at)) ) ) ) ) ) )
+                , ( registration_disabled
+                  , ( experiment_type
+                    , ( invitation_template
+                      , ( session_reminder_lead_time
+                        , ( session_reminder_subject
+                          , (session_reminder_text, (created_at, updated_at)) )
+                        ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -81,6 +118,11 @@ let t =
       ; filter
       ; direct_registration_disabled
       ; registration_disabled
+      ; experiment_type
+      ; invitation_template
+      ; session_reminder_lead_time
+      ; session_reminder_subject
+      ; session_reminder_text
       ; created_at
       ; updated_at
       }
@@ -104,8 +146,21 @@ let t =
                         (tup2
                            RegistrationDisabled.t
                            (tup2
-                              Common.Repo.CreatedAt.t
-                              Common.Repo.UpdatedAt.t)))))))))
+                              (option Pool_common.Repo.ExperimentType.t)
+                              (tup2
+                                 (option InvitationTemplate.t)
+                                 (tup2
+                                    (option
+                                       Pool_common.Repo.Reminder.LeadTime.t)
+                                    (tup2
+                                       (option
+                                          Pool_common.Repo.Reminder.Subject.t)
+                                       (tup2
+                                          (option
+                                             Pool_common.Repo.Reminder.Text.t)
+                                          (tup2
+                                             Common.Repo.CreatedAt.t
+                                             Common.Repo.UpdatedAt.t))))))))))))))
 ;;
 
 module Write = struct
@@ -117,8 +172,13 @@ module Write = struct
           , ( PublicTitle.value m.public_title
             , ( Description.value m.description
               , ( m.filter
-                , (m.direct_registration_disabled, m.registration_disabled) ) )
-            ) ) )
+                , ( m.direct_registration_disabled
+                  , ( m.registration_disabled
+                    , ( m.experiment_type
+                      , ( m.invitation_template
+                        , ( m.session_reminder_lead_time
+                          , (m.session_reminder_subject, m.session_reminder_text)
+                          ) ) ) ) ) ) ) ) ) )
     in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
@@ -137,7 +197,20 @@ module Write = struct
                        string
                        (tup2
                           DirectRegistrationDisabled.t
-                          RegistrationDisabled.t)))))))
+                          (tup2
+                             RegistrationDisabled.t
+                             (tup2
+                                (option Pool_common.Repo.ExperimentType.t)
+                                (tup2
+                                   (option InvitationTemplate.t)
+                                   (tup2
+                                      (option
+                                         Pool_common.Repo.Reminder.LeadTime.t)
+                                      (tup2
+                                         (option
+                                            Pool_common.Repo.Reminder.Subject.t)
+                                         (option
+                                            Pool_common.Repo.Reminder.Text.t)))))))))))))
   ;;
 end
 
@@ -147,11 +220,23 @@ module Public = struct
   let t =
     let encode (m : t) =
       Ok
-        (m.id, (m.public_title, (m.description, m.direct_registration_disabled)))
+        ( m.id
+        , ( m.public_title
+          , (m.description, (m.direct_registration_disabled, m.experiment_type))
+          ) )
     in
-    let decode (id, (public_title, (description, direct_registration_disabled)))
+    let decode
+        ( id
+        , ( public_title
+          , (description, (direct_registration_disabled, experiment_type)) ) )
       =
-      Ok { id; public_title; description; direct_registration_disabled }
+      Ok
+        { id
+        ; public_title
+        ; description
+        ; direct_registration_disabled
+        ; experiment_type
+        }
     in
     Caqti_type.(
       custom
@@ -161,6 +246,10 @@ module Public = struct
            RepoId.t
            (tup2
               PublicTitle.t
-              (tup2 Description.t DirectRegistrationDisabled.t))))
+              (tup2
+                 Description.t
+                 (tup2
+                    DirectRegistrationDisabled.t
+                    (option Pool_common.Repo.ExperimentType.t))))))
   ;;
 end

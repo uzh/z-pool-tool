@@ -32,11 +32,12 @@ let index req =
 let new_form req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/experiments" in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    Page.Admin.Experiments.create context flash_fetcher
+    let%lwt sys_languages = Settings.find_languages tenant_db in
+    Page.Admin.Experiments.create context sys_languages flash_fetcher
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in
@@ -48,6 +49,7 @@ let create req =
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
+    ||> HttpUtils.remove_empty_values
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
@@ -92,7 +94,8 @@ let detail edit req =
       |> Lwt.return_ok
     | true ->
       let flash_fetcher key = Sihl.Web.Flash.find key req in
-      Page.Admin.Experiments.edit experiment context flash_fetcher
+      let%lwt sys_languages = Settings.find_languages tenant_db in
+      Page.Admin.Experiments.edit experiment context sys_languages flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -110,6 +113,7 @@ let update req =
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
+      ||> HttpUtils.remove_empty_values
     in
     let detail_path =
       Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)

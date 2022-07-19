@@ -62,6 +62,7 @@ let create_contact verified contact_info =
   ; recruitment_channel = Contact.RecruitmentChannel.read recruitment_channel
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
   ; language
+  ; experiment_type_preference = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
   ; verified = Pool_user.Verified.create None
@@ -74,6 +75,7 @@ let create_contact verified contact_info =
   ; lastname_version = Pool_common.Version.create ()
   ; paused_version = Pool_common.Version.create ()
   ; language_version = Pool_common.Version.create ()
+  ; experiment_type_preference_version = Pool_common.Version.create ()
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
@@ -155,7 +157,7 @@ let sign_up () =
           , firstname
           , lastname
           , language |> CCOption.get_exn_or "Test failed" )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -270,9 +272,12 @@ let update_password () =
           , new_password
             |> Pool_user.Password.create
             |> Pool_common.Utils.get_or_failwith
-          , new_password |> Pool_user.PasswordConfirmed.create
-          , language |> CCOption.get_or ~default:Language.En )
+          , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
+      ; Email.ChangedPassword
+          ( contact.Contact.user
+          , language |> CCOption.get_or ~default:Language.En )
+        |> Pool_event.email
       ]
   in
   check_result expected events
@@ -312,9 +317,7 @@ let update_password_wrong_policy () =
       |> Pool_common.Utils.get_or_failwith
       |> handle contact)
   in
-  let expected =
-    Error Message.(PasswordPolicy I18n.Key.(PasswordPolicyText |> to_string))
-  in
+  let expected = Error Message.PasswordPolicy in
   check_result expected events
 ;;
 
@@ -362,7 +365,7 @@ let request_email_validation () =
           , contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -414,7 +417,7 @@ let update_email () =
     Ok
       [ Contact.EmailUpdated (contact, Email.address email_unverified)
         |> Pool_event.contact
-      ; Email.EmailVerified email_unverified |> Pool_event.email_address
+      ; Email.EmailVerified email_unverified |> Pool_event.email_verification
       ]
   in
   check_result expected events
@@ -438,7 +441,7 @@ let verify_email () =
   let expected =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified email_unverified |> Pool_event.email_address
+      ; Email.EmailVerified email_unverified |> Pool_event.email_verification
       ]
   in
   check_result expected events

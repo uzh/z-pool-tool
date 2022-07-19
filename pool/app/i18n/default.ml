@@ -80,6 +80,54 @@ let default_values =
     , [ "EN", "Please complete the participants data."
       ; "DE", "Bitte vervollständigen Sie noch die Teilnahmedaten."
       ] )
+  ; ( "reschedule_session_subject"
+    , [ "EN", "Your session was rescheduled."
+      ; "DE", "Ihre Session wurde verschoben."
+      ] )
+  ; ( "reschedule_session_text"
+    , [ ( "EN"
+        , {|Dear {name}
+
+Your session was rescheduled.
+
+{sessionOverviewEN}
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Ihre Session wurde verschoben.
+
+{sessionOverviewDE}
+
+Freundliche Grüsse,
+Pool Tool|}
+        )
+      ] )
+  ; ( "trigger_profile_update_subject"
+    , [ "EN", "Please check your profile."
+      ; "DE", "Bitte kontrollieren Sie Ihr Profil."
+      ] )
+  ; ( "trigger_profile_update_text"
+    , [ ( "EN"
+        , {|Dear {name}
+
+Your profile has not been updated in a while.
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Ihr Profil wurde bereits eine Weile nicht aktualisiert.
+
+Freundliche Grüsse,
+Pool Tool|}
+        )
+      ] )
   ; "welcome_text", [ "EN", "Welcome"; "DE", "Willkommen" ]
   ; ( "password_policy_text"
     , [ "EN", "Password must be at least 8 characters in length."

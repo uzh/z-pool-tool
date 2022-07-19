@@ -46,6 +46,10 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
+          pool_sessions.reminder_subject,
+          pool_sessions.reminder_text,
+          pool_sessions.reminder_lead_time,
+          pool_sessions.reminder_sent_at,
           (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
           pool_sessions.canceled_at,
           pool_sessions.created_at,
@@ -243,6 +247,34 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  let find_sessions_to_remind_request =
+    let open Caqti_request.Infix in
+    {sql|
+    INNER JOIN pool_experiments
+      ON pool_experiments.uuid = pool_sessions.experiment_uuid
+    WHERE
+      pool_sessions.reminder_sent_at IS NULL
+    AND
+      pool_sessions.start <= DATE_ADD(NOW(), INTERVAL
+        COALESCE(
+          pool_sessions.reminder_lead_time,
+          pool_experiments.session_reminder_lead_time,
+          (SELECT value FROM pool_system_settings WHERE settings_key = $1))
+        SECOND)
+    |sql}
+    |> find_sql
+    |> Caqti_type.(string) ->* RepoEntity.t
+  ;;
+
+  let find_sessions_to_remind pool =
+    let settings_key = Settings.default_session_reminder_lead_time_key_yojson in
+    Lwt_result.ok
+    @@ Utils.Database.collect
+         (Database.Label.value pool)
+         find_sessions_to_remind_request
+         (settings_key |> Yojson.Safe.to_string)
+  ;;
+
   let find_follow_ups_request =
     let open Caqti_request.Infix in
     (* TODO [aerben] order by what here? *)
@@ -275,6 +307,10 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
+        reminder_subject,
+        reminder_text,
+        reminder_lead_time,
+        reminder_sent_at,
         canceled_at
       ) VALUES (
         UNHEX(REPLACE($2, '-', '')),
@@ -287,7 +323,11 @@ module Sql = struct
         $8,
         $9,
         $10,
-        $11
+        $11,
+        $12,
+        $13,
+        $14,
+        $15
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -313,7 +353,11 @@ module Sql = struct
         max_participants = $7,
         min_participants = $8,
         overbook = $9,
-        canceled_at = $10
+        reminder_subject = $10,
+        reminder_text = $11,
+        reminder_lead_time = $12,
+        reminder_sent_at = $13,
+        canceled_at = $14
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -401,6 +445,14 @@ let find_follow_ups pool parent_session_id =
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
+
+let find_sessions_to_remind pool =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_sessions_to_remind pool
+  >>= fun sessions ->
+  Lwt_list.map_s (location_to_repo_entity pool) sessions ||> CCResult.flatten_l
+;;
+
 let insert = Sql.insert
 let update = Sql.update
 let delete = Sql.delete

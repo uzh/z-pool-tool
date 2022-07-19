@@ -35,67 +35,268 @@ let location_select options selected ?(attributes = []) () =
     ]
 ;;
 
-let create csrf language experiment_id locations ~flash_fetcher =
-  div
-    [ h3
-        ~a:[ a_class [ "heading-3" ] ]
-        [ txt
-            Pool_common.(
-              Utils.control_to_string
-                language
-                Message.(Create (Some Field.Session)))
+let session_form
+    csrf
+    language
+    (experiment : Experiment.t)
+    ?(session : Session.t option)
+    ?(follow_up_to : Session.t option)
+    locations
+    sys_languages
+    ~flash_fetcher
+  =
+  let open CCFun in
+  let open Session in
+  let default_value_session = CCOption.(session <+> follow_up_to) in
+  let has_assignments =
+    default_value_session
+    |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
+  in
+  let reschedule_hint () =
+    match session, has_assignments with
+    | Some session, true ->
+      let action =
+        let open Pool_common.Id in
+        Format.asprintf
+          "/admin/experiments/%s/sessions/%s/reschedule"
+          (value experiment.Experiment.id)
+          (value session.Session.id)
+        |> Sihl.Web.externalize_path
+      in
+      p
+        [ txt "There are assignments for this session. Please use the "
+        ; a
+            ~a:[ a_href action ]
+            [ txt "form provided to reschedule a session." ]
         ]
-    ; form
-        ~a:
-          [ a_class [ "stack" ]
-          ; a_method `Post
-          ; a_action
-              (Format.asprintf "/admin/experiments/%s/sessions"
-               @@ Pool_common.Id.value experiment_id
-              |> Sihl.Web.externalize_path)
-          ]
-        [ Component.csrf_element csrf ()
-        ; flatpicker_element
-            language
-            `Datetime_local
-            Pool_common.Message.Field.Start
-            ~required:true
-            ~flash_fetcher
-            ~warn_past:true
-        ; flatpicker_element
-            language
-            ~required:true
-            `Time
-            Pool_common.Message.Field.Duration
-            ~help:Pool_common.I18n.TimeSpanPickerHint
-            ~flash_fetcher
-        ; textarea_element
-            language
-            Pool_common.Message.Field.Description
-            ~flash_fetcher
-        ; location_select locations None ()
-        ; input_element
-            language
-            `Number
-            Pool_common.Message.Field.MaxParticipants
-            ~required:true
-            ~flash_fetcher
-        ; input_element
-            language
-            `Number
-            Pool_common.Message.Field.MinParticipants
-            ~required:true
-            ~flash_fetcher
-            ~value:"0"
-        ; input_element
-            language
-            `Number
-            Pool_common.Message.Field.Overbook
-            ~required:true
-            ~flash_fetcher
-        ; submit_element language Message.(Create (Some Field.Session)) ()
+    | _ -> txt ""
+  in
+  let value = CCFun.flip (CCOption.map_or ~default:"") default_value_session in
+  let amount fnc = value (fnc %> ParticipantAmount.value %> CCInt.to_string) in
+  let lead_time_value time =
+    time
+    |> CCOption.map_or
+         ~default:""
+         Pool_common.(Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
+  in
+  let to_default_value html =
+    div ~a:[ a_class [ "gap"; "inset-sm"; "border-left" ] ] [ html ]
+  in
+  let action, submit =
+    let open Pool_common in
+    let base =
+      Format.asprintf
+        "/admin/experiments/%s/sessions"
+        (Pool_common.Id.value experiment.Experiment.id)
+    in
+    match session, follow_up_to with
+    | None, None -> base, Message.(Create (Some Field.Session))
+    | None, Some follow_up_to ->
+      ( Format.asprintf
+          "%s/%s/follow-up"
+          base
+          (follow_up_to.Session.id |> Pool_common.Id.value)
+      , Message.(Create (Some Field.FollowUpSession)) )
+    | Some session, _ ->
+      ( Format.asprintf "%s/%s" base (session.id |> Pool_common.Id.value)
+      , Message.(Update (Some Field.Session)) )
+  in
+  form
+    ~a:
+      [ a_class [ "stack" ]
+      ; a_method `Post
+      ; a_action (action |> Sihl.Web.externalize_path)
+      ]
+    [ Component.csrf_element csrf ()
+    ; flatpicker_element
+        language
+        `Datetime_local
+        Pool_common.Message.Field.Start
+        ~required:true
+        ~flash_fetcher
+        ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
+        ~warn_past:true
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
+    ; flatpicker_element
+        language
+        ~required:true
+        `Time
+        Pool_common.Message.Field.Duration
+        ~help:Pool_common.I18n.TimeSpanPickerHint
+        ~value:
+          (value (fun s ->
+               s.duration
+               |> Duration.value
+               |> Pool_common.Utils.Time.timespan_spanpicker))
+        ~flash_fetcher
+        ~additional_attributes:
+          (if has_assignments then [ a_disabled () ] else [])
+    ; reschedule_hint ()
+    ; textarea_element
+        language
+        Pool_common.Message.Field.Description
+        ~value:
+          (value (fun s ->
+               s.description |> CCOption.map_or ~default:"" Description.value))
+        ~flash_fetcher
+    ; location_select locations None ()
+    ; input_element
+        language
+        `Number
+        Pool_common.Message.Field.MaxParticipants
+        ~required:true
+        ~value:(amount (fun s -> s.max_participants))
+        ~flash_fetcher
+    ; input_element
+        language
+        `Number
+        Pool_common.Message.Field.MinParticipants
+        ~required:true
+        ~value:(amount (fun s -> s.min_participants))
+        ~flash_fetcher
+    ; input_element
+        language
+        `Number
+        Pool_common.Message.Field.Overbook
+        ~required:true
+        ~value:(amount (fun s -> s.overbook))
+        ~flash_fetcher
+    ; div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h3
+            ~a:[ a_class [ "heading-3" ] ]
+            [ txt Pool_common.(Utils.text_to_string language I18n.Reminder) ]
+        ; div
+            ~a:[ a_class [ "stack" ] ]
+            [ div
+                [ flatpicker_element
+                    language
+                    `Time
+                    Pool_common.Message.Field.LeadTime
+                    ~help:Pool_common.I18n.TimeSpanPickerHint
+                    ~value:
+                      (value (fun s -> s.reminder_lead_time |> lead_time_value))
+                    ~flash_fetcher
+                ; experiment.Experiment.session_reminder_lead_time
+                  |> CCOption.map_or ~default:(txt "") (fun leadtime ->
+                         Pool_common.(
+                           Utils.text_to_string
+                             language
+                             (I18n.SessionReminderDefaultLeadTime
+                                (leadtime |> Reminder.LeadTime.value)))
+                         |> txt
+                         |> to_default_value)
+                ]
+            ; div
+                [ MessageTextElements.session_reminder_help
+                    language
+                    sys_languages
+                    ?session:default_value_session
+                    ()
+                ; div
+                    ~a:[ a_class [ "stack"; "gap-lg" ] ]
+                    [ div
+                        [ input_element
+                            language
+                            `Text
+                            Pool_common.Message.Field.ReminderSubject
+                            ~value:
+                              (value (fun s ->
+                                   s.reminder_subject
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Pool_common.Reminder.Subject.value))
+                            ~flash_fetcher
+                        ; experiment.Experiment.session_reminder_subject
+                          |> CCOption.map_or ~default:(txt "") (fun text ->
+                                 Pool_common.(
+                                   Utils.text_to_string
+                                     language
+                                     (I18n.SessionReminderDefaultSubject
+                                        (text |> Reminder.Subject.value)))
+                                 |> HttpUtils.add_line_breaks
+                                 |> to_default_value)
+                        ]
+                    ; div
+                        [ textarea_element
+                            language
+                            Pool_common.Message.Field.ReminderText
+                            ~value:
+                              (value (fun s ->
+                                   s.reminder_text
+                                   |> CCOption.map_or
+                                        ~default:""
+                                        Pool_common.Reminder.Text.value))
+                            ~flash_fetcher
+                        ; experiment.Experiment.session_reminder_text
+                          |> CCOption.map_or ~default:(txt "") (fun text ->
+                                 Pool_common.(
+                                   Utils.text_to_string
+                                     language
+                                     (I18n.SessionReminderDefaultText
+                                        (text |> Reminder.Text.value)))
+                                 |> HttpUtils.add_line_breaks
+                                 |> to_default_value)
+                        ]
+                    ]
+                ]
+            ]
         ]
+    ; submit_element language submit ()
     ]
+;;
+
+let reschedule_session
+    Pool_context.{ csrf; language; _ }
+    experiment
+    (session : Session.t)
+    flash_fetcher
+  =
+  let open Session in
+  let action =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/reschedule"
+      (value experiment.Experiment.id)
+      (value session.Session.id)
+  in
+  form
+    ~a:
+      [ a_class [ "stack" ]
+      ; a_method `Post
+      ; a_action (action |> Sihl.Web.externalize_path)
+      ]
+    [ Component.csrf_element csrf ()
+    ; flatpicker_element
+        language
+        `Datetime_local
+        Pool_common.Message.Field.Start
+        ~required:true
+        ~flash_fetcher
+        ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
+        ~disable_past:true
+    ; flatpicker_element
+        language
+        ~required:true
+        `Time
+        Pool_common.Message.Field.Duration
+        ~help:Pool_common.I18n.TimeSpanPickerHint
+        ~value:
+          (session.duration
+          |> Duration.value
+          |> Pool_common.Utils.Time.timespan_spanpicker)
+        ~flash_fetcher
+    ; submit_element
+        language
+        Pool_common.Message.(Reschedule (Some Field.Session))
+        ()
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Reschedule (Some Field.Session)))
+       experiment
 ;;
 
 let index
@@ -103,11 +304,7 @@ let index
     experiment
     grouped_sessions
     chronological
-    locations
-    flash_fetcher
   =
-  (* TODO [aerben] if in chronological view, add a hint which is follow up
-     (icon) *)
   let experiment_id = experiment.Experiment.id in
   let rows =
     CCList.flat_map
@@ -141,6 +338,39 @@ let index
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
+          let delete_form =
+            if session.Session.assignment_count
+               |> Session.AssignmentCount.value
+               == 0
+            then
+              form
+                ~a:
+                  [ a_method `Post
+                  ; a_action
+                      (Format.asprintf
+                         "/admin/experiments/%s/sessions/%s/delete"
+                         (Pool_common.Id.value experiment_id)
+                         (Pool_common.Id.value session.id)
+                      |> Sihl.Web.externalize_path)
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string language I18n.DeleteSession)
+                  ]
+                [ Component.csrf_element csrf ()
+                ; submit_element
+                    language
+                    Message.(Delete None)
+                    ~submit_type:`Error
+                    ()
+                ]
+            else
+              submit_element
+                language
+                Message.(Delete None)
+                ~submit_type:`Disabled
+                ()
+          in
           let attrs =
             if CCOption.is_some session.follow_up_to && not chronological
             then [ a_class [ "inset"; "left" ] ]
@@ -168,27 +398,7 @@ let index
                   Pool_common.(Utils.control_to_string language Message.(More))
               ]
           ; cancel_form
-          ; form
-              ~a:
-                [ a_method `Post
-                ; a_action
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s/delete"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ; a_user_data
-                    "confirmable"
-                    Pool_common.(
-                      Utils.confirmable_to_string language I18n.DeleteSession)
-                ]
-              [ Component.csrf_element csrf ()
-              ; submit_element
-                  language
-                  Message.(Delete None)
-                  ~submit_type:`Error
-                  ()
-              ]
+          ; delete_form
           ]
         in
         session_row parent :: CCList.map session_row follow_ups)
@@ -200,47 +410,58 @@ let index
   in
   let html =
     div
-      ~a:[ a_class [ "stack-lg" ] ]
-      ((if CCList.is_empty rows
-       then
-         [ p
-             [ txt
-                 Pool_common.(
-                   Utils.text_to_string
-                     language
-                     (I18n.EmtpyList Message.Field.Sessions))
-             ]
+      ~a:[ a_class [ "stack" ] ]
+      (a
+         ~a:
+           [ a_href
+               (Format.asprintf
+                  "/admin/experiments/%s/sessions/create"
+                  (experiment.Experiment.id |> Pool_common.Id.value)
+               |> Sihl.Web.externalize_path)
+           ]
+         [ txt
+             Pool_common.(
+               Utils.control_to_string
+                 language
+                 Message.(Create (Some Field.Session)))
          ]
-       else
-         [ div
-             ~a:[ a_class [ "stack" ] ]
-             [ p
-                 [ Pool_common.I18n.SessionIndent
-                   |> Pool_common.Utils.text_to_string language
-                   |> txt
-                 ]
-             ; a
-                 ~a:
-                   [ a_href
-                       (Format.asprintf
-                          "/admin/experiments/%s/sessions%s"
-                          (Pool_common.Id.value experiment_id)
-                          (if chronological then "" else "?chronological=true")
-                       |> Sihl.Web.externalize_path)
-                   ]
-                 [ p
-                     [ (if chronological
-                       then Pool_common.I18n.SwitchGrouped
-                       else Pool_common.I18n.SwitchChronological)
-                       |> Pool_common.Utils.text_to_string language
-                       |> txt
-                     ]
-                 ]
-               (* TODO [aerben] allow tables to be sorted generally? *)
-             ; Table.horizontal_table `Striped language ~thead rows
-             ]
-         ])
-      @ [ create csrf language experiment_id locations ~flash_fetcher ])
+      ::
+      (if CCList.is_empty rows
+      then
+        [ p
+            [ txt
+                Pool_common.(
+                  Utils.text_to_string
+                    language
+                    (I18n.EmtpyList Message.Field.Sessions))
+            ]
+        ]
+      else
+        [ p
+            [ Pool_common.I18n.SessionIndent
+              |> Pool_common.Utils.text_to_string language
+              |> txt
+            ]
+        ; a
+            ~a:
+              [ a_href
+                  (Format.asprintf
+                     "/admin/experiments/%s/sessions%s"
+                     (Pool_common.Id.value experiment_id)
+                     (if chronological then "" else "?chronological=true")
+                  |> Sihl.Web.externalize_path)
+              ]
+            [ p
+                [ (if chronological
+                  then Pool_common.I18n.SwitchGrouped
+                  else Pool_common.I18n.SwitchChronological)
+                  |> Pool_common.Utils.text_to_string language
+                  |> txt
+                ]
+            ]
+          (* TODO [aerben] allow tables to be sorted generally? *)
+        ; Table.horizontal_table `Striped language ~thead rows
+        ]))
   in
   Page_admin_experiments.experiment_layout
     language
@@ -250,7 +471,27 @@ let index
     html
 ;;
 
-(* TODO [aerben] in parent session, link to follow up session *)
+let new_form
+    Pool_context.{ language; csrf; _ }
+    experiment
+    locations
+    sys_languages
+    flash_fetcher
+  =
+  Page_admin_experiments.experiment_layout
+    language
+    (Page_admin_experiments.Control
+       Pool_common.Message.(Create (Some Field.Session)))
+    experiment
+    (session_form
+       csrf
+       language
+       experiment
+       locations
+       sys_languages
+       ~flash_fetcher)
+;;
+
 let detail
     (Pool_context.{ language; _ } as context)
     experiment
@@ -316,34 +557,51 @@ let detail
         @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent)
       ; p
           ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-          ([ a
-               ~a:
-                 [ a_href
-                     (Format.asprintf
-                        "/admin/experiments/%s/sessions/%s/edit"
-                        (Pool_common.Id.value experiment.Experiment.id)
-                        (Pool_common.Id.value session.id)
-                     |> Sihl.Web.externalize_path)
+          ((a
+              ~a:
+                [ a_href
+                    (Format.asprintf
+                       "/admin/experiments/%s/sessions/%s/edit"
+                       (Pool_common.Id.value experiment.Experiment.id)
+                       (Pool_common.Id.value session.id)
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ Message.(Edit (Some Field.Session))
+                |> Pool_common.Utils.control_to_string language
+                |> txt
+              ]
+           ::
+           (* TODO [aerben] should follow up be created on follow up? *)
+           (if CCOption.is_none session.follow_up_to
+           then
+             [ a
+                 ~a:
+                   [ a_href
+                       (Format.asprintf
+                          "/admin/experiments/%s/sessions/%s/follow-up"
+                          (Pool_common.Id.value experiment.Experiment.id)
+                          (Pool_common.Id.value session.id)
+                       |> Sihl.Web.externalize_path)
+                   ]
+                 [ Message.(Create (Some Field.FollowUpSession))
+                   |> Pool_common.Utils.control_to_string language
+                   |> txt
                  ]
-               [ Message.(Edit (Some Field.Session))
-                 |> Pool_common.Utils.control_to_string language
-                 |> txt
-               ]
-           ]
+             ]
+           else []))
           @
-          (* TODO [aerben] should follow up be created on follow up? *)
-          if CCOption.is_none session.follow_up_to
+          if session.assignment_count |> AssignmentCount.value > 0
           then
             [ a
                 ~a:
                   [ a_href
                       (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/follow-up"
+                         "/admin/experiments/%s/sessions/%s/reschedule"
                          (Pool_common.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ]
-                [ Message.(Create (Some Field.FollowUpSession))
+                [ Message.(Reschedule (Some Field.Session))
                   |> Pool_common.Utils.control_to_string language
                   |> txt
                 ]
@@ -376,123 +634,69 @@ let detail
     html
 ;;
 
-let edit_helper
-    (title, subtitle, path, button)
+let edit
     Pool_context.{ language; csrf; _ }
-    experiment_id
+    experiment
     (session : Session.t)
     locations
+    sys_languages
     flash_fetcher
   =
-  let open Session in
-  let html =
-    div
-      [ p [ txt subtitle ]
-      ; (let amount amt = amt |> ParticipantAmount.value |> string_of_int in
-         form
-           ~a:
-             [ a_class [ "stack" ]
-             ; a_method `Post
-             ; a_action (Sihl.Web.externalize_path path)
-             ]
-           [ Component.csrf_element csrf ()
-             (* TODO [aerben] use better formatted date *)
-           ; flatpicker_element
-               language
-               `Datetime_local
-               Pool_common.Message.Field.Start
-               ~required:true
-               ~value:(session.start |> Start.value |> Ptime.to_rfc3339)
-               ~flash_fetcher
-               ~warn_past:true
-           ; flatpicker_element
-               language
-               `Time
-               Pool_common.Message.Field.Duration
-               ~help:Pool_common.I18n.TimeSpanPickerHint
-               ~value:
-                 (session.duration
-                 |> Duration.value
-                 |> Pool_common.Utils.Time.timespan_spanpicker)
-               ~required:true
-               ~flash_fetcher
-           ; textarea_element
-               language
-               Pool_common.Message.Field.Description
-               ~value:
-                 (CCOption.map_or
-                    ~default:""
-                    Description.value
-                    session.description)
-               ~flash_fetcher
-           ; location_select locations (Some session.location) ()
-           ; input_element
-               language
-               `Number
-               Pool_common.Message.Field.MaxParticipants
-               ~required:true
-               ~value:(amount session.max_participants)
-               ~flash_fetcher
-           ; input_element
-               language
-               `Number
-               Pool_common.Message.Field.MinParticipants
-               ~required:true
-               ~value:(amount session.min_participants)
-               ~flash_fetcher
-           ; input_element
-               language
-               `Number
-               ~help:Pool_common.I18n.Overbook
-               Pool_common.Message.Field.Overbook
-               ~required:true
-               ~value:(amount session.overbook)
-               ~flash_fetcher
-           ; submit_element language button ~submit_type:`Success ()
-           ])
-      ]
-  in
-  Page_admin_experiments.experiment_layout
-    language
-    (Page_admin_experiments.Control title)
-    experiment_id
-    html
-;;
-
-let edit (Pool_context.{ language; _ } as ctx) experiment (session : Session.t) =
-  edit_helper
-    ( Pool_common.Message.(Edit (Some Field.Session))
-    , session |> session_title |> Pool_common.Utils.text_to_string language
-    , Format.asprintf
-        "/admin/experiments/%s/sessions/%s"
-        (Pool_common.Id.value experiment.Experiment.id)
-        (Pool_common.Id.value session.Session.id)
-    , Message.(Update (Some Field.Session)) )
-    ctx
-    experiment
-    session
+  div
+    [ p
+        [ txt
+            (session
+            |> session_title
+            |> Pool_common.Utils.text_to_string language)
+        ]
+    ; session_form
+        csrf
+        language
+        experiment
+        ~session
+        locations
+        sys_languages
+        ~flash_fetcher
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Edit (Some Field.Session)))
+       experiment
 ;;
 
 let follow_up
-    (Pool_context.{ language; _ } as ctx)
+    Pool_context.{ language; csrf; _ }
     experiment
-    (session : Session.t)
+    (parent_session : Session.t)
+    locations
+    sys_languages
+    flash_fetcher
   =
-  edit_helper
-    ( Message.(Create (Some Field.FollowUpSession))
-    , Pool_common.Utils.(
-        session
-        |> session_title
-        |> text_to_string language
-        |> CCFormat.asprintf
-             "%s %s"
-             (Pool_common.I18n.FollowUpSessionFor |> text_to_string language))
-    , Format.asprintf
-        "/admin/experiments/%s/sessions/%s/follow-up"
-        (Pool_common.Id.value experiment.Experiment.id)
-        (Pool_common.Id.value session.Session.id)
-    , Message.(Create (Some Field.Session)) )
-    ctx
-    experiment
-    session
+  div
+    [ p
+        [ txt
+            Pool_common.Utils.(
+              parent_session
+              |> session_title
+              |> text_to_string language
+              |> CCFormat.asprintf
+                   "%s %s"
+                   (Pool_common.I18n.FollowUpSessionFor
+                   |> text_to_string language))
+        ]
+    ; session_form
+        csrf
+        language
+        experiment
+        ~follow_up_to:parent_session
+        locations
+        sys_languages
+        ~flash_fetcher
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Create (Some Field.FollowUpSession)))
+       experiment
 ;;

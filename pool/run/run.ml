@@ -8,6 +8,10 @@ let commands =
   ; Seed.tenant_data_clean
   ; Tenant_pool.create_tenant_pool
   ; Contact.sign_up
+  ; SessionReminder.all_tenants_session_reminder
+  ; SessionReminder.tenant_specific_session_reminder
+  ; Contact.all_profile_update_triggers
+  ; Contact.tenant_specific_profile_update_trigger
   ]
 ;;
 
@@ -29,6 +33,8 @@ let () =
   Sihl.App.(
     empty
     |> with_services services
-    |> before_start (fun () -> Printexc.record_backtrace true |> Lwt.return)
+    |> before_start (fun () ->
+           let () = Middleware.Error.before_start () in
+           Printexc.record_backtrace true |> Lwt.return)
     |> run ~commands)
 ;;

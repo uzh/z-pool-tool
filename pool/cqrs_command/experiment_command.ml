@@ -11,6 +11,12 @@ let default_schema command =
         ; Description.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
+        ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
+        ; Conformist.optional @@ InvitationTemplate.Subject.schema ()
+        ; Conformist.optional @@ InvitationTemplate.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ]
       command)
 ;;
@@ -21,12 +27,24 @@ let default_command
     description
     direct_registration_disabled
     registration_disabled
+    experiment_type
+    invitation_subject
+    invitation_text
+    session_reminder_lead_time
+    session_reminder_subject
+    session_reminder_text
   =
   { title
   ; public_title
   ; description
   ; direct_registration_disabled
   ; registration_disabled
+  ; experiment_type
+  ; invitation_subject
+  ; invitation_text
+  ; session_reminder_lead_time
+  ; session_reminder_subject
+  ; session_reminder_text
   }
 ;;
 
@@ -43,9 +61,23 @@ module Create : sig
 end = struct
   type t = create
 
-  let handle command =
+  let handle (command : t) =
     let open CCResult in
-    Ok [ Experiment.Created command |> Pool_event.experiment ]
+    let* experiment =
+      Experiment.create
+        command.title
+        command.public_title
+        command.description
+        command.direct_registration_disabled
+        command.registration_disabled
+        command.experiment_type
+        command.invitation_subject
+        command.invitation_text
+        command.session_reminder_lead_time
+        command.session_reminder_subject
+        command.session_reminder_text
+    in
+    Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   ;;
 
   let decode data =
@@ -74,9 +106,24 @@ module Update : sig
 end = struct
   type t = create
 
-  let handle experiment command =
+  let handle experiment (command : t) =
     let open CCResult in
-    Ok [ Experiment.Updated (experiment, command) |> Pool_event.experiment ]
+    let* experiment =
+      Experiment.create
+        ~id:experiment.Experiment.id
+        command.title
+        command.public_title
+        command.description
+        command.direct_registration_disabled
+        command.registration_disabled
+        command.experiment_type
+        command.invitation_subject
+        command.invitation_text
+        command.session_reminder_lead_time
+        command.session_reminder_subject
+        command.session_reminder_text
+    in
+    Ok [ Experiment.Updated experiment |> Pool_event.experiment ]
   ;;
 
   let decode data =

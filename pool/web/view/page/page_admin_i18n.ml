@@ -14,6 +14,16 @@ let list translation_list Pool_context.{ language; csrf; _ } =
       `Text
       Pool_common.Message.Field.Translation
   in
+  let textarea_element translation =
+    textarea_element
+      ~orientation:`Horizontal
+      ~classnames:[ "grow" ]
+      ~label_field:(Pool_common.Language.field_of_t (I18n.language translation))
+      ~required:true
+      ~value:(translation |> I18n.content |> I18n.Content.value)
+      language
+      Pool_common.Message.Field.Translation
+  in
   let build_translations_row translation_list =
     CCList.map
       (fun (key, translations) ->
@@ -26,6 +36,11 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                      "/admin/i18n/%s"
                      (translation |> I18n.id |> Pool_common.Id.value))
               in
+              let text_input =
+                match I18n.Key.is_textarea key with
+                | true -> textarea_element translation
+                | false -> input_element translation
+              in
               form
                 ~a:
                   [ a_action action
@@ -33,7 +48,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   ; a_class [ "flexrow"; "flex-gap" ]
                   ]
                 [ Component.csrf_element csrf ()
-                ; input_element translation
+                ; text_input
                 ; submit_icon `SaveOutline
                 ])
             translations

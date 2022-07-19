@@ -1,46 +1,96 @@
+module Reminder = Pool_common.Reminder
+
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
 let experiments pool =
+  let open CCFun in
+  let open CCOption.Infix in
   let data =
     [ ( "The Twenty pound auction"
       , "the_twenty_pound_auction"
-      , "It was great fun." )
+      , "It was great fun."
+      , None
+      , None
+      , Some (60 * 60)
+      , None
+      , None )
     ; ( "The Wallet Game"
       , "the_wallet_game"
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
-         value is the sum of the signal." )
+         value is the sum of the signal."
+      , Some "Invitation subject"
+      , Some "Invitation text"
+      , None
+      , None
+      , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
       , "the_ultimatum_and_the_dictator_bargaining_games"
       , "The experiment illustrates the problem of public good provision as \
          discussed in most microeconomics lectures or lectures on public \
-         economics." )
+         economics."
+      , None
+      , None
+      , Some (60 * 60)
+      , Some "Subject"
+      , Some "Don't forget your session." )
     ]
   in
   let events =
     CCList.map
-      (fun (title, public_title, description) ->
+      (fun ( title
+           , public_title
+           , description
+           , invitation_subject
+           , invitation_text
+           , session_reminder_lead_time
+           , session_reminder_subject
+           , session_reminder_text ) ->
         let experiment =
-          let title = Experiment.Title.create title |> get_or_failwith in
+          let open Experiment in
+          let title = Title.create title |> get_or_failwith in
           let public_title =
-            Experiment.PublicTitle.create public_title |> get_or_failwith
+            PublicTitle.create public_title |> get_or_failwith
           in
-          let description =
-            Experiment.Description.create description |> get_or_failwith
+          let description = Description.create description |> get_or_failwith in
+          let invitation_subject =
+            invitation_subject
+            >|= InvitationTemplate.Subject.create %> get_or_failwith
+          in
+          let invitation_text =
+            invitation_text
+            >|= InvitationTemplate.Text.create %> get_or_failwith
+          in
+          let session_reminder_lead_time =
+            session_reminder_lead_time
+            >|= Ptime.Span.of_int_s
+                %> Reminder.LeadTime.create
+                %> get_or_failwith
+          in
+          let session_reminder_text =
+            session_reminder_text >|= Reminder.Text.create %> get_or_failwith
+          in
+          let session_reminder_subject =
+            session_reminder_subject
+            >|= Reminder.Subject.create %> get_or_failwith
           in
           let direct_registration_disabled =
-            Experiment.DirectRegistrationDisabled.create false
+            DirectRegistrationDisabled.create false
           in
-          let registration_disabled =
-            Experiment.RegistrationDisabled.create false
-          in
-          Experiment.
-            { title
-            ; public_title
-            ; description
-            ; direct_registration_disabled
-            ; registration_disabled
-            }
+          let registration_disabled = RegistrationDisabled.create false in
+          create
+            title
+            public_title
+            description
+            direct_registration_disabled
+            registration_disabled
+            (Some Pool_common.ExperimentType.Lab)
+            invitation_subject
+            invitation_text
+            session_reminder_lead_time
+            session_reminder_subject
+            session_reminder_text
+          |> get_or_failwith
         in
         Experiment.Created experiment)
       data

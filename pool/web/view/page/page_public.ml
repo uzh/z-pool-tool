@@ -49,9 +49,13 @@ let login Pool_context.{ language; query_language; csrf; _ } =
             ; submit_element language Message.Login ()
             ]
         ; p
+            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
             [ a
                 ~a:[ a_href (externalize "/request-reset-password") ]
                 (txt_to_string Pool_common.I18n.ResetPasswordLink)
+            ; a
+                ~a:[ a_href (externalize "/signup") ]
+                (txt_to_string Pool_common.I18n.SignUpTitle)
             ]
         ]
     ]

@@ -125,32 +125,6 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
-  let insert_request =
-    let open Caqti_request.Infix in
-    {sql|
-      INSERT INTO pool_invitations (
-        uuid,
-        experiment_id,
-        contact_id,
-        resent_at,
-        created_at,
-        updated_at
-      ) VALUES (
-        UNHEX(REPLACE($1, '-', '')),
-        (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($2, '-', ''))),
-        (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE($3, '-', ''))),
-        $4,
-        $5,
-        $6
-      )
-    |sql}
-    |> RepoEntity.t ->. Caqti_type.unit
-  ;;
-
-  let insert pool =
-    Utils.Database.exec (Pool_database.Label.value pool) insert_request
-  ;;
-
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -277,9 +251,45 @@ let find_multiple_by_experiment_and_contacts =
   Sql.find_multiple_by_experiment_and_contacts
 ;;
 
-let insert pool session_id model =
-  model |> of_entity session_id |> Sql.insert pool
-;;
-
 let update = Sql.update
 let contact_was_invited_to_experiment = Sql.contact_was_invited_to_experiment
+
+let bulk_insert pool contacts experiment_id =
+  let insert_sql =
+    {sql|
+      INSERT INTO pool_invitations (
+        uuid,
+        experiment_id,
+        contact_id,
+        resent_at,
+        created_at,
+        updated_at
+      ) VALUES
+    |sql}
+  in
+  let values, value_insert =
+    CCList.fold_left
+      (fun (dyn, sql) contact ->
+        let sql_line =
+          {sql| (
+            UNHEX(REPLACE(?, '-', '')),
+            (SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))),
+            (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))),
+            ?,
+            ?,
+            ?
+          ) |sql}
+        in
+        let entity = contact |> Entity.create |> of_entity experiment_id in
+        dyn |> Dynparam.add RepoEntity.t entity, sql @ [ sql_line ])
+      (Dynparam.empty, [])
+      contacts
+  in
+  let (Dynparam.Pack (pt, pv)) = values in
+  let prepare_request =
+    let open Caqti_request.Infix in
+    Format.asprintf "%s %s" insert_sql (CCString.concat ",\n" value_insert)
+    |> (pt ->. Caqti_type.unit) ~oneshot:true
+  in
+  Utils.Database.exec (pool |> Pool_database.Label.value) prepare_request pv
+;;

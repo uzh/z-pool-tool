@@ -98,8 +98,16 @@ let find_inactive_user_warning pool =
   Sql.find pool RepoEntity.t Entity.InactiveUserWarning
 ;;
 
+let find_trigger_profile_update_after pool =
+  Sql.find pool RepoEntity.t Entity.TriggerProfileUpdateAfter
+;;
+
 let find_terms_and_conditions pool =
   Sql.find pool RepoEntity.t Entity.TermsAndConditions
+;;
+
+let find_default_reminder_lead_time pool =
+  Sql.find pool RepoEntity.t Entity.ReminderLeadTime
 ;;
 
 let update pool value = Sql.update pool Entity.Write.{ value }

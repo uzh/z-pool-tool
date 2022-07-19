@@ -36,21 +36,13 @@ type create =
   ; contact : Contact.t
   }
 
-type resent =
-  { invitation : t
-  ; experiment : Experiment.t
-  }
-
 val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
-type event_type =
-  | Created of create
-  | Resent of resent
-[@@deriving eq, show]
-
-type event = event_type * Pool_common.Language.t
+type event =
+  | Created of Contact.t list * Experiment.t
+  | Resent of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

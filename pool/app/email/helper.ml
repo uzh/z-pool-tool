@@ -2,6 +2,12 @@ open Entity
 module User = Pool_user
 module Database = Pool_database
 
+let string_to_html =
+  let open CCFun in
+  CCString.split ~by:"\n\n"
+  %> CCList.map (Utils.Html.handle_line_breaks Tyxml.Html.p)
+;;
+
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
@@ -39,9 +45,37 @@ let prepare_email pool language label subject email params =
     Sihl_email.Template.email_of_template ~template mail params
 ;;
 
+let prepare_boilerplate_email template email params =
+  match Sihl.Configuration.read_string "SMTP_SENDER" with
+  | None -> failwith "SMTP_SENDER not found in configuration"
+  | Some sender ->
+    let CustomTemplate.{ subject; content } = template in
+    let subject = subject |> CustomTemplate.Subject.value in
+    let text = content |> CustomTemplate.Content.value in
+    let html =
+      Default_utils.(
+        combine_html
+          Pool_common.Language.En
+          (Some subject)
+          (text |> string_to_html)
+        |> html_to_string)
+    in
+    let mail =
+      Sihl_email.
+        { sender
+        ; recipient = email
+        ; subject
+        ; text
+        ; html = Some html
+        ; cc = []
+        ; bcc = []
+        }
+    in
+    Sihl_email.Template.email_of_template mail params
+;;
+
 module PasswordReset = struct
-  let create pool language ~user =
-    let email = user.Sihl_user.email in
+  let create pool language ({ Sihl_user.email; _ } as user) =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
@@ -64,19 +98,13 @@ module PasswordReset = struct
         |> Sihl.Web.externalize_path
         |> create_public_url url
       in
-      let given_name =
-        user.Sihl_user.given_name |> CCOption.value ~default:""
-      in
-      let name = user.Sihl_user.name |> CCOption.value ~default:"" in
       prepare_email
         pool
         language
         TemplateLabel.PasswordReset
         subject
         email
-        [ "resetUrl", reset_url
-        ; "name", Format.asprintf "%s %s" given_name name
-        ]
+        [ "resetUrl", reset_url; "name", user |> User.user_fullname ]
       |> Lwt_result.ok
   ;;
 end

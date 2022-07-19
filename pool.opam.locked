@@ -205,7 +205,7 @@ pin-depends: [
   ["sihl-queue.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
   ["sihl-email.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
   ["sihl-cache.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
-  ["canary.0.0.1" "git+https://github.com/chrismamo1/canary.git"]
+  ["canary.0.0.1" "git+https://github.com/uzh/canary.git"]
   ["sihl.3.0.3" "git+https://github.com/oxidizing/sihl.git"]
   ["conformist.0.8.1" "git+https://github.com/oxidizing/conformist.git"]
   [

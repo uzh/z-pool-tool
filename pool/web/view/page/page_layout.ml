@@ -144,6 +144,8 @@ module Tenant = struct
         ; "/admin/locations", Locations
         ; "/admin/settings", Settings
         ; "/admin/i18n", I18n
+        ; "/admin/contacts", Contacts
+        ; "/admin/admins", Admins
         ])
       @ [ "/logout", Logout ]
       |> CCList.map (fun item ->
