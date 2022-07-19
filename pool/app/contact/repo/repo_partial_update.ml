@@ -9,7 +9,7 @@ let update_sihl_user pool ?firstname ?lastname contact =
 ;;
 
 let update_sql column_fragment =
-  let base = {sql| UPDATE pool_contacts SET |sql} in
+  let base = {sql| UPDATE pool_contacts SET profile_updated_at = $2, |sql} in
   let where_fragment =
     {sql| WHERE user_uuid = UNHEX(REPLACE($1, '-', '')) |sql}
   in
@@ -19,7 +19,11 @@ let update_sql column_fragment =
 let partial_update pool (field : Entity.Field.t) contact =
   let open Entity in
   let base_caqti = Pool_common.Repo.Id.t in
-  let dyn = Dynparam.empty |> Dynparam.add base_caqti (contact |> id) in
+  let dyn =
+    Dynparam.empty
+    |> Dynparam.add base_caqti (contact |> id)
+    |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ())
+  in
   let%lwt dyn, sql =
     let open Field in
     let htmx_field, version = field in
@@ -37,7 +41,7 @@ let partial_update pool (field : Entity.Field.t) contact =
                Pool_common.Repo.Version.t
                Pool_common.Version.(version |> increment |> value)
         , {sql|
-          firstname_version = $2
+          firstname_version = $3
         |sql} )
     | Lastname value ->
       let%lwt (_ : Entity.Sihl_user.t) =
@@ -52,7 +56,7 @@ let partial_update pool (field : Entity.Field.t) contact =
                Pool_common.Repo.Version.t
                Pool_common.Version.(version |> increment |> value)
         , {sql|
-            lastname_version = $2
+            lastname_version = $3
           |sql} )
     | Paused value ->
       Lwt.return
@@ -62,8 +66,8 @@ let partial_update pool (field : Entity.Field.t) contact =
                Pool_common.Repo.Version.t
                Pool_common.Version.(version |> increment |> value)
         , {sql|
-              paused = $2,
-              paused_version = $3
+              paused = $3,
+              paused_version = $4
             |sql}
         )
     | Language value ->
@@ -74,8 +78,8 @@ let partial_update pool (field : Entity.Field.t) contact =
                Pool_common.Repo.Version.t
                Pool_common.Version.(version |> increment |> value)
         , {sql|
-                language = $2,
-                language_version = $3
+                language = $3,
+                language_version = $4
               |sql}
         )
     | Custom _ -> failwith "Todo"
