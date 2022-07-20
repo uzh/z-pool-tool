@@ -73,10 +73,8 @@ let distribution_form_field language (field, current_order) =
         [ button
             ~a:
               [ a_class [ "error" ]
-              ; a_user_data "hx-post" ""
-              ; a_user_data "hx-trigger" "click"
-              ; a_user_data "hx-target" "closest .distribution"
-              ; a_user_data "hx-swap" "delete"
+              ; a_onclick "removeDistribution(event)"
+              ; a_button_type `Button
               ]
             [ txt
                 Pool_common.(
@@ -254,6 +252,14 @@ let form
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
     let open Pool_common.Message in
+    let remove_fnc =
+      {js|
+        function removeDistribution(e) {
+          e.preventDefault();
+          const parent = e.currentTarget.closest('.distribution').remove();
+        }
+    |js}
+    in
     let select =
       CCList.map
         (fun field ->
@@ -330,6 +336,7 @@ let form
                  (fun distribution ->
                    CCList.map (distribution_form_field language) distribution)
                  distribution)
+          ; script (Unsafe.data remove_fnc)
           ; script (Unsafe.data Page_scripts.sortable_js)
           ]
       ]
