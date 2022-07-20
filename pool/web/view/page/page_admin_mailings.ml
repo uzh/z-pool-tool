@@ -44,7 +44,10 @@ let distribution_form_field language (field, current_order) =
                     (order |> show))
              ]
             @ selected)
-          (order |> show |> txt))
+          (order
+          |> CCFun.flip to_human language
+          |> CCString.capitalize_ascii
+          |> txt))
       all
     |> fun options ->
     div
