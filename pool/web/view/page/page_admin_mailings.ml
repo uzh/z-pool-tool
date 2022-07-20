@@ -55,7 +55,11 @@ let distribution_form_field language (field, current_order) =
       ]
   in
   div
-    ~a:[ a_class [ "flexrow"; "flex-gap"; "distribution" ] ]
+    ~a:
+      [ a_class [ "flexrow"; "flex-gap"; "distribution" ]
+      ; a_user_data "sortable-item" ""
+      ; a_draggable true
+      ]
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
         [ label
@@ -315,15 +319,19 @@ let form
               ]
           ]
       ; div
-          ~a:
-            [ a_id "distribution-list"
-            ; a_class [ "gap"; "flexcolumn"; "stack" ]
-            ]
-          (CCOption.map_or
-             ~default:[]
-             (fun distribution ->
-               CCList.map (distribution_form_field language) distribution)
-             distribution)
+          [ div
+              ~a:
+                [ a_id "distribution-list"
+                ; a_class [ "gap"; "flexcolumn"; "stack" ]
+                ; a_user_data "sortable" ""
+                ]
+              (CCOption.map_or
+                 ~default:[]
+                 (fun distribution ->
+                   CCList.map (distribution_form_field language) distribution)
+                 distribution)
+          ; script (Unsafe.data Page_scripts.sortable_js)
+          ]
       ]
   in
   let action, submit =

@@ -63,6 +63,19 @@ let create req =
         , experiment_path ~suffix:"mailings/create" experiment_id
         , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* experiment = Experiment.find tenant_db experiment_id in
+       let* distribution =
+         Sihl.Web.Request.urlencoded_list
+           Pool_common.Message.Field.(array_key Distribution)
+           req
+         ||> Mailing.Distribution.of_urlencoded_list
+       in
+       let urlencoded =
+         CCList.Assoc.set
+           ~eq:( = )
+           Pool_common.Message.Field.(show Distribution)
+           [ distribution ]
+           urlencoded
+       in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Create in
