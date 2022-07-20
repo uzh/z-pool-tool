@@ -138,6 +138,19 @@ let update req =
     Lwt_result.map_error (fun err ->
         err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* mailing = Mailing.find tenant_db id in
+       let* distribution =
+         Sihl.Web.Request.urlencoded_list
+           Pool_common.Message.Field.(array_key Distribution)
+           req
+         ||> Mailing.Distribution.of_urlencoded_list
+       in
+       let urlencoded =
+         CCList.Assoc.set
+           ~eq:( = )
+           Pool_common.Message.Field.(show Distribution)
+           [ distribution ]
+           urlencoded
+       in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Update in
@@ -192,6 +205,51 @@ let search_info req =
   @@
   match result with
   | Ok mailings -> mailings |> HttpUtils.html_to_plain_text_response
+  | Error _ -> Rock.Response.make ()
+;;
+
+let add_condition req =
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* { Pool_context.language; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let field =
+      let open CCResult in
+      let error = Pool_common.Message.(Invalid Field.DistributionField) in
+      urlencoded
+      |> CCList.assoc_opt
+           ~eq:CCString.equal
+           Pool_common.Message.Field.(show DistributionField)
+      |> CCFun.flip CCOption.bind CCList.head_opt
+      |> CCFun.flip CCOption.bind (fun str ->
+             try Some (Pool_common.Message.Field.read str) with
+             | _ -> None)
+      |> CCOption.to_result error
+      >>= (fun field ->
+            if CCList.mem
+                 ~eq:Pool_common.Message.Field.equal
+                 field
+                 Mailing.Distribution.sortable_fields
+            then Ok field
+            else Error error)
+      >|= fun field -> Mailing.Distribution.(field, SortOrder.default)
+    in
+    Lwt.return_ok
+    @@
+    match field with
+    | Ok field -> Page.Admin.Mailing.distribution_form_field language field
+    | Error error ->
+      Tyxml.Html.(
+        div
+          ~a:[ a_class [ "error" ] ]
+          [ txt Pool_common.Utils.(error_to_string language error) ])
+  in
+  Lwt.return
+  @@
+  match result with
+  | Ok html -> html |> HttpUtils.html_to_plain_text_response
   | Error _ -> Rock.Response.make ()
 ;;
 

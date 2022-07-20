@@ -216,6 +216,7 @@ module Admin = struct
           ; post "" create
           ; get "/create" new_form
           ; post "/search-info" search_info
+          ; post "/add-condition" add_condition
           ; choose ~scope:(Mailing |> url_key) specific
           ]
       in

@@ -50,6 +50,11 @@ module Rate = struct
 end
 
 module Distribution = struct
+  let sortable_fields =
+    Pool_common.Message.Field.
+      [ Firstname; Name; NumberOfAssignments; NumberOfInvitations ]
+  ;;
+
   module SortOrder = struct
     let field = Pool_common.Message.Field.SortOrder
     let go m fmt _ = Format.pp_print_string fmt m
@@ -57,7 +62,7 @@ module Distribution = struct
     type t =
       | Ascending [@name "ASC"] [@printer go "ASC"]
       | Descending [@name "DESC"] [@printer go "DESC"]
-    [@@deriving eq, show, yojson]
+    [@@deriving eq, show, yojson, enum]
 
     let to_human m lang =
       let open Pool_common in
@@ -77,6 +82,15 @@ module Distribution = struct
       | _ -> Error Pool_common.Message.(Invalid field)
     ;;
 
+    let all : t list =
+      CCList.range min max
+      |> CCList.map of_enum
+      |> CCList.all_some
+      |> CCOption.get_exn_or
+           "Distribution order: Could not create list of all keys!"
+    ;;
+
+    let default = Ascending
     let label m = m |> show |> Utils.Countries.find
     let schema () = Pool_common.Utils.schema_decoder create show field
   end
@@ -106,6 +120,19 @@ module Distribution = struct
       CCResult.(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
     in
     Pool_common.Utils.schema_decoder decode encode field
+  ;;
+
+  let of_urlencoded_list data =
+    let open CCResult in
+    data
+    |> CCList.map (fun distribution_field ->
+           match CCString.split ~by:"," distribution_field with
+           | [ field; order ] ->
+             Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
+           | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
+    |> CCResult.flatten_l
+    >|= CCString.concat ","
+    >|= Format.asprintf "[%s]"
   ;;
 end
 

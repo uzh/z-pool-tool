@@ -48,6 +48,8 @@ module Rate : sig
 end
 
 module Distribution : sig
+  val sortable_fields : Pool_common.Message.Field.t list
+
   module SortOrder : sig
     type t =
       | Ascending
@@ -60,6 +62,8 @@ module Distribution : sig
     val read : string -> t
     val create : string -> (t, Pool_common.Message.error) result
     val label : t -> string
+    val all : t list
+    val default : t
 
     val schema
       :  unit
@@ -80,6 +84,10 @@ module Distribution : sig
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+
+  val of_urlencoded_list
+    :  string list
+    -> (string, Pool_common.Message.error) result
 end
 
 type t =

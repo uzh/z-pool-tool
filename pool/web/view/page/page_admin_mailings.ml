@@ -25,6 +25,63 @@ let detail_mailing_path ?suffix experiment_id mailing =
   |> CCString.concat "/"
 ;;
 
+let distribution_form_field language (field, current_order) =
+  let sort_select =
+    let open Mailing.Distribution.SortOrder in
+    CCList.map
+      (fun order ->
+        let selected =
+          match equal order current_order with
+          | true -> [ a_selected () ]
+          | false -> []
+        in
+        option
+          ~a:
+            ([ a_value
+                 (Format.asprintf
+                    "%s,%s"
+                    (Pool_common.Message.Field.show field)
+                    (order |> show))
+             ]
+            @ selected)
+          (order |> show |> txt))
+      all
+    |> fun options ->
+    div
+      ~a:[ a_class [ "select" ] ]
+      [ select
+          ~a:[ a_name Pool_common.Message.Field.(array_key Distribution) ]
+          options
+      ]
+  in
+  div
+    ~a:[ a_class [ "flexrow"; "flex-gap"; "distribution" ] ]
+    [ div
+        ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
+        [ label
+            [ Pool_common.(Utils.field_to_string language field)
+              |> CCString.capitalize_ascii
+              |> txt
+            ]
+        ; div ~a:[ a_class [ "form-group" ] ] [ sort_select ]
+        ]
+    ; div
+        [ button
+            ~a:
+              [ a_class [ "error" ]
+              ; a_user_data "hx-post" ""
+              ; a_user_data "hx-trigger" "click"
+              ; a_user_data "hx-target" "closest .distribution"
+              ; a_user_data "hx-swap" "delete"
+              ]
+            [ txt
+                Pool_common.(
+                  Utils.control_to_string language Message.(Delete None))
+            ]
+        ]
+    ]
+;;
+
 module List = struct
   let row
       with_link
@@ -190,6 +247,85 @@ let form
       });
   |js}
   in
+  let distribution_select (distribution : Mailing.Distribution.t option) =
+    let open Mailing.Distribution in
+    let open Pool_common.Message in
+    let select =
+      CCList.map
+        (fun field ->
+          option
+            ~a:[ a_value (field |> Field.show) ]
+            (field
+            |> Pool_common.Utils.field_to_string language
+            |> CCString.capitalize_ascii
+            |> txt))
+        sortable_fields
+      |> fun options ->
+      div
+        ~a:[ a_class [ "form-group" ] ]
+        [ label
+            [ txt
+                (Pool_common.(
+                   Utils.field_to_string
+                     language
+                     Message.Field.DistributionField)
+                |> CCString.capitalize_ascii)
+            ]
+        ; div
+            ~a:[ a_class [ "select" ] ]
+            [ select
+                ~a:
+                  [ a_id "distribution-select"
+                  ; a_name Pool_common.Message.Field.(show DistributionField)
+                  ]
+                options
+            ]
+        ]
+    in
+    div
+      ~a:[ a_class [ "flexcolumn" ] ]
+      [ h3
+          [ txt
+              (Pool_common.(
+                 Utils.field_to_string language Message.Field.Distribution)
+              |> CCString.capitalize_ascii)
+          ]
+      ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
+      ; div
+          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          [ select
+          ; div
+              ~a:[ a_class [ "form-group"; "justify-end" ] ]
+              [ button
+                  ~a:
+                    [ a_class [ "success" ]
+                    ; a_user_data
+                        "hx-post"
+                        (mailings_path
+                           ~suffix:"add-condition"
+                           experiment.Experiment.id)
+                    ; a_user_data "hx-trigger" "click"
+                    ; a_user_data "hx-target" "#distribution-list"
+                    ; a_user_data "hx-swap" "beforeend"
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Utils.control_to_string language Message.(Add None))
+                  ]
+              ]
+          ]
+      ; div
+          ~a:
+            [ a_id "distribution-list"
+            ; a_class [ "gap"; "flexcolumn"; "stack" ]
+            ]
+          (CCOption.map_or
+             ~default:[]
+             (fun distribution ->
+               CCList.map (distribution_form_field language) distribution)
+             distribution)
+      ]
+  in
   let action, submit =
     match mailing with
     | None ->
@@ -273,18 +409,9 @@ let form
                     |> CCInt.to_string)
                   ~additional_attributes:[ a_input_min (`Number 1) ]
               ]
-          ; input_element
-              language
-              `Text
-              Field.Distribution
-              ~flash_fetcher
-              ~help:I18n.Distribution
-              ?value:
-                CCOption.(
-                  mailing
-                  >>= (fun m -> m.Mailing.distribution)
-                  >|= fun m ->
-                  m |> Mailing.Distribution.yojson_of_t |> Yojson.Safe.to_string)
+          ; distribution_select
+              (CCOption.bind mailing (fun (m : Mailing.t) ->
+                   m.Mailing.distribution))
             (* TODO: Add detailed description how distribution element works *)
           ; submit_element language submit ()
           ]
