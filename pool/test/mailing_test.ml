@@ -1,4 +1,5 @@
 module MailingCommand = Cqrs_command.Mailing_command
+module Conformist = Pool_common.Utils.PoolConformist
 module Field = Pool_common.Message.Field
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
@@ -99,6 +100,49 @@ let create () =
     |> decode
     |> get_or_failwith
     |> handle ~id:Data.Mailing.id experiment
+  in
+  let expected =
+    Ok
+      [ Mailing.Created (mailing, experiment.Experiment.id)
+        |> Pool_event.mailing
+      ]
+  in
+  check_result expected events
+;;
+
+let create_with_distribution () =
+  let open Mailing in
+  let open Pool_common.Message in
+  let open CCResult in
+  let open MailingCommand.Create in
+  let mailing = create_mailing () in
+  let distribution =
+    Field.
+      [ NumberOfInvitations, Distribution.SortOrder.Ascending
+      ; NumberOfAssignments, Distribution.SortOrder.Descending
+      ]
+  in
+  let mailing = { mailing with distribution = Some distribution } in
+  let experiment = Test_utils.create_experiment () in
+  let urlencoded () =
+    distribution
+    |> CCList.map (fun (field, sort) ->
+           Format.asprintf
+             "%s,%s"
+             (Field.show field)
+             (Distribution.SortOrder.show sort))
+    |> Distribution.of_urlencoded_list
+    >|= fun distribution ->
+    let show = Field.show in
+    [ show Field.Start, mailing.start_at |> StartAt.value |> Ptime.to_rfc3339
+    ; show Field.End, mailing.end_at |> EndAt.value |> Ptime.to_rfc3339
+    ; show Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+    ; show Field.Distribution, distribution
+    ]
+    |> CCList.map (fun (field, value) -> field, [ value ])
+  in
+  let events =
+    () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
   in
   let expected =
     Ok
