@@ -2,6 +2,7 @@ open Tyxml.Html
 
 let icon icon_type =
   (match icon_type with
+  | `Add -> "add"
   | `CalendarOutline -> "calendar-outline"
   | `Calendar -> "calendar"
   | `CreateOutline -> "create-outline"

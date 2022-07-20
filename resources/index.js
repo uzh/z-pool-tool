@@ -2,6 +2,7 @@ import 'htmx.org'
 import flatpickr from 'flatpickr'
 import { German } from "flatpickr/dist/l10n/de.js"
 import Default from "flatpickr/dist/l10n/default.js"
+import { initSortable } from "./sortable"
 
 import 'flatpickr/dist/themes/light.css'
 import './index.css'
@@ -74,3 +75,4 @@ function initDatepicker() {
 }
 
 initDatepicker();
+initSortable();

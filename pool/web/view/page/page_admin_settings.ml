@@ -37,7 +37,7 @@ let show
     in
     let field_elements =
       div
-        ~a:[ a_user_data "sortable" ""; a_class [ "input-group" ] ]
+        ~a:[ a_user_data "sortable" "" ]
         (CCList.map
            (fun (language, selected) ->
              let attrs =
@@ -300,6 +300,5 @@ let show
         ; terms_and_conditions_html
         ; default_lead_time
         ]
-    ; script (Unsafe.data Page_scripts.sortable_js)
     ]
 ;;

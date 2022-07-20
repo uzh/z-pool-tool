@@ -80,10 +80,7 @@ let distribution_form_field language (field, current_order) =
               ; a_button_type `Button
               ; a_user_data "field" Pool_common.Message.Field.(show field)
               ]
-            [ txt
-                Pool_common.(
-                  Utils.control_to_string language Message.(Delete None))
-            ]
+            [ Component.Icon.icon `Trash ]
         ]
     ]
 ;;
@@ -256,6 +253,12 @@ let form
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
     let open Pool_common.Message in
+    let is_disabled field =
+      CCOption.map_or
+        ~default:false
+        (fun dist -> CCList.mem_assoc ~eq:Field.equal field dist)
+        distribution
+    in
     let remove_fnc =
       {js|
         function removeDistribution(e) {
@@ -300,8 +303,11 @@ let form
       in
       CCList.map
         (fun field ->
+          let is_disabled =
+            if is_disabled field then [ a_disabled () ] else []
+          in
           option
-            ~a:[ a_value (field |> Field.show) ]
+            ~a:([ a_value (field |> Field.show) ] @ is_disabled)
             (field
             |> Pool_common.Utils.field_to_string language
             |> CCString.capitalize_ascii
@@ -339,7 +345,16 @@ let form
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; div
-          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          ~a:
+            [ a_class
+                [ "switcher"
+                ; "flex-gap"
+                ; "border-bottom"
+                ; "inset"
+                ; "u-shape"
+                ; "vertical"
+                ]
+            ]
           [ select
           ; div
               ~a:[ a_class [ "form-group"; "justify-end" ] ]
@@ -355,17 +370,14 @@ let form
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
                     ]
-                  [ txt
-                      Pool_common.(
-                        Utils.control_to_string language Message.(Add None))
-                  ]
+                  [ Component.Icon.icon `Add ]
               ]
           ]
       ; div
           [ div
               ~a:
                 [ a_id "distribution-list"
-                ; a_class [ "gap"; "flexcolumn"; "stack" ]
+                ; a_class [ "gap"; "flexcolumn" ]
                 ; a_user_data "sortable" ""
                 ]
               (CCOption.map_or
@@ -374,7 +386,6 @@ let form
                    CCList.map (distribution_form_field language) distribution)
                  distribution)
           ; script (Unsafe.data remove_fnc)
-          ; script (Unsafe.data Page_scripts.sortable_js)
           ]
       ]
   in
