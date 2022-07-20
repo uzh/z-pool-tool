@@ -78,6 +78,7 @@ let distribution_form_field language (field, current_order) =
               [ a_class [ "error" ]
               ; a_onclick "removeDistribution(event)"
               ; a_button_type `Button
+              ; a_user_data "field" Pool_common.Message.Field.(show field)
               ]
             [ txt
                 Pool_common.(
@@ -259,11 +260,44 @@ let form
       {js|
         function removeDistribution(e) {
           e.preventDefault();
-          const parent = e.currentTarget.closest('.distribution').remove();
+          var field = e.currentTarget.dataset.field;
+          var select = document.getElementById('distribution-select');
+          var options = Array.from(select.getElementsByTagName('option'));
+          options.forEach(option => {
+            if (option.value === field) {
+                option.disabled = false;
+            }
+          })
+          e.currentTarget.closest('.distribution').remove();
         }
+
+      document.querySelector('#distribution-list').addEventListener('htmx:beforeSwap', (e) => {
+        var param = e.detail.requestConfig.parameters.distribution_field;
+        var select = document.getElementById('distribution-select');
+        var options = Array.from(select.getElementsByTagName('option'));
+        var defaultOption = options.find((elm) => !elm.value);
+        if (param) {
+          options.forEach(option => {
+            if (option.value === param) {
+              option.disabled = true;
+            }
+            option.selected = false;
+            })
+          defaultOption.selected = true;
+        } else {
+          e.detail.shouldSwap = false
+        }
+      })
     |js}
     in
     let select =
+      let default_option =
+        option
+          ~a:[ a_value ""; a_disabled (); a_selected () ]
+          (Pool_common.(Utils.control_to_string language Message.PleaseSelect)
+          |> CCString.capitalize_ascii
+          |> txt)
+      in
       CCList.map
         (fun field ->
           option
@@ -291,7 +325,7 @@ let form
                   [ a_id "distribution-select"
                   ; a_name Pool_common.Message.Field.(show DistributionField)
                   ]
-                options
+                (default_option :: options)
             ]
         ]
     in
