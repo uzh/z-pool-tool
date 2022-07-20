@@ -51,8 +51,7 @@ end
 
 module Distribution = struct
   let sortable_fields =
-    Pool_common.Message.Field.
-      [ Firstname; Name; NumberOfAssignments; NumberOfInvitations ]
+    Pool_common.Message.Field.[ NumberOfAssignments; NumberOfInvitations ]
   ;;
 
   module SortOrder = struct
