@@ -178,7 +178,8 @@ let rec error_to_string = function
       "Die folgenden Kontakte wurden bereits zu diesem Experiment eingeladen: \
        %s"
       (CCString.concat ", " names)
-  | Authorization _message -> "TODO"
+  | Authorization message ->
+    field_message "Autorisierung nicht möglich: " message ""
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->
