@@ -27,37 +27,40 @@ var originClass = "origin"
 
 function slist(target) {
     target.classList.add("slist");
-    var items = target.children, dragged = null, hovered = null;
+    var items = target.children, dragged = null;
     var currentLength = items.length;
 
     function addListener(i) {
         i.draggable = true;
+
         i.addEventListener("dragstart", function (e) {
             dragged = this;
             for (let it of items) {
                 it.classList.add(it != dragged ? hintClass : originClass);
             }
         });
+
         i.addEventListener("dragenter", function (e) {
             if (this != dragged) {
-                hovered = this;
                 for (let i of items) {
                     i.classList.remove(activeClass)
                 }
                 this.classList.add(activeClass);
             }
         });
+
         i.addEventListener("dragend", function () {
             for (let it of items) {
                 it.classList.remove(hintClass, originClass, activeClass);
             }
         });
+
         i.addEventListener("dragover", function (e) {
             e.preventDefault();
         });
+
         i.addEventListener("drop", function (e) {
             e.preventDefault();
-            hovered = null;
             if (this != dragged) {
                 let draggedpos = 0, droppedpos = 0;
                 for (let it = 0; it < items.length; it++) {

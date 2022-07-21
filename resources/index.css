@@ -6,8 +6,15 @@
     display: none;
 }
 
+[data-sortable-item] {
+    padding: 0.7rem;
+    cursor: move;
+    cursor: grab;
+}
+
 [data-sortable-item].origin {
     background-color: #fafafa;
+    cursor: grabbing;
 }
 
 [data-sortable-item].active {
@@ -17,11 +24,6 @@
 [data-sortable] {
     border: 1px solid #b5b5b5;
     border-radius: 4px;
-}
-
-[data-sortable-item] {
-    padding: 0.7rem;
-    cursor: grab;
 }
 
 [data-sortable-item] *:not(button) {
