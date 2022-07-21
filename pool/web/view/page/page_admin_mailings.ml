@@ -259,7 +259,7 @@ let form
         (fun dist -> CCList.mem_assoc ~eq:Field.equal field dist)
         distribution
     in
-    let remove_fnc =
+    let distribution_fncs =
       {js|
         function removeDistribution(e) {
           e.preventDefault();
@@ -385,7 +385,7 @@ let form
                  (fun distribution ->
                    CCList.map (distribution_form_field language) distribution)
                  distribution)
-          ; script (Unsafe.data remove_fnc)
+          ; script (Unsafe.data distribution_fncs)
           ]
       ]
   in
