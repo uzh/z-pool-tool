@@ -106,8 +106,7 @@ let add_public_visibility_and_uninvited_signup_flags =
     ~label:"add experiment_type columns"
     {sql|
      ALTER TABLE pool_experiments
-      ADD COLUMN allow_uninvited_signup boolean NOT NULL DEFAULT 0 AFTER registration_disabled,
-      ADD COLUMN publicly_visible boolean NOT NULL DEFAULT 0 AFTER allow_uninvited_signup
+      ADD COLUMN allow_uninvited_signup boolean NOT NULL DEFAULT 0 AFTER registration_disabled
     |sql}
 ;;
 

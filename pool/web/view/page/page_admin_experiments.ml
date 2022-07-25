@@ -165,10 +165,6 @@ let experiment_form
         ~help:Pool_common.I18n.AllowUninvitedSignup
         Pool_common.Message.Field.AllowUninvitedSignup
         allow_uninvited_signup_value
-    ; checkbox_element
-        ~help:Pool_common.I18n.PubliclyVisible
-        Pool_common.Message.Field.PubliclyVisible
-        publicly_visible_value
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3
@@ -372,7 +368,6 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
           , registration_disabled_value |> boolean_value )
         ; ( Field.AllowUninvitedSignup
           , allow_uninvited_signup_value |> boolean_value )
-        ; Field.PubliclyVisible, publicly_visible_value |> boolean_value
         ]
       |> vertical_table
     in

@@ -3,11 +3,7 @@ module Common = Pool_common
 
 let experiment_boolean_fields =
   Pool_common.Message.Field.(
-    [ DirectRegistrationDisabled
-    ; RegistrationDisabled
-    ; AllowUninvitedSignup
-    ; PubliclyVisible
-    ]
+    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
     |> CCList.map show)
 ;;
 

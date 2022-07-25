@@ -78,7 +78,6 @@ let experiments pool =
             DirectRegistrationDisabled.create false
           in
           let allow_uninvited_signup = AllowUninvitedSignup.create false in
-          let publicly_visible = PubliclyVisible.create false in
           let registration_disabled = RegistrationDisabled.create false in
           create
             title
@@ -87,7 +86,6 @@ let experiments pool =
             direct_registration_disabled
             registration_disabled
             allow_uninvited_signup
-            publicly_visible
             (Some Pool_common.ExperimentType.Lab)
             invitation_subject
             invitation_text

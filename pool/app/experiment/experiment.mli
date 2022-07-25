@@ -84,20 +84,6 @@ module AllowUninvitedSignup : sig
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
-module PubliclyVisible : sig
-  type t
-
-  val equal : t -> t -> t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
 module InvitationTemplate : sig
   module Subject : sig
     type t
@@ -148,7 +134,6 @@ type t =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; publicly_visible : PubliclyVisible.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
@@ -170,7 +155,6 @@ val create
   -> DirectRegistrationDisabled.t
   -> RegistrationDisabled.t
   -> AllowUninvitedSignup.t
-  -> PubliclyVisible.t
   -> Pool_common.ExperimentType.t option
   -> InvitationTemplate.Subject.t option
   -> InvitationTemplate.Text.t option
@@ -186,7 +170,6 @@ type create =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; publicly_visible : PubliclyVisible.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_subject : InvitationTemplate.Subject.t option
   ; invitation_text : InvitationTemplate.Text.t option
@@ -265,4 +248,3 @@ val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
-val publicly_visible_value : t -> bool

@@ -7,7 +7,6 @@ type create =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; publicly_visible : PubliclyVisible.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_subject : InvitationTemplate.Subject.t option
   ; invitation_text : InvitationTemplate.Text.t option

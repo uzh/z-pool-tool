@@ -99,8 +99,6 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
-    | PubliclyVisible [@name "publicly_visible"]
-        [@printer go "publicly_visible"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]

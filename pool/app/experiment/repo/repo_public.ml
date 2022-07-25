@@ -33,12 +33,10 @@ let condition_registration_not_disabled =
   "pool_experiments.registration_disabled = 0"
 ;;
 
-let condition_allow_uninvited_signup_or_publicly_visible =
+let condition_allow_uninvited_signup =
   Format.asprintf
     {sql|
-      (pool_experiments.allow_uninvited_signup = 1
-        OR
-      pool_experiments.publicly_visible = 1)
+      pool_experiments.allow_uninvited_signup = 1
     |sql}
 ;;
 
@@ -49,7 +47,7 @@ let find_all_public_by_contact_request =
        "%s WHERE %s AND (%s OR %s)"
        pool_invitations_left_join
        condition_registration_not_disabled
-       condition_allow_uninvited_signup_or_publicly_visible
+       condition_allow_uninvited_signup
   |> select_from_experiments_sql
   |> Caqti_type.string ->* RepoEntity.Public.t
 ;;
@@ -71,7 +69,7 @@ let find_request =
        pool_invitations_left_join
        id_fragment
        condition_registration_not_disabled
-       condition_allow_uninvited_signup_or_publicly_visible
+       condition_allow_uninvited_signup
   |> select_from_experiments_sql
   |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
 ;;

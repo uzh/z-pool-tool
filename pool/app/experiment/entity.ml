@@ -101,24 +101,6 @@ module AllowUninvitedSignup = struct
   ;;
 end
 
-module PubliclyVisible = struct
-  type t = bool [@@deriving eq, show]
-
-  let create m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Common.Message.Field.PubliclyVisible
-  ;;
-end
-
 module InvitationTemplate = struct
   module Subject = struct
     type t = string [@@deriving eq, show]
@@ -186,7 +168,6 @@ type t =
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
-  ; publicly_visible : PubliclyVisible.t
   ; experiment_type : Pool_common.ExperimentType.t option
   ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
@@ -205,7 +186,6 @@ let create
     direct_registration_disabled
     registration_disabled
     allow_uninvited_signup
-    publicly_visible
     experiment_type
     invitation_subject
     invitation_text
@@ -235,7 +215,6 @@ let create
     ; direct_registration_disabled
     ; registration_disabled
     ; allow_uninvited_signup
-    ; publicly_visible
     ; experiment_type
     ; invitation_template
     ; session_reminder_lead_time
@@ -285,5 +264,3 @@ let registration_disabled_value (m : t) =
 let allow_uninvited_signup_value (m : t) =
   AllowUninvitedSignup.value m.allow_uninvited_signup
 ;;
-
-let publicly_visible_value (m : t) = PubliclyVisible.value m.publicly_visible

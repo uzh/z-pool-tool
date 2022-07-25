@@ -82,7 +82,6 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
-  | PubliclyVisible -> "publicly visible"
   | PublicTitle -> "public title"
   | Rate -> "rate"
   | ReminderText -> "reminder text"

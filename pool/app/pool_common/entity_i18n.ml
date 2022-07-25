@@ -75,7 +75,6 @@ type hint =
   | NumberIsSecondsHint
   | NumberIsWeeksHint
   | Overbook
-  | PubliclyVisible
   | Rate
   | RateDependencyWith
   | RateDependencyWithout

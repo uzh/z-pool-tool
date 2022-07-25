@@ -92,7 +92,6 @@ module DummyData = struct
           false |> DirectRegistrationDisabled.create
       ; registration_disabled = false |> RegistrationDisabled.create
       ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-      ; publicly_visible = false |> PubliclyVisible.create
       ; experiment_type = Some Pool_common.ExperimentType.Lab
       ; created_at = Ptime_clock.now ()
       ; updated_at = Ptime_clock.now ()
