@@ -27,7 +27,7 @@ function updateFilterObject(parentIds, id, data, filter) {
             ...filter,
             [id]: {
                 // should children be reset or kept?
-                // probably depending on the change? and to or => keep. and to single => delete
+                // probably depending on the change? and to or => keep / and to single => delete
                 // predicates: filter[id].predicates,
                 ...data
             }

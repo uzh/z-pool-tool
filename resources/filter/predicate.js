@@ -163,7 +163,7 @@ export class SinglePredicate extends Base {
                 case "date":
                     inputType = "date"
                     break;
-                case "book":
+                case "bool":
                     inputType = "checkbox"
                     break;
                 default:
