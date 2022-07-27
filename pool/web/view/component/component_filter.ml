@@ -74,29 +74,32 @@ let filter language experiment =
     ]
     |> wrap_filter
   in
+  let _ =
+    form
+      ~a:
+        [ a_method `Post
+        ; a_action
+            (Format.asprintf
+               "/admin/experiments/%s/invitations/contacts"
+               (experiment.Experiment.id |> Pool_common.Id.value)
+            |> Sihl.Web.externalize_path)
+        ; a_class [ "flexcolumn"; "stack" ]
+        ]
+      (CCList.map
+         (fun (key, input_type) ->
+           match input_type with
+           | `Str -> string_filter key
+           | `Date -> date_filter key
+           | `Bool -> boolean_filter key)
+         keys_with_types
+      @ [ Component_input.submit_element
+            language
+            (Pool_common.Message.Create None)
+            ()
+        ])
+  in
   div
-    [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Filter" ]
-    ; form
-        ~a:
-          [ a_method `Post
-          ; a_action
-              (Format.asprintf
-                 "/admin/experiments/%s/invitations/contacts"
-                 (experiment.Experiment.id |> Pool_common.Id.value)
-              |> Sihl.Web.externalize_path)
-          ; a_class [ "flexcolumn"; "stack" ]
-          ]
-        (CCList.map
-           (fun (key, input_type) ->
-             match input_type with
-             | `Str -> string_filter key
-             | `Date -> date_filter key
-             | `Bool -> boolean_filter key)
-           keys_with_types
-        @ [ Component_input.submit_element
-              language
-              (Pool_common.Message.Create None)
-              ()
-          ])
+    [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt "Filter contacts" ]
+    ; div ~a:[ a_class [ "gap" ] ] [ Unsafe.node "contact-filter" [] ]
     ]
 ;;

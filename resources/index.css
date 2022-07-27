@@ -33,3 +33,7 @@
 [data-sortable-item]:not(:last-child) {
     border-bottom: 1px solid #b5b5b5;
 }
+
+.predicate {
+    background-color: rgba(0, 0, 0, 0.02);
+}

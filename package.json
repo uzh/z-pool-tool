@@ -3,13 +3,15 @@
     "version": "0.0.1",
     "license": "GPL-2.0-or-later",
     "scripts": {
-        "build": "export NODE_OPTIONS=--trace-warnings; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PREFIX_PATH/assets/"
+        "build": "export NODE_OPTIONS=--trace-warnings; parcel build resources/index.js resources/images/** --dist-dir public --public-url $PREFIX_PATH/assets/",
+        "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js --dist-dir public"
     },
     "devDependencies": {
         "parcel": "^2.0.0"
     },
     "dependencies": {
         "flatpickr": "^4.6.13",
-        "htmx.org": "^1.6.0"
+        "htmx.org": "^1.6.0",
+        "lit": "^2.2.6"
     }
 }
