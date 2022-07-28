@@ -7,7 +7,6 @@ let encode_person
       | `Recruiter
       | `LocationManager
       | `Operator
-      | `Root
       ]
       -> a Entity.t
       -> (string * (Sihl_user.t * (Ptime.t * Ptime.t)), 'b) result

@@ -26,6 +26,7 @@ module Description = struct
   ;;
 end
 
+(* TODO [aerben] rename to contact *)
 module ParticipantAmount = struct
   type t = int [@@deriving eq, show]
 
