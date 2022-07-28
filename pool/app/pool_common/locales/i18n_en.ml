@@ -44,6 +44,7 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
   | SentInvitations -> "Sent invitations"
+  | SessionCancellationSubject -> "Session cancelled"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionReminderDefaultLeadTime leadtime ->
@@ -207,25 +208,25 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-   | CancelSession -> "session", "cancel", None
-   | DeleteCustomField -> "field", "delete", None
-   | DeleteCustomFieldOption -> "option", "delete", None
-   | DeleteEmailSuffix -> "email suffix", "delete", None
-   | DeleteExperiment -> "experiment", "delete", None
-   | DeleteFile -> "the file", "delete", None
-   | DeleteMailing -> "mailing", "delete", None
-   | DeleteSession -> "session", "delete", None
-   | PublisCustomField ->
-     ( "field an all associated options"
-     , "publish"
-     , Some "You will not be able to delete it field anymore." )
-   | PublisCustomFieldOption ->
-     "option", "publish", Some "You will not be able to delete the it anymore."
-   | StopMailing -> "mailing", "stop", None)
+  | CancelSession -> "session", "cancel", None
+  | DeleteCustomField -> "field", "delete", None
+  | DeleteCustomFieldOption -> "option", "delete", None
+  | DeleteEmailSuffix -> "email suffix", "delete", None
+  | DeleteExperiment -> "experiment", "delete", None
+  | DeleteFile -> "the file", "delete", None
+  | DeleteMailing -> "mailing", "delete", None
+  | DeleteSession -> "session", "delete", None
+  | PublisCustomField ->
+    ( "field an all associated options"
+    , "publish"
+    , Some "You will not be able to delete it field anymore." )
+  | PublisCustomFieldOption ->
+    "option", "publish", Some "You will not be able to delete the it anymore."
+  | StopMailing -> "mailing", "stop", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
   |> fun msg ->
   additive
   |> CCOption.map_or ~default:msg (fun additive ->
-       Format.asprintf "%s %s" msg additive)
+         Format.asprintf "%s %s" msg additive)
 ;;

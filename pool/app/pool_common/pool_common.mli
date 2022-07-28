@@ -70,12 +70,7 @@ module Model : sig
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
-
-    val create
-      :  Entity_message.Field.t
-      -> string
-      -> (t, Entity_message.error) result
-
+    val create : string -> (t, Entity_message.error) result
     val value : t -> string
     val of_string : string -> t
 
@@ -314,7 +309,6 @@ module Reminder : sig
     val equal : t -> t -> bool
     val show : t -> t
     val create : string -> (t, Message.error) result
-    val of_string : string -> t
     val value : t -> string
     val pp : Format.formatter -> t -> unit
 
@@ -329,7 +323,6 @@ module Reminder : sig
     val equal : t -> t -> bool
     val show : t -> t
     val create : string -> (t, Message.error) result
-    val of_string : string -> t
     val value : t -> string
     val pp : Format.formatter -> t -> unit
 

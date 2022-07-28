@@ -106,6 +106,28 @@ Freundliche Grüsse,
 Pool Tool|}
         )
       ] )
+  ; ( "cancel_session_text"
+    , [ ( "EN"
+        , {|Dear {name}
+
+Your session was cancelled.
+
+{sessionOverviewEN}
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Ihre Session wurde abgesagt.
+
+{sessionOverviewDE}
+
+Freundliche Grüsse,
+Pool Tool|}
+        )
+      ] )
   ; ( "trigger_profile_update_subject"
     , [ "EN", "Please check your profile."
       ; "DE", "Bitte kontrollieren Sie Ihr Profil."
@@ -135,13 +157,13 @@ Pool Tool|}
       ] )
   ]
   |> CCList.map (fun (key, data) ->
-       let key = key |> Key.of_string |> get_or_failwith in
-       CCList.map
-         (fun (language, content) ->
-           create
-             key
-             (language |> Pool_common.Language.create |> get_or_failwith)
-             (content |> Content.create |> get_or_failwith))
-         data)
+         let key = key |> Key.of_string |> get_or_failwith in
+         CCList.map
+           (fun (language, content) ->
+             create
+               key
+               (language |> Pool_common.Language.create |> get_or_failwith)
+               (content |> Content.create |> get_or_failwith))
+           data)
   |> CCList.flatten
 ;;

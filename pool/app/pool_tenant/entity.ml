@@ -13,7 +13,7 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -21,7 +21,7 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -29,7 +29,7 @@ module Url = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Url
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -44,7 +44,7 @@ module Styles = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Styles
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
   end
 end
@@ -58,7 +58,7 @@ module Icon = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.Icon
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
   end
 end
@@ -162,14 +162,14 @@ module Write = struct
   [@@deriving eq, show]
 
   let create
-    title
-    description
-    url
-    database
-    smtp_auth
-    styles
-    icon
-    default_language
+      title
+      description
+      url
+      database
+      smtp_auth
+      styles
+      icon
+      default_language
     =
     { id = Id.create ()
     ; title

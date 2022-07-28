@@ -47,6 +47,7 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
   | SentInvitations -> "Versendete Einladungen"
+  | SessionCancellationSubject -> "Session abgesagt"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionReminderDefaultLeadTime leadtime ->
@@ -218,27 +219,27 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-   | CancelSession -> "die Session", "absagen", None
-   | DeleteCustomField -> "das Feld", "löschen", None
-   | DeleteCustomFieldOption -> "das Option", "löschen", None
-   | DeleteEmailSuffix -> "das Suffix", "löschen", None
-   | DeleteExperiment -> "das Experiment", "löschen", None
-   | DeleteFile -> "die Datei", "löschen", None
-   | DeleteMailing -> "den Versand", "löschen", None
-   | DeleteSession -> "die Session", "löschen", None
-   | PublisCustomField ->
-     ( "das Feld und alle dazugehörigen Optionen"
-     , "publizieren"
-     , Some "Sie werden das Feld nicht mehr löschen können." )
-   | PublisCustomFieldOption ->
-     ( "die Option"
-     , "publizieren"
-     , Some "Sie werden die Option nicht mehr löschen können." )
-   | StopMailing -> "den Versand", "stoppen", None)
+  | CancelSession -> "die Session", "absagen", None
+  | DeleteCustomField -> "das Feld", "löschen", None
+  | DeleteCustomFieldOption -> "das Option", "löschen", None
+  | DeleteEmailSuffix -> "das Suffix", "löschen", None
+  | DeleteExperiment -> "das Experiment", "löschen", None
+  | DeleteFile -> "die Datei", "löschen", None
+  | DeleteMailing -> "den Versand", "löschen", None
+  | DeleteSession -> "die Session", "löschen", None
+  | PublisCustomField ->
+    ( "das Feld und alle dazugehörigen Optionen"
+    , "publizieren"
+    , Some "Sie werden das Feld nicht mehr löschen können." )
+  | PublisCustomFieldOption ->
+    ( "die Option"
+    , "publizieren"
+    , Some "Sie werden die Option nicht mehr löschen können." )
+  | StopMailing -> "den Versand", "stoppen", None)
   |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
   |> fun msg ->
   additive
   |> CCOption.map_or ~default:msg (fun additive ->
-       Format.asprintf "%s %s" msg additive)
+         Format.asprintf "%s %s" msg additive)
 ;;

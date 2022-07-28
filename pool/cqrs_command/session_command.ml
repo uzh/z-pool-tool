@@ -3,16 +3,16 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "session.cqrs"
 
 let create_command
-  start
-  duration
-  description
-  max_participants
-  min_participants
-  overbook
-  reminder_subject
-  reminder_text
-  reminder_lead_time
-  : Session.base
+    start
+    duration
+    description
+    max_participants
+    min_participants
+    overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
+    : Session.base
   =
   Session.
     { start
@@ -47,16 +47,16 @@ let create_schema =
 ;;
 
 let update_command
-  start
-  duration
-  description
-  max_participants
-  min_participants
-  overbook
-  reminder_subject
-  reminder_text
-  reminder_lead_time
-  : Session.update
+    start
+    duration
+    description
+    max_participants
+    min_participants
+    overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
+    : Session.update
   =
   Session.
     { start
@@ -90,79 +90,89 @@ let update_schema =
       update_command)
 ;;
 
+(* If session is follow-up, make sure it's later than parent *)
+let starts_after_parent parent_session start =
+  let open Session in
+  CCOption.map_or
+    ~default:false
+    (fun (s : Session.t) ->
+      Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+    parent_session
+;;
+
 let validate_start follow_up_sessions parent_session start =
   let open Session in
   (* If session has follow-ups, make sure they are all later *)
-  let starts_after_followups =
+  let starts_before_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
         Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
       follow_up_sessions
   in
-  (* If session is follow-up, make sure it's later than parent *)
-  let starts_before_parent =
-    CCOption.map_or
-      ~default:false
-      (fun (s : Session.t) ->
-        Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-      parent_session
-  in
-  if starts_before_parent || starts_after_followups
+  if starts_after_parent parent_session start || starts_before_followups
   then Error Pool_common.Message.FollowUpIsEarlierThanMain
   else Ok ()
 ;;
 
-(* TODO [aerben] create sigs *)
-module Create = struct
+let run_validations validations =
+  let open CCResult in
+  validations
+  |> CCList.filter fst
+  |> CCList.map (fun (_, err) -> Error err)
+  |> flatten_l
+  |> map ignore
+;;
+
+module Create : sig
   type t = Session.base
 
-  let command = create_command
+  val handle
+    :  ?parent_session:Session.t
+    -> Experiment.Id.t
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Session.base
+
   let schema = create_schema
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    experiment_id
-    location
-    (Session.
-       { start
-       ; duration
-       ; description
-       ; max_participants
-       ; min_participants
-       ; (* TODO [aerben] find a better name *)
-         overbook
-       ; reminder_subject
-       ; reminder_text
-       ; reminder_lead_time
-       } :
-      Session.base)
+      ?(tags = Logs.Tag.empty)
+      ?parent_session
+      experiment_id
+      location
+      (Session.
+         { start
+         ; duration
+         ; description
+         ; max_participants
+         ; min_participants
+         ; (* TODO [aerben] find a better name *)
+           overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
+         } :
+        Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    (* If session is follow-up, make sure it's later than parent *)
-    let follow_up_is_ealier =
-      let open Session in
-      CCOption.map_or
-        ~default:false
-        (fun (s : Session.t) ->
-          Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-        parent_session
-    in
+    let open CCResult in
     let validations =
-      [ follow_up_is_ealier, Pool_common.Message.FollowUpIsEarlierThanMain
+      [ ( starts_after_parent parent_session start
+        , Pool_common.Message.FollowUpIsEarlierThanMain )
       ; ( max_participants < min_participants
         , Pool_common.Message.(
             Smaller (Field.MaxParticipants, Field.MinParticipants)) )
       ]
     in
-    let open CCResult in
-    let* () =
-      validations
-      |> CCList.filter fst
-      |> CCList.map (fun (_, err) -> Error err)
-      |> flatten_l
-      |> map ignore
-    in
+    let* () = run_validations validations in
     let (session : Session.base) =
       Session.
         { start
@@ -191,7 +201,7 @@ module Create = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module Update : sig
@@ -215,23 +225,23 @@ end = struct
   type t = Session.update
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    location
-    (Session.
-       { start
-       ; duration
-       ; description
-       ; max_participants
-       ; min_participants
-       ; overbook
-       ; reminder_subject
-       ; reminder_text
-       ; reminder_lead_time
-       } :
-      Session.update)
+      ?(tags = Logs.Tag.empty)
+      ?parent_session
+      follow_up_sessions
+      session
+      location
+      (Session.
+         { start
+         ; duration
+         ; description
+         ; max_participants
+         ; min_participants
+         ; overbook
+         ; reminder_subject
+         ; reminder_text
+         ; reminder_lead_time
+         } :
+        Session.update)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
@@ -311,12 +321,12 @@ end = struct
   ;;
 
   let handle
-    ?(tags = Logs.Tag.empty)
-    ?parent_session
-    follow_up_sessions
-    session
-    emails
-    (Session.{ start; _ } as reschedule : Session.reschedule)
+      ?(tags = Logs.Tag.empty)
+      ?parent_session
+      follow_up_sessions
+      session
+      emails
+      (Session.{ start; _ } as reschedule : Session.reschedule)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
@@ -370,28 +380,29 @@ end = struct
 end
 
 module Cancel : sig
-  type t =
-    { session : Session.t
-    ; notify_via : string
-    }
-
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
+    -> Sihl_email.t list
+    -> Contact.MessageChannel.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
   (* TODO issue #90 step 2 *)
   (* notify_via: Email, SMS *)
-  type t =
-    { session : Session.t
-    ; notify_via : string
-    }
-
-  let handle ?(tags = Logs.Tag.empty) session =
+  (* TODO [aerben] use contacts *)
+  let handle ?(tags = Logs.Tag.empty) session emails notify_via =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    Ok [ Session.Canceled session |> Pool_event.session ]
+    let open Contact.MessageChannel in
+    match notify_via with
+    | Email ->
+      Ok
+        [ Session.Canceled session |> Pool_event.session
+        ; Email.BulkSent emails |> Pool_event.email
+        ]
+    (* TODO issue #149 implement this and then fix test *)
+    | SMS -> Error Pool_common.Message.NoValue
   ;;
 
   let effects = [ `Manage, `TargetEntity `System ]
@@ -409,6 +420,8 @@ module SendReminder : sig
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
+  (* TODO [aerben] sometimes we have this uncurried, sometimes curried, make it
+     consistent *)
   let handle ?(tags = Logs.Tag.empty) command =
     Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
     Ok

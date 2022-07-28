@@ -176,17 +176,14 @@ module Reminder = struct
     type t = string [@@deriving eq, show, sexp_of]
 
     let create subject =
-      if CCString.is_empty subject
-      then Error PoolError.(Invalid Field.ReminderSubject)
-      else Ok subject
+      if CCString.is_empty subject then Error PoolError.NoValue else Ok subject
     ;;
 
-    let of_string m = m
     let value m = m
 
     let schema () =
       Pool_common_utils.schema_decoder
-        (fun m -> m |> of_string |> CCResult.return)
+        create
         value
         PoolError.Field.ReminderSubject
     ;;
@@ -196,19 +193,13 @@ module Reminder = struct
     type t = string [@@deriving eq, show, sexp_of]
 
     let create text =
-      if CCString.is_empty text
-      then Error PoolError.(Invalid Field.ReminderText)
-      else Ok text
+      if CCString.is_empty text then Error PoolError.NoValue else Ok text
     ;;
 
-    let of_string m = m
     let value m = m
 
     let schema () =
-      Pool_common_utils.schema_decoder
-        (fun m -> m |> of_string |> CCResult.return)
-        value
-        PoolError.Field.ReminderText
+      Pool_common_utils.schema_decoder create value PoolError.Field.ReminderText
     ;;
   end
 

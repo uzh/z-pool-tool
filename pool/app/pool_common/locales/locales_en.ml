@@ -119,6 +119,7 @@ let field_to_string =
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
+  | SentAt -> "sent at"
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"

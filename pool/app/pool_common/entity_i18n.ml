@@ -32,6 +32,7 @@ type t =
   | ResetPasswordLink
   | ResetPasswordTitle
   | SentInvitations
+  | SessionCancellationSubject
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder

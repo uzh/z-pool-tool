@@ -148,37 +148,43 @@ val find_public
 val find_all_public_by_location
   :  Pool_database.Label.t
   -> Pool_location.Id.t
-  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
 
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Pool_common.Id.t
-  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
 
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Public.t, Pool_common.Message.error) result Lwt.t
+  -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
 val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
+  -> (Pool_common.Id.t * string, Pool_common.Message.error) Lwt_result.t
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
-  -> (t list, Pool_common__Entity_message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val build_cancellation_messages
+  :  Pool_database.Label.t
+  -> Pool_common.Language.t
+  -> Contact.t list
+  -> (Sihl_email.t list, Pool_common.Message.error) Lwt_result.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string

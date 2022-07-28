@@ -41,9 +41,9 @@ module Password = struct
   ;;
 
   let validate_current_password
-    ?(field = PoolError.Field.CurrentPassword)
-    user
-    password
+      ?(field = PoolError.Field.CurrentPassword)
+      user
+      password
     =
     if Sihl_user.matches_password (password |> to_sihl) user
     then Ok ()
@@ -86,29 +86,28 @@ module EmailAddress = struct
   ;;
 
   let validate_suffix
-    (allowed_email_suffixes : Settings.EmailSuffix.t list option)
-    email
+      (allowed_email_suffixes : Settings.EmailSuffix.t list option)
+      email
     =
     match allowed_email_suffixes with
     | None -> Ok ()
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
-       (* TODO check whether this is really the case *)
-       | None -> Error PoolError.EmailMalformed
-       | Some suffix ->
-         let open CCResult in
-         let* suffix = suffix |> Settings.EmailSuffix.create in
-         if CCList.mem
-              ~eq:Settings.EmailSuffix.equal
-              suffix
-              allowed_email_suffixes
-         then Ok ()
-         else
-           Error
-             PoolError.(
-               InvalidEmailSuffix
-                 (allowed_email_suffixes
-                 |> CCList.map Settings.EmailSuffix.value)))
+      (* TODO check whether this is really the case *)
+      | None -> Error PoolError.EmailMalformed
+      | Some suffix ->
+        let open CCResult in
+        let* suffix = suffix |> Settings.EmailSuffix.create in
+        if CCList.mem
+             ~eq:Settings.EmailSuffix.equal
+             suffix
+             allowed_email_suffixes
+        then Ok ()
+        else
+          Error
+            PoolError.(
+              InvalidEmailSuffix
+                (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value)))
   ;;
 
   let validate = validate_suffix
@@ -125,7 +124,7 @@ module Firstname = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.Firstname
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
   let of_string m = m
 end
@@ -134,7 +133,7 @@ module Lastname = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.Lastname
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
   let of_string m = m
 end

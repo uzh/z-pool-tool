@@ -122,6 +122,7 @@ module TemplateLabel : sig
     | PasswordChange
     | PasswordReset
     | SignUpVerification
+    | SessionCancellation
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit

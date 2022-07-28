@@ -118,6 +118,7 @@ let field_to_string =
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"
+  | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"

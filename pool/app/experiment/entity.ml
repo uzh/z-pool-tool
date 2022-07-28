@@ -5,7 +5,7 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -13,7 +13,7 @@ module PublicTitle = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.PublicTitle
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -21,7 +21,7 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -48,7 +48,7 @@ module InvitationTemplate = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.InvitationSubject
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -57,7 +57,7 @@ module InvitationTemplate = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.InvitationText
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -99,19 +99,19 @@ type t =
 [@@deriving eq, show]
 
 let create
-  ?id
-  title
-  public_title
-  description
-  direct_registration_disabled
-  registration_disabled
-  allow_uninvited_signup
-  experiment_type
-  invitation_subject
-  invitation_text
-  session_reminder_lead_time
-  session_reminder_subject
-  session_reminder_text
+    ?id
+    title
+    public_title
+    description
+    direct_registration_disabled
+    registration_disabled
+    allow_uninvited_signup
+    experiment_type
+    invitation_subject
+    invitation_text
+    session_reminder_lead_time
+    session_reminder_subject
+    session_reminder_text
   =
   let open CCResult in
   let* () =

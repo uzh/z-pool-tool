@@ -20,6 +20,7 @@ let prepend_root_directory pool url =
   | false -> url
 ;;
 
+(* TODO [aerben] make this result isntead of exception *)
 let prepare_email pool language label subject email params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
@@ -29,6 +30,7 @@ let prepare_email pool language label subject email params =
   in
   match template, Sihl.Configuration.read_string "SMTP_SENDER" with
   | _, None -> failwith "SMTP_SENDER not found in configuration"
+  (* TODO [aerben] no exceptions here *)
   | None, _ -> failwith "Email template not found!"
   | Some template, Some sender ->
     let mail =

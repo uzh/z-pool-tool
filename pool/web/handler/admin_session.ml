@@ -26,14 +26,14 @@ let location urlencoded tenant_db =
 let reschedule_messages tenant_db sys_languages session =
   let open Utils.Lwt_result.Infix in
   let create_message sys_languages contact (session : Session.t) template =
-    (* TODO[tinhub]: What text element are required? Do we need custom
+    (* TODO[timhub]: What text element are required? Do we need custom
        template? *)
     let name = Contact.fullname contact in
     let email = Contact.email_address contact in
     let session_overview =
       (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , Session.(to_email_text lang session) )))
+           ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+           , Session.(to_email_text lang session) )))
         sys_languages
     in
     Email.Helper.prepare_boilerplate_email
@@ -137,9 +137,9 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/%s" path "create"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+        ( err
+        , Format.asprintf "%s/%s" path "create"
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in
@@ -176,42 +176,42 @@ let detail req page =
     let* session = Session.find tenant_db session_id in
     let* experiment = Experiment.find tenant_db experiment_id in
     (match page with
-     | `Detail ->
-       let* assignments =
-         Assignment.find_by_session tenant_db session.Session.id
-       in
-       Page.Admin.Session.detail context experiment session assignments
-       |> Lwt.return_ok
-     | `Edit ->
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let* experiment = Experiment.find tenant_db experiment_id in
-       let%lwt locations = Pool_location.find_all tenant_db in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
-       Page.Admin.Session.edit
-         context
-         experiment
-         session
-         locations
-         sys_languages
-         flash_fetcher
-       |> Lwt.return_ok
-     | `Close ->
-       let* assignments =
-         Assignment.find_by_session tenant_db session.Session.id
-       in
-       Page.Admin.Session.close context experiment session assignments
-       |> Lwt.return_ok
-     | `Reschedule ->
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let* experiment = Experiment.find tenant_db experiment_id in
-       Page.Admin.Session.reschedule_session
-         context
-         experiment
-         session
-         flash_fetcher
-       |> Lwt.return_ok)
+    | `Detail ->
+      let* assignments =
+        Assignment.find_by_session tenant_db session.Session.id
+      in
+      Page.Admin.Session.detail context experiment session assignments
+      |> Lwt.return_ok
+    | `Edit ->
+      let flash_fetcher key = Sihl.Web.Flash.find key req in
+      let* experiment = Experiment.find tenant_db experiment_id in
+      let%lwt locations = Pool_location.find_all tenant_db in
+      let* sys_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
+      Page.Admin.Session.edit
+        context
+        experiment
+        session
+        locations
+        sys_languages
+        flash_fetcher
+      |> Lwt.return_ok
+    | `Close ->
+      let* assignments =
+        Assignment.find_by_session tenant_db session.Session.id
+      in
+      Page.Admin.Session.close context experiment session assignments
+      |> Lwt.return_ok
+    | `Reschedule ->
+      let flash_fetcher key = Sihl.Web.Flash.find key req in
+      let* experiment = Experiment.find tenant_db experiment_id in
+      Page.Admin.Session.reschedule_session
+        context
+        experiment
+        session
+        flash_fetcher
+      |> Lwt.return_ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -244,9 +244,9 @@ let update_handler action req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/%s" path error_path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+        ( err
+        , Format.asprintf "%s/%s" path error_path
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* session = Session.find tenant_db session_id in
@@ -310,8 +310,32 @@ let disabler req command ctor =
     let tenant_db = context.Pool_context.tenant_db in
     let session_id = id req Pool_common.Message.Field.Session in
     let* session = Session.find tenant_db session_id in
-    let* events = session |> command |> Lwt_result.lift in
     let tags = Logger.req req in
+    let* events =
+      match command with
+      | `Cancel ->
+        let* contacts =
+          Assignment.find_by_session tenant_db session.Session.id
+          >|= CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
+        in
+        let* messages =
+          Session.build_cancellation_messages
+            tenant_db
+            context.Pool_context.language
+            contacts
+        in
+        Cqrs_command.Session_command.Cancel.handle
+          ~tags
+          session
+          messages
+          (* TODO issue #149 dont hardcode email *)
+          Contact.MessageChannel.Email
+        |> Lwt_result.lift
+      | `Delete ->
+        session
+        |> Cqrs_command.Session_command.Delete.handle ~tags
+        |> Lwt_result.lift
+    in
     let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       error_path
@@ -321,20 +345,11 @@ let disabler req command ctor =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-(* TODO [aerben] add a confirmation before cancelling *)
 (* TODO [aerben] if already canceled, allow uncancel *)
-let cancel req =
-  let tags = Logger.req req in
-  disabler req (Cqrs_command.Session_command.Cancel.handle ~tags) (fun m ->
-    Pool_common.Message.Canceled m)
-;;
+let cancel req = disabler req `Cancel (fun m -> Pool_common.Message.Canceled m)
 
 (* TODO [aerben] add a confirmation before deleting *)
-let delete req =
-  let tags = Logger.req req in
-  disabler req (Cqrs_command.Session_command.Delete.handle ~tags) (fun m ->
-    Pool_common.Message.Deleted m)
-;;
+let delete req = disabler req `Delete (fun m -> Pool_common.Message.Deleted m)
 
 let follow_up req =
   let open Utils.Lwt_result.Infix in
@@ -386,9 +401,9 @@ let create_follow_up req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-      ( err
-      , Format.asprintf "%s/follow-up" path
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+        ( err
+        , Format.asprintf "%s/follow-up" path
+        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in
