@@ -92,9 +92,7 @@ let hint_to_string = function
      directly enroll in the experiment."
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
-     first. E.g. with name ascending and email address descending: \
-     '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'. (Currently only as \
-     json array objects.)"
+     first."
   | I18nText str -> str
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
