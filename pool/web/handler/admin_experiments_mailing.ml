@@ -228,30 +228,41 @@ let add_condition req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let field =
-      let open CCResult in
-      let error = Pool_common.Message.(Invalid Field.DistributionField) in
+    let invalid field = Pool_common.Message.(Invalid field) in
+    let find_in_urlencoded read field =
       urlencoded
       |> CCList.assoc_opt
            ~eq:CCString.equal
-           Pool_common.Message.Field.(show DistributionField)
+           Pool_common.Message.Field.(show field)
       |> CCFun.flip CCOption.bind CCList.head_opt
       |> CCFun.flip CCOption.bind (fun str ->
-             try Some (Pool_common.Message.Field.read str) with
+             try Some (read str) with
              | _ -> None)
-      |> CCOption.to_result error
-      >>= (fun field ->
-            if CCList.mem
-                 ~eq:Pool_common.Message.Field.equal
-                 field
-                 Mailing.Distribution.sortable_fields
-            then Ok field
-            else Error error)
-      >|= fun field -> Mailing.Distribution.(field, SortOrder.default)
+      |> CCOption.to_result (invalid field)
+    in
+    let distribution =
+      let open CCResult in
+      let* field =
+        let field = Pool_common.Message.Field.DistributionField in
+        field
+        |> find_in_urlencoded Pool_common.Message.Field.read
+        >>= fun field ->
+        if CCList.mem
+             ~eq:Pool_common.Message.Field.equal
+             field
+             Mailing.Distribution.sortable_fields
+        then Ok field
+        else Error (invalid field)
+      in
+      let* order =
+        let field = Pool_common.Message.Field.SortOrder in
+        field |> find_in_urlencoded Mailing.Distribution.SortOrder.read
+      in
+      Ok (field, order)
     in
     Lwt.return_ok
     @@
-    match field with
+    match distribution with
     | Ok field -> Page.Admin.Mailing.distribution_form_field language field
     | Error error ->
       Tyxml.Html.(

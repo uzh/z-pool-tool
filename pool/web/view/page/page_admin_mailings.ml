@@ -25,38 +25,43 @@ let detail_mailing_path ?suffix experiment_id mailing =
   |> CCString.concat "/"
 ;;
 
-let distribution_form_field language (field, current_order) =
-  let sort_select =
-    let open Mailing.Distribution.SortOrder in
-    CCList.map
-      (fun order ->
-        let selected =
-          match equal order current_order with
-          | true -> [ a_selected () ]
-          | false -> []
-        in
-        option
-          ~a:
-            ([ a_value
-                 (Format.asprintf
-                    "%s,%s"
-                    (Pool_common.Message.Field.show field)
-                    (order |> show))
-             ]
-            @ selected)
-          (order
-          |> CCFun.flip to_human language
-          |> CCString.capitalize_ascii
-          |> txt))
-      all
-    |> fun options ->
-    div
-      ~a:[ a_class [ "select" ] ]
-      [ select
-          ~a:[ a_name Pool_common.Message.Field.(array_key Distribution) ]
-          options
-      ]
+let distribution_sort_select language ?field current_order =
+  let open Mailing.Distribution.SortOrder in
+  let select_name =
+    let open Pool_common.Message in
+    match field with
+    | None -> Field.(show SortOrder)
+    | Some _ -> Field.(array_key Distribution)
   in
+  CCList.map
+    (fun order ->
+      let selected =
+        match equal order current_order with
+        | true -> [ a_selected () ]
+        | false -> []
+      in
+      option
+        ~a:
+          ([ a_value
+               (match field with
+               | None -> order |> show
+               | Some field ->
+                 Format.asprintf
+                   "%s,%s"
+                   (Pool_common.Message.Field.show field)
+                   (order |> show))
+           ]
+          @ selected)
+        (order
+        |> CCFun.flip to_human language
+        |> CCString.capitalize_ascii
+        |> txt))
+    all
+  |> fun options ->
+  div ~a:[ a_class [ "select" ] ] [ select ~a:[ a_name select_name ] options ]
+;;
+
+let distribution_form_field language (field, current_order) =
   div
     ~a:
       [ a_class [ "flexrow"; "flex-gap"; "distribution" ]
@@ -70,7 +75,9 @@ let distribution_form_field language (field, current_order) =
               |> CCString.capitalize_ascii
               |> txt
             ]
-        ; div ~a:[ a_class [ "form-group" ] ] [ sort_select ]
+        ; div
+            ~a:[ a_class [ "form-group" ] ]
+            [ distribution_sort_select language ~field current_order ]
         ]
     ; div
         [ button
@@ -293,7 +300,7 @@ let form
       })
     |js}
     in
-    let select =
+    let field_select =
       let default_option =
         option
           ~a:[ a_value ""; a_disabled (); a_selected () ]
@@ -314,25 +321,23 @@ let form
             |> txt))
         sortable_fields
       |> fun options ->
+      select
+        ~a:
+          [ a_id "distribution-select"
+          ; a_name Pool_common.Message.Field.(show DistributionField)
+          ]
+        (default_option :: options)
+    in
+    let sort_select = distribution_sort_select language SortOrder.default in
+    let form_group select field =
       div
         ~a:[ a_class [ "form-group" ] ]
         [ label
             [ txt
-                (Pool_common.(
-                   Utils.field_to_string
-                     language
-                     Message.Field.DistributionField)
+                (Pool_common.(Utils.field_to_string language field)
                 |> CCString.capitalize_ascii)
             ]
-        ; div
-            ~a:[ a_class [ "select" ] ]
-            [ select
-                ~a:
-                  [ a_id "distribution-select"
-                  ; a_name Pool_common.Message.Field.(show DistributionField)
-                  ]
-                (default_option :: options)
-            ]
+        ; div ~a:[ a_class [ "select" ] ] [ select ]
         ]
     in
     div
@@ -347,15 +352,19 @@ let form
       ; div
           ~a:
             [ a_class
-                [ "switcher"
-                ; "flex-gap"
-                ; "border-bottom"
+                [ "border-bottom"
                 ; "inset"
                 ; "u-shape"
                 ; "vertical"
+                ; "flexrow"
+                ; "flex-gap"
                 ]
             ]
-          [ select
+          [ div
+              ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
+              [ form_group field_select Message.Field.DistributionField
+              ; form_group sort_select Message.Field.SortOrder
+              ]
           ; div
               ~a:[ a_class [ "form-group"; "justify-end" ] ]
               [ button
