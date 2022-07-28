@@ -132,6 +132,7 @@ module TemplateLabel : sig
     | PasswordChange
     | PasswordReset
     | SignUpVerification
+    | SessionCancellation
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -211,7 +212,7 @@ module Helper : sig
     :  CustomTemplate.t
     -> string
     -> (string * string) list
-    -> Sihl_email.t Lwt.t
+    -> Sihl_email.t
 
   module ConfirmationEmail : sig
     val create

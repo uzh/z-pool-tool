@@ -123,7 +123,7 @@ let trigger_profile_update_by_tenant pool =
                  ~default:default_language
                  contact.Contact.language)
           in
-          create_message contact template |> Lwt_result.ok)
+          create_message contact template |> Lwt_result.return)
         contacts
       ||> CCResult.flatten_l
     in

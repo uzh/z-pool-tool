@@ -33,6 +33,13 @@ module RecruitmentChannel = struct
   ;;
 end
 
+module MessageChannel = struct
+  type t =
+    | Email
+    | SMS
+  [@@deriving eq, show]
+end
+
 module NumberOfInvitations = struct
   type t = int [@@deriving eq, show]
 

@@ -164,6 +164,95 @@ let () =
         ] )
     ; ( "session"
       , [ test_case
+            "create session empty data fails"
+            `Quick
+            Session_test.create_empty_data
+        ; test_case
+            "create session invalid data fails"
+            `Quick
+            Session_test.create_invalid_data
+        ; test_case
+            "create session min participants greater than max participants \
+             fails"
+            `Quick
+            Session_test.create_min_gt_max
+        ; test_case
+            "create session optionals omitted succeeds"
+            `Quick
+            Session_test.create_no_optional
+        ; test_case
+            "create session all info succeeds"
+            `Quick
+            Session_test.create_full
+        ; test_case
+            "create session min participants equal max participants succeeds"
+            `Quick
+            Session_test.create_min_eq_max
+        ; test_case
+            "update session empty data fails"
+            `Quick
+            Session_test.update_empty_data
+        ; test_case
+            "update session invalid data fails"
+            `Quick
+            Session_test.update_invalid_data
+        ; test_case
+            "update session min participants greater than max participants \
+             fails"
+            `Quick
+            Session_test.update_min_gt_max
+        ; test_case
+            "update session optionals omitted succeeds"
+            `Quick
+            Session_test.update_no_optional
+        ; test_case
+            "update session all info succeeds"
+            `Quick
+            Session_test.update_full
+        ; test_case
+            "update session min participants greater than max participants \
+             succeeds"
+            `Quick
+            Session_test.update_min_eq_max
+        ; test_case "delete session succeeds" `Quick Session_test.delete
+        ; test_case
+            "cancel session without reason fails"
+            `Quick
+            Session_test.cancel_no_reason
+        ; test_case
+            "cancel session without message channels fails"
+            `Quick
+            Session_test.cancel_no_message_channels
+        ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
+        ; test_case
+            "send reminders for session succeeds"
+            `Quick
+            Session_test.send_reminder
+        ; test_case
+            "create follow up earlier than parent fails"
+            `Quick
+            Session_test.create_follow_up_earlier
+        ; test_case
+            "create follow up later than parent succeeds"
+            `Quick
+            Session_test.create_follow_up_later
+        ; test_case
+            "update follow up earlier than parent fails"
+            `Quick
+            Session_test.update_follow_up_earlier
+        ; test_case
+            "update follow up later than parent succeeds"
+            `Quick
+            Session_test.update_follow_up_later
+        ; test_case
+            "update with follow ups earlier fails"
+            `Quick
+            Session_test.update_follow_ups_earlier
+        ; test_case
+            "update with follow ups later succeeds"
+            `Quick
+            Session_test.update_follow_ups_later
+        ; test_case
             "reschedule session to past"
             `Quick
             Session_test.reschedule_to_past

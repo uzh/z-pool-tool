@@ -90,29 +90,39 @@ let update_schema =
       update_command)
 ;;
 
+(* If session is follow-up, make sure it's later than parent *)
+let starts_after_parent parent_session start =
+  let open Session in
+  CCOption.map_or
+    ~default:false
+    (fun (s : Session.t) ->
+      Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+    parent_session
+;;
+
 let validate_start follow_up_sessions parent_session start =
   let open Session in
   (* If session has follow-ups, make sure they are all later *)
-  let starts_after_followups =
+  let starts_before_followups =
     CCList.exists
       (fun (follow_up : Session.t) ->
         Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
       follow_up_sessions
   in
-  (* If session is follow-up, make sure it's later than parent *)
-  let starts_before_parent =
-    CCOption.map_or
-      ~default:false
-      (fun (s : Session.t) ->
-        Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-      parent_session
-  in
-  if starts_before_parent || starts_after_followups
+  if starts_after_parent parent_session start || starts_before_followups
   then Error Pool_common.Message.FollowUpIsEarlierThanMain
   else Ok ()
 ;;
 
-(* TODO [aerben] create sigs *)
+let run_validations validations =
+  let open CCResult in
+  validations
+  |> CCList.filter fst
+  |> CCList.map (fun (_, err) -> Error err)
+  |> flatten_l
+  |> map ignore
+;;
+
 module Create : sig
   include Common.CommandSig with type t = Session.base
 
@@ -125,6 +135,7 @@ module Create : sig
     -> (Pool_event.t list, Conformist.error_msg) result
 
   val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Session.base
 
@@ -150,30 +161,16 @@ end = struct
       Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
-    (* If session is follow-up, make sure it's later than parent *)
-    let follow_up_is_ealier =
-      let open Session in
-      CCOption.map_or
-        ~default:false
-        (fun (s : Session.t) ->
-          Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-        parent_session
-    in
+    let open CCResult in
     let validations =
-      [ follow_up_is_ealier, Pool_common.Message.FollowUpIsEarlierThanMain
+      [ ( starts_after_parent parent_session start
+        , Pool_common.Message.FollowUpIsEarlierThanMain )
       ; ( max_participants < min_participants
         , Pool_common.Message.(
             Smaller (Field.MaxParticipants, Field.MinParticipants)) )
       ]
     in
-    let open CCResult in
-    let* () =
-      validations
-      |> CCList.filter fst
-      |> CCList.map (fun (_, err) -> Error err)
-      |> flatten_l
-      |> map ignore
-    in
+    let* () = run_validations validations in
     let (session : Session.base) =
       Session.
         { start
@@ -397,28 +394,59 @@ end
 module Cancel : sig
   include Common.CommandSig
 
-  type t =
-    { session : Session.t
-    ; notify_via : string
-    }
+  type t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
+    -> (Session.CancellationReason.t -> Sihl_email.t list)
+    -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
   val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
-  (* TODO issue #90 step 2 *)
-  (* notify_via: Email, SMS *)
   type t =
-    { session : Session.t
-    ; notify_via : string
+    { notify_email : bool
+    ; notify_sms : bool
+    ; reason : Session.CancellationReason.t
     }
 
-  let handle ?(tags = Logs.Tag.empty) session =
+  let handle ?(tags = Logs.Tag.empty) session messages_fn command =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    Ok [ Session.Canceled session |> Pool_event.session ]
+    let open CCResult.Infix in
+    let* () =
+      if not (command.notify_email || command.notify_sms)
+      then Error Pool_common.Message.PickMessageChannel
+      else Ok ()
+    in
+    let email_event =
+      if command.notify_email
+      then [ Email.BulkSent (messages_fn command.reason) |> Pool_event.email ]
+      else []
+    in
+    (* TODO issue #149 implement this and then fix test *)
+    let sms_event = if command.notify_sms then [] else [] in
+    let cancel_event = [ Session.Canceled session |> Pool_event.session ] in
+    [ email_event; sms_event; cancel_event ]
+    |> CCList.flatten
+    |> CCResult.return
+  ;;
+
+  let command notify_email notify_sms reason =
+    { notify_email; notify_sms; reason }
+  ;;
+
+  let schema =
+    Conformist.(
+      make
+        Field.[ bool "email"; bool "sms"; Session.CancellationReason.schema () ]
+        command)
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects id =

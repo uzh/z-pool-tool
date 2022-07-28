@@ -278,6 +278,21 @@ module Model = struct
     Mailing.create ?id start deadline rate None |> get_or_failwith_pool_error
   ;;
 
+  let create_email
+    ?(sender = "sender@mail.com")
+    ?(recipient = "recipient@mail.com")
+    ()
+    =
+    Sihl_email.create
+      ~html:"<p>Hello</p>"
+      ~cc:[ "cc1@mail.com"; "cc2@mail.com" ]
+      ~bcc:[ "bcc@mail.com" ]
+      ~sender
+      ~recipient
+      ~subject:"Subject"
+      "Hello"
+  ;;
+
   let create_session () =
     let hour = Ptime.Span.of_int_s @@ (60 * 60) in
     Session.

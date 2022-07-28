@@ -131,7 +131,7 @@ module Admin = struct
     include Pool_common.Model.String
 
     let field = Message.Field.AdminHint
-    let create = create field
+    let create = create
     let schema = schema field ?validation:None
   end
 

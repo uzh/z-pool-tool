@@ -323,33 +323,6 @@ let index
       (fun (parent, follow_ups) ->
         let open Session in
         let session_row session =
-          let cancel_form =
-            match CCOption.is_some session.Session.canceled_at with
-            | true ->
-              submit_element
-                ~submit_type:`Disabled
-                language
-                Message.(Cancel None)
-                ()
-            | false ->
-              form
-                ~a:
-                  [ a_method `Post
-                  ; a_action
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/cancel"
-                         (Experiment.Id.value experiment_id)
-                         (Pool_common.Id.value session.id)
-                      |> Sihl.Web.externalize_path)
-                  ; a_user_data
-                      "confirmable"
-                      Pool_common.(
-                        Utils.confirmable_to_string language I18n.CancelSession)
-                  ]
-                [ csrf_element csrf ()
-                ; submit_element language Message.(Cancel None) ()
-                ]
-          in
           let delete_form =
             if session.Session.assignment_count
                |> Session.AssignmentCount.value
@@ -404,7 +377,6 @@ let index
                   (Experiment.Id.value experiment_id)
                   (Pool_common.Id.value session.id)
                 |> edit_link
-              ; cancel_form
               ; delete_form
               ]
           ]
@@ -569,6 +541,12 @@ let detail
             && CCOption.is_none session.closed_at
           , "reschedule"
           , Reschedule (Some Field.Session) )
+        ; ( CCOption.is_none session.canceled_at
+            && Ptime.is_later
+                 (session.start |> Start.value)
+                 ~than:Ptime_clock.(now ())
+          , "cancel"
+          , Cancel (Some Field.Session) )
         ; ( CCOption.is_none session.closed_at
             && Ptime.is_earlier
                  (session.start |> Start.value)
@@ -815,5 +793,70 @@ let close
   |> Page_admin_experiments.experiment_layout
        language
        (Page_admin_experiments.Control control)
+       experiment
+;;
+
+let cancel
+  Pool_context.{ language; csrf; _ }
+  experiment
+  (session : Session.t)
+  flash_fetcher
+  =
+  let action =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/cancel"
+      (Experiment.Id.value experiment.Experiment.id)
+      (value session.Session.id)
+  in
+  (match session.Session.canceled_at with
+   | Some canceled_at ->
+     Pool_common.(
+       p
+         [ canceled_at
+           |> Utils.Time.formatted_date_time
+           |> Pool_common.Message.sessionalreadycanceled
+           |> Utils.error_to_string language
+           |> txt
+         ])
+   | None ->
+     form
+       ~a:
+         [ a_class [ "stack" ]
+         ; a_method `Post
+         ; a_action (action |> Sihl.Web.externalize_path)
+         ]
+       [ csrf_element csrf ()
+       ; textarea_element
+           ~flash_fetcher
+           language
+           Pool_common.Message.Field.Reason
+       ; span
+           Pool_common.
+             [ I18n.SessionCancelMessage |> Utils.hint_to_string language |> txt
+             ]
+       ; p
+           Pool_common.
+             [ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
+       ; checkbox_element
+           ~flash_fetcher
+           language
+           Pool_common.Message.Field.Email
+         (* TODO issue #149 re-add this *)
+         (* ; checkbox_element ~flash_fetcher language
+            Pool_common.Message.Field.SMS *)
+       ; div
+           ~a:[ a_class [ "flexrow" ] ]
+           [ submit_element
+               ~classnames:[ "push" ]
+               language
+               Pool_common.Message.(Cancel (Some Field.Session))
+               ()
+           ]
+       ])
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Cancel (Some Field.Session)))
        experiment
 ;;

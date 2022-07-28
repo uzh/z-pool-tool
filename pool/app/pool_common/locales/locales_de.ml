@@ -18,9 +18,9 @@ let field_to_string =
   | City -> "Ort"
   | ClosedAt -> "Geschlossen am"
   | Comment -> "Kommentar"
-  | Contact -> "Proband"
+  | Contact -> "Kontakt"
   | ContactEmail -> "Kontakt Email Adresse"
-  | Contacts -> "Probanden"
+  | Contacts -> "Kontakte"
   | CustomField -> "Feld"
   | CustomFields -> "Felder"
   | CustomFieldGroup -> "Gruppe"
@@ -42,7 +42,7 @@ let field_to_string =
   | Distribution -> "Verteilung"
   | DistributionField -> "Feld"
   | Duration -> "Dauer"
-  | Email -> "Email Adresse"
+  | Email -> "Email"
   | EmailAddress -> "Email Adresse"
   | EmailAddressUnverified -> "Unverifizierte Email Adresse"
   | EmailAddressVerified -> "Verifizierte Email Adresse"
@@ -86,6 +86,7 @@ let field_to_string =
   | Mailing -> "Versand"
   | MainSession -> "Hauptsession"
   | MaxParticipants -> "Maximum an Teilnehmern"
+  | MessageChannel -> "Nachrichtenkanal"
   | MinParticipants -> "Minimum an Teilnehmern"
   | Model -> "Modell"
   | Name -> "Name"
@@ -109,6 +110,7 @@ let field_to_string =
   | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"
   | Rate -> "Höchstrate"
+  | Reason -> "Grund"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
@@ -118,10 +120,12 @@ let field_to_string =
   | Role -> "Rolle"
   | Room -> "Raum"
   | Root -> "Root"
+  | SentAt -> "Verschickt am"
   | Session -> "Session"
   | Sessions -> "Sessions"
   | Setting -> "Einstellung"
   | ShowUp -> "Anwesend"
+  | SMS -> "SMS"
   | SmtpAuthMethod -> "Smtp Authentifizierungsmethode"
   | SmtpAuthServer -> "Smtp Authentifizierungsserver"
   | SmtpPassword -> "Smtp Passwort"
@@ -323,6 +327,9 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | PickMessageChannel ->
+    "Kein Nachrichtenkanal wurde ausgewählt für die Benachrichtigung der \
+     Kontakte."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
       "%s ist nicht kompatibel mit %s."
@@ -347,6 +354,8 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
      kontaktieren."
+  | SessionAlreadyCanceled date ->
+    CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
   | SessionAlreadyClosed -> "Diese Session wurde bereits geschlossen."
   | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->

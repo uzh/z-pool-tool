@@ -54,11 +54,12 @@ let create_reminders pool default_language sys_languages session =
         let layout = Email.Helper.layout_from_tenant tenant in
         match custom_template layout with
         | Some template ->
-          Lwt_result.ok (reminder_email sys_languages contact session template)
+          Lwt_result.return
+            (reminder_email sys_languages contact session template)
         | None ->
           (match Hashtbl.find_opt i18n_texts message_language with
            | Some template ->
-             Lwt_result.ok
+             Lwt_result.return
                (reminder_email sys_languages contact session template)
            | None ->
              let find = CCFun.flip (I18n.find_by_key pool) message_language in
@@ -72,7 +73,7 @@ let create_reminders pool default_language sys_languages session =
                  }
              in
              let () = Hashtbl.add i18n_texts message_language template in
-             Lwt_result.ok
+             Lwt_result.return
                (reminder_email sys_languages contact session template)))
       assignments
   in

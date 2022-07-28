@@ -145,9 +145,6 @@ let sign_up () =
          tenant
          language
   in
-  CCList.iter
-    (fun m -> print_endline (Pool_event.show m))
-    (events |> Pool_common.Utils.get_or_failwith);
   let expected =
     let email = email_address |> Pool_user.EmailAddress.of_string in
     let firstname = firstname |> Pool_user.Firstname.of_string in

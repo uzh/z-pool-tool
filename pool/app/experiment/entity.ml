@@ -10,7 +10,7 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Title
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -18,7 +18,7 @@ module PublicTitle = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.PublicTitle
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -26,7 +26,7 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Description
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -53,7 +53,7 @@ module InvitationTemplate = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.InvitationSubject
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -62,7 +62,7 @@ module InvitationTemplate = struct
     include Pool_common.Model.String
 
     let field = Common.Message.Field.InvitationText
-    let create = create field
+    let create = create
     let schema = schema ?validation:None field
     let of_string m = m
   end

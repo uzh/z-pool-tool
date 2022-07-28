@@ -2,7 +2,7 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Description
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -72,6 +72,19 @@ module AssignmentCount = struct
     then Error Pool_common.Message.(Invalid Field.AssignmentCount)
     else Ok m
   ;;
+end
+
+module CancellationReason = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Reason
+  let create = create
+
+  let validate m =
+    if CCString.is_empty m then Error Pool_common.Message.NoValue else Ok m
+  ;;
+
+  let schema = schema ?validation:(Some validate) field
 end
 
 type t =

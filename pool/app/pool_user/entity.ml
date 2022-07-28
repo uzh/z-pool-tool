@@ -125,7 +125,7 @@ module Firstname = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.Firstname
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
   let of_string m = m
 end
@@ -134,7 +134,7 @@ module Lastname = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.Lastname
-  let create = create field
+  let create = create
   let schema = schema ?validation:None field
   let of_string m = m
 end

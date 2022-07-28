@@ -25,6 +25,7 @@ type t =
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
+  | NotifyVia
   | OurPartners
   | ProfileCompletionTitle
   | RateTotalSent of int
@@ -112,6 +113,7 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SelectedDateIsPast
+  | SessionCancelMessage
   | SessionClose
   | SessionReminderLanguageHint
   | SessionRegistrationHint

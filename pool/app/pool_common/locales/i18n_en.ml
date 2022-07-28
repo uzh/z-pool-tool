@@ -28,6 +28,7 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
+  | NotifyVia -> "Notify via"
   | OurPartners -> "Our partners"
   | ProfileCompletionTitle -> "Profile completion"
   | LocationFileNew -> "Add file to location"
@@ -187,6 +188,8 @@ let hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | SessionCancelMessage ->
+    "This reason will be provided to all contacts assigned to this session."
   | SessionClose ->
     {|S: the contact showed up
     P: the contact participated in the experiment

@@ -75,14 +75,12 @@ module String = struct
   let value m = m
   let of_string m = m
 
-  let create field str =
-    if CCString.is_empty str
-    then Error Entity_message.(Invalid field)
-    else Ok str
+  let create str =
+    if CCString.is_empty str then Error Entity_message.NoValue else Ok str
   ;;
 
   let schema field ?validation () =
-    let create = CCOption.value ~default:(create field) validation in
+    let create = CCOption.value ~default:create validation in
     Pool_common_utils.schema_decoder create value field
   ;;
 end
