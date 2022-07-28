@@ -118,8 +118,8 @@ let create_with_distribution () =
   let mailing = create_mailing () in
   let distribution =
     Field.
-      [ NumberOfInvitations, Distribution.SortOrder.Ascending
-      ; NumberOfAssignments, Distribution.SortOrder.Descending
+      [ InvitationCount, Distribution.SortOrder.Ascending
+      ; AssignmentCount, Distribution.SortOrder.Descending
       ]
   in
   let mailing = { mailing with distribution = Some distribution } in
