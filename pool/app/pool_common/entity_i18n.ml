@@ -66,6 +66,7 @@ type nav_link =
 [@@deriving eq]
 
 type hint =
+  | AllowUninvitedSignup
   | AssignContactFromWaitingList
   | DirectRegistrationDisbled
   | Distribution

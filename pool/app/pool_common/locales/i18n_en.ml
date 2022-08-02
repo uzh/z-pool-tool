@@ -85,6 +85,9 @@ let nav_link_to_string = function
 ;;
 
 let hint_to_string = function
+  | AllowUninvitedSignup ->
+    "Contacts who have not been invited will be able to sign up for the \
+     experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
   | DirectRegistrationDisbled ->

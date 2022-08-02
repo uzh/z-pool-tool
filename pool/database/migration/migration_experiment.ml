@@ -101,6 +101,15 @@ let add_experiment_type_column =
     |sql}
 ;;
 
+let add_public_visibility_and_uninvited_signup_flags =
+  Sihl.Database.Migration.create_step
+    ~label:"add experiment_type columns"
+    {sql|
+     ALTER TABLE pool_experiments
+      ADD COLUMN allow_uninvited_signup boolean NOT NULL DEFAULT 0 AFTER registration_disabled
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
@@ -113,5 +122,6 @@ let migration () =
     |> add_step set_default_public_title
     |> add_step add_session_reminder_columns
     |> add_step add_invitation_columns
-    |> add_step add_experiment_type_column)
+    |> add_step add_experiment_type_column
+    |> add_step add_public_visibility_and_uninvited_signup_flags)
 ;;

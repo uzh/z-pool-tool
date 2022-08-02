@@ -4,6 +4,7 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"

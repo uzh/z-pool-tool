@@ -11,6 +11,7 @@ let default_schema command =
         ; Description.schema ()
         ; DirectRegistrationDisabled.schema ()
         ; RegistrationDisabled.schema ()
+        ; AllowUninvitedSignup.schema ()
         ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
         ; Conformist.optional @@ InvitationTemplate.Subject.schema ()
         ; Conformist.optional @@ InvitationTemplate.Text.schema ()
@@ -27,6 +28,7 @@ let default_command
     description
     direct_registration_disabled
     registration_disabled
+    allow_uninvited_signup
     experiment_type
     invitation_subject
     invitation_text
@@ -39,6 +41,7 @@ let default_command
   ; description
   ; direct_registration_disabled
   ; registration_disabled
+  ; allow_uninvited_signup
   ; experiment_type
   ; invitation_subject
   ; invitation_text
@@ -70,6 +73,7 @@ end = struct
         command.description
         command.direct_registration_disabled
         command.registration_disabled
+        command.allow_uninvited_signup
         command.experiment_type
         command.invitation_subject
         command.invitation_text
@@ -116,6 +120,7 @@ end = struct
         command.description
         command.direct_registration_disabled
         command.registration_disabled
+        command.allow_uninvited_signup
         command.experiment_type
         command.invitation_subject
         command.invitation_text

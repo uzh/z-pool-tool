@@ -5,6 +5,8 @@ module Field = struct
 
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
+    | AllowUninvitedSignup [@name "allow_uninvited_signup"]
+        [@printer go "allow_uninvited_signup"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
     | Assignment [@name "assignment"] [@printer go "assignment"]
     | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
@@ -103,8 +105,8 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
-    | Rate [@name "rate"] [@printer go "rate"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
