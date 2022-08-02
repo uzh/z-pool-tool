@@ -92,9 +92,7 @@ let hint_to_string = function
      directly enroll in the experiment."
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
-     first. E.g. with name ascending and email address descending: \
-     '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'. (Currently only as \
-     json array objects.)"
+     first."
   | I18nText str -> str
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
@@ -111,9 +109,9 @@ let hint_to_string = function
     "There are currently no other mailings running in the specified time range."
   | RateNumberPerMinutes (per_n_minutes, number) ->
     Format.asprintf
-      "Generates every %d minutes %.2f new invitations."
+      "Generates max %i new invitations every %d minutes"
+      (number +. 0.5 |> CCFloat.round |> CCInt.of_float)
       per_n_minutes
-      number
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."

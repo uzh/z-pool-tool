@@ -99,9 +99,7 @@ let hint_to_string = function
      setzen, aber nicht direkt für das Experiment einschreiben."
   | Distribution ->
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
-     versendet werden. Z.B. mit Name aufsteigend und E-Mail Adresse \
-     absteigend: '[[[\"name\"],[\"ASC\"]],[[\"name\"],[\"DESC\"]]]'  (Zur Zeit \
-     nur als Json Array Objekte.)"
+     versendet werden."
   | I18nText str -> str
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"

@@ -5,3 +5,31 @@
 .toggle-address:checked~.toggled {
     display: none;
 }
+
+[data-sortable-item] {
+    padding: 0.7rem;
+    cursor: move;
+    cursor: grab;
+}
+
+[data-sortable-item].origin {
+    background-color: #fafafa;
+    cursor: grabbing;
+}
+
+[data-sortable-item].active {
+    background-color: #48c78e50;
+}
+
+[data-sortable]:not(:empty) {
+    border: 1px solid #b5b5b5;
+    border-radius: 4px;
+}
+
+[data-sortable-item] *:not(button) {
+    cursor: inherit;
+}
+
+[data-sortable-item]:not(:last-child) {
+    border-bottom: 1px solid #b5b5b5;
+}
