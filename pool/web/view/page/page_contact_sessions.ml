@@ -26,7 +26,8 @@ let public_overview sessions experiment language =
                   (Format.asprintf
                      "/experiments/%s/sessions/%s"
                      (experiment.id |> Pool_common.Id.value)
-                     (session.Session.Public.id |> Pool_common.Id.value))
+                     (session.Session.Public.id |> Pool_common.Id.value)
+                  |> Sihl.Web.externalize_path)
               ]
             [ txt Pool_common.(Utils.control_to_string language Message.signup)
             ]
