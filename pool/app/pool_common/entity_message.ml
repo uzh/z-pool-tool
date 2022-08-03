@@ -54,6 +54,7 @@ module Field = struct
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
     | Filename [@name "filename"] [@printer go "filename"]
     | Filesize [@name "filesize"] [@printer go "filesize"]
+    | Filter [@name "filter"] [@printer go "filter"]
     | Firstname [@name "firstname"] [@printer go "firstname"]
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]

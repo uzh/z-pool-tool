@@ -124,7 +124,7 @@ export class SinglePredicate extends Base {
     updateValues() {
         const data = {
             key: this.key,
-            operator: this.operator,
+            operator: this.operator ? this.operator.name : undefined,
             value: this.value
         }
         this.setFilterValue(this.parentIds, this.id, data)

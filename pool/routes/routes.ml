@@ -164,7 +164,6 @@ module Admin = struct
         Experiments.Invitations.
           [ get "" index
           ; post "" create
-          ; post "contacts" filter
           ; post (add_key ~suffix:"resend" Invitation) resend
           ]
       in
@@ -264,6 +263,24 @@ module Admin = struct
   ;;
 end
 
+module Api = struct
+  let filter =
+    let open Handler.Admin.Filter in
+    let open Pool_common.Message.Field in
+    [ post
+        (Format.asprintf "/experiment/%s/create" (Experiment |> url_key))
+        create
+    ]
+  ;;
+
+  let routes =
+    choose
+      ~middlewares:Admin.middlewares
+      ~scope:"/admin"
+      [ choose ~scope:"/filter" filter ]
+  ;;
+end
+
 module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
@@ -332,6 +349,7 @@ let router =
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
+    ; choose ~scope:"/api" [ Api.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
     ; get

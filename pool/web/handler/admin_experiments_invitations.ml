@@ -172,30 +172,3 @@ let resend req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
-
-let filter req =
-  let open Utils.Lwt_result.Infix in
-  let experiment_id =
-    let open Pool_common.Message.Field in
-    let open HttpUtils in
-    get_field_router_param req Experiment |> Pool_common.Id.of_string
-  in
-  let redirect_path =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (Pool_common.Id.value experiment_id)
-  in
-  let[@warning "-27"] result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let%lwt urlencoded =
-         Sihl.Web.Request.to_urlencoded req
-         ||> HttpUtils.remove_empty_values
-         ||> Filter.from_urlencoded
-       in
-       let%lwt response =
-         Http_utils.redirect_to_with_actions redirect_path []
-       in
-       Ok response |> Lwt_result.lift
-  in
-  result |> HttpUtils.extract_happy_path req
-;;

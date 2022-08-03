@@ -92,7 +92,7 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; Filter.filter language experiment
+      ; Filter.filter_lit csrf experiment
       ; form
           ~a:
             [ a_method `Post

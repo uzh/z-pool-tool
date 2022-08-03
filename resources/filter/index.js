@@ -1,4 +1,4 @@
-import { LitElement } from 'lit';
+import { html, LitElement } from 'lit';
 import { AndOrPredicate, ListPredicate, Predicate, SinglePredicate } from './predicate.js';
 
 // This is just a help
@@ -52,6 +52,23 @@ export class ContactFilter extends LitElement {
     constructor() {
         super();
         this.filterValue = {};
+        this.action = String(this.getAttribute('data-action'));
+        this.csrf = String(this.getAttribute('data-csrf'));
+    }
+
+    submit(e) {
+        e.preventDefault();
+        // How to pass the csrf token??
+        fetch(this.action, {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': this.csrf,
+            },
+            body: JSON.stringify(this.filterValue)
+        }).then(res => {
+            console.log("Request complete! response:", res);
+        });
     }
 
     setFilterValue(parentIds, id, data) {
@@ -65,7 +82,14 @@ export class ContactFilter extends LitElement {
 
     render() {
         let predicate = new Predicate(0, [], (parentIds, id, data) => this.setFilterValue(parentIds, id, data))
-        return predicate;
+        return html`
+            <div>
+                ${predicate}
+                <button type="submit" class="success gap" @click=${(e) => this.submit(e)}>
+                    Find contacts
+                </button>
+            </div>
+            `;
     }
 }
 

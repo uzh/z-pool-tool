@@ -6,6 +6,7 @@ module Admin = Admin_admins
 module Session = Admin_session
 module Experiments = Admin_experiments
 module Location = Admin_location
+module Filter = Admin_filter
 
 let create_layout req = General.create_tenant_layout `Admin req
 

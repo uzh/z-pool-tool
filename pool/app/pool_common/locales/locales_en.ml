@@ -44,6 +44,7 @@ let field_to_string =
   | FileMimeType -> "mime type"
   | Filename -> "filename"
   | Filesize -> "filesize"
+  | Filter -> "filter"
   | Firstname -> "firstname"
   | FollowUpSession -> "follow-up session"
   | From -> "from"
