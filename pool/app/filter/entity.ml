@@ -13,6 +13,7 @@ module Ptime = struct
   let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Basic.from_string
 end
 
+let error = Pool_common.Message.(Invalid Field.Filter)
 let basic_to_safe m = m |> Yojson.Basic.to_string |> Yojson.Safe.from_string
 let wrap_string m = Format.asprintf "[\"%s\"]" m
 
@@ -56,14 +57,17 @@ let rec yojson_of_val value =
 (* TODO[timhub]: Use assocs and store data type? *)
 let rec val_of_yojson (value : Yojson.Basic.t) =
   match value with
-  | `Bool b -> Bool b
-  | `Float f -> Nr f
-  | `Int i -> Nr (CCFloat.of_int i)
-  | `List lst -> Lst (CCList.map val_of_yojson lst)
-  | `Null -> Empty
-  | `String s -> Str s
+  | `Bool b -> Ok (Bool b)
+  | `Float f -> Ok (Nr f)
+  | `Int i -> Ok (Nr (CCFloat.of_int i))
+  | `List lst ->
+    CCList.map val_of_yojson lst
+    |> CCResult.flatten_l
+    |> CCResult.map (fun l -> Lst l)
+  | `Null -> Ok Empty
+  | `String s -> Ok (Str s)
   (* TODO[timhub]: Error handling *)
-  | `Assoc _ -> failwith "Unhandled"
+  | `Assoc _ -> Error error
 ;;
 
 type key = string [@@deriving yojson]
@@ -109,24 +113,22 @@ module Operator = struct
   ;;
 
   let yojson_of_t t = t |> to_string |> wrap_string |> Yojson.Safe.from_string
-
-  let t_of_yojson m =
-    m |> Yojson.Safe.to_string |> unwrap_string |> of_string |> CCResult.get_exn
-  ;;
+  let t_of_yojson m = m |> Yojson.Safe.to_string |> unwrap_string |> of_string
 end
 
 module Predicate = struct
   type 'a t = key * 'a Operator.t * 'a val'
 
-  let t_of_yojson (json : Yojson.Safe.t) : 'a t =
+  let t_of_yojson (json : Yojson.Safe.t) =
     let json = Yojson.Safe.to_basic json |> Yojson.Basic.Util.to_list in
     match json with
     | [ key; operator; value ] ->
+      let open CCResult in
       let key = key |> basic_to_safe |> key_of_yojson in
-      let operator = operator |> basic_to_safe |> Operator.t_of_yojson in
-      let value = value |> val_of_yojson in
-      key, operator, value
-    | _ -> failwith "Invalid yojson"
+      let* operator = operator |> basic_to_safe |> Operator.t_of_yojson in
+      let* value = value |> val_of_yojson in
+      Ok (key, operator, value)
+    | _ -> Error error
   ;;
 
   let yojson_of_t (m : 'a t) =
@@ -152,7 +154,7 @@ type filter =
   (* TODO[timhub]: Fix this type *)
   | PredS of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_s"]
   | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
-[@@deriving show { with_path = false }]
+[@@deriving show { with_path = false }, variants]
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
@@ -167,19 +169,22 @@ let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
 ;;
 
 let rec filter_of_yojson json =
+  let open CCResult in
   match json with
   | `Tuple [ k; filter ] ->
     let key = k |> Yojson.Safe.to_string |> unwrap_string in
     (match key, filter with
     | "and", `Tuple [ f1; f2 ] ->
-      And (f1 |> filter_of_yojson, f2 |> filter_of_yojson)
+      CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
+      >|= fun (p1, p2) -> And (p1, p2)
     | "or", `Tuple [ f1; f2 ] ->
-      Or (f1 |> filter_of_yojson, f2 |> filter_of_yojson)
+      CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
+      >|= fun (p1, p2) -> Or (p1, p2)
     | "not", f -> f |> filter_of_yojson
-    | "pred_s", p -> PredS (p |> Predicate.t_of_yojson)
-    | "pred_m", p -> PredM (p |> Predicate.t_of_yojson)
-    | _ -> failwith "Unhandled")
-  | _ -> failwith "Unhandled"
+    | "pred_s", p -> p |> Predicate.t_of_yojson >|= preds
+    | "pred_m", p -> p |> Predicate.t_of_yojson >|= predm
+    | _ -> Error error)
+  | _ -> Error error
 ;;
 
 let ( &.& ) a b = And (a, b)
@@ -208,10 +213,11 @@ let list_filter : filter =
 let and_filter : filter = And (single_filter, list_filter)
 
 let json_to_filter () =
+  let open CCResult in
   let json = and_filter |> yojson_of_filter in
   let _ = Logs.info (fun m -> m "%s" (json |> Yojson.Safe.to_string)) in
-  let filter = filter_of_yojson json in
+  let* filter = filter_of_yojson json in
   Logs.info (fun m ->
       m "%s" (filter |> yojson_of_filter |> Yojson.Safe.to_string));
-  ()
+  Ok ()
 ;;

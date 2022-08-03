@@ -22,7 +22,7 @@ let create req =
        in
        (* Logs.info (fun m -> m "Filter: %s" (Yojson.Safe.pretty_to_string
           json_filter)); *)
-       let () = Filter.json_to_filter () in
+       let _ = Filter.json_to_filter () in
        let%lwt response =
          Http_utils.redirect_to_with_actions redirect_path []
        in

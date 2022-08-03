@@ -2,6 +2,6 @@
  (name filter)
  (libraries pool_common utils ppx_deriving_yojson.runtime)
  (preprocess
-  (pps lwt_ppx ppx_deriving.show ppx_yojson_conv)))
+  (pps lwt_ppx ppx_deriving.show ppx_yojson_conv ppx_variants_conv)))
 
 (include_subdirs unqualified)
