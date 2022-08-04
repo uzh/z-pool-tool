@@ -180,7 +180,7 @@ let rec filter_of_yojson json =
     | "or", `Tuple [ f1; f2 ] ->
       CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
       >|= fun (p1, p2) -> Or (p1, p2)
-    | "not", f -> f |> filter_of_yojson
+    | "not", f -> f |> filter_of_yojson >|= not
     | "pred_s", p -> p |> Predicate.t_of_yojson >|= preds
     | "pred_m", p -> p |> Predicate.t_of_yojson >|= predm
     | _ -> Error error)
@@ -199,9 +199,10 @@ let ( --. ) a = Not a
  * deactivated: hidden by default
  * tags: empty by default, depends on #23 *)
 
-let foo : filter =
-  PredS ("role", Operator.Equal, Str "participant")
-  &.& Not (PredS ("verified", Operator.Equal, Empty))
+let not_filter = Not (PredS ("verified", Operator.Equal, Empty))
+
+let or_filter : filter =
+  PredS ("role", Operator.Equal, Str "participant") |.| not_filter
 ;;
 
 let single_filter : filter = PredS ("paused", Operator.Equal, Bool false)
@@ -210,7 +211,7 @@ let list_filter : filter =
   PredM ("experiment_id", Operator.ContainsNone, Lst [ Nr 2.0; Nr 3.0 ])
 ;;
 
-let and_filter : filter = And (single_filter, list_filter)
+let and_filter : filter = And (or_filter, list_filter)
 
 let json_to_filter () =
   let open CCResult in
