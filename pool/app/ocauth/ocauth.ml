@@ -73,7 +73,7 @@ module Contact = struct
           (Uuid.of_string_exn (Pool_common.Id.value (Contact.id t))))
       t
     |> Lwt_result.map_error (fun s ->
-           Format.asprintf "Failed to convert Contact to authorizable: %s" s)
+         Format.asprintf "Failed to convert Contact to authorizable: %s" s)
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
 end
@@ -134,7 +134,7 @@ end
     order to achieve a minimal level of functionality. Notably, the [`Admin]
     role should have [`Manage] authority on everything in the system. *)
 let root_permissions : Authorizer.auth_rule list =
-  List.map (fun role -> `Role `Admin, `Manage, `Role role) Role.all
+  CCList.map (fun role -> `Role `Admin, `Manage, `Role role) Role.all
 ;;
 
 let checker_of_rules rules =
