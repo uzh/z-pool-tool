@@ -1,6 +1,3 @@
-let ( >|= ) = Lwt.Infix.( >|= )
-let database_label = Test_utils.Data.database_label
-
 let update_language_as ~actor =
   let open Lwt_result.Syntax in
   let subject =
@@ -8,7 +5,7 @@ let update_language_as ~actor =
     |> Contact_test.contact_info
     |> Contact_test.create_contact true
   in
-  let* tenant = Pool_tenant.find_by_label database_label in
+  let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
   let effects = Cqrs_command.Contact_command.Update.effects tenant subject in
   let* _ = Ocauth.Pool_tenant.to_authorizable tenant in
   let* _ = Ocauth.Contact.to_authorizable subject in

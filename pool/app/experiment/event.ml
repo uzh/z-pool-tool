@@ -27,6 +27,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created t -> Repo.insert pool t
   | Updated t -> Repo.update pool t
   | Destroyed experiment_id -> Repo.destroy pool experiment_id
+  (** TODO: was placeholder *)
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
     let user_id = Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
