@@ -11,7 +11,6 @@ type t =
   | `Waiting_list
   | `Assignment
   | `Mailing
-  | `Assignment
   | `Assistant of Ocaml_authorize.Uuidm.t
   | `Experimenter of Ocaml_authorize.Uuidm.t
   | `Location_manager of Ocaml_authorize.Uuidm.t
