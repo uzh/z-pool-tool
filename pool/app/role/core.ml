@@ -67,7 +67,6 @@ let all =
   ; `Waiting_list
   ; `Assignment
   ; `Mailing
-  ; `Assignment
   ; `Assistant Ocaml_authorize.Uuidm.nil
   ; `Experimenter Ocaml_authorize.Uuidm.nil
   ; `Location_manager Ocaml_authorize.Uuidm.nil
