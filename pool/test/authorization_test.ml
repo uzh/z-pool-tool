@@ -7,8 +7,12 @@ let update_language_as ~actor =
   in
   let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
   let effects = Cqrs_command.Contact_command.Update.effects tenant subject in
-  let* _ = Ocauth.Pool_tenant.to_authorizable tenant in
-  let* _ = Ocauth.Contact.to_authorizable subject in
+  let* (_ : [> `User ] Ocauth.Authorizable.t) =
+    Ocauth.Pool_tenant.to_authorizable tenant
+  in
+  let* (_ : [> `User ] Ocauth.Authorizable.t) =
+    Ocauth.Contact.to_authorizable subject
+  in
   let* () =
     (Ocauth.Persistence.checker_of_effects effects) ~actor
     |> Lwt_result.map_error Pool_common.Message.authorization
