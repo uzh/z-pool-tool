@@ -27,12 +27,25 @@ type _ val' =
   | Bool : bool -> [> `Single ] val'
   | Date : Ptime.t -> [> `Single ] val'
   | Empty : [> `Single ] val'
-  (* TODO maybe problematic when pattern matching (constructor would escape its
-     scope *)
-  (* | Lst : 'a list -> [> `Multi ] val' *)
-  (* | Lst : [> `Single ] val' list -> [> `Multi ] val' *)
-  (* TODO[timhub]: Fix this type *)
   | Lst : [ `Single ] val' list -> [> `Multi ] val'
+
+let[@warning "-4"] equal_val' val_one val_two =
+  let equal_single_val' v1 v2 =
+    match v1, v2 with
+    | Str s1, Str s2 -> CCString.equal s1 s2
+    | Nr n1, Nr n2 -> CCFloat.equal n1 n2
+    | Bool b1, Bool b2 -> CCBool.equal b1 b2
+    | Date d1, Date d2 ->
+      CCString.equal (Ptime.to_rfc3339 d1) (Ptime.to_rfc3339 d2)
+    | Empty, Empty -> true
+    | _ -> false
+  in
+  match val_one, val_two with
+  | Str _, Str _ | Nr _, Nr _ | Bool _, Bool _ | Date _, Date _ | Empty, Empty
+    -> equal_single_val' val_one val_two
+  | Lst l1, Lst l2 -> CCList.equal equal_single_val' l1 l2
+  | _ -> false
+;;
 
 let stringify_bool = function
   | true -> "true"
@@ -141,6 +154,16 @@ end
 module Predicate = struct
   type 'a t = key * 'a Operator.t * 'a val'
 
+  let equal p1 p2 =
+    let key1, operator1, val1 = p1 in
+    let key2, operator2, val2 = p2 in
+    [ equal_key key1 key2
+    ; Operator.equal operator1 operator2
+    ; equal_val' val1 val2
+    ]
+    |> CCList.find not
+  ;;
+
   let t_of_yojson (json : Yojson.Safe.t) =
     let json = Yojson.Safe.to_basic json |> Yojson.Basic.Util.to_list in
     match json with
@@ -179,7 +202,15 @@ type filter =
 [@@deriving show { with_path = false }, variants]
 
 (* TODO[timhub]: add equality *)
-let equal_filter _ _ = false
+let[@warning "-4"] rec equal_filter f_one f_two =
+  match f_one, f_two with
+  | And (f_one_a, f_one_b), And (f_two_a, f_two_b)
+  | Or (f_one_a, f_one_b), Or (f_two_a, f_two_b) ->
+    equal_filter f_one_a f_two_a && equal_filter f_one_b f_two_b
+  | Not f1, Not f2 -> equal_filter f1 f2
+  | PredS p1, PredS p2 | PredM p1, PredM p2 -> Predicate.equal p1 p2
+  | _ -> false
+;;
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
@@ -238,6 +269,7 @@ let list_filter : filter =
 
 let and_filter : filter = And (or_filter, list_filter)
 
+(* TODO: remove this function *)
 let json_to_filter () =
   let open CCResult in
   let json = and_filter |> yojson_of_filter in
@@ -247,7 +279,7 @@ let json_to_filter () =
 
 type t =
   { id : Pool_common.Id.t
-  ; filter : filter
+  ; filter : filter [@equal equal_filter]
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }

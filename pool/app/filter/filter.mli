@@ -45,6 +45,11 @@ val show : t -> string
 val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> filter -> t
 val json_to_filter : unit -> (filter, Pool_common.Message.error) result
+val yojson_of_filter : filter -> Yojson.Safe.t
+
+val filter_of_yojson
+  :  Yojson.Safe.t
+  -> (filter, Pool_common.Message.error) result
 
 val find
   :  Pool_database.Label.t
