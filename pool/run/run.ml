@@ -45,7 +45,13 @@ let () =
              ()
              Ocauth.root_permissions
          in
-         let%lwt _ = Ocauth.(Persistence.put_perms root_permissions) in
+         let%lwt (_
+                   : ( Ocauth.Persistence.auth_rule list
+                     , Ocauth.Persistence.auth_rule list )
+                     result)
+           =
+           Ocauth.(Persistence.put_perms root_permissions)
+         in
          Printexc.record_backtrace true |> Lwt.return)
     |> run ~commands)
 ;;
