@@ -23,12 +23,17 @@ const mockup = {
 
 function updateFilterObject(parentIds, id, data, filter) {
     if (parentIds.length == 0) {
+        let oldPredicate = {}
+        if(filter[id] && filter[id].predicateType === data.predicateType) {
+            oldPredicate = filter[id]
+        }
         return {
             ...filter,
             [id]: {
                 // should children be reset or kept?
                 // probably depending on the change? and to or => keep / and to single => delete
                 // predicates: filter[id].predicates,
+                ...oldPredicate,
                 ...data
             }
         }
@@ -58,6 +63,7 @@ export class ContactFilter extends LitElement {
 
     submit(e) {
         e.preventDefault();
+
         // How to pass the csrf token??
         fetch(this.action, {
             method: "POST",
@@ -73,7 +79,6 @@ export class ContactFilter extends LitElement {
 
     setFilterValue(parentIds, id, data) {
         this.filterValue = updateFilterObject(parentIds, id, data, this.filterValue);
-        console.log(this.filterValue);
     }
 
     createRenderRoot() {

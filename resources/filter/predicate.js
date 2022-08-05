@@ -127,7 +127,7 @@ export class SinglePredicate extends Base {
             operator: this.operator ? this.operator.name : undefined,
             value: this.value
         }
-        this.setFilterValue(this.parentIds, this.id, data)
+        this.setFilterValue(this.parentIds, this.id, {predicates: [data]})
     }
 
     setKey(e) {
@@ -233,10 +233,11 @@ export class AndOrPredicate extends Base {
         return html`
             <div class="flexcolumn stack inset left">
                 ${this.predicates.map(p => html`<div>${p}</div>`)}
-                <div><button @click=${() => this.addPredicate()}>Add predicate</button></div>
             </div>`
     }
 }
+// <div><button @click=${() => this.addPredicate()}>Add predicate</button></div>
+
 
 export class Predicate extends Base {
     static get properties() {
