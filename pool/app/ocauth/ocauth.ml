@@ -18,7 +18,7 @@ let console_authorizable =
   Authorizable.make ~roles:(Role_set.singleton `Admin) ~typ:`Admin (Uuid.v `V4)
 ;;
 
-(** [console_authorizable] is a [\[ `Guest \] Authorizable.t] to be assigned to
+(** [guest_authorizable] is a [\[ `Guest \] Authorizable.t] to be assigned to
     entities at the absolute lowest level of trust, such as users browsing the
     public facing website without logging in. *)
 let guest_authorizable =
