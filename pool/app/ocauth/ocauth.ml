@@ -1,14 +1,5 @@
 include Core
-
-module Persistence = struct
-  include Repo
-
-  let collect_rules effects =
-    collect_rules effects
-    |> Lwt_result.map_error Pool_common.Message.authorization
-  ;;
-end
-
+module Persistence = Repo
 open Utils.Lwt_result.Syntax
 
 (** [console_authorizable] is an [\[ `Admin \] Authorizable.t] for use in
@@ -41,6 +32,8 @@ module User = struct
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
 
+  (** Many request handlers do not extract a [User.t] at any point. This
+      function is useful in such cases. *)
   let authorizable_of_req req =
     let* user_id =
       Sihl.Web.Session.find "user_id" req
@@ -135,9 +128,4 @@ end
     role should have [`Manage] authority on everything in the system. *)
 let root_permissions : Authorizer.auth_rule list =
   CCList.map (fun role -> `Role `Admin, `Manage, `Role role) Role.all
-;;
-
-let checker_of_rules rules =
-  let f = Authorizer.checker_of_rules rules in
-  fun ~actor -> f ~actor |> CCResult.map_err Pool_common.Message.authorization
 ;;
