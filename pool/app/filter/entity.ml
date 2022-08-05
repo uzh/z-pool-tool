@@ -7,7 +7,6 @@ module Ptime = struct
     |> Ptime.of_rfc3339
     |> CCResult.map (fun (m, _, _) -> m)
     |> CCResult.map_err (fun _ -> "Invalid date time provided")
-    |> CCResult.get_or_failwith
   ;;
 
   let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Basic.from_string
@@ -33,41 +32,63 @@ type _ val' =
   (* | Lst : 'a list -> [> `Multi ] val' *)
   (* | Lst : [> `Single ] val' list -> [> `Multi ] val' *)
   (* TODO[timhub]: Fix this type *)
-  | Lst : [ `Single | `Multi ] val' list -> [> `Multi ] val'
+  | Lst : [ `Single ] val' list -> [> `Multi ] val'
 
 let stringify_bool = function
   | true -> "true"
   | false -> "false"
 ;;
 
-let rec yojson_of_val value =
+let single_val_to_yojson (value : [ `Single ] val') =
   let go m = m |> wrap_string |> Yojson.Basic.from_string in
-  match[@warning "-4"] value with
+  match value with
   | Str str -> go str
   | Nr nr -> nr |> CCFloat.to_string |> go
   | Bool b -> b |> stringify_bool |> go
   | Date ptime -> ptime |> Ptime.yojson_of_t
   | Empty -> "" |> go
+;;
+
+let yojson_of_val (value : [ `Single | `Multi ] val') =
+  let go = single_val_to_yojson in
+  match value with
+  | Str str -> go (Str str)
+  | Nr nr -> go (Nr nr)
+  | Bool b -> go (Bool b)
+  | Date ptime -> go (Date ptime)
+  | Empty -> go Empty
   | Lst lst ->
-    CCList.map (fun v -> yojson_of_val v) lst
+    CCList.map (fun v -> single_val_to_yojson v) lst
     |> Yojson.Basic.Util.flatten
     |> fun t -> `List t
 ;;
 
-(* TODO[timhub]: Use assocs and store data type? *)
-let rec val_of_yojson (value : Yojson.Basic.t) =
+(* Why does val_of_yojson compile if I extract this part of the function? *)
+(* TODO: fix date and time *)
+let single_val_of_yojson value =
   match value with
   | `Bool b -> Ok (Bool b)
   | `Float f -> Ok (Nr f)
   | `Int i -> Ok (Nr (CCFloat.of_int i))
-  | `List lst ->
-    CCList.map val_of_yojson lst
-    |> CCResult.flatten_l
-    |> CCResult.map (fun l -> Lst l)
   | `Null -> Ok Empty
   | `String s -> Ok (Str s)
-  (* TODO[timhub]: Error handling *)
+  | _ -> Error error
+;;
+
+(* TODO[timhub]: Use assocs and store data type? *)
+let val_of_yojson (value : Yojson.Basic.t)
+    : ([> `Single | `Multi ] val', Pool_common.Message.error) result
+  =
+  match value with
   | `Assoc _ -> Error error
+  | `List lst ->
+    let vals =
+      CCList.map single_val_of_yojson lst
+      |> CCResult.flatten_l
+      |> CCResult.map (fun l -> Lst l)
+    in
+    vals
+  | a -> single_val_of_yojson a
 ;;
 
 type key = string [@@deriving yojson]
