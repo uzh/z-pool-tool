@@ -130,7 +130,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
-  ; filter : string
+  ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -212,9 +212,12 @@ val pp_event : Format.formatter -> event -> unit
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_all
+  :  Pool_database.Label.t
+  -> unit
+  -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_public
   :  Pool_database.Label.t

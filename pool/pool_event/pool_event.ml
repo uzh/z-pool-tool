@@ -6,6 +6,7 @@ type t =
   | Database of Database.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
+  | Filter of Filter.event
   | Experiment of Experiment.event
   | I18n of I18n.event
   | Invitation of Invitation.event
@@ -26,6 +27,7 @@ let database events = Database events
 let email events = Email events
 let email_verification events = EmailVerification events
 let experiment events = Experiment events
+let filter events = Filter events
 let i18n events = I18n events
 let invitation events = Invitation events
 let mailing events = Mailing events
@@ -46,6 +48,7 @@ let handle_event pool event =
   | Email event -> Email.handle_event pool event
   | EmailVerification event -> Email.handle_verification_event pool event
   | Experiment event -> Experiment.handle_event pool event
+  | Filter event -> Filter.handle_event pool event
   | I18n event -> I18n.handle_event pool event
   | Invitation event -> Invitation.handle_event pool event
   | Mailing event -> Mailing.handle_event pool event

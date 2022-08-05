@@ -19,10 +19,11 @@ let experiment_boolean_fields =
 
 let index req =
   let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt expermient_list = Experiment.find_all tenant_db () in
+    @@ let* expermient_list = Experiment.find_all tenant_db () in
        Page.Admin.Experiments.index expermient_list context
        |> create_layout ~active_navigation:"/admin/experiments" req context
        >|= Sihl.Web.Response.of_html

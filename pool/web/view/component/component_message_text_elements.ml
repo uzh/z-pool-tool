@@ -83,7 +83,7 @@ module DummyData = struct
       ; title = Title.create "The Wallet Game\t" |> get_exn
       ; public_title = PublicTitle.create "public_title" |> get_exn
       ; description = Description.create "A description for everyone" |> get_exn
-      ; filter = "1=1"
+      ; filter = None
       ; invitation_template = None
       ; session_reminder_subject = None
       ; session_reminder_text = None

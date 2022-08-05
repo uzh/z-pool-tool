@@ -8,7 +8,7 @@ module Sql = struct
         title,
         public_title,
         description,
-        filter,
+        filter_uuid,
         direct_registration_disabled,
         registration_disabled,
         allow_uninvited_signup,
@@ -23,7 +23,7 @@ module Sql = struct
         ?,
         ?,
         ?,
-        ?,
+        UNHEX(REPLACE(?, '-', '')),
         ?,
         ?,
         ?,
@@ -42,8 +42,11 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool =
-    Utils.Database.exec (Database.Label.value pool) insert_request
+  let insert pool entity =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      insert_request
+      (entity |> Repo_entity.to_repo_entity)
   ;;
 
   let select_from_experiments_sql where_fragment =
@@ -60,7 +63,13 @@ module Sql = struct
           pool_experiments.title,
           pool_experiments.public_title,
           pool_experiments.description,
-          pool_experiments.filter,
+          LOWER(CONCAT(
+            SUBSTR(HEX(pool_experiments.filter_uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_experiments.filter_uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_experiments.filter_uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_experiments.filter_uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_experiments.filter_uuid), 21)
+          )),
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
           pool_experiments.allow_uninvited_signup,
@@ -83,8 +92,12 @@ module Sql = struct
     "" |> select_from_experiments_sql |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+  let find_all pool () =
+    let open Lwt.Infix in
+    ()
+    |> Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+    >>= Lwt_list.map_s (fun m -> Repo_entity.of_repo_entity pool m)
+    |> Lwt.map CCList.all_ok
   ;;
 
   let find_request =
@@ -97,12 +110,13 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    >>= Repo_entity.of_repo_entity pool
   ;;
 
   let find_of_session =
@@ -117,12 +131,13 @@ module Sql = struct
   ;;
 
   let find_of_session pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_of_session
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+    >>= Repo_entity.of_repo_entity pool
   ;;
 
   let update_request =
@@ -133,7 +148,7 @@ module Sql = struct
         title = $2,
         public_title = $3,
         description = $4,
-        filter = $5,
+        filter_uuid = UNHEX(REPLACE($5, '-', '')),
         direct_registration_disabled = $6,
         registration_disabled = $7,
         allow_uninvited_signup = $8,
@@ -149,8 +164,11 @@ module Sql = struct
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool =
-    Utils.Database.exec (Database.Label.value pool) update_request
+  let update pool entity =
+    Utils.Database.exec
+      (Database.Label.value pool)
+      update_request
+      (entity |> Repo_entity.to_repo_entity)
   ;;
 
   let destroy_request =

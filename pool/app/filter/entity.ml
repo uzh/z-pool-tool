@@ -91,7 +91,7 @@ let val_of_yojson (value : Yojson.Basic.t)
   | a -> single_val_of_yojson a
 ;;
 
-type key = string [@@deriving yojson]
+type key = string [@@deriving yojson, eq]
 
 let yojson_of_key m = m |> wrap_string |> Yojson.Safe.from_string
 let key_of_yojson m = m |> Yojson.Safe.to_string |> unwrap_string
@@ -107,6 +107,7 @@ module Operator = struct
     | ContainsSome : [> `Multi ] t
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
+  [@@deriving eq]
 
   let of_string = function
     | "less" -> Ok Less
@@ -177,6 +178,9 @@ type filter =
   | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
 [@@deriving show { with_path = false }, variants]
 
+(* TODO[timhub]: add equality *)
+let equal_filter _ _ = false
+
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
   | And (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
@@ -237,9 +241,22 @@ let and_filter : filter = And (or_filter, list_filter)
 let json_to_filter () =
   let open CCResult in
   let json = and_filter |> yojson_of_filter in
-  let _ = Logs.info (fun m -> m "%s" (json |> Yojson.Safe.to_string)) in
   let* filter = filter_of_yojson json in
-  Logs.info (fun m ->
-      m "%s" (filter |> yojson_of_filter |> Yojson.Safe.to_string));
-  Ok ()
+  Ok filter
+;;
+
+type t =
+  { id : Pool_common.Id.t
+  ; filter : filter
+  ; created_at : Ptime.t
+  ; updated_at : Ptime.t
+  }
+[@@deriving eq, show]
+
+let create ?(id = Pool_common.Id.create ()) filter =
+  { id
+  ; filter
+  ; created_at = Pool_common.CreatedAt.create ()
+  ; updated_at = Pool_common.UpdatedAt.create ()
+  }
 ;;

@@ -1,5 +1,7 @@
 let waiting_list pool =
-  let%lwt experiments = Experiment.find_all pool () in
+  let%lwt experiments =
+    Experiment.find_all pool () |> Lwt.map CCResult.get_exn
+  in
   let to_public_experiment (experiment : Experiment.t) =
     Experiment.Public.
       { id = experiment.Experiment.id

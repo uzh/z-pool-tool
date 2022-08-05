@@ -159,7 +159,7 @@ let create_experiment () =
         Description.create "A description for everyone"
         |> CCResult.map_err show_error
         |> CCResult.get_or_failwith
-    ; filter = "1=1"
+    ; filter = None
     ; invitation_template = None
     ; session_reminder_subject = None
     ; session_reminder_text = None

@@ -106,13 +106,11 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let find_filtered_request filter =
+let find_filtered_request _ =
   let open Caqti_request.Infix in
-  Format.asprintf
-    {sql|
+  {sql|
     WHERE
-      %s
-      AND user_users.admin = 0
+      user_users.admin = 0
       AND user_users.confirmed = 1
       AND NOT EXISTS
         (SELECT 1
@@ -133,7 +131,6 @@ let find_filtered_request filter =
               SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', '')))
             )
     |sql}
-    filter
   |> find_request_sql
   |> Caqti_type.string ->* Repo_model.t
 ;;

@@ -48,6 +48,20 @@ function updateFilterObject(parentIds, id, data, filter) {
     }
 }
 
+function wrapString (str) {
+    return `["${str}"]`
+}
+
+function formatToYojson(json) {
+    return Object.entries(json).map(([key, value]) => {
+        if(["and", "or"].includes(value.predicateType)) {
+            return `${wrapString(value.predicateType)}`
+        } else {
+            return `${wrapString(value.predicateType)}`
+        }
+      })
+}
+
 export class ContactFilter extends LitElement {
     static get properties() {
         return {
@@ -63,7 +77,8 @@ export class ContactFilter extends LitElement {
 
     submit(e) {
         e.preventDefault();
-
+        const body = formatToYojson(this.filterValue);
+        console.log(body);
         // How to pass the csrf token??
         fetch(this.action, {
             method: "POST",

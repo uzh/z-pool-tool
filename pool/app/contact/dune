@@ -2,6 +2,7 @@
  (name contact)
  (libraries
   email
+  filter
   pool_common
   pool_user
   ptime

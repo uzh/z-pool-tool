@@ -69,7 +69,7 @@ val find_multiple
 val find_filtered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> string
+  -> Filter.t option
   -> t list Lwt.t
 
 val find_by_email
