@@ -248,7 +248,7 @@ type filter_param =
   | Existing of Filter.filter
   | New of Filter.Utils.filter_label
 
-let rec filter_form
+let rec predicate_form
     language
     (filter_param : filter_param)
     ?(identifier = [ 0 ])
@@ -273,18 +273,22 @@ let rec filter_form
       | And | Or ->
         CCList.map
           (fun i ->
-            filter_form language (New PredS) ~identifier:(identifier @ [ i ]) ())
+            predicate_form
+              language
+              (New PredS)
+              ~identifier:(identifier @ [ i ])
+              ())
           [ 0; 1 ]
         |> div ~a:[ a_class [ "stack" ] ]
       | Not ->
-        filter_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
+        predicate_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
       | PredS | PredM -> single_predicate_form language identifier ())
     | Existing filter ->
       (match filter with
       | And (f1, f2) | Or (f1, f2) ->
         CCList.mapi
           (fun i filter ->
-            filter_form
+            predicate_form
               language
               (Existing filter)
               ~identifier:(identifier @ [ i ])
@@ -292,7 +296,7 @@ let rec filter_form
           [ f1; f2 ]
         |> div ~a:[ a_class [ "stack" ] ]
       | Not filter ->
-        filter_form
+        predicate_form
           language
           (Existing filter)
           ~identifier:(identifier @ [ 0 ])
@@ -314,5 +318,19 @@ let rec filter_form
         ~selected
         ()
     ; div [ predicate_form ]
+    ]
+;;
+
+let filter_form language experiment filter =
+  let action =
+    Format.asprintf
+      "/admin/experiments/%s/filter/create"
+      (Pool_common.Id.value experiment.Experiment.id)
+  in
+  let predicates = predicate_form language filter () in
+  form
+    ~a:[ a_action action; a_method `Post; a_id "filter-form" ]
+    [ predicates
+    ; Component_input.submit_element language Pool_common.Message.(Save None) ()
     ]
 ;;

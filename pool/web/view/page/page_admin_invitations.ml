@@ -95,11 +95,11 @@ module Partials = struct
       ; (let open Component.Filter in
         filter_form
           language
+          experiment
           (CCOption.map_or
              ~default:(New Filter.Utils.default_filter_label)
              (fun f -> Existing f.Filter.filter)
              experiment.Experiment.filter))
-          ()
       ; form
           ~a:
             [ a_method `Post

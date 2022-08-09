@@ -81,7 +81,8 @@ let toggle_predicate_type req =
             | _ -> Error Pool_common.Message.(Invalid Field.Id))
       |> Lwt_result.lift
     in
-    Component.Filter.(filter_form language (New predicate_type) ~identifier ())
+    Component.Filter.(
+      predicate_form language (New predicate_type) ~identifier ())
     |> Lwt_result.return
   in
   (match result with
