@@ -3,10 +3,27 @@ type _ val' =
   | Nr : float -> [> `Single ] val'
   | Bool : bool -> [> `Single ] val'
   | Date : Ptime.t -> [> `Single ] val'
-  | Empty : [> `Single ] val'
   | Lst : [ `Single ] val' list -> [> `Multi ] val'
 
-type key = string
+module Key : sig
+  type t =
+    | Age
+    | Birthday
+    | Email
+    | Name
+    | Paused
+    | Verified
+    | VerifiedAt
+
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val equal : t -> t -> bool
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val read : string -> (t, Pool_common.Message.error) result
+  val all : t list
+  val type_of_key : t -> [> `Bool | `Date | `Nr | `Str ]
+end
 
 module Operator : sig
   type _ t =
@@ -19,10 +36,13 @@ module Operator : sig
     | ContainsSome : [> `Multi ] t
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
+
+  val to_string : [> `Multi | `Single ] t -> string
+  val equal : [> `Multi | `Single ] t -> [> `Multi | `Single ] t -> bool
 end
 
 module Predicate : sig
-  type 'a t = key * 'a Operator.t * 'a val'
+  type 'a t = Key.t * 'a Operator.t * 'a val'
 end
 
 type filter =
@@ -32,6 +52,8 @@ type filter =
   (* TODO[timhub]: Fix this type *)
   | PredS of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_s"]
   | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
+
+val show_filter : filter -> string
 
 type t =
   { id : Pool_common.Id.t
@@ -61,3 +83,28 @@ type event = Created of t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
+
+module Utils : sig
+  type filter_label =
+    | And
+    | Or
+    | Not
+    | PredS
+    | PredM
+
+  val equal_filter_label : filter_label -> filter_label -> bool
+  val stringify_label : filter_label -> string * string
+
+  val label_of_string
+    :  string
+    -> (filter_label, Pool_common__Entity_message.error) result
+
+  val all_filter_labels : filter_label list
+  val default_filter_label : filter_label
+  val all_single_operators : [> `Multi | `Single ] Operator.t list
+  val all_multi_operators : [> `Multi | `Single ] Operator.t list
+
+  val input_type_to_operator
+    :  [< `Bool | `Date | `Nr | `Str ]
+    -> [> `Single ] Operator.t list
+end

@@ -220,6 +220,7 @@ module Admin = struct
           ; choose ~scope:(Mailing |> url_key) specific
           ]
       in
+      let filter = Handler.Admin.Filter.[ post "/create" create ] in
       Experiments.
         [ get "" index
         ; get "/create" new_form
@@ -233,6 +234,7 @@ module Admin = struct
         ; choose ~scope:(build_scope "sessions") sessions
         ; choose ~scope:(build_scope "assignments") assignments
         ; choose ~scope:(build_scope "mailings") mailings
+        ; choose ~scope:(build_scope "filter") filter
         ]
     in
     let admins =
@@ -248,6 +250,12 @@ module Admin = struct
       Handler.Admin.Contacts.
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
+    let filter =
+      Handler.Admin.Filter.
+        [ post "/toggle-key" toggle_key
+        ; post "/toggle-predicate-type" toggle_predicate_type
+        ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
@@ -256,28 +264,11 @@ module Admin = struct
       ; get "/i18n" I18n.index
       ; post (Format.asprintf "/i18n/%s" (I18n |> url_key)) I18n.update
       ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:"/filter" filter
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ]
-  ;;
-end
-
-module Api = struct
-  let filter =
-    let open Handler.Admin.Filter in
-    let open Pool_common.Message.Field in
-    [ post
-        (Format.asprintf "/experiment/%s/create" (Experiment |> url_key))
-        create
-    ]
-  ;;
-
-  let routes =
-    choose
-      ~middlewares:Admin.middlewares
-      ~scope:"/admin"
-      [ choose ~scope:"/filter" filter ]
   ;;
 end
 
@@ -349,7 +340,6 @@ let router =
     [ Public.routes
     ; Contact.routes
     ; choose ~scope:"/admin" [ Admin.routes ]
-    ; choose ~scope:"/api" [ Api.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
     ; get

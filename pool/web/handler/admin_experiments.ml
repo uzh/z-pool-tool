@@ -89,16 +89,6 @@ let detail edit req =
     let open Lwt_result.Syntax in
     let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
     let* experiment = Experiment.find tenant_db id in
-    Logs.info (fun m ->
-        m
-          "%s"
-          (CCOption.map_or
-             ~default:"None"
-             (fun f ->
-               f.Filter.filter
-               |> Filter.yojson_of_filter
-               |> Yojson.Safe.to_string)
-             experiment.Experiment.filter));
     (match edit with
      | false ->
        let* session_count = Experiment.session_count tenant_db id in

@@ -21,13 +21,15 @@ let unwrap_string m =
   m |> CCString.take (CCString.length m - 2) |> CCString.drop 2
 ;;
 
+let print m fmt _ = Format.pp_print_string fmt m
+
 type _ val' =
-  | Str : string -> [> `Single ] val'
-  | Nr : float -> [> `Single ] val'
-  | Bool : bool -> [> `Single ] val'
-  | Date : Ptime.t -> [> `Single ] val'
-  | Empty : [> `Single ] val'
-  | Lst : [ `Single ] val' list -> [> `Multi ] val'
+  | Str : string -> [> `Single ] val' [@printer print "str"]
+  | Nr : float -> [> `Single ] val' [@printer print "nr"]
+  | Bool : bool -> [> `Single ] val' [@printer print "bool"]
+  | Date : Ptime.t -> [> `Single ] val' [@printer print "date"]
+  | Lst : [ `Single ] val' list -> [> `Multi ] val' [@printer print "list"]
+[@@deriving show { with_path = false }]
 
 let[@warning "-4"] equal_val' val_one val_two =
   let equal_single_val' v1 v2 =
@@ -37,29 +39,30 @@ let[@warning "-4"] equal_val' val_one val_two =
     | Bool b1, Bool b2 -> CCBool.equal b1 b2
     | Date d1, Date d2 ->
       CCString.equal (Ptime.to_rfc3339 d1) (Ptime.to_rfc3339 d2)
-    | Empty, Empty -> true
     | _ -> false
   in
   match val_one, val_two with
-  | Str _, Str _ | Nr _, Nr _ | Bool _, Bool _ | Date _, Date _ | Empty, Empty
-    -> equal_single_val' val_one val_two
+  | Str _, Str _ | Nr _, Nr _ | Bool _, Bool _ | Date _, Date _ ->
+    equal_single_val' val_one val_two
   | Lst l1, Lst l2 -> CCList.equal equal_single_val' l1 l2
   | _ -> false
 ;;
 
-let stringify_bool = function
-  | true -> "true"
-  | false -> "false"
+let single_val_to_string (m : [ `Single ] val') =
+  match m with
+  | Str _ -> "str"
+  | Nr _ -> "nr"
+  | Bool _ -> "bool"
+  | Date _ -> "date"
 ;;
 
-let single_val_to_yojson (value : [ `Single ] val') =
-  let go m = m |> wrap_string |> Yojson.Basic.from_string in
-  match value with
-  | Str str -> go str
-  | Nr nr -> nr |> CCFloat.to_string |> go
-  | Bool b -> b |> stringify_bool |> go
-  | Date ptime -> ptime |> Ptime.yojson_of_t
-  | Empty -> "" |> go
+let single_val_to_yojson (value : [ `Single ] val') : Yojson.Basic.t =
+  (match value with
+  | Str str -> `String str
+  | Nr nr -> `Float nr
+  | Bool b -> `Bool b
+  | Date ptime -> `String (ptime |> Ptime.to_rfc3339))
+  |> fun json -> `Assoc [ single_val_to_string value, json ]
 ;;
 
 let yojson_of_val (value : [ `Single | `Multi ] val') =
@@ -69,31 +72,31 @@ let yojson_of_val (value : [ `Single | `Multi ] val') =
   | Nr nr -> go (Nr nr)
   | Bool b -> go (Bool b)
   | Date ptime -> go (Date ptime)
-  | Empty -> go Empty
   | Lst lst ->
-    CCList.map (fun v -> single_val_to_yojson v) lst
-    |> Yojson.Basic.Util.flatten
-    |> fun t -> `List t
+    CCList.map (fun v -> single_val_to_yojson v) lst |> fun t -> `List t
 ;;
 
-(* Why does val_of_yojson compile if I extract this part of the function? *)
-(* TODO: fix date and time *)
 let single_val_of_yojson value =
   match value with
-  | `Bool b -> Ok (Bool b)
-  | `Float f -> Ok (Nr f)
-  | `Int i -> Ok (Nr (CCFloat.of_int i))
-  | `Null -> Ok Empty
-  | `String s -> Ok (Str s)
+  | `Assoc [ (key, value) ] ->
+    (match key, value with
+    | "str", `String s -> Ok (Str s)
+    | "nr", `Float f -> Ok (Nr f)
+    | "nr", `Int i -> Ok (Nr (i |> CCInt.to_float))
+    | "bool", `Bool b -> Ok (Bool b)
+    | "date", `String s ->
+      s
+      |> Ptime.of_rfc3339
+      |> CCResult.map (fun (d, _, _) -> Date d)
+      |> CCResult.map_err (fun _ -> error)
+    | _ -> Error error)
   | _ -> Error error
 ;;
 
-(* TODO[timhub]: Use assocs and store data type? *)
 let val_of_yojson (value : Yojson.Basic.t)
     : ([> `Single | `Multi ] val', Pool_common.Message.error) result
   =
   match value with
-  | `Assoc _ -> Error error
   | `List lst ->
     let vals =
       CCList.map single_val_of_yojson lst
@@ -101,13 +104,47 @@ let val_of_yojson (value : Yojson.Basic.t)
       |> CCResult.map (fun l -> Lst l)
     in
     vals
-  | a -> single_val_of_yojson a
+  | _ -> single_val_of_yojson value
 ;;
 
-type key = string [@@deriving yojson, eq]
+module Key = struct
+  type t =
+    | Age [@printer print "age"] [@name "age"]
+    | Birthday [@printer print "birthday"] [@name "birthday"]
+    | Email [@printer print "email"] [@name "email"]
+    | Name [@printer print "name"] [@name "name"]
+    | Paused [@printer print "paused"] [@name "paused"]
+    | Verified [@printer print "verified"] [@name "verified"]
+    | VerifiedAt [@printer print "verified_at"] [@name "verified_at"]
+  [@@deriving show { with_path = false }, eq, enum, yojson]
 
-let yojson_of_key m = m |> wrap_string |> Yojson.Safe.from_string
-let key_of_yojson m = m |> Yojson.Safe.to_string |> unwrap_string
+  let read m =
+    try
+      Ok
+        (m
+        |> Format.asprintf "[\"%s\"]"
+        |> Yojson.Safe.from_string
+        |> t_of_yojson)
+    with
+    | _ -> Error Pool_common.Message.(Invalid Field.Key)
+  ;;
+
+  let all : t list =
+    CCList.range min max
+    |> CCList.map of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
+  ;;
+
+  let type_of_key = function
+    | Age -> `Nr
+    | Birthday -> `Date
+    | Email | Name -> `Str
+    | Paused -> `Bool
+    | Verified -> `Bool
+    | VerifiedAt -> `Date
+  ;;
+end
 
 module Operator = struct
   type _ t =
@@ -120,7 +157,8 @@ module Operator = struct
     | ContainsSome : [> `Multi ] t
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
-  [@@deriving eq]
+  [@@deriving eq, enum]
+  (* TODO: Add LIKE operator *)
 
   let of_string = function
     | "less" -> Ok Less
@@ -152,12 +190,12 @@ module Operator = struct
 end
 
 module Predicate = struct
-  type 'a t = key * 'a Operator.t * 'a val'
+  type 'a t = Key.t * 'a Operator.t * 'a val'
 
   let equal p1 p2 =
     let key1, operator1, val1 = p1 in
     let key2, operator2, val2 = p2 in
-    [ equal_key key1 key2
+    [ Key.equal key1 key2
     ; Operator.equal operator1 operator2
     ; equal_val' val1 val2
     ]
@@ -169,7 +207,7 @@ module Predicate = struct
     match json with
     | [ key; operator; value ] ->
       let open CCResult in
-      let key = key |> basic_to_safe |> key_of_yojson in
+      let key = key |> basic_to_safe |> Key.t_of_yojson in
       let* operator = operator |> basic_to_safe |> Operator.t_of_yojson in
       let* value = value |> val_of_yojson in
       Ok (key, operator, value)
@@ -180,7 +218,7 @@ module Predicate = struct
     let key, operator, value = m in
     let value = value |> yojson_of_val |> basic_to_safe in
     let operator = Operator.yojson_of_t operator in
-    let key = yojson_of_key key in
+    let key = Key.yojson_of_t key in
     [ key; operator; value ]
     |> CCList.map Yojson.Safe.to_string
     |> CCString.concat ","
@@ -255,19 +293,19 @@ let ( --. ) a = Not a
  * deactivated: hidden by default
  * tags: empty by default, depends on #23 *)
 
-let not_filter = Not (PredS ("verified", Operator.Equal, Empty))
+let not_filter = Not (PredS (Key.Email, Operator.Equal, Str "test@econ.uzh.ch"))
 
 let or_filter : filter =
-  PredS ("role", Operator.Equal, Str "participant") |.| not_filter
+  PredS (Key.Name, Operator.Equal, Str "foo") |.| not_filter
 ;;
 
-let single_filter : filter = PredS ("paused", Operator.Equal, Bool false)
+let single_filter : filter = PredS (Key.Name, Operator.Equal, Str "Foo")
 
 let list_filter : filter =
-  PredM ("experiment_id", Operator.ContainsNone, Lst [ Nr 2.0; Nr 3.0 ])
+  PredM (Key.Age, Operator.ContainsNone, Lst [ Nr 20.0; Nr 21.0 ])
 ;;
 
-let and_filter : filter = And (or_filter, list_filter)
+let and_filter : filter = And (or_filter, single_filter)
 
 (* TODO: remove this function *)
 let json_to_filter () =

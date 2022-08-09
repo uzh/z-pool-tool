@@ -37,3 +37,7 @@
 .predicate {
     background-color: rgba(0, 0, 0, 0.02);
 }
+
+.switcher-sm>* {
+    flex-basis: calc((24rem - 100%)*999);
+}

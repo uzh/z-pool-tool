@@ -1,5 +1,4 @@
 open Tyxml.Html
-open Component
 
 let form_action ?path id =
   let base =
@@ -46,8 +45,8 @@ module Partials = struct
                             (invitation.Invitation.id |> Pool_common.Id.value))
                        experiment.Experiment.id)
                 ]
-              [ csrf_element csrf ()
-              ; submit_element
+              [ Component.csrf_element csrf ()
+              ; Component.submit_element
                   language
                   Pool_common.Message.(Resend (Some Field.Invitation))
                   ()
@@ -55,7 +54,7 @@ module Partials = struct
           ])
         invitation_list
     in
-    Table.horizontal_table `Striped language ~thead rows
+    Component.Table.horizontal_table `Striped language ~thead rows
   ;;
 
   let send_invitation
@@ -82,7 +81,7 @@ module Partials = struct
             ])
           filtered_contacts
       in
-      Table.horizontal_table `Striped language rows
+      Component.Table.horizontal_table `Striped language rows
     in
     div
       [ h2
@@ -92,16 +91,24 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; Filter.filter_lit csrf experiment
+      ; Component.Filter.filter_lit csrf experiment
+      ; (let open Component.Filter in
+        filter_form
+          language
+          (CCOption.map_or
+             ~default:(New Filter.Utils.default_filter_label)
+             (fun f -> Existing f.Filter.filter)
+             experiment.Experiment.filter))
+          ()
       ; form
           ~a:
             [ a_method `Post
             ; a_action (form_action experiment.Experiment.id)
             ; a_class [ "stack" ]
             ]
-          [ csrf_element csrf ()
+          [ Component.csrf_element csrf ()
           ; form_table
-          ; submit_element
+          ; Component.submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))
               ~submit_type:`Success

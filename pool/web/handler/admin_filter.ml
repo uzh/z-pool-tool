@@ -1,6 +1,21 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let print_urlencoded urlencoded =
+  CCList.map
+    (fun (k, v) -> Logs.info (fun m -> m "%s:%s" k (CCString.concat ", " v)))
+    urlencoded
+;;
+
+let find_in_params urlencoded field =
+  CCList.assoc_opt
+    ~eq:CCString.equal
+    Pool_common.Message.Field.(show field)
+    urlencoded
+  |> CCFun.flip CCOption.bind CCList.head_opt
+  |> CCOption.to_result Pool_common.Message.(Invalid field)
+;;
+
 let create req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
@@ -20,8 +35,6 @@ let create req =
          Sihl.Web.Request.to_json req
          ||> CCOption.to_result Pool_common.Message.(Invalid Field.Filter)
        in
-       (* Logs.info (fun m -> m "Filter: %s" (Yojson.Safe.pretty_to_string
-          json_filter)); *)
        let* experiment = Experiment.find tenant_db experiment_id in
        let* filter = Filter.json_to_filter () |> Lwt_result.lift in
        let events =
@@ -42,4 +55,73 @@ let create req =
        events |>> handle
   in
   result |> HttpUtils.extract_happy_path req
+;;
+
+let toggle_predicate_type req =
+  let open Lwt_result.Syntax in
+  let%lwt result =
+    let* { Pool_context.language; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let* predicate_type =
+      let open CCResult in
+      find_in_params urlencoded Pool_common.Message.Field.Predicate
+      >>= Filter.Utils.label_of_string
+      |> Lwt_result.lift
+    in
+    let* identifier =
+      let open CCResult in
+      find_in_params urlencoded Pool_common.Message.Field.Id
+      >>= (fun str ->
+            str
+            |> CCString.split ~by:"-"
+            |> fun str ->
+            try Ok (CCList.map CCInt.of_string_exn str) with
+            | _ -> Error Pool_common.Message.(Invalid Field.Id))
+      |> Lwt_result.lift
+    in
+    Component.Filter.(filter_form language (New predicate_type) ~identifier ())
+    |> Lwt_result.return
+  in
+  (match result with
+  | Ok html -> html
+  | Error err ->
+    err
+    |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
+    |> Tyxml.Html.txt
+    |> CCList.pure
+    |> Tyxml.Html.div)
+  |> CCList.pure
+  |> HttpUtils.multi_html_to_plain_text_response
+  |> Lwt.return
+;;
+
+let toggle_key req =
+  let open Lwt_result.Syntax in
+  let%lwt result =
+    let* { Pool_context.language; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let* key =
+      let open CCResult in
+      let open Filter in
+      find_in_params urlencoded Pool_common.Message.Field.Key
+      >>= Key.read
+      |> Lwt_result.lift
+    in
+    Component.Filter.predicate_toggled language key () |> Lwt.return_ok
+  in
+  (match result with
+  | Ok html -> html
+  | Error err ->
+    err
+    |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
+    |> Tyxml.Html.txt
+    |> CCList.pure
+    |> Tyxml.Html.div)
+  |> CCList.pure
+  |> HttpUtils.multi_html_to_plain_text_response
+  |> Lwt.return
 ;;
