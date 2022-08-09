@@ -91,7 +91,6 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; Component.Filter.filter_lit csrf experiment
       ; (let open Component.Filter in
         filter_form
           language

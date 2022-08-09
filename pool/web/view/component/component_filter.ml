@@ -29,22 +29,6 @@ let format_identifiers ?prefix identifiers =
   | Some prefix -> Format.asprintf "%s-%s" prefix ids
 ;;
 
-let filter_lit csrf experiment =
-  div
-    [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt "Filter contacts" ]
-    ; div
-        ~a:[ a_class [ "gap" ] ]
-        [ Unsafe.node
-            "contact-filter"
-            ~a:
-              [ a_user_data "action" (form_action experiment.Experiment.id)
-              ; a_user_data "csrf" csrf
-              ]
-            []
-        ]
-    ]
-;;
-
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
   option
@@ -279,10 +263,11 @@ let rec predicate_form
               ~identifier:(identifier @ [ i ])
               ())
           [ 0; 1 ]
-        |> div ~a:[ a_class [ "stack" ] ]
       | Not ->
         predicate_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
-      | PredS | PredM -> single_predicate_form language identifier ())
+        |> CCList.pure
+      | PredS | PredM ->
+        single_predicate_form language identifier () |> CCList.pure)
     | Existing filter ->
       (match filter with
       | And (f1, f2) | Or (f1, f2) ->
@@ -294,16 +279,17 @@ let rec predicate_form
               ~identifier:(identifier @ [ i ])
               ())
           [ f1; f2 ]
-        |> div ~a:[ a_class [ "stack" ] ]
       | Not filter ->
         predicate_form
           language
           (Existing filter)
           ~identifier:(identifier @ [ 0 ])
           ()
+        |> CCList.pure
       | PredS predicate | PredM predicate ->
         let k, o, v = predicate in
-        single_predicate_form language identifier ~key:k ~operator:o ~value:v ())
+        single_predicate_form language identifier ~key:k ~operator:o ~value:v ()
+        |> CCList.pure)
   in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   div
@@ -317,7 +303,7 @@ let rec predicate_form
         identifier
         ~selected
         ()
-    ; div [ predicate_form ]
+    ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
     ]
 ;;
 

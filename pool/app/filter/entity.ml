@@ -58,10 +58,10 @@ let single_val_to_string (m : [ `Single ] val') =
 
 let single_val_to_yojson (value : [ `Single ] val') : Yojson.Basic.t =
   (match value with
-  | Str str -> `String str
-  | Nr nr -> `Float nr
-  | Bool b -> `Bool b
-  | Date ptime -> `String (ptime |> Ptime.to_rfc3339))
+   | Str str -> `String str
+   | Nr nr -> `Float nr
+   | Bool b -> `Bool b
+   | Date ptime -> `String (ptime |> Ptime.to_rfc3339))
   |> fun json -> `Assoc [ single_val_to_string value, json ]
 ;;
 
@@ -80,21 +80,21 @@ let single_val_of_yojson value =
   match value with
   | `Assoc [ (key, value) ] ->
     (match key, value with
-    | "str", `String s -> Ok (Str s)
-    | "nr", `Float f -> Ok (Nr f)
-    | "nr", `Int i -> Ok (Nr (i |> CCInt.to_float))
-    | "bool", `Bool b -> Ok (Bool b)
-    | "date", `String s ->
-      s
-      |> Ptime.of_rfc3339
-      |> CCResult.map (fun (d, _, _) -> Date d)
-      |> CCResult.map_err (fun _ -> error)
-    | _ -> Error error)
+     | "str", `String s -> Ok (Str s)
+     | "nr", `Float f -> Ok (Nr f)
+     | "nr", `Int i -> Ok (Nr (i |> CCInt.to_float))
+     | "bool", `Bool b -> Ok (Bool b)
+     | "date", `String s ->
+       s
+       |> Ptime.of_rfc3339
+       |> CCResult.map (fun (d, _, _) -> Date d)
+       |> CCResult.map_err (fun _ -> error)
+     | _ -> Error error)
   | _ -> Error error
 ;;
 
 let val_of_yojson (value : Yojson.Basic.t)
-    : ([> `Single | `Multi ] val', Pool_common.Message.error) result
+  : ([> `Single | `Multi ] val', Pool_common.Message.error) result
   =
   match value with
   | `List lst ->
@@ -252,11 +252,11 @@ let[@warning "-4"] rec equal_filter f_one f_two =
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
-  | And (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
-  | Or (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
-  | Not f -> f |> yojson_of_filter
-  | PredS p -> Predicate.yojson_of_t p
-  | PredM p -> Predicate.yojson_of_t p)
+   | And (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
+   | Or (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
+   | Not f -> f |> yojson_of_filter
+   | PredS p -> Predicate.yojson_of_t p
+   | PredM p -> Predicate.yojson_of_t p)
   |> fun pred ->
   let k = f |> show_filter |> wrap_string |> Yojson.Safe.from_string in
   `Tuple [ k; pred ]
@@ -268,16 +268,16 @@ let rec filter_of_yojson json =
   | `Tuple [ k; filter ] ->
     let key = k |> Yojson.Safe.to_string |> unwrap_string in
     (match key, filter with
-    | "and", `Tuple [ f1; f2 ] ->
-      CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
-      >|= fun (p1, p2) -> And (p1, p2)
-    | "or", `Tuple [ f1; f2 ] ->
-      CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
-      >|= fun (p1, p2) -> Or (p1, p2)
-    | "not", f -> f |> filter_of_yojson >|= not
-    | "pred_s", p -> p |> Predicate.t_of_yojson >|= preds
-    | "pred_m", p -> p |> Predicate.t_of_yojson >|= predm
-    | _ -> Error error)
+     | "and", `Tuple [ f1; f2 ] ->
+       CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
+       >|= fun (p1, p2) -> And (p1, p2)
+     | "or", `Tuple [ f1; f2 ] ->
+       CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
+       >|= fun (p1, p2) -> Or (p1, p2)
+     | "not", f -> f |> filter_of_yojson >|= not
+     | "pred_s", p -> p |> Predicate.t_of_yojson >|= preds
+     | "pred_m", p -> p |> Predicate.t_of_yojson >|= predm
+     | _ -> Error error)
   | _ -> Error error
 ;;
 
