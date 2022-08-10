@@ -321,6 +321,7 @@ let submit_element
   ?(submit_type = `Primary)
   ?(classnames = [])
   ?has_icon
+  ?(attributes = [])
   ()
   =
   let button_type_class =
@@ -345,7 +346,9 @@ let submit_element
       has_icon
   in
   button
-    ~a:[ a_button_type `Submit; a_class (classnames @ button_type_class) ]
+    ~a:
+      ([ a_button_type `Submit; a_class (classnames @ button_type_class) ]
+      @ attributes)
     content
 ;;
 

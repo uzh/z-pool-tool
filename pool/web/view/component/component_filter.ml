@@ -70,6 +70,7 @@ let operators_select operators ?selected () =
 
 let value_input language key ?(value : 'a val' option) () =
   let input_type = key |> Filter.Key.type_of_key in
+  let field_name = Pool_common.Message.Field.Value in
   match input_type with
   | `Str ->
     let value =
@@ -78,24 +79,16 @@ let value_input language key ?(value : 'a val' option) () =
           | Str s -> Some s
           | _ -> None)
     in
-    Component_input.input_element
-      language
-      ?value
-      `Text
-      Pool_common.Message.Field.Value
+    Component_input.input_element language ?value `Text field_name
   | `Nr ->
     let value =
       CCOption.bind value (fun value ->
           match[@warning "-4"] value with
           | Nr n -> Some n
           | _ -> None)
-      |> CCOption.map CCFloat.to_string
+      |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
     in
-    Component_input.input_element
-      language
-      `Number
-      ?value
-      Pool_common.Message.Field.Name
+    Component_input.input_element language `Number ?value field_name
   | `Bool ->
     let value =
       CCOption.map_or
@@ -106,10 +99,7 @@ let value_input language key ?(value : 'a val' option) () =
           | _ -> false)
         value
     in
-    Component_input.checkbox_element
-      language
-      ~value
-      Pool_common.Message.Field.Name
+    Component_input.checkbox_element language ~value field_name
   | `Date ->
     let value =
       CCOption.bind value (fun value ->
@@ -121,7 +111,7 @@ let value_input language key ?(value : 'a val' option) () =
       language
       `Datetime_local
       ?value
-      Pool_common.Message.Field.Name
+      field_name
 ;;
 
 let predicate_toggled language key ?value ?operator () =
@@ -312,11 +302,16 @@ let filter_form language experiment filter =
     Format.asprintf
       "/admin/experiments/%s/filter/create"
       (Pool_common.Id.value experiment.Experiment.id)
+    |> Sihl.Web.externalize_path
   in
   let predicates = predicate_form language filter () in
-  form
-    ~a:[ a_action action; a_method `Post; a_id "filter-form" ]
+  div
+    ~a:[ a_user_data "action" action; a_id "filter-form" ]
     [ predicates
-    ; Component_input.submit_element language Pool_common.Message.(Save None) ()
+    ; Component_input.submit_element
+        language
+        ~attributes:[ a_id "submit-filter-form" ]
+        Pool_common.Message.(Save None)
+        ()
     ]
 ;;

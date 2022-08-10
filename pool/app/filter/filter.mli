@@ -66,7 +66,7 @@ val equal : t -> t -> bool
 val show : t -> string
 val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> filter -> t
-val json_to_filter : unit -> (filter, Pool_common.Message.error) result
+val json_to_filter : string -> (filter, Pool_common.Message.error) result
 val yojson_of_filter : filter -> Yojson.Safe.t
 
 val filter_of_yojson
@@ -78,7 +78,9 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-type event = Created of t
+type event =
+  | Created of t
+  | Updated of t
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -93,6 +95,7 @@ module Utils : sig
     | PredM
 
   val equal_filter_label : filter_label -> filter_label -> bool
+  val show_filter_label : filter_label -> string
   val stringify_label : filter_label -> string * string
 
   val label_of_string

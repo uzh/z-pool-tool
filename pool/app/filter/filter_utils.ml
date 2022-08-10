@@ -10,7 +10,7 @@ type filter_label =
   | Not
   | PredS
   | PredM
-[@@deriving eq, enum]
+[@@deriving eq, enum, show]
 
 let stringify_label = function
   | And -> "and", "And"

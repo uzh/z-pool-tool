@@ -229,7 +229,12 @@ end
 
 let print_filter m fmt _ = Format.pp_print_string fmt m
 
+(** SELECT id FROM table WHERE // And predicate id = i AND name = 'timo' AND //
+    nested or predicate ( email = '1\@mail.com' OR email = '2\@mail.com' ) *)
+
 (* TODO turn into infix constructors *)
+(* Should AND and OR be lists of filter? I guess UI would be easier to
+   understand *)
 type filter =
   | And of filter * filter [@printer print_filter "and"]
   | Or of filter * filter [@printer print_filter "or"]
@@ -308,12 +313,7 @@ let list_filter : filter =
 let and_filter : filter = And (or_filter, single_filter)
 
 (* TODO: remove this function *)
-let json_to_filter () =
-  let open CCResult in
-  let json = and_filter |> yojson_of_filter in
-  let* filter = filter_of_yojson json in
-  Ok filter
-;;
+let json_to_filter json = json |> Yojson.Safe.from_string |> filter_of_yojson
 
 type t =
   { id : Pool_common.Id.t

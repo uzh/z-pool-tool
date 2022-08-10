@@ -24,37 +24,48 @@ let create req =
     let open HttpUtils in
     get_field_router_param req Experiment |> Pool_common.Id.of_string
   in
-  let redirect_path =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (Pool_common.Id.value experiment_id)
+  let language =
+    let open CCResult in
+    Pool_context.find req
+    >|= (fun { Pool_context.language; _ } -> language)
+    |> get_or ~default:Pool_common.Language.En
   in
-  let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* _ =
-         Sihl.Web.Request.to_json req
-         ||> CCOption.to_result Pool_common.Message.(Invalid Field.Filter)
-       in
-       let* experiment = Experiment.find tenant_db experiment_id in
-       let* filter = Filter.json_to_filter () |> Lwt_result.lift in
-       let events =
-         let open Cqrs_command.Experiment_command.AddFilter in
-         handle experiment filter |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
-         in
-         let headers =
-           Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
-         in
-         "Filter saved"
-         |> Sihl.Web.Response.of_plain_text ~headers
-         |> Lwt.return
-       in
-       events |>> handle
+  let%lwt result =
+    let { Pool_context.tenant_db; _ } =
+      Pool_context.find req |> CCResult.get_exn
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let* experiment = Experiment.find tenant_db experiment_id in
+    let* filter =
+      let open CCResult in
+      find_in_params urlencoded Pool_common.Message.Field.Filter
+      >>= Filter.json_to_filter
+      |> Lwt_result.lift
+    in
+    let events =
+      let open Cqrs_command.Experiment_command.UpdateFilter in
+      handle experiment filter |> Lwt_result.lift
+    in
+    let handle events =
+      Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+    in
+    events |>> handle
   in
-  result |> HttpUtils.extract_happy_path req
+  let open HttpUtils in
+  (match result with
+  | Ok () ->
+    { message =
+        Pool_common.(
+          Utils.success_to_string language Message.(Created Field.Filter))
+    ; success = true
+    }
+  | Error err ->
+    { message = Pool_common.(Utils.error_to_string language err)
+    ; success = false
+    })
+  |> yojson_of_json_response
+  |> yojson_to_json_response
+  |> Lwt.return
 ;;
 
 let toggle_predicate_type req =

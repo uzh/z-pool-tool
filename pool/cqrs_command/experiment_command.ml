@@ -167,7 +167,7 @@ end = struct
   ;;
 end
 
-module AddFilter : sig
+module UpdateFilter : sig
   type t = Filter.filter
 
   val handle
@@ -180,13 +180,18 @@ end = struct
   type t = Filter.filter
 
   let handle experiment filter =
-    let id = Pool_common.Id.create () in
-    let filter = Filter.create ~id filter in
-    let experiment = Experiment.{ experiment with filter = Some filter } in
-    Ok
-      [ Filter.Created filter |> Pool_event.filter
-      ; Experiment.Updated experiment |> Pool_event.experiment
-      ]
+    match experiment.filter with
+    | None ->
+      let id = Pool_common.Id.create () in
+      let filter = Filter.create ~id filter in
+      let experiment = Experiment.{ experiment with filter = Some filter } in
+      Ok
+        [ Filter.Created filter |> Pool_event.filter
+        ; Experiment.Updated experiment |> Pool_event.experiment
+        ]
+    | Some current_filter ->
+      let filter = Filter.{ current_filter with filter } in
+      Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 
   let effects experiment =

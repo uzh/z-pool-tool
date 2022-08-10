@@ -59,7 +59,25 @@ module Sql = struct
   let insert pool =
     Utils.Database.exec (Database.Label.value pool) insert_request
   ;;
+
+  let update_request =
+    let open Caqti_request.Infix in
+    {sql|
+        UPDATE
+          pool_filter
+        SET
+          filter = $2
+        WHERE
+          uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+    |> Repo_entity.Write.t ->. Caqti_type.unit
+  ;;
+
+  let update pool =
+    Utils.Database.exec (Pool_database.Label.value pool) update_request
+  ;;
 end
 
 let find = Sql.find
 let insert = Sql.insert
+let update = Sql.update
