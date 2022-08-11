@@ -38,22 +38,10 @@ let all_filter_labels : filter_label list =
   |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
 ;;
 
-(* TODO[timhub]: Can i use single or multi? *)
-
-let all_single_operators : [> `Multi | `Single ] Entity.Operator.t list =
-  let open Entity.Operator in
-  [ Less; LessEqual; Greater; GreaterEqual; Equal; NotEqual ]
-;;
-
-let all_multi_operators : [> `Multi | `Single ] Entity.Operator.t list =
-  let open Entity.Operator in
-  [ ContainsSome; ContainsNone; ContainsAll ]
-;;
-
 let input_type_to_operator =
   let open Entity.Operator in
   function
   | `Bool -> [ Equal; NotEqual ]
-  | `Str -> [ Equal; NotEqual ]
+  | `Str -> [ Equal; NotEqual; Like ]
   | `Date | `Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
 ;;

@@ -154,6 +154,7 @@ module Operator = struct
     | GreaterEqual : [> `Single ] t
     | Equal : [> `Single ] t
     | NotEqual : [> `Single ] t
+    | Like : [> `Single ] t
     | ContainsSome : [> `Multi ] t
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
@@ -167,6 +168,7 @@ module Operator = struct
     | "greater_equal" -> Ok GreaterEqual
     | "equal" -> Ok Equal
     | "not_equal" -> Ok NotEqual
+    | "like" -> Ok Like
     | "contains_some" -> Ok ContainsSome
     | "contains_none" -> Ok ContainsNone
     | "contains_all" -> Ok ContainsAll
@@ -180,6 +182,7 @@ module Operator = struct
     | GreaterEqual -> "greater_equal"
     | Equal -> "equal"
     | NotEqual -> "not_equal"
+    | Like -> "like"
     | ContainsSome -> "contains_some"
     | ContainsNone -> "contains_none"
     | ContainsAll -> "contains_all"

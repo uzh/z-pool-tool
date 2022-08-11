@@ -33,6 +33,7 @@ module Operator : sig
     | GreaterEqual : [> `Single ] t
     | Equal : [> `Single ] t
     | NotEqual : [> `Single ] t
+    | Like : [> `Single ] t
     | ContainsSome : [> `Multi ] t
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
@@ -104,8 +105,6 @@ module Utils : sig
 
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label
-  val all_single_operators : [> `Multi | `Single ] Operator.t list
-  val all_multi_operators : [> `Multi | `Single ] Operator.t list
 
   val input_type_to_operator
     :  [< `Bool | `Date | `Nr | `Str ]
