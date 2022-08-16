@@ -99,7 +99,7 @@ stages:
 
 before_script:
   - |
-    if [[ -z $ECON_SMTP_APP_PASSWORD || -z $ECON_POOL_DATABASE_URL || -z $ECON_POOL_DATABASE_URL_STAGING || -z $ECON_POOL_SIHL_SECRET ]]; then
+    if [[ -z $ECON_POOL_DATABASE_URL || -z $ECON_POOL_DATABASE_URL_STAGING || -z $ECON_POOL_SIHL_SECRET ]]; then
       echo 'one or more global variables are undefined'
       exit 1
     fi
