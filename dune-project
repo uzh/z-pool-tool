@@ -11,7 +11,7 @@
 (source
  (uri git+https://gitlab.uzh.ch/econ/study-coordination/pool))
 
-(license PRIVATE)
+(license GPL-2.0-or-later)
 
 (maintainers "engineering@uzh.econ.ch")
 
