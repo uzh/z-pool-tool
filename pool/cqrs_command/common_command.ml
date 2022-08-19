@@ -18,5 +18,5 @@ module ResetPassword = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Utils.todo [%here]
+  let effects () = Utils.todo [%here]
 end
