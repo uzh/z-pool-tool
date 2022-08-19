@@ -30,7 +30,7 @@ let show req =
         Lwt.return_error Pool_common.Message.AlreadySignedUpForExperiment
       | None -> Lwt.return_ok ()
     in
-    let* session = Session.find_public tenant_db id contact in
+    let* session = Session.find_public tenant_db id in
     Page.Contact.Experiment.Assignment.detail session experiment context
     |> Lwt.return_ok
     >>= create_layout req context

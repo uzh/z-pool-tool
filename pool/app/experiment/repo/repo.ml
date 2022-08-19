@@ -11,6 +11,8 @@ module Sql = struct
         filter,
         direct_registration_disabled,
         registration_disabled,
+        allow_uninvited_signup,
+        experiment_type,
         invitation_subject,
         invitation_text,
         session_reminder_lead_time,
@@ -18,6 +20,8 @@ module Sql = struct
         session_reminder_text
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -59,6 +63,8 @@ module Sql = struct
           pool_experiments.filter,
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
+          pool_experiments.allow_uninvited_signup,
+          pool_experiments.experiment_type,
           pool_experiments.invitation_subject,
           pool_experiments.invitation_text,
           pool_experiments.session_reminder_lead_time,
@@ -130,11 +136,13 @@ module Sql = struct
         filter = $5,
         direct_registration_disabled = $6,
         registration_disabled = $7,
-        invitation_subject = $8,
-        invitation_text = $9,
-        session_reminder_lead_time = $10,
-        session_reminder_subject = $11,
-        session_reminder_text = $12
+        allow_uninvited_signup = $8,
+        experiment_type = $9,
+        invitation_subject = $10,
+        invitation_text = $11,
+        session_reminder_lead_time = $12,
+        session_reminder_subject = $13,
+        session_reminder_text = $14
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

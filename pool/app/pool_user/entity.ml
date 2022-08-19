@@ -41,9 +41,9 @@ module Password = struct
   ;;
 
   let validate_current_password
-      ?(field = PoolError.Field.CurrentPassword)
-      user
-      password
+    ?(field = PoolError.Field.CurrentPassword)
+    user
+    password
     =
     if Sihl_user.matches_password (password |> to_sihl) user
     then Ok ()
@@ -86,24 +86,24 @@ module EmailAddress = struct
   ;;
 
   let validate_suffix
-      (allowed_email_suffixes : Settings.EmailSuffix.t list option)
-      email
+    (allowed_email_suffixes : Settings.EmailSuffix.t list option)
+    email
     =
     match allowed_email_suffixes with
     | None -> Ok ()
     | Some allowed_email_suffixes ->
       (match strip_email_suffix email with
-      (* TODO check whether this is really the case *)
-      | None -> Error PoolError.EmailMalformed
-      | Some suffix ->
-        let open CCResult in
-        let* suffix = suffix |> Settings.EmailSuffix.create in
-        if CCList.mem
-             ~eq:Settings.EmailSuffix.equal
-             suffix
-             allowed_email_suffixes
-        then Ok ()
-        else Error PoolError.(Invalid Field.EmailSuffix))
+       (* TODO check whether this is really the case *)
+       | None -> Error PoolError.EmailMalformed
+       | Some suffix ->
+         let open CCResult in
+         let* suffix = suffix |> Settings.EmailSuffix.create in
+         if CCList.mem
+              ~eq:Settings.EmailSuffix.equal
+              suffix
+              allowed_email_suffixes
+         then Ok ()
+         else Error PoolError.(Invalid Field.EmailSuffix))
   ;;
 
   let validate = validate_suffix
@@ -199,3 +199,22 @@ module EmailVerified = struct
   let value m = m
   let is_some m = m |> CCOption.is_some
 end
+
+let user_firstname { Sihl_user.id; given_name; _ } =
+  given_name
+  |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" id)
+  |> Firstname.of_string
+;;
+
+let user_lastname { Sihl_user.id; name; _ } =
+  name
+  |> CCOption.get_exn_or (Format.asprintf "User '%s' has no firstname" id)
+  |> Lastname.of_string
+;;
+
+let user_fullname user =
+  Format.asprintf
+    "%s %s"
+    (user |> user_firstname |> Firstname.value)
+    (user |> user_lastname |> Lastname.value)
+;;

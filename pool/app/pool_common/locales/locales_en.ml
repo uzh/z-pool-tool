@@ -4,6 +4,7 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
@@ -27,6 +28,7 @@ let field_to_string =
   | DirectRegistrationDisabled -> "direct registration disabled"
   | Disabled -> "disabled"
   | Distribution -> "distribution"
+  | DistributionField -> "field"
   | Duration -> "duration"
   | Email -> "email address"
   | EmailAddress -> "email address"
@@ -35,6 +37,7 @@ let field_to_string =
   | EmailSuffix -> "email suffix"
   | End -> "end"
   | Experiment -> "experiment"
+  | ExperimentType -> "experiment type"
   | File -> "file"
   | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
@@ -50,6 +53,7 @@ let field_to_string =
   | InactiveUserWarning -> "warn inactive user"
   | Institution -> "institution"
   | Invitation -> "invitation"
+  | InvitationCount -> "no. invitations"
   | InvitationSubject -> "invitation subject"
   | InvitationText -> "invitation text"
   | Invitations -> "invitations"
@@ -69,6 +73,7 @@ let field_to_string =
   | MinParticipants -> "minimum participants"
   | Name -> "name"
   | NewPassword -> "new password"
+  | Order -> "order"
   | Operator -> "operator"
   | Overbook -> "overbook"
   | Page -> "page"
@@ -81,7 +86,7 @@ let field_to_string =
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | PublicTitle -> "public title"
-  | Rate -> "rate"
+  | Rate -> "rate limit"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
@@ -120,6 +125,7 @@ let field_to_string =
   | Title -> "title"
   | Token -> "token"
   | Translation -> "translation"
+  | TriggerProfileUpdateAfter -> "request to check the profile"
   | Url -> "url"
   | User -> "user"
   | Version -> "version"
@@ -152,6 +158,8 @@ let success_to_string : success -> string = function
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "was successfully rescheduled."
   | SentList field ->
     field_message "" (field_to_string field) "were successfully sent."
   | SettingsUpdated -> "Settings were updated successfully."
@@ -241,6 +249,8 @@ let rec error_to_string = function
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
+  | SessionHasAssignments ->
+    "There are already assignments for this session. It cannot be deleted."
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
   | ReminderSubjectAndTextRequired ->
@@ -292,11 +302,13 @@ let control_to_string = function
   | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
   | More -> "more"
+  | PleaseSelect -> "please select"
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
+  | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
   | Show -> "show"
   | SignUp -> format_submit "sign up" None

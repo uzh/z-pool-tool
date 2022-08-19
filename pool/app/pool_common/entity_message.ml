@@ -5,6 +5,8 @@ module Field = struct
 
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
+    | AllowUninvitedSignup [@name "allow_uninvited_signup"]
+        [@printer go "allow_uninvited_signup"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
     | Assignment [@name "assignment"] [@printer go "assignment"]
     | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
@@ -32,6 +34,8 @@ module Field = struct
         [@printer go "direct_registration_disabled"]
     | Disabled [@name "disabled"] [@printer go "disabled"]
     | Distribution [@name "distribution"] [@printer go "distribution"]
+    | DistributionField [@name "distribution_field"]
+        [@printer go "distribution_field"]
     | Duration [@name "duration"] [@printer go "duration"]
     | Email [@name "email"] [@printer go "email"]
     | EmailAddress [@name "email_address"] [@printer go "email_address"]
@@ -43,6 +47,7 @@ module Field = struct
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
+    | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
@@ -61,6 +66,8 @@ module Field = struct
         [@printer go "inactive_user_warning"]
     | Institution [@name "institution"] [@printer go "institution"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
+    | InvitationCount [@name "invitation_count"]
+        [@printer go "invitation_count"]
     | InvitationSubject [@name "invitation_subject"]
         [@printer go "invitation_subject"]
     | InvitationText [@name "invitation_text"] [@printer go "invitation_text"]
@@ -83,6 +90,8 @@ module Field = struct
         [@printer go "min_participants"]
     | Name [@name "name"] [@printer go "name"]
     | NewPassword [@name "new_password"] [@printer go "new_password"]
+        [@printer go "num_invitations"]
+    | Order [@name "order"] [@printer go "order"]
     | Operator [@name "operator"] [@printer go "operator"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
     | Page [@name "page"] [@printer go "page"]
@@ -96,8 +105,8 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
-    | Rate [@name "rate"] [@printer go "rate"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
@@ -142,6 +151,8 @@ module Field = struct
     | Title [@name "title"] [@printer go "title"]
     | Token [@name "token"] [@printer go "token"]
     | Translation [@name "translation"] [@printer go "translation"]
+    | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
+        [@printer go "trigger_profile_update_after"]
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
     | Version [@name "version"] [@printer go "version"]
@@ -208,6 +219,7 @@ type error =
   | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
+  | SessionHasAssignments
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
@@ -245,6 +257,7 @@ type success =
   | PasswordReset
   | PasswordResetSuccessMessage
   | RemovedFromWaitingList
+  | Rescheduled of Field.t
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -289,7 +302,9 @@ type control =
   | Enroll
   | Login
   | More
+  | PleaseSelect
   | RemoveFromWaitingList
+  | Reschedule of Field.t option
   | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option

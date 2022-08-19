@@ -1,17 +1,5 @@
 open Entity
 
-module Sihl_email = struct
-  include Sihl_email
-
-  let equal (e1 : t) (e2 : t) =
-    let open CCString in
-    equal e1.sender e2.sender
-    && equal e1.recipient e2.recipient
-    && equal e1.subject e2.subject
-    && equal e1.text e2.text
-  ;;
-end
-
 type base =
   { start : Start.t
   ; duration : Duration.t
@@ -25,6 +13,25 @@ type base =
   }
 [@@deriving eq, show]
 
+type update =
+  { start : Start.t option
+  ; duration : Duration.t option
+  ; description : Description.t option
+  ; max_participants : ParticipantAmount.t
+  ; min_participants : ParticipantAmount.t
+  ; overbook : ParticipantAmount.t
+  ; reminder_subject : Pool_common.Reminder.Subject.t option
+  ; reminder_text : Pool_common.Reminder.Text.t option
+  ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
+  }
+[@@deriving eq, show]
+
+type reschedule =
+  { start : Start.t
+  ; duration : Duration.t
+  }
+[@@deriving eq, show]
+
 (* TODO [aerben] experiment ID *)
 type event =
   | Created of
@@ -32,7 +39,8 @@ type event =
   | Canceled of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
-  | ReminderSent of (t * Sihl_email.t list)
+  | ReminderSent of t
+  | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
 let handle_event pool = function
@@ -82,14 +90,11 @@ let handle_event pool = function
       ; reminder_text
       ; reminder_lead_time
       }
-  | ReminderSent (session, emails) ->
-    let%lwt () =
-      match CCList.length emails > 0 with
-      | true -> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
-      | false -> Lwt.return_unit
-    in
+  | ReminderSent session ->
     { session with
       reminder_sent_at = Some (Pool_common.Reminder.SentAt.create_now ())
     }
     |> Repo.update pool
+  | Rescheduled (session, { start; duration }) ->
+    { session with start; duration } |> Repo.update pool
 ;;

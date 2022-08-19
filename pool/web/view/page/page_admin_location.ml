@@ -77,11 +77,11 @@ let file_form
   in
   let label_select =
     let open Mapping.Label in
-    selector language Message.Field.Label equal show labels None ()
+    selector language Message.Field.Label show labels None ()
   in
   let language_select =
     let open Pool_common.Language in
-    selector language Message.Field.Language equal show languages None ()
+    selector language Message.Field.Language show languages None ()
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
@@ -144,7 +144,6 @@ let form
       [ selector
           language
           Message.Field.Status
-          Status.equal
           Status.show
           states
           (Some status)

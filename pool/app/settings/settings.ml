@@ -69,6 +69,20 @@ let[@warning "-4"] find_inactive_user_warning pool =
     |> failwith
 ;;
 
+let[@warning "-4"] find_trigger_profile_update_after pool =
+  let open Utils.Lwt_result.Infix in
+  Repo.find_trigger_profile_update_after pool
+  ||> fun { value; _ } ->
+  match value with
+  | Value.TriggerProfileUpdateAfter value -> value
+  | _ ->
+    (* Due to Repo function, this state cannot be reached. *)
+    Pool_common.(
+      Message.(Retrieve Field.TriggerProfileUpdateAfter)
+      |> Utils.error_to_string Language.En)
+    |> failwith
+;;
+
 let[@warning "-4"] find_terms_and_conditions pool =
   let open Utils.Lwt_result.Infix in
   Repo.find_terms_and_conditions pool

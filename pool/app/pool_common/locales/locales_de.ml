@@ -4,9 +4,10 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
-  | AssignmentCount -> "No. Assignments"
+  | AssignmentCount -> "Anz. Anmeldungen"
   | Assignments -> "Anmeldungen"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
@@ -27,6 +28,7 @@ let field_to_string =
   | DirectRegistrationDisabled -> "Direkte Registrierung deaktiviert"
   | Disabled -> "Gesperrt"
   | Distribution -> "Verteilung"
+  | DistributionField -> "Feld"
   | Duration -> "Dauer"
   | Email -> "Email Adresse"
   | EmailAddress -> "Email Adresse"
@@ -35,6 +37,7 @@ let field_to_string =
   | EmailSuffix -> "Email Endung"
   | End -> "Ende"
   | Experiment -> "Experiment"
+  | ExperimentType -> "Experimenttyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
@@ -53,6 +56,7 @@ let field_to_string =
   | InvitationSubject -> "Einladungsbetreff"
   | InvitationText -> "Einladungstext"
   | Invitations -> "Einladungen"
+  | InvitationCount -> "Anz. Einladungen"
   | Key -> "Schlüssel"
   | Label -> "Label"
   | Language -> "Sprache"
@@ -69,6 +73,7 @@ let field_to_string =
   | MinParticipants -> "Minimum an Teilnehmern"
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
+  | Order -> "Reihenfolge"
   | Operator -> "Operator"
   | Overbook -> "Überbuchen"
   | Page -> "Seite"
@@ -80,7 +85,7 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | PublicTitle -> "Öffentlicher Titel"
-  | Rate -> "Rate"
+  | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
@@ -119,6 +124,7 @@ let field_to_string =
   | Title -> "Titel"
   | Token -> "Token"
   | Translation -> "Übersetzung"
+  | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
   | Url -> "Url"
   | User -> "Benutzer"
   | Version -> "Version"
@@ -150,6 +156,8 @@ let success_to_string : success -> string = function
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
+  | Rescheduled field ->
+    field_message "" (field_to_string field) "wurden erfolgreich verschoben."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -260,6 +268,9 @@ let rec error_to_string = function
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
+  | SessionHasAssignments ->
+    "Es existieren bereits Anmeldungen für diese Session. Sie kann nicht \
+     gelöscht werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
   | ReminderSubjectAndTextRequired ->
@@ -317,7 +328,9 @@ let control_to_string = function
   | Enroll -> format_submit "einschreiben" None
   | Login -> format_submit "anmelden" None
   | More -> "mehr"
+  | PleaseSelect -> "bitte wählen"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
+  | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None

@@ -2,13 +2,14 @@ open Entity
 open Default
 
 type event =
-  | LanguagesUpdated of Pool_common.Language.t list
-  | EmailSuffixesUpdated of EmailSuffix.t list
-  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
   | ContactEmailUpdated of ContactEmail.t
+  | DefaultReminderLeadTimeUpdated of Pool_common.Reminder.LeadTime.t
+  | EmailSuffixesUpdated of EmailSuffix.t list
   | InactiveUserDisableAfterUpdated of InactiveUser.DisableAfter.t
   | InactiveUserWarningUpdated of InactiveUser.Warning.t
+  | LanguagesUpdated of Pool_common.Language.t list
   | TermsAndConditionsUpdated of TermsAndConditions.t list
+  | TriggerProfileUpdateAfterUpdated of TriggerProfileUpdateAfter.t
   | DefaultRestored of default
 [@@deriving eq, show]
 
@@ -42,6 +43,11 @@ let handle_event pool : event -> unit Lwt.t = function
       Repo.update pool (Value.TermsAndConditions terms_and_conditions)
     in
     Lwt.return_unit
+  | TriggerProfileUpdateAfterUpdated trigger_update_after ->
+    let%lwt () =
+      Repo.update pool (Value.TriggerProfileUpdateAfter trigger_update_after)
+    in
+    Lwt.return_unit
   | DefaultRestored
       { default_reminder_lead_time
       ; tenant_languages
@@ -49,6 +55,7 @@ let handle_event pool : event -> unit Lwt.t = function
       ; tenant_contact_email
       ; inactive_user_disable_after
       ; inactive_user_warning
+      ; trigger_profile_update_after
       ; terms_and_conditions
       } ->
     let%lwt () =
@@ -58,6 +65,7 @@ let handle_event pool : event -> unit Lwt.t = function
       ; ContactEmail
       ; InactiveUserDisableAfter
       ; InactiveUserWarning
+      ; TriggerProfileUpdateAfter
       ; TermsAndConditions
       ]
       |> Lwt_list.iter_s (Repo.delete pool)
@@ -70,6 +78,7 @@ let handle_event pool : event -> unit Lwt.t = function
         ; TenantContactEmail tenant_contact_email
         ; InactiveUserDisableAfter inactive_user_disable_after
         ; InactiveUserWarning inactive_user_warning
+        ; TriggerProfileUpdateAfter trigger_profile_update_after
         ; TermsAndConditions terms_and_conditions
         ]
       |> Lwt_list.iter_s (Repo.insert pool)

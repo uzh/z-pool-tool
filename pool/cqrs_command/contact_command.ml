@@ -84,7 +84,7 @@ end = struct
           , command.lastname
           , default_language |> CCOption.get_or ~default:Pool_common.Language.En
           )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -120,6 +120,7 @@ module Update : sig
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
     ; language : Pool_common.Language.t option
+    ; experiment_type_preference : Pool_common.ExperimentType.t option
     }
 
   val handle
@@ -138,10 +139,11 @@ end = struct
     ; lastname : User.Lastname.t option
     ; paused : User.Paused.t option
     ; language : Pool_common.Language.t option
+    ; experiment_type_preference : Pool_common.ExperimentType.t option
     }
 
-  let command firstname lastname paused language =
-    { firstname; lastname; paused; language }
+  let command firstname lastname paused language experiment_type_preference =
+    { firstname; lastname; paused; language; experiment_type_preference }
   ;;
 
   let schema =
@@ -152,6 +154,7 @@ end = struct
           ; Conformist.optional @@ User.Lastname.schema ()
           ; Conformist.optional @@ User.Paused.schema ()
           ; Conformist.optional @@ Pool_common.Language.schema ()
+          ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
           ]
         command)
   ;;
@@ -240,10 +243,13 @@ end = struct
           ( contact
           , command.current_password
           , command.new_password
-          , command.password_confirmation
+          , command.password_confirmation )
+        |> Pool_event.contact
+      ; Email.ChangedPassword
+          ( contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.contact
+        |> Pool_event.email
       ]
   ;;
 
@@ -281,7 +287,7 @@ end = struct
           , contact.Contact.user
           , contact.Contact.language
             |> CCOption.get_or ~default:Pool_common.Language.En )
-        |> Pool_event.email_address
+        |> Pool_event.email_verification
       ]
   ;;
 
@@ -313,7 +319,7 @@ end = struct
     Ok
       [ Contact.EmailUpdated (contact, Email.address email)
         |> Pool_event.contact
-      ; Email.EmailVerified email |> Pool_event.email_address
+      ; Email.EmailVerified email |> Pool_event.email_verification
       ]
   ;;
 
@@ -357,7 +363,28 @@ end = struct
   let handle contact command =
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified command.email |> Pool_event.email_address
+      ; Email.EmailVerified command.email |> Pool_event.email_verification
+      ]
+  ;;
+end
+
+module SendProfileUpdateTrigger : sig
+  type t =
+    { contacts : Contact.t list
+    ; emails : Sihl_email.t list
+    }
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+end = struct
+  type t =
+    { contacts : Contact.t list
+    ; emails : Sihl_email.t list
+    }
+
+  let handle ({ contacts; emails } : t) =
+    Ok
+      [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
+      ; Email.BulkSent emails |> Pool_event.email
       ]
   ;;
 

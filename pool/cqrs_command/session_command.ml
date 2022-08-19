@@ -1,6 +1,6 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
-let session_command
+let create_command
     start
     duration
     description
@@ -10,6 +10,7 @@ let session_command
     reminder_subject
     reminder_text
     reminder_lead_time
+    : Session.base
   =
   Session.
     { start
@@ -24,7 +25,7 @@ let session_command
     }
 ;;
 
-let session_schema =
+let create_schema =
   Conformist.(
     make
       Field.
@@ -40,15 +41,81 @@ let session_schema =
         ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
-      session_command)
+      create_command)
+;;
+
+let update_command
+    start
+    duration
+    description
+    max_participants
+    min_participants
+    overbook
+    reminder_subject
+    reminder_text
+    reminder_lead_time
+    : Session.update
+  =
+  Session.
+    { start
+    ; duration
+    ; description
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; reminder_subject
+    ; reminder_text
+    ; reminder_lead_time
+    }
+;;
+
+let update_schema =
+  Conformist.(
+    make
+      Field.
+        [ Conformist.optional @@ Session.Start.schema ()
+        ; Conformist.optional @@ Session.Duration.schema ()
+        ; Conformist.optional @@ Session.Description.schema ()
+        ; Session.ParticipantAmount.schema
+            Pool_common.Message.Field.MaxParticipants
+        ; Session.ParticipantAmount.schema
+            Pool_common.Message.Field.MinParticipants
+        ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
+        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
+        ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
+        ]
+      update_command)
+;;
+
+let validate_start follow_up_sessions parent_session start =
+  let open Session in
+  (* If session has follow-ups, make sure they are all later *)
+  let starts_after_followups =
+    CCList.exists
+      (fun (follow_up : Session.t) ->
+        Ptime.is_earlier ~than:(Start.value start) (Start.value follow_up.start))
+      follow_up_sessions
+  in
+  (* If session is follow-up, make sure it's later than parent *)
+  let starts_before_parent =
+    CCOption.map_or
+      ~default:false
+      (fun (s : Session.t) ->
+        Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
+      parent_session
+  in
+  if starts_before_parent || starts_after_followups
+  then Error Pool_common.Message.FollowUpIsEarlierThanMain
+  else Ok ()
 ;;
 
 (* TODO [aerben] create sigs *)
 module Create = struct
   type t = Session.base
 
-  let command = session_command
-  let schema = session_schema
+  let command = create_command
+  let schema = create_schema
 
   let handle
       ?parent_session
@@ -123,11 +190,24 @@ module Create = struct
   let effects = [ `Manage, `Role `System ]
 end
 
-module Update = struct
-  type t = Session.base
+module Update : sig
+  type t = Session.update
 
-  let command = session_command
-  let schema = session_schema
+  val handle
+    :  ?parent_session:Session.t
+    -> Session.t list
+    -> Session.t
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Session.update
 
   let handle
       ?parent_session
@@ -145,42 +225,31 @@ module Update = struct
          ; reminder_text
          ; reminder_lead_time
          } :
-        Session.base)
+        Session.update)
     =
-    (* If session has follow-ups, make sure they are all later *)
     let open Session in
-    let follow_ups_are_ealier =
-      CCList.exists
-        (fun (follow_up : Session.t) ->
-          Ptime.is_earlier
-            ~than:(Start.value start)
-            (Start.value follow_up.start))
-        follow_up_sessions
-    in
-    (* If session is follow-up, make sure it's later than parent *)
-    let follow_up_is_ealier =
-      CCOption.map_or
-        ~default:false
-        (fun (s : Session.t) ->
-          Ptime.is_earlier ~than:(Start.value s.start) (Start.value start))
-        parent_session
-    in
-    print_endline @@ string_of_bool follow_up_is_ealier;
-    let validations =
-      [ ( follow_up_is_ealier || follow_ups_are_ealier
-        , Pool_common.Message.FollowUpIsEarlierThanMain )
-      ; ( max_participants < min_participants
-        , Pool_common.Message.(
-            Smaller (Field.MaxParticipants, Field.MinParticipants)) )
-      ]
-    in
     let open CCResult in
+    let has_assignments = Session.has_assignments session in
+    let* start, duration =
+      let open Pool_common.Message in
+      let to_result field =
+        CCOption.to_result (Conformist [ field, Pool_common.Message.NoValue ])
+      in
+      match has_assignments with
+      | false ->
+        CCResult.both
+          (to_result Field.Start start)
+          (to_result Field.Duration duration)
+      | true -> Ok (session.start, session.duration)
+    in
+    let* () = validate_start follow_up_sessions parent_session start in
     let* () =
-      validations
-      |> CCList.filter fst
-      |> CCList.map (fun (_, err) -> Error err)
-      |> flatten_l
-      |> map ignore
+      if max_participants < min_participants
+      then
+        Error
+          Pool_common.Message.(
+            Smaller (Field.MaxParticipants, Field.MinParticipants))
+      else Ok ()
     in
     let (session_cmd : Session.base) =
       Session.
@@ -197,6 +266,66 @@ module Update = struct
     in
     Ok
       [ Session.Updated (session_cmd, location, session) |> Pool_event.session ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate update_schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+
+  let can user _ =
+    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  ;;
+end
+
+module Reschedule : sig
+  type t = Session.reschedule
+
+  val handle
+    :  ?parent_session:Session.t
+    -> Session.t list
+    -> Session.t
+    -> Sihl_email.t list
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+
+  val can : Sihl_user.t -> t -> bool Lwt.t
+end = struct
+  type t = Session.reschedule
+
+  let command start duration : Session.reschedule = Session.{ start; duration }
+
+  let schema =
+    Conformist.(
+      make Field.[ Session.Start.schema (); Session.Duration.schema () ] command)
+  ;;
+
+  let handle
+      ?parent_session
+      follow_up_sessions
+      session
+      emails
+      (Session.{ start; _ } as reschedule : Session.reschedule)
+    =
+    let open CCResult in
+    let* () = validate_start follow_up_sessions parent_session start in
+    let* () =
+      if Ptime.is_earlier
+           ~than:(Ptime_clock.now ())
+           (start |> Session.Start.value)
+      then Error Pool_common.Message.TimeInPast
+      else Ok ()
+    in
+    Ok
+      ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
+      ::
+      (if emails |> CCList.is_empty |> not
+      then [ Email.BulkSent emails |> Pool_event.email ]
+      else []))
   ;;
 
   let decode data =
@@ -219,9 +348,12 @@ end = struct
   type t = { session : Session.t }
 
   let handle session =
-    (* TODO [aerben] only when no assignments added *)
-    (* TODO [aerben] how to deal with follow-ups? currently they just disappear *)
-    Ok [ Session.Deleted session |> Pool_event.session ]
+    (* TODO [aerben] how to deal with follow-ups? currently they just
+       disappear *)
+    if not
+         (session.Session.assignment_count |> Session.AssignmentCount.value == 0)
+    then Error Pool_common.Message.SessionHasAssignments
+    else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
   let effects = [ `Manage, `Role `System ]
@@ -260,8 +392,13 @@ end = struct
 
   let handle command =
     Ok
-      (CCList.map
-         (fun data -> Session.ReminderSent data |> Pool_event.session)
+      (CCList.flat_map
+         (fun (session, emails) ->
+           (Session.ReminderSent session |> Pool_event.session)
+           ::
+           (if emails |> CCList.is_empty |> not
+           then [ Email.BulkSent emails |> Pool_event.email ]
+           else []))
          command)
   ;;
 

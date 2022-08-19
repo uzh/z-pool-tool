@@ -2,66 +2,13 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let sortable =
-  {js|
-      function slist (target) {
-        target.classList.add("slist");
-        var items = target.children, current = null;
-        for (let i of items) {
-          i.draggable = true;
-          i.addEventListener("dragstart", function (e) {
-            current = this;
-            for (let it of items) {
-              if (it != current) { it.classList.add("hint"); }
-            }
-          });
-          i.addEventListener("dragenter", function (e) {
-            if (this != current) { this.classList.add("active"); }
-          });
-          i.addEventListener("dragleave", function () {
-            this.classList.remove("active");
-          });
-          i.addEventListener("dragend", function () {
-            for (let it of items) {
-              it.classList.remove("hint");
-              it.classList.remove("active");
-            }
-          });
-          i.addEventListener("dragover", function (e) {
-            e.preventDefault();
-          });
-          i.addEventListener("drop", function (e) {
-            e.preventDefault();
-            if (this != current) {
-              let currentpos = 0, droppedpos = 0;
-              for (let it=0; it<items.length; it++) {
-                if (current == items[it]) { currentpos = it; }
-                if (this == items[it]) { droppedpos = it; }
-              }
-              if (currentpos < droppedpos) {
-                this.parentNode.insertBefore(current, this.nextSibling);
-              } else {
-                this.parentNode.insertBefore(current, this);
-              }
-            }
-          });
-        }
-      }
-
-      window.addEventListener("DOMContentLoaded", function(){
-        document.querySelectorAll('[data-sortable]').forEach(elm => {
-          slist(elm);
-        });
-      });
-  |js}
-;;
-
 let show
     tenant_languages
     email_suffixes
     contact_email
     inactive_user_disable_after
     inactive_user_warning
+    trigger_profile_update_after
     terms_and_conditions
     default_reminder_lead_time
     Pool_context.{ language; csrf; _ }
@@ -90,7 +37,7 @@ let show
     in
     let field_elements =
       div
-        ~a:[ a_user_data "sortable" ""; a_class [ "input-group" ] ]
+        ~a:[ a_user_data "sortable" "" ]
         (CCList.map
            (fun (language, selected) ->
              let attrs =
@@ -253,6 +200,36 @@ let show
           ]
       ]
   in
+  let trigger_profile_update_after_html =
+    let open Settings.TriggerProfileUpdateAfter in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ Pool_common.(
+              Utils.field_to_string
+                language
+                Message.Field.TriggerProfileUpdateAfter)
+            |> CCString.capitalize_ascii
+            |> txt
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ form
+              ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
+              [ Component.csrf_element csrf ()
+              ; Component.input_element
+                  ~help:Pool_common.I18n.NumberIsDaysHint
+                  ~required:true
+                  language
+                  `Number
+                  Message.Field.TriggerProfileUpdateAfter
+                  ~value:
+                    (trigger_profile_update_after |> value |> CCInt.to_string)
+              ; submit_element language Message.(Update None) ()
+              ]
+          ]
+      ]
+  in
   let terms_and_conditions_html =
     let terms_and_conditions =
       CCList.map Settings.TermsAndConditions.value terms_and_conditions
@@ -319,9 +296,9 @@ let show
         ; email_suffixes_html
         ; contact_email_html
         ; inactive_user_html
+        ; trigger_profile_update_after_html
         ; terms_and_conditions_html
         ; default_lead_time
         ]
-    ; script (Unsafe.data sortable)
     ]
 ;;

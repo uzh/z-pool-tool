@@ -26,6 +26,7 @@ module Description = struct
   ;;
 end
 
+(* TODO [aerben] rename to contact *)
 module ParticipantAmount = struct
   type t = int [@@deriving eq, show]
 
@@ -162,6 +163,8 @@ let create
 let is_fully_booked (m : t) =
   m.assignment_count >= m.max_participants + m.overbook
 ;;
+
+let has_assignments m = AssignmentCount.value m.assignment_count > 0
 
 type assignments =
   { session : t

@@ -2,6 +2,24 @@ module PoolError = Pool_common.Message
 module Database = Pool_database
 module User = Pool_user
 
+module Sihl_user = struct
+  include Sihl_user
+
+  let equal m k = CCString.equal m.id k.id
+end
+
+module Sihl_email = struct
+  include Sihl_email
+
+  let equal (e1 : t) (e2 : t) =
+    let open CCString in
+    equal e1.sender e2.sender
+    && equal e1.recipient e2.recipient
+    && equal e1.subject e2.subject
+    && equal e1.text e2.text
+  ;;
+end
+
 module TemplateLabel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
@@ -53,6 +71,8 @@ module CustomTemplate = struct
   [@@deriving eq, show]
 end
 
+type text_component = (string, string) CCPair.t [@@deriving eq, show]
+
 module Token = struct
   type t = string [@@deriving eq, show]
 
@@ -71,7 +91,6 @@ end
 type email_unverified =
   { address : User.EmailAddress.t
   ; user : Sihl_user.t
-        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; token : Token.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -81,7 +100,6 @@ type email_unverified =
 type email_verified =
   { address : User.EmailAddress.t
   ; user : Sihl_user.t
-        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; verified_at : VerifiedAt.t
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t

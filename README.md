@@ -58,6 +58,32 @@ Run `make build` to build the pool-tool project. This builds `.ml` files using `
 In order to deploy to production:
 
 1. edit `dune-project` and update version `(version 0.0.0)`
-1. build the project `dune build` or edit `payout.opam` and update version `version: "0.0.0"`
+1. build the project `dune build` or edit `pool.opam` and update version `version: "0.0.0"`
 1. commit
 1. tag commit and push
+
+### Local test with production environment
+
+When testing the production environment, you need to update the csrf cookie key (default `__HOST-csrf`).
+This can be done with adding the optional argument `cookie_key` to the csrf middleware.
+
+```ocaml
+(* NOTE: the middleware might have additional arguments defined *)
+Sihl.Web.Middleware.csrf ~cookie_key:"csrf" ()
+```
+
+> **`__Host-` prefix**: Cookies with names starting with `__Host-` must be set with the `secure` flag, must be from a secure page (HTTPS), must not have a domain specified (and therefore aren't sent to subdomains) and the path must be `/`.
+
+_Source: <https://developer.mozilla.org/de/docs/Web/HTTP/Headers/Set-Cookie>_
+
+Alternatively, these options simulate a similar production environment (without `CHECK_CSRF`):
+
+```
+QUEUE_FORCE_ASYNC=true EMAIL_BYPASS_INTERCEPT=true SMTP_SENDER=noreply@uast.uzh.ch SMTP_HOST=uzhxchange.uzh.ch SMTP_USERNAME=noreply@uast.uzh.ch SMTP_PORT=5587 SMTP_START_TLS=true SMTP_PASSWORD=<password> make dev
+```
+
+Use this until https://gitlab.uzh.ch/econ/administration/phd/admission/-/issues/201#note_136262 is resolved:
+
+```
+SMTP_HOST=smtp.uzh.ch SMTP_PORT=25 SMTP_SENDER=info@uast.uzh.ch SMTP_START_TLS=true EMAIL_BYPASS_INTERCEPT=true make dev
+```

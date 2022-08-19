@@ -99,11 +99,6 @@ let send_tenant_reminder pool =
   data >>= events |>> Pool_event.handle_events pool
 ;;
 
-let setup_databases () =
-  Database.Root.setup ();
-  Database.Tenant.setup ()
-;;
-
 let tenant_specific_session_reminder =
   Sihl.Command.make
     ~name:"session_reminder.send"
@@ -112,7 +107,7 @@ let tenant_specific_session_reminder =
       match args with
       | [ pool ] ->
         let open Utils.Lwt_result.Infix in
-        let%lwt _ = setup_databases () in
+        let%lwt _ = Command_utils.setup_databases () in
         pool
         |> Pool_database.Label.create
         |> Lwt_result.lift
@@ -130,7 +125,7 @@ let all_tenants_session_reminder =
       | [] ->
         let open CCFun in
         let open Lwt.Infix in
-        setup_databases ()
+        Command_utils.setup_databases ()
         >>= Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
         >|= CCList.all_ok
         >|= (fun _ -> Ok ()) %> CCOption.of_result

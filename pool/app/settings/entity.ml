@@ -94,6 +94,29 @@ module InactiveUser = struct
   end
 end
 
+module TriggerProfileUpdateAfter = struct
+  type t = Day.t [@@deriving eq, show, yojson]
+
+  let create day =
+    let open CCResult.Infix in
+    let open Pool_common.Message in
+    day
+    |> CCInt.of_string
+    |> CCOption.to_result (Invalid Field.TimeSpan)
+    >>= fun day -> if day < 0 then Error TimeSpanPositive else Ok day
+  ;;
+
+  let value m = m
+  let to_timespan = Day.to_timespan
+
+  let schema () =
+    Pool_common.Utils.schema_decoder
+      create
+      CCInt.to_string
+      Message.Field.TriggerProfileUpdateAfter
+  ;;
+end
+
 module TermsAndConditions = struct
   module Terms = struct
     type t = string [@@deriving eq, show, yojson]
@@ -135,6 +158,9 @@ module Value = struct
   type inactive_user_warning = InactiveUser.DisableAfter.t
   [@@deriving eq, show, yojson]
 
+  type trigger_profile_update_after = TriggerProfileUpdateAfter.t
+  [@@deriving eq, show, yojson]
+
   type terms_and_conditions = TermsAndConditions.t list
   [@@deriving eq, show, yojson]
 
@@ -145,6 +171,7 @@ module Value = struct
     | TenantContactEmail of tenant_contact_email
     | InactiveUserDisableAfter of inactive_user_disable_after
     | InactiveUserWarning of inactive_user_warning
+    | TriggerProfileUpdateAfter of trigger_profile_update_after
     | TermsAndConditions of terms_and_conditions
   [@@deriving eq, show, yojson, variants]
 end
@@ -156,6 +183,7 @@ type setting_key =
   | ContactEmail [@name "contact_email"]
   | InactiveUserDisableAfter [@name "inactive_user_disable_after"]
   | InactiveUserWarning [@name "inactive_user_warning"]
+  | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
   | TermsAndConditions [@name "terms_and_conditions"]
 [@@deriving eq, show, yojson]
 
@@ -170,30 +198,36 @@ module Write = struct
 end
 
 let action_of_param = function
-  | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
-  | "update_tenant_languages" -> Ok `UpdateTenantLanguages
-  | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
   | "create_tenant_emailsuffix" -> Ok `CreateTenantEmailSuffix
   | "delete_tenant_emailsuffix" -> Ok `DeleteTenantEmailSuffix
-  | "update_tenant_contact_email" -> Ok `UpdateTenantContactEmail
+  | "update_default_lead_time" -> Ok `UpdateDefaultLeadTime
   | "update_inactive_user_disable_after" -> Ok `UpdateInactiveUserDisableAfter
   | "update_inactive_user_warning" -> Ok `UpdateInactiveUserWarning
+  | "update_tenant_contact_email" -> Ok `UpdateTenantContactEmail
+  | "update_tenant_emailsuffix" -> Ok `UpdateTenantEmailSuffixes
+  | "update_tenant_languages" -> Ok `UpdateTenantLanguages
   | "update_terms_and_conditions" -> Ok `UpdateTermsAndConditions
+  | "update_trigger_profile_update_after" -> Ok `UpdateTriggerProfileUpdateAfter
   | _ -> Error Pool_common.Message.DecodeAction
 ;;
 
 let stringify_action = function
-  | `UpdateDefaultLeadTime -> "update_default_lead_time"
-  | `UpdateTenantLanguages -> "update_tenant_languages"
-  | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
   | `CreateTenantEmailSuffix -> "create_tenant_emailsuffix"
-  | `UpdateTenantContactEmail -> "update_tenant_contact_email"
   | `DeleteTenantEmailSuffix -> "delete_tenant_emailsuffix"
+  | `UpdateDefaultLeadTime -> "update_default_lead_time"
   | `UpdateInactiveUserDisableAfter -> "update_inactive_user_disable_after"
   | `UpdateInactiveUserWarning -> "update_inactive_user_warning"
+  | `UpdateTenantContactEmail -> "update_tenant_contact_email"
+  | `UpdateTenantEmailSuffixes -> "update_tenant_emailsuffix"
+  | `UpdateTenantLanguages -> "update_tenant_languages"
   | `UpdateTermsAndConditions -> "update_terms_and_conditions"
+  | `UpdateTriggerProfileUpdateAfter -> "update_trigger_profile_update_after"
 ;;
 
 let default_session_reminder_lead_time_key_yojson =
   yojson_of_setting_key ReminderLeadTime
+;;
+
+let trigger_profile_update_after_key_yojson =
+  yojson_of_setting_key TriggerProfileUpdateAfter
 ;;

@@ -24,7 +24,7 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
+    : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in
@@ -34,17 +34,6 @@ let set_password
     ~password
     ~password_confirmation
   >|= ignore
-;;
-
-let send_password_changed_email pool language person =
-  let open Lwt.Infix in
-  Email.Helper.PasswordChange.create
-    pool
-    language
-    (email_address person)
-    (firstname person)
-    (lastname person)
-  >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 let has_terms_accepted pool (contact : t) =
@@ -64,11 +53,7 @@ type event =
   | PausedUpdated of t * User.Paused.t
   | EmailUpdated of t * User.EmailAddress.t
   | PasswordUpdated of
-      t
-      * User.Password.t
-      * User.Password.t
-      * User.PasswordConfirmed.t
-      * Pool_common.Language.t
+      t * User.Password.t * User.Password.t * User.PasswordConfirmed.t
   | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
@@ -77,6 +62,7 @@ type event =
   | UnverifiedDeleted of t
   | AssignmentIncreased of t
   | ShowUpIncreased of t
+  | ProfileUpdateTriggeredAtUpdated of t list
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -96,6 +82,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; recruitment_channel = contact.recruitment_channel
     ; terms_accepted_at = contact.terms_accepted_at
     ; language = contact.language
+    ; experiment_type_preference = None
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
     ; verified = User.Verified.create None
@@ -106,6 +93,7 @@ let handle_event pool : event -> unit Lwt.t =
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
     ; language_version = Pool_common.Version.create ()
+    ; experiment_type_preference_version = Pool_common.Version.create ()
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -151,7 +139,7 @@ let handle_event pool : event -> unit Lwt.t =
         contact.user
     in
     Lwt.return_unit
-  | PasswordUpdated (person, old_password, new_password, confirmed, language) ->
+  | PasswordUpdated (person, old_password, new_password, confirmed) ->
     let old_password = old_password |> User.Password.to_sihl in
     let new_password = new_password |> User.Password.to_sihl in
     let new_password_confirmation =
@@ -166,7 +154,6 @@ let handle_event pool : event -> unit Lwt.t =
         ~new_password_confirmation
         person.user
     in
-    let%lwt () = send_password_changed_email pool language person in
     Lwt.return_unit
   | LanguageUpdated (contact, language) ->
     let%lwt () =
@@ -212,4 +199,6 @@ let handle_event pool : event -> unit Lwt.t =
         num_assignments =
           contact.num_assignments |> NumberOfAssignments.increment
       }
+  | ProfileUpdateTriggeredAtUpdated contacts ->
+    contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
 ;;

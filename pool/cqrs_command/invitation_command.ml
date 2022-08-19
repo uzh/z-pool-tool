@@ -73,21 +73,23 @@ end = struct
     in
     let errors = CCList.map Contact.fullname errors in
     let emails =
-      CCList.fold_left
-        (fun emails (contact : Contact.t) ->
-          let email =
-            invitation_template_elements
-              system_languages
-              i18n_texts
-              command.experiment
-              contact.Contact.language
-            |> CCResult.map (fun template -> contact, template)
-          in
-          email :: emails)
-        []
+      CCList.map
+        (fun { Contact.user; language; _ } ->
+          invitation_template_elements
+            system_languages
+            i18n_texts
+            command.experiment
+            language
+          |> CCResult.map (fun template ->
+                 ( user
+                 , [ ( "experimentDescription"
+                     , command.experiment.Experiment.description
+                       |> Experiment.Description.value )
+                   ]
+                 , template )))
         contacts
     in
-    if not (CCList.is_empty errors)
+    if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (
       match CCList.all_ok emails with
@@ -95,8 +97,7 @@ end = struct
         Ok
           [ Invitation.Created (contacts, command.experiment)
             |> Pool_event.invitation
-          ; Invitation.InvitationsSent (command.experiment, emails)
-            |> Pool_event.invitation
+          ; Email.InvitationBulkSent emails |> Pool_event.email
           ]
       | Error err -> Error err)
   ;;
@@ -105,24 +106,44 @@ end = struct
 end
 
 module Resend : sig
+  type t =
+    { invitation : Invitation.t
+    ; experiment : Experiment.t
+    }
+
   val handle
-    :  Invitation.resent
+    :  t
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Invitation.resent -> bool Lwt.t
+  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
-  let handle (command : Invitation.resent) system_languages i18n_texts =
+  type t =
+    { invitation : Invitation.t
+    ; experiment : Experiment.t
+    }
+
+  let handle (command : t) system_languages i18n_texts =
     let open CCResult in
     let* email =
       invitation_template_elements
         system_languages
         i18n_texts
-        command.Invitation.experiment
-        command.Invitation.invitation.Invitation.contact.Contact.language
+        command.experiment
+        command.invitation.Invitation.contact.Contact.language
     in
-    Ok [ Invitation.Resent (command, email) |> Pool_event.invitation ]
+    Ok
+      [ Invitation.Resent command.invitation |> Pool_event.invitation
+      ; Email.InvitationSent
+          ( command.invitation.Invitation.contact.Contact.user
+          , [ ( "experimentDescription"
+              , command.experiment.Experiment.description
+                |> Experiment.Description.value )
+            ]
+          , email )
+        |> Pool_event.email
+      ]
   ;;
 
   let can _user Invitation.{ experiment = _; invitation = _ } =

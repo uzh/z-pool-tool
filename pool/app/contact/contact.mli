@@ -32,6 +32,7 @@ type t =
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t
   ; language : Pool_common.Language.t option
+  ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
   ; verified : Pool_user.Verified.t
@@ -42,6 +43,7 @@ type t =
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
+  ; experiment_type_preference_version : Pool_common.Version.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -81,6 +83,11 @@ val find_by_user
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_to_trigger_profile_update
+  :  Pool_database.Label.t
+  -> (t list, 'a) Lwt_result.t
+
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =
@@ -112,7 +119,6 @@ type event =
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-      * Pool_common.Language.t
   | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
@@ -121,6 +127,7 @@ type event =
   | UnverifiedDeleted of t
   | AssignmentIncreased of t
   | ShowUpIncreased of t
+  | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
 val firstnameupdated : t -> Pool_user.Firstname.t -> event

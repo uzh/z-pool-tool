@@ -20,7 +20,7 @@ let create req =
     let tenant_db = context.Pool_context.tenant_db in
     let* contact = HttpUtils.get_current_contact tenant_db req in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
-    let* session = Session.find_public tenant_db id contact in
+    let* session = Session.find_public tenant_db id in
     let* waiting_list =
       Waiting_list.find_by_contact_and_experiment tenant_db contact experiment
     in
@@ -38,7 +38,7 @@ let create req =
         >|= I18n.content
       in
       let session_text = Session.(public_to_email_text language session) in
-      Lwt_result.return Assignment.{ subject; text; language; session_text }
+      Lwt_result.return Email.{ subject; text; language; session_text }
     in
     let%lwt already_enrolled =
       let open Lwt.Infix in

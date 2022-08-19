@@ -10,6 +10,8 @@ let commands =
   ; Contact.sign_up
   ; SessionReminder.all_tenants_session_reminder
   ; SessionReminder.tenant_specific_session_reminder
+  ; Contact.all_profile_update_triggers
+  ; Contact.tenant_specific_profile_update_trigger
   ]
 ;;
 

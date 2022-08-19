@@ -226,6 +226,37 @@ module InactiveUser = struct
   end
 end
 
+module UpdateTriggerProfileUpdateAfter : sig
+  type t = Settings.TriggerProfileUpdateAfter.t
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
+end = struct
+  type t = Settings.TriggerProfileUpdateAfter.t
+
+  let command trigger_update_after = trigger_update_after
+
+  let schema =
+    Conformist.(
+      make Field.[ Settings.TriggerProfileUpdateAfter.schema () ] command)
+  ;;
+
+  let handle inactive_user_warning =
+    Ok
+      [ Settings.TriggerProfileUpdateAfterUpdated inactive_user_warning
+        |> Pool_event.settings
+      ]
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  ;;
+end
+
 module UpdateTermsAndConditions : sig
   type t = (string * string list) list
 

@@ -11,7 +11,7 @@ end = struct
   type t = Pool_tenant.t
 
   let handle default () =
-    Ok [ Email.(DefaultRestored default) |> Pool_event.email_address ]
+    Ok [ Email.(DefaultRestored default) |> Pool_event.email ]
   ;;
 
   let effects tenant =

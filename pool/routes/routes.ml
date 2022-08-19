@@ -177,6 +177,8 @@ module Admin = struct
             ; post "/follow-up" create_follow_up
             ; post "/cancel" cancel
             ; post "/delete" delete
+            ; get "/reschedule" reschedule_form
+            ; post "/reschedule" reschedule
             ]
         in
         Session.
@@ -214,6 +216,7 @@ module Admin = struct
           ; post "" create
           ; get "/create" new_form
           ; post "/search-info" search_info
+          ; post "/add-condition" add_condition
           ; choose ~scope:(Mailing |> url_key) specific
           ]
       in

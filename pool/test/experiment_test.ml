@@ -2,8 +2,9 @@ module ExperimentCommand = Cqrs_command.Experiment_command
 module Common = Pool_common
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.
-    [ DirectRegistrationDisabled |> show; RegistrationDisabled |> show ]
+  Pool_common.Message.Field.(
+    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
+    |> CCList.map show)
 ;;
 
 module Data = struct
@@ -11,31 +12,6 @@ module Data = struct
   let public_title = "public_experiment_title"
   let description = "Description"
   let filter = "1=1"
-
-  let experiment =
-    let open CCResult in
-    let id = Pool_common.Id.create () in
-    let* title = title |> Experiment.Title.create in
-    let* public_title = public_title |> Experiment.PublicTitle.create in
-    let* description = description |> Experiment.Description.create in
-    Ok
-      Experiment.
-        { id
-        ; title
-        ; public_title
-        ; description
-        ; filter
-        ; direct_registration_disabled =
-            false |> DirectRegistrationDisabled.create
-        ; registration_disabled = false |> RegistrationDisabled.create
-        ; invitation_template = None
-        ; session_reminder_subject = None
-        ; session_reminder_text = None
-        ; session_reminder_lead_time = None
-        ; created_at = Common.CreatedAt.create ()
-        ; updated_at = Common.UpdatedAt.create ()
-        }
-  ;;
 end
 
 let database_label = Test_utils.Data.database_label
@@ -133,8 +109,7 @@ let create_with_missing_text_element additional error =
     let open CCResult.Infix in
     let open Cqrs_command.Experiment_command.Create in
     urlencoded @ additional
-    |> Http_utils.format_request_boolean_values
-         [ "direct_registration_disabled"; "registration_disabled" ]
+    |> Http_utils.format_request_boolean_values experiment_boolean_fields
     |> decode
     >>= handle
   in

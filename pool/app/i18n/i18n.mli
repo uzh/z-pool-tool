@@ -18,13 +18,18 @@ module Key : sig
     | ReminderSubject
     | ReminderSmsText
     | ReminderText
+    | RescheduleSessionSubject
+    | RescheduleSessionText
     | SessionFinishSubject
     | SessionFinishText
+    | TriggerProfileUpdateSubject
+    | TriggerProfileUpdateText
     | WelcomeText
 
   val to_string : t -> string
   val equal : t -> t -> bool
   val of_string : string -> (t, Pool_common.Message.error) result
+  val is_textarea : t -> bool
   val all : t list
 
   val schema
