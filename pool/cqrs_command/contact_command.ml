@@ -366,6 +366,8 @@ end = struct
       ; Email.EmailVerified command.email |> Pool_event.email_verification
       ]
   ;;
+
+  let can _contact = Utils.todo [%here]
 end
 
 module SendProfileUpdateTrigger : sig

@@ -146,7 +146,5 @@ end = struct
       ]
   ;;
 
-  let can _user Invitation.{ experiment = _; invitation = _ } =
-    Utils.todo [%here]
-  ;;
+  let can _user { experiment = _; invitation = _ } = Utils.todo [%here]
 end
