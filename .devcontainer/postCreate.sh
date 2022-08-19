@@ -18,6 +18,7 @@ opam pin add -yn sihl-queue $repo
 opam pin add -yn sihl-storage $repo
 opam pin add -yn sihl-token $repo
 opam pin add -yn sihl-user $repo
+opam pin add -yn letters https://github.com/oxidizing/letters.git
 
 # pin custom libraries hosted on the UZH gitlab
 opam pin add -yn canary https://github.com/uzh/canary.git
