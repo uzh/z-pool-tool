@@ -367,7 +367,7 @@ end = struct
       ]
   ;;
 
-  let can _contact = Utils.todo [%here]
+  let effects _contact = Utils.todo [%here]
 end
 
 module SendProfileUpdateTrigger : sig

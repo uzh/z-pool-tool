@@ -205,7 +205,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Session.update
 
@@ -273,7 +273,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = Utils.todo [%here]
+  let effects _user _command = Utils.todo [%here]
 end
 
 module Reschedule : sig
