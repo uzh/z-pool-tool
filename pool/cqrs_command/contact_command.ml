@@ -377,6 +377,7 @@ module SendProfileUpdateTrigger : sig
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Contact.t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { contacts : Contact.t list
