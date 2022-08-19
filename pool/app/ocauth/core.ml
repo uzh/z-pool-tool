@@ -1,1 +1,1 @@
-include Ocaml_authorize.Make (Role)
+include Guardian.Make (Role)

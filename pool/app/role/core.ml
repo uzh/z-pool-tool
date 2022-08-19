@@ -11,11 +11,11 @@ type t =
   | `Waiting_list
   | `Assignment
   | `Mailing
-  | `Assistant of Ocaml_authorize.Uuidm.t
-  | `Experimenter of Ocaml_authorize.Uuidm.t
-  | `Location_manager of Ocaml_authorize.Uuidm.t
-  | `Operator of Ocaml_authorize.Uuidm.t
-  | `Recruiter of Ocaml_authorize.Uuidm.t
+  | `Assistant of Guardian.Uuidm.t
+  | `Experimenter of Guardian.Uuidm.t
+  | `Location_manager of Guardian.Uuidm.t
+  | `Operator of Guardian.Uuidm.t
+  | `Recruiter of Guardian.Uuidm.t
   ]
 [@@deriving show, eq, ord, yojson]
 
@@ -29,10 +29,10 @@ let get_target (t : t) =
   | _ -> failwith (Printf.sprintf "Cannot get target from role %s" (show t))
 ;;
 
-let get_name t = show t |> Ocaml_authorize.Util.decompose_variant_string |> fst
+let get_name t = show t |> Guardian.Util.decompose_variant_string |> fst
 
 let of_string s =
-  match Ocaml_authorize.Util.decompose_variant_string s with
+  match Guardian.Util.decompose_variant_string s with
   | "admin", [] -> `Admin
   | "tenant", [] -> `Tenant
   | "guest", [] -> `Guest
@@ -44,13 +44,12 @@ let of_string s =
   | "waiting_list", [] -> `Waiting_list
   | "assignment", [] -> `Assignment
   | "mailing", [] -> `Mailing
-  | "assistant", [ id ] -> `Assistant (Ocaml_authorize.Uuidm.of_string_exn id)
-  | "experimenter", [ id ] ->
-    `Experimenter (Ocaml_authorize.Uuidm.of_string_exn id)
+  | "assistant", [ id ] -> `Assistant (Guardian.Uuidm.of_string_exn id)
+  | "experimenter", [ id ] -> `Experimenter (Guardian.Uuidm.of_string_exn id)
   | "location_manager", [ id ] ->
-    `Location_manager (Ocaml_authorize.Uuidm.of_string_exn id)
-  | "operator", [ id ] -> `Operator (Ocaml_authorize.Uuidm.of_string_exn id)
-  | "recruiter", [ id ] -> `Recruiter (Ocaml_authorize.Uuidm.of_string_exn id)
+    `Location_manager (Guardian.Uuidm.of_string_exn id)
+  | "operator", [ id ] -> `Operator (Guardian.Uuidm.of_string_exn id)
+  | "recruiter", [ id ] -> `Recruiter (Guardian.Uuidm.of_string_exn id)
   | _ -> failwith ("Invalid role: " ^ s)
 ;;
 
@@ -67,10 +66,10 @@ let all =
   ; `Waiting_list
   ; `Assignment
   ; `Mailing
-  ; `Assistant Ocaml_authorize.Uuidm.nil
-  ; `Experimenter Ocaml_authorize.Uuidm.nil
-  ; `Location_manager Ocaml_authorize.Uuidm.nil
-  ; `Operator Ocaml_authorize.Uuidm.nil
-  ; `Recruiter Ocaml_authorize.Uuidm.nil
+  ; `Assistant Guardian.Uuidm.nil
+  ; `Experimenter Guardian.Uuidm.nil
+  ; `Location_manager Guardian.Uuidm.nil
+  ; `Operator Guardian.Uuidm.nil
+  ; `Recruiter Guardian.Uuidm.nil
   ]
 ;;

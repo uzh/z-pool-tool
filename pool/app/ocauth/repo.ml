@@ -6,4 +6,4 @@ module MariaConfig = struct
   ;;
 end
 
-include Ocaml_authorize_backends.Mariadb_backend.Make (Role) (MariaConfig) ()
+include Guardian_backends.Mariadb_backend.Make (Role) (MariaConfig) ()

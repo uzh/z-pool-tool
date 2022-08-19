@@ -17,7 +17,7 @@ let guest_authorizable =
 ;;
 
 (** Convenience module for turning Sihl or Pool [user]s into entities that
-    [Ocaml_authorize] can work with. *)
+    [Guardian] can work with. *)
 module User = struct
   type t = Sihl_user.t
 
@@ -53,7 +53,7 @@ module User = struct
 end
 
 (** Convenience module for turning Pool [participant]s into entities that
-    [Ocaml_authorize] can work with. *)
+    [Guardian] can work with. *)
 module Contact = struct
   type t = Contact.t
 
@@ -123,9 +123,9 @@ module Admin = struct
   ;;
 end
 
-(** The list of permissions that we need [Ocaml_authorize] to be aware of in
-    order to achieve a minimal level of functionality. Notably, the [`Admin]
-    role should have [`Manage] authority on everything in the system. *)
+(** The list of permissions that we need [Guardian] to be aware of in order to
+    achieve a minimal level of functionality. Notably, the [`Admin] role should
+    have [`Manage] authority on everything in the system. *)
 let root_permissions : Authorizer.auth_rule list =
   CCList.map (fun role -> `Role `Admin, `Manage, `Role role) Role.all
 ;;

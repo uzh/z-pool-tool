@@ -1,1 +1,1 @@
-include Ocaml_authorize.Role_s with type t = Core.t
+include Guardian.Role_s with type t = Core.t

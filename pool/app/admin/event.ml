@@ -26,12 +26,12 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    : type person.
-      Database.Label.t
-      -> person t
-      -> string
-      -> string
-      -> (unit, string) result Lwt.t
+  : type person.
+    Database.Label.t
+    -> person t
+    -> string
+    -> string
+    -> (unit, string) result Lwt.t
   =
  fun pool person password password_confirmation ->
   let open Lwt_result.Infix in
@@ -108,7 +108,7 @@ let handle_event pool : event -> unit Lwt.t = function
         |> Lwt_result.map_error Pool_common.Message.error_to_exn
         |> Lwt_result.get_exn
         |> Lwt.map (fun tenant ->
-               Ocauth.Uuid.of_string_exn (Common.Id.value tenant.Pool_tenant.id))
+             Ocauth.Uuid.of_string_exn (Common.Id.value tenant.Pool_tenant.id))
       in
       Lwt.return
       @@
@@ -120,7 +120,7 @@ let handle_event pool : event -> unit Lwt.t = function
       | Operator -> `Operator tenant_id
     in
     Ocauth.Persistence.grant_roles
-      (Ocaml_authorize.Uuidm.of_string_exn user.Sihl_user.id)
+      (Guardian.Uuidm.of_string_exn user.Sihl_user.id)
       (Ocauth.Role_set.singleton role)
     |> Lwt_result.map_error (fun s -> Failure s)
     |> Lwt_result.get_exn
@@ -132,9 +132,9 @@ let handle_event pool : event -> unit Lwt.t = function
 ;;
 
 let[@warning "-4"] equal_person_event
-    (one : 'a person_event)
-    (two : 'a person_event)
-    : bool
+  (one : 'a person_event)
+  (two : 'a person_event)
+  : bool
   =
   match one, two with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->

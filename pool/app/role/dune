@@ -1,6 +1,6 @@
 (library
  (name role)
- (libraries sihl ocaml_authorize)
+ (libraries sihl guardian)
  (preprocess
   (pps
    ppx_deriving.show

@@ -1,8 +1,8 @@
 (library
  (name ocauth)
  (libraries
-  ocaml_authorize
-  ocaml_authorize.backends
+  guardian
+  guardian.backends
   role
   pool_common
   sihl
