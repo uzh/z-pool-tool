@@ -21,7 +21,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -68,16 +68,14 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module ToggleStatus : sig
   type t = Root.t
 
   val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = Root.t
 
@@ -89,7 +87,5 @@ end = struct
     | Inactive -> Ok [ Root.Enabled root |> Pool_event.root ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end

@@ -33,31 +33,31 @@
    (>= 0.8.1))
   (sihl
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-cache
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-email
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-queue
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-storage
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-token
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (sihl-user
    (and
-    (>= 3.0.3)
+    (>= 3.0.4)
     (< 4.0.0)))
   (lwt
    (>= 5.6.1))
@@ -80,6 +80,8 @@
   (ppx_variants_conv
    (= v0.14.2))
   canary
+  (guardian
+   (>= 0.0.0))
   ;; Test/Dev dependencies
   (alcotest-lwt :with-test)
   (ppx_inline_test :with-test)))

@@ -11,7 +11,7 @@ module AssignOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -22,13 +22,10 @@ end = struct
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Tenant, Some command.tenant_id)
-        ]
+  let effects t =
+    [ `Manage, `Uniq (t.user_id |> Id.to_uuidm)
+    ; `Manage, `Uniq (t.tenant_id |> Id.to_uuidm)
+    ]
   ;;
 end
 
@@ -43,7 +40,7 @@ module DivestOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : string
@@ -54,14 +51,10 @@ end = struct
     Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
+  let effects t =
+    [ `Manage, `Uniq (t.user_id |> Ocauth.Uuid.of_string_exn)
+    ; `Manage, `Uniq (t.tenant_id |> Ocauth.Uuid.of_string_exn)
+    ]
   ;;
 end
 
@@ -86,13 +79,10 @@ module AddRoot : sig
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = { user_id : string }
 
   let handle = Utils.todo
-
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end

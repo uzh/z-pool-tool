@@ -187,9 +187,7 @@ module Create = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module Update : sig
@@ -207,7 +205,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = Session.update
 
@@ -275,9 +273,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects _user _command = Utils.todo [%here]
 end
 
 module Reschedule : sig
@@ -295,7 +291,7 @@ module Reschedule : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = Session.reschedule
 
@@ -335,9 +331,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module Delete : sig
@@ -347,7 +341,7 @@ module Delete : sig
     :  Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = { session : Session.t }
 
@@ -360,9 +354,7 @@ end = struct
     else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module Cancel : sig
@@ -375,7 +367,7 @@ module Cancel : sig
     :  Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   (* TODO issue #90 step 2 *)
   (* notify_via: Email, SMS *)
@@ -385,17 +377,14 @@ end = struct
     }
 
   let handle session = Ok [ Session.Canceled session |> Pool_event.session ]
-
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module SendReminder : sig
   type t = (Session.t * Sihl_email.t list) list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
@@ -411,7 +400,5 @@ end = struct
          command)
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end

@@ -134,12 +134,12 @@ compile-and-test:
     - opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
     - opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
     - opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
-    # TODO remove once https://gitlab.uzh.ch/econ/administration/phd/admission/-/issues/201#note_136262 is done
     - opam pin add -yn letters https://github.com/oxidizing/letters.git#master
 
     # pin custom libraries hosted on the UZH gitlab
     - opam pin add -yn canary https://github.com/uzh/canary.git
     - opam pin add -yn conformist https://github.com/oxidizing/conformist.git
+    - opam pin add -yn guardian https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.uzh.ch/econ/it/framework/ocaml/permissions.git
 
     # pin payout and install system dependencies
     - opam pin add -yn pool .

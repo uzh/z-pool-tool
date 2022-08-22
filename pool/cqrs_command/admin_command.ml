@@ -21,7 +21,7 @@ module CreateOperator : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -65,9 +65,7 @@ end = struct
     Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
-  ;;
+  let effects = [ `Create, `Role `Admin ]
 
   let decode data =
     Conformist.decode_and_validate schema data

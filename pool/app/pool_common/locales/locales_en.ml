@@ -184,6 +184,7 @@ let rec error_to_string = function
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
       (CCString.concat ", " names)
+  | Authorization message -> field_message "Unable to authorize: " message ""
   | Conformist errs ->
     CCList.map
       (fun (field, err) ->

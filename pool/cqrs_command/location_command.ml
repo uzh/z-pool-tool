@@ -72,11 +72,7 @@ module Create = struct
          }
   ;;
 
-  let can user _ =
-    Permission.can
-      user
-      ~any_of:[ Permission.Manage (Permission.Location, None) ]
-  ;;
+  let effects = [ `Manage, `Role `Location ]
 end
 
 module Update = struct
@@ -135,9 +131,7 @@ module Update = struct
          }
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
-  ;;
+  let effects = [ `Manage, `Role `System ]
 end
 
 module AddFile = struct
@@ -182,11 +176,7 @@ module AddFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can
-      user
-      ~any_of:[ Permission.Manage (Permission.Location, None) ]
-  ;;
+  let effects = [ `Manage, `Role `Location ]
 end
 
 module DeleteFile = struct
@@ -203,9 +193,5 @@ module DeleteFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can
-      user
-      ~any_of:[ Permission.Manage (Permission.Location, None) ]
-  ;;
+  let effects = [ `Manage, `Role `Location ]
 end

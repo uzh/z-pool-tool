@@ -60,7 +60,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t = create
 
@@ -89,9 +89,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
-  ;;
+  let effects = [ `Create, `Role `Experiment ]
 end
 
 module Update : sig
@@ -106,7 +104,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Experiment.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = create
 
@@ -136,8 +134,8 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Experiment ]
+  let effects experiment =
+    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 
@@ -148,7 +146,7 @@ module Delete : sig
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   (* Only when no sessions added *)
 
@@ -164,12 +162,8 @@ end = struct
       Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy (Permission.Experiment, Some command.experiment_id)
-        ]
+  let effects command =
+    [ `Delete, `Uniq (command.experiment_id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 
@@ -185,7 +179,10 @@ module AddExperimenter : sig
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects
+    :  Experiment.t
+    -> Admin.experimenter Admin.t
+    -> Ocauth.Authorizer.effect list
 end = struct
   type t = { user_id : Id.t }
 
@@ -196,8 +193,10 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  let effects experiment user =
+    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    ]
   ;;
 end
 
@@ -212,7 +211,7 @@ module DivestExperimenter : sig
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -226,13 +225,10 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
-        ]
+  let effects { user_id; experiment_id } =
+    [ `Update, `Uniq (experiment_id |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (user_id |> Pool_common.Id.to_uuidm)
+    ]
   ;;
 end
 
@@ -244,7 +240,7 @@ module AddAssistant : sig
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Experiment.t -> t -> Ocauth.Authorizer.effect list
 end = struct
   type t = { user_id : Id.t }
 
@@ -254,8 +250,10 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Manage (Permission.System, None) ]
+  let effects experiment t =
+    [ `Update, `Uniq (experiment.Experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (t.user_id |> Pool_common.Id.to_uuidm)
+    ]
   ;;
 end
 
@@ -270,7 +268,10 @@ module DivestAssistant : sig
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects
+    :  Experiment.t
+    -> Admin.experimenter Admin.t
+    -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -283,12 +284,9 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.System, None)
-        ; Permission.Manage (Permission.Experiment, Some command.experiment_id)
-        ]
+  let effects experiment user =
+    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    ]
   ;;
 end

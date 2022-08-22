@@ -26,12 +26,12 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    : type person.
-      Database.Label.t
-      -> person t
-      -> string
-      -> string
-      -> (unit, string) result Lwt.t
+  : type person.
+    Database.Label.t
+    -> person t
+    -> string
+    -> string
+    -> (unit, string) result Lwt.t
   =
  fun pool person password password_confirmation ->
   let open Lwt_result.Infix in
@@ -102,14 +102,28 @@ let handle_event pool : event -> unit Lwt.t = function
       | LocationManager -> Repo.insert pool (LocationManager person)
       | Operator -> Repo.insert pool (Operator person)
     in
-    (match role with
-    | Assistant -> Role.assistant
-    | Experimenter -> Role.experimenter
-    | Recruiter -> Role.recruiter
-    | LocationManager -> Role.location_manager
-    | Operator -> Role.operator)
-    |> fun role ->
-    Permission.assign user (role (user.Sihl_user.id |> Common.Id.of_string))
+    let%lwt role =
+      let%lwt tenant_id =
+        Pool_tenant.find_by_label pool
+        |> Lwt_result.map_error Pool_common.Message.error_to_exn
+        |> Lwt_result.get_exn
+        |> Lwt.map (fun tenant ->
+             Ocauth.Uuid.of_string_exn (Common.Id.value tenant.Pool_tenant.id))
+      in
+      Lwt.return
+      @@
+      match role with
+      | Assistant -> `Assistant tenant_id
+      | Experimenter -> `Experimenter tenant_id
+      | Recruiter -> `Recruiter tenant_id
+      | LocationManager -> `Location_manager tenant_id
+      | Operator -> `Operator tenant_id
+    in
+    Ocauth.Persistence.grant_roles
+      (Guardian.Uuidm.of_string_exn user.Sihl_user.id)
+      (Ocauth.Role_set.singleton role)
+    |> Lwt_result.map_error (fun s -> Failure s)
+    |> Lwt_result.get_exn
   | AssistantEvents event -> handle_person_event pool event
   | ExperimenterEvents event -> handle_person_event pool event
   | LocationManagerEvents event -> handle_person_event pool event
@@ -118,9 +132,9 @@ let handle_event pool : event -> unit Lwt.t = function
 ;;
 
 let[@warning "-4"] equal_person_event
-    (one : 'a person_event)
-    (two : 'a person_event)
-    : bool
+  (one : 'a person_event)
+  (two : 'a person_event)
+  : bool
   =
   match one, two with
   | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->

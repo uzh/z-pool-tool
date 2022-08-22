@@ -1,7 +1,7 @@
 (library
  (name root)
  (libraries
-  permission
+  ocauth
   pool_common
   pool_tenant
   pool_user

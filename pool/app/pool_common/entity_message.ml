@@ -178,6 +178,7 @@ type error =
   | AlreadyInPast
   | AlreadyStarted
   | AlreadyInvitedToExperiment of string list
+  | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
   | ContactSignupInvalidEmail
@@ -240,6 +241,8 @@ type error =
 
 type warning = Warning of string
 [@@deriving eq, show, yojson, variants, sexp_of]
+
+let error_to_exn error = Failure (show_error error)
 
 type success =
   | AddedToWaitingList

@@ -11,9 +11,15 @@ type event =
 
 let handle_event _ : event -> unit Lwt.t = function
   | OperatorAssigned (tenant_id, user) ->
-    Permission.assign (Admin.user user) (Role.operator tenant_id)
+    Ocauth.Persistence.put_perm_exn
+      ( `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+      , `Manage
+      , `Uniq (Id.to_uuidm tenant_id) )
   | OperatorDivested (tenant_id, user) ->
-    Permission.divest (Admin.user user) (Role.operator tenant_id)
+    Ocauth.Persistence.delete_perm_exn
+      ( `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+      , `Manage
+      , `Uniq (Id.to_uuidm tenant_id) )
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 

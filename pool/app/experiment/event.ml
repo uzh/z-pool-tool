@@ -29,11 +29,23 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created t -> Repo.insert pool t
   | Updated t -> Repo.update pool t
   | Destroyed experiment_id -> Repo.destroy pool experiment_id
+  (** TODO: was placeholder *)
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
-    Permission.divest (Admin.user user) (Role.operator experiment.id)
+    let user_id = Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
+    Ocauth.Persistence.revoke_roles
+      user_id
+      (Ocauth.Role_set.singleton (`Experimenter (Id.to_uuidm experiment.id)))
+    |> Lwt_result.map_error (fun x -> Failure x)
+    |> Lwt_result.get_exn
   | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
-    -> Permission.divest (Admin.user user) (Role.operator experiment.id)
+    ->
+    let user_id = Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
+    Ocauth.Persistence.revoke_roles
+      user_id
+      (Ocauth.Role_set.singleton (`Assistant (Id.to_uuidm experiment.id)))
+    |> Lwt_result.map_error (fun x -> Failure x)
+    |> Lwt_result.get_exn
 ;;
 
 let[@warning "-4"] equal_event event1 event2 =

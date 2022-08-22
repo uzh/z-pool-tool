@@ -1,0 +1,12 @@
+(library
+ (name ocauth)
+ (libraries
+  guardian
+  guardian.backends
+  role
+  pool_common
+  sihl
+  contact
+  pool_user)
+ (preprocess
+  (pps lwt_ppx)))

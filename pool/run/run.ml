@@ -34,7 +34,26 @@ let () =
     empty
     |> with_services services
     |> before_start (fun () ->
-           let () = Middleware.Error.before_start () in
-           Printexc.record_backtrace true |> Lwt.return)
+         let () = Middleware.Error.before_start () in
+         (* put_perms will fail on permissions that already exist, so we need to
+            clear the root database first in order to make sure new
+            [root_permissions] items end up in the database *)
+         let%lwt () =
+           (* TODO: Handle errors *)
+           Lwt_list.fold_left_s
+             (fun _acc perm ->
+               let%lwt _rv = Ocauth.Persistence.delete_perm perm in
+               Lwt.return ())
+             ()
+             Ocauth.root_permissions
+         in
+         let%lwt (_
+                   : ( Ocauth.Persistence.auth_rule list
+                     , Ocauth.Persistence.auth_rule list )
+                     result)
+           =
+           Ocauth.(Persistence.put_perms root_permissions)
+         in
+         Printexc.record_backtrace true |> Lwt.return)
     |> run ~commands)
 ;;

@@ -8,7 +8,7 @@
   email
   experiment
   i18n
-  permission
+  ocauth
   pool_common
   pool_event
   pool_location
@@ -22,6 +22,7 @@
   tenant)
  (preprocess
   (pps
+   ppx_here
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq

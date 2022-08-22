@@ -1,8 +1,8 @@
 let invitation_template_elements
-  system_languages
-  i18n_texts
-  experiment
-  contact_langauge
+    system_languages
+    i18n_texts
+    experiment
+    contact_langauge
   =
   let open CCResult in
   let* default_language =
@@ -26,9 +26,9 @@ let invitation_template_elements
     let language =
       contact_langauge
       |> CCOption.map_or ~default:default_language (fun l ->
-           if CCList.mem ~eq:Pool_common.Language.equal l system_languages
-           then l
-           else default_language)
+             if CCList.mem ~eq:Pool_common.Language.equal l system_languages
+             then l
+             else default_language)
     in
     let* subject, text =
       CCList.Assoc.get ~eq:Pool_common.Language.equal language i18n_texts
@@ -81,12 +81,12 @@ end = struct
             command.experiment
             language
           |> CCResult.map (fun template ->
-               ( user
-               , [ ( "experimentDescription"
-                   , command.experiment.Experiment.description
-                     |> Experiment.Description.value )
-                 ]
-               , template )))
+                 ( user
+                 , [ ( "experimentDescription"
+                     , command.experiment.Experiment.description
+                       |> Experiment.Description.value )
+                   ]
+                 , template )))
         contacts
     in
     if CCList.is_empty errors |> not
@@ -102,15 +102,7 @@ end = struct
       | Error err -> Error err)
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            (Permission.Experiment, Some command.experiment.Experiment.id)
-        ; Permission.Create Permission.Invitation
-        ]
-  ;;
+  let can _user _command = Utils.todo [%here]
 end
 
 module Resend : sig
@@ -154,14 +146,5 @@ end = struct
       ]
   ;;
 
-  let can user { experiment; invitation } =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            (Permission.Experiment, Some experiment.Experiment.id)
-        ; Permission.Manage
-            (Permission.Invitation, Some invitation.Invitation.id)
-        ]
-  ;;
+  let can _user { experiment = _; invitation = _ } = Utils.todo [%here]
 end

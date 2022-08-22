@@ -18,12 +18,5 @@ module ResetPassword = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user contact =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage (Permission.Contact, None)
-        ; Permission.Update (Permission.Contact, Some (contact |> Contact.id))
-        ]
-  ;;
+  let effects () = Utils.todo [%here]
 end

@@ -6,7 +6,7 @@ module RestoreDefault : sig
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
@@ -14,12 +14,7 @@ end = struct
     Ok [ Email.(DefaultRestored default) |> Pool_event.email ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command |> Pool_tenant.id))
-        ]
+  let effects tenant =
+    [ `Delete, `Uniq (tenant |> Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end

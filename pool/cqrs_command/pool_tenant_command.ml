@@ -39,7 +39,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -165,9 +165,7 @@ end = struct
       ]
   ;;
 
-  let can user _ =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
-  ;;
+  let effects = [ `Create, `Role `Tenant ]
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -201,7 +199,7 @@ module EditDetails : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
+  val effects : Pool_tenant.Write.t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -307,12 +305,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user (tenant : Pool_tenant.t) =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
-  ;;
+  let effects { Pool_tenant.Write.id; _ } = [ `Update, `Uniq (Id.to_uuidm id) ]
 end
 
 module EditDatabase : sig
@@ -330,7 +323,9 @@ module EditDatabase : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> Pool_tenant.t -> bool Lwt.t
+  val effects
+    :  Pool_database.Label.t
+    -> (Ocauth.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
 end = struct
   type t =
     { database_url : Pool_database.Url.t
@@ -361,11 +356,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can user (tenant : Pool_tenant.t) =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Update (Permission.Tenant, Some tenant.Pool_tenant.id) ]
+  let effects dblabel =
+    let open Lwt_result.Syntax in
+    let* tenant = Pool_tenant.find_by_label dblabel in
+    Lwt.return_ok [ `Update, `Uniq (Id.to_uuidm tenant.Pool_tenant.id) ]
   ;;
 end
 
@@ -375,22 +369,20 @@ module DestroyLogo : sig
     -> Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> bool Lwt.t
+  val effects : Ocauth.Authorizer.effect list
 end = struct
   let handle tenant asset_id =
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let can user =
-    Permission.can user ~any_of:[ Permission.Create Permission.Tenant ]
-  ;;
+  let effects = [ `Create, `Role `Tenant ]
 end
 
 module Destroy : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = { tenant_id : string }
 
@@ -401,12 +393,7 @@ end = struct
       ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command.tenant_id |> Id.of_string))
-        ]
+  let effects { tenant_id } =
+    [ `Delete, `Uniq (Ocauth.Uuid.of_string_exn tenant_id) ]
   ;;
 end

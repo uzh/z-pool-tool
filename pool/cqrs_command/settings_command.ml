@@ -171,8 +171,6 @@ module InactiveUser = struct
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
-
-    val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
     type t = Settings.InactiveUser.DisableAfter.t
 
@@ -190,8 +188,6 @@ module InactiveUser = struct
         ]
     ;;
 
-    let can = Utils.todo
-
     let decode data =
       Conformist.decode_and_validate schema data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
@@ -206,8 +202,6 @@ module InactiveUser = struct
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
-
-    val can : Sihl_user.t -> t -> bool Lwt.t
   end = struct
     type t = Settings.InactiveUser.Warning.t
 
@@ -224,8 +218,6 @@ module InactiveUser = struct
           |> Pool_event.settings
         ]
     ;;
-
-    let can = Utils.todo
 
     let decode data =
       Conformist.decode_and_validate schema data
@@ -272,8 +264,6 @@ module UpdateTermsAndConditions : sig
     :  Pool_common.Language.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = (string * string list) list
 
@@ -317,15 +307,13 @@ end = struct
         |> Pool_event.settings
       ]
   ;;
-
-  let can = Utils.todo
 end
 
 module RestoreDefault : sig
   type t = Pool_tenant.t
 
   val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
@@ -333,13 +321,8 @@ end = struct
     Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
   ;;
 
-  let can user command =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Destroy
-            (Permission.Tenant, Some (command |> Pool_tenant.id))
-        ]
+  let effects t =
+    [ `Delete, `Uniq (t.Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 

@@ -17,7 +17,7 @@ module Create : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (t, Message.error) result
-  val can : Sihl_user.t -> Experiment.t -> bool Lwt.t
+  val effects : Experiment.t -> Ocauth.Authorizer.effect list
 end = struct
   type t =
     { start_at : StartAt.t
@@ -60,14 +60,10 @@ end = struct
       ]
   ;;
 
-  let can user experiment =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            (Permission.Experiment, Some experiment.Experiment.id)
-        ; Permission.Create Permission.Mailing
-        ]
+  let effects (experiment : Experiment.t) : Ocauth.Authorizer.effect list =
+    [ `Manage, `Uniq (Pool_common.Id.to_uuidm experiment.Experiment.id)
+    ; `Create, `Role `Mailing
+    ]
   ;;
 end
 
@@ -76,7 +72,7 @@ module Update : sig
 
   val handle : Mailing.t -> t -> (Pool_event.t list, Message.error) result
   val decode : Conformist.input -> (t, Message.error) result
-  val can : Sihl_user.t -> Mailing.t -> bool Lwt.t
+  val effects : Mailing.t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Mailing.update
 
@@ -107,17 +103,14 @@ end = struct
     | false -> Error Pool_common.Message.AlreadyStarted
   ;;
 
-  let can user mailing =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            ( Permission.Mailing
-            , Some
-                (mailing.Mailing.id
-                |> Mailing.Id.value
-                |> Pool_common.Id.of_string) )
-        ]
+  let effects mailing =
+    [ ( `Update
+      , `Uniq
+          (mailing.Mailing.id
+          |> Mailing.Id.value
+          |> Pool_common.Id.of_string
+          |> Pool_common.Id.to_uuidm) )
+    ]
   ;;
 end
 
@@ -128,7 +121,7 @@ module Delete : sig
     :  Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -138,15 +131,14 @@ end = struct
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
-  let can user mailing =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            ( Permission.Mailing
-            , Some (mailing.Mailing.id |> Id.value |> Pool_common.Id.of_string)
-            )
-        ]
+  let effects mailing =
+    [ ( `Delete
+      , `Uniq
+          (mailing.Mailing.id
+          |> Mailing.Id.value
+          |> Pool_common.Id.of_string
+          |> Pool_common.Id.to_uuidm) )
+    ]
   ;;
 end
 
@@ -157,7 +149,7 @@ module Stop : sig
     :  Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : t -> Ocauth.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -168,15 +160,14 @@ end = struct
     else Error Message.NotInTimeRange
   ;;
 
-  let can user mailing =
-    Permission.can
-      user
-      ~any_of:
-        [ Permission.Manage
-            ( Permission.Mailing
-            , Some (mailing.Mailing.id |> Id.value |> Pool_common.Id.of_string)
-            )
-        ]
+  let effects mailing =
+    [ ( `Manage
+      , `Uniq
+          (mailing.Mailing.id
+          |> Mailing.Id.value
+          |> Pool_common.Id.of_string
+          |> Pool_common.Id.to_uuidm) )
+    ]
   ;;
 end
 

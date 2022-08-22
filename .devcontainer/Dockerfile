@@ -44,6 +44,9 @@ RUN apt-get update -q \
   zip \
   zlib1g-dev \
   zsh \
+  fish \
+  libsqlite3-dev \
+  sqlite3 \
   #
   # cleanup installations
   && apt-get autoremove -y \
