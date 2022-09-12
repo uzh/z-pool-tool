@@ -1,17 +1,5 @@
 # Pool Tool
 
-## Links
-
-Access using following URL:
-
-- production root: `https://pool-root.econ.uzh.ch/`
-- production tenant: `https://pool.econ.uzh.ch/`
-- staging root: `https://pool-root.econ.uzh.ch/staging/`
-- staging tenant: `https://pool.econ.uzh.ch/staging/`
-- staging optional tenant: `https://tenant.econ.uzh.ch/staging/`
-
-For the staging login credentials see 1Password.
-
 ## Architecture
 
 Follow the [Architecture](./doc/ARCHITECTURE.md) documentation.
