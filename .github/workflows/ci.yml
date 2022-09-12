@@ -1,0 +1,112 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ${{ matrix.os }}
+    env:
+      SIHL_ENV: test
+      MYSQL_DATABASE: test_econ
+      MYSQL_ROOT_PASSWORD: password
+      DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@database-root:3306/${MYSQL_DATABASE}
+    services:
+      database-root:
+        image: mariadb:10.6
+      database-tenant:
+        image: mariadb:10.6
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        ocaml-compiler: [4.12.x]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          dune-cache: true
+
+      - name: Install system dependencies
+        run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
+
+      - name: Pin Sihl and other custom libraries
+        run: |
+          opam pin add -yn sihl https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
+          opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
+          opam pin add -yn canary https://github.com/uzh/canary.git
+          opam pin add -yn conformist https://github.com/oxidizing/conformist.git
+
+      - name: Pin current pool tool
+        run: |
+          opam pin add -yn pool .
+          OPAMSOLVERTIMEOUT=180 opam depext -y pool
+
+      - name: Install dependencies
+        run: opam install --deps-only --with-test -y .
+
+      - name: Build
+        run: opam exec -- dune build --root .
+
+      - name: Check formatting
+        run: make format
+
+      - name: Migrate and seed test database
+        run: |
+          opam config exec -- dune exec --root . pool/run/run.exe migrate.root
+          opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
+          opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
+          opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+
+      - name: Run tests
+        run: opam config exec -- make test
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: run.exe
+          path: _build/default/pool/run/run.exe
+
+      - uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: tests
+          path: _build/default/pool/test/
+
+  assets:
+    name: Build assets
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node-version: [16.x]
+    env:
+      ECON_PACKAGE_REGISTRY_READ_TOKEN: ${ECON_PACKAGE_REGISTRY_READ_TOKEN}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: install yarn packages
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: install
+      - name: build yarn package
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: build
+
+      - name: move all assets to one folder
+        run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: assets
+          path: public
+
+
