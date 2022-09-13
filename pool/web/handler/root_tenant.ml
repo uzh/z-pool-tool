@@ -100,7 +100,7 @@ let create_operator req =
     >> events
     >>= handle
     |> Lwt_result.map_error (fun err ->
-           err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+         err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
     |>> return_to_overview
   in
   result |> HttpUtils.extract_happy_path req

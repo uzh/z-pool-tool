@@ -3,16 +3,16 @@ open Component
 module Message = Pool_common.Message
 
 let show
-    tenant_languages
-    email_suffixes
-    contact_email
-    inactive_user_disable_after
-    inactive_user_warning
-    trigger_profile_update_after
-    terms_and_conditions
-    default_reminder_lead_time
-    Pool_context.{ language; csrf; _ }
-    flash_fetcher
+  tenant_languages
+  email_suffixes
+  contact_email
+  inactive_user_disable_after
+  inactive_user_warning
+  trigger_profile_update_after
+  terms_and_conditions
+  default_reminder_lead_time
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
   =
   let action_path action =
     Sihl.Web.externalize_path
@@ -26,9 +26,9 @@ let show
       [ tenant_languages |> CCList.map (fun k -> k, true)
       ; Pool_common.Language.all
         |> CCList.filter_map (fun k ->
-               match CCList.mem k tenant_languages with
-               | true -> None
-               | false -> Some (k, false))
+             match CCList.mem k tenant_languages with
+             | true -> None
+             | false -> Some (k, false))
       ]
       |> CCList.flatten
     in

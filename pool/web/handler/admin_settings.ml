@@ -51,7 +51,7 @@ let update_settings req =
   let redirect_path = "/admin/settings" in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
-        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events () =
       let command_handler =
@@ -64,9 +64,9 @@ let update_settings req =
             in
             m
             |> CCList.filter_map (fun (k, _) ->
-                   match CCList.mem k Pool_common.Language.all_codes with
-                   | true -> Some (k |> Pool_common.Language.create)
-                   | false -> None)
+                 match CCList.mem k Pool_common.Language.all_codes with
+                 | true -> Some (k |> Pool_common.Language.create)
+                 | false -> None)
             |> CCResult.flatten_l
             >>= UpdateLanguages.handle terms_and_conditions
             |> lift

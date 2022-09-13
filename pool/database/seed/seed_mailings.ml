@@ -22,17 +22,17 @@ let generate_events experiments =
   let mailings =
     CCList.range_by ~step:5 0 180
     |> CCList.map (fun delta ->
-           let start =
-             Ptime_clock.now ()
-             |> CCFun.flip
-                  Ptime.add_span
-                  (Ptime.Span.of_int_s ((delta * 24 * 3600) + 1))
-             |> CCOption.get_exn_or
-                  "Mailing series seed: could not generate mailings."
-             |> Mailing.StartAt.create
-             |> get_or_failwith
-           in
-           start)
+         let start =
+           Ptime_clock.now ()
+           |> CCFun.flip
+                Ptime.add_span
+                (Ptime.Span.of_int_s ((delta * 24 * 3600) + 1))
+           |> CCOption.get_exn_or
+                "Mailing series seed: could not generate mailings."
+           |> Mailing.StartAt.create
+           |> get_or_failwith
+         in
+         start)
   in
   let overlaps = CCList.take 5 mailings in
   CCList.mapi

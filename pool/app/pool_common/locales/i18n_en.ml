@@ -131,13 +131,13 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-  | CancelSession -> "session", "cancel"
-  | DeleteEmailSuffix -> "email suffix", "delete"
-  | DeleteExperiment -> "experiment", "delete"
-  | DeleteFile -> "the file", "delete"
-  | DeleteMailing -> "mailing", "delete"
-  | DeleteSession -> "session", "delete"
-  | StopMailing -> "mailing", "stop")
+   | CancelSession -> "session", "cancel"
+   | DeleteEmailSuffix -> "email suffix", "delete"
+   | DeleteExperiment -> "experiment", "delete"
+   | DeleteFile -> "the file", "delete"
+   | DeleteMailing -> "mailing", "delete"
+   | DeleteSession -> "session", "delete"
+   | StopMailing -> "mailing", "stop")
   |> fun (obj, action) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
 ;;

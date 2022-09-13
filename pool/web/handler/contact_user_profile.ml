@@ -76,7 +76,7 @@ let update req =
       Pool_context.Tenant.find req
       |> Lwt_result.lift
       |> Lwt_result.map_error (fun err ->
-             err, path_with_lang "/user/personal-details")
+           err, path_with_lang "/user/personal-details")
     in
     let version =
       version_raw
@@ -130,14 +130,14 @@ let update req =
         |> html_response
       | Field.Language ->
         (match error with
-        | Some _ ->
-          Htmx.Language
-            (contact.language_version, contact.language, tenant_languages)
-          |> html_response
-        | None ->
-          Sihl.Web.Response.of_plain_text ""
-          |> Sihl.Web.Response.add_header
-               ("HX-Redirect", "/user/personal-details"))
+         | Some _ ->
+           Htmx.Language
+             (contact.language_version, contact.language, tenant_languages)
+           |> html_response
+         | None ->
+           Sihl.Web.Response.of_plain_text ""
+           |> Sihl.Web.Response.add_header
+                ("HX-Redirect", "/user/personal-details"))
       | k ->
         failwith
         @@ Pool_common.Utils.error_to_string
@@ -170,8 +170,8 @@ let update_email req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun msg ->
-        HttpUtils.(
-          msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+      HttpUtils.(
+        msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result (NotFound Field.User)
@@ -195,11 +195,11 @@ let update_email req =
            handle ?allowed_email_suffixes contact new_email |> Lwt_result.lift)
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-           let%lwt () = Pool_event.handle_events tenant_db events in
-           HttpUtils.(
-             redirect_to_with_actions
-               (path_with_language query_language "/email-confirmation")
-               [ Message.set ~success:[ EmailConfirmationMessage ] ]))
+         let%lwt () = Pool_event.handle_events tenant_db events in
+         HttpUtils.(
+           redirect_to_with_actions
+             (path_with_language query_language "/email-confirmation")
+             [ Message.set ~success:[ EmailConfirmationMessage ] ]))
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -211,8 +211,8 @@ let update_password req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun msg ->
-        HttpUtils.(
-          msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
+      HttpUtils.(
+        msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact =
          Http_utils.user_from_session tenant_db req
          ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
@@ -225,11 +225,11 @@ let update_password req =
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-           let%lwt () = Pool_event.handle_events tenant_db events in
-           HttpUtils.(
-             redirect_to_with_actions
-               (path_with_language query_language "/user/login-information")
-               [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
+         let%lwt () = Pool_event.handle_events tenant_db events in
+         HttpUtils.(
+           redirect_to_with_actions
+             (path_with_language query_language "/user/login-information")
+             [ Message.set ~success:[ Pool_common.Message.PasswordChanged ] ]))
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req

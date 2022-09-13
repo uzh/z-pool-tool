@@ -32,8 +32,8 @@ let admin_detail req is_edit =
       Lwt.return_ok ()
     in
     (match is_edit with
-    | true -> Page.Admin.Admins.edit context admin
-    | false -> Page.Admin.Admins.detail context admin)
+     | true -> Page.Admin.Admins.edit context admin
+     | false -> Page.Admin.Admins.detail context admin)
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
   in

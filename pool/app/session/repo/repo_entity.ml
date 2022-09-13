@@ -89,22 +89,22 @@ let t =
                                 ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
-      ( id
-      , ( follow_up_to
-        , ( start
-          , ( duration
-            , ( description
-              , ( location_id
-                , ( max_participants
-                  , ( min_participants
-                    , ( overbook
-                      , ( reminder_subject
-                        , ( reminder_text
-                          , ( reminder_lead_time
-                            , ( reminder_sent_at
-                              , ( assignment_count
-                                , (canceled_at, (created_at, updated_at)) ) ) )
-                          ) ) ) ) ) ) ) ) ) ) )
+    ( id
+    , ( follow_up_to
+      , ( start
+        , ( duration
+          , ( description
+            , ( location_id
+              , ( max_participants
+                , ( min_participants
+                  , ( overbook
+                    , ( reminder_subject
+                      , ( reminder_text
+                        , ( reminder_lead_time
+                          , ( reminder_sent_at
+                            , ( assignment_count
+                              , (canceled_at, (created_at, updated_at)) ) ) ) )
+                      ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -182,24 +182,24 @@ module Write = struct
     }
 
   let entity_to_write
-      (Entity.
-         { id
-         ; follow_up_to
-         ; start
-         ; duration
-         ; description
-         ; location
-         ; max_participants
-         ; min_participants
-         ; overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         ; reminder_sent_at
-         ; canceled_at
-         ; _
-         } :
-        Entity.t)
+    (Entity.
+       { id
+       ; follow_up_to
+       ; start
+       ; duration
+       ; description
+       ; location
+       ; max_participants
+       ; min_participants
+       ; overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       ; reminder_sent_at
+       ; canceled_at
+       ; _
+       } :
+      Entity.t)
     =
     { id
     ; follow_up_to
@@ -237,20 +237,19 @@ module Write = struct
                   ) ) ) ) ) )
     in
     let decode
-        ( id
-        , ( follow_up_to
-          , ( start
-            , ( duration
-              , ( description
-                , ( location_id
-                  , ( max_participants
-                    , ( min_participants
-                      , ( overbook
-                        , ( reminder_subject
-                          , ( reminder_text
-                            , ( reminder_lead_time
-                              , (reminder_sent_at, canceled_at) ) ) ) ) ) ) ) )
-              ) ) ) )
+      ( id
+      , ( follow_up_to
+        , ( start
+          , ( duration
+            , ( description
+              , ( location_id
+                , ( max_participants
+                  , ( min_participants
+                    , ( overbook
+                      , ( reminder_subject
+                        , ( reminder_text
+                          , (reminder_lead_time, (reminder_sent_at, canceled_at))
+                          ) ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -371,16 +370,16 @@ module Public = struct
                 ) ) ) ) )
     in
     let decode
-        ( id
-        , ( follow_up_to
-          , ( start
-            , ( duration
-              , ( description
-                , ( location_id
-                  , ( max_participants
-                    , ( min_participants
-                      , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) )
-          ) )
+      ( id
+      , ( follow_up_to
+        , ( start
+          , ( duration
+            , ( description
+              , ( location_id
+                , ( max_participants
+                  , ( min_participants
+                    , (overbook, (assignment_count, canceled_at)) ) ) ) ) ) ) )
+      )
       =
       Ok
         { id

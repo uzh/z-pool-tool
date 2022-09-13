@@ -1,15 +1,10 @@
 open Entity
 
 let encode_person
-    : type a.
-      [< `Assistant
-      | `Experimenter
-      | `Recruiter
-      | `LocationManager
-      | `Operator
-      ]
-      -> a Entity.t
-      -> (string * (Sihl_user.t * (Ptime.t * Ptime.t)), 'b) result
+  : type a.
+    [< `Assistant | `Experimenter | `Recruiter | `LocationManager | `Operator ]
+    -> a Entity.t
+    -> (string * (Sihl_user.t * (Ptime.t * Ptime.t)), 'b) result
   =
  fun carrier person ->
   match person with

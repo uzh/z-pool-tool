@@ -15,7 +15,7 @@ module Label = struct
       m
       |> create
       |> CCResult.map_err (fun err ->
-             Pool_common.(Utils.error_to_string Language.En err))
+           Pool_common.(Utils.error_to_string Language.En err))
     in
     Caqti_type.(custom ~encode ~decode string)
   ;;

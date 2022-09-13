@@ -7,8 +7,8 @@ let create_tenant_pool =
        <smtp_auth_protocol> <styles> <icon> <logos> <default_language>"
     ~description:"Creates a new test tenant"
     (fun args ->
-      let help_text =
-        {|Provide all fields to create a new tenant:
+    let help_text =
+      {|Provide all fields to create a new tenant:
         <title>                             : string
         <description>                       : string
         <url>                               : string
@@ -29,71 +29,69 @@ let create_tenant_pool =
         <operator_firstname>                : string
         <operator_lastname>                 : string
       |}
-      in
-      match args with
-      | [ title
-        ; description
-        ; url
-        ; database_url
-        ; database_label
-        ; smtp_auth_server
-        ; smtp_auth_port
-        ; smtp_auth_username
-        ; smtp_auth_password
-        ; smtp_auth_authentication_method
-        ; smtp_auth_protocol
-        ; styles
-        ; icon
-        ; logos
-        ; default_language
-        ; email
-        ; password
-        ; firstname
-        ; lastname
-        ] ->
-        let%lwt result =
-          let open Utils.Lwt_result.Infix in
-          let run_command () =
-            Lwt_result.lift
-            @@
-            let open CCResult.Infix in
-            Cqrs_command.Pool_tenant_command.Create.decode
-              [ "title", [ title ]
-              ; "description", [ description ]
-              ; "url", [ url ]
-              ; "database_url", [ database_url ]
-              ; "database_label", [ database_label ]
-              ; "smtp_auth_server", [ smtp_auth_server ]
-              ; "smtp_auth_port", [ smtp_auth_port ]
-              ; "smtp_auth_username", [ smtp_auth_username ]
-              ; "smtp_auth_password", [ smtp_auth_password ]
-              ; ( "smtp_auth_authentication_method"
-                , [ smtp_auth_authentication_method ] )
-              ; "smtp_auth_protocol", [ smtp_auth_protocol ]
-              ; "styles", [ styles ]
-              ; "icon", [ icon ]
-              ; "logos", [ logos ]
-              ; "language", [ default_language ]
-              ; "email", [ email ]
-              ; "password", [ password ]
-              ; "firstname", [ firstname ]
-              ; "lastname", [ lastname ]
-              ]
-            >>= Cqrs_command.Pool_tenant_command.Create.handle
-          in
-          let run_events =
-            Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
-          in
-          () |> run_command |>> run_events
+    in
+    match args with
+    | [ title
+      ; description
+      ; url
+      ; database_url
+      ; database_label
+      ; smtp_auth_server
+      ; smtp_auth_port
+      ; smtp_auth_username
+      ; smtp_auth_password
+      ; smtp_auth_authentication_method
+      ; smtp_auth_protocol
+      ; styles
+      ; icon
+      ; logos
+      ; default_language
+      ; email
+      ; password
+      ; firstname
+      ; lastname
+      ] ->
+      let%lwt result =
+        let open Utils.Lwt_result.Infix in
+        let run_command () =
+          Lwt_result.lift
+          @@
+          let open CCResult.Infix in
+          Cqrs_command.Pool_tenant_command.Create.decode
+            [ "title", [ title ]
+            ; "description", [ description ]
+            ; "url", [ url ]
+            ; "database_url", [ database_url ]
+            ; "database_label", [ database_label ]
+            ; "smtp_auth_server", [ smtp_auth_server ]
+            ; "smtp_auth_port", [ smtp_auth_port ]
+            ; "smtp_auth_username", [ smtp_auth_username ]
+            ; "smtp_auth_password", [ smtp_auth_password ]
+            ; ( "smtp_auth_authentication_method"
+              , [ smtp_auth_authentication_method ] )
+            ; "smtp_auth_protocol", [ smtp_auth_protocol ]
+            ; "styles", [ styles ]
+            ; "icon", [ icon ]
+            ; "logos", [ logos ]
+            ; "language", [ default_language ]
+            ; "email", [ email ]
+            ; "password", [ password ]
+            ; "firstname", [ firstname ]
+            ; "lastname", [ lastname ]
+            ]
+          >>= Cqrs_command.Pool_tenant_command.Create.handle
         in
-        (match result with
-        | Ok _ -> Lwt.return_some ()
-        | Error err ->
-          err
-          |> Pool_common.(Utils.error_to_string Language.En)
-          |> print_endline;
-          Lwt.return_some ())
-      | _ ->
-        print_endline help_text;
-        Lwt.return_some ())
+        let run_events =
+          Lwt_list.iter_s (Pool_event.handle_event Pool_database.root)
+        in
+        () |> run_command |>> run_events
+      in
+      (match result with
+       | Ok _ -> Lwt.return_some ()
+       | Error err ->
+         err |> Pool_common.(Utils.error_to_string Language.En) |> print_endline;
+         Lwt.return_some ())
+    | _ ->
+      print_endline help_text;
+      Lwt.return_some ())
 ;;

@@ -51,24 +51,24 @@ let t =
                         ) ) ) ) ) ) ) ) ) )
   in
   let decode
-      ( user
-      , ( recruitment_channel
-        , ( terms_accepted_at
-          , ( language
-            , ( experiment_type_preference
-              , ( paused
-                , ( disabled
-                  , ( verified
-                    , ( email_verified
-                      , ( num_invitations
-                        , ( num_assignments
-                          , ( firstname_version
-                            , ( lastname_version
-                              , ( paused_version
-                                , ( language_version
-                                  , ( experiment_type_preference_version
-                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
-                    ) ) ) ) ) ) ) )
+    ( user
+    , ( recruitment_channel
+      , ( terms_accepted_at
+        , ( language
+          , ( experiment_type_preference
+            , ( paused
+              , ( disabled
+                , ( verified
+                  , ( email_verified
+                    , ( num_invitations
+                      , ( num_assignments
+                        , ( firstname_version
+                          , ( lastname_version
+                            , ( paused_version
+                              , ( language_version
+                                , ( experiment_type_preference_version
+                                  , (created_at, updated_at) ) ) ) ) ) ) ) ) )
+                ) ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
@@ -297,9 +297,8 @@ module Preview = struct
                 , NumberOfAssignments.value m.num_assignments ) ) ) ) )
     in
     let decode
-        ( user
-        , (language, (paused, (verified, (num_invitations, num_assignments))))
-        )
+      ( user
+      , (language, (paused, (verified, (num_invitations, num_assignments)))) )
       =
       let open Pool_user in
       let open CCResult in

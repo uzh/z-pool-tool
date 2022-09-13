@@ -121,7 +121,7 @@ let start () =
   Lwt_list.iter_s
     (fun pool ->
       Logs.info (fun m ->
-          m "Start database %s" (Pool_database.Label.value pool));
+        m "Start database %s" (Pool_database.Label.value pool));
       Service.Migration.check_migrations_status
         ~ctx:(Pool_tenant.to_ctx pool)
         ~migrations:(Tenant.Migration.steps ())

@@ -130,11 +130,11 @@ let create () =
           ; LogoType.PartnerLogo, partner_logo.Assets.id
           ]
           |> CCList.map (fun (logo_type, asset_id) ->
-                 { Write.id = Pool_common.Id.create ()
-                 ; tenant_id = tenant.Pool_tenant.Write.id
-                 ; asset_id = Pool_common.Id.of_string asset_id
-                 ; logo_type
-                 })
+               { Write.id = Pool_common.Id.create ()
+               ; tenant_id = tenant.Pool_tenant.Write.id
+               ; asset_id = Pool_common.Id.of_string asset_id
+               ; logo_type
+               })
         in
         [ Pool_tenant.Created tenant; Pool_tenant.LogosUploaded logo_mappings ]
         |> Lwt_list.iter_s (Pool_tenant.handle_event Pool_database.root))

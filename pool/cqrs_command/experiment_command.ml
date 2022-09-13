@@ -23,18 +23,18 @@ let default_schema command =
 ;;
 
 let default_command
-    title
-    public_title
-    description
-    direct_registration_disabled
-    registration_disabled
-    allow_uninvited_signup
-    experiment_type
-    invitation_subject
-    invitation_text
-    session_reminder_lead_time
-    session_reminder_subject
-    session_reminder_text
+  title
+  public_title
+  description
+  direct_registration_disabled
+  registration_disabled
+  allow_uninvited_signup
+  experiment_type
+  invitation_subject
+  invitation_text
+  session_reminder_lead_time
+  session_reminder_subject
+  session_reminder_text
   =
   { title
   ; public_title

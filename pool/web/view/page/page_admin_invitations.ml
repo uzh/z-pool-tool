@@ -27,9 +27,9 @@ module Partials = struct
           [ invitation.contact |> Contact.fullname |> txt
           ; invitation.resent_at
             |> CCOption.map_or ~default:"" (fun reset_at ->
-                   reset_at
-                   |> ResentAt.value
-                   |> Pool_common.Utils.Time.formatted_date_time)
+                 reset_at
+                 |> ResentAt.value
+                 |> Pool_common.Utils.Time.formatted_date_time)
             |> txt
           ; invitation.created_at
             |> Pool_common.CreatedAt.value
@@ -59,9 +59,9 @@ module Partials = struct
   ;;
 
   let send_invitation
-      Pool_context.{ csrf; language; _ }
-      experiment
-      filtered_contacts
+    Pool_context.{ csrf; language; _ }
+    experiment
+    filtered_contacts
     =
     let form_table =
       let rows =

@@ -38,9 +38,9 @@ let create req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
-        ( err
-        , "/admin/locations/create"
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , "/admin/locations/create"
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let events =
       let open CCResult.Infix in
@@ -70,8 +70,7 @@ let new_file req =
   let id = id req Field.Location Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err ->
-        ( err
-        , id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create" ))
+      err, id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create")
     @@
     let open Lwt_result.Syntax in
     let* location = find tenant_db id in
@@ -95,7 +94,7 @@ let add_file req =
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
-        err, Format.asprintf "%s/files/create" path)
+      err, Format.asprintf "%s/files/create" path)
     @@
     let open Lwt_result.Syntax in
     let* location = Pool_location.find tenant_db id in
@@ -207,9 +206,9 @@ let update req =
       id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
     in
     Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf "%s/edit" detail_path
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , Format.asprintf "%s/edit" detail_path
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let open Lwt_result.Syntax in
     let* location = Pool_location.find tenant_db id in

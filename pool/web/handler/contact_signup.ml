@@ -29,7 +29,7 @@ let sign_up_create req =
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun msg ->
-        msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
+      msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* () =
          CCList.assoc ~eq:( = ) terms_key urlencoded
          |> CCList.hd
@@ -53,7 +53,7 @@ let sign_up_create req =
          >== Pool_user.EmailAddress.create
          >>= find_contact
          >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
-                 Command.DeleteUnverified.handle p |> Lwt_result.lift)
+               Command.DeleteUnverified.handle p |> Lwt_result.lift)
        in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
@@ -71,13 +71,13 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-           let%lwt () = Pool_event.handle_events tenant_db events in
-           HttpUtils.(
-             redirect_to_with_actions
-               (path_with_language query_language "/email-confirmation")
-               [ Message.set
-                   ~success:[ Pool_common.Message.EmailConfirmationMessage ]
-               ]))
+         let%lwt () = Pool_event.handle_events tenant_db events in
+         HttpUtils.(
+           redirect_to_with_actions
+             (path_with_language query_language "/email-confirmation")
+             [ Message.set
+                 ~success:[ Pool_common.Message.EmailConfirmationMessage ]
+             ]))
        |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -91,7 +91,7 @@ let email_verification req =
     let%lwt redirect_path =
       let%lwt user = Http_utils.user_from_session tenant_db req in
       CCOption.bind user (fun user ->
-          Some (General.dashboard_path tenant_db user))
+        Some (General.dashboard_path tenant_db user))
       |> CCOption.value ~default:("/login" |> Lwt.return)
     in
     (let* token =

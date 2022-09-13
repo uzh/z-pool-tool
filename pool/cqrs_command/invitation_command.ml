@@ -1,8 +1,8 @@
 let invitation_template_elements
-    system_languages
-    i18n_texts
-    experiment
-    contact_langauge
+  system_languages
+  i18n_texts
+  experiment
+  contact_langauge
   =
   let open CCResult in
   let* default_language =
@@ -26,9 +26,9 @@ let invitation_template_elements
     let language =
       contact_langauge
       |> CCOption.map_or ~default:default_language (fun l ->
-             if CCList.mem ~eq:Pool_common.Language.equal l system_languages
-             then l
-             else default_language)
+           if CCList.mem ~eq:Pool_common.Language.equal l system_languages
+           then l
+           else default_language)
     in
     let* subject, text =
       CCList.Assoc.get ~eq:Pool_common.Language.equal language i18n_texts
@@ -81,12 +81,12 @@ end = struct
             command.experiment
             language
           |> CCResult.map (fun template ->
-                 ( user
-                 , [ ( "experimentDescription"
-                     , command.experiment.Experiment.description
-                       |> Experiment.Description.value )
-                   ]
-                 , template )))
+               ( user
+               , [ ( "experimentDescription"
+                   , command.experiment.Experiment.description
+                     |> Experiment.Description.value )
+                 ]
+               , template )))
         contacts
     in
     if CCList.is_empty errors |> not

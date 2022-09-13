@@ -59,9 +59,9 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Lwt_result.map_error (fun err ->
-        ( err
-        , experiment_path ~suffix:"mailings/create" experiment_id
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , experiment_path ~suffix:"mailings/create" experiment_id
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let* distribution =
          Sihl.Web.Request.urlencoded_list
@@ -106,7 +106,7 @@ let detail edit req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err ->
-        err, experiment_path ~suffix:"mailings" experiment_id)
+      err, experiment_path ~suffix:"mailings" experiment_id)
     @@ let* mailing =
          Mailing.find tenant_db id
          >== fun m ->
@@ -117,13 +117,13 @@ let detail edit req =
        in
        let* experiment = Experiment.find tenant_db experiment_id in
        (match edit with
-       | false -> Page.Admin.Mailing.detail context experiment mailing
-       | true ->
-         Page.Admin.Mailing.form
-           ~mailing
-           context
-           experiment
-           (CCFun.flip Sihl.Web.Flash.find req))
+        | false -> Page.Admin.Mailing.detail context experiment mailing
+        | true ->
+          Page.Admin.Mailing.form
+            ~mailing
+            context
+            experiment
+            (CCFun.flip Sihl.Web.Flash.find req))
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -149,7 +149,7 @@ let update req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Lwt_result.map_error (fun err ->
-        err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+      err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* mailing = Mailing.find tenant_db id in
        let* distribution =
          Sihl.Web.Request.urlencoded_list
@@ -236,8 +236,8 @@ let add_condition req =
            Pool_common.Message.Field.(show field)
       |> CCFun.flip CCOption.bind CCList.head_opt
       |> CCFun.flip CCOption.bind (fun str ->
-             try Some (read str) with
-             | _ -> None)
+           try Some (read str) with
+           | _ -> None)
       |> CCOption.to_result (invalid field)
     in
     let distribution =

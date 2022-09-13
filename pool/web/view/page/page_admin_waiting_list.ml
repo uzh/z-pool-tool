@@ -3,11 +3,11 @@ open Component
 module Message = Pool_common.Message
 
 let detail
-    (Waiting_list.{ id; contact; experiment; comment; _ } : Waiting_list.t)
-    sessions
-    experiment_id
-    Pool_context.{ language; csrf; _ }
-    flash_fetcher
+  (Waiting_list.{ id; contact; experiment; comment; _ } : Waiting_list.t)
+  sessions
+  experiment_id
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
   =
   let waiting_list_detail =
     div
@@ -61,22 +61,22 @@ let detail
                     |> Start.value
                     |> Pool_common.Utils.Time.formatted_date_time)
               ; (match Session.is_fully_booked session with
-                | false ->
-                  input
-                    ~a:
-                      [ a_input_type `Radio
-                      ; a_name Pool_common.Message.Field.(show Session)
-                      ; a_value Session.(session.id |> Pool_common.Id.value)
-                      ]
-                    ()
-                | true ->
-                  span
-                    [ txt
-                        Pool_common.(
-                          Utils.error_to_string
-                            language
-                            Message.SessionFullyBooked)
-                    ])
+                 | false ->
+                   input
+                     ~a:
+                       [ a_input_type `Radio
+                       ; a_name Pool_common.Message.Field.(show Session)
+                       ; a_value Session.(session.id |> Pool_common.Id.value)
+                       ]
+                     ()
+                 | true ->
+                   span
+                     [ txt
+                         Pool_common.(
+                           Utils.error_to_string
+                             language
+                             Message.SessionFullyBooked)
+                     ])
               ])
             sessions
         in

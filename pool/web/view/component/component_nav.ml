@@ -7,7 +7,7 @@ let subnav language links base_url active =
       let is_active =
         active
         |> CCOption.map_or ~default:false (fun active ->
-               I18n.equal_nav_link active label)
+             I18n.equal_nav_link active label)
       in
       let classnames = [] in
       let link_label = txt (Utils.nav_link_to_string language label) in

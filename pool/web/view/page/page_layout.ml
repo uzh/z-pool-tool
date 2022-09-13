@@ -30,10 +30,10 @@ let global_stylesheets =
     ; "/assets/index.css", true
     ]
     |> CCList.map (fun (url, externalize) ->
-           link
-             ~rel:[ `Stylesheet ]
-             ~href:(if externalize then Sihl.Web.externalize_path url else url)
-             ())
+         link
+           ~rel:[ `Stylesheet ]
+           ~href:(if externalize then Sihl.Web.externalize_path url else url)
+           ())
   in
   CCList.cons
     (script
@@ -91,12 +91,12 @@ let build_nav_link (url, title) language query_language active_navigation =
   in
   active_navigation
   |> CCOption.map_or ~default:nav_link (fun active ->
-         if CCString.equal active url
-         then
-           span
-             ~a:[ a_class (CCList.cons "active" classnames) ]
-             [ txt_to_string title ]
-         else nav_link)
+       if CCString.equal active url
+       then
+         span
+           ~a:[ a_class (CCList.cons "active" classnames) ]
+           [ txt_to_string title ]
+       else nav_link)
 ;;
 
 module Tenant = struct
@@ -135,31 +135,31 @@ module Tenant = struct
     let nav_links =
       let open Pool_common.I18n in
       (match layout_context with
-      | `Contact -> [ "/experiments", Experiments; "/user", Profile ]
-      | `Admin ->
-        [ "/admin/dashboard", Dashboard
-        ; "/admin/experiments", Experiments
-        ; "/admin/locations", Locations
-        ; "/admin/settings", Settings
-        ; "/admin/i18n", I18n
-        ; "/admin/contacts", Contacts
-        ; "/admin/admins", Admins
-        ])
+       | `Contact -> [ "/experiments", Experiments; "/user", Profile ]
+       | `Admin ->
+         [ "/admin/dashboard", Dashboard
+         ; "/admin/experiments", Experiments
+         ; "/admin/locations", Locations
+         ; "/admin/settings", Settings
+         ; "/admin/i18n", I18n
+         ; "/admin/contacts", Contacts
+         ; "/admin/admins", Admins
+         ])
       @ [ "/logout", Logout ]
       |> CCList.map (fun item ->
-             build_nav_link item language query_language active_navigation)
+           build_nav_link item language query_language active_navigation)
     in
     nav ~a:[ a_class [ "main-nav" ] ] nav_links
   ;;
 
   let create_layout
-      layout_context
-      children
-      Pool_context.Tenant.{ tenant_languages; tenant }
-      message
-      active_lang
-      query_language
-      active_navigation
+    layout_context
+    children
+    Pool_context.Tenant.{ tenant_languages; tenant }
+    message
+    active_lang
+    query_language
+    active_navigation
     =
     let title_text = Pool_tenant.(Title.value tenant.title) in
     let page_title =
@@ -209,7 +209,7 @@ let create_root_layout children message lang ?active_navigation () =
       let open Pool_common.I18n in
       [ "/root/tenants", Tenants ]
       |> CCList.map (fun item ->
-             build_nav_link item Pool_common.Language.En None active_navigation)
+           build_nav_link item Pool_common.Language.En None active_navigation)
     in
     nav ~a:[ a_class [ "main-nav" ] ] nav_links
   in

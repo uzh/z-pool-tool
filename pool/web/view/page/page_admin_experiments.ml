@@ -90,10 +90,10 @@ let index experiment_list Pool_context.{ language; _ } =
 ;;
 
 let experiment_form
-    ?experiment
-    Pool_context.{ language; csrf; _ }
-    sys_languages
-    flash_fetcher
+  ?experiment
+  Pool_context.{ language; csrf; _ }
+  sys_languages
+  flash_fetcher
   =
   let open Experiment in
   let action =
@@ -186,20 +186,20 @@ let experiment_form
                 Pool_common.Message.Field.InvitationSubject
                 ~value:
                   (value (fun e ->
-                       e.invitation_template
-                       |> CCOption.map_or
-                            ~default:""
-                            InvitationTemplate.subject_value))
+                     e.invitation_template
+                     |> CCOption.map_or
+                          ~default:""
+                          InvitationTemplate.subject_value))
                 ~flash_fetcher
             ; textarea_element
                 language
                 Pool_common.Message.Field.InvitationText
                 ~value:
                   (value (fun e ->
-                       e.invitation_template
-                       |> CCOption.map_or
-                            ~default:""
-                            InvitationTemplate.text_value))
+                     e.invitation_template
+                     |> CCOption.map_or
+                          ~default:""
+                          InvitationTemplate.text_value))
                 ~flash_fetcher
             ]
         ]
@@ -226,10 +226,10 @@ let experiment_form
                 ~help:Pool_common.I18n.TimeSpanPickerHint
                 ~value:
                   (value (fun e ->
-                       session_reminder_lead_time_value e
-                       |> CCOption.map_or
-                            ~default:""
-                            Pool_common.Utils.Time.timespan_spanpicker))
+                     session_reminder_lead_time_value e
+                     |> CCOption.map_or
+                          ~default:""
+                          Pool_common.Utils.Time.timespan_spanpicker))
                 ~flash_fetcher
             ; div
                 ~a:[ a_class [ "stack" ] ]
@@ -243,16 +243,16 @@ let experiment_form
                     Pool_common.Message.Field.ReminderSubject
                     ~value:
                       (value (fun e ->
-                           session_reminder_subject_value e
-                           |> CCOption.value ~default:""))
+                         session_reminder_subject_value e
+                         |> CCOption.value ~default:""))
                     ~flash_fetcher
                 ; textarea_element
                     language
                     Pool_common.Message.Field.ReminderText
                     ~value:
                       (value (fun e ->
-                           session_reminder_text_value e
-                           |> CCOption.value ~default:""))
+                         session_reminder_text_value e
+                         |> CCOption.value ~default:""))
                     ~flash_fetcher
                 ]
             ]
@@ -285,10 +285,10 @@ let create (Pool_context.{ language; _ } as context) sys_languages flash_fetcher
 ;;
 
 let edit
-    experiment
-    (Pool_context.{ language; _ } as context)
-    sys_languages
-    flash_fetcher
+  experiment
+  (Pool_context.{ language; _ } as context)
+  sys_languages
+  flash_fetcher
   =
   let html = experiment_form ~experiment context sys_languages flash_fetcher in
   experiment_layout
@@ -459,10 +459,10 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
 ;;
 
 let invitations
-    invitations
-    experiment
-    filtered_contacts
-    (Pool_context.{ language; _ } as context)
+  invitations
+  experiment
+  filtered_contacts
+  (Pool_context.{ language; _ } as context)
   =
   let html =
     div

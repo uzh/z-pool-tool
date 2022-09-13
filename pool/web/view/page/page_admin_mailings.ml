@@ -44,12 +44,12 @@ let distribution_sort_select language ?field current_order =
         ~a:
           ([ a_value
                (match field with
-               | None -> order |> show
-               | Some field ->
-                 Format.asprintf
-                   "%s,%s"
-                   (Pool_common.Message.Field.show field)
-                   (order |> show))
+                | None -> order |> show
+                | Some field ->
+                  Format.asprintf
+                    "%s,%s"
+                    (Pool_common.Message.Field.show field)
+                    (order |> show))
            ]
           @ selected)
         (order
@@ -94,10 +94,10 @@ let distribution_form_field language (field, current_order) =
 
 module List = struct
   let row
-      with_link
-      Pool_context.{ csrf; language; _ }
-      experiment_id
-      (mailing : Mailing.t)
+    with_link
+    Pool_context.{ csrf; language; _ }
+    experiment_id
+    (mailing : Mailing.t)
     =
     let open Mailing in
     let now = Ptime_clock.now () in
@@ -136,10 +136,10 @@ module List = struct
   ;;
 
   let create
-      with_link
-      (Pool_context.{ language; _ } as context)
-      experiment_id
-      mailings
+    with_link
+    (Pool_context.{ language; _ } as context)
+    experiment_id
+    mailings
     =
     let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
     let thead = if with_link then base_head @ [ None ] else base_head in
@@ -198,15 +198,15 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
                 |> CCOption.map_or ~default:"" Mailing.Distribution.show )
             ]
             |> CCList.map (fun (field, value) ->
-                   tr
-                     [ th
-                         [ txt
-                             (field
-                             |> Pool_common.Utils.field_to_string language
-                             |> CCString.capitalize_ascii)
-                         ]
-                     ; td [ txt value ]
-                     ])
+                 tr
+                   [ th
+                       [ txt
+                           (field
+                           |> Pool_common.Utils.field_to_string language
+                           |> CCString.capitalize_ascii)
+                       ]
+                   ; td [ txt value ]
+                   ])
           in
           table ~a:[ a_class [ "striped"; "table" ] ] rows)
        ]
@@ -239,10 +239,10 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
 ;;
 
 let form
-    ?(mailing : Mailing.t option)
-    Pool_context.{ language; csrf; _ }
-    experiment
-    flash_fetcher
+  ?(mailing : Mailing.t option)
+  Pool_context.{ language; csrf; _ }
+  experiment
+  flash_fetcher
   =
   let functions =
     {js|
@@ -483,7 +483,7 @@ let form
               ]
           ; distribution_select
               (CCOption.bind mailing (fun (m : Mailing.t) ->
-                   m.Mailing.distribution))
+                 m.Mailing.distribution))
             (* TODO: Add detailed description how distribution element works *)
           ; submit_element language submit ()
           ]
@@ -507,11 +507,11 @@ let edit context experiment_id mailing flash_fetcher =
 ;;
 
 let overlaps
-    ?average_send
-    ?total
-    (Pool_context.{ language; _ } as context)
-    experiment_id
-    mailings
+  ?average_send
+  ?total
+  (Pool_context.{ language; _ } as context)
+  experiment_id
+  mailings
   =
   let average =
     match average_send with

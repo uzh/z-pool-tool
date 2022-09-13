@@ -72,13 +72,13 @@ let t =
               ) ) ) ) )
   in
   let decode
-      ( id
-      , ( session_id
-        , ( contact_id
-          , ( show_up
-            , ( participated
-              , (matches_filter, (canceled_at, (created_at, updated_at))) ) ) )
-        ) )
+    ( id
+    , ( session_id
+      , ( contact_id
+        , ( show_up
+          , ( participated
+            , (matches_filter, (canceled_at, (created_at, updated_at))) ) ) ) )
+    )
     =
     let open CCResult in
     Ok

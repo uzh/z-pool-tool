@@ -45,7 +45,7 @@ let t =
         , (m.experiment_id, (m.comment, (m.created_at, m.updated_at))) ) )
   in
   let decode
-      (id, (contact_id, (experiment_id, (comment, (created_at, updated_at)))))
+    (id, (contact_id, (experiment_id, (comment, (created_at, updated_at)))))
     =
     Ok
       { id

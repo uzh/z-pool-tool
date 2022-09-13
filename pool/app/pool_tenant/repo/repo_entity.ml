@@ -94,17 +94,17 @@ let t =
                       ) ) ) ) ) ) ) ) )
   in
   let decode
-      ( id
-      , ( title
-        , ( description
-          , ( url
-            , ( database_label
-              , ( smtp_auth
-                , ( styles
-                  , ( icon
-                    , ( maintenance
-                      , (disabled, (default_language, (created_at, updated_at)))
-                      ) ) ) ) ) ) ) ) )
+    ( id
+    , ( title
+      , ( description
+        , ( url
+          , ( database_label
+            , ( smtp_auth
+              , ( styles
+                , ( icon
+                  , ( maintenance
+                    , (disabled, (default_language, (created_at, updated_at)))
+                    ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     map_err (fun _ -> "decode tenant read")
@@ -178,18 +178,17 @@ module Write = struct
                           ) ) ) ) ) ) ) ) ) )
     in
     let decode
-        ( id
-        , ( title
-          , ( description
-            , ( url
-              , ( database
-                , ( smtp_auth
-                  , ( styles
-                    , ( icon
-                      , ( maintenance
-                        , ( disabled
-                          , (default_language, (created_at, updated_at)) ) ) )
-                    ) ) ) ) ) ) )
+      ( id
+      , ( title
+        , ( description
+          , ( url
+            , ( database
+              , ( smtp_auth
+                , ( styles
+                  , ( icon
+                    , ( maintenance
+                      , (disabled, (default_language, (created_at, updated_at)))
+                      ) ) ) ) ) ) ) ) )
       =
       let open CCResult in
       map_err (fun _ -> "decode tenant write")

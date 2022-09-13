@@ -66,10 +66,10 @@ let index location_list Pool_context.{ language; _ } =
 ;;
 
 let file_form
-    (labels : Pool_location.Mapping.Label.t list)
-    (languages : Pool_common.Language.t list)
-    (location : Pool_location.t)
-    Pool_context.{ language; csrf; _ }
+  (labels : Pool_location.Mapping.Label.t list)
+  (languages : Pool_common.Language.t list)
+  (location : Pool_location.t)
+  Pool_context.{ language; csrf; _ }
   =
   let open Pool_location in
   let action =
@@ -117,10 +117,10 @@ let file_form
 ;;
 
 let form
-    ?(location : Pool_location.t option)
-    ?(states : Pool_location.Status.t list = [])
-    Pool_context.{ language; csrf; _ }
-    flash_fetcher
+  ?(location : Pool_location.t option)
+  ?(states : Pool_location.Status.t list = [])
+  Pool_context.{ language; csrf; _ }
+  flash_fetcher
   =
   let open Pool_location in
   let path = "/admin/locations" in
@@ -128,7 +128,7 @@ let form
   let action =
     location
     |> CCOption.map_or ~default:path (fun { id; _ } ->
-           id |> Id.value |> Format.asprintf "%s/%s" path)
+         id |> Id.value |> Format.asprintf "%s/%s" path)
   in
   let value field_fcn decode_fcn =
     let open CCOption.Infix in
@@ -154,17 +154,17 @@ let form
   let address_value fcn =
     location
     |> CCOption.map_or ~default (fun ({ address; _ } : t) ->
-           match address with
-           | Address.Virtual -> default
-           | Address.Physical m -> m |> fcn)
+         match address with
+         | Address.Virtual -> default
+         | Address.Physical m -> m |> fcn)
   in
   let is_virtual_checkbox =
     let selected =
       location
       |> CCOption.map_or ~default:[] (fun ({ address; _ } : t) ->
-             match address with
-             | Address.Virtual -> [ a_checked () ]
-             | Address.Physical _ -> [])
+           match address with
+           | Address.Virtual -> [ a_checked () ]
+           | Address.Physical _ -> [])
     in
     input
       ~a:
@@ -268,7 +268,7 @@ let form
                           ~value:
                             Address.Mail.(
                               address_value (fun { street; _ } ->
-                                  Street.value street))
+                                Street.value street))
                       ; div
                           ~a:[ a_class [ "switcher"; "flex-gap" ] ]
                           [ input_element
@@ -278,7 +278,7 @@ let form
                               ~value:
                                 Address.Mail.(
                                   address_value (fun { zip; _ } ->
-                                      Zip.value zip))
+                                    Zip.value zip))
                           ; input_element
                               language
                               `Text
@@ -286,7 +286,7 @@ let form
                               ~value:
                                 Address.Mail.(
                                   address_value (fun { city; _ } ->
-                                      City.value city))
+                                    City.value city))
                           ]
                       ]
                   ]
@@ -326,10 +326,10 @@ module FileList = struct
   ;;
 
   let row
-      csrf
-      visual_language
-      location_id
-      (Mapping.{ id; label; language; file } : Mapping.file)
+    csrf
+    visual_language
+    location_id
+    (Mapping.{ id; label; language; file } : Mapping.file)
     =
     let delete_form =
       Tyxml.Html.form
@@ -416,7 +416,7 @@ module SessionList = struct
           |> txt
         ; session.canceled_at
           |> CCOption.map_or ~default:"" (fun t ->
-                 Pool_common.Utils.Time.formatted_date_time t)
+               Pool_common.Utils.Time.formatted_date_time t)
           |> txt
         ; a
             ~a:
@@ -465,9 +465,9 @@ module SessionList = struct
 end
 
 let detail
-    (location : Pool_location.t)
-    Pool_context.{ csrf; language; _ }
-    sessions
+  (location : Pool_location.t)
+  Pool_context.{ csrf; language; _ }
+  sessions
   =
   let open Pool_location in
   let location_details =

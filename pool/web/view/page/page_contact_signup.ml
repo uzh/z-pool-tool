@@ -1,9 +1,9 @@
 module Field = Pool_common.Message.Field
 
 let signup
-    terms
-    Pool_context.{ language; query_language; csrf; _ }
-    flash_fetcher
+  terms
+  Pool_context.{ language; query_language; csrf; _ }
+  flash_fetcher
   =
   let open Tyxml.Html in
   let submit_url =
@@ -18,8 +18,8 @@ let signup
       |> Pool_common.Message.Field.show
       |> flash_fetcher
       |> CCFun.flip CCOption.bind (fun field ->
-             try Some (read field) with
-             | _ -> None)
+           try Some (read field) with
+           | _ -> None)
     in
     Component.selector language field show all selected ~flash_fetcher ()
   in

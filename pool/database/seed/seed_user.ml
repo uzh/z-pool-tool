@@ -155,10 +155,10 @@ let contacts db_pool =
           |> Lwt.return
         | Some { Sihl_user.id; _ } ->
           Logs.debug (fun m ->
-              m
-                "Contact already exists (%s): %s"
-                (db_pool |> Pool_database.Label.value)
-                id);
+            m
+              "Contact already exists (%s): %s"
+              (db_pool |> Pool_database.Label.value)
+              id);
           contacts |> Lwt.return)
       []
       users

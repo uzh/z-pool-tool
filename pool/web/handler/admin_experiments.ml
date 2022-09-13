@@ -54,9 +54,9 @@ let create req =
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
-        ( err
-        , "/admin/experiments/create"
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , "/admin/experiments/create"
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let events =
       let open CCResult.Infix in
@@ -89,15 +89,19 @@ let detail edit req =
     let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
     let* experiment = Experiment.find tenant_db id in
     (match edit with
-    | false ->
-      let* session_count = Experiment.session_count tenant_db id in
-      Page.Admin.Experiments.detail experiment session_count context
-      |> Lwt.return_ok
-    | true ->
-      let flash_fetcher key = Sihl.Web.Flash.find key req in
-      let%lwt sys_languages = Settings.find_languages tenant_db in
-      Page.Admin.Experiments.edit experiment context sys_languages flash_fetcher
-      |> Lwt.return_ok)
+     | false ->
+       let* session_count = Experiment.session_count tenant_db id in
+       Page.Admin.Experiments.detail experiment session_count context
+       |> Lwt.return_ok
+     | true ->
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       let%lwt sys_languages = Settings.find_languages tenant_db in
+       Page.Admin.Experiments.edit
+         experiment
+         context
+         sys_languages
+         flash_fetcher
+       |> Lwt.return_ok)
     >>= create_layout req context
     >|= Sihl.Web.Response.of_html
   in
@@ -120,9 +124,9 @@ let update req =
       Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)
     in
     Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf "%s/edit" detail_path
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , Format.asprintf "%s/edit" detail_path
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let open Lwt_result.Syntax in
     let* experiment = Experiment.find tenant_db id in
@@ -153,11 +157,11 @@ let delete req =
     in
     let experiments_path = "/admin/experiments" in
     Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf
-            "%s/%s"
-            experiments_path
-            (Pool_common.Id.value experiment_id) ))
+      ( err
+      , Format.asprintf
+          "%s/%s"
+          experiments_path
+          (Pool_common.Id.value experiment_id) ))
     @@ let* session_count = Experiment.session_count tenant_db experiment_id in
        let events =
          Cqrs_command.Experiment_command.Delete.(

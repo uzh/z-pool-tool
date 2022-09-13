@@ -19,7 +19,7 @@ module Partials = struct
     a.canceled_at
     |> Assignment.CanceledAt.value
     |> CCOption.map_or ~default:"" (fun c ->
-           Pool_common.Utils.Time.formatted_date_time c)
+         Pool_common.Utils.Time.formatted_date_time c)
     |> txt
   ;;
 

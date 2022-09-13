@@ -1,16 +1,16 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
 let create_command
-    start
-    duration
-    description
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
-    : Session.base
+  start
+  duration
+  description
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
+  : Session.base
   =
   Session.
     { start
@@ -45,16 +45,16 @@ let create_schema =
 ;;
 
 let update_command
-    start
-    duration
-    description
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
-    : Session.update
+  start
+  duration
+  description
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
+  : Session.update
   =
   Session.
     { start
@@ -118,22 +118,22 @@ module Create = struct
   let schema = create_schema
 
   let handle
-      ?parent_session
-      experiment_id
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; (* TODO [aerben] find a better name *)
-           overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.base)
+    ?parent_session
+    experiment_id
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; (* TODO [aerben] find a better name *)
+         overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.base)
     =
     (* If session is follow-up, make sure it's later than parent *)
     let follow_up_is_ealier =
@@ -210,22 +210,22 @@ end = struct
   type t = Session.update
 
   let handle
-      ?parent_session
-      follow_up_sessions
-      session
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.update)
+    ?parent_session
+    follow_up_sessions
+    session
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.update)
     =
     let open Session in
     let open CCResult in
@@ -303,11 +303,11 @@ end = struct
   ;;
 
   let handle
-      ?parent_session
-      follow_up_sessions
-      session
-      emails
-      (Session.{ start; _ } as reschedule : Session.reschedule)
+    ?parent_session
+    follow_up_sessions
+    session
+    emails
+    (Session.{ start; _ } as reschedule : Session.reschedule)
     =
     let open CCResult in
     let* () = validate_start follow_up_sessions parent_session start in

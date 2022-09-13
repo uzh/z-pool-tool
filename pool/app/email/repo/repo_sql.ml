@@ -55,7 +55,7 @@ let find_request_sql : type a. a carrier -> string -> string =
 ;;
 
 let find_by_user_request
-    : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
+  : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
   =
   let open Caqti_request.Infix in
   function
@@ -72,7 +72,7 @@ let find_by_user_request
 ;;
 
 let find_by_address_request
-    : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
+  : type a. a carrier -> (string, a t, [ `One ]) Caqti_request.t
   =
   let open Caqti_request.Infix in
   function

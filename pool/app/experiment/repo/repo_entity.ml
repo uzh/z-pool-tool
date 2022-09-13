@@ -102,20 +102,20 @@ let t =
             ) ) ) )
   in
   let decode
-      ( id
-      , ( title
-        , ( public_title
-          , ( description
-            , ( filter
-              , ( direct_registration_disabled
-                , ( registration_disabled
-                  , ( allow_uninvited_signup
-                    , ( experiment_type
-                      , ( invitation_template
-                        , ( session_reminder_lead_time
-                          , ( session_reminder_subject
-                            , (session_reminder_text, (created_at, updated_at))
-                            ) ) ) ) ) ) ) ) ) ) ) )
+    ( id
+    , ( title
+      , ( public_title
+        , ( description
+          , ( filter
+            , ( direct_registration_disabled
+              , ( registration_disabled
+                , ( allow_uninvited_signup
+                  , ( experiment_type
+                    , ( invitation_template
+                      , ( session_reminder_lead_time
+                        , ( session_reminder_subject
+                          , (session_reminder_text, (created_at, updated_at)) )
+                        ) ) ) ) ) ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -241,9 +241,9 @@ module Public = struct
           ) )
     in
     let decode
-        ( id
-        , ( public_title
-          , (description, (direct_registration_disabled, experiment_type)) ) )
+      ( id
+      , ( public_title
+        , (description, (direct_registration_disabled, experiment_type)) ) )
       =
       Ok
         { id

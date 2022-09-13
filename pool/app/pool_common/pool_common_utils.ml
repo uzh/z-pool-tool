@@ -37,8 +37,8 @@ let with_log_error ?(level = Logs.Error) err =
 
 let with_log_result_error fcn =
   CCResult.map_err (fun err ->
-      let _ = err |> fcn |> with_log_error in
-      err)
+    let _ = err |> fcn |> with_log_error in
+    err)
 ;;
 
 let decoder create_fcn field l =

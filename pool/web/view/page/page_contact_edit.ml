@@ -23,12 +23,12 @@ let contact_profile_layout language title ?active html =
 ;;
 
 let personal_details_form
-    csrf
-    user_update_csrf
-    language
-    action
-    tenant_languages
-    contact
+  csrf
+  user_update_csrf
+  language
+  action
+  tenant_languages
+  contact
   =
   let open Contact in
   let form_attrs action =
@@ -86,10 +86,10 @@ let detail contact Pool_context.{ language; query_language; _ } =
 ;;
 
 let personal_details
-    user_update_csrf
-    (contact : Contact.t)
-    tenant_languages
-    Pool_context.{ language; query_language; csrf; _ }
+  user_update_csrf
+  (contact : Contact.t)
+  tenant_languages
+  Pool_context.{ language; query_language; csrf; _ }
   =
   let action = HttpUtils.path_with_language query_language "/user/update" in
   div
@@ -118,9 +118,9 @@ let personal_details
 ;;
 
 let login_information
-    (contact : Contact.t)
-    Pool_context.{ language; query_language; csrf; _ }
-    password_policy
+  (contact : Contact.t)
+  Pool_context.{ language; query_language; csrf; _ }
+  password_policy
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in

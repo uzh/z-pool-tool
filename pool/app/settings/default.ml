@@ -49,7 +49,7 @@ let terms_and_conditions =
        werden." )
   ]
   |> CCList.map (fun (language, text) ->
-         TermsAndConditions.create language text |> get_or_failwith)
+       TermsAndConditions.create language text |> get_or_failwith)
 ;;
 
 let default_values =

@@ -6,7 +6,7 @@ let combine_html language html_title content =
       (title
          (txt
             ((CCOption.map_or ~default:pool_title (fun title ->
-                  CCString.concat " - " [ title; pool_title ]))
+                CCString.concat " - " [ title; pool_title ]))
                html_title)))
       [ meta
           ~a:

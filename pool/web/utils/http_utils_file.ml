@@ -117,8 +117,8 @@ let upload_files pool allow_list req =
   let open Utils.Lwt_result.Infix in
   save_files allow_list req
   >|> Lwt_list.map_s (fun (k, v) ->
-          let* id = file_to_storage_add pool v in
-          Lwt.return_ok (k, id))
+        let* id = file_to_storage_add pool v in
+        Lwt.return_ok (k, id))
   ||> CCResult.flatten_l
 ;;
 
@@ -129,21 +129,21 @@ let update_files pool files req =
     match filename with
     | Some filename ->
       (match load_file filename with
-      | Ok (filesize, mime, data) ->
-        let ctx = Pool_tenant.to_ctx pool in
-        let%lwt file = Service.Storage.find ~ctx id in
-        let updated_file =
-          let open Sihl_storage in
-          file
-          |> set_filename_stored (Filename.basename filename)
-          |> set_filesize_stored filesize
-          |> set_mime_stored (File.Mime.to_string mime)
-        in
-        let base64 = Base64.encode_exn data in
-        let%lwt _ = Service.Storage.update_base64 ~ctx updated_file base64 in
-        let%lwt () = remove_imported_file filename in
-        Lwt.return_some (Ok id)
-      | Error err -> Lwt.return_some (Error err))
+       | Ok (filesize, mime, data) ->
+         let ctx = Pool_tenant.to_ctx pool in
+         let%lwt file = Service.Storage.find ~ctx id in
+         let updated_file =
+           let open Sihl_storage in
+           file
+           |> set_filename_stored (Filename.basename filename)
+           |> set_filesize_stored filesize
+           |> set_mime_stored (File.Mime.to_string mime)
+         in
+         let base64 = Base64.encode_exn data in
+         let%lwt _ = Service.Storage.update_base64 ~ctx updated_file base64 in
+         let%lwt () = remove_imported_file filename in
+         Lwt.return_some (Ok id)
+       | Error err -> Lwt.return_some (Error err))
     | None -> Lwt.return_none
   in
   let%lwt result =

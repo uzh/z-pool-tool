@@ -48,9 +48,9 @@ end = struct
   ;;
 
   let handle
-      ?(id = Mailing.Id.create ())
-      experiment
-      ({ start_at; end_at; rate; distribution } : t)
+    ?(id = Mailing.Id.create ())
+    experiment
+    ({ start_at; end_at; rate; distribution } : t)
     =
     let open CCResult in
     let* mailing = Mailing.create ~id start_at end_at rate distribution in

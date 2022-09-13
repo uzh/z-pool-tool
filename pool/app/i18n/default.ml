@@ -135,13 +135,13 @@ Pool Tool|}
       ] )
   ]
   |> CCList.map (fun (key, data) ->
-         let key = key |> Key.of_string |> get_or_failwith in
-         CCList.map
-           (fun (language, content) ->
-             create
-               key
-               (language |> Pool_common.Language.create |> get_or_failwith)
-               (content |> Content.create |> get_or_failwith))
-           data)
+       let key = key |> Key.of_string |> get_or_failwith in
+       CCList.map
+         (fun (language, content) ->
+           create
+             key
+             (language |> Pool_common.Language.create |> get_or_failwith)
+             (content |> Content.create |> get_or_failwith))
+         data)
   |> CCList.flatten
 ;;

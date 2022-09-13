@@ -18,10 +18,10 @@ let raise_caqti_error =
     failwith "Caqti error unsupported"
   | (Error #t | Ok _) as x ->
     (match x with
-    | Ok res -> res
-    | Error err ->
-      Logs.err (fun m -> m "%s" @@ show err);
-      failwith (show err))
+     | Ok res -> res
+     | Error err ->
+       Logs.err (fun m -> m "%s" @@ show err);
+       failwith (show err))
 ;;
 
 let find db_pool request input =
@@ -142,8 +142,8 @@ let clean_all db_pool =
   clean_requests db_pool
   >>= fun clean_requests ->
   with_disabled_fk_check db_pool (fun connection ->
-      let module Connection = (val connection : Caqti_lwt.CONNECTION) in
-      Lwt_list.iter_s
-        (fun request -> Connection.exec request () |> Lwt.map raise_caqti_error)
-        clean_requests)
+    let module Connection = (val connection : Caqti_lwt.CONNECTION) in
+    Lwt_list.iter_s
+      (fun request -> Connection.exec request () |> Lwt.map raise_caqti_error)
+      clean_requests)
 ;;

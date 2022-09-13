@@ -82,14 +82,14 @@ module User = struct
   let user_caqti =
     let open Sihl.Contract.User in
     let decode
-        ( id
-        , ( email
-          , ( username
-            , ( name
-              , ( given_name
-                , ( password
-                  , (status, (admin, (confirmed, (created_at, updated_at)))) )
-                ) ) ) ) )
+      ( id
+      , ( email
+        , ( username
+          , ( name
+            , ( given_name
+              , ( password
+                , (status, (admin, (confirmed, (created_at, updated_at)))) ) )
+            ) ) ) )
       =
       Ok
         { id

@@ -18,10 +18,10 @@ let t =
   let decode (id, (key, (language, content))) =
     let open CCResult in
     map_err (fun _ ->
-        Common.(
-          Utils.error_to_string
-            Common.Language.En
-            (Message.Decode Message.Field.I18n)))
+      Common.(
+        Utils.error_to_string
+          Common.Language.En
+          (Message.Decode Message.Field.I18n)))
     @@ let* key = Key.of_string key in
        let* content = Content.create content in
        Ok { id; key; language; content }

@@ -24,7 +24,7 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-    : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
+  : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
  fun pool { user; _ } password password_confirmation ->
   let open Lwt_result.Infix in

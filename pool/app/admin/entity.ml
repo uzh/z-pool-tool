@@ -21,7 +21,7 @@ end
 
 type person =
   { user : Sihl_user.t
-        [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
+       [@equal fun m k -> CCString.equal m.Sihl_user.id k.Sihl_user.id]
   ; created_at : Common.CreatedAt.t
   ; updated_at : Common.UpdatedAt.t
   }

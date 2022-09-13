@@ -156,10 +156,10 @@ let login_after_terms_update _ () =
   let expected = Error TermsAndConditionsNotAccepted in
   accepted
   |> Lwt.map (fun accepted ->
-         Alcotest.(
-           check
-             (result Test_utils.contact Test_utils.error)
-             "succeeds"
-             expected
-             accepted))
+       Alcotest.(
+         check
+           (result Test_utils.contact Test_utils.error)
+           "succeeds"
+           expected
+           accepted))
 ;;

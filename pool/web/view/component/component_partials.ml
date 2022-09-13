@@ -14,8 +14,8 @@ let mail_to_html ?(highlight_first_line = true) mail =
   in
   let base = [ building_room; street |> Street.value; city_zip ] in
   (match institution with
-  | Some institution -> CCList.cons (institution |> Institution.value) base
-  | None -> base)
+   | Some institution -> CCList.cons (institution |> Institution.value) base
+   | None -> base)
   |> CCList.foldi
        (fun html index str ->
          let str = str |> txt in
@@ -28,9 +28,9 @@ let mail_to_html ?(highlight_first_line = true) mail =
 ;;
 
 let address_to_html
-    ?(highlight_first_line = true)
-    language
-    (location_address : Pool_location.Address.t)
+  ?(highlight_first_line = true)
+  language
+  (location_address : Pool_location.Address.t)
   =
   let open Pool_location.Address in
   match location_address with
@@ -42,8 +42,8 @@ let address_to_html
     ]
     |> fun html ->
     (match highlight_first_line with
-    | true -> strong html
-    | false -> span html)
+     | true -> strong html
+     | false -> span html)
   | Physical mail -> mail_to_html ~highlight_first_line mail
 ;;
 

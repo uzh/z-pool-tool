@@ -4,8 +4,8 @@ let reminder_email sys_languages contact (session : Session.t) template =
   let email = Contact.email_address contact in
   let session_overview =
     CCList.map (fun lang ->
-        ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-        , Session.(to_email_text lang session) ))
+      ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+      , Session.(to_email_text lang session) ))
   in
   Email.Helper.prepare_boilerplate_email
     template
@@ -52,20 +52,20 @@ let create_reminders pool default_language sys_languages session =
             CCOption.value ~default:default_language contact.Contact.language
           in
           (match Hashtbl.find_opt i18n_texts message_language with
-          | Some template ->
-            Lwt_result.ok
-              (reminder_email sys_languages contact session template)
-          | None ->
-            let find = CCFun.flip (I18n.find_by_key pool) message_language in
-            let* subject = find I18n.Key.InvitationSubject in
-            let* text = find I18n.Key.InvitationText in
-            let template =
-              Email.CustomTemplate.
-                { subject = Subject.I18n subject; content = Content.I18n text }
-            in
-            let () = Hashtbl.add i18n_texts message_language template in
-            Lwt_result.ok
-              (reminder_email sys_languages contact session template)))
+           | Some template ->
+             Lwt_result.ok
+               (reminder_email sys_languages contact session template)
+           | None ->
+             let find = CCFun.flip (I18n.find_by_key pool) message_language in
+             let* subject = find I18n.Key.InvitationSubject in
+             let* text = find I18n.Key.InvitationText in
+             let template =
+               Email.CustomTemplate.
+                 { subject = Subject.I18n subject; content = Content.I18n text }
+             in
+             let () = Hashtbl.add i18n_texts message_language template in
+             Lwt_result.ok
+               (reminder_email sys_languages contact session template)))
       assignments
   in
   let open Utils.Lwt_result.Infix in
@@ -104,16 +104,16 @@ let tenant_specific_session_reminder =
     ~name:"session_reminder.send"
     ~description:"Send session reminders of specified tenant"
     (fun args ->
-      match args with
-      | [ pool ] ->
-        let open Utils.Lwt_result.Infix in
-        let%lwt _ = Command_utils.setup_databases () in
-        pool
-        |> Pool_database.Label.create
-        |> Lwt_result.lift
-        >>= send_tenant_reminder
-        ||> CCOption.of_result
-      | _ -> failwith "Argument missmatch")
+    match args with
+    | [ pool ] ->
+      let open Utils.Lwt_result.Infix in
+      let%lwt _ = Command_utils.setup_databases () in
+      pool
+      |> Pool_database.Label.create
+      |> Lwt_result.lift
+      >>= send_tenant_reminder
+      ||> CCOption.of_result
+    | _ -> failwith "Argument missmatch")
 ;;
 
 let all_tenants_session_reminder =
@@ -121,13 +121,13 @@ let all_tenants_session_reminder =
     ~name:"session_reminder.send_all"
     ~description:"Send session reminders of all tenants"
     (fun args ->
-      match args with
-      | [] ->
-        let open CCFun in
-        let open Lwt.Infix in
-        Command_utils.setup_databases ()
-        >>= Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
-        >|= CCList.all_ok
-        >|= (fun _ -> Ok ()) %> CCOption.of_result
-      | _ -> failwith "Argument missmatch")
+    match args with
+    | [] ->
+      let open CCFun in
+      let open Lwt.Infix in
+      Command_utils.setup_databases ()
+      >>= Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
+      >|= CCList.all_ok
+      >|= (fun _ -> Ok ()) %> CCOption.of_result
+    | _ -> failwith "Argument missmatch")
 ;;

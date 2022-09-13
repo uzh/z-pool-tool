@@ -1,6 +1,6 @@
 let context user () =
   let tenant_db_of_request req
-      : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
+    : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
     =
     (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
        host cannot be handled at the moment *)
@@ -50,13 +50,13 @@ let context user () =
     | None ->
       user_language contact
       |> Lwt.map (fun l ->
-             l
-             >>= is_valid
-             |> value
-                  ~default:
-                    (CCOption.get_exn_or
-                       "Cannot determine language"
-                       (CCList.head_opt tenant_languages)))
+           l
+           >>= is_valid
+           |> value
+                ~default:
+                  (CCOption.get_exn_or
+                     "Cannot determine language"
+                     (CCList.head_opt tenant_languages)))
   in
   let filter handler req =
     let open Lwt_result.Syntax in

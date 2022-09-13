@@ -41,7 +41,7 @@ let t =
         , (m.contact_id, (m.resent_at, (m.created_at, m.updated_at))) ) )
   in
   let decode
-      (id, (experiment_id, (contact_id, (resent_at, (created_at, updated_at)))))
+    (id, (experiment_id, (contact_id, (resent_at, (created_at, updated_at)))))
     =
     let open CCResult in
     Ok { id; experiment_id; contact_id; resent_at; created_at; updated_at }

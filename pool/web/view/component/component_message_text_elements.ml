@@ -134,7 +134,7 @@ let build_help language toggle_id help =
   in
   help
   |> CCList.map (fun (elm, example) ->
-         [ txt (Format.asprintf "{%s}" elm); example ])
+       [ txt (Format.asprintf "{%s}" elm); example ])
   |> Component_table.horizontal_table `Simple language ~align_top:true
   |> wrap_hints
 ;;
@@ -143,8 +143,8 @@ let session_reminder_help language sys_languages ?session () =
   let session = CCOption.value ~default:DummyData.session session in
   let session_overview =
     (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , Session.(to_email_text lang session) |> Http_utils.add_line_breaks )))
+       ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+       , Session.(to_email_text lang session) |> Http_utils.add_line_breaks )))
       sys_languages
   in
   DummyData.name_element :: session_overview

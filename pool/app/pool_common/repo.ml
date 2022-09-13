@@ -19,7 +19,7 @@ module Language = struct
     m
     |> create
     |> CCResult.map_err (fun _ ->
-           Locales_en.error_to_string Entity_message.(Decode Field.Language))
+         Locales_en.error_to_string Entity_message.(Decode Field.Language))
   ;;
 
   let t = Caqti_type.(custom ~encode ~decode string)

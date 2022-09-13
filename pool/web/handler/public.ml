@@ -18,7 +18,7 @@ let index req =
   then Http_utils.redirect_to "/root"
   else (
     let result
-        ({ Pool_context.tenant_db; language; query_language; _ } as context)
+      ({ Pool_context.tenant_db; language; query_language; _ } as context)
       =
       let open Lwt_result.Syntax in
       let open Lwt_result.Infix in
@@ -85,7 +85,7 @@ let email_confirmation_note req =
 
 let not_found req =
   let result
-      ({ Pool_context.language; query_language; tenant_db; _ } as context)
+    ({ Pool_context.language; query_language; tenant_db; _ } as context)
     =
     let open Lwt_result.Infix in
     let open Lwt_result.Syntax in
@@ -97,7 +97,7 @@ let not_found req =
       |> Lwt_result.return
     | false ->
       Lwt_result.map_error (fun err ->
-          err, Http_utils.path_with_language query_language "/error")
+        err, Http_utils.path_with_language query_language "/error")
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
          let%lwt tenant_languages = Settings.find_languages tenant_db in
          let req =
@@ -140,13 +140,13 @@ let error req =
     |> General.create_tenant_layout `Contact req context
   in
   (match tenant_error with
-  | Ok tenant_error -> tenant_error
-  | Error _ ->
-    ( Common.Message.TerminatoryRootErrorTitle
-    , Common.Message.TerminatoryRootError )
-    |> error_page
-    |> fun html ->
-    Page.Layout.create_root_layout html None Pool_common.Language.En ())
+   | Ok tenant_error -> tenant_error
+   | Error _ ->
+     ( Common.Message.TerminatoryRootErrorTitle
+     , Common.Message.TerminatoryRootError )
+     |> error_page
+     |> fun html ->
+     Page.Layout.create_root_layout html None Pool_common.Language.En ())
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

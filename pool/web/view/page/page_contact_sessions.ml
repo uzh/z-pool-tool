@@ -19,24 +19,24 @@ let public_overview sessions experiment language =
             |> Pool_common.Utils.Time.formatted_timespan)
       ; txt (session.Session.Public.location |> Pool_location.to_string language)
       ; (match Session.Public.is_fully_booked session with
-        | false ->
-          a
-            ~a:
-              [ a_href
-                  (Format.asprintf
-                     "/experiments/%s/sessions/%s"
-                     (experiment.id |> Pool_common.Id.value)
-                     (session.Session.Public.id |> Pool_common.Id.value)
-                  |> Sihl.Web.externalize_path)
-              ]
-            [ txt Pool_common.(Utils.control_to_string language Message.signup)
-            ]
-        | true ->
-          span
-            [ txt
-                Pool_common.(
-                  Utils.error_to_string language Message.SessionFullyBooked)
-            ])
+         | false ->
+           a
+             ~a:
+               [ a_href
+                   (Format.asprintf
+                      "/experiments/%s/sessions/%s"
+                      (experiment.id |> Pool_common.Id.value)
+                      (session.Session.Public.id |> Pool_common.Id.value)
+                   |> Sihl.Web.externalize_path)
+               ]
+             [ txt Pool_common.(Utils.control_to_string language Message.signup)
+             ]
+         | true ->
+           span
+             [ txt
+                 Pool_common.(
+                   Utils.error_to_string language Message.SessionFullyBooked)
+             ])
       ])
     sessions
   |> Component.Table.horizontal_table `Striped language ~thead

@@ -48,11 +48,11 @@ let index experiment_list Pool_context.{ language; _ } =
 ;;
 
 let show
-    experiment
-    sessions
-    session_user_is_assigned
-    user_is_enlisted
-    Pool_context.{ language; csrf; _ }
+  experiment
+  sessions
+  session_user_is_assigned
+  user_is_enlisted
+  Pool_context.{ language; csrf; _ }
   =
   let open Experiment.Public in
   let form_action =
@@ -119,8 +119,8 @@ let show
          Experiment.DirectRegistrationDisabled.value
            experiment.direct_registration_disabled
        with
-      | false -> session_list sessions
-      | true -> div [ waiting_list_form () ])
+       | false -> session_list sessions
+       | true -> div [ waiting_list_form () ])
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]

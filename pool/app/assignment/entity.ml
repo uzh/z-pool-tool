@@ -66,12 +66,12 @@ type t =
 [@@deriving eq, show]
 
 let create
-    ?(id = Pool_common.Id.create ())
-    ?(show_up = ShowUp.create false)
-    ?(participated = Participated.create false)
-    ?(matches_filter = MatchesFilter.create true)
-    ?(canceled_at = CanceledAt.init)
-    contact
+  ?(id = Pool_common.Id.create ())
+  ?(show_up = ShowUp.create false)
+  ?(participated = Participated.create false)
+  ?(matches_filter = MatchesFilter.create true)
+  ?(canceled_at = CanceledAt.init)
+  contact
   =
   { id
   ; contact

@@ -7,11 +7,11 @@ module Icon = Component_icon
 open Tyxml.Html
 
 let language_select
-    options
-    selected
-    ?(field = Pool_common.Message.Field.Language)
-    ?(attributes = [])
-    ()
+  options
+  selected
+  ?(field = Pool_common.Message.Field.Language)
+  ?(attributes = [])
+  ()
   =
   let open Pool_common in
   let name = Message.Field.show field in
@@ -21,7 +21,7 @@ let language_select
         let is_selected =
           selected
           |> CCOption.map (fun selected ->
-                 if Language.equal selected l then [ a_selected () ] else [])
+               if Language.equal selected l then [ a_selected () ] else [])
           |> CCOption.value ~default:[]
         in
         option
@@ -93,7 +93,7 @@ end
 let flash_fetched_value fetcher value name =
   let old_value =
     CCOption.bind fetcher (fun flash_fetcher ->
-        name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Pool_common.Message.Field.show |> flash_fetcher)
   in
   let open CCOption.Infix in
   old_value <+> value |> CCOption.get_or ~default:""
@@ -102,18 +102,18 @@ let flash_fetched_value fetcher value name =
 let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
 
 let input_element
-    ?(orientation = `Vertical)
-    ?(classnames = [])
-    ?label_field
-    ?help
-    ?identifier
-    ?(required = false)
-    ?flash_fetcher
-    ?value
-    ?(additional_attributes = [])
-    language
-    input_type
-    name
+  ?(orientation = `Vertical)
+  ?(classnames = [])
+  ?label_field
+  ?help
+  ?identifier
+  ?(required = false)
+  ?flash_fetcher
+  ?value
+  ?(additional_attributes = [])
+  language
+  input_type
+  name
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
@@ -137,20 +137,20 @@ let input_element
 ;;
 
 let flatpicker_element
-    ?(orientation = `Vertical)
-    ?(classnames = [])
-    ?label_field
-    ?help
-    ?identifier
-    ?(required = false)
-    ?flash_fetcher
-    ?value
-    ?(warn_past = false)
-    ?(disable_past = false)
-    ?(additional_attributes = [])
-    language
-    input_type
-    name
+  ?(orientation = `Vertical)
+  ?(classnames = [])
+  ?label_field
+  ?help
+  ?identifier
+  ?(required = false)
+  ?flash_fetcher
+  ?value
+  ?(warn_past = false)
+  ?(disable_past = false)
+  ?(additional_attributes = [])
+  language
+  input_type
+  name
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
@@ -198,21 +198,21 @@ let flatpicker_element
 ;;
 
 let checkbox_element
-    ?(orientation = `Vertical)
-    ?(classnames = [])
-    ?label_field
-    ?help
-    ?identifier
-    ?flash_fetcher
-    ?(required = false)
-    ?(value = false)
-    language
-    name
+  ?(orientation = `Vertical)
+  ?(classnames = [])
+  ?label_field
+  ?help
+  ?identifier
+  ?flash_fetcher
+  ?(required = false)
+  ?(value = false)
+  language
+  name
   =
   let input_label = Elements.input_label language name label_field required in
   let value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
-        name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Pool_common.Message.Field.show |> flash_fetcher)
     |> CCOption.map (fun s -> CCString.equal "true" s)
     |> CCOption.value ~default:value
   in
@@ -239,13 +239,13 @@ let checkbox_element
 ;;
 
 let input_element_file
-    ?(orientation = `Vertical)
-    ?(allow_multiple = false)
-    ?(has_icon = true)
-    ?(required = false)
-    ?label_field
-    language
-    field
+  ?(orientation = `Vertical)
+  ?(allow_multiple = false)
+  ?(has_icon = true)
+  ?(required = false)
+  ?label_field
+  language
+  field
   =
   let input_label = Elements.input_label language field label_field required in
   let name = Pool_common.Message.Field.(field |> show) in
@@ -286,15 +286,15 @@ let input_element_file
 ;;
 
 let textarea_element
-    ?(orientation = `Vertical)
-    ?(classnames = [])
-    ?(attributes = [])
-    ?(required = false)
-    ?label_field
-    ?value
-    ?flash_fetcher
-    language
-    name
+  ?(orientation = `Vertical)
+  ?(classnames = [])
+  ?(attributes = [])
+  ?(required = false)
+  ?label_field
+  ?value
+  ?flash_fetcher
+  language
+  name
   =
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
@@ -306,7 +306,7 @@ let textarea_element
   let ( <+> ) = CCOption.( <+> ) in
   let old_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
-        name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Pool_common.Message.Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
   let textarea =
@@ -321,17 +321,17 @@ let textarea_element
 ;;
 
 let submit_element
-    lang
-    control
-    ?(submit_type = `Primary)
-    ?(classnames = [])
-    ?has_icon
-    ()
+  lang
+  control
+  ?(submit_type = `Primary)
+  ?(classnames = [])
+  ?has_icon
+  ()
   =
   let button_type_class =
     (match has_icon with
-    | Some _ -> [ "has-icon" ]
-    | None -> [])
+     | Some _ -> [ "has-icon" ]
+     | None -> [])
     @ CCList.pure
     @@
     match submit_type with
@@ -361,24 +361,24 @@ let submit_icon ?(classnames = []) icon_type =
 ;;
 
 let selector
-    language
-    field
-    show
-    options
-    selected
-    ?flash_fetcher
-    ?(required = false)
-    ?help
-    ?(attributes = [])
-    ?(add_empty = false)
-    ()
+  language
+  field
+  show
+  options
+  selected
+  ?flash_fetcher
+  ?(required = false)
+  ?help
+  ?(attributes = [])
+  ?(add_empty = false)
+  ()
   =
   let name = Pool_common.Message.Field.(show field) in
   let input_label = Elements.input_label language field None required in
   let selected =
     let open CCOption in
     bind flash_fetcher (fun flash_fetcher ->
-        field |> Pool_common.Message.Field.show |> flash_fetcher)
+      field |> Pool_common.Message.Field.show |> flash_fetcher)
     <+> map show selected
   in
   let options =

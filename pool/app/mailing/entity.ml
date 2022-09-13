@@ -69,8 +69,8 @@ module Distribution = struct
       Utils.control_to_string
         lang
         (match m with
-        | Ascending -> Message.Ascending
-        | Descending -> Message.Descending)
+         | Ascending -> Message.Ascending
+         | Descending -> Message.Descending)
     ;;
 
     let read m =
@@ -105,11 +105,9 @@ module Distribution = struct
   let get_order_element m =
     m
     |> CCList.map (fun (field, order) ->
-           CCString.concat
-             " "
-             [ field |> Pool_common.Message.Field.show
-             ; order |> SortOrder.show
-             ])
+         CCString.concat
+           " "
+           [ field |> Pool_common.Message.Field.show; order |> SortOrder.show ])
     |> CCString.concat ", "
     |> Format.asprintf "ORDER BY %s"
   ;;
@@ -126,10 +124,10 @@ module Distribution = struct
     let open CCResult in
     data
     |> CCList.map (fun distribution_field ->
-           match CCString.split ~by:"," distribution_field with
-           | [ field; order ] ->
-             Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
-           | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
+         match CCString.split ~by:"," distribution_field with
+         | [ field; order ] ->
+           Ok (Format.asprintf "[[\"%s\"],[\"%s\"]]" field order)
+         | _ -> Error Pool_common.Message.(Invalid Field.Distribution))
     |> CCResult.flatten_l
     >|= CCString.concat ","
     >|= Format.asprintf "[%s]"

@@ -54,14 +54,14 @@ type t =
 [@@deriving show]
 
 let to_entity
-    { id; start_at; end_at; rate; distribution; created_at; updated_at; _ }
+  { id; start_at; end_at; rate; distribution; created_at; updated_at; _ }
   =
   Entity.{ id; start_at; end_at; rate; distribution; created_at; updated_at }
 ;;
 
 let of_entity
-    (experiment_id : Pool_common.Id.t)
-    { Entity.id; start_at; end_at; rate; distribution; created_at; updated_at }
+  (experiment_id : Pool_common.Id.t)
+  { Entity.id; start_at; end_at; rate; distribution; created_at; updated_at }
   =
   { id
   ; experiment_id
@@ -84,10 +84,10 @@ let t =
           ) ) )
   in
   let decode
-      ( id
-      , ( experiment_id
-        , (start_at, (end_at, (rate, (distribution, (created_at, updated_at)))))
-        ) )
+    ( id
+    , ( experiment_id
+      , (start_at, (end_at, (rate, (distribution, (created_at, updated_at)))))
+      ) )
     =
     let open CCResult in
     Ok

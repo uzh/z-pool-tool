@@ -14,8 +14,8 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       let is_confirmed contact =
         Lwt_result.lift
           (match contact.Contact.user.Sihl_user.confirmed with
-          | true -> Ok contact
-          | false -> Error Pool_common.Message.ContactUnconfirmed)
+           | true -> Ok contact
+           | false -> Error Pool_common.Message.ContactUnconfirmed)
       in
       let terms_agreed contact =
         let%lwt accepted = Contact.has_terms_accepted pool contact in
@@ -35,7 +35,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
       Pool_context.find req
       |> CCResult.to_opt
       |> CCFun.flip CCOption.bind (fun { Pool_context.query_language; _ } ->
-             query_language)
+           query_language)
     in
     match confirmed_and_terms_agreed with
     | Ok _ -> handler req

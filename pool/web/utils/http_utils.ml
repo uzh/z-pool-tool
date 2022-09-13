@@ -32,12 +32,12 @@ let find_query_lang req =
 let path_with_language lang path =
   lang
   |> CCOption.map (fun lang ->
-         let open Pool_common in
-         Message.add_field_query_params
-           path
-           [ ( Message.Field.Language
-             , lang |> Language.show |> CCString.lowercase_ascii )
-           ])
+       let open Pool_common in
+       Message.add_field_query_params
+         path
+         [ ( Message.Field.Language
+           , lang |> Language.show |> CCString.lowercase_ascii )
+         ])
   |> CCOption.value ~default:path
 ;;
 
@@ -60,15 +60,15 @@ let extract_happy_path_generic req result msgf =
     |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
-           redirect_to_with_actions
-             (path_with_language query_language error_path)
-             [ msgf error_msg ])
+         redirect_to_with_actions
+           (path_with_language query_language error_path)
+           [ msgf error_msg ])
   | Error _ -> redirect_to "/error"
 ;;
 
 let extract_happy_path req result =
   extract_happy_path_generic req result (fun err ->
-      Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
+    Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
 let extract_happy_path_with_actions req result =
@@ -80,16 +80,16 @@ let extract_happy_path_with_actions req result =
     |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
-           redirect_to_with_actions
-             (path_with_language query_language error_path)
-             (CCList.append
-                [ Message.set
-                    ~warning:[]
-                    ~success:[]
-                    ~info:[]
-                    ~error:[ error_key ]
-                ]
-                error_actions))
+         redirect_to_with_actions
+           (path_with_language query_language error_path)
+           (CCList.append
+              [ Message.set
+                  ~warning:[]
+                  ~success:[]
+                  ~info:[]
+                  ~error:[ error_key ]
+              ]
+              error_actions))
   | Error _ -> redirect_to "/error"
 ;;
 
@@ -113,7 +113,7 @@ let urlencoded_to_flash urlencoded =
   Sihl.Web.Flash.set
     (urlencoded
     |> CCList.map (fun (m, k) ->
-           m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
+         m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
 (* TODO[timhub]: hide information, at least on public site *)
@@ -146,8 +146,8 @@ let format_request_boolean_values values urlencoded =
     StringMap.update
       k
       (function
-        | None -> Some [ "false" ]
-        | Some values -> values |> intersection_to_bool_string |> CCOption.some)
+       | None -> Some [ "false" ]
+       | Some values -> values |> intersection_to_bool_string |> CCOption.some)
       m
   in
   handle_boolean_values update urlencoded values

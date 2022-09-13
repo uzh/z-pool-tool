@@ -63,10 +63,10 @@ let detail Pool_context.{ language; _ } contact =
 ;;
 
 let edit
-    Pool_context.{ language; csrf; _ }
-    user_update_csrf
-    tenant_languages
-    contact
+  Pool_context.{ language; csrf; _ }
+  user_update_csrf
+  tenant_languages
+  contact
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
