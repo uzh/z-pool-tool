@@ -54,3 +54,15 @@ build: [
   ]
 ]
 dev-repo: "git+https://gitlab.uzh.ch/econ/study-coordination/pool"
+pin-depends: [
+  ["sihl" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-cache" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-email" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-queue" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-storage" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-token" "https://github.com/oxidizing/sihl.git"]
+  ["sihl-user" "https://github.com/oxidizing/sihl.git"]
+  ["canary" "https://github.com/uzh/canary.git"]
+  ["conformist" "https://github.com/oxidizing/conformist.git"]
+  ["guardian" "https://github.com/uzh/guardian.git"]
+]

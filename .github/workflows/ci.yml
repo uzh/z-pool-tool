@@ -4,30 +4,37 @@ on: [push, pull_request]
 jobs:
   build:
     name: Build and test
+
     runs-on: ${{ matrix.os }}
+
     env:
       SIHL_ENV: test
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
       DATABASE_URL: mariadb://root:${MYSQL_ROOT_PASSWORD}@database-root:3306/${MYSQL_DATABASE}
+
     services:
       database-root:
         image: mariadb:10.6
       database-tenant:
         image: mariadb:10.6
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
         ocaml-compiler: [4.12.x]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Use OCaml ${{ matrix.ocaml-version }}
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
+          dune-pin: true
 
       - name: Install system dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
@@ -43,6 +50,7 @@ jobs:
           opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
           opam pin add -yn canary https://github.com/uzh/canary.git
           opam pin add -yn conformist https://github.com/oxidizing/conformist.git
+          opam pin add -ywn guardian https://github.com/uzh/guardian.git
 
       - name: Pin current pool tool
         run: |
@@ -108,5 +116,3 @@ jobs:
         with:
           name: assets
           path: public
-
-
