@@ -15,10 +15,10 @@ jobs:
     services:
       database-root:
         image: mariadb:10.6
-        ports: [3306]
+        ports: [3306:3306]
       database-tenant:
         image: mariadb:10.6
-        ports: [3306]
+        ports: [3307:3306]
 
     strategy:
       fail-fast: false
@@ -70,8 +70,8 @@ jobs:
 
       - name: Migrate and seed test database
         env:
-          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-root.ports[3306] }}/${{ env.MYSQL_DATABASE }}
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-tenant.ports[3306] }}/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@localhost:3306/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@localhost:3307/${{ env.MYSQL_DATABASE }}
         run: |
           opam config exec -- dune exec --root . pool/run/run.exe migrate.root
           opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
@@ -80,8 +80,8 @@ jobs:
 
       - name: Run tests
         env:
-            DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-root.ports[3306] }}/${{ env.MYSQL_DATABASE }}
-            DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-tenant.ports[3306] }}/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@localhost:3306/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@localhost:3307/${{ env.MYSQL_DATABASE }}
         run: opam config exec -- make test
 
       - uses: actions/upload-artifact@v3
