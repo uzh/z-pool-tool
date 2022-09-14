@@ -17,7 +17,12 @@ module Data = struct
   let title = "Econ uzh"
   let description = "description"
   let url = "pool.econ.uzh.ch"
-  let database_url = "mariadb://root@database-tenant:3306/test_econ"
+
+  let database_url =
+    Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
+    |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
+  ;;
+
   let database_label = "econ-test"
   let smtp_auth_server = "smtp.uzh.ch"
   let smtp_auth_port = "587"

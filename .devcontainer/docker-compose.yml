@@ -17,6 +17,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DATABASE_URL=mariadb://root@database-root:3306/development
+      - DATABASE_URL_TENANT_TEST=mariadb://root@database-tenant:3306/test_econ
       - DATABASE_SKIP_DEFAULT_POOL_CREATION=true
       - DATABASE_CHOOSE_POOL=root
       - OPAMSOLVERTIMEOUT=180

@@ -28,22 +28,14 @@ let create () =
   let data =
     if Sihl.Configuration.is_test ()
     then (
-      let password =
-        Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
-        |> CCOption.map (Format.asprintf ":%s")
-        |> CCOption.get_or ~default:""
-      in
-      let database =
-        Sihl.Configuration.read_string "MYSQL_DATABASE"
-        |> CCOption.get_exn_or "MYSQL_DATABASE undefined"
+      let database_url =
+        Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
+        |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
       in
       [ ( "Econ test"
         , "description"
         , "test.pool.econ.uzh.ch"
-        , Format.asprintf
-            "mariadb://root%s@database-tenant:3306/%s"
-            password
-            database
+        , database_url
         , "econ-test"
         , "smtp.uzh.ch"
         , "587"

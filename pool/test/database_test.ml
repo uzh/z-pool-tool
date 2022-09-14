@@ -5,23 +5,12 @@ end
 module Data = struct
   let database_label = "econ-test"
 
-  let databases =
-    let password =
-      Sihl.Configuration.read_string "MYSQL_ROOT_PASSWORD"
-      |> CCOption.map (Format.asprintf ":%s")
-      |> CCOption.get_or ~default:""
-    in
-    let database =
-      Sihl.Configuration.read_string "MYSQL_DATABASE"
-      |> CCOption.get_exn_or "MYSQL_DATABASE undefined"
-    in
+  let database =
     let url =
-      Format.asprintf
-        "mariadb://root%s@database-tenant:3306/%s"
-        password
-        database
+      Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
+      |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
     in
-    [ url, database_label ]
+    url, database_label
   ;;
 end
 
@@ -37,7 +26,7 @@ let check_find_tenant_database _ () =
   let create url label =
     Pool_database.create url label |> Test_utils.get_or_failwith_pool_error
   in
-  let expected = CCList.map (CCFun.uncurry create) Data.databases in
+  let expected = CCList.map (CCFun.uncurry create) [ Data.database ] in
   let%lwt tenants = Pool_tenant.find_databases () in
   Alcotest.(check (list Testable.database) "databases found" expected tenants)
   |> Lwt.return
