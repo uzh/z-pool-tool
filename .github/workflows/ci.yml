@@ -11,8 +11,8 @@ jobs:
       SIHL_ENV: test
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
-      DATABASE_URL: mariadb://root:${{ fromJSON(env.MYSQL_ROOT_PASSWORD) }}@127.0.0.1:${{ job.services.database-root.ports[3306] }}/${{ fromJSON(env.MYSQL_DATABASE) }}
-      DATABASE_URL_TENANT_TEST: mariadb://root:${{ fromJSON(env.MYSQL_ROOT_PASSWORD) }}@127.0.0.1:${{ job.services.database-tenant.ports[3306] }}/${{ fromJSON(env.MYSQL_DATABASE) }}
+      DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-root.ports[3306] }}/${{ env.MYSQL_DATABASE }}
+      DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:${{ job.services.database-tenant.ports[3306] }}/${{ env.MYSQL_DATABASE }}
 
     services:
       database-root:
