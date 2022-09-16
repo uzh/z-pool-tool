@@ -159,7 +159,6 @@ module Operator = struct
     | ContainsNone : [> `Multi ] t
     | ContainsAll : [> `Multi ] t
   [@@deriving eq, enum]
-  (* TODO: Add LIKE operator *)
 
   let of_string = function
     | "less" -> Ok Less
@@ -232,9 +231,6 @@ end
 
 let print_filter m fmt _ = Format.pp_print_string fmt m
 
-(** SELECT id FROM table WHERE // And predicate id = i AND name = 'timo' AND //
-    nested or predicate ( email = '1\@mail.com' OR email = '2\@mail.com' ) *)
-
 (* TODO turn into infix constructors *)
 (* Should AND and OR be lists of filter? I guess UI would be easier to
    understand *)
@@ -247,7 +243,6 @@ type filter =
   | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
 [@@deriving show { with_path = false }, variants]
 
-(* TODO[timhub]: add equality *)
 let[@warning "-4"] rec equal_filter f_one f_two =
   match f_one, f_two with
   | And (f_one_a, f_one_b), And (f_two_a, f_two_b)
