@@ -53,16 +53,16 @@ let create req =
   in
   let open HttpUtils in
   (match result with
-  | Ok () ->
-    { message =
-        Pool_common.(
-          Utils.success_to_string language Message.(Created Field.Filter))
-    ; success = true
-    }
-  | Error err ->
-    { message = Pool_common.(Utils.error_to_string language err)
-    ; success = false
-    })
+   | Ok () ->
+     { message =
+         Pool_common.(
+           Utils.success_to_string language Message.(Created Field.Filter))
+     ; success = true
+     }
+   | Error err ->
+     { message = Pool_common.(Utils.error_to_string language err)
+     ; success = false
+     })
   |> yojson_of_json_response
   |> yojson_to_json_response
   |> Lwt.return
@@ -97,13 +97,13 @@ let toggle_predicate_type req =
     |> Lwt_result.return
   in
   (match result with
-  | Ok html -> html
-  | Error err ->
-    err
-    |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
-    |> Tyxml.Html.txt
-    |> CCList.pure
-    |> Tyxml.Html.div)
+   | Ok html -> html
+   | Error err ->
+     err
+     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
+     |> Tyxml.Html.txt
+     |> CCList.pure
+     |> Tyxml.Html.div)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
@@ -126,13 +126,13 @@ let toggle_key req =
     Component.Filter.predicate_toggled language key () |> Lwt.return_ok
   in
   (match result with
-  | Ok html -> html
-  | Error err ->
-    err
-    |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
-    |> Tyxml.Html.txt
-    |> CCList.pure
-    |> Tyxml.Html.div)
+   | Ok html -> html
+   | Error err ->
+     err
+     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
+     |> Tyxml.Html.txt
+     |> CCList.pure
+     |> Tyxml.Html.div)
   |> CCList.pure
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return

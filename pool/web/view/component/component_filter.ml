@@ -18,9 +18,9 @@ let form_action ?path id =
 let format_identifiers ?prefix identifiers =
   let ids =
     (CCList.fold_left (fun str n ->
-         if CCString.is_empty str
-         then CCInt.to_string n
-         else Format.asprintf "%s-%s" str (CCInt.to_string n)))
+       if CCString.is_empty str
+       then CCInt.to_string n
+       else Format.asprintf "%s-%s" str (CCInt.to_string n)))
       ""
       identifiers
   in
@@ -75,17 +75,17 @@ let value_input language key ?(value : 'a val' option) () =
   | `Str ->
     let value =
       CCOption.bind value (fun value ->
-          match[@warning "-4"] value with
-          | Str s -> Some s
-          | _ -> None)
+        match[@warning "-4"] value with
+        | Str s -> Some s
+        | _ -> None)
     in
     Component_input.input_element language ?value `Text field_name
   | `Nr ->
     let value =
       CCOption.bind value (fun value ->
-          match[@warning "-4"] value with
-          | Nr n -> Some n
-          | _ -> None)
+        match[@warning "-4"] value with
+        | Nr n -> Some n
+        | _ -> None)
       |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
     in
     Component_input.input_element language `Number ?value field_name
@@ -103,9 +103,9 @@ let value_input language key ?(value : 'a val' option) () =
   | `Date ->
     let value =
       CCOption.bind value (fun value ->
-          match[@warning "-4"] value with
-          | Date d -> Some (d |> Ptime.to_rfc3339)
-          | _ -> None)
+        match[@warning "-4"] value with
+        | Date d -> Some (d |> Ptime.to_rfc3339)
+        | _ -> None)
     in
     Component_input.flatpicker_element
       language
@@ -135,15 +135,13 @@ let single_predicate_form language identifier ?key ?operator ?value () =
     in
     Key.all
     |> CCList.map (fun opt ->
-           let selected =
-             CCOption.map_or
-               ~default:[]
-               (fun key -> if Key.equal key opt then [ a_selected () ] else [])
-               key
-           in
-           option
-             ~a:([ a_value (Key.show opt) ] @ selected)
-             (opt |> format |> txt))
+         let selected =
+           CCOption.map_or
+             ~default:[]
+             (fun key -> if Key.equal key opt then [ a_selected () ] else [])
+             key
+         in
+         option ~a:([ a_value (Key.show opt) ] @ selected) (opt |> format |> txt))
   in
   let toggled_content =
     match key with
@@ -223,20 +221,20 @@ type filter_param =
   | New of Filter.Utils.filter_label
 
 let rec predicate_form
-    language
-    (filter_param : filter_param)
-    ?(identifier = [ 0 ])
-    ()
+  language
+  (filter_param : filter_param)
+  ?(identifier = [ 0 ])
+  ()
   =
   let selected =
     match filter_param with
     | Existing f ->
       (match f with
-      | And _ -> Utils.And
-      | Or _ -> Utils.Or
-      | Not _ -> Utils.Not
-      | PredS _ -> Utils.PredS
-      | PredM _ -> Utils.PredM)
+       | And _ -> Utils.And
+       | Or _ -> Utils.Or
+       | Not _ -> Utils.Not
+       | PredS _ -> Utils.PredS
+       | PredM _ -> Utils.PredM)
     | New f -> f
   in
   let predicate_form =
@@ -244,42 +242,48 @@ let rec predicate_form
     | New label ->
       let open Filter.Utils in
       (match label with
-      | And | Or ->
-        CCList.map
-          (fun i ->
-            predicate_form
-              language
-              (New PredS)
-              ~identifier:(identifier @ [ i ])
-              ())
-          [ 0; 1 ]
-      | Not ->
-        predicate_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
-        |> CCList.pure
-      | PredS | PredM ->
-        single_predicate_form language identifier () |> CCList.pure)
+       | And | Or ->
+         CCList.map
+           (fun i ->
+             predicate_form
+               language
+               (New PredS)
+               ~identifier:(identifier @ [ i ])
+               ())
+           [ 0; 1 ]
+       | Not ->
+         predicate_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
+         |> CCList.pure
+       | PredS | PredM ->
+         single_predicate_form language identifier () |> CCList.pure)
     | Existing filter ->
       (match filter with
-      | And (f1, f2) | Or (f1, f2) ->
-        CCList.mapi
-          (fun i filter ->
-            predicate_form
-              language
-              (Existing filter)
-              ~identifier:(identifier @ [ i ])
-              ())
-          [ f1; f2 ]
-      | Not filter ->
-        predicate_form
-          language
-          (Existing filter)
-          ~identifier:(identifier @ [ 0 ])
-          ()
-        |> CCList.pure
-      | PredS predicate | PredM predicate ->
-        let k, o, v = predicate in
-        single_predicate_form language identifier ~key:k ~operator:o ~value:v ()
-        |> CCList.pure)
+       | And (f1, f2) | Or (f1, f2) ->
+         CCList.mapi
+           (fun i filter ->
+             predicate_form
+               language
+               (Existing filter)
+               ~identifier:(identifier @ [ i ])
+               ())
+           [ f1; f2 ]
+       | Not filter ->
+         predicate_form
+           language
+           (Existing filter)
+           ~identifier:(identifier @ [ 0 ])
+           ()
+         |> CCList.pure
+       | PredS predicate | PredM predicate ->
+         let k, o, v = predicate in
+         single_predicate_form
+           language
+           identifier
+           ~key:k
+           ~operator:o
+           ~value:v
+           ()
+         |> CCList.pure)
   in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   div

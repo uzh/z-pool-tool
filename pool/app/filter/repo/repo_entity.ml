@@ -15,7 +15,7 @@ module Filter = struct
           |> Yojson.Safe.from_string
           |> filter_of_yojson
           |> map_err (fun err ->
-                 Pool_common.Utils.error_to_string Pool_common.Language.En err))
+               Pool_common.Utils.error_to_string Pool_common.Language.En err))
         string)
   ;;
 end
