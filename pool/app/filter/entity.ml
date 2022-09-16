@@ -29,6 +29,7 @@ type _ val' =
   | Bool : bool -> [> `Single ] val' [@printer print "bool"]
   | Date : Ptime.t -> [> `Single ] val' [@printer print "date"]
   | Lst : [ `Single ] val' list -> [> `Multi ] val' [@printer print "list"]
+    (* TODO: Remove this type, and just use list of vals? *)
 [@@deriving show { with_path = false }]
 
 let[@warning "-4"] equal_val' val_one val_two =
@@ -185,6 +186,19 @@ module Operator = struct
     | ContainsSome -> "contains_some"
     | ContainsNone -> "contains_none"
     | ContainsAll -> "contains_all"
+  ;;
+
+  let to_sql = function
+    | Less -> "<"
+    | LessEqual -> "<="
+    | Greater -> ">"
+    | GreaterEqual -> ">="
+    | Equal -> "="
+    | NotEqual -> "<>"
+    | Like -> "LIKE"
+    | ContainsSome -> "CONTAINS" (* TODO *)
+    | ContainsNone -> "CONTAINS" (* TODO *)
+    | ContainsAll -> "CONTAINS" (* TODO *)
   ;;
 
   let yojson_of_t t = t |> to_string |> wrap_string |> Yojson.Safe.from_string

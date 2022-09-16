@@ -106,9 +106,76 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let find_filtered_request _ =
-  let open Caqti_request.Infix in
-  {sql|
+let filter_to_sql dyn (filter : Filter.filter) =
+  let open Filter in
+  (* let add_dyn_param dyn (value : [ `Single ] val') *)
+  let add_dyn_param dyn (value : [> `Multi | `Single ] val') =
+    let add_single_value dyn (value : [ `Single ] val') =
+      let add c v = Dynparam.add c v dyn in
+      match value with
+      | Str s -> add Caqti_type.string s
+      | Nr n -> add Caqti_type.float n
+      | Bool b -> add Caqti_type.bool b
+      | Date d -> add Caqti_type.ptime d
+    in
+    match value with
+    | Str s -> add_single_value dyn (Str s), "?"
+    | Nr n -> add_single_value dyn (Nr n), "?"
+    | Bool b -> add_single_value dyn (Bool b), "?"
+    | Date d -> add_single_value dyn (Date d), "?"
+    | Lst lst ->
+      let dyn, params =
+        CCList.fold_left
+          (fun (dyn, params) value ->
+            add_single_value dyn value, CCList.cons "?" params)
+          (dyn, [])
+          lst
+      in
+      dyn, CCString.concat "," params
+  in
+  let rec filter_sql (dyn, sql) filter =
+    match filter with
+    | And (f1, f2) ->
+      let dyn, sql1 = filter_sql (dyn, sql) f1 in
+      let dyn, sql2 = filter_sql (dyn, sql) f2 in
+      dyn, Format.asprintf "%s AND %s" sql1 sql2
+    | Or (f1, f2) ->
+      let dyn, sql1 = filter_sql (dyn, sql) f1 in
+      let dyn, sql2 = filter_sql (dyn, sql) f2 in
+      dyn, Format.asprintf "%s OR %s" sql1 sql2
+    | Not f ->
+      let dyn, sql = filter_sql (dyn, sql) f in
+      dyn, Format.asprintf "NOT %s" sql
+    | PredS (key, operator, value) ->
+      (* TODO: add table name *)
+      let dyn, param = add_dyn_param dyn value in
+      let sql =
+        Format.asprintf
+          "%s %s %s"
+          (Key.show key)
+          (Operator.to_sql operator)
+          param
+      in
+      dyn, sql
+    | PredM (key, operator, value) ->
+      let dyn, params = add_dyn_param dyn value in
+      (* TODO: add table name *)
+      let sql =
+        Format.asprintf
+          "%s %s (%s)"
+          (Key.show key)
+          (Operator.to_sql operator)
+          params
+      in
+      dyn, sql
+  in
+  let dyn, sql = filter_sql (dyn, "") filter in
+  dyn, sql
+;;
+
+let find_filtered pool experiment_id filter =
+  let base_condition =
+    {sql|
     WHERE
       user_users.admin = 0
       AND user_users.confirmed = 1
@@ -119,7 +186,7 @@ let find_filtered_request _ =
             pool_invitations.contact_id = pool_contacts.id
           AND
             pool_invitations.experiment_id IN (
-              SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE($1, '-', '')))
+              SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', '')))
             )
         AND NOT EXISTS
         (SELECT 1
@@ -128,18 +195,30 @@ let find_filtered_request _ =
             pool_assignments.contact_id = pool_contacts.id
           AND
             pool_assignments.session_id IN (
-              SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', '')))
+              SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')))
             )
     |sql}
-  |> find_request_sql
-  |> Caqti_type.string ->* Repo_model.t
-;;
-
-let find_filtered pool experiment_id filter =
-  Utils.Database.collect
-    (Pool_database.Label.value pool)
-    (find_filtered_request filter)
-    (experiment_id |> Pool_common.Id.value)
+  in
+  let dyn, sql =
+    let id_param =
+      Dynparam.(
+        (* TODO: Can i reuse same argument? *)
+        empty
+        |> add Caqti_type.string (experiment_id |> Pool_common.Id.value)
+        |> add Caqti_type.string (experiment_id |> Pool_common.Id.value))
+    in
+    match filter with
+    | None -> id_param, base_condition
+    | Some filter ->
+      let dyn, sql = filter_to_sql id_param filter.Filter.filter in
+      dyn, Format.asprintf "%s\n AND (%s)" base_condition sql
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let open Caqti_request.Infix in
+  let request = sql |> find_request_sql |> pt ->* Repo_model.t in
+  let () = Caqti_request.pp Format.std_formatter request in
+  print_endline "XXXXXXXXXXX";
+  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
 let find_multiple_request ids =

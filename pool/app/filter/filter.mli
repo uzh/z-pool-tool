@@ -39,6 +39,7 @@ module Operator : sig
     | ContainsAll : [> `Multi ] t
 
   val to_string : [> `Multi | `Single ] t -> string
+  val to_sql : [> `Multi | `Single ] t -> string
   val equal : [> `Multi | `Single ] t -> [> `Multi | `Single ] t -> bool
 end
 
