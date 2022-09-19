@@ -117,55 +117,27 @@ module EmailAddress = struct
 end
 
 module Firstname = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let create m =
-    if CCString.is_empty m
-    then Error PoolError.(Invalid Field.Firstname)
-    else Ok m
-  ;;
-
+  let field = PoolError.Field.Firstname
+  let create = create field
+  let schema = schema ?validation:None field
   let of_string m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.Firstname
-  ;;
 end
 
 module Lastname = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let create m =
-    if CCString.is_empty m
-    then Error PoolError.(Invalid Field.Lastname)
-    else Ok m
-  ;;
-
+  let field = PoolError.Field.Lastname
+  let create = create field
+  let schema = schema ?validation:None field
   let of_string m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.Lastname
-  ;;
 end
 
 module Paused = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      PoolError.Field.Paused
-  ;;
+  let schema = schema PoolError.Field.Paused
 end
 
 module Disabled = struct

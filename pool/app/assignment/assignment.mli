@@ -1,23 +1,13 @@
 module ShowUp : sig
-  type t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 
   val init : t
-  val create : bool -> t
 end
 
 module Participated : sig
-  type t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 
   val init : t
-  val create : bool -> t
 end
 
 module MatchesFilter : sig

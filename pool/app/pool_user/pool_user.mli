@@ -45,47 +45,19 @@ module Password : sig
 end
 
 module Firstname : sig
-  type t
+  include Pool_common.Model.StringSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Lastname : sig
-  type t
+  include Pool_common.Model.StringSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Paused : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> bool
-  val create : bool -> t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 end
 
 module Disabled : sig

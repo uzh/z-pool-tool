@@ -5,42 +5,32 @@ module Message = Pool_common.Message
 module Field = Message.Field
 module Address = Entity_address
 
-let create_if_not_empty_string field m =
-  if CCString.is_empty m then Error Message.(Invalid field) else Ok m
-;;
-
 module Id = struct
   include Pool_common.Id
 end
 
 module Name = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
   let field = Field.Name
-  let create = create_if_not_empty_string field
-  let value m = m
-  let of_string m = m
-  let schema () = Utils.schema_decoder create value field
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Description = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
   let field = Field.Description
-  let create = create_if_not_empty_string field
-  let value m = m
-  let of_string m = m
-  let schema () = Utils.schema_decoder create value field
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Link = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
   let field = Field.Link
-  let create = create_if_not_empty_string field
-  let value m = m
-  let of_string m = m
-  let schema () = Utils.schema_decoder create value field
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Status = struct

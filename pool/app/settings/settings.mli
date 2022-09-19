@@ -1,29 +1,9 @@
 module ContactEmail : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module EmailSuffix : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> t
-  val value : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module InactiveUser : sig
@@ -75,9 +55,7 @@ end
 
 module TermsAndConditions : sig
   module Terms : sig
-    type t
-
-    val value : t -> string
+    include Pool_common.Model.StringSig
   end
 
   type t

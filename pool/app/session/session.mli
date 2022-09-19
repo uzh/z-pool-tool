@@ -1,25 +1,9 @@
-(* TODO [aerben] maybe can extract even more? *)
-module type Base = sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
 module Description : sig
-  include Base
-
-  val value : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
+  include Pool_common.Model.StringSig
 end
 
 module ParticipantAmount : sig
-  include Base
+  include Pool_common.Model.BaseSig
 
   val value : t -> int
   val create : int -> (t, Pool_common.Message.error) result
@@ -30,14 +14,14 @@ module ParticipantAmount : sig
 end
 
 module Start : sig
-  include Base
+  include Pool_common.Model.BaseSig
 
   val value : t -> Ptime.t
   val create : Ptime.t -> t
 end
 
 module Duration : sig
-  include Base
+  include Pool_common.Model.BaseSig
 
   val value : t -> Ptime.Span.t
   val create : Ptime.Span.t -> (t, Pool_common.Message.error) result

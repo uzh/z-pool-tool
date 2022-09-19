@@ -1,5 +1,5 @@
 module Id : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : unit -> t
   val of_string : string -> t
@@ -11,7 +11,7 @@ module Id : sig
 end
 
 module StartAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
@@ -24,7 +24,7 @@ module StartAt : sig
 end
 
 module EndAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
@@ -36,7 +36,7 @@ module EndAt : sig
 end
 
 module Rate : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : int -> (t, Pool_common.Message.error) result
   val value : t -> int

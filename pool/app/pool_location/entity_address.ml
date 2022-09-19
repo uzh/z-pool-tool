@@ -3,53 +3,45 @@ module Utils = Pool_common.Utils
 module Message = Pool_common.Message
 module Field = Message.Field
 
-let create_if_not_empty_string field m =
-  if CCString.is_empty m then Error Message.(Invalid field) else Ok m
-;;
-
 module Mail = struct
   module Room = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.Room
-    let create = create_if_not_empty_string field
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   module Institution = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.Institution
-    let create = create_if_not_empty_string field
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   module Building = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.Building
-    let create = create_if_not_empty_string field
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   module Street = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.Street
-    let create = create_if_not_empty_string field
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   module Zip = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.Zip
 
@@ -63,19 +55,17 @@ module Mail = struct
       if Re.execp regex zip then Ok zip else Error Message.(Invalid field)
     ;;
 
-    let value m = m
+    let schema = schema ~validation:create field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   module City = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
     let field = Field.City
-    let create = create_if_not_empty_string field
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let schema () = Utils.schema_decoder create value field
   end
 
   type t =

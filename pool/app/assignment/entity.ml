@@ -1,39 +1,15 @@
 module ShowUp = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
   let init = false
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Pool_common.Message.Field.ShowUp
-  ;;
+  let schema = schema Pool_common.Message.Field.ShowUp
 end
 
 module Participated = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
   let init = false
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Pool_common.Message.Field.Participated
-  ;;
+  let schema = schema Pool_common.Message.Field.Participated
 end
 
 module MatchesFilter = struct

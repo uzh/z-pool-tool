@@ -64,13 +64,3 @@ let schema_list_decoder create_fcn encode_fnc field =
     (fun l -> l |> encode_fnc)
     Entity_message.Field.(field |> show)
 ;;
-
-module type BaseSig = sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Entity_message.error) result
-  val schema : unit -> (Entity_message.error, t) PoolConformist.Field.t
-end
