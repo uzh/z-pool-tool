@@ -216,8 +216,6 @@ let find_filtered pool experiment_id filter =
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request = sql |> find_request_sql |> pt ->* Repo_model.t in
-  let () = Caqti_request.pp Format.std_formatter request in
-  print_endline "XXXXXXXXXXX";
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
