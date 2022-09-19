@@ -27,26 +27,16 @@ module EndAt = struct
 end
 
 module Rate = struct
-  type t = int [@@deriving eq, show]
+  include Pool_common.Model.Integer
 
   let field = Pool_common.Message.Field.Rate
 
   let create m =
-    if m > 0 then Ok m else Error Pool_common.Message.(Invalid Field.Rate)
+    if m > 0 then Ok m else Error Pool_common.Message.(Invalid field)
   ;;
 
-  let value m = m
   let default = 1
-
-  let schema () =
-    let decode str =
-      let open CCResult in
-      CCInt.of_string str
-      |> CCOption.to_result Pool_common.Message.(NotANumber str)
-      >>= create
-    in
-    Pool_common.Utils.schema_decoder decode CCInt.to_string field
-  ;;
+  let schema = schema field create
 end
 
 module Distribution = struct

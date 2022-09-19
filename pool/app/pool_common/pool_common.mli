@@ -82,6 +82,41 @@ module Model : sig
       -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
+  module Integer : sig
+    type t = int
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> int
+
+    val schema
+      :  Entity_message.Field.t
+      -> (int -> (t, Entity_message.error) result)
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type IntegerSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val create : int -> (t, Entity_message.error) result
+    val value : t -> int
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
   module type BaseSig = sig
     type t
 

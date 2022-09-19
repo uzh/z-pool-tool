@@ -83,6 +83,41 @@ module type StringSig = sig
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
+module Integer = struct
+  open Sexplib.Conv
+
+  type t = int [@@deriving eq, show, sexp_of, yojson]
+
+  let value m = m
+
+  let schema field create () =
+    let decode str =
+      let open CCResult in
+      CCInt.of_string str
+      |> CCOption.to_result Entity_message.(NotANumber str)
+      >>= create
+    in
+    Pool_common_utils.schema_decoder decode CCInt.to_string field
+  ;;
+end
+
+module type IntegerSig = sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
+  val create : int -> (t, Entity_message.error) result
+  val value : t -> int
+
+  val schema
+    :  unit
+    -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+end
+
 module type BaseSig = sig
   type t
 

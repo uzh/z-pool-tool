@@ -36,15 +36,9 @@ module EndAt : sig
 end
 
 module Rate : sig
-  include Pool_common.Model.BaseSig
+  include Pool_common.Model.IntegerSig
 
-  val create : int -> (t, Pool_common.Message.error) result
-  val value : t -> int
   val default : t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Distribution : sig
