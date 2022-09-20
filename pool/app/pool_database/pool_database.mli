@@ -1,27 +1,11 @@
 module Url : sig
-  type t
-
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module Label : sig
-  type t
+  include Pool_common.Model.StringSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val value : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 type t =

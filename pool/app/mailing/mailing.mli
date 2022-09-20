@@ -1,5 +1,5 @@
 module Id : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : unit -> t
   val of_string : string -> t
@@ -11,20 +11,19 @@ module Id : sig
 end
 
 module StartAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
   val to_human : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.Field.t
-    -> unit
+    :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module EndAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
@@ -36,15 +35,9 @@ module EndAt : sig
 end
 
 module Rate : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.IntegerSig
 
-  val create : int -> (t, Pool_common.Message.error) result
-  val value : t -> int
   val default : t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Distribution : sig

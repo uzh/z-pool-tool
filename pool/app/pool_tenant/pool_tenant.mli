@@ -2,74 +2,27 @@ module Database = Pool_database
 
 module SmtpAuth : sig
   module Server : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Port : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Username : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Password : sig
-    type t
-
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module AuthenticationMethod : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Protocol : sig
-    type t
-
-    val value : t -> string
-    val equal : t -> t -> bool
-    val create : string -> (t, Pool_common.Message.error) result
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   type t =

@@ -19,7 +19,7 @@ end
 module CanceledAt = struct
   include Entity.CanceledAt
 
-  let t = Caqti_type.(option ptime)
+  let t = Caqti_type.ptime
 end
 
 type t =
@@ -29,7 +29,7 @@ type t =
   ; show_up : ShowUp.t
   ; participated : Participated.t
   ; matches_filter : MatchesFilter.t
-  ; canceled_at : CanceledAt.t
+  ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -88,7 +88,7 @@ let t =
       ; show_up = ShowUp.create show_up
       ; participated = Participated.create participated
       ; matches_filter = MatchesFilter.create matches_filter
-      ; canceled_at = CanceledAt.value canceled_at
+      ; canceled_at = CCOption.map CanceledAt.value canceled_at
       ; created_at
       ; updated_at
       }
@@ -110,7 +110,7 @@ let t =
                      (tup2
                         MatchesFilter.t
                         (tup2
-                           CanceledAt.t
+                           (option CanceledAt.t)
                            (tup2
                               Pool_common.Repo.CreatedAt.t
                               Pool_common.Repo.UpdatedAt.t)))))))))
@@ -126,6 +126,6 @@ module Public = struct
       Ok { id; canceled_at }
     in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t CanceledAt.t))
+      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (option CanceledAt.t)))
   ;;
 end

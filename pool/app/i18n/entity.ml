@@ -136,19 +136,11 @@ module Key = struct
 end
 
 module Content = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create content =
-    if CCString.is_empty content
-    then Error PoolError.(Invalid Field.Translation)
-    else Ok content
-  ;;
-
-  let schema () =
-    Common.Utils.schema_decoder create value PoolError.Field.Translation
-  ;;
+  let field = Common.Message.Field.Translation
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 type t =

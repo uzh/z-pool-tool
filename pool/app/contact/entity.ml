@@ -60,13 +60,13 @@ end
 type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : User.TermsAccepted.t
+  ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : User.Paused.t
   ; disabled : User.Disabled.t
-  ; verified : User.Verified.t
-  ; email_verified : User.EmailVerified.t
+  ; verified : User.Verified.t option
+  ; email_verified : User.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
@@ -83,13 +83,13 @@ module Write = struct
   type t =
     { user_id : Pool_common.Id.t
     ; recruitment_channel : RecruitmentChannel.t
-    ; terms_accepted_at : User.TermsAccepted.t
+    ; terms_accepted_at : User.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
     ; paused : User.Paused.t
     ; disabled : User.Disabled.t
-    ; verified : User.Verified.t
-    ; email_verified : User.EmailVerified.t
+    ; verified : User.Verified.t option
+    ; email_verified : User.EmailVerified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     ; firstname_version : Pool_common.Version.t
@@ -140,7 +140,7 @@ module Preview = struct
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
     ; paused : User.Paused.t
-    ; verified : User.Verified.t
+    ; verified : User.Verified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     }

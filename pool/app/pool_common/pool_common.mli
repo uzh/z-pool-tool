@@ -1,6 +1,174 @@
 module Message = Entity_message
 module I18n = Entity_i18n
 
+module Model : sig
+  module Boolean : sig
+    type t = bool
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val create : bool -> t
+    val value : t -> bool
+    val stringify : t -> string
+    val of_string : string -> t
+
+    val schema
+      :  Entity_message.Field.t
+      -> unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type BooleanSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val create : bool -> t
+    val value : t -> bool
+    val stringify : t -> string
+    val of_string : string -> t
+
+    val schema
+      :  unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module String : sig
+    type t = string
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+
+    val create
+      :  Entity_message.Field.t
+      -> string
+      -> (t, Entity_message.error) result
+
+    val value : t -> string
+
+    val schema
+      :  Entity_message.Field.t
+      -> ?validation:(t -> (t, Entity_message.error) result)
+      -> unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type StringSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val create : string -> (t, Entity_message.error) result
+    val value : t -> string
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module Integer : sig
+    type t = int
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> int
+
+    val schema
+      :  Entity_message.Field.t
+      -> (int -> (t, Entity_message.error) result)
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type IntegerSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val create : int -> (t, Entity_message.error) result
+    val value : t -> int
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module Ptime : sig
+    type t = Ptime.t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> Ptime.t
+    val create_now : unit -> t
+    val to_human : t -> string
+
+    val schema
+      :  Entity_message.Field.t
+      -> (Ptime.t -> (t, Entity_message.error) result)
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type PtimeSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+    val value : t -> Ptime.t
+    val create_now : unit -> t
+    val to_human : t -> string
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type BaseSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : string -> (t, Entity_message.error) result
+
+    val schema
+      :  unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+end
+
 module Id : sig
   type t
 
@@ -330,14 +498,4 @@ module Utils : sig
     -> ('b, 'a) result
 
   val get_or_failwith : ('a, Message.error) result -> 'a
-
-  module type BaseSig = sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : string -> (t, Entity_message.error) result
-    val schema : unit -> (Message.error, t) PoolConformist.Field.t
-  end
 end

@@ -1,29 +1,9 @@
-module type Base = sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
 module Description = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create description =
-    if CCString.is_empty description
-    then Error Pool_common.Message.NoValue
-    else Ok description
-  ;;
-
-  let schema () =
-    Pool_common.(Utils.schema_decoder create value Message.Field.Description)
-  ;;
+  let field = Pool_common.Message.Field.Description
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 (* TODO [aerben] rename to contact *)

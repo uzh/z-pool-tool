@@ -60,15 +60,16 @@ let create_contact verified contact_info =
         ; updated_at = Pool_common.UpdatedAt.create ()
         }
   ; recruitment_channel = Contact.RecruitmentChannel.read recruitment_channel
-  ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
+  ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
   ; paused = Pool_user.Paused.create false
   ; disabled = Pool_user.Disabled.create false
-  ; verified = Pool_user.Verified.create None
+  ; verified = None
   ; email_verified =
-      (if verified then Some (Ptime_clock.now ()) else None)
-      |> Pool_user.EmailVerified.create
+      (if verified
+      then Some (Ptime_clock.now () |> Pool_user.EmailVerified.create)
+      else None)
   ; num_invitations = Contact.NumberOfInvitations.init
   ; num_assignments = Contact.NumberOfAssignments.init
   ; firstname_version = Pool_common.Version.create ()
@@ -103,7 +104,9 @@ let sign_up_not_allowed_suffix () =
 
 let sign_up () =
   let user_id = Pool_common.Id.create () in
-  let terms_accepted_at = Pool_user.TermsAccepted.create_now () in
+  let terms_accepted_at =
+    Pool_user.TermsAccepted.create_now () |> CCOption.pure
+  in
   let (( email_address
        , password
        , firstname

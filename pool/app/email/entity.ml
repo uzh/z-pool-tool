@@ -81,11 +81,9 @@ module Token = struct
 end
 
 module VerifiedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
-  let value m = m
   let create m = m
-  let create_now = Ptime_clock.now
 end
 
 type email_unverified =

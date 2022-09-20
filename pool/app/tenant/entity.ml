@@ -6,7 +6,7 @@ module PoolError = Common.Message
 
 module StatusReport = struct
   module CreatedAt = struct
-    type t = Ptime.t [@@deriving eq, show]
+    include Pool_common.Model.Ptime
   end
 
   type t = { created_at : CreatedAt.t } [@@deriving eq, show]
