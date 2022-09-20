@@ -196,7 +196,7 @@ module Sql = struct
       , ( m.show_up |> ShowUp.value
         , ( m.participated |> Participated.value
           , ( m.matches_filter |> MatchesFilter.value
-            , m.canceled_at |> CanceledAt.value ) ) ) ))
+            , CCOption.map CanceledAt.value m.canceled_at ) ) ) ))
   ;;
 
   let update pool m =

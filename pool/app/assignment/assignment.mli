@@ -17,10 +17,7 @@ module MatchesFilter : sig
 end
 
 module CanceledAt : sig
-  type t
-
-  val create_now : unit -> t
-  val value : t -> Ptime.t
+  include Pool_common.Model.PtimeSig
 end
 
 type t =

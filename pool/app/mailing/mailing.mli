@@ -18,8 +18,7 @@ module StartAt : sig
   val to_human : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.Field.t
-    -> unit
+    :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 

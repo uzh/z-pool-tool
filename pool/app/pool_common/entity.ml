@@ -70,19 +70,15 @@ module Version = struct
 end
 
 module CreatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Model.Ptime
 
   let create = Ptime_clock.now
-  let value m = m
-  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module UpdatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Model.Ptime
 
   let create = Ptime_clock.now
-  let value m = m
-  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module File = struct

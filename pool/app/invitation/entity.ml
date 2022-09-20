@@ -1,9 +1,7 @@
 module ResentAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create = Ptime_clock.now
-  let value m = m
-  let sexp_of_t = Pool_common.Utils.Time.ptime_to_sexp
 end
 
 type t =

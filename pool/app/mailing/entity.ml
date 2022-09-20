@@ -3,27 +3,19 @@ module Id = struct
 end
 
 module StartAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let field = Pool_common.Message.Field.Start
   let create m = Ok m
-  let value m = m
-  let to_human = Pool_common.Utils.Time.formatted_date_time
-
-  let schema ?(field = field) () =
-    let decode str =
-      let open CCResult in
-      Pool_common.(Utils.Time.parse_time str >>= create)
-    in
-    Pool_common.Utils.schema_decoder decode Ptime.to_rfc3339 field
-  ;;
+  let schema = schema field create
 end
 
 module EndAt = struct
-  include StartAt
+  include Pool_common.Model.Ptime
 
   let field = Pool_common.Message.Field.End
-  let schema = schema ~field
+  let create m = Ok m
+  let schema = schema field create
 end
 
 module Rate = struct

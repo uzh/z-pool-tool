@@ -148,27 +148,21 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create m = m
-  let create_now () = Ptime_clock.now ()
-  let value m = m
 end
 
 module Verified = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create m = m
-  let create_now () = Ptime_clock.now ()
-  let value m = m
 end
 
 module EmailVerified = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let create m = m
-  let create_now () = Ptime_clock.now ()
-  let value m = m
 end
 
 let user_firstname { Sihl_user.id; given_name; _ } =

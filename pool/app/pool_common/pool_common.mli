@@ -117,6 +117,44 @@ module Model : sig
       -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
+  module Ptime : sig
+    type t = Ptime.t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Basic.t -> t
+    val yojson_of_t : t -> Yojson.Basic.t
+    val value : t -> Ptime.t
+    val create_now : unit -> t
+    val to_human : t -> string
+
+    val schema
+      :  Entity_message.Field.t
+      -> (Ptime.t -> (t, Entity_message.error) result)
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
+  module type PtimeSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_yojson : Yojson.Basic.t -> t
+    val yojson_of_t : t -> Yojson.Basic.t
+    val value : t -> Ptime.t
+    val create_now : unit -> t
+    val to_human : t -> string
+
+    val schema
+      :  unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
   module type BaseSig = sig
     type t
 

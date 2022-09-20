@@ -88,7 +88,7 @@ let t =
       ; show_up = ShowUp.create show_up
       ; participated = Participated.create participated
       ; matches_filter = MatchesFilter.create matches_filter
-      ; canceled_at = CanceledAt.value canceled_at
+      ; canceled_at = CCOption.map CanceledAt.value canceled_at
       ; created_at
       ; updated_at
       }
