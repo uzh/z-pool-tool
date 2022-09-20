@@ -19,9 +19,8 @@ end
 module CanceledAt : sig
   type t
 
-  val init : t
   val create_now : unit -> t
-  val value : t -> Ptime.t option
+  val value : t -> Ptime.t
 end
 
 type t =
@@ -30,7 +29,7 @@ type t =
   ; show_up : ShowUp.t
   ; participated : Participated.t
   ; matches_filter : MatchesFilter.t
-  ; canceled_at : CanceledAt.t
+  ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -41,7 +40,7 @@ val equal : t -> t -> bool
 module Public : sig
   type t =
     { id : Pool_common.Id.t
-    ; canceled_at : CanceledAt.t
+    ; canceled_at : CanceledAt.t option
     }
 end
 

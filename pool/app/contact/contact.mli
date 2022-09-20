@@ -30,13 +30,13 @@ end
 type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Pool_user.TermsAccepted.t
+  ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
-  ; verified : Pool_user.Verified.t
-  ; email_verified : Pool_user.EmailVerified.t
+  ; verified : Pool_user.Verified.t option
+  ; email_verified : Pool_user.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
@@ -97,7 +97,7 @@ type create =
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Pool_user.TermsAccepted.t
+  ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }
 
@@ -145,7 +145,7 @@ module Preview : sig
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
     ; paused : Pool_user.Paused.t
-    ; verified : Pool_user.Verified.t
+    ; verified : Pool_user.Verified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     }

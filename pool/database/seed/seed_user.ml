@@ -147,7 +147,8 @@ let contacts db_pool =
               ; firstname = firstname |> User.Firstname.of_string
               ; lastname = lastname |> User.Lastname.of_string
               ; recruitment_channel
-              ; terms_accepted_at = User.TermsAccepted.create terms_accepted_at
+              ; terms_accepted_at =
+                  CCOption.map User.TermsAccepted.create terms_accepted_at
               ; language
               }
           ]

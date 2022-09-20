@@ -32,13 +32,13 @@ let t =
     Ok
       ( m.user
       , ( m.recruitment_channel
-        , ( TermsAccepted.value m.terms_accepted_at
+        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
-                  , ( Verified.value m.verified
-                    , ( EmailVerified.value m.email_verified
+                  , ( CCOption.map Verified.value m.verified
+                    , ( CCOption.map EmailVerified.value m.email_verified
                       , ( NumberOfInvitations.value m.num_invitations
                         , ( NumberOfAssignments.value m.num_assignments
                           , ( Version.value m.firstname_version
@@ -76,13 +76,14 @@ let t =
       Ok
         { user
         ; recruitment_channel
-        ; terms_accepted_at = TermsAccepted.create terms_accepted_at
+        ; terms_accepted_at =
+            CCOption.map TermsAccepted.create terms_accepted_at
         ; language
         ; experiment_type_preference
         ; paused = Paused.create paused
         ; disabled = Disabled.create disabled
-        ; verified = Verified.create verified
-        ; email_verified = EmailVerified.create email_verified
+        ; verified = CCOption.map Verified.create verified
+        ; email_verified = CCOption.map EmailVerified.create email_verified
         ; num_invitations = NumberOfInvitations.of_int num_invitations
         ; num_assignments = NumberOfAssignments.of_int num_assignments
         ; firstname_version = of_int firstname_version
@@ -106,7 +107,7 @@ let t =
          (tup2
             RecruitmentChannel.t
             (tup2
-               TermsAccepted.t
+               (option TermsAccepted.t)
                (tup2
                   (option Language.t)
                   (tup2
@@ -116,9 +117,9 @@ let t =
                         (tup2
                            Disabled.t
                            (tup2
-                              Verified.t
+                              (option Verified.t)
                               (tup2
-                                 EmailVerified.t
+                                 (option EmailVerified.t)
                                  (tup2
                                     NumberOfInvitations.t
                                     (tup2
@@ -145,13 +146,13 @@ let contact =
     Ok
       ( m.user.Sihl_user.id
       , ( m.recruitment_channel
-        , ( TermsAccepted.value m.terms_accepted_at
+        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
-                  , ( Verified.value m.verified
-                    , ( EmailVerified.value m.email_verified
+                  , ( CCOption.map Verified.value m.verified
+                    , ( CCOption.map EmailVerified.value m.email_verified
                       , ( NumberOfInvitations.value m.num_invitations
                         , ( NumberOfAssignments.value m.num_assignments
                           , ( Version.value m.firstname_version
@@ -178,7 +179,7 @@ let contact =
          (tup2
             RecruitmentChannel.t
             (tup2
-               TermsAccepted.t
+               (option TermsAccepted.t)
                (tup2
                   (option Language.t)
                   (tup2
@@ -188,9 +189,9 @@ let contact =
                         (tup2
                            Disabled.t
                            (tup2
-                              Verified.t
+                              (option Verified.t)
                               (tup2
-                                 EmailVerified.t
+                                 (option EmailVerified.t)
                                  (tup2
                                     NumberOfInvitations.t
                                     (tup2
@@ -220,13 +221,13 @@ module Write = struct
       Ok
         ( m.user_id
         , ( m.recruitment_channel
-          , ( TermsAccepted.value m.terms_accepted_at
+          , ( CCOption.map TermsAccepted.value m.terms_accepted_at
             , ( m.language
               , ( m.experiment_type_preference
                 , ( Paused.value m.paused
                   , ( Disabled.value m.disabled
-                    , ( Verified.value m.verified
-                      , ( EmailVerified.value m.email_verified
+                    , ( CCOption.map Verified.value m.verified
+                      , ( CCOption.map EmailVerified.value m.email_verified
                         , ( NumberOfInvitations.value m.num_invitations
                           , ( NumberOfAssignments.value m.num_assignments
                             , ( Version.value m.firstname_version
@@ -253,7 +254,7 @@ module Write = struct
            (tup2
               RecruitmentChannel.t
               (tup2
-                 TermsAccepted.t
+                 (option TermsAccepted.t)
                  (tup2
                     (option Language.t)
                     (tup2
@@ -263,9 +264,9 @@ module Write = struct
                           (tup2
                              Disabled.t
                              (tup2
-                                Verified.t
+                                (option Verified.t)
                                 (tup2
-                                   EmailVerified.t
+                                   (option EmailVerified.t)
                                    (tup2
                                       NumberOfInvitations.t
                                       (tup2
@@ -292,7 +293,7 @@ module Preview = struct
         ( m.user
         , ( m.language
           , ( Paused.value m.paused
-            , ( Verified.value m.verified
+            , ( CCOption.map Verified.value m.verified
               , ( NumberOfInvitations.value m.num_invitations
                 , NumberOfAssignments.value m.num_assignments ) ) ) ) )
     in
@@ -307,7 +308,7 @@ module Preview = struct
           { user
           ; language
           ; paused = Paused.create paused
-          ; verified = Verified.create verified
+          ; verified = CCOption.map Verified.create verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
           ; num_assignments = NumberOfAssignments.of_int num_assignments
           }
@@ -324,7 +325,7 @@ module Preview = struct
               (tup2
                  Paused.t
                  (tup2
-                    Verified.t
+                    (option Verified.t)
                     (tup2 NumberOfInvitations.t NumberOfAssignments.t))))))
   ;;
 end

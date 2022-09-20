@@ -10,7 +10,7 @@ type create =
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : User.TermsAccepted.t
+  ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }
 [@@deriving eq, show]
@@ -39,7 +39,7 @@ let set_password
 let has_terms_accepted pool (contact : t) =
   let%lwt last_updated = Settings.terms_and_conditions_last_updated pool in
   let terms_accepted_at =
-    contact.terms_accepted_at |> User.TermsAccepted.value
+    contact.terms_accepted_at |> CCOption.map User.TermsAccepted.value
   in
   CCOption.map (Ptime.is_later ~than:last_updated) terms_accepted_at
   |> CCOption.get_or ~default:false
@@ -85,8 +85,8 @@ let handle_event pool : event -> unit Lwt.t =
     ; experiment_type_preference = None
     ; paused = User.Paused.create false
     ; disabled = User.Disabled.create false
-    ; verified = User.Verified.create None
-    ; email_verified = User.EmailVerified.create None
+    ; verified = None
+    ; email_verified = None
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; firstname_version = Pool_common.Version.create ()
@@ -169,18 +169,22 @@ let handle_event pool : event -> unit Lwt.t =
   | Verified contact ->
     Repo.update
       pool
-      { contact with verified = Pool_user.Verified.create_now () }
+      { contact with verified = Some (Pool_user.Verified.create_now ()) }
   | EmailVerified contact ->
     let%lwt _ =
       Service.User.update ~ctx Sihl_user.{ contact.user with confirmed = true }
     in
     Repo.update
       pool
-      { contact with email_verified = Pool_user.EmailVerified.create_now () }
+      { contact with
+        email_verified = Some (Pool_user.EmailVerified.create_now ())
+      }
   | TermsAccepted contact ->
     Repo.update
       pool
-      { contact with terms_accepted_at = User.TermsAccepted.create_now () }
+      { contact with
+        terms_accepted_at = Some (User.TermsAccepted.create_now ())
+      }
   | Disabled contact ->
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->

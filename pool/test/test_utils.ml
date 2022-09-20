@@ -89,14 +89,14 @@ let create_contact () =
           ; updated_at = Pool_common.UpdatedAt.create ()
           }
     ; recruitment_channel = RecruitmentChannel.Friend
-    ; terms_accepted_at = Pool_user.TermsAccepted.create_now ()
+    ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
     ; language = Some Pool_common.Language.En
     ; experiment_type_preference = None
     ; paused = Pool_user.Paused.create false
     ; disabled = Pool_user.Disabled.create false
-    ; verified = Pool_user.Verified.create None
+    ; verified = None
     ; email_verified =
-        Pool_user.EmailVerified.create (Some (Ptime_clock.now ()))
+        () |> Ptime_clock.now |> Pool_user.EmailVerified.create |> CCOption.pure
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
     ; firstname_version = Pool_common.Version.create ()
@@ -310,7 +310,7 @@ let create_assignment () =
     ; show_up = ShowUp.init
     ; participated = Participated.init
     ; matches_filter = MatchesFilter.init
-    ; canceled_at = CanceledAt.init
+    ; canceled_at = None
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }

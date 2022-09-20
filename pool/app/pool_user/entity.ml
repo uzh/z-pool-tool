@@ -148,28 +148,27 @@ module Disabled = struct
 end
 
 module TermsAccepted = struct
-  type t = Ptime.t option [@@deriving eq, show]
+  type t = Ptime.t [@@deriving eq, show]
 
   let create m = m
-  let create_now () = Some (Ptime_clock.now ())
+  let create_now () = Ptime_clock.now ()
   let value m = m
 end
 
 module Verified = struct
-  type t = Ptime.t option [@@deriving eq, show]
+  type t = Ptime.t [@@deriving eq, show]
 
   let create m = m
-  let create_now () = Some (Ptime_clock.now ())
+  let create_now () = Ptime_clock.now ()
   let value m = m
 end
 
 module EmailVerified = struct
-  type t = Ptime.t option [@@deriving eq, show]
+  type t = Ptime.t [@@deriving eq, show]
 
   let create m = m
-  let create_now () = Some (Ptime_clock.now ())
+  let create_now () = Ptime_clock.now ()
   let value m = m
-  let is_some m = m |> CCOption.is_some
 end
 
 let user_firstname { Sihl_user.id; given_name; _ } =

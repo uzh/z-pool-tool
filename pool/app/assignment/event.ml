@@ -16,7 +16,7 @@ type event =
 let handle_event pool : event -> unit Lwt.t = function
   | Canceled assignment ->
     let%lwt () =
-      { assignment with canceled_at = CanceledAt.create_now () }
+      { assignment with canceled_at = Some (CanceledAt.create_now ()) }
       |> Repo.update pool
     in
     Lwt.return_unit

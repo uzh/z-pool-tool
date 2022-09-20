@@ -21,10 +21,9 @@ module MatchesFilter = struct
 end
 
 module CanceledAt = struct
-  type t = Ptime.t option [@@deriving eq, show]
+  type t = Ptime.t [@@deriving eq, show]
 
-  let init = None
-  let create_now () = Some (Ptime_clock.now ())
+  let create_now () = Ptime_clock.now ()
   let value m = m
   let sexp_of_t = Pool_common.Utils.Time.ptime_to_sexp
 end
@@ -35,7 +34,7 @@ type t =
   ; show_up : ShowUp.t
   ; participated : Participated.t
   ; matches_filter : MatchesFilter.t
-  ; canceled_at : CanceledAt.t
+  ; canceled_at : CanceledAt.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -46,7 +45,7 @@ let create
   ?(show_up = ShowUp.create false)
   ?(participated = Participated.create false)
   ?(matches_filter = MatchesFilter.create true)
-  ?(canceled_at = CanceledAt.init)
+  ?canceled_at
   contact
   =
   { id
@@ -63,6 +62,6 @@ let create
 module Public = struct
   type t =
     { id : Pool_common.Id.t
-    ; canceled_at : CanceledAt.t
+    ; canceled_at : CanceledAt.t option
     }
 end
