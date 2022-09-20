@@ -124,8 +124,8 @@ module Model : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    val t_of_yojson : Yojson.Basic.t -> t
-    val yojson_of_t : t -> Yojson.Basic.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
     val value : t -> Ptime.t
     val create_now : unit -> t
     val to_human : t -> string
@@ -144,8 +144,8 @@ module Model : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
     val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    val t_of_yojson : Yojson.Basic.t -> t
-    val yojson_of_t : t -> Yojson.Basic.t
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
     val value : t -> Ptime.t
     val create_now : unit -> t
     val to_human : t -> string

@@ -125,13 +125,13 @@ module Ptime = struct
 
   let t_of_yojson m =
     m
-    |> Yojson.Basic.to_string
+    |> Yojson.Safe.to_string
     |> Ptime.of_rfc3339
     |> CCResult.map (fun (m, _, _) -> m)
     |> CCResult.get_exn
   ;;
 
-  let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Basic.from_string
+  let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Safe.from_string
   let value m = m
   let create_now = Ptime_clock.now
   let to_human = Pool_common_utils.Time.formatted_date_time
@@ -152,8 +152,8 @@ module type PtimeSig = sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val t_of_yojson : Yojson.Basic.t -> t
-  val yojson_of_t : t -> Yojson.Basic.t
+  val t_of_yojson : Yojson.Safe.t -> t
+  val yojson_of_t : t -> Yojson.Safe.t
   val value : t -> Ptime.t
   val create_now : unit -> t
   val to_human : t -> string
