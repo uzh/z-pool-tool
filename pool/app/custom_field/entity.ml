@@ -104,6 +104,7 @@ module Validation = struct
     include Pool_common.Model.String
 
     let field = Message.Field.Regex
+    let create = create field
     let schema = schema field ?validation:None
   end
 
@@ -167,6 +168,7 @@ module Admin = struct
     include Pool_common.Model.String
 
     let field = Message.Field.AdminHint
+    let create = create field
     let schema = schema field ?validation:None
   end
 

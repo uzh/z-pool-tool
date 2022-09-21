@@ -85,19 +85,7 @@ end
 
 module Validation : sig
   module Regex : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-    val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Error : sig
@@ -142,19 +130,7 @@ end
 
 module Admin : sig
   module Hint : sig
-    type t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-    val value : t -> string
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    include Pool_common.Model.StringSig
   end
 
   module Overwrite : sig
@@ -180,6 +156,8 @@ type t =
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
+
+val equal : t -> t -> bool
 
 val create
   :  ?id:Id.t

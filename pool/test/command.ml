@@ -166,5 +166,7 @@ let () =
             `Quick
             Session_test.reschedule_to_past
         ] )
+    ; ( "custom_field"
+      , [ test_case "create custom field" `Quick Custom_field_test.create ] )
     ]
 ;;

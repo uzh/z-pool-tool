@@ -55,7 +55,8 @@ module Create : sig
   type t = command
 
   val handle
-    :  (Pool_common.Language.t * string) list
+    :  ?id:Custom_field.Id.t
+    -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -65,6 +66,7 @@ end = struct
   type t = command
 
   let handle
+    ?id
     names
     hints
     { model; field_type; validation; required; disabled; admin }
@@ -72,6 +74,7 @@ end = struct
     let open CCResult in
     let* t =
       Custom_field.create
+        ?id
         model
         names
         hints
