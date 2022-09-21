@@ -99,9 +99,9 @@ module Update : sig
 
   val handle
     :  Pool_common.Language.t list
-    -> (Pool_common.Language.t * string) list
-    -> (Pool_common.Language.t * string) list
     -> Custom_field.t
+    -> (Pool_common.Language.t * string) list
+    -> (Pool_common.Language.t * string) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -111,9 +111,9 @@ end = struct
 
   let handle
     sys_languages
+    custom_field
     name
     hint
-    custom_field
     { model; field_type; validation; required; disabled; admin }
     =
     let open CCResult in

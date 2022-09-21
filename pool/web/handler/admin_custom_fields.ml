@@ -124,9 +124,9 @@ let write ?id req =
         let* custom_field = Custom_field.find tenant_db id in
         Cqrs_command.Custom_field_command.Update.handle
           sys_languages
+          custom_field
           field_names
           field_hints
-          custom_field
           decoded
         |> Lwt_result.lift
     in

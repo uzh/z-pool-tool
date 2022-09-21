@@ -77,3 +77,47 @@ let create () =
       expected
       events)
 ;;
+
+let create_with_missing_name () =
+  let open CCResult in
+  let events =
+    Data.data
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> CustomFieldCommand.base_decode
+    >>= CustomFieldCommand.Create.handle
+          ~id:Data.id
+          Data.sys_languages
+          (Data.name |> CCList.hd |> CCList.pure)
+          Data.hint
+  in
+  let expected = Error Pool_common.Message.(AllLanguagesRequired Field.Name) in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let update () =
+  let open CCResult in
+  let events =
+    Data.data
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> CustomFieldCommand.base_decode
+    >>= CustomFieldCommand.Update.handle
+          Data.sys_languages
+          Data.custom_field
+          Data.name
+          Data.hint
+  in
+  let expected =
+    Ok [ Custom_field.Updated Data.custom_field |> Pool_event.custom_field ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
