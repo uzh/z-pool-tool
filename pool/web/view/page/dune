@@ -3,6 +3,7 @@
  (libraries
   component
   contact
+  custom_field
   experiment
   htmx
   http_utils

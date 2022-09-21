@@ -60,6 +60,7 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | UserProfileTitle -> "User Profile"
+  | Validation -> "Validation"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
@@ -67,6 +68,7 @@ let nav_link_to_string = function
   | Admins -> "Admins"
   | Assignments -> "Assignments"
   | Contacts -> "Contacts"
+  | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
   | I18n -> "Translations"

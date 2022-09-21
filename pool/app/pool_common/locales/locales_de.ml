@@ -4,6 +4,7 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AdminHint -> "Hint für Administratoren"
   | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
@@ -16,6 +17,7 @@ let field_to_string =
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
+  | CustomField -> "Feld"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | Database -> "Datenbank"
@@ -36,8 +38,10 @@ let field_to_string =
   | EmailAddressVerified -> "Verifizierte Email Adresse"
   | EmailSuffix -> "Email Endung"
   | End -> "Ende"
+  | ErrorMessage -> "Fehlermeldung"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
+  | FieldType -> "Feldtyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
@@ -45,6 +49,7 @@ let field_to_string =
   | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
+  | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -71,11 +76,13 @@ let field_to_string =
   | MainSession -> "Hauptsession"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
+  | Model -> "Modell"
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | Order -> "Reihenfolge"
   | Operator -> "Operator"
   | Overbook -> "Überbuchen"
+  | Overwrite -> "overwrite"
   | Page -> "Seite"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Anzahl Teilnehmer"
@@ -90,6 +97,8 @@ let field_to_string =
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
   | ReminderSubject -> "Erinnerungsbetreff"
+  | Regex -> "Regex"
+  | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -217,6 +226,8 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
+  | Empty field ->
+    field_message "" (field_to_string field) " darf nicht leer sein."
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \

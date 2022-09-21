@@ -2,6 +2,24 @@ module Message = Entity_message
 module I18n = Entity_i18n
 
 module Model : sig
+  module type IdSig = sig
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : unit -> t
+    val of_string : string -> t
+    val value : t -> string
+    val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
+    val t_of_sexp : Sexplib0.Sexp.t -> t
+    val to_uuidm : t -> Uuidm.t
+
+    val schema
+      :  unit
+      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+  end
+
   module Boolean : sig
     type t = bool
 
@@ -170,21 +188,9 @@ module Model : sig
 end
 
 module Id : sig
-  type t
+  include Model.IdSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : unit -> t
-  val of_string : string -> t
   val value : t -> string
-  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
-  val t_of_sexp : Sexplib0.Sexp.t -> t
-  val to_uuidm : t -> Uuidm.t
-
-  val schema
-    :  unit
-    -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
 module Language : sig

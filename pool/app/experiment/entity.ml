@@ -184,3 +184,8 @@ let registration_disabled_value (m : t) =
 let allow_uninvited_signup_value (m : t) =
   AllowUninvitedSignup.value m.allow_uninvited_signup
 ;;
+
+let boolean_fields =
+  Pool_common.Message.Field.
+    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
+;;

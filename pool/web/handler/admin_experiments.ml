@@ -12,9 +12,7 @@ let id req field encode =
 ;;
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.(
-    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
-    |> CCList.map show)
+  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
 let index req =

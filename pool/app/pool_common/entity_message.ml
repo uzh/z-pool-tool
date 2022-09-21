@@ -5,11 +5,12 @@ module Field = struct
 
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
+    | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
     | AllowUninvitedSignup [@name "allow_uninvited_signup"]
         [@printer go "allow_uninvited_signup"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
     | Assignment [@name "assignment"] [@printer go "assignment"]
-    | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
+    | Assignments [@name "assignments"] [@printer go "assignments"]
     | AssignmentCount [@name "assignment_count"]
         [@printer go "assignment_count"]
     | Building [@name "building"] [@printer go "building"]
@@ -22,6 +23,7 @@ module Field = struct
     | CreatedAt [@name "created_at"] [@printer go "created_at"]
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
+    | CustomField [@name "custom_field"] [@printer go "custom_field"]
     | Database [@name "database"] [@printer go "database"]
     | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
@@ -45,9 +47,11 @@ module Field = struct
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer go "email_address_verified"]
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
+    | ErrorMessage [@name "error_message"] [@printer go "error_message"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
     | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
+    | FieldType [@name "field_type"] [@printer go "field_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
@@ -56,6 +60,7 @@ module Field = struct
     | Firstname [@name "firstname"] [@printer go "firstname"]
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]
+    | Hint [@name "hint"] [@printer go "hint"]
     | Host [@name "host"] [@printer go "host"]
     | I18n [@name "i18n"] [@printer go "i18n"]
     | Icon [@name "icon"] [@printer go "icon"]
@@ -88,12 +93,14 @@ module Field = struct
         [@printer go "max_participants"]
     | MinParticipants [@name "min_participants"]
         [@printer go "min_participants"]
+    | Model [@name "model"] [@printer go "model"]
     | Name [@name "name"] [@printer go "name"]
     | NewPassword [@name "new_password"] [@printer go "new_password"]
         [@printer go "num_invitations"]
     | Order [@name "order"] [@printer go "order"]
     | Operator [@name "operator"] [@printer go "operator"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
+    | Overwrite [@name "overwrite"] [@printer go "overwrite"]
     | Page [@name "page"] [@printer go "page"]
     | Participant [@name "participant"] [@printer go "participant"]
     | ParticipantCount [@name "participant_count"]
@@ -114,6 +121,8 @@ module Field = struct
     | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]
     | ReminderSubject [@name "reminder_subject"]
         [@printer go "reminder_subject"]
+    | Regex [@name "regex"] [@printer go "regex"]
+    | Required [@name "required"] [@printer go "required"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
@@ -192,6 +201,7 @@ type error =
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
   | EmailMalformed
+  | Empty of Field.t
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FollowUpIsEarlierThanMain

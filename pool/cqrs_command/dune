@@ -3,6 +3,7 @@
  (libraries
   admin
   conformist
+  custom_field
   contact
   database
   email
