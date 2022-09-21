@@ -40,7 +40,8 @@ module Name : sig
   val find_opt : t -> Pool_common.Language.t -> name option
 
   val create
-    :  (Pool_common.Language.t * string) list
+    :  Pool_common.Language.t list
+    -> (Pool_common.Language.t * string) list
     -> (t, Pool_common.Message.error) result
 end
 
@@ -162,8 +163,8 @@ val equal : t -> t -> bool
 val create
   :  ?id:Id.t
   -> Model.t
-  -> (Pool_common.Language.t * string) list
-  -> (Pool_common.Language.t * string) list
+  -> Name.t
+  -> Hint.t
   -> FieldType.t
   -> Validation.t
   -> Required.t

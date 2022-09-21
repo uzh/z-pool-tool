@@ -185,6 +185,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Please provide '"
+      (field |> field_to_string)
+      "' in all languages."
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
@@ -218,8 +223,6 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email address is already verified cannot be deleted."
   | EmailMalformed -> "Malformed email"
-  | Empty field ->
-    field_message "" (field_to_string field) " must not be empty."
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."

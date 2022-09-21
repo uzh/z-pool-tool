@@ -183,6 +183,7 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AllLanguagesRequired of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyInPast
   | AlreadyStarted
@@ -201,7 +202,6 @@ type error =
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified
   | EmailMalformed
-  | Empty of Field.t
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FollowUpIsEarlierThanMain

@@ -184,6 +184,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Bitte geben Sie '"
+      (field |> field_to_string |> CCString.trim)
+      "' in allen Sprachen an."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
@@ -226,8 +231,6 @@ let rec error_to_string = function
   | EmailDeleteAlreadyVerified ->
     "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
   | EmailMalformed -> "Fehlerhafte Email Adresse"
-  | Empty field ->
-    field_message "" (field_to_string field) " darf nicht leer sein."
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \

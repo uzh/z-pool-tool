@@ -26,11 +26,18 @@ let form
       ~flash_fetcher
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
-  let input_by_lang field value_fnc =
+  let input_by_lang ?(required = false) field value_fnc =
     let open Pool_common in
     let group_class = Component.Elements.group_class [] `Horizontal in
     CCList.map
       (fun lang ->
+        let label_text =
+          Pool_common.(
+            lang
+            |> Language.field_of_t
+            |> Utils.field_to_string language
+            |> CCString.capitalize_ascii)
+        in
         let id =
           Format.asprintf
             "%s-%s"
@@ -38,39 +45,36 @@ let form
             (Language.show lang)
         in
         let input_element =
+          let attrs =
+            [ a_input_type `Text
+            ; a_id id
+            ; a_name
+                (Format.asprintf
+                   "%s[%s]"
+                   (Message.Field.array_key field)
+                   (Language.show lang))
+            ; a_value (value_fnc lang)
+            ]
+          in
           div
             ~a:[ a_class [ "input-group" ] ]
-            [ input
-                ~a:
-                  [ a_input_type `Text
-                  ; a_id id
-                  ; a_name
-                      (Format.asprintf
-                         "%s[%s]"
-                         (Message.Field.array_key field)
-                         (Language.show lang))
-                  ; a_value (value_fnc lang)
-                  ]
-                ()
-            ]
+            [ input ~a:(if required then a_required () :: attrs else attrs) () ]
         in
         div
           ~a:[ a_class group_class ]
           [ label
               ~a:[ a_label_for id ]
               [ txt
-                  Pool_common.(
-                    lang
-                    |> Language.field_of_t
-                    |> Utils.field_to_string language
-                    |> CCString.capitalize_ascii)
+                  (if required
+                  then Format.asprintf "%s *" label_text
+                  else label_text)
               ]
           ; input_element
           ])
       sys_languages
   in
   let name_inputs =
-    input_by_lang Pool_common.Message.Field.Name (fun lang ->
+    input_by_lang ~required:true Pool_common.Message.Field.Name (fun lang ->
       let open CCOption in
       custom_field
       >>= (fun f -> Name.find_opt f.name lang)

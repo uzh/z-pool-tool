@@ -93,14 +93,20 @@ let write ?id req =
   let field_hints =
     find_assocs_in_urlencoded urlencoded Pool_common.Message.Field.Hint
   in
+  let redirect_path = "/admin/custom-fields" in
+  let error_path =
+    match id with
+    | None -> Format.asprintf "%s/new" redirect_path
+    | Some id ->
+      Format.asprintf "%s/%s/edit" redirect_path (Custom_field.Id.value id)
+  in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
-      ( err
-      , "/admin/custom-fields/new"
-      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
       let open Lwt_result.Syntax in
+      let%lwt sys_languages = Settings.find_languages tenant_db in
       let* decoded =
         urlencoded
         |> Cqrs_command.Custom_field_command.base_decode
@@ -109,6 +115,7 @@ let write ?id req =
       match id with
       | None ->
         Cqrs_command.Custom_field_command.Create.handle
+          sys_languages
           field_names
           field_hints
           decoded
@@ -116,6 +123,7 @@ let write ?id req =
       | Some id ->
         let* custom_field = Custom_field.find tenant_db id in
         Cqrs_command.Custom_field_command.Update.handle
+          sys_languages
           field_names
           field_hints
           custom_field
@@ -127,7 +135,7 @@ let write ?id req =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
       in
       Http_utils.redirect_to_with_actions
-        "/admin/custom-fields"
+        redirect_path
         [ Message.set
             ~success:[ Pool_common.Message.(Created Field.CustomField) ]
         ]

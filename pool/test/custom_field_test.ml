@@ -7,14 +7,15 @@ let boolean_fields =
 module Data = struct
   open Custom_field
 
+  let sys_languages = Pool_common.Language.[ En; De ]
   let id = Id.create ()
   let model = Model.Contact
   let field_type = FieldType.Text
   let regex = "^.{4,}$"
   let error = Validation.Error.Invalid
   let admin_hint = "hint"
-  let name = [ Pool_common.Language.En, "name" ]
-  let hint = [ Pool_common.Language.En, "hint" ]
+  let name = CCList.map (fun l -> l, "name") sys_languages
+  let hint = CCList.map (fun l -> l, "hint") sys_languages
 
   let data =
     Pool_common.Message.
@@ -29,7 +30,7 @@ module Data = struct
 
   let custom_field =
     let get = CCResult.get_exn in
-    let name = Name.create name |> get in
+    let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
     let regex = Validation.Regex.create regex |> get in
     let validation = Validation.{ regex; error } in
@@ -60,7 +61,11 @@ let create () =
     Data.data
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
-    >>= CustomFieldCommand.Create.handle ~id:Data.id Data.name Data.hint
+    >>= CustomFieldCommand.Create.handle
+          ~id:Data.id
+          Data.sys_languages
+          Data.name
+          Data.hint
   in
   let expected =
     Ok [ Custom_field.Created Data.custom_field |> Pool_event.custom_field ]

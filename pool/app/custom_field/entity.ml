@@ -39,7 +39,6 @@ module Model = struct
 end
 
 module Name = struct
-  (* TODO: do we need validation? e.g. primary language is set? *)
   type name = string [@@deriving eq, show, yojson]
 
   let value_name n = n
@@ -48,10 +47,15 @@ module Name = struct
 
   let find_opt t lang = CCList.assoc_opt ~eq:Language.equal lang t
 
-  let create names =
-    if CCList.is_empty names
-    then Error Pool_common.Message.(Empty Field.Name)
-    else Ok names
+  let create sys_languages names =
+    CCList.filter
+      (fun lang ->
+        CCList.assoc_opt ~eq:Pool_common.Language.equal lang names
+        |> CCOption.is_none)
+      sys_languages
+    |> function
+    | [] -> Ok names
+    | _ -> Error Pool_common.Message.(AllLanguagesRequired Field.Name)
   ;;
 end
 
@@ -63,12 +67,7 @@ module Hint = struct
   type t = (Language.t * hint) list [@@deriving eq, show, yojson]
 
   let find_opt t lang = CCList.assoc_opt ~eq:Language.equal lang t
-
-  let create hints =
-    (* TODO: do we need validation? e.g. if one hint is given, all languages of
-       name need hint? *)
-    Ok hints
-  ;;
+  let create hints = Ok hints
 end
 
 module FieldType = struct
@@ -212,8 +211,6 @@ let create
   admin
   =
   let open CCResult in
-  let* name = Name.create name in
-  let* hint = Hint.create hint in
   Ok
     { id
     ; model

@@ -56,6 +56,7 @@ module Create : sig
 
   val handle
     :  ?id:Custom_field.Id.t
+    -> Pool_common.Language.t list
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
     -> t
@@ -67,17 +68,20 @@ end = struct
 
   let handle
     ?id
-    names
-    hints
+    sys_languages
+    name
+    hint
     { model; field_type; validation; required; disabled; admin }
     =
     let open CCResult in
+    let* name = Custom_field.Name.create sys_languages name in
+    let* hint = Custom_field.Hint.create hint in
     let* t =
       Custom_field.create
         ?id
         model
-        names
-        hints
+        name
+        hint
         field_type
         validation
         required
@@ -94,7 +98,8 @@ module Update : sig
   type t = command
 
   val handle
-    :  (Pool_common.Language.t * string) list
+    :  Pool_common.Language.t list
+    -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
     -> Custom_field.t
     -> t
@@ -105,13 +110,14 @@ end = struct
   type t = command
 
   let handle
+    sys_languages
     name
     hint
     custom_field
     { model; field_type; validation; required; disabled; admin }
     =
     let open CCResult in
-    let* name = Custom_field.Name.create name in
+    let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
     let t =
       (Custom_field.
