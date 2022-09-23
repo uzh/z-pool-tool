@@ -75,6 +75,7 @@ module Model : sig
       -> (t, Entity_message.error) result
 
     val value : t -> string
+    val of_string : string -> t
 
     val schema
       :  Entity_message.Field.t
@@ -94,6 +95,7 @@ module Model : sig
     val yojson_of_t : t -> Yojson.Safe.t
     val create : string -> (t, Entity_message.error) result
     val value : t -> string
+    val of_string : string -> t
 
     val schema
       :  unit

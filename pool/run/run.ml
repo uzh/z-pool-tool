@@ -12,6 +12,7 @@ let commands =
   ; SessionReminder.tenant_specific_session_reminder
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
+  ; Matcher.run
   ]
 ;;
 

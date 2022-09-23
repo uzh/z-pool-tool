@@ -67,6 +67,24 @@ module Sql = struct
       find_by_experiment_request
   ;;
 
+  let find_current_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE
+        NOW() < pool_mailing.end AND NOW() > pool_mailing.start
+      ORDER BY pool_mailing.start
+    |sql}
+    |> Format.asprintf "%s\n%s" select_sql
+    |> Caqti_type.unit ->* RepoEntity.t
+  ;;
+
+  let find_current pool =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_current_request
+      ()
+  ;;
+
   let find_overlaps_request =
     let open Caqti_request.Infix in
     {sql|
@@ -161,6 +179,11 @@ let find_by_experiment pool id =
 let find_overlaps pool Entity.{ id; start_at; end_at; _ } =
   let open Utils.Lwt_result.Infix in
   Sql.find_overlaps pool start_at end_at id ||> CCList.map to_entity
+;;
+
+let find_current pool =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_current pool ||> CCList.map to_entity
 ;;
 
 let insert pool experiment_id model =

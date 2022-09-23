@@ -1,5 +1,7 @@
 module Id = struct
   include Pool_common.Id
+
+  let to_common m = m
 end
 
 module StartAt = struct
