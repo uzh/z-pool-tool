@@ -1,5 +1,6 @@
 module Message = Pool_common.Message
 module Language = Pool_common.Language
+module Answer = Entity_answer
 
 let printer m fmt _ = Format.pp_print_string fmt m
 
@@ -294,6 +295,19 @@ module Write = struct
     ; required : Required.t
     ; disabled : Disabled.t
     ; admin : Admin.t
+    }
+  [@@deriving eq, show]
+end
+
+module Public = struct
+  type t =
+    { id : Id.t
+    ; name : Name.t
+    ; hint : Hint.t
+    ; field_type : FieldType.t
+    ; validation : Validation.t
+    ; required : Required.t
+    ; answer : Answer.t option
     }
   [@@deriving eq, show]
 end

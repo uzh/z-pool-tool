@@ -29,6 +29,7 @@ let personal_details_form
   action
   tenant_languages
   contact
+  custom_fields
   =
   let open Contact in
   let form_attrs action =
@@ -36,6 +37,16 @@ let personal_details_form
     ; a_action (Sihl.Web.externalize_path action)
     ; a_class [ "stack" ]
     ]
+  in
+  let custom_fields_form =
+    let open Custom_field in
+    custom_fields
+    |> CCList.map (fun field ->
+         div
+           [ txt
+               (Name.find_opt field.Public.name language
+               |> CCOption.map_or ~default:"-" Name.value_name)
+           ])
   in
   form
     ~a:(form_attrs action)
@@ -51,7 +62,8 @@ let personal_details_form
              ; Language
                  (contact.language_version, contact.language, tenant_languages)
              ]
-       ])
+       ]
+    @ custom_fields_form)
 ;;
 
 let detail contact Pool_context.{ language; query_language; _ } =
@@ -88,6 +100,7 @@ let detail contact Pool_context.{ language; query_language; _ } =
 let personal_details
   user_update_csrf
   (contact : Contact.t)
+  custom_fields
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
@@ -102,6 +115,7 @@ let personal_details
             action
             tenant_languages
             contact
+            custom_fields
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/user") ]

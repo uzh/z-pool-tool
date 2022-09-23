@@ -393,7 +393,7 @@ module Repo : sig
   module Version : sig
     type t = Version.t
 
-    val t : int Caqti_type.t
+    val t : t Caqti_type.t
   end
 
   module CreatedAt : sig

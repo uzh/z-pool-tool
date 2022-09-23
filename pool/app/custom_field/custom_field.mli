@@ -1,3 +1,31 @@
+module Answer : sig
+  module Id : sig
+    include Pool_common.Model.IdSig
+  end
+
+  module Answer : sig
+    type t =
+      | Text of string
+      | Number of int
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
+  end
+
+  type t =
+    { id : Id.t
+    ; answer : Answer.t
+    ; version : Pool_common.Version.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 module Id : sig
   include Pool_common.Model.IdSig
 end
@@ -180,6 +208,22 @@ val create
   -> Admin.t
   -> (t, Pool_common.Message.error) result
 
+module Public : sig
+  type t =
+    { id : Id.t
+    ; name : Name.t
+    ; hint : Hint.t
+    ; field_type : FieldType.t
+    ; validation : Validation.t
+    ; required : Required.t
+    ; answer : Answer.t option
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
 val boolean_fields : Pool_common.Message.Field.t list
 
 type event =
@@ -196,3 +240,8 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Entity.Message.error) result Lwt.t
+
+val find_all_for_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Public.t list Lwt.t

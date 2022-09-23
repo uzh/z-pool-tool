@@ -1,5 +1,6 @@
 open Entity
 module Common = Pool_common
+module Answer = Repo_entity_answer
 
 let encode_yojson of_t t = t |> of_t |> Yojson.Safe.to_string |> CCResult.return
 
@@ -174,6 +175,37 @@ module Write = struct
                        (tup2
                           Validation.t
                           (tup2 Required.t (tup2 Disabled.t Admin.t)))))))))
+  ;;
+end
+
+module Public = struct
+  let t =
+    let open Public in
+    let encode m =
+      Ok
+        ( m.Public.id
+        , ( m.name
+          , (m.hint, (m.field_type, (m.validation, (m.required, m.answer)))) )
+        )
+    in
+    let decode
+      (id, (name, (hint, (field_type, (validation, (required, answer))))))
+      =
+      Ok { id; name; hint; field_type; validation; required; answer }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Common.Repo.Id.t
+           (tup2
+              Name.t
+              (tup2
+                 Hint.t
+                 (tup2
+                    FieldType.t
+                    (tup2 Validation.t (tup2 Required.t (option Answer.t))))))))
   ;;
 end
 

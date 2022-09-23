@@ -67,6 +67,7 @@ let edit
   user_update_csrf
   tenant_languages
   contact
+  custom_fields
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -80,6 +81,7 @@ let edit
            (Contact.id contact |> Pool_common.Id.value))
         tenant_languages
         contact
+        custom_fields
     ; p
         [ a
             ~a:

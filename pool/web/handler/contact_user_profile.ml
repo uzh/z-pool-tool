@@ -35,9 +35,13 @@ let show usage req =
            |> Lwt_result.lift
            >|= fun c -> c.Pool_context.Tenant.tenant_languages
          in
+         let%lwt custom_fields =
+           Custom_field.find_all_for_contact tenant_db (Contact.id contact)
+         in
          Page.Contact.personal_details
            user_update_csrf
            contact
+           custom_fields
            tenant_languages
            context
          |> create_layout req ~active_navigation:"/user" context

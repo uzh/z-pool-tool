@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "Administrator"
   | AdminHint -> "Hint für Administratoren"
+  | Answer -> "Antwort"
   | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"

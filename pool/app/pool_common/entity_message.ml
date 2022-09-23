@@ -6,6 +6,7 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
+    | Answer [@name "answer"] [@printer go "answer"]
     | AllowUninvitedSignup [@name "allow_uninvited_signup"]
         [@printer go "allow_uninvited_signup"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]

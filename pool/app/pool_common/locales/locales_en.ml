@@ -5,6 +5,7 @@ let field_to_string =
   function
   | Admin -> "admin"
   | AdminHint -> "hint for admins"
+  | Answer -> "answer"
   | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"

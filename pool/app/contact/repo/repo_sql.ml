@@ -251,7 +251,7 @@ module Paused = struct
       update_request
       ( contact |> Entity.id
       , paused |> Pool_user.Paused.value
-      , paused_version |> Pool_common.Version.value
+      , paused_version
       , Ptime_clock.now () )
   ;;
 end
@@ -275,10 +275,7 @@ module Language = struct
     Utils.Database.exec
       (Database.Label.value pool)
       update_request
-      ( contact |> Entity.id
-      , language
-      , language_version |> Pool_common.Version.value
-      , Ptime_clock.now () )
+      (contact |> Entity.id, language, language_version, Ptime_clock.now ())
   ;;
 end
 
@@ -300,7 +297,7 @@ let update_version_for pool field (id, version) =
   Utils.Database.exec
     (Database.Label.value pool)
     (field |> update_version_for_request)
-    (id, version |> Pool_common.Version.value, Ptime_clock.now ())
+    (id, version, Ptime_clock.now ())
 ;;
 
 let update_request =
