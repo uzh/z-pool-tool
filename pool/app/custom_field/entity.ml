@@ -72,7 +72,7 @@ end
 
 module FieldType = struct
   type t =
-    | Boolean [@name "boolean"] [@printer printer "boolean"]
+    | Number [@name "number"] [@printer printer "number"]
     | Text [@name "text"] [@printer printer "text"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
@@ -99,55 +99,81 @@ module FieldType = struct
 end
 
 module Validation = struct
-  module Regex = struct
-    include Pool_common.Model.String
+  module Ptime = struct
+    include Ptime
 
-    let field = Message.Field.Regex
-    let create = create field
-    let schema = schema field ?validation:None
+    let t_of_yojson = Pool_common.Model.Ptime.t_of_yojson
+    let yojson_of_t = Pool_common.Model.Ptime.yojson_of_t
   end
 
-  module Error = struct
+  module Text = struct
     type t =
-      | Invalid [@name "invalid"] [@printer printer "invalid"]
-      | Malformatted [@name "malformatted"] [@printer printer "malformatted"]
-      | NegativeAmount [@name "negative_amount"]
-          [@printer printer "negative_amount"]
-      | NoValue [@name "no_value"] [@printer printer "no_value"]
-    [@@deriving eq, show { with_path = false }, yojson, enum]
+      | TextLengthMin of int [@name "text_length_min"]
+          [@printer printer "text_length_min"]
+      | TextLengthMax of int [@name "text_length_max"]
+          [@printer printer "text_length_max"]
+    [@@deriving eq, show { with_path = false }, yojson, variants]
 
-    let all : t list =
-      CCList.range min max
-      |> CCList.map of_enum
-      |> CCList.all_some
-      |> CCOption.get_exn_or "Errors: Could not create list of all errors!"
+    let schema data =
+      let open CCOption in
+      CCList.filter_map
+        (fun (key, value) ->
+          match key with
+          | "text_length_min" -> value |> CCInt.of_string >|= textlengthmin
+          | "text_length_max" -> value |> CCInt.of_string >|= textlengthmax
+          | _ -> None)
+        data
     ;;
 
-    let field = Pool_common.Message.Field.ErrorMessage
-
-    let read m =
-      m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
+    let to_strings = function
+      | TextLengthMin n -> "text_length_min", n |> CCInt.to_string
+      | TextLengthMax n -> "text_length_max", n |> CCInt.to_string
     ;;
 
-    let create s =
-      try Ok (read s) with
-      | _ -> Error Pool_common.(Message.Invalid field)
+    let all = [ "text_length_min", `Number; "text_length_max", `Number ]
+  end
+
+  module Number = struct
+    type t =
+      | NumberMin of int [@name "number_min"] [@printer printer "number_min"]
+      | NumberMax of int [@name "number_max"] [@printer printer "number_max"]
+    [@@deriving eq, show { with_path = false }, yojson, variants]
+
+    let schema data =
+      let open CCOption in
+      CCList.filter_map
+        (fun (key, value) ->
+          match key with
+          | "number_min" -> value |> CCInt.of_string >|= numbermin
+          | "number_max" -> value |> CCInt.of_string >|= numbermax
+          | _ -> None)
+        data
     ;;
 
-    let value = show
+    let all = [ "number_min", `Number; "number_max", `Number ]
 
-    let format_as_label t =
-      t |> show |> CCString.replace ~which:`All ~sub:"_" ~by:" "
+    let to_strings = function
+      | NumberMin n -> "number_min", n |> CCInt.to_string
+      | NumberMax n -> "number_max", n |> CCInt.to_string
     ;;
-
-    let schema () = Pool_common.Utils.schema_decoder create value field
   end
 
   type t =
-    { regex : Regex.t
-    ; error : Error.t
-    }
-  [@@deriving eq, show, yojson]
+    | Text of Text.t list
+    | Number of Number.t list
+  [@@deriving eq, show { with_path = false }, yojson, variants]
+
+  let schema data = function
+    | FieldType.Number -> data |> Number.schema |> number
+    | FieldType.Text -> data |> Text.schema |> text
+  ;;
+
+  let to_strings = function
+    | Text rules -> CCList.map Text.to_strings rules
+    | Number rules -> CCList.map Number.to_strings rules
+  ;;
+
+  let all = [ FieldType.Text, Text.all; FieldType.Number, Number.all ]
 end
 
 module Required = struct

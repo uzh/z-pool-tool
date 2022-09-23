@@ -11,18 +11,16 @@ module Data = struct
   let id = Id.create ()
   let model = Model.Contact
   let field_type = FieldType.Text
-  let regex = "^.{4,}$"
-  let error = Validation.Error.Invalid
   let admin_hint = "hint"
   let name = CCList.map (fun l -> l, "name") sys_languages
   let hint = CCList.map (fun l -> l, "hint") sys_languages
+  let validation_data = [ "text_length_max", "20" ]
+  let validation = Custom_field.Validation.schema validation_data field_type
 
   let data =
     Pool_common.Message.
       [ Field.(Model |> show), model |> Model.show
       ; Field.(FieldType |> show), field_type |> FieldType.show
-      ; Field.(Regex |> show), regex
-      ; Field.(ErrorMessage |> show), error |> Validation.Error.show
       ; Field.(AdminHint |> show), admin_hint
       ]
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
@@ -32,8 +30,6 @@ module Data = struct
     let get = CCResult.get_exn in
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
-    let regex = Validation.Regex.create regex |> get in
-    let validation = Validation.{ regex; error } in
     let admin_hint = Admin.Hint.create admin_hint |> get in
     let admin =
       Admin.{ hint = Some admin_hint; overwrite = Overwrite.create false }
@@ -66,6 +62,7 @@ let create () =
           Data.sys_languages
           Data.name
           Data.hint
+          Data.validation_data
   in
   let expected =
     Ok [ Custom_field.Created Data.custom_field |> Pool_event.custom_field ]
@@ -89,6 +86,7 @@ let create_with_missing_name () =
           Data.sys_languages
           (Data.name |> CCList.hd |> CCList.pure)
           Data.hint
+          Data.validation_data
   in
   let expected = Error Pool_common.Message.(AllLanguagesRequired Field.Name) in
   Alcotest.(
@@ -110,6 +108,7 @@ let update () =
           Data.custom_field
           Data.name
           Data.hint
+          Data.validation_data
   in
   let expected =
     Ok [ Custom_field.Updated Data.custom_field |> Pool_event.custom_field ]

@@ -15,8 +15,7 @@ module Sql = struct
         pool_custom_fields.name,
         pool_custom_fields.hint,
         pool_custom_fields.field_type,
-        pool_custom_fields.validation_regex,
-        pool_custom_fields.validation_error,
+        pool_custom_fields.validation,
         pool_custom_fields.required,
         pool_custom_fields.disabled,
         pool_custom_fields.admin_hint,
@@ -64,15 +63,13 @@ module Sql = struct
         name,
         hint,
         field_type,
-        validation_regex,
-        validation_error,
+        validation,
         required,
         disabled,
         admin_hint,
         admin_overwrite
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
-        ?,
         ?,
         ?,
         ?,
@@ -107,12 +104,11 @@ module Sql = struct
         name = $3,
         hint = $4,
         field_type = $5,
-        validation_regex = $6,
-        validation_error = $7,
-        required = $8,
-        disabled = $9,
-        admin_hint = $10,
-        admin_overwrite = $11
+        validation = $6,
+        required = $7,
+        disabled = $8,
+        admin_hint = $9,
+        admin_overwrite = $10
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

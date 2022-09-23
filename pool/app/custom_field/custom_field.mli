@@ -71,7 +71,7 @@ end
 
 module FieldType : sig
   type t =
-    | Boolean
+    | Number
     | Text
 
   val equal : t -> t -> bool
@@ -85,40 +85,42 @@ module FieldType : sig
 end
 
 module Validation : sig
-  module Regex : sig
-    include Pool_common.Model.StringSig
-  end
-
-  module Error : sig
+  module Text : sig
     type t =
-      | Invalid
-      | Malformatted
-      | NegativeAmount
-      | NoValue
+      | TextLengthMin of int
+      | TextLengthMax of int
 
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
-    val format_as_label : t -> string
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
-    val all : t list
+  end
 
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  module Number : sig
+    type t =
+      | NumberMin of int
+      | NumberMax of int
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
   end
 
   type t =
-    { regex : Regex.t
-    ; error : Error.t
-    }
+    | Text of Text.t list
+    | Number of Number.t list
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
+  val schema : (string * string) list -> FieldType.t -> t
+  val to_strings : t -> (string * string) list
+  val all : (FieldType.t * (string * [> `Number ]) list) list
 end
 
 module Required : sig

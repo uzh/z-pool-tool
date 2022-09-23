@@ -3,30 +3,16 @@ module Conformist = Pool_common.Utils.PoolConformist
 type command =
   { model : Custom_field.Model.t
   ; field_type : Custom_field.FieldType.t
-  ; validation : Custom_field.Validation.t
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
   ; admin : Custom_field.Admin.t
   }
 
-let base_command
-  model
-  field_type
-  validation_regex
-  validation_error
-  required
-  disabled
-  admin_hint
-  admin_overwrite
-  =
-  let validation =
-    Custom_field.Validation.
-      { regex = validation_regex; error = validation_error }
-  in
+let base_command model field_type required disabled admin_hint admin_overwrite =
   let admin =
     Custom_field.Admin.{ hint = admin_hint; overwrite = admin_overwrite }
   in
-  { model; field_type; validation; required; disabled; admin }
+  { model; field_type; required; disabled; admin }
 ;;
 
 let base_schema =
@@ -36,8 +22,6 @@ let base_schema =
       Field.
         [ Model.schema ()
         ; FieldType.schema ()
-        ; Validation.Regex.schema ()
-        ; Validation.Error.schema ()
         ; Required.schema ()
         ; Disabled.schema ()
         ; Conformist.optional @@ Admin.Hint.schema ()
@@ -59,6 +43,7 @@ module Create : sig
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
+    -> (string * string) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -71,11 +56,13 @@ end = struct
     sys_languages
     name
     hint
-    { model; field_type; validation; required; disabled; admin }
+    validation
+    { model; field_type; required; disabled; admin }
     =
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
+    let validation = Custom_field.Validation.schema validation field_type in
     let* t =
       Custom_field.create
         ?id
@@ -102,6 +89,7 @@ module Update : sig
     -> Custom_field.t
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
+    -> (string * string) list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -114,11 +102,13 @@ end = struct
     custom_field
     name
     hint
-    { model; field_type; validation; required; disabled; admin }
+    validation
+    { model; field_type; required; disabled; admin }
     =
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
+    let validation = Custom_field.Validation.schema validation field_type in
     let t =
       (Custom_field.
          { custom_field with

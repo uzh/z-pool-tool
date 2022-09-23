@@ -47,7 +47,6 @@ module Field = struct
     | EmailAddressVerified [@name "email_address_verified"]
         [@printer go "email_address_verified"]
     | EmailSuffix [@name "email_suffix"] [@printer go "email_suffix"]
-    | ErrorMessage [@name "error_message"] [@printer go "error_message"]
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
     | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
@@ -121,7 +120,6 @@ module Field = struct
     | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]
     | ReminderSubject [@name "reminder_subject"]
         [@printer go "reminder_subject"]
-    | Regex [@name "regex"] [@printer go "regex"]
     | Required [@name "required"] [@printer go "required"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
@@ -164,6 +162,7 @@ module Field = struct
         [@printer go "trigger_profile_update_after"]
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
+    | Validation [@name "validation"] [@printer go "validation"]
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
     | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
@@ -177,6 +176,23 @@ module Field = struct
 
   let url_key m = m |> show |> Format.asprintf ":%s"
   let array_key m = m |> show |> Format.asprintf "%s[]"
+end
+
+module CustomField = struct
+  let printer m fmt _ = Format.pp_print_string fmt m
+
+  type error =
+    | IntMinValue (* of int *) [@name "int_min_value"]
+        [@printer printer "int_min_value"]
+    | IntMaxValue (* of int *) [@name "int_max_value"]
+        [@printer printer "int_max_value"]
+    | StringMaxLength (* of int *) [@name "string_max_length"]
+        [@printer printer "string_max_length"]
+    | StringMinLength (* of int *) [@name "string_min_length"]
+        [@printer printer "string_min_length"]
+    | NoValue [@name "no_value"] [@printer printer "no_value"]
+    | Invalid [@name "invalid"] [@printer printer "invalid"]
+  [@@deriving eq, show { with_path = false }, yojson]
 end
 
 (* TODO [aerben] make these general, compare what fields exist already, whenever

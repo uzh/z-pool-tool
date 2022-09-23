@@ -51,7 +51,7 @@ let form
             ; a_name
                 (Format.asprintf
                    "%s[%s]"
-                   (Message.Field.array_key field)
+                   (Message.Field.show field)
                    (Language.show lang))
             ; a_value (value_fnc lang)
             ]
@@ -88,6 +88,85 @@ let form
       >>= (fun f -> Hint.find_opt f.hint lang)
       >|= Hint.value_hint
       |> value ~default:"")
+  in
+  let validation_subform =
+    let current_values =
+      custom_field
+      |> CCOption.map_or ~default:[] (fun f ->
+           f.validation |> Validation.to_strings)
+    in
+    let rule_input field_type name input_type value disabled =
+      let prefixed_name =
+        Format.asprintf
+          "%s[%s]"
+          Pool_common.Message.Field.(show Validation)
+          name
+      in
+      let wrapper_class = [ "switcher"; "flex-gap"; "align-center" ] in
+      let input_attributes =
+        [ a_input_type input_type
+        ; a_name prefixed_name
+        ; a_id name
+        ; a_value value
+        ; a_class [ "grow-2" ]
+        ]
+      in
+      let attrs, classes =
+        match disabled with
+        | true -> a_disabled () :: input_attributes, "disabled" :: wrapper_class
+        | false -> input_attributes, wrapper_class
+      in
+      div
+        ~a:
+          [ a_class classes
+          ; a_user_data "field-type" (FieldType.show field_type)
+          ]
+        [ div
+            ~a:[ a_class [ "grow" ] ]
+            [ label ~a:[ a_label_for name ] [ txt name ] ]
+        ; input ~a:attrs ()
+        ]
+    in
+    let functions =
+      {js|
+        var select = document.querySelector("[name='field_type']");
+        select.addEventListener("change", function(e) {
+          var type = e.currentTarget.value;
+          var inputs = document.querySelectorAll("[data-field-type]");
+          inputs.forEach(function(elm){
+            if(elm.dataset.fieldType != type) {
+              elm.classList.add("disabled")
+            } else {
+              elm.classList.remove("disabled")
+            }
+            var input = elm.querySelector('input');
+            input.disabled = elm.dataset.fieldType != type;
+          })
+        })
+    |js}
+    in
+    div
+      [ div
+          ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+          (CCList.map
+             (fun (field_type, rules) ->
+               CCList.map
+                 (fun (name, input_type) ->
+                   let value =
+                     CCList.assoc_opt ~eq:CCString.equal name current_values
+                     |> CCOption.value ~default:""
+                   in
+                   let disabled =
+                     custom_field
+                     |> CCOption.map_or ~default:true (fun field ->
+                          not (FieldType.equal field.field_type field_type))
+                   in
+                   rule_input field_type name input_type value disabled)
+                 rules)
+             Validation.all
+          |> CCList.flatten)
+      ; script (Unsafe.data functions)
+      ]
   in
   form
     ~a:
@@ -149,28 +228,8 @@ let form
             ~a:[ a_class [ "heading-4" ] ]
             [ txt Pool_common.(I18n.Validation |> Utils.text_to_string language)
             ]
-        ; input_element
-            language
-            `Text
-            Pool_common.Message.Field.Regex
-            ~orientation:`Horizontal
-            ~value:
-              (value (fun f ->
-                 f.validation.Validation.regex |> Validation.Regex.value))
-            ~required:true
-            ~flash_fetcher
-        ; Component.selector
-            language
-            Pool_common.Message.Field.ErrorMessage
-            Validation.Error.show
-            Validation.Error.all
-            (CCOption.map (fun f -> f.validation.Validation.error) custom_field)
-            ~option_formatter:Validation.Error.format_as_label
-            ~add_empty:true
-            ~required:true
-            ~flash_fetcher
-            ()
         ]
+    ; validation_subform
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ h4

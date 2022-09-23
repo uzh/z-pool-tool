@@ -7,23 +7,23 @@ let boolean_fields =
   Custom_field.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
-let find_assocs_in_urlencoded urlencoded field =
-  let field = Pool_common.Message.Field.array_key field in
+let find_assocs_in_urlencoded urlencoded field encoder =
+  let field = Pool_common.Message.Field.show field in
   CCList.filter_map
     (fun (key, values) ->
-      let key, lang = CCString.take_drop (CCString.length field) key in
-      match CCString.equal field key with
+      let group, id = CCString.take_drop (CCString.length field) key in
+      match CCString.equal field group with
       | false -> None
       | true ->
-        let language =
+        let key =
           let open CCOption in
-          lang
+          id
           |> CCString.chop_prefix ~pre:"["
           >>= CCString.chop_suffix ~suf:"]"
-          >>= fun l -> l |> Pool_common.Language.create |> CCResult.to_opt
+          >>= fun l -> l |> encoder
         in
         let value = CCList.head_opt values in
-        (match language, value with
+        (match key, value with
          | Some l, Some v -> Some (l, v)
          | _ -> None))
     urlencoded
@@ -87,11 +87,13 @@ let write ?id req =
     ||> HttpUtils.format_request_boolean_values boolean_fields
     ||> HttpUtils.remove_empty_values
   in
-  let field_names =
-    find_assocs_in_urlencoded urlencoded Pool_common.Message.Field.Name
-  in
-  let field_hints =
-    find_assocs_in_urlencoded urlencoded Pool_common.Message.Field.Hint
+  let field_names, field_hints, validations =
+    let open Pool_common in
+    let encode_lang t = t |> Language.create |> CCResult.to_opt in
+    let go field = find_assocs_in_urlencoded urlencoded field in
+    ( go Message.Field.Name encode_lang
+    , go Message.Field.Hint encode_lang
+    , go Message.Field.Validation CCOption.pure )
   in
   let redirect_path = "/admin/custom-fields" in
   let error_path =
@@ -118,6 +120,7 @@ let write ?id req =
           sys_languages
           field_names
           field_hints
+          validations
           decoded
         |> Lwt_result.lift
       | Some id ->
@@ -127,6 +130,7 @@ let write ?id req =
           custom_field
           field_names
           field_hints
+          validations
           decoded
         |> Lwt_result.lift
     in

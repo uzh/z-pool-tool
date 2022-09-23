@@ -49,7 +49,7 @@ module Hint = struct
     let encode t =
       t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
     in
-    let decode (s : string) =
+    let decode s =
       let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
       try Ok (read s) with
       | _ ->
@@ -76,30 +76,19 @@ end
 module Validation = struct
   include Validation
 
-  module Regex = struct
-    include Regex
-
-    let t = Caqti_type.string
-  end
-
-  module Error = struct
-    include Error
-
-    let t =
-      let encode = Utils.fcn_ok value in
-      let decode m =
-        m
-        |> create
-        |> CCResult.map_err Common.(Utils.error_to_string Language.En)
-      in
-      Caqti_type.(custom ~encode ~decode string)
-    ;;
-  end
-
   let t =
-    let encode m = Ok (m.regex, m.error) in
-    let decode (regex, error) = Ok { regex; error } in
-    Caqti_type.(custom ~encode ~decode (tup2 Regex.t Error.t))
+    let encode t =
+      t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
+    in
+    let decode s =
+      let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
+      try Ok (read s) with
+      | _ ->
+        Error
+          Pool_common.(
+            Utils.error_to_string Language.En Message.(Invalid Field.Validation))
+    in
+    Caqti_type.(custom ~encode ~decode string)
   ;;
 end
 
@@ -138,8 +127,6 @@ module Admin = struct
 end
 
 module Write = struct
-  (* TODO: Can I reuse this caqti type? *)
-
   let of_entity (t : t) =
     Write.
       { id = t.id
