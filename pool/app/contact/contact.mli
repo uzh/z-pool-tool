@@ -48,6 +48,23 @@ type t =
   ; updated_at : Ptime.t
   }
 
+module Field : sig
+  type htmx_field =
+    | Firstname of Pool_user.Firstname.t
+    | Lastname of Pool_user.Lastname.t
+    | Paused of Pool_user.Paused.t
+    | Language of Pool_common.Language.t option
+    | Custom of string * string
+
+  type t = htmx_field * Pool_common.Version.t
+
+  val decode_and_validate
+    :  Pool_common.Message.Field.t
+    -> Pool_common.Version.t
+    -> string
+    -> (t, Pool_common.Message.error) result
+end
+
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
@@ -101,25 +118,15 @@ type create =
   ; language : Pool_common.Language.t option
   }
 
-type update = Event.update =
-  { firstname : Pool_user.Firstname.t
-  ; lastname : Pool_user.Lastname.t
-  ; paused : Pool_user.Paused.t
-  ; language : Pool_common.Language.t option
-  }
-
 type event =
   | Created of create
-  | FirstnameUpdated of t * Pool_user.Firstname.t
-  | LastnameUpdated of t * Pool_user.Lastname.t
-  | PausedUpdated of t * Pool_user.Paused.t
+  | Updated of Field.t * t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -130,10 +137,6 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
-val firstnameupdated : t -> Pool_user.Firstname.t -> event
-val lastnameupdated : t -> Pool_user.Lastname.t -> event
-val pausedupdated : t -> Pool_user.Paused.t -> event
-val languageupdated : t -> Pool_common.Language.t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

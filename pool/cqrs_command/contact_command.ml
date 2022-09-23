@@ -115,13 +115,7 @@ end = struct
 end
 
 module Update : sig
-  type t =
-    { firstname : User.Firstname.t option
-    ; lastname : User.Lastname.t option
-    ; paused : User.Paused.t option
-    ; language : Pool_common.Language.t option
-    ; experiment_type_preference : Pool_common.ExperimentType.t option
-    }
+  type t = Contact.Field.t
 
   val handle
     :  Contact.t
@@ -129,57 +123,35 @@ module Update : sig
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
-
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
 end = struct
-  type t =
-    { firstname : User.Firstname.t option
-    ; lastname : User.Lastname.t option
-    ; paused : User.Paused.t option
-    ; language : Pool_common.Language.t option
-    ; experiment_type_preference : Pool_common.ExperimentType.t option
-    }
+  type t = Contact.Field.t
 
-  let command firstname lastname paused language experiment_type_preference =
-    { firstname; lastname; paused; language; experiment_type_preference }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.
-          [ Conformist.optional @@ User.Firstname.schema ()
-          ; Conformist.optional @@ User.Lastname.schema ()
-          ; Conformist.optional @@ User.Paused.schema ()
-          ; Conformist.optional @@ Pool_common.Language.schema ()
-          ; Conformist.optional @@ Pool_common.ExperimentType.schema ()
-          ]
-        command)
-  ;;
-
-  let handle contact (command : t) =
-    Contact.
-      [ command.firstname |> CCOption.map (firstnameupdated contact)
-      ; command.lastname |> CCOption.map (lastnameupdated contact)
-      ; command.paused |> CCOption.map (pausedupdated contact)
-      ; command.language |> CCOption.map (languageupdated contact)
-      ]
-    |> CCList.filter_map CCFun.id
-    |> CCList.map Pool_event.contact
-    |> CCResult.pure
+  let handle contact ((htmx_field, version) as command : t) =
+    let open CCResult in
+    let* _ =
+      let old_version, field =
+        let open Contact in
+        let open Pool_common.Message in
+        let open Contact.Field in
+        match htmx_field with
+        | Firstname _ -> contact.firstname_version, Field.Firstname
+        | Lastname _ -> contact.lastname_version, Field.Lastname
+        | Paused _ -> contact.paused_version, Field.Paused
+        | Language _ -> contact.language_version, Field.Language
+        | Custom _ -> failwith "Todo"
+      in
+      let open Pool_common.Version in
+      if old_version |> value > (version |> value)
+      then Error Pool_common.Message.(MeantimeUpdate field)
+      else Ok ()
+    in
+    Ok [ Contact.Updated (command, contact) |> Pool_event.contact ]
   ;;
 
   let effects pool subject =
     [ `Update, `Uniq (Contact.id subject |> Pool_common.Id.to_uuidm)
     ; `Update, `Uniq (Pool_tenant.id pool |> Pool_common.Id.to_uuidm)
     ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 end
 

@@ -21,6 +21,7 @@ let field_to_string =
   | CustomField -> "Feld"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
+  | Custom str -> str
   | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
@@ -240,6 +241,7 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvitationSubjectAndTextRequired ->
     "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."

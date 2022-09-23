@@ -63,7 +63,7 @@ let detail Pool_context.{ language; _ } contact =
 ;;
 
 let edit
-  Pool_context.{ language; csrf; _ }
+  Pool_context.{ language; csrf; query_language; _ }
   user_update_csrf
   tenant_languages
   contact
@@ -76,6 +76,7 @@ let edit
         csrf
         user_update_csrf
         language
+        query_language
         (Format.asprintf
            "/admin/contacts/%s"
            (Contact.id contact |> Pool_common.Id.value))

@@ -152,3 +152,45 @@ module Preview = struct
     m.user.Sihl_user.email |> User.EmailAddress.of_string
   ;;
 end
+
+module Field = struct
+  module PoolField = Pool_common.Message.Field
+  module Conformist = Pool_common.Utils.PoolConformist
+
+  type htmx_field =
+    | Firstname of User.Firstname.t
+    | Lastname of User.Lastname.t
+    | Paused of User.Paused.t
+    | Language of Pool_common.Language.t option
+    | Custom of string * string
+  [@@deriving eq, show]
+
+  type t = htmx_field * Pool_common.Version.t [@@deriving eq, show]
+
+  let decode_and_validate field version value =
+    let open CCResult in
+    let validate schema =
+      let schema =
+        Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
+      in
+      Conformist.decode_and_validate
+        schema
+        [ field |> Pool_common.Message.Field.show, [ value ] ]
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    in
+    let custom label = Ok (Custom (label, value)) in
+    (match[@warning "-4"] field with
+    | PoolField.Firstname ->
+      User.Firstname.schema |> validate >|= fun m -> Firstname m
+    | PoolField.Lastname ->
+      User.Lastname.schema |> validate >|= fun m -> Lastname m
+    | PoolField.Paused -> User.Paused.schema |> validate >|= fun m -> Paused m
+    | PoolField.Language ->
+      (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+      |> validate
+      >|= fun m -> Language m
+    | PoolField.Custom str -> custom str
+    | _ -> failwith "Todo")
+    >|= fun htmx -> htmx, version
+  ;;
+end

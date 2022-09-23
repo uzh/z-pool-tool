@@ -26,17 +26,16 @@ let personal_details_form
   csrf
   user_update_csrf
   language
+  query_language
   action
-  tenant_languages
+  _
   contact
   custom_fields
   =
   let open Contact in
-  let form_attrs action =
-    [ a_method `Post
-    ; a_action (Sihl.Web.externalize_path action)
-    ; a_class [ "stack" ]
-    ]
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let form_attrs =
+    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
   in
   let custom_fields_form =
     let open Custom_field in
@@ -49,22 +48,35 @@ let personal_details_form
            ])
   in
   form
-    ~a:(form_attrs action)
+    ~a:form_attrs
     (CCList.flatten
        [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
        ; CCList.map
-           (fun htmx_element ->
-             Htmx.create htmx_element language ~hx_post:action ())
-           Htmx.
-             [ Firstname (contact.firstname_version, contact |> firstname)
-             ; Lastname (contact.lastname_version, contact |> lastname)
-             ; Paused (contact.paused_version, contact.paused)
-             ; Language
-                 (contact.language_version, contact.language, tenant_languages)
+           (fun (field, version, value) ->
+             Htmx.create field language version ~value ~hx_post:action ())
+           Pool_common.Message.
+             [ ( Field.Firstname
+               , contact.firstname_version
+               , contact |> firstname |> Pool_user.Firstname.value )
+             ; ( Field.Lastname
+               , contact.lastname_version
+               , contact |> lastname |> Pool_user.Lastname.value )
+             ; ( Field.Language
+               , contact.language_version
+               , contact.language
+                 |> CCOption.map Pool_common.Language.show
+                 |> CCOption.value ~default:"" )
+             ; Field.Paused, contact.paused_version, ""
              ]
        ]
     @ custom_fields_form)
 ;;
+
+(***
+
+  Htmx.create Pool_common.Message.Field.Paused language
+  contact.Contact.paused_version ~checked:(contact.Contact.paused |>
+  Pool_user.Paused.value) ~hx_post:action () *)
 
 let detail contact Pool_context.{ language; query_language; _ } =
   let open Contact in
@@ -104,7 +116,7 @@ let personal_details
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
-  let action = HttpUtils.path_with_language query_language "/user/update" in
+  let action = "/user/update" in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -112,6 +124,7 @@ let personal_details
             csrf
             user_update_csrf
             language
+            query_language
             action
             tenant_languages
             contact
