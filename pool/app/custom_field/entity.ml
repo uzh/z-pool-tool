@@ -130,6 +130,22 @@ module Validation = struct
       | TextLengthMax n -> "text_length_max", n |> CCInt.to_string
     ;;
 
+    let validate rules value =
+      let open CCResult in
+      let length = CCString.length value in
+      let open Pool_common in
+      CCList.map
+        (fun rule ->
+          match rule with
+          | TextLengthMin i ->
+            if length < i then Error (Message.TextLengthMin i) else Ok ()
+          | TextLengthMax i ->
+            if length > i then Error (Message.TextLengthMax i) else Ok ())
+        rules
+      |> CCList.all_ok
+      >|= CCFun.const value
+    ;;
+
     let all = [ "text_length_min", `Number; "text_length_max", `Number ]
   end
 
@@ -155,6 +171,21 @@ module Validation = struct
     let to_strings = function
       | NumberMin n -> "number_min", n |> CCInt.to_string
       | NumberMax n -> "number_max", n |> CCInt.to_string
+    ;;
+
+    let validate rules value =
+      let open CCResult in
+      let open Pool_common in
+      CCList.map
+        (fun rule ->
+          match rule with
+          | NumberMin i ->
+            if value < i then Error (Message.NumberMin i) else Ok ()
+          | NumberMax i ->
+            if value > i then Error (Message.NumberMax i) else Ok ())
+        rules
+      |> CCList.all_ok
+      >|= CCFun.const value
     ;;
   end
 

@@ -95,6 +95,11 @@ module Validation : sig
     val show : t -> string
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
+
+    val validate
+      :  t list
+      -> string
+      -> (string, Pool_common.Message.error) result
   end
 
   module Number : sig
@@ -107,6 +112,7 @@ module Validation : sig
     val show : t -> string
     val t_of_yojson : Yojson.Safe.t -> t
     val yojson_of_t : t -> Yojson.Safe.t
+    val validate : t list -> int -> (int, Pool_common.Message.error) result
   end
 
   type t =

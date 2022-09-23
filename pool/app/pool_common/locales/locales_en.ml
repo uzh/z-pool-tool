@@ -252,6 +252,8 @@ let rec error_to_string = function
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
+  | NumberMax i -> Format.asprintf "Must not be larger than %i." i
+  | NumberMin i -> Format.asprintf "Must not be smaller than %i." i
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
@@ -281,6 +283,8 @@ let rec error_to_string = function
     "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
+  | TextLengthMax i -> Format.asprintf "Must not be longer than %i." i
+  | TextLengthMin i -> Format.asprintf "Must not be shorter than %i." i
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."

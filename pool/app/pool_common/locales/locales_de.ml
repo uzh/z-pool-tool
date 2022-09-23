@@ -269,6 +269,8 @@ let rec error_to_string = function
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
+  | NumberMax i -> Format.asprintf "Darf nicht grösser als %i sein." i
+  | NumberMin i -> Format.asprintf "Darf nicht kleiner als %i sein." i
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
@@ -306,6 +308,8 @@ let rec error_to_string = function
     "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
+  | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i sein." i
+  | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i sein." i
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."

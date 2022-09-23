@@ -178,23 +178,6 @@ module Field = struct
   let array_key m = m |> show |> Format.asprintf "%s[]"
 end
 
-module CustomField = struct
-  let printer m fmt _ = Format.pp_print_string fmt m
-
-  type error =
-    | IntMinValue (* of int *) [@name "int_min_value"]
-        [@printer printer "int_min_value"]
-    | IntMaxValue (* of int *) [@name "int_max_value"]
-        [@printer printer "int_max_value"]
-    | StringMaxLength (* of int *) [@name "string_max_length"]
-        [@printer printer "string_max_length"]
-    | StringMinLength (* of int *) [@name "string_min_length"]
-        [@printer printer "string_min_length"]
-    | NoValue [@name "no_value"] [@printer printer "no_value"]
-    | Invalid [@name "invalid"] [@printer printer "invalid"]
-  [@@deriving eq, show { with_path = false }, yojson]
-end
-
 (* TODO [aerben] make these general, compare what fields exist already, whenever
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
@@ -237,6 +220,8 @@ type error =
   | NotHandled of string
   | NotInTimeRange
   | NoValue
+  | NumberMax of int
+  | NumberMin of int
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicy
   | PasswordResetFailMessage
@@ -257,6 +242,8 @@ type error =
   | TerminatoryTenantErrorTitle
   | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
+  | TextLengthMax of int
+  | TextLengthMin of int
   | TimeInPast
   | TimeSpanPositive
   | TokenAlreadyUsed
