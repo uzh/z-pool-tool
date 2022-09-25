@@ -115,7 +115,7 @@ end = struct
 end
 
 module Update : sig
-  type t = Contact.Field.t
+  type t = Contact.PartialUpdate.t
 
   val handle
     :  Contact.t
@@ -124,28 +124,10 @@ module Update : sig
 
   val effects : Pool_tenant.t -> Contact.t -> Ocauth.Authorizer.effect list
 end = struct
-  type t = Contact.Field.t
+  type t = Contact.PartialUpdate.t
 
-  let handle contact ((htmx_field, version) as command : t) =
-    let open CCResult in
-    let* _ =
-      let old_version, field =
-        let open Contact in
-        let open Pool_common.Message in
-        let open Contact.Field in
-        match htmx_field with
-        | Firstname _ -> contact.firstname_version, Field.Firstname
-        | Lastname _ -> contact.lastname_version, Field.Lastname
-        | Paused _ -> contact.paused_version, Field.Paused
-        | Language _ -> contact.language_version, Field.Language
-        | Custom _ -> failwith "Todo"
-      in
-      let open Pool_common.Version in
-      if old_version |> value > (version |> value)
-      then Error Pool_common.Message.(MeantimeUpdate field)
-      else Ok ()
-    in
-    Ok [ Contact.Updated (command, contact) |> Pool_event.contact ]
+  let handle contact (field : t) =
+    Ok [ Contact.Updated (field, contact) |> Pool_event.contact ]
   ;;
 
   let effects pool subject =

@@ -153,22 +153,25 @@ module Preview = struct
   ;;
 end
 
-module Field = struct
+module PartialUpdate = struct
   module PoolField = Pool_common.Message.Field
   module Conformist = Pool_common.Utils.PoolConformist
 
-  type htmx_field =
-    | Firstname of User.Firstname.t
-    | Lastname of User.Lastname.t
-    | Paused of User.Paused.t
-    | Language of Pool_common.Language.t option
-    | Custom of string * string
-  [@@deriving eq, show]
+  type t =
+    | Firstname of Pool_common.Version.t * User.Firstname.t
+    | Lastname of Pool_common.Version.t * User.Lastname.t
+    | Paused of Pool_common.Version.t * User.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
+  [@@deriving eq, show, variants]
 
-  type t = htmx_field * Pool_common.Version.t [@@deriving eq, show]
-
-  let decode_and_validate field version value =
-    let open CCResult in
+  let validate contact (field, version, value) =
+    let check_version old_v t =
+      let open Pool_common.Version in
+      if old_v |> value > (version |> value)
+      then Error Pool_common.Message.(MeantimeUpdate field)
+      else Ok t
+    in
     let validate schema =
       let schema =
         Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
@@ -178,19 +181,40 @@ module Field = struct
         [ field |> Pool_common.Message.Field.show, [ value ] ]
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     in
-    let custom label = Ok (Custom (label, value)) in
-    (match[@warning "-4"] field with
+    let open CCResult in
+    match[@warning "-4"] field with
     | PoolField.Firstname ->
-      User.Firstname.schema |> validate >|= fun m -> Firstname m
+      User.Firstname.schema
+      |> validate
+      >|= (fun m -> Firstname (version, m))
+      >>= check_version contact.firstname_version
     | PoolField.Lastname ->
-      User.Lastname.schema |> validate >|= fun m -> Lastname m
-    | PoolField.Paused -> User.Paused.schema |> validate >|= fun m -> Paused m
+      User.Lastname.schema
+      |> validate
+      >|= (fun m -> Lastname (version, m))
+      >>= check_version contact.lastname_version
+    | PoolField.Paused ->
+      User.Paused.schema
+      |> validate
+      >|= (fun m -> Paused (version, m))
+      >>= check_version contact.paused_version
     | PoolField.Language ->
       (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
       |> validate
-      >|= fun m -> Language m
-    | PoolField.Custom str -> custom str
-    | _ -> failwith "Todo")
-    >|= fun htmx -> htmx, version
+      >|= (fun m -> Language (version, m))
+      >>= check_version contact.language_version
+    | _ -> failwith "Todo"
+  ;;
+
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
+    | Custom _ -> failwith "TODO"
   ;;
 end
+
+let validate_partial_update = PartialUpdate.validate

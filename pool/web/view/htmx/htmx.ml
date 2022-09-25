@@ -9,14 +9,6 @@ let hx_target = a_user_data "hx-target"
 let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
-
-type t =
-  | Firstname of Version.t * User.Firstname.t
-  | Lastname of Version.t * User.Lastname.t
-  | Paused of Version.t * User.Paused.t
-  | Language of
-      Version.t * Pool_common.Language.t option * Pool_common.Language.t list
-
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 
 let hx_attributes field version ?action () =
@@ -33,90 +25,98 @@ let hx_attributes field version ?action () =
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
 
-(* TODO[timhub]:
+type 'a selector =
+  { show : 'a -> string
+  ; options : 'a list
+  ; selected : 'a option
+  }
 
-   - Create multiple htmx input types? - Text - Checkbox - Select? *)
+type 'a value =
+  | Text of string option
+  | Number of int option
+  | Checkbox of bool
+  | Select of 'a selector
+
+type 'a t = Version.t * Pool_common.Message.Field.t * 'a value
+
 let create
-    field
-    language
-    version
-    ?value
-    ?checked
-    ?(classnames = [])
-    ?hx_post
-    ?error
-    ?success
-    ()
+  ((version, field, value) : 'a t)
+  language
+  ?(classnames = [])
+  ?hx_post
+  ?error
+  ?success
+  ()
   =
-  let open Pool_common in
-  let field_to_string = Utils.field_to_string language in
-  let value = CCOption.value ~default:"" value in
-  let checked = CCOption.value ~default:false checked in
+  let _ = Pool_common.Message.Field.CustomHtmx ("name", "Label") in
   let input_class =
     match error, success with
-    | Some _, None -> [ "has-error" ]
     | None, Some _ -> [ "success" ]
     | _, _ -> []
   in
-  let error_msg =
-    match error with
-    | None -> span []
-    | Some error ->
-      span
-        ~a:[ a_class [ "help"; "error-message" ] ]
-        [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+  let classnames = classnames @ input_class in
+  let additional_attributes =
+    [ a_class input_class ] @ hx_attributes field version ?action:hx_post ()
   in
-  let base_input_attributes input_type field version =
-    [ a_input_type input_type
-    ; a_name Message.Field.(field |> show)
-    ; a_placeholder (field_to_string field)
-    ; a_class input_class
-    ]
-    @ hx_attributes field version ?action:hx_post ()
-  in
-  let input, field =
-    let open Pool_common.Message in
-    match[@warning "-4"] field with
-    | Field.Firstname ->
-      let field = Message.Field.Firstname in
-      ( input
-          ~a:(base_input_attributes `Text field version @ [ a_value value ])
-          ()
-      , field )
-    | Field.Lastname ->
-      let field = Message.Field.Lastname in
-      ( input
-          ~a:(base_input_attributes `Text field version @ [ a_value value ])
-          ()
-      , field )
-    | Field.Paused ->
-      let field = Message.Field.Paused in
-      let is_checked = if checked then [ a_checked () ] else [] in
-      ( input ~a:(base_input_attributes `Checkbox field version @ is_checked) ()
-      , field )
-    | Field.Language ->
-      let field = Message.Field.Language in
-      ( Component.language_select
-          Pool_common.Language.all (* TODO[timhub]: Use correct languages *)
-          (value |> Pool_common.Language.create |> CCResult.to_opt)
-          ~field
-          ~attributes:
-            (a_class input_class
-            :: hx_attributes field version ?action:hx_post ())
-          ()
-      , field )
-    | Field.Custom _ -> failwith "Todo"
-    | _ -> failwith "Todo"
-  in
-  div
-    ~a:[ a_class ([ "form-group" ] @ classnames) ]
-    [ label [ txt (field_to_string field |> CCString.capitalize_ascii) ]
-    ; input
-    ; error_msg
-    ]
+  let default s = Option.value ~default:"" s in
+  match value with
+  | Text str ->
+    Component.input_element
+      ~classnames
+      ~value:(str |> default)
+      ~additional_attributes
+      ?error
+      language
+      `Text
+      field
+  | Number n ->
+    Component.input_element
+      ~classnames
+      ~value:(n |> CCOption.map CCInt.to_string |> default)
+      ~additional_attributes
+      ?error
+      language
+      `Number
+      field
+  | Checkbox boolean ->
+    Component.checkbox_element
+      ~additional_attributes
+      ~classnames
+      ~value:boolean
+      language
+      field
+  | Select { show; options; selected } ->
+    Component.selector
+      ~attributes:additional_attributes
+      language
+      field
+      show
+      options
+      selected
+      ()
 ;;
 
 (* Use this CSRF element as HTMX response in POSTs*)
 let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
+;;
+
+let partial_update_to_htmx sys_languages =
+  let open Contact.PartialUpdate in
+  let open Pool_common.Message in
+  function
+  | Firstname (v, firstname) ->
+    v, Field.Firstname, Text (firstname |> User.Firstname.value |> CCOption.pure)
+  | Lastname (v, lastname) ->
+    v, Field.Lastname, Text (lastname |> User.Lastname.value |> CCOption.pure)
+  | Paused (v, paused) -> v, Field.Paused, Checkbox (paused |> User.Paused.value)
+  | Language (v, lang) ->
+    ( v
+    , Field.Language
+    , Select
+        { show = Pool_common.Language.show
+        ; options = sys_languages
+        ; selected = lang
+        } )
+  | Custom _ -> failwith "TODO"
 ;;

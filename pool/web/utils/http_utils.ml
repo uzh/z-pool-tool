@@ -93,6 +93,33 @@ let extract_happy_path_with_actions req result =
   | Error _ -> redirect_to "/error"
 ;;
 
+let extract_happy_path_htmx req result =
+  let htmx_redirect path ?query_language ?(actions = []) () =
+    Sihl.Web.Response.of_plain_text ""
+    |> Sihl.Web.Response.add_header
+         ("HX-Redirect", path_with_language query_language path)
+    |> CCList.fold_left CCFun.( % ) CCFun.id actions
+    |> Lwt.return
+  in
+  let context = Pool_context.find req in
+  match context with
+  | Ok ({ Pool_context.query_language; _ } as context) ->
+    let%lwt res = result context in
+    res
+    |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
+    |> CCResult.map Lwt.return
+    |> CCResult.get_lazy (fun (error_msg, error_path) ->
+         htmx_redirect
+           error_path
+           ?query_language
+           ~actions:[ Message.set ~error:[ error_msg ] ]
+           ())
+  | Error err ->
+    Logs.err (fun m ->
+      m "%s" @@ Pool_common.(Utils.error_to_string Language.En err));
+    htmx_redirect "/error" ()
+;;
+
 (* Read urlencoded values in any order *)
 let urlencoded_to_params_opt urlencoded keys =
   keys

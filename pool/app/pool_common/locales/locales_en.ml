@@ -21,7 +21,7 @@ let field_to_string =
   | CustomField -> "field"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
-  | Custom str -> str
+  | CustomHtmx (_, label) -> label
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"

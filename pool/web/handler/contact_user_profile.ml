@@ -7,6 +7,33 @@ module PoolField = Pool_common.Message.Field
 let create_layout = Contact_general.create_layout
 let user_update_csrf = "_user_update_csrf"
 
+let parse_urlencoded urlencoded =
+  let open Pool_common.Message in
+  let open CCResult in
+  let find_param name err =
+    let open CCOption in
+    CCList.assoc_opt ~eq:CCString.equal name urlencoded
+    >>= CCList.head_opt
+    |> to_result err
+  in
+  let* field_str = find_param "field" InvalidHtmxRequest in
+  let field =
+    try PoolField.read field_str with
+    (* TODO: Check if given field is custom field name *)
+    | _ -> PoolField.CustomHtmx (field_str, field_str)
+  in
+  let* version =
+    find_param "version" (HtmxVersionNotFound field_str)
+    >>= fun i ->
+    i
+    |> CCInt.of_string
+    |> CCOption.map Pool_common.Version.of_int
+    |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
+  in
+  let* value = find_param field_str InvalidHtmxRequest in
+  Ok (field, version, value)
+;;
+
 let show usage req =
   let result ({ Pool_context.tenant_db; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
@@ -57,33 +84,6 @@ let details = show `Overview
 let personal_details = show `PersonalDetails
 let login_information = show `LoginInformation
 
-let decode_and_validate urlencoded field version value =
-  let open Contact.Field in
-  let open CCResult in
-  let validate schema =
-    let schema =
-      Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
-    in
-    Conformist.decode_and_validate schema urlencoded
-    |> CCResult.map_err (fun err ->
-         err |> Pool_common.Message.to_conformist_error)
-  in
-  let custom label = Ok (Custom (label, value)) in
-  (match[@warning "-4"] field with
-   | PoolField.Firstname ->
-     User.Firstname.schema |> validate >|= fun m -> Firstname m
-   | PoolField.Lastname ->
-     User.Lastname.schema |> validate >|= fun m -> Lastname m
-   | PoolField.Paused -> User.Paused.schema |> validate >|= fun m -> Paused m
-   | PoolField.Language ->
-     (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
-     |> validate
-     >|= fun m -> Language m
-   | PoolField.Custom str -> custom str
-   | _ -> failwith "Todo")
-  >|= fun htmx -> htmx, version
-;;
-
 let update req =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -106,81 +106,74 @@ let update req =
       Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
       ||> with_redirect "/login"
     in
-    let find_param name err =
-      let open CCOption in
-      CCList.assoc_opt ~eq:CCString.equal name urlencoded
-      >>= CCList.head_opt
-      |> to_result err
-    in
-    let* field_str =
-      find_param "field" InvalidHtmxRequest
-      |> with_redirect "/user/update"
+    let* Pool_context.Tenant.{ tenant_languages; _ } =
+      Pool_context.Tenant.find req
+      |> with_redirect "/user/personal-details"
       |> Lwt_result.lift
     in
-    let* version =
-      find_param "version" (HtmxVersionNotFound field_str)
-      |> with_redirect "/user/update"
-      |> Lwt_result.lift
-      >>= fun i ->
-      i
-      |> CCInt.of_string
-      |> CCOption.map Pool_common.Version.of_int
-      |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
-      |> with_redirect "/user/update"
+    let* field, version, value =
+      parse_urlencoded urlencoded
+      |> with_redirect "/user/personal-details"
       |> Lwt_result.lift
     in
-    let* value =
-      find_param field_str InvalidHtmxRequest
-      |> with_redirect "/user/update"
-      |> Lwt_result.lift
-    in
-    let field =
-      try PoolField.read field_str with
-      | _ -> PoolField.Custom field_str
-    in
-    let events =
+    let%lwt response =
       let open CCResult in
-      Contact.Field.decode_and_validate field version value
-      >>= Cqrs_command.Contact_command.Update.handle contact
-    in
-    let htmx_element classnames version ?error () =
-      let hx_post = Sihl.Web.externalize_path (path_with_lang "/user/update") in
-      let csrf_element = Htmx.csrf_element_swap csrf ~id:user_update_csrf () in
-      let success =
-        match error with
-        | None -> true
-        | Some _ -> false
+      let partial_update =
+        Contact.validate_partial_update contact (field, version, value)
       in
-      [ Htmx.create
-          field
-          language
-          ~classnames
-          ~hx_post
-          ?error
-          ~success
-          ~value
-          version
-          ()
-      ; csrf_element
-      ]
-      |> HttpUtils.multi_html_to_plain_text_response
+      let events =
+        let open CCResult in
+        partial_update >>= Cqrs_command.Contact_command.Update.handle contact
+      in
+      let htmx_element () =
+        let hx_post =
+          Sihl.Web.externalize_path (path_with_lang "/user/update")
+        in
+        let csrf_element =
+          Htmx.csrf_element_swap csrf ~id:user_update_csrf ()
+        in
+        let htmx =
+          let open Pool_common.Message in
+          match partial_update with
+          | Ok partial_update ->
+            let input =
+              partial_update
+              |> Contact.PartialUpdate.increment_version
+              |> Htmx.partial_update_to_htmx tenant_languages
+            in
+            Htmx.create input language ~hx_post ~success:true ()
+          | Error error ->
+            let[@warning "-4"] value =
+              match field with
+              | Field.Firstname -> Htmx.Text (value |> CCOption.pure)
+              | Field.Lastname -> Htmx.Text (value |> CCOption.pure)
+              | Field.Paused -> Htmx.Checkbox false
+              | Field.Language ->
+                let open Htmx in
+                Select
+                  { show = Pool_common.Language.show
+                  ; options = tenant_languages
+                  ; selected =
+                      value |> Pool_common.Language.create |> CCResult.to_opt
+                  }
+              | _ -> failwith "TODO"
+            in
+            Htmx.create (version, field, value) language ~hx_post ~error ()
+        in
+        [ htmx; csrf_element ] |> HttpUtils.multi_html_to_plain_text_response
+      in
+      (* TODO: When and where to update version? *)
+      let%lwt () =
+        match events with
+        | Error _ -> Lwt.return_unit
+        | Ok events ->
+          events |> Lwt_list.iter_s (Pool_event.handle_event tenant_db)
+      in
+      htmx_element () |> Lwt.return
     in
-    match events with
-    | Ok events ->
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
-      htmx_element [ "success" ] (Pool_common.Version.increment version) ()
-      |> Lwt_result.return
-    | Error err ->
-      htmx_element [ "error" ] version ~error:err () |> Lwt_result.return
+    response |> Lwt_result.return
   in
-  (* TODO: Error handling *)
-  Lwt.catch
-    (fun () -> result |> HttpUtils.extract_happy_path req)
-    (fun exn ->
-      Logs.err (fun m -> m "%s" @@ Printexc.to_string exn);
-      Sihl.Web.Response.of_plain_text ""
-      |> Sihl.Web.Response.add_header ("HX-Redirect", "/error")
-      |> Lwt.return)
+  HttpUtils.extract_happy_path_htmx req result
 ;;
 
 let update_email req =

@@ -16,7 +16,7 @@ let update_sql column_fragment =
   Format.asprintf "%s %s %s" base column_fragment where_fragment
 ;;
 
-let partial_update pool (field : Entity.Field.t) contact =
+let partial_update pool (field : Entity.PartialUpdate.t) contact =
   let open Entity in
   let base_caqti = Pool_common.Repo.Id.t in
   let dyn =
@@ -25,10 +25,9 @@ let partial_update pool (field : Entity.Field.t) contact =
     |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ())
   in
   let%lwt dyn, sql =
-    let open Field in
-    let htmx_field, version = field in
-    match htmx_field with
-    | Firstname value ->
+    let open PartialUpdate in
+    match field with
+    | Firstname (version, value) ->
       let%lwt (_ : Entity.Sihl_user.t) =
         update_sihl_user
           pool
@@ -43,7 +42,7 @@ let partial_update pool (field : Entity.Field.t) contact =
         , {sql|
           firstname_version = $3
         |sql} )
-    | Lastname value ->
+    | Lastname (version, value) ->
       let%lwt (_ : Entity.Sihl_user.t) =
         update_sihl_user
           pool
@@ -58,7 +57,7 @@ let partial_update pool (field : Entity.Field.t) contact =
         , {sql|
             lastname_version = $3
           |sql} )
-    | Paused value ->
+    | Paused (version, value) ->
       Lwt.return
         ( dyn
           |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
@@ -70,7 +69,7 @@ let partial_update pool (field : Entity.Field.t) contact =
               paused_version = $4
             |sql}
         )
-    | Language value ->
+    | Language (version, value) ->
       Lwt.return
         ( dyn
           |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value

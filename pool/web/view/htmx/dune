@@ -1,3 +1,3 @@
 (library
  (name htmx)
- (libraries component http_utils service sihl tyxml))
+ (libraries custom_field component http_utils service sihl tyxml))

@@ -48,22 +48,21 @@ type t =
   ; updated_at : Ptime.t
   }
 
-module Field : sig
-  type htmx_field =
-    | Firstname of Pool_user.Firstname.t
-    | Lastname of Pool_user.Lastname.t
-    | Paused of Pool_user.Paused.t
-    | Language of Pool_common.Language.t option
-    | Custom of string * string
+module PartialUpdate : sig
+  type t =
+    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
+    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
+    | Paused of Pool_common.Version.t * Pool_user.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
 
-  type t = htmx_field * Pool_common.Version.t
-
-  val decode_and_validate
-    :  Pool_common.Message.Field.t
-    -> Pool_common.Version.t
-    -> string
-    -> (t, Pool_common.Message.error) result
+  val increment_version : t -> t
 end
+
+val validate_partial_update
+  :  t
+  -> Pool_common.Message.Field.t * Pool_common.Version.t * string
+  -> (PartialUpdate.t, Pool_common.Message.error) result
 
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
@@ -120,7 +119,7 @@ type create =
 
 type event =
   | Created of create
-  | Updated of Field.t * t
+  | Updated of PartialUpdate.t * t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t

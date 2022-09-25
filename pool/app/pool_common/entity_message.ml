@@ -3,6 +3,11 @@ open Sexplib.Conv
 module Field = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
+  let custom _ fmt t =
+    let name, _ = t in
+    Format.pp_print_string fmt name
+  ;;
+
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -26,7 +31,9 @@ module Field = struct
         [@printer go "current_password"]
     (* TODO: Are both fields required? *)
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
-    | Custom of string [@name "custom"] [@printer go "custom"]
+      (* TODO: Are both fields required? *)
+    | CustomHtmx of (string * string) [@name "custom"]
+        [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
     | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer go "database_url"]

@@ -172,8 +172,9 @@ let contacts db_pool =
       match contact with
       | Ok contact ->
         [ Contact.Updated
-            ( ( Contact.Field.Paused (paused |> Pool_user.Paused.create)
-              , Pool_common.Version.create () )
+            ( Contact.PartialUpdate.Paused
+                ( Pool_common.Version.create ()
+                , paused |> Pool_user.Paused.create )
             , contact )
         ]
         @ (if disabled then [ Contact.Disabled contact ] else [])

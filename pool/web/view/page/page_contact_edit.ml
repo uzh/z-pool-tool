@@ -28,7 +28,7 @@ let personal_details_form
   language
   query_language
   action
-  _
+  tenant_languages
   contact
   custom_fields
   =
@@ -47,36 +47,43 @@ let personal_details_form
                |> CCOption.map_or ~default:"-" Name.value_name)
            ])
   in
+  let open Pool_common.Message in
   form
     ~a:form_attrs
-    (CCList.flatten
-       [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
-       ; CCList.map
-           (fun (field, version, value) ->
-             Htmx.create field language version ~value ~hx_post:action ())
-           Pool_common.Message.
-             [ ( Field.Firstname
-               , contact.firstname_version
-               , contact |> firstname |> Pool_user.Firstname.value )
-             ; ( Field.Lastname
-               , contact.lastname_version
-               , contact |> lastname |> Pool_user.Lastname.value )
-             ; ( Field.Language
-               , contact.language_version
-               , contact.language
-                 |> CCOption.map Pool_common.Language.show
-                 |> CCOption.value ~default:"" )
-             ; Field.Paused, contact.paused_version, ""
-             ]
-       ]
-    @ custom_fields_form)
+    [ div
+        ~a:[ a_class [ "stack" ] ]
+        (Component.csrf_element csrf ~id:user_update_csrf ()
+        :: CCList.map
+             (fun field -> Htmx.create field language ~hx_post:action ())
+             Htmx.
+               [ ( contact.firstname_version
+                 , Field.Firstname
+                 , Text
+                     (contact
+                     |> Contact.firstname
+                     |> User.Firstname.value
+                     |> CCOption.pure) )
+               ; ( contact.lastname_version
+                 , Field.Lastname
+                 , Text
+                     (contact
+                     |> Contact.lastname
+                     |> User.Lastname.value
+                     |> CCOption.pure) )
+               ; ( contact.lastname_version
+                 , Field.Language
+                 , Select
+                     { show = Pool_common.Language.show
+                     ; options = tenant_languages
+                     ; selected = contact.language
+                     } )
+               ; ( contact.paused_version
+                 , Field.Paused
+                 , Checkbox (contact.paused |> User.Paused.value) )
+               ])
+    ; div ~a:[ a_class [ "stack" ] ] custom_fields_form
+    ]
 ;;
-
-(***
-
-  Htmx.create Pool_common.Message.Field.Paused language
-  contact.Contact.paused_version ~checked:(contact.Contact.paused |>
-  Pool_user.Paused.value) ~hx_post:action () *)
 
 let detail contact Pool_context.{ language; query_language; _ } =
   let open Contact in

@@ -195,6 +195,8 @@ type t =
   }
 
 val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
+val show : t -> string
 
 val create
   :  ?id:Id.t

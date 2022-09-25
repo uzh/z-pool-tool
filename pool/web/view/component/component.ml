@@ -76,6 +76,15 @@ module Elements = struct
       ]
   ;;
 
+  let error language = function
+    | None -> []
+    | Some error ->
+      [ span
+          ~a:[ a_class [ "help"; "error-message" ] ]
+          [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+      ]
+  ;;
+
   let apply_orientation attributes = function
     | `Vertical -> input ~a:attributes ()
     | `Horizontal ->
@@ -110,6 +119,7 @@ let input_element
   ?(required = false)
   ?flash_fetcher
   ?value
+  ?error
   ?(additional_attributes = [])
   language
   input_type
@@ -123,17 +133,21 @@ let input_element
       Elements.attributes input_type name id [ a_value value ]
       @ additional_attributes
     in
-    if required then a_required () :: attrs else attrs
+    let attrs = if required then a_required () :: attrs else attrs in
+    if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
     let group_class = Elements.group_class classnames orientation in
     let help = Elements.help language help in
+    let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
     div
       ~a:[ a_class group_class ]
-      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help)
+      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
+      @ help
+      @ error)
 ;;
 
 let flatpicker_element
@@ -206,6 +220,7 @@ let checkbox_element
   ?flash_fetcher
   ?(required = false)
   ?(value = false)
+  ?(additional_attributes = [])
   language
   name
   =
@@ -229,7 +244,9 @@ let checkbox_element
   in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
-  let input_element = Elements.apply_orientation attributes orientation in
+  let input_element =
+    Elements.apply_orientation (attributes @ additional_attributes) orientation
+  in
   div
     ~a:[ a_class group_class ]
     [ div

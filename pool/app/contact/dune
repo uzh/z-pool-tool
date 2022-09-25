@@ -1,6 +1,7 @@
 (library
  (name contact)
  (libraries
+  custom_field
   email
   pool_common
   pool_user
