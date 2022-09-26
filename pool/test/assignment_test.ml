@@ -1,15 +1,7 @@
 module ContactCommand = Cqrs_command.Contact_command
 module AssignmentCommand = Cqrs_command.Assignment_command
 module Field = Pool_common.Message.Field
-
-let check_result expected generated =
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
-;;
+module Model = Test_utils.Model
 
 type assignment_data =
   { session : Session.Public.t
@@ -18,9 +10,9 @@ type assignment_data =
   }
 
 let assignment_data () =
-  let session = Test_utils.create_public_session () in
-  let experiment = Test_utils.create_experiment () in
-  let contact = Test_utils.create_contact () in
+  let session = Model.create_public_session () in
+  let experiment = Model.create_experiment () in
+  let contact = Model.create_contact () in
   { session; experiment; contact }
 ;;
 
@@ -35,11 +27,9 @@ let confirmation_email =
 let create () =
   let { session; experiment; contact } = assignment_data () in
   let waiting_list =
-    Test_utils.create_waiting_list_from_experiment_and_contact
-      experiment
-      contact
+    Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
-  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
+  let experiment = experiment |> Model.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
@@ -58,20 +48,20 @@ let create () =
         |> Pool_event.email
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let canceled () =
-  let assignment = Test_utils.create_assignment () in
+  let assignment = Model.create_assignment () in
   let events = AssignmentCommand.Cancel.handle assignment in
   let expected =
     Ok [ Assignment.Canceled assignment |> Pool_event.assignment ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let set_attendance () =
-  let assignment = Test_utils.create_assignment () in
+  let assignment = Model.create_assignment () in
   let show_up = "true" in
   let participated = "false" in
   let events =
@@ -94,18 +84,16 @@ let set_attendance () =
         |> Pool_event.assignment
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let assign_to_fully_booked_session () =
   let { session; experiment; contact } = assignment_data () in
-  let session = session |> Test_utils.fully_book_public_session in
+  let session = session |> Model.fully_book_public_session in
   let waiting_list =
-    Test_utils.create_waiting_list_from_experiment_and_contact
-      experiment
-      contact
+    Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
-  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
+  let experiment = experiment |> Model.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
@@ -114,19 +102,17 @@ let assign_to_fully_booked_session () =
     AssignmentCommand.Create.handle command confirmation_email false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let assign_to_experiment_with_direct_registration_disabled () =
   let { session; experiment; contact } = assignment_data () in
-  let session = session |> Test_utils.fully_book_public_session in
+  let session = session |> Model.fully_book_public_session in
   let waiting_list =
-    Test_utils.create_waiting_list_from_experiment_and_contact
-      experiment
-      contact
+    Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
   let experiment =
-    let public = experiment |> Test_utils.experiment_to_public_experiment in
+    let public = experiment |> Model.experiment_to_public_experiment in
     Experiment.Public.
       { public with
         direct_registration_disabled =
@@ -141,18 +127,16 @@ let assign_to_experiment_with_direct_registration_disabled () =
     AssignmentCommand.Create.handle command confirmation_email false
   in
   let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let assign_to_session_contact_is_already_assigned () =
   let { session; experiment; contact } = assignment_data () in
   let already_assigned = true in
   let waiting_list =
-    Test_utils.create_waiting_list_from_experiment_and_contact
-      experiment
-      contact
+    Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
-  let experiment = experiment |> Test_utils.experiment_to_public_experiment in
+  let experiment = experiment |> Model.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
@@ -161,12 +145,12 @@ let assign_to_session_contact_is_already_assigned () =
     AssignmentCommand.Create.handle command confirmation_email already_assigned
   in
   let expected = Error Pool_common.Message.(AlreadySignedUpForExperiment) in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let assign_contact_from_waiting_list () =
-  let session = Test_utils.create_session () in
-  let waiting_list = Test_utils.create_waiting_list () in
+  let session = Model.create_session () in
+  let waiting_list = Model.create_waiting_list () in
   let already_enrolled = false in
   let events =
     let command =
@@ -191,19 +175,19 @@ let assign_contact_from_waiting_list () =
         |> Pool_event.email
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let assign_contact_from_waiting_list_to_disabled_experiment () =
-  let session = Test_utils.create_session () in
-  let experiment = Test_utils.create_experiment () in
+  let session = Model.create_session () in
+  let experiment = Model.create_experiment () in
   let experiment =
     Experiment.
       { experiment with
         registration_disabled = true |> RegistrationDisabled.create
       }
   in
-  let waiting_list = Test_utils.create_waiting_list () in
+  let waiting_list = Model.create_waiting_list () in
   let waiting_list = Waiting_list.{ waiting_list with experiment } in
   let already_enrolled = false in
   let events =
@@ -214,5 +198,5 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
     AssignmentCommand.CreateFromWaitingList.handle command confirmation_email
   in
   let expected = Error Pool_common.Message.(RegistrationDisabled) in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;

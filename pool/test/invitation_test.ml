@@ -1,5 +1,6 @@
 module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_common.Message.Field
+module Model = Test_utils.Model
 
 let i18n_templates languages =
   let open I18n in
@@ -22,17 +23,8 @@ let i18n_templates languages =
     languages
 ;;
 
-let check_result expected generated =
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
-;;
-
 let create_invitation () =
-  let contact = Test_utils.create_contact () in
+  let contact = Model.create_contact () in
   Invitation.
     { id = Pool_common.Id.create ()
     ; contact
@@ -43,8 +35,8 @@ let create_invitation () =
 ;;
 
 let create () =
-  let experiment = Test_utils.create_experiment () in
-  let contact = Test_utils.create_contact () in
+  let experiment = Model.create_experiment () in
+  let contact = Model.create_contact () in
   let languages = Pool_common.Language.all in
   let i18n_templates = i18n_templates languages in
   let events =
@@ -71,13 +63,13 @@ let create () =
       ; Email.InvitationBulkSent email |> Pool_event.email
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let resend () =
   let open InvitationCommand.Resend in
   let invitation = create_invitation () in
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let languages = Pool_common.Language.all in
   let i18n_templates = i18n_templates languages in
   let events = handle { invitation; experiment } languages i18n_templates in
@@ -102,5 +94,5 @@ let resend () =
         |> Pool_event.email
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
