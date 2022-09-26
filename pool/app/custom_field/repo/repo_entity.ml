@@ -28,17 +28,8 @@ module Name = struct
   include Name
 
   let t =
-    let encode t =
-      t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
-    in
-    let decode t =
-      let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-      try Ok (read t) with
-      | _ ->
-        Error
-          Pool_common.(
-            Utils.error_to_string Language.En Message.(Invalid Field.Name))
-    in
+    let encode = encode_yojson yojson_of_t in
+    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Name in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -47,17 +38,8 @@ module Hint = struct
   include Hint
 
   let t =
-    let encode t =
-      t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
-    in
-    let decode s =
-      let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-      try Ok (read s) with
-      | _ ->
-        Error
-          Pool_common.(
-            Utils.error_to_string Language.En Message.(Invalid Field.Hint))
-    in
+    let encode = encode_yojson yojson_of_t in
+    let decode = decode_yojson t_of_yojson Pool_common.Message.Field.Hint in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -78,16 +60,9 @@ module Validation = struct
   include Validation
 
   let t =
-    let encode t =
-      t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
-    in
-    let decode s =
-      let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-      try Ok (read s) with
-      | _ ->
-        Error
-          Pool_common.(
-            Utils.error_to_string Language.En Message.(Invalid Field.Validation))
+    let encode = encode_yojson yojson_of_t in
+    let decode =
+      decode_yojson t_of_yojson Pool_common.Message.Field.Validation
     in
     Caqti_type.(custom ~encode ~decode string)
   ;;

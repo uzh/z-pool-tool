@@ -53,11 +53,9 @@ let form ?id req =
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* custom_field =
-      match id with
-      | Some id ->
-        let* field = Custom_field.find tenant_db id in
-        Lwt_result.return (Some field)
-      | None -> Lwt_result.return None
+      id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Custom_field.find tenant_db id >|= CCOption.pure)
     in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail
