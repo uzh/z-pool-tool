@@ -23,26 +23,22 @@ end = struct
     ; i18n_templates : (Pool_common.Language.t * (I18n.t * I18n.t)) list
     }
 
-  let handle matchings =
-    let open Invitation_command in
-    matchings
-    |> CCList.map
-         (fun { experiment; contacts; skip_contacts; i18n_templates; _ } ->
-         let languages = Pool_common.Language.all in
-         let command =
-           Create.
-             { experiment
-             ; contacts
-             ; invited_contacts = skip_contacts |> CCList.map Contact.id
-             }
-         in
-         Create.handle
-           ~skip_already_invited:true
-           command
-           languages
-           i18n_templates)
-    |> CCList.all_ok
-    |> CCResult.map CCList.flatten
+  let handle =
+    let open CCFun.Infix in
+    CCList.map
+      (fun { experiment; contacts; skip_contacts; i18n_templates; _ } ->
+      let open Invitation_command in
+      let languages = Pool_common.Language.all in
+      let command =
+        Create.
+          { experiment
+          ; contacts
+          ; invited_contacts = skip_contacts |> CCList.map Contact.id
+          }
+      in
+      Create.handle ~skip_already_invited:true command languages i18n_templates)
+    %> CCList.all_ok
+    %> CCResult.map CCList.flatten
   ;;
 
   let effects db_label =
