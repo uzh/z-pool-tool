@@ -73,6 +73,27 @@ let dummy_to_file (dummy : Database.SeedAssets.file) =
     }
 ;;
 
+let i18n_templates languages =
+  let open I18n in
+  let open CCResult in
+  CCList.map
+    (fun language ->
+      let subject =
+        "Subject"
+        |> Content.create
+        >|= create Key.InvitationSubject language
+        |> get_exn
+      in
+      let text =
+        "Text"
+        |> Content.create
+        >|= create Key.InvitationText language
+        |> get_exn
+      in
+      language, (subject, text))
+    languages
+;;
+
 module Model = struct
   let create_contact () =
     Contact.

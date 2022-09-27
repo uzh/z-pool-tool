@@ -36,7 +36,11 @@ end = struct
              ; invited_contacts = skip_contacts |> CCList.map Contact.id
              }
          in
-         Create.handle command languages i18n_templates)
+         Create.handle
+           ~skip_already_invited:true
+           command
+           languages
+           i18n_templates)
     |> CCList.all_ok
     |> CCResult.map CCList.flatten
   ;;

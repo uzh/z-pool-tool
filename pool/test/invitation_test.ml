@@ -2,27 +2,6 @@ module InvitationCommand = Cqrs_command.Invitation_command
 module Field = Pool_common.Message.Field
 module Model = Test_utils.Model
 
-let i18n_templates languages =
-  let open I18n in
-  let open CCResult in
-  CCList.map
-    (fun language ->
-      let subject =
-        "Subject"
-        |> Content.create
-        >|= create Key.InvitationSubject language
-        |> get_exn
-      in
-      let text =
-        "Text"
-        |> Content.create
-        >|= create Key.InvitationText language
-        |> get_exn
-      in
-      language, (subject, text))
-    languages
-;;
-
 let create_invitation () =
   let contact = Model.create_contact () in
   Invitation.
@@ -38,7 +17,7 @@ let create () =
   let experiment = Model.create_experiment () in
   let contact = Model.create_contact () in
   let languages = Pool_common.Language.all in
-  let i18n_templates = i18n_templates languages in
+  let i18n_templates = Test_utils.i18n_templates languages in
   let events =
     let command =
       InvitationCommand.Create.
@@ -71,7 +50,7 @@ let resend () =
   let invitation = create_invitation () in
   let experiment = Model.create_experiment () in
   let languages = Pool_common.Language.all in
-  let i18n_templates = i18n_templates languages in
+  let i18n_templates = Test_utils.i18n_templates languages in
   let events = handle { invitation; experiment } languages i18n_templates in
   let expected =
     let open CCResult in
