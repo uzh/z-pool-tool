@@ -1,33 +1,27 @@
 (library
- (name cqrs_command)
+ (name custom_field)
  (libraries
-  admin
-  conformist
-  custom_field
   contact
-  database
   email
   experiment
-  i18n
-  ocauth
-  pool_common
-  pool_event
-  pool_location
-  pool_tenant
-  pool_user
-  role
-  root
   session
+  guardian
+  pool_common
+  pool_user
+  ptime
+  role
+  service
   settings
   sihl
-  tenant)
+  sihl-user
+  utils)
  (preprocess
   (pps
-   ppx_here
    lwt_ppx
    ppx_deriving.enum
    ppx_deriving.eq
    ppx_deriving.show
-   ppx_sexp_conv
    ppx_variants_conv
    ppx_yojson_conv)))
+
+(include_subdirs unqualified)

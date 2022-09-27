@@ -4,6 +4,8 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AdminHint -> "Hint für Administratoren"
+  | Answer -> "Antwort"
   | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
@@ -16,6 +18,7 @@ let field_to_string =
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
+  | CustomField -> "Feld"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | Database -> "Datenbank"
@@ -38,6 +41,7 @@ let field_to_string =
   | End -> "Ende"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
+  | FieldType -> "Feldtyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
@@ -45,6 +49,7 @@ let field_to_string =
   | Filesize -> "Dateigrösse"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
+  | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -71,11 +76,13 @@ let field_to_string =
   | MainSession -> "Hauptsession"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
+  | Model -> "Modell"
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | Order -> "Reihenfolge"
   | Operator -> "Operator"
   | Overbook -> "Überbuchen"
+  | Overwrite -> "overwrite"
   | Page -> "Seite"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Anzahl Teilnehmer"
@@ -90,6 +97,7 @@ let field_to_string =
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
   | ReminderSubject -> "Erinnerungsbetreff"
+  | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -127,6 +135,7 @@ let field_to_string =
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
   | Url -> "Url"
   | User -> "Benutzer"
+  | Validation -> "Validierung"
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
@@ -175,6 +184,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Bitte geben Sie '"
+      (field |> field_to_string |> CCString.trim)
+      "' in allen Sprachen an."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
@@ -256,6 +270,8 @@ let rec error_to_string = function
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
+  | NumberMax i -> Format.asprintf "Darf nicht grösser als %i sein." i
+  | NumberMin i -> Format.asprintf "Darf nicht kleiner als %i sein." i
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
@@ -293,6 +309,8 @@ let rec error_to_string = function
     "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
+  | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i sein." i
+  | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i sein." i
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."

@@ -248,6 +248,15 @@ module Admin = struct
       Handler.Admin.Contacts.
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
+    let custom_fields =
+      let specific = CustomField.[ get "/edit" edit; post "" update ] in
+      CustomField.
+        [ get "" index
+        ; post "" create
+        ; get "/new" new_form
+        ; choose ~scope:(CustomField |> url_key) specific
+        ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
@@ -259,6 +268,7 @@ module Admin = struct
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
+      ; choose ~scope:"/custom-fields" custom_fields
       ]
   ;;
 end

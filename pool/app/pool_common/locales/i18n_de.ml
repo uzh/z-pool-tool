@@ -67,6 +67,7 @@ let to_string = function
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | UserProfileTitle -> "Benutzerprofil"
+  | Validation -> "Validierung"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
@@ -74,6 +75,7 @@ let nav_link_to_string = function
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
   | Contacts -> "Konktakte"
+  | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"

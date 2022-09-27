@@ -369,6 +369,7 @@ let selector
   ?flash_fetcher
   ?(required = false)
   ?help
+  ?option_formatter
   ?(attributes = [])
   ?(add_empty = false)
   ()
@@ -393,7 +394,10 @@ let selector
         in
         option
           ~a:((l |> show |> a_value) :: is_selected)
-          (l |> show |> CCString.capitalize_ascii |> txt))
+          (l
+          |> CCOption.value ~default:show option_formatter
+          |> CCString.capitalize_ascii
+          |> txt))
       options
   in
   let options =

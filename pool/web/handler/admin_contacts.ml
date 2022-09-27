@@ -39,7 +39,15 @@ let detail_view action req =
         |> Lwt_result.lift
         >|= fun c -> c.Pool_context.Tenant.tenant_languages
       in
-      Page.Admin.Contact.edit context user_update_csrf tenant_languages contact
+      let%lwt custom_fields =
+        Custom_field.find_all_for_contact tenant_db (Contact.id contact)
+      in
+      Page.Admin.Contact.edit
+        context
+        user_update_csrf
+        tenant_languages
+        contact
+        custom_fields
       |> create_layout req context
       >|= Sihl.Web.Response.of_html
   in

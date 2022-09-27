@@ -7,6 +7,7 @@
   assignment
   caqti-driver-mariadb
   contact
+  custom_field
   cqrs_command
   database
   experiment

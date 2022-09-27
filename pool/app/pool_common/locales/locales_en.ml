@@ -4,6 +4,8 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AdminHint -> "hint for admins"
+  | Answer -> "answer"
   | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
@@ -16,6 +18,7 @@ let field_to_string =
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
+  | CustomField -> "field"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | Database -> "database"
@@ -38,6 +41,7 @@ let field_to_string =
   | End -> "end"
   | Experiment -> "experiment"
   | ExperimentType -> "experiment type"
+  | FieldType -> "field type"
   | File -> "file"
   | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
@@ -45,6 +49,7 @@ let field_to_string =
   | Filesize -> "filesize"
   | Firstname -> "firstname"
   | FollowUpSession -> "follow-up session"
+  | Hint -> "hint"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -71,11 +76,13 @@ let field_to_string =
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
+  | Model -> "model"
   | Name -> "name"
   | NewPassword -> "new password"
   | Order -> "order"
   | Operator -> "operator"
   | Overbook -> "overbook"
+  | Overwrite -> "overwrite"
   | Page -> "page"
   | Participant -> "participant"
   | ParticipantCount -> "number of participants"
@@ -92,6 +99,7 @@ let field_to_string =
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
+  | Required -> "required"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
@@ -128,6 +136,7 @@ let field_to_string =
   | TriggerProfileUpdateAfter -> "request to check the profile"
   | Url -> "url"
   | User -> "user"
+  | Validation -> "validation"
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
@@ -176,6 +185,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Please provide '"
+      (field |> field_to_string)
+      "' in all languages."
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
@@ -239,6 +253,8 @@ let rec error_to_string = function
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
+  | NumberMax i -> Format.asprintf "Must not be larger than %i." i
+  | NumberMin i -> Format.asprintf "Must not be smaller than %i." i
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
@@ -268,6 +284,8 @@ let rec error_to_string = function
     "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
+  | TextLengthMax i -> Format.asprintf "Must not be longer than %i." i
+  | TextLengthMin i -> Format.asprintf "Must not be shorter than %i." i
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."

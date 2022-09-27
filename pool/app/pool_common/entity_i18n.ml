@@ -26,28 +26,30 @@ type t =
   | ResetPasswordLink
   | ResetPasswordTitle
   | SessionDetailTitle of Ptime.t
+  | SessionIndent
   | SessionReminder
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
-  | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
-  | SessionIndent
+  | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionSignUpTitle
-  | SwitchChronological
-  | SwitchGrouped
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
+  | SwitchChronological
+  | SwitchGrouped
   | TermsAndConditionsTitle
   | TextTemplates
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
   | UserProfileTitle
+  | Validation
   | WaitingListIsDisabled
 
 type nav_link =
   | Admins
   | Assignments
   | Contacts
+  | CustomFields
   | Dashboard
   | Experiments
   | I18n

@@ -2,9 +2,7 @@ module ExperimentCommand = Cqrs_command.Experiment_command
 module Common = Pool_common
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.(
-    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
-    |> CCList.map show)
+  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
 module Data = struct
