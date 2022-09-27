@@ -31,11 +31,10 @@ let form
     CCList.map
       (fun lang ->
         let label_text =
-          Pool_common.(
-            lang
-            |> Language.field_of_t
-            |> Utils.field_to_string language
-            |> CCString.capitalize_ascii)
+          lang
+          |> Language.field_of_t
+          |> Utils.field_to_string language
+          |> CCString.capitalize_ascii
         in
         let id =
           Format.asprintf
@@ -170,10 +169,10 @@ let form
       ; a_action (Sihl.Web.externalize_path action)
       ; a_class [ "stack-lg" ]
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; div
         ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-        [ Component.selector
+        [ selector
             language
             Message.Field.Model
             Model.show
@@ -183,7 +182,7 @@ let form
             ~required:true
             ~flash_fetcher
             ()
-        ; Component.selector
+        ; selector
             language
             Message.Field.FieldType
             FieldType.show

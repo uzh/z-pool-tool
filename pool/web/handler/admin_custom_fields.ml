@@ -12,20 +12,17 @@ let find_assocs_in_urlencoded urlencoded field encoder =
   CCList.filter_map
     (fun (key, values) ->
       let group, id = CCString.take_drop (CCString.length field) key in
-      match CCString.equal field group with
-      | false -> None
-      | true ->
-        let key =
-          let open CCOption in
-          id
-          |> CCString.chop_prefix ~pre:"["
-          >>= CCString.chop_suffix ~suf:"]"
-          >>= fun l -> l |> encoder
-        in
-        let value = CCList.head_opt values in
-        (match key, value with
-         | Some l, Some v -> Some (l, v)
-         | _ -> None))
+      let value = CCList.head_opt values in
+      let key =
+        let open CCOption in
+        id
+        |> CCString.chop_prefix ~pre:"["
+        >>= CCString.chop_suffix ~suf:"]"
+        >>= encoder
+      in
+      match key, value with
+      | Some l, Some v when CCString.equal field group -> Some (l, v)
+      | _ -> None)
     urlencoded
 ;;
 
