@@ -127,14 +127,6 @@ let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
-let version_selector p = function
-  | "firstname" -> Some p.firstname_version
-  | "lastname" -> Some p.lastname_version
-  | "paused" -> Some p.paused_version
-  | "language" -> Some p.language_version
-  | _ -> None
-;;
-
 module Preview = struct
   type t =
     { user : Sihl_user.t

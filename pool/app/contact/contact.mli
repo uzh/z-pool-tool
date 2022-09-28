@@ -75,7 +75,6 @@ val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
-val version_selector : t -> string -> Pool_common.Version.t option
 val show : t -> string
 
 val find
