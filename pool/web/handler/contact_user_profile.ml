@@ -123,6 +123,14 @@ let update req =
     in
     let%lwt response =
       let open CCResult in
+      let html_response html =
+        let csrf_element =
+          Htmx.csrf_element_swap csrf ~id:user_update_csrf ()
+        in
+        [ html; csrf_element ]
+        |> HttpUtils.multi_html_to_plain_text_response
+        |> Lwt.return
+      in
       let%lwt partial_update =
         Contact.validate_partial_update
           contact
@@ -137,76 +145,75 @@ let update req =
         let hx_post =
           Sihl.Web.externalize_path (path_with_lang "/user/update")
         in
-        let csrf_element =
-          Htmx.csrf_element_swap csrf ~id:user_update_csrf ()
-        in
-        let%lwt htmx =
-          let open Pool_common.Message in
-          match partial_update with
-          | Ok partial_update ->
-            partial_update
-            |> Contact.PartialUpdate.increment_version
-            |> fun m ->
-            Htmx.partial_update_to_htmx
+        let open Pool_common.Message in
+        match partial_update with
+        | Ok partial_update ->
+          partial_update
+          |> Contact.PartialUpdate.increment_version
+          |> fun m ->
+          Htmx.partial_update_to_htmx
+            language
+            tenant_languages
+            m
+            ~hx_post
+            ~success:true
+            ()
+          |> html_response
+        | Error error ->
+          let create_htmx ?htmx_attributes ?(field = field) value =
+            Htmx.create
+              (Htmx.create_entity ?htmx_attributes version field value)
               language
-              tenant_languages
-              m
               ~hx_post
-              ~success:true
+              ~error
               ()
-            |> Lwt.return
-          | Error error ->
-            let create_htmx ?htmx_attributes ?(field = field) value =
-              Htmx.create
-                (Htmx.create_entity ?htmx_attributes version field value)
-                language
-                ~hx_post
-                ~error
-                ()
-              |> Lwt.return
-            in
-            (match[@warning "-4"] field with
-             | Field.Firstname ->
-               Htmx.Text (value |> CCOption.pure) |> create_htmx
-             | Field.Lastname ->
-               Htmx.Text (value |> CCOption.pure) |> create_htmx
-             | Field.Paused -> Htmx.Checkbox false |> create_htmx
-             | Field.Language ->
-               Htmx.Select
-                 Htmx.
-                   { show = Pool_common.Language.show
-                   ; options = tenant_languages
-                   ; selected =
-                       value |> Pool_common.Language.create |> CCResult.to_opt
-                   }
-               |> create_htmx
-             | _ ->
-               let field_id =
-                 field_id |> CCOption.get_exn_or "TODO: Error handling"
-               in
-               let open Custom_field in
-               let%lwt field =
-                 let open Utils.Lwt_result.Infix in
-                 find_by_contact tenant_db (Contact.id contact) field_id
-                 ||> CCResult.get_exn (* TODO: Error handling *)
-               in
-               let value =
-                 match field with
-                 | Public.Number _ -> value |> CCInt.of_string |> Htmx.number
-                 | Public.Text _ -> value |> CCOption.pure |> Htmx.text
-               in
-               Htmx.custom_field_to_htmx
-                 ~value
-                 language
-                 field
-                 ~hx_post
-                 ~error
-                 ()
-               |> Lwt.return)
-        in
-        [ htmx; csrf_element ]
-        |> HttpUtils.multi_html_to_plain_text_response
-        |> Lwt.return
+            |> html_response
+          in
+          (match[@warning "-4"] field with
+           | Field.Firstname ->
+             Htmx.Text (value |> CCOption.pure) |> create_htmx
+           | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
+           | Field.Paused -> Htmx.Checkbox false |> create_htmx
+           | Field.Language ->
+             Htmx.Select
+               Htmx.
+                 { show = Pool_common.Language.show
+                 ; options = tenant_languages
+                 ; selected =
+                     value |> Pool_common.Language.create |> CCResult.to_opt
+                 }
+             |> create_htmx
+           | _ ->
+             let open Custom_field in
+             let%lwt field =
+               let open Utils.Lwt_result.Infix in
+               field_id
+               |> CCOption.to_result InvalidHtmxRequest
+               |> Lwt_result.lift
+               >>= find_by_contact tenant_db (Contact.id contact)
+             in
+             (match field with
+              | Error error ->
+                HttpUtils.(
+                  htmx_redirect
+                    "/user/update"
+                    ?query_language
+                    ~actions:[ Message.set ~error:[ error ] ]
+                    ())
+              | Ok field ->
+                let value =
+                  match field with
+                  | Public.Number _ -> value |> CCInt.of_string |> Htmx.number
+                  | Public.Text _ -> value |> CCOption.pure |> Htmx.text
+                in
+                Htmx.custom_field_to_htmx
+                  ~value
+                  language
+                  field
+                  ~hx_post
+                  ~error
+                  ()
+                |> html_response))
       in
       (* TODO: When and where to update version? *)
       let%lwt () =
