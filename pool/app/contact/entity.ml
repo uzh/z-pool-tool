@@ -165,7 +165,31 @@ module PartialUpdate = struct
     | Custom of Custom_field.Public.t
   [@@deriving eq, show, variants]
 
-  let validate contact (field, version, value) =
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
+    | Custom custom_field ->
+      let open Custom_field in
+      let open Public in
+      Custom
+        (match custom_field with
+         | Number ({ answer; _ } as public) ->
+           answer
+           |> CCOption.map_or ~default:custom_field (fun a ->
+                let answer = Answer.increment_version a |> CCOption.pure in
+                Number { public with answer })
+         | Text ({ answer; _ } as public) ->
+           answer
+           |> CCOption.map_or ~default:custom_field (fun a ->
+                let answer = Answer.increment_version a |> CCOption.pure in
+                Text { public with answer }))
+  ;;
+
+  let validate contact tenand_db (field, version, value, field_id) =
     let check_version old_v t =
       let open Pool_common.Version in
       if old_v |> value > (version |> value)
@@ -188,32 +212,36 @@ module PartialUpdate = struct
       |> validate
       >|= (fun m -> Firstname (version, m))
       >>= check_version contact.firstname_version
+      |> Lwt.return
     | PoolField.Lastname ->
       User.Lastname.schema
       |> validate
       >|= (fun m -> Lastname (version, m))
       >>= check_version contact.lastname_version
+      |> Lwt.return
     | PoolField.Paused ->
       User.Paused.schema
       |> validate
       >|= (fun m -> Paused (version, m))
       >>= check_version contact.paused_version
+      |> Lwt.return
     | PoolField.Language ->
       (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
       |> validate
       >|= (fun m -> Language (version, m))
       >>= check_version contact.language_version
-    | _ -> failwith "Todo"
-  ;;
-
-  let increment_version =
-    let increment = Pool_common.Version.increment in
-    function
-    | Firstname (version, value) -> firstname (version |> increment) value
-    | Lastname (version, value) -> lastname (version |> increment) value
-    | Paused (version, value) -> paused (version |> increment) value
-    | Language (version, value) -> language (version |> increment) value
-    | Custom _ -> failwith "TODO"
+      |> Lwt.return
+    | _ ->
+      let open Lwt_result.Syntax in
+      let open Lwt_result.Infix in
+      let* custom_field =
+        field_id
+        |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
+        |> Lwt_result.lift
+        >>= Custom_field.find_by_contact tenand_db (id contact)
+        >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
+      in
+      Custom custom_field |> Lwt_result.return
   ;;
 end
 

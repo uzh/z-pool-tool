@@ -10,17 +10,50 @@ let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
+let field_id_key = "field_id"
+let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
-let hx_attributes field version ?action () =
+let custom_field_label language m =
+  let open Custom_field in
+  let id = Public.get_id m in
+  let name = Public.get_name language m in
+  Pool_common.Message.(
+    Field.CustomHtmx
+      ( id |> Id.value
+      , name (* TODO: fail?? what when new language gets activated? *)
+        |> CCOption.map_or ~default:"----" Name.value_name ))
+;;
+
+let custom_field_hint language m =
+  let open Custom_field in
+  let open CCOption in
+  Public.get_hint language m
+  >|= Hint.value_hint
+  >|= fun h -> Pool_common.I18n.CustomHtmx h
+;;
+
+let hx_attributes field version ?action ?(additional_attributes = []) () =
   let name = Pool_common.Message.Field.(field |> show) in
+  let params, vals =
+    let base_vals =
+      [ "version", version |> Pool_common.Version.value |> CCInt.to_string
+      ; "field", name
+      ]
+    in
+    CCList.fold_left
+      (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
+      (hx_base_params, base_vals)
+      additional_attributes
+  in
   [ hx_swap "outerHTML"
-  ; hx_params (CCString.concat ", " (CCList.cons name hx_base_params))
+  ; hx_params (CCString.concat ", " (CCList.cons name params))
   ; hx_target "closest .form-group"
   ; hx_vals
       (Format.asprintf
-         {|{"version": "%i", "field": "%s"}|}
-         (version |> Pool_common.Version.value)
-         name)
+         {|{%s}|}
+         (vals
+         |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+         |> CCString.concat ", "))
   ]
   @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
 ;;
@@ -36,11 +69,23 @@ type 'a value =
   | Number of int option
   | Checkbox of bool
   | Select of 'a selector
+[@@deriving variants]
 
-type 'a t = Version.t * Pool_common.Message.Field.t * 'a value
+(* type 'a t = Version.t * Pool_common.Message.Field.t * 'a value *)
+type 'a t =
+  { version : Version.t
+  ; field : Pool_common.Message.Field.t
+  ; value : 'a value
+  ; help : Pool_common.I18n.hint option
+  ; htmx_attributes : (string * string) list option
+  }
+
+let create_entity ?help ?htmx_attributes version field value =
+  { version; field; value; help; htmx_attributes }
+;;
 
 let create
-  ((version, field, value) : 'a t)
+  ({ version; field; value; help; htmx_attributes } : 'a t)
   language
   ?(classnames = [])
   ?hx_post
@@ -48,7 +93,6 @@ let create
   ?success
   ()
   =
-  let _ = Pool_common.Message.Field.CustomHtmx ("name", "Label") in
   let input_class =
     match error, success with
     | None, Some _ -> [ "success" ]
@@ -56,7 +100,13 @@ let create
   in
   let classnames = classnames @ input_class in
   let additional_attributes =
-    [ a_class input_class ] @ hx_attributes field version ?action:hx_post ()
+    [ a_class input_class ]
+    @ hx_attributes
+        field
+        version
+        ?action:hx_post
+        ?additional_attributes:htmx_attributes
+        ()
   in
   let default s = Option.value ~default:"" s in
   match value with
@@ -66,6 +116,7 @@ let create
       ~value:(str |> default)
       ~additional_attributes
       ?error
+      ?help
       language
       `Text
       field
@@ -75,6 +126,7 @@ let create
       ~value:(n |> CCOption.map CCInt.to_string |> default)
       ~additional_attributes
       ?error
+      ?help
       language
       `Number
       field
@@ -83,11 +135,13 @@ let create
       ~additional_attributes
       ~classnames
       ~value:boolean
+      ?help
       language
       field
   | Select { show; options; selected } ->
     Component.selector
       ~attributes:additional_attributes
+      ?help
       language
       field
       show
@@ -101,22 +155,69 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let partial_update_to_htmx sys_languages =
+let custom_field_to_htmx_value custom_field =
+  let open Custom_field in
+  match custom_field with
+  | Public.Number field ->
+    let answer = field.Public.answer in
+    answer |> CCOption.map (fun a -> a.Answer.value) |> number
+  | Public.Text field ->
+    let answer = field.Public.answer in
+    answer |> CCOption.map (fun a -> a.Answer.value) |> text
+;;
+
+let custom_field_to_htmx ?value language custom_field =
+  let to_html m = create m language in
+  let open Custom_field in
+  let field_id = Public.get_id custom_field in
+  let htmx_attributes = custom_field_htmx_attributes field_id in
+  let label = custom_field_label language custom_field in
+  let version =
+    Public.get_version custom_field
+    |> CCOption.value ~default:(Pool_common.Version.create ())
+  in
+  let value =
+    value |> CCOption.value ~default:(custom_field_to_htmx_value custom_field)
+  in
+  let help = custom_field_hint language custom_field in
+  { version
+  ; field = label
+  ; value
+  ; htmx_attributes = Some htmx_attributes
+  ; help
+  }
+  |> to_html
+;;
+
+let partial_update_to_htmx language sys_languages =
+  let to_html m = create m language in
   let open Contact.PartialUpdate in
   let open Pool_common.Message in
   function
   | Firstname (v, firstname) ->
-    v, Field.Firstname, Text (firstname |> User.Firstname.value |> CCOption.pure)
+    create_entity
+      v
+      Field.Firstname
+      (Text (firstname |> User.Firstname.value |> CCOption.pure))
+    |> to_html
   | Lastname (v, lastname) ->
-    v, Field.Lastname, Text (lastname |> User.Lastname.value |> CCOption.pure)
-  | Paused (v, paused) -> v, Field.Paused, Checkbox (paused |> User.Paused.value)
+    create_entity
+      v
+      Field.Lastname
+      (Text (lastname |> User.Lastname.value |> CCOption.pure))
+    |> to_html
+  | Paused (v, paused) ->
+    create_entity v Field.Paused (Checkbox (paused |> User.Paused.value))
+    |> to_html
   | Language (v, lang) ->
-    ( v
-    , Field.Language
-    , Select
-        { show = Pool_common.Language.show
-        ; options = sys_languages
-        ; selected = lang
-        } )
-  | Custom _ -> failwith "TODO"
+    create_entity
+      v
+      Field.Language
+      (Select
+         { show = Pool_common.Language.show
+         ; options = sys_languages
+         ; selected = lang
+         })
+    |> to_html
+  | Custom field -> custom_field_to_htmx language field
 ;;

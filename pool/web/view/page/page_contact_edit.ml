@@ -34,18 +34,13 @@ let personal_details_form
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
-  let form_attrs =
-    [ a_method `Post; a_action (externalize action); a_class [ "stack" ] ]
-  in
+  let action = externalize action in
+  let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
+  let htmx_create field = Htmx.create field language ~hx_post:action () in
   let custom_fields_form =
-    let open Custom_field in
     custom_fields
-    |> CCList.map (fun field ->
-         div
-           [ txt
-               (Name.find_opt field.Public.name language
-               |> CCOption.map_or ~default:"-" Name.value_name)
-           ])
+    |> CCList.map (fun custom_field ->
+         Htmx.custom_field_to_htmx language custom_field ~hx_post:action ())
   in
   let open Pool_common.Message in
   form
@@ -54,7 +49,8 @@ let personal_details_form
         ~a:[ a_class [ "stack" ] ]
         (Component.csrf_element csrf ~id:user_update_csrf ()
         :: CCList.map
-             (fun field -> Htmx.create field language ~hx_post:action ())
+             (fun (version, field, value) ->
+               Htmx.create_entity version field value |> htmx_create)
              Htmx.
                [ ( contact.firstname_version
                  , Field.Firstname
@@ -70,7 +66,7 @@ let personal_details_form
                      |> Contact.lastname
                      |> User.Lastname.value
                      |> CCOption.pure) )
-               ; ( contact.lastname_version
+               ; ( contact.language_version
                  , Field.Language
                  , Select
                      { show = Pool_common.Language.show

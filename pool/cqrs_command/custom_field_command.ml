@@ -62,14 +62,13 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let validation = Custom_field.Validation.schema validation field_type in
     let* t =
       Custom_field.create
         ?id
+        field_type
         model
         name
         hint
-        field_type
         validation
         required
         disabled
@@ -108,20 +107,18 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let validation = Custom_field.Validation.schema validation field_type in
-    let t =
-      (Custom_field.
-         { custom_field with
-           model
-         ; name
-         ; hint
-         ; field_type
-         ; validation
-         ; required
-         ; disabled
-         ; admin
-         }
-        : Custom_field.t)
+    let id = Custom_field.get_id custom_field in
+    let* t =
+      Custom_field.create
+        ~id
+        field_type
+        model
+        name
+        hint
+        validation
+        required
+        disabled
+        admin
     in
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;

@@ -24,67 +24,69 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
     |> Dynparam.add base_caqti (contact |> id)
     |> Dynparam.add Caqti_type.ptime (Ptime_clock.now ())
   in
-  let%lwt dyn, sql =
-    let open PartialUpdate in
-    match field with
-    | Firstname (version, value) ->
-      let%lwt (_ : Entity.Sihl_user.t) =
-        update_sihl_user
-          pool
-          ~firstname:(value |> Pool_user.Firstname.value)
-          contact
-      in
-      Lwt.return
-        ( dyn
-          |> Dynparam.add
-               Pool_common.Repo.Version.t
-               Pool_common.Version.(version |> increment)
-        , {sql|
+  let update_user_table (dyn, sql) =
+    let open Caqti_request.Infix in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let update_request = sql |> update_sql |> pt ->. Caqti_type.unit in
+    Utils.Database.exec (pool |> Pool_database.Label.value) update_request pv
+  in
+  let open PartialUpdate in
+  match field with
+  | Firstname (version, value) ->
+    let%lwt (_ : Entity.Sihl_user.t) =
+      update_sihl_user
+        pool
+        ~firstname:(value |> Pool_user.Firstname.value)
+        contact
+    in
+    ( dyn
+      |> Dynparam.add
+           Pool_common.Repo.Version.t
+           Pool_common.Version.(version |> increment)
+    , {sql|
           firstname_version = $3
         |sql} )
-    | Lastname (version, value) ->
-      let%lwt (_ : Entity.Sihl_user.t) =
-        update_sihl_user
-          pool
-          ~lastname:(value |> Pool_user.Lastname.value)
-          contact
-      in
-      Lwt.return
-        ( dyn
-          |> Dynparam.add
-               Pool_common.Repo.Version.t
-               Pool_common.Version.(version |> increment)
-        , {sql|
+    |> update_user_table
+  | Lastname (version, value) ->
+    let%lwt (_ : Entity.Sihl_user.t) =
+      update_sihl_user
+        pool
+        ~lastname:(value |> Pool_user.Lastname.value)
+        contact
+    in
+    ( dyn
+      |> Dynparam.add
+           Pool_common.Repo.Version.t
+           Pool_common.Version.(version |> increment)
+    , {sql|
             lastname_version = $3
           |sql} )
-    | Paused (version, value) ->
-      Lwt.return
-        ( dyn
-          |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
-          |> Dynparam.add
-               Pool_common.Repo.Version.t
-               Pool_common.Version.(version |> increment)
-        , {sql|
+    |> update_user_table
+  | Paused (version, value) ->
+    ( dyn
+      |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
+      |> Dynparam.add
+           Pool_common.Repo.Version.t
+           Pool_common.Version.(version |> increment)
+    , {sql|
               paused = $3,
               paused_version = $4
             |sql}
-        )
-    | Language (version, value) ->
-      Lwt.return
-        ( dyn
-          |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value
-          |> Dynparam.add
-               Pool_common.Repo.Version.t
-               Pool_common.Version.(version |> increment)
-        , {sql|
+    )
+    |> update_user_table
+  | Language (version, value) ->
+    ( dyn
+      |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value
+      |> Dynparam.add
+           Pool_common.Repo.Version.t
+           Pool_common.Version.(version |> increment)
+    , {sql|
                 language = $3,
                 language_version = $4
               |sql}
-        )
-    | Custom _ -> failwith "Todo"
-  in
-  let open Caqti_request.Infix in
-  let (Dynparam.Pack (pt, pv)) = dyn in
-  let update_request = sql |> update_sql |> pt ->. Caqti_type.unit in
-  Utils.Database.exec (pool |> Pool_database.Label.value) update_request pv
+    )
+    |> update_user_table
+  | Custom field ->
+    let open Custom_field in
+    (upsert_answer pool (Entity.id contact)) field
 ;;

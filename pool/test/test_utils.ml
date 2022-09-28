@@ -5,6 +5,10 @@ end
 (* Testable *)
 let event = Alcotest.testable Pool_event.pp Pool_event.equal
 
+let partial_update =
+  Alcotest.testable Contact.PartialUpdate.pp Contact.PartialUpdate.equal
+;;
+
 let tenant_smtp_auth =
   Alcotest.testable Pool_tenant.SmtpAuth.pp Pool_tenant.SmtpAuth.equal
 ;;
@@ -107,6 +111,15 @@ let create_contact () =
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
+;;
+
+let contact_info email_address =
+  ( email_address
+  , "password"
+  , "Jane"
+  , "Doe"
+  , Contact.RecruitmentChannel.(Friend |> show)
+  , Some Pool_common.Language.En )
 ;;
 
 let create_location () =

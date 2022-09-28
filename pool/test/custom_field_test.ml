@@ -15,7 +15,8 @@ module Data = struct
   let name = CCList.map (fun l -> l, "name") sys_languages
   let hint = CCList.map (fun l -> l, "hint") sys_languages
   let validation_data = [ "text_length_max", "20" ]
-  let validation = Custom_field.Validation.schema validation_data field_type
+  let disabled = false |> Disabled.create
+  let required = false |> Required.create
 
   let data =
     Pool_common.Message.
@@ -34,18 +35,17 @@ module Data = struct
     let admin =
       Admin.{ hint = Some admin_hint; overwrite = Overwrite.create false }
     in
-    { id
-    ; model
-    ; name
-    ; hint
-    ; field_type
-    ; validation
-    ; required = Required.create false
-    ; disabled = Disabled.create false
-    ; admin
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
-    }
+    Custom_field.create
+      ~id
+      field_type
+      model
+      name
+      hint
+      validation_data
+      required
+      disabled
+      admin
+    |> CCResult.get_exn
   ;;
 end
 

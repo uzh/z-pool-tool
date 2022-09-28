@@ -245,6 +245,7 @@ type error =
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
+  | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError

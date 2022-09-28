@@ -2,16 +2,21 @@ module Id = struct
   include Pool_common.Id
 end
 
-module Answer = struct
-  type t =
-    | Text of string
-    | Number of int
-  [@@deriving eq, show, yojson]
-end
-
-type t =
+type 'a t =
   { id : Id.t
-  ; answer : Answer.t
+  ; value : 'a
   ; version : Pool_common.Version.t
   }
 [@@deriving eq, show]
+
+let create ?(id = Id.create ()) ?(version = Pool_common.Version.create ()) value
+  =
+  { id; version; value }
+;;
+
+let id { id; _ } = id
+let version { version; _ } = version
+
+let increment_version m =
+  { m with version = Pool_common.Version.increment (version m) }
+;;

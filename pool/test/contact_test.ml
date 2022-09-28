@@ -12,14 +12,7 @@ let check_result expected generated =
       generated)
 ;;
 
-let contact_info email_address =
-  ( email_address
-  , "password"
-  , "Jane"
-  , "Doe"
-  , Contact.RecruitmentChannel.(Friend |> show)
-  , Some Language.En )
-;;
+let contact_info = Test_utils.contact_info
 
 let sign_up_contact contact_info =
   let email_address, password, firstname, lastname, recruitment_channel, _ =
@@ -186,62 +179,14 @@ let update_language () =
   let open CCResult in
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let language = Language.De in
-  let events =
-    Contact.Field.decode_and_validate
-      Pool_common.Message.Field.Language
-      contact.Contact.language_version
-      (Pool_common.Language.show language)
-    >>= Contact_command.Update.handle contact
+  let version = 0 |> Pool_common.Version.of_int in
+  let partial_update =
+    Contact.PartialUpdate.(Language (version, Some language))
   in
+  let events = partial_update |> Contact_command.Update.handle contact in
   let expected =
-    Ok
-      [ Contact.Updated
-          ( ( Contact.Field.Language (Some language)
-            , contact.Contact.language_version )
-          , contact )
-        |> Pool_event.contact
-      ]
+    Ok [ Contact.Updated (partial_update, contact) |> Pool_event.contact ]
   in
-  check_result expected events
-;;
-
-let update_paused () =
-  let open CCResult in
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let paused = true in
-  let events =
-    Contact.Field.decode_and_validate
-      Pool_common.Message.Field.Paused
-      contact.Contact.language_version
-      (string_of_bool paused)
-    >>= Contact_command.Update.handle contact
-  in
-  let expected =
-    ( Contact.Field.Paused (paused |> Pool_user.Paused.create)
-    , Pool_common.Version.create () )
-    |> Contact_command.Update.handle contact
-  in
-  check_result expected events
-;;
-
-let update_with_false_version () =
-  let open CCResult in
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let language = Language.De in
-  let field = Pool_common.Message.Field.Language in
-  let events =
-    Contact.Field.decode_and_validate
-      field
-      contact.Contact.language_version
-      (Pool_common.Language.show language)
-    >>= Contact_command.Update.handle
-          Contact.
-            { contact with
-              language_version =
-                Pool_common.Version.increment contact.language_version
-            }
-  in
-  let expected = Error Pool_common.Message.(MeantimeUpdate field) in
   check_result expected events
 ;;
 

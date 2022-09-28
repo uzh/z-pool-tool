@@ -57,12 +57,18 @@ module PartialUpdate : sig
     | Custom of Custom_field.Public.t
 
   val increment_version : t -> t
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
 end
 
 val validate_partial_update
   :  t
-  -> Pool_common.Message.Field.t * Pool_common.Version.t * string
-  -> (PartialUpdate.t, Pool_common.Message.error) result
+  -> Pool_database.Label.t
+  -> Pool_common.Message.Field.t
+     * Pool_common.Version.t
+     * string
+     * Custom_field.Id.t option
+  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t

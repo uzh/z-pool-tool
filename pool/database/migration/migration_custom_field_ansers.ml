@@ -5,9 +5,9 @@ let create_custom_field_answers_table =
       CREATE TABLE IF NOT EXISTS pool_custom_field_answers (
         `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
         `uuid` binary(16) NOT NULL,
-        `custom_field_uuid` bigint(20) NOT NULL,
-        `entity_uuid` bigint(20) NOT NULL,
-        `answer` text NOT NULL,
+        `custom_field_uuid` binary(16) NOT NULL,
+        `entity_uuid` binary(16) NOT NULL,
+        `value` text NOT NULL,
         `version` bigint(20) NOT NULL DEFAULT 0,
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

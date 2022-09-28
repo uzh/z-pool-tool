@@ -46,7 +46,7 @@ module Name = struct
 
   type t = (Language.t * name) list [@@deriving eq, show, yojson]
 
-  let find_opt t lang = CCList.assoc_opt ~eq:Language.equal lang t
+  let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
 
   let create sys_languages names =
     CCList.filter
@@ -67,7 +67,7 @@ module Hint = struct
 
   type t = (Language.t * hint) list [@@deriving eq, show, yojson]
 
-  let find_opt t lang = CCList.assoc_opt ~eq:Language.equal lang t
+  let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
   let create hints = Ok hints
 end
 
@@ -87,7 +87,7 @@ module FieldType = struct
     CCList.range min max
     |> CCList.map of_enum
     |> CCList.all_some
-    |> CCOption.get_exn_or "Models: Could not create list of all models!"
+    |> CCOption.get_exn_or "Models: Could not create list of all\nmodels!"
   ;;
 
   let create s =
@@ -97,115 +97,6 @@ module FieldType = struct
 
   let value = show
   let schema () = Pool_common.Utils.schema_decoder create value field
-end
-
-module Validation = struct
-  module Ptime = struct
-    include Ptime
-
-    let t_of_yojson = Pool_common.Model.Ptime.t_of_yojson
-    let yojson_of_t = Pool_common.Model.Ptime.yojson_of_t
-  end
-
-  module Text = struct
-    type t =
-      | TextLengthMin of int [@name "text_length_min"]
-          [@printer printer "text_length_min"]
-      | TextLengthMax of int [@name "text_length_max"]
-          [@printer printer "text_length_max"]
-    [@@deriving eq, show { with_path = false }, yojson, variants]
-
-    let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          match key with
-          | "text_length_min" -> value |> CCInt.of_string >|= textlengthmin
-          | "text_length_max" -> value |> CCInt.of_string >|= textlengthmax
-          | _ -> None)
-        data
-    ;;
-
-    let to_strings = function
-      | TextLengthMin n -> "text_length_min", n |> CCInt.to_string
-      | TextLengthMax n -> "text_length_max", n |> CCInt.to_string
-    ;;
-
-    let validate rules value =
-      let open CCResult in
-      let length = CCString.length value in
-      let open Pool_common in
-      CCList.map
-        (fun rule ->
-          match rule with
-          | TextLengthMin i ->
-            if length < i then Error (Message.TextLengthMin i) else Ok ()
-          | TextLengthMax i ->
-            if length > i then Error (Message.TextLengthMax i) else Ok ())
-        rules
-      |> CCList.all_ok
-      >|= CCFun.const value
-    ;;
-
-    let all = [ "text_length_min", `Number; "text_length_max", `Number ]
-  end
-
-  module Number = struct
-    type t =
-      | NumberMin of int [@name "number_min"] [@printer printer "number_min"]
-      | NumberMax of int [@name "number_max"] [@printer printer "number_max"]
-    [@@deriving eq, show { with_path = false }, yojson, variants]
-
-    let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          match key with
-          | "number_min" -> value |> CCInt.of_string >|= numbermin
-          | "number_max" -> value |> CCInt.of_string >|= numbermax
-          | _ -> None)
-        data
-    ;;
-
-    let all = [ "number_min", `Number; "number_max", `Number ]
-
-    let to_strings = function
-      | NumberMin n -> "number_min", n |> CCInt.to_string
-      | NumberMax n -> "number_max", n |> CCInt.to_string
-    ;;
-
-    let validate rules value =
-      let open CCResult in
-      let open Pool_common in
-      CCList.map
-        (fun rule ->
-          match rule with
-          | NumberMin i ->
-            if value < i then Error (Message.NumberMin i) else Ok ()
-          | NumberMax i ->
-            if value > i then Error (Message.NumberMax i) else Ok ())
-        rules
-      |> CCList.all_ok
-      >|= CCFun.const value
-    ;;
-  end
-
-  type t =
-    | Text of Text.t list
-    | Number of Number.t list
-  [@@deriving eq, show { with_path = false }, yojson, variants]
-
-  let schema data = function
-    | FieldType.Number -> data |> Number.schema |> number
-    | FieldType.Text -> data |> Text.schema |> text
-  ;;
-
-  let to_strings = function
-    | Text rules -> CCList.map Text.to_strings rules
-    | Number rules -> CCList.map Number.to_strings rules
-  ;;
-
-  let all = [ FieldType.Text, Text.all; FieldType.Number, Number.all ]
 end
 
 module Required = struct
@@ -242,46 +133,181 @@ module Admin = struct
   [@@deriving eq, show]
 end
 
-type t =
+module Validation = struct
+  let printer m fmt _ = Format.pp_print_string fmt m
+
+  type raw = string * string [@@deriving show, eq, yojson]
+  type raw_list = raw list [@@deriving show, eq, yojson]
+
+  module Ptime = struct
+    include Ptime
+
+    let t_of_yojson = Pool_common.Model.Ptime.t_of_yojson
+    let yojson_of_t = Pool_common.Model.Ptime.yojson_of_t
+  end
+
+  module Text = struct
+    type rule =
+      | TextLengthMin of int [@name "text_length_min"]
+          [@printer printer "text_length_min"]
+      | TextLengthMax of int [@name "text_length_max"]
+          [@printer printer "text_length_max"]
+    [@@deriving eq, show { with_path = false }, yojson, variants]
+
+    type t = rule list [@@deriving eq, show { with_path = false }, yojson]
+
+    let schema data =
+      let open CCOption in
+      CCList.filter_map
+        (fun (key, value) ->
+          (match key with
+           | "text_length_min" ->
+             value
+             |> CCInt.of_string
+             >|= fun min str ->
+             if CCString.length str < min
+             then Error (Message.TextLengthMin min)
+             else Ok str
+           | "text_length_max" ->
+             value
+             |> CCInt.of_string
+             >|= fun max str ->
+             if CCString.length str > max
+             then Error (Message.TextLengthMin max)
+             else Ok str
+           | _ -> None)
+          |> CCOption.map (fun r -> r, (key, value)))
+        data
+    ;;
+
+    let to_strings = function
+      | TextLengthMin n -> "text_length_min", n |> CCInt.to_string
+      | TextLengthMax n -> "text_length_max", n |> CCInt.to_string
+    ;;
+
+    let validate rules value =
+      let open CCResult in
+      let length = CCString.length value in
+      let open Pool_common in
+      CCList.map
+        (fun rule ->
+          match rule with
+          | TextLengthMin i ->
+            if length < i then Error (Message.TextLengthMin i) else Ok ()
+          | TextLengthMax i ->
+            if length > i then Error (Message.TextLengthMax i) else Ok ())
+        rules
+      |> CCList.all_ok
+    ;;
+
+    let all = [ "text_length_min", `Number; "text_length_max", `Number ]
+  end
+
+  module Number = struct
+    type rule =
+      | NumberMin of int [@name "number_min"] [@printer printer "number_min"]
+      | NumberMax of int [@name "number_max"] [@printer printer "number_max"]
+    [@@deriving eq, show { with_path = false }, yojson, variants]
+
+    type t = rule list [@@deriving eq, show { with_path = false }, yojson]
+
+    let schema data =
+      let open CCOption in
+      CCList.filter_map
+        (fun (key, value) ->
+          (match key with
+           | "number_min" ->
+             value
+             |> CCInt.of_string
+             >|= fun min i ->
+             if i < min then Error (Message.NumberMin min) else Ok i
+           | "number_max" ->
+             value
+             |> CCInt.of_string
+             >|= fun max i ->
+             if i > max then Error (Message.NumberMax max) else Ok i
+           | _ -> None)
+          |> CCOption.map (fun r -> r, (key, value)))
+        data
+    ;;
+
+    let all = [ "number_min", `Number; "number_max", `Number ]
+
+    let validate rules value =
+      let open CCResult in
+      let open Pool_common in
+      CCList.map
+        (fun rule ->
+          match rule with
+          | NumberMin i ->
+            if value < i then Error (Message.NumberMin i) else Ok ()
+          | NumberMax i ->
+            if value > i then Error (Message.NumberMax i) else Ok ())
+        rules
+      |> CCList.all_ok
+    ;;
+  end
+
+  let encode_to_yojson t =
+    t |> CCList.map (fun (_, raw) -> raw) |> yojson_of_raw_list
+  ;;
+
+  let to_strings all m =
+    m
+    |> CCList.filter_map (fun (_, (key, value)) ->
+         CCList.find_opt (fun (k, _) -> CCString.equal k key) all
+         |> CCOption.map (CCFun.const (key, value)))
+  ;;
+
+  let all =
+    let go field_type lst =
+      CCList.map (fun (key, input_type) -> key, input_type, field_type) lst
+    in
+    go FieldType.Number Number.all @ go FieldType.Text Text.all
+  ;;
+end
+
+type 'a validation =
+  (('a -> ('a, Pool_common.Message.error) result) * Validation.raw
+  [@equal fun (_, raw1) (_, raw2) -> Validation.equal_raw raw1 raw2])
+[@@deriving show, eq]
+
+type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; field_type : FieldType.t
-  ; validation : Validation.t
+  ; validation : 'a validation list
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
   }
+[@@deriving eq, show]
+
+type t =
+  | Number of int custom_field
+  | Text of string custom_field
 [@@deriving eq, show]
 
 let create
   ?(id = Pool_common.Id.create ())
+  field_type
   model
   name
   hint
-  field_type
   validation
   required
   disabled
   admin
   =
   let open CCResult in
-  Ok
-    { id
-    ; model
-    ; name
-    ; hint
-    ; field_type
-    ; validation
-    ; required
-    ; disabled
-    ; admin
-    ; created_at = Pool_common.CreatedAt.create ()
-    ; updated_at = Pool_common.UpdatedAt.create ()
-    }
+  match (field_type : FieldType.t) with
+  | FieldType.Number ->
+    let validation = Validation.Number.schema validation in
+    Ok (Number { id; model; name; hint; validation; required; disabled; admin })
+  | FieldType.Text ->
+    let validation = Validation.Text.schema validation in
+    Ok (Text { id; model; name; hint; validation; required; disabled; admin })
 ;;
 
 module Write = struct
@@ -290,8 +316,8 @@ module Write = struct
     ; model : Model.t
     ; name : Name.t
     ; hint : Hint.t
+    ; validation : Yojson.Safe.t
     ; field_type : FieldType.t
-    ; validation : Validation.t
     ; required : Required.t
     ; disabled : Disabled.t
     ; admin : Admin.t
@@ -300,49 +326,116 @@ module Write = struct
 end
 
 module Public = struct
-  type t =
+  type 'a public =
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; field_type : FieldType.t
-    ; validation : Validation.t
+    ; validation : 'a validation list
     ; required : Required.t
-    ; answer : Answer.t option
+    ; answer : 'a Answer.t option
     }
   [@@deriving eq, show]
+
+  type t =
+    | Number of int public
+    | Text of string public
+  [@@deriving eq, show]
+
+  let validate value (m : t) =
+    let open CCResult.Infix in
+    let go rules value =
+      CCList.fold_left
+        (fun result (rule, _) -> result >>= rule)
+        (Ok value)
+        rules
+    in
+    match m with
+    | Number ({ validation; answer; _ } as public) ->
+      let id = answer |> CCOption.map Answer.id in
+      let version = answer |> CCOption.map Answer.version in
+      value
+      |> CCInt.of_string
+      |> CCOption.to_result Pool_common.Message.(NotANumber value)
+      >>= fun i ->
+      i
+      |> go validation
+      >|= Answer.create ?id ?version
+      >|= fun a : t -> Number { public with answer = a |> CCOption.pure }
+    | Text ({ validation; answer; _ } as public) ->
+      let id = answer |> CCOption.map Answer.id in
+      let version = answer |> CCOption.map Answer.version in
+      value
+      |> go validation
+      >|= Answer.create ?id ?version
+      >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
+  ;;
+
+  let get_id (t : t) =
+    match t with
+    | Number { id; _ } | Text { id; _ } -> id
+  ;;
+
+  let get_name lang (t : t) =
+    match t with
+    | Number { name; _ } | Text { name; _ } -> Name.find_opt lang name
+  ;;
+
+  let get_hint lang (t : t) =
+    match t with
+    | Number { hint; _ } | Text { hint; _ } -> Hint.find_opt lang hint
+  ;;
+
+  let get_version (t : t) =
+    match t with
+    | Number { answer; _ } -> answer |> CCOption.map Answer.version
+    | Text { answer; _ } -> answer |> CCOption.map Answer.version
+  ;;
 end
 
+let get_id = function
+  | Number { id; _ } | Text { id; _ } -> id
+;;
+
+let get_model = function
+  | Number { model; _ } | Text { model; _ } -> model
+;;
+
+let get_name = function
+  | Number { name; _ } | Text { name; _ } -> name
+;;
+
+let get_hint = function
+  | Number { hint; _ } | Text { hint; _ } -> hint
+;;
+
+let get_required = function
+  | Number { required; _ } | Text { required; _ } -> required
+;;
+
+let get_disabled = function
+  | Number { disabled; _ } | Text { disabled; _ } -> disabled
+;;
+
+let get_admin = function
+  | Number { admin; _ } | Text { admin; _ } -> admin
+;;
+
+let get_field_type = function
+  | Number _ -> FieldType.Number
+  | Text _ -> FieldType.Text
+;;
+
+let get_validation_strings =
+  let open Validation in
+  function
+  | Number { validation; _ } -> validation |> to_strings Number.all
+  | Text { validation; _ } -> validation |> to_strings Text.all
+;;
+
+(* TODO: Is this needed? *)
+let validation_to_yojson = function
+  | Number { validation; _ } -> Validation.encode_to_yojson validation
+  | Text { validation; _ } -> Validation.encode_to_yojson validation
+;;
+
 let boolean_fields = Pool_common.Message.Field.[ Required; Disabled; Overwrite ]
-
-(* A field should linked to a "category" *)
-(* type _ t = | Contact : field -> [> `Single ] t | Experiment : field -> [>
-   `Single ] t | Session : field -> [> `Single ] t
-
-   module Answer = struct module TextAnswer = struct type t = string [@@deriving
-   eq, show, yojson] end
-
-   module TextAnswerMasked = struct type t = string [@@deriving eq, yojson]
-
-   let show m = CCString.repeat "*" @@ CCString.length m
-
-   let pp (formatter : Format.formatter) (m : t) : unit = Format.fprintf
-   formatter "%s" m ;; end
-
-   type t = | Text of TextAnswer.t | Masked of TextAnswerMasked.t [@@deriving
-   yojson, show, eq]
-
-   let text = function | Text text -> text | Masked text ->
-   TextAnswerMasked.show text ;; end
-
-   module Populated = struct module AssignedModel = struct let print m fmt _ =
-   Format.pp_print_string fmt m
-
-   type _ t = | Contact : Contact.t -> [> `Single ] t [@printer print "contact"]
-   | Experiment : Experiment.t -> [> `Single ] t [@printer print "experiment"] |
-   Session : Session.t -> [> `Single ] t [@printer print "session"] [@@deriving
-   eq, show] end
-
-   (* TODO: Populated Entity should be linked to a fixed e.g. "Contact.t" *)
-   type _ t = { id : Id.t ; name : Name.t ; hint : Hint.t ; field_type :
-   FieldType.t ; validation : Validation.t ; required : Required.t ; metadata :
-   Metadata.t ; disabled : Disabled.t } end *)

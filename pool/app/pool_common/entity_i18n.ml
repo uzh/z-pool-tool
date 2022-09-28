@@ -70,6 +70,7 @@ type nav_link =
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
   | I18nText of string

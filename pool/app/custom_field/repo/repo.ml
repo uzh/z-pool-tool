@@ -47,12 +47,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (id |> Entity.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
   ;;
 
   let insert_sql =

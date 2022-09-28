@@ -31,7 +31,12 @@ let parse_urlencoded urlencoded =
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
   in
   let* value = find_param field_str InvalidHtmxRequest in
-  Ok (field, version, value)
+  let field_id =
+    find_param Htmx.field_id_key ()
+    |> CCOption.of_result
+    |> CCOption.map Custom_field.Id.of_string
+  in
+  Ok (field, version, value, field_id)
 ;;
 
 let show usage req =
@@ -111,15 +116,18 @@ let update req =
       |> with_redirect "/user/personal-details"
       |> Lwt_result.lift
     in
-    let* field, version, value =
+    let* field, version, value, field_id =
       parse_urlencoded urlencoded
       |> with_redirect "/user/personal-details"
       |> Lwt_result.lift
     in
     let%lwt response =
       let open CCResult in
-      let partial_update =
-        Contact.validate_partial_update contact (field, version, value)
+      let%lwt partial_update =
+        Contact.validate_partial_update
+          contact
+          tenant_db
+          (field, version, value, field_id)
       in
       let events =
         let open CCResult in
@@ -132,35 +140,73 @@ let update req =
         let csrf_element =
           Htmx.csrf_element_swap csrf ~id:user_update_csrf ()
         in
-        let htmx =
+        let%lwt htmx =
           let open Pool_common.Message in
           match partial_update with
           | Ok partial_update ->
-            let input =
-              partial_update
-              |> Contact.PartialUpdate.increment_version
-              |> Htmx.partial_update_to_htmx tenant_languages
-            in
-            Htmx.create input language ~hx_post ~success:true ()
+            partial_update
+            |> Contact.PartialUpdate.increment_version
+            |> fun m ->
+            Htmx.partial_update_to_htmx
+              language
+              tenant_languages
+              m
+              ~hx_post
+              ~success:true
+              ()
+            |> Lwt.return
           | Error error ->
-            let[@warning "-4"] value =
-              match field with
-              | Field.Firstname -> Htmx.Text (value |> CCOption.pure)
-              | Field.Lastname -> Htmx.Text (value |> CCOption.pure)
-              | Field.Paused -> Htmx.Checkbox false
-              | Field.Language ->
-                let open Htmx in
-                Select
-                  { show = Pool_common.Language.show
-                  ; options = tenant_languages
-                  ; selected =
-                      value |> Pool_common.Language.create |> CCResult.to_opt
-                  }
-              | _ -> failwith "TODO"
+            let create_htmx ?htmx_attributes ?(field = field) value =
+              Htmx.create
+                (Htmx.create_entity ?htmx_attributes version field value)
+                language
+                ~hx_post
+                ~error
+                ()
+              |> Lwt.return
             in
-            Htmx.create (version, field, value) language ~hx_post ~error ()
+            (match[@warning "-4"] field with
+             | Field.Firstname ->
+               Htmx.Text (value |> CCOption.pure) |> create_htmx
+             | Field.Lastname ->
+               Htmx.Text (value |> CCOption.pure) |> create_htmx
+             | Field.Paused -> Htmx.Checkbox false |> create_htmx
+             | Field.Language ->
+               Htmx.Select
+                 Htmx.
+                   { show = Pool_common.Language.show
+                   ; options = tenant_languages
+                   ; selected =
+                       value |> Pool_common.Language.create |> CCResult.to_opt
+                   }
+               |> create_htmx
+             | _ ->
+               let field_id =
+                 field_id |> CCOption.get_exn_or "TODO: Error handling"
+               in
+               let open Custom_field in
+               let%lwt field =
+                 let open Utils.Lwt_result.Infix in
+                 find_by_contact tenant_db (Contact.id contact) field_id
+                 ||> CCResult.get_exn (* TODO: Error handling *)
+               in
+               let value =
+                 match field with
+                 | Public.Number _ -> value |> CCInt.of_string |> Htmx.number
+                 | Public.Text _ -> value |> CCOption.pure |> Htmx.text
+               in
+               Htmx.custom_field_to_htmx
+                 ~value
+                 language
+                 field
+                 ~hx_post
+                 ~error
+                 ()
+               |> Lwt.return)
         in
-        [ htmx; csrf_element ] |> HttpUtils.multi_html_to_plain_text_response
+        [ htmx; csrf_element ]
+        |> HttpUtils.multi_html_to_plain_text_response
+        |> Lwt.return
       in
       (* TODO: When and where to update version? *)
       let%lwt () =
@@ -169,7 +215,7 @@ let update req =
         | Ok events ->
           events |> Lwt_list.iter_s (Pool_event.handle_event tenant_db)
       in
-      htmx_element () |> Lwt.return
+      () |> htmx_element
     in
     response |> Lwt_result.return
   in

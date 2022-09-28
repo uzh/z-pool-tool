@@ -61,5 +61,6 @@ let () =
   Lwt_main.run
     (let%lwt () = Test_utils.setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     Alcotest_lwt.run "integration" @@ suite)
+     let%lwt _ = Alcotest_lwt.run "integration" @@ suite in
+     Alcotest_lwt.run "lwt commands" @@ Command_lwt_tests.command)
 ;;
