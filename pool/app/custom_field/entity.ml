@@ -147,28 +147,22 @@ module Validation = struct
   end
 
   module Text = struct
-    type rule =
-      | TextLengthMin of int [@name "text_length_min"]
-          [@printer printer "text_length_min"]
-      | TextLengthMax of int [@name "text_length_max"]
-          [@printer printer "text_length_max"]
-    [@@deriving eq, show { with_path = false }, yojson, variants]
-
-    type t = rule list [@@deriving eq, show { with_path = false }, yojson]
+    let text_min_length = "text_length_min"
+    let text_max_length = "text_length_max"
 
     let schema data =
       let open CCOption in
       CCList.filter_map
         (fun (key, value) ->
           (match key with
-           | "text_length_min" ->
+           | _ when CCString.equal key text_min_length ->
              value
              |> CCInt.of_string
              >|= fun min str ->
              if CCString.length str < min
              then Error (Message.TextLengthMin min)
              else Ok str
-           | "text_length_max" ->
+           | _ when CCString.equal key text_max_length ->
              value
              |> CCInt.of_string
              >|= fun max str ->
@@ -180,48 +174,24 @@ module Validation = struct
         data
     ;;
 
-    let to_strings = function
-      | TextLengthMin n -> "text_length_min", n |> CCInt.to_string
-      | TextLengthMax n -> "text_length_max", n |> CCInt.to_string
-    ;;
-
-    let validate rules value =
-      let open CCResult in
-      let length = CCString.length value in
-      let open Pool_common in
-      CCList.map
-        (fun rule ->
-          match rule with
-          | TextLengthMin i ->
-            if length < i then Error (Message.TextLengthMin i) else Ok ()
-          | TextLengthMax i ->
-            if length > i then Error (Message.TextLengthMax i) else Ok ())
-        rules
-      |> CCList.all_ok
-    ;;
-
-    let all = [ "text_length_min", `Number; "text_length_max", `Number ]
+    let all = [ text_min_length, `Number; text_max_length, `Number ]
   end
 
   module Number = struct
-    type rule =
-      | NumberMin of int [@name "number_min"] [@printer printer "number_min"]
-      | NumberMax of int [@name "number_max"] [@printer printer "number_max"]
-    [@@deriving eq, show { with_path = false }, yojson, variants]
-
-    type t = rule list [@@deriving eq, show { with_path = false }, yojson]
+    let number_min = "number_min"
+    let number_max = "number_max"
 
     let schema data =
       let open CCOption in
       CCList.filter_map
         (fun (key, value) ->
           (match key with
-           | "number_min" ->
+           | _ when CCString.equal key number_min ->
              value
              |> CCInt.of_string
              >|= fun min i ->
              if i < min then Error (Message.NumberMin min) else Ok i
-           | "number_max" ->
+           | _ when CCString.equal key number_max ->
              value
              |> CCInt.of_string
              >|= fun max i ->
@@ -231,21 +201,7 @@ module Validation = struct
         data
     ;;
 
-    let all = [ "number_min", `Number; "number_max", `Number ]
-
-    let validate rules value =
-      let open CCResult in
-      let open Pool_common in
-      CCList.map
-        (fun rule ->
-          match rule with
-          | NumberMin i ->
-            if value < i then Error (Message.NumberMin i) else Ok ()
-          | NumberMax i ->
-            if value > i then Error (Message.NumberMax i) else Ok ())
-        rules
-      |> CCList.all_ok
-    ;;
+    let all = [ number_min, `Number; number_max, `Number ]
   end
 
   let encode_to_yojson t =
