@@ -3,8 +3,9 @@ open Sexplib.Conv
 module Field = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
+  (* TODO: Fix this: when to use fst or se*)
   let custom _ fmt t =
-    let name, _ = t in
+    let _, name = t in
     Format.pp_print_string fmt name
   ;;
 

@@ -196,7 +196,7 @@ module Public : sig
   val show : t -> string
   val validate : string -> t -> (t, Pool_common.Message.error) result
   val get_id : t -> Id.t
-  val get_name : Pool_common.Language.t -> t -> Name.name option
+  val get_name_value : Pool_common.Language.t -> t -> string
   val get_hint : Pool_common.Language.t -> t -> Hint.hint option
   val get_version : t -> Pool_common.Version.t option
 end
@@ -226,6 +226,11 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_public
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (Public.t, Pool_common.Message.error) result Lwt.t
 
 val find_all_for_contact
   :  Pool_database.Label.t

@@ -33,7 +33,7 @@ let detail_view action req =
       |> create_layout req context
       >|= Sihl.Web.Response.of_html
     | `Edit ->
-      let user_update_csrf = Contact_user_profile.user_update_csrf in
+      let user_update_csrf = Htmx.user_update_csrf in
       let* tenant_languages =
         Pool_context.Tenant.find req
         |> Lwt_result.lift

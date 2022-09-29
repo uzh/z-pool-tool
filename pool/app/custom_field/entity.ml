@@ -331,9 +331,10 @@ module Public = struct
     | Number { id; _ } | Text { id; _ } -> id
   ;;
 
-  let get_name lang (t : t) =
+  let get_name_value lang (t : t) =
     match t with
-    | Number { name; _ } | Text { name; _ } -> Name.find_opt lang name
+    | Number { name; _ } | Text { name; _ } ->
+      Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
   ;;
 
   let get_hint lang (t : t) =

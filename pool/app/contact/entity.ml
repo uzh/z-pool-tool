@@ -224,6 +224,7 @@ module PartialUpdate = struct
       >>= check_version contact.language_version
       |> Lwt.return
     | _ ->
+      (* FIX ERROR LABLE *)
       let open Lwt_result.Syntax in
       let open Lwt_result.Infix in
       let open Custom_field in

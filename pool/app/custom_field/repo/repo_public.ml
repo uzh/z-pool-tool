@@ -32,6 +32,28 @@ module Sql = struct
     |sql}
   ;;
 
+  let find_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+        %s
+        WHERE pool_custom_fields.uuid = UNHEX(REPLACE($1, '-', ''))
+      |sql}
+      select_sql
+    |> Caqti_type.string ->! Repo_entity.Public.t
+  ;;
+
+  let find pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_request
+      (id |> Entity.Id.value)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    >|= Repo_entity.Public.to_entity
+  ;;
+
+  (* TODO: Are both queries required? *)
   let find_all_for_contact_request =
     let open Caqti_request.Infix in
     Format.asprintf
@@ -137,3 +159,4 @@ end
 let find_all_for_contact = Sql.find_all_for_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer
+let find = Sql.find

@@ -91,10 +91,8 @@ module Elements = struct
       div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
   ;;
 
-  let identifier ?identifier language name =
-    CCOption.value
-      identifier
-      ~default:(Pool_common.Utils.field_to_string language name)
+  let identifier ?identifier name =
+    CCOption.value identifier ~default:(Pool_common.Message.Field.show name)
     |> CCString.replace ~which:`All ~sub:" " ~by:"_"
   ;;
 end
@@ -127,7 +125,7 @@ let input_element
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     let attrs =
       Elements.attributes input_type name id [ a_value value ]
@@ -192,7 +190,7 @@ let flatpicker_element
         ; disable_past, "disable-past", "true"
         ]
   in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     Elements.attributes
       input_type
@@ -236,7 +234,7 @@ let checkbox_element
     | true -> [ a_checked () ]
     | false -> []
   in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     Elements.attributes `Checkbox name id value_attrs
     |> fun attrs ->

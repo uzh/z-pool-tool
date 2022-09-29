@@ -10,18 +10,15 @@ let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
+let user_update_csrf = "_user_update_csrf"
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
 let custom_field_label language m =
   let open Custom_field in
   let id = Public.get_id m in
-  let name = Public.get_name language m in
-  Pool_common.Message.(
-    Field.CustomHtmx
-      ( id |> Id.value
-      , name (* TODO: fail?? what when new language gets activated? *)
-        |> CCOption.map_or ~default:"----" Name.value_name ))
+  let name = Public.get_name_value language m in
+  Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
 ;;
 
 let custom_field_hint language m =
