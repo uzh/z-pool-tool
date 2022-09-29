@@ -453,3 +453,31 @@ let selector
     ; div help
     ]
 ;;
+
+let custom_field_to_input ?flash_fetcher language custom_field =
+  let open Custom_field in
+  let label = Public.to_common_field language custom_field in
+  let help = Public.to_common_hint language custom_field in
+  let required = Public.get_required custom_field |> Required.value in
+  let create value input_type =
+    input_element
+      ?flash_fetcher
+      ?value
+      ?help
+      ~required
+      language
+      input_type
+      label
+  in
+  match custom_field with
+  | Public.Number field ->
+    let answer = field.Public.answer in
+    let value =
+      answer |> CCOption.map (fun a -> a.Answer.value |> CCInt.to_string)
+    in
+    create value `Number
+  | Public.Text field ->
+    let answer = field.Public.answer in
+    let value = answer |> CCOption.map (fun a -> a.Answer.value) in
+    create value `Text
+;;

@@ -199,6 +199,17 @@ module Public : sig
   val get_name_value : Pool_common.Language.t -> t -> string
   val get_hint : Pool_common.Language.t -> t -> Hint.hint option
   val get_version : t -> Pool_common.Version.t option
+  val get_required : t -> Required.t
+
+  val to_common_field
+    :  Pool_common.Language.t
+    -> t
+    -> Pool_common.Message.Field.t
+
+  val to_common_hint
+    :  Pool_common.Language.t
+    -> t
+    -> Pool_common.I18n.hint option
 end
 
 val boolean_fields : Pool_common.Message.Field.t list
@@ -213,6 +224,7 @@ val get_field_type : t -> FieldType.t
 val get_validation_strings : t -> (string * string) list
 
 type event =
+  | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
   | Updated of t
 
@@ -237,6 +249,17 @@ val find_all_by_contact
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
 
+val find_all_required_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Public.t list Lwt.t
+
+val find_multiple_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Pool_common.Id.t list
+  -> Public.t list Lwt.t
+
 val find_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
@@ -248,3 +271,8 @@ val upsert_answer
   -> Pool_common.Id.t
   -> Public.t
   -> unit Lwt.t
+
+val all_required_answered
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> bool Lwt.t

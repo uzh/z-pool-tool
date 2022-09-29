@@ -342,10 +342,28 @@ module Public = struct
     | Number { hint; _ } | Text { hint; _ } -> Hint.find_opt lang hint
   ;;
 
+  let get_required (t : t) =
+    match t with
+    | Number { required; _ } | Text { required; _ } -> required
+  ;;
+
   let get_version (t : t) =
     match t with
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
     | Text { answer; _ } -> answer |> CCOption.map Answer.version
+  ;;
+
+  let to_common_field language m =
+    let id = get_id m in
+    let name = get_name_value language m in
+    Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
+  ;;
+
+  let to_common_hint language m =
+    let open CCOption in
+    get_hint language m
+    >|= Hint.value_hint
+    >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
 end
 
@@ -389,7 +407,6 @@ let get_validation_strings =
   | Text { validation; _ } -> validation |> to_strings Text.all
 ;;
 
-(* TODO: Is this needed? *)
 let validation_to_yojson = function
   | Number { validation; _ } -> Validation.encode_to_yojson validation
   | Text { validation; _ } -> Validation.encode_to_yojson validation

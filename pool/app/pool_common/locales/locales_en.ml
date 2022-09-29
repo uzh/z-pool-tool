@@ -93,6 +93,7 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | Profile -> "profile"
   | PublicTitle -> "public title"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
@@ -145,7 +146,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "To continue, you need to answer the following questions."
 ;;
 
 let success_to_string : success -> string = function

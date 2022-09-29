@@ -122,6 +122,7 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
+    | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
@@ -292,7 +293,10 @@ type success =
   | Updated of Field.t
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
+type info =
+  | Info of string
+  | RequiredFieldsMissing
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string

@@ -22,6 +22,7 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
+  | ProfileCompletitionTitle -> "Profile completition"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"

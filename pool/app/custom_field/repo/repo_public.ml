@@ -1,8 +1,18 @@
 module Database = Pool_database
+module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
-  let select_sql =
+  let answers_left_join =
     {sql|
+      LEFT JOIN pool_custom_field_answers
+      ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
+      AND pool_custom_field_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+  ;;
+
+  let select_sql =
+    Format.asprintf
+      {sql|
       SELECT
         LOWER(CONCAT(
           SUBSTR(HEX(pool_custom_fields.uuid), 1, 8), '-',
@@ -26,10 +36,9 @@ module Sql = struct
         pool_custom_field_answers.value,
         pool_custom_field_answers.version
       FROM pool_custom_fields
-      LEFT JOIN pool_custom_field_answers
-        ON pool_custom_field_answers.custom_field_uuid = pool_custom_fields.uuid
-        AND pool_custom_field_answers.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+      %s
     |sql}
+      answers_left_join
   ;;
 
   let find_request =
@@ -53,23 +62,67 @@ module Sql = struct
     >|= Repo_entity.Public.to_entity
   ;;
 
-  let find_all_by_contact_request =
+  let find_all_by_contact_request required =
     let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|%s
-      WHERE pool_custom_fields.model = $2
-      AND pool_custom_fields.disabled = 0
-    |sql}
-      select_sql
+    let where =
+      Format.asprintf
+        {sql|
+        WHERE pool_custom_fields.model = $2
+        AND pool_custom_fields.disabled = 0
+        %s
+      |sql}
+        (if required then "AND pool_custom_fields.required = 1" else "")
+    in
+    Format.asprintf "%s \n %s" select_sql where
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 
-  let find_all_by_contact pool id =
+  let find_all_by_contact ?(required = false) pool id =
     let open Lwt.Infix in
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_all_by_contact_request
+      (find_all_by_contact_request required)
       (Pool_common.Id.value id, Entity.Model.(show Contact))
+    >|= CCList.map Repo_entity.Public.to_entity
+  ;;
+
+  let find_multiple_by_contact_request ids =
+    let where =
+      Format.asprintf
+        {sql|
+        WHERE pool_custom_fields.model = $2
+        AND pool_custom_fields.disabled = 0
+        AND pool_custom_fields.uuid in ( %s )
+      |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
+           ids
+        |> CCString.concat ",")
+    in
+    Format.asprintf "%s \n %s" select_sql where
+  ;;
+
+  let find_multiple_by_contact pool contact_id ids =
+    let open Lwt.Infix in
+    let open Caqti_request.Infix in
+    let dyn =
+      let base =
+        Dynparam.(
+          empty
+          |> add Caqti_type.string (contact_id |> Pool_common.Id.value)
+          |> add Caqti_type.string Entity.Model.(show Contact))
+      in
+      CCList.fold_left
+        (fun dyn id ->
+          dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+        base
+        ids
+    in
+    let (Dynparam.Pack (pt, pv)) = dyn in
+    let request =
+      find_multiple_by_contact_request ids |> pt ->* Repo_entity.Public.t
+    in
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
     >|= CCList.map Repo_entity.Public.to_entity
   ;;
 
@@ -95,6 +148,30 @@ module Sql = struct
       , Entity.Id.value field_id )
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
     >|= Repo_entity.Public.to_entity
+  ;;
+
+  let all_required_answered_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+      SELECT count(*) questions FROM pool_custom_fields
+      %s
+      WHERE pool_custom_fields.model = $2
+      AND pool_custom_fields.disabled = 0
+      AND pool_custom_fields.required = 1
+      AND pool_custom_field_answers.value IS NULL
+      |sql}
+      answers_left_join
+    |> Caqti_type.(tup2 string string ->! int)
+  ;;
+
+  let all_required_answered pool contact_id =
+    let open Lwt.Infix in
+    Utils.Database.find
+      (Pool_database.Label.value pool)
+      all_required_answered_request
+      (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
+    >|= CCInt.equal 0
   ;;
 
   let upsert_answer_request =
@@ -156,6 +233,9 @@ module Sql = struct
 end
 
 let find_all_by_contact = Sql.find_all_by_contact
+let find_all_required_by_contact = Sql.find_all_by_contact ~required:true
+let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer
 let find = Sql.find
+let all_required_answered = Sql.all_required_answered

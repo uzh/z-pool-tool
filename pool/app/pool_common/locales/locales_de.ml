@@ -92,6 +92,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
@@ -144,7 +145,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
 ;;
 
 let success_to_string : success -> string = function

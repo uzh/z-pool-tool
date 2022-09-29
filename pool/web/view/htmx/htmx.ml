@@ -20,21 +20,6 @@ let admin_profile_hx_post id =
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
-let custom_field_label language m =
-  let open Custom_field in
-  let id = Public.get_id m in
-  let name = Public.get_name_value language m in
-  Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
-;;
-
-let custom_field_hint language m =
-  let open Custom_field in
-  let open CCOption in
-  Public.get_hint language m
-  >|= Hint.value_hint
-  >|= fun h -> Pool_common.I18n.CustomHtmx h
-;;
-
 let hx_attributes field version ?action ?(additional_attributes = []) () =
   let name = Pool_common.Message.Field.(field |> show) in
   let params, vals =
@@ -173,7 +158,7 @@ let custom_field_to_htmx ?value language custom_field =
   let open Custom_field in
   let field_id = Public.get_id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
-  let label = custom_field_label language custom_field in
+  let label = Public.to_common_field language custom_field in
   let version =
     Public.get_version custom_field
     |> CCOption.value ~default:(Pool_common.Version.create ())
@@ -181,7 +166,7 @@ let custom_field_to_htmx ?value language custom_field =
   let value =
     value |> CCOption.value ~default:(custom_field_to_htmx_value custom_field)
   in
-  let help = custom_field_hint language custom_field in
+  let help = Public.to_common_hint language custom_field in
   { version
   ; field = label
   ; value

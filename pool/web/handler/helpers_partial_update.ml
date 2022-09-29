@@ -30,7 +30,7 @@ let parse_urlencoded tenant_db language urlencoded =
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
       >>= Custom_field.find_public tenant_db
-      >|= fun f -> Htmx.custom_field_label language f
+      >|= fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
     find_param "version" (HtmxVersionNotFound field_str)

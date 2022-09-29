@@ -128,3 +128,79 @@ let update_password req =
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
+
+let completition req =
+  let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    Lwt_result.map_error (fun err -> err, "/login")
+    @@
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let* user =
+      Http_utils.user_from_session tenant_db req
+      ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
+    in
+    let* contact =
+      Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+      |> Lwt_result.map_error (fun err -> err)
+    in
+    let%lwt custom_fields =
+      Custom_field.find_all_required_by_contact tenant_db (Contact.id contact)
+    in
+    Page.Contact.completition context flash_fetcher custom_fields
+    |> create_layout req ~active_navigation:"/user" context
+    >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let completition_post req =
+  let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.format_request_boolean_values []
+    ||> HttpUtils.remove_empty_values
+  in
+  let result { Pool_context.tenant_db; query_language; _ } =
+    Lwt_result.map_error (fun err ->
+      HttpUtils.(
+        ( err
+        , path_with_language query_language "/user/completition"
+        , [ urlencoded_to_flash urlencoded ] )))
+    @@ let* contact = HttpUtils.get_current_contact tenant_db req in
+       let%lwt custom_fields =
+         urlencoded
+         |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
+         |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
+       in
+       let events =
+         custom_fields
+         |> CCList.map (fun f ->
+              let open CCOption in
+              ( CCList.assoc_opt
+                  ~eq:CCString.equal
+                  Custom_field.(f |> Public.get_id |> Id.value)
+                  urlencoded
+                >>= CCList.head_opt
+                |> value ~default:""
+              , f ))
+         |> Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
+              (Contact.id contact)
+         |> Lwt_result.lift
+       in
+       let handle events =
+         let%lwt (_ : unit list) =
+           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.(
+           redirect_to_with_actions
+             "/dashboard"
+             [ Message.set
+                 ~success:[ Pool_common.Message.(Updated Field.Profile) ]
+             ])
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
