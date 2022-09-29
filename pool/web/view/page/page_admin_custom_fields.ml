@@ -7,7 +7,7 @@ let base_path = "/admin/custom-fields"
 let form
   ?(custom_field : Custom_field.t option)
   Pool_context.{ language; csrf; _ }
-  sys_languages
+  tenant_languages
   flash_fetcher
   =
   let open Custom_field in
@@ -32,6 +32,10 @@ let form
     let group_class = Elements.group_class [] `Horizontal in
     CCList.map
       (fun lang ->
+        let required =
+          required
+          && CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
+        in
         let label_text =
           lang
           |> Language.field_of_t
@@ -71,7 +75,7 @@ let form
               ]
           ; input_element
           ])
-      sys_languages
+      Pool_common.Language.all
   in
   let name_inputs =
     input_by_lang ~required:true Message.Field.Name (fun lang ->
