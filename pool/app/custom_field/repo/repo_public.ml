@@ -53,8 +53,7 @@ module Sql = struct
     >|= Repo_entity.Public.to_entity
   ;;
 
-  (* TODO: Are both queries required? *)
-  let find_all_for_contact_request =
+  let find_all_by_contact_request =
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|%s
@@ -65,11 +64,11 @@ module Sql = struct
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 
-  let find_all_for_contact pool id =
+  let find_all_by_contact pool id =
     let open Lwt.Infix in
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_all_for_contact_request
+      find_all_by_contact_request
       (Pool_common.Id.value id, Entity.Model.(show Contact))
     >|= CCList.map Repo_entity.Public.to_entity
   ;;
@@ -156,7 +155,7 @@ module Sql = struct
   ;;
 end
 
-let find_all_for_contact = Sql.find_all_for_contact
+let find_all_by_contact = Sql.find_all_by_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer
 let find = Sql.find

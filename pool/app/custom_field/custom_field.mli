@@ -232,7 +232,7 @@ val find_public
   -> Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
-val find_all_for_contact
+val find_all_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> Public.t list Lwt.t

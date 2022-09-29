@@ -40,7 +40,7 @@ let detail_view action req =
         >|= fun c -> c.Pool_context.Tenant.tenant_languages
       in
       let%lwt custom_fields =
-        Custom_field.find_all_for_contact tenant_db (Contact.id contact)
+        Custom_field.find_all_by_contact tenant_db (Contact.id contact)
       in
       Page.Admin.Contact.edit
         context
