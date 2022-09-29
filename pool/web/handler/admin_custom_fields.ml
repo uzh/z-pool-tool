@@ -12,20 +12,17 @@ let find_assocs_in_urlencoded urlencoded field encoder =
   CCList.filter_map
     (fun (key, values) ->
       let group, id = CCString.take_drop (CCString.length field) key in
-      match CCString.equal field group with
-      | false -> None
-      | true ->
-        let key =
-          let open CCOption in
-          id
-          |> CCString.chop_prefix ~pre:"["
-          >>= CCString.chop_suffix ~suf:"]"
-          >>= fun l -> l |> encoder
-        in
-        let value = CCList.head_opt values in
-        (match key, value with
-         | Some l, Some v -> Some (l, v)
-         | _ -> None))
+      let value = CCList.head_opt values in
+      let key =
+        let open CCOption in
+        id
+        |> CCString.chop_prefix ~pre:"["
+        >>= CCString.chop_suffix ~suf:"]"
+        >>= encoder
+      in
+      match key, value with
+      | Some l, Some v when CCString.equal field group -> Some (l, v)
+      | _ -> None)
     urlencoded
 ;;
 
@@ -53,11 +50,9 @@ let form ?id req =
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* custom_field =
-      match id with
-      | Some id ->
-        let* field = Custom_field.find tenant_db id in
-        Lwt_result.return (Some field)
-      | None -> Lwt_result.return None
+      id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Custom_field.find tenant_db id >|= CCOption.pure)
     in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail

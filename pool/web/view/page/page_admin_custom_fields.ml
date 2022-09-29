@@ -29,15 +29,14 @@ let form
   let field_type = CCOption.map get_field_type custom_field in
   let input_by_lang ?(required = false) field value_fnc =
     let open Pool_common in
-    let group_class = Component.Elements.group_class [] `Horizontal in
+    let group_class = Elements.group_class [] `Horizontal in
     CCList.map
       (fun lang ->
         let label_text =
-          Pool_common.(
-            lang
-            |> Language.field_of_t
-            |> Utils.field_to_string language
-            |> CCString.capitalize_ascii)
+          lang
+          |> Language.field_of_t
+          |> Utils.field_to_string language
+          |> CCString.capitalize_ascii
         in
         let id =
           Format.asprintf
@@ -75,7 +74,7 @@ let form
       sys_languages
   in
   let name_inputs =
-    input_by_lang ~required:true Pool_common.Message.Field.Name (fun lang ->
+    input_by_lang ~required:true Message.Field.Name (fun lang ->
       let open CCOption in
       custom_field
       >|= (fun f -> get_name f)
@@ -84,7 +83,7 @@ let form
       |> value ~default:"")
   in
   let hint_inputs =
-    input_by_lang Pool_common.Message.Field.Hint (fun lang ->
+    input_by_lang Message.Field.Hint (fun lang ->
       let open CCOption in
       custom_field
       >|= (fun f -> get_hint f)
@@ -99,10 +98,7 @@ let form
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
-        Format.asprintf
-          "%s[%s]"
-          Pool_common.Message.Field.(show Validation)
-          name
+        Format.asprintf "%s[%s]" Message.Field.(show Validation) name
       in
       let wrapper_class = [ "switcher"; "flex-gap"; "align-center" ] in
       let input_attributes =
@@ -172,12 +168,12 @@ let form
       ; a_action (Sihl.Web.externalize_path action)
       ; a_class [ "stack-lg" ]
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; div
         ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-        [ Component.selector
+        [ selector
             language
-            Pool_common.Message.Field.Model
+            Message.Field.Model
             Model.show
             Model.all
             (CCOption.map get_model custom_field)
@@ -185,9 +181,9 @@ let form
             ~required:true
             ~flash_fetcher
             ()
-        ; Component.selector
+        ; selector
             language
-            Pool_common.Message.Field.FieldType
+            Message.Field.FieldType
             FieldType.show
             FieldType.all
             field_type
@@ -241,7 +237,7 @@ let form
         ; input_element
             language
             `Text
-            Pool_common.Message.Field.AdminHint
+            Message.Field.AdminHint
             ~orientation:`Horizontal
             ~value:
               (value (fun f ->
@@ -291,7 +287,7 @@ let detail
 ;;
 
 let index field_list Pool_context.{ language; _ } =
-  let thead = Pool_common.Message.Field.[ Some Title; None ] in
+  let thead = Message.Field.[ Some Title; None ] in
   let rows =
     let open Custom_field in
     CCList.map
