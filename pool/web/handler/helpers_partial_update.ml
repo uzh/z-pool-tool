@@ -1,10 +1,5 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
-(* Another type?? *)
-(***
-
-  type test = | Firstname | Lastname | Paused | Language | Custom of
-  Custom_field.Id.t *)
 
 let parse_urlencoded tenant_db language urlencoded =
   let open Pool_common.Message in
@@ -50,7 +45,8 @@ let parse_urlencoded tenant_db language urlencoded =
   (field, version, value, field_id) |> Lwt_result.return
 ;;
 
-let update req =
+let update ?contact req =
+  let is_admin = CCOption.is_some contact in
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt urlencoded =
@@ -63,23 +59,29 @@ let update req =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
     in
     let open Utils.Lwt_result.Syntax in
-    let* user =
-      Http_utils.user_from_session tenant_db req
-      ||> CCOption.to_result (NotFound Field.User)
-      ||> with_redirect "/login"
-    in
     let* contact =
-      Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      ||> with_redirect "/login"
+      match contact with
+      | Some contact -> Lwt_result.return contact
+      | None ->
+        Http_utils.user_from_session tenant_db req
+        ||> CCOption.to_result (NotFound Field.User)
+        >>= (fun { Sihl_user.id; _ } ->
+              Contact.find tenant_db (id |> Pool_common.Id.of_string))
+        ||> with_redirect "/login"
+    in
+    let back_path =
+      if is_admin
+      then
+        Format.asprintf
+          "/admin/contacts/%s/edit"
+          (contact |> Contact.id |> Pool_common.Id.value)
+      else "/user/personal-details"
     in
     let* Pool_context.Tenant.{ tenant_languages; _ } =
-      Pool_context.Tenant.find req
-      |> with_redirect "/user/personal-details"
-      |> Lwt_result.lift
+      Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
     in
     let* field, version, value, field_id =
-      parse_urlencoded tenant_db language urlencoded
-      ||> with_redirect "/user/personal-details"
+      parse_urlencoded tenant_db language urlencoded ||> with_redirect back_path
     in
     let%lwt response =
       let open CCResult in
@@ -103,7 +105,12 @@ let update req =
       in
       let htmx_element () =
         let hx_post =
-          Sihl.Web.externalize_path (path_with_lang "/user/update")
+          Htmx.(
+            if is_admin
+            then admin_profile_hx_post (Contact.id contact)
+            else contact_profile_hx_post)
+          |> path_with_lang
+          |> Sihl.Web.externalize_path
         in
         let open Pool_common.Message in
         match partial_update with
@@ -157,7 +164,7 @@ let update req =
               | Error error ->
                 HttpUtils.(
                   htmx_redirect
-                    "/user/update"
+                    back_path
                     ?query_language
                     ~actions:[ Message.set ~error:[ error ] ]
                     ())

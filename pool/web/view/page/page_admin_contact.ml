@@ -77,9 +77,7 @@ let edit
         user_update_csrf
         language
         query_language
-        (Format.asprintf
-           "/admin/contacts/%s"
-           (Contact.id contact |> Pool_common.Id.value))
+        (Htmx.admin_profile_hx_post (Contact.id contact))
         tenant_languages
         contact
         custom_fields

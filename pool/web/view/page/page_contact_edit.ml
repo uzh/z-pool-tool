@@ -119,7 +119,7 @@ let personal_details
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
-  let action = "/user/update" in
+  let action = Htmx.contact_profile_hx_post in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]

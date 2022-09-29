@@ -11,6 +11,12 @@ let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
 let user_update_csrf = "_user_update_csrf"
+let contact_profile_hx_post = "/user/update"
+
+let admin_profile_hx_post id =
+  Format.asprintf "/admin/contacts/%s" (id |> Pool_common.Id.value)
+;;
+
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
@@ -68,7 +74,6 @@ type 'a value =
   | Select of 'a selector
 [@@deriving variants]
 
-(* type 'a t = Version.t * Pool_common.Message.Field.t * 'a value *)
 type 'a t =
   { version : Version.t
   ; field : Pool_common.Message.Field.t
