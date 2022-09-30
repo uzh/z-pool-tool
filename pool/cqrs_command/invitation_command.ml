@@ -48,7 +48,6 @@ module Create : sig
 
   val handle
     :  t
-    -> ?skip_already_invited:bool
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -61,31 +60,16 @@ end = struct
     ; invited_contacts : Pool_common.Id.t list
     }
 
-  let handle
-    (command : t)
-    ?(skip_already_invited = false)
-    system_languages
-    i18n_texts
-    =
+  let handle (command : t) system_languages i18n_texts =
     let open CCResult in
     let errors, contacts =
-      if skip_already_invited
-      then (
-        let contacts =
-          CCList.filter
-            (fun contact ->
-              CCList.memq (Contact.id contact) command.invited_contacts |> not)
-            command.contacts
-        in
-        [], contacts)
-      else
-        CCList.partition
-          (fun contact ->
-            CCList.mem
-              ~eq:Pool_common.Id.equal
-              (Contact.id contact)
-              command.invited_contacts)
-          command.contacts
+      CCList.partition
+        (fun contact ->
+          CCList.mem
+            ~eq:Pool_common.Id.equal
+            (Contact.id contact)
+            command.invited_contacts)
+        command.contacts
     in
     let errors = CCList.map Contact.fullname errors in
     let emails =
@@ -109,6 +93,7 @@ end = struct
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (
       match CCList.all_ok emails with
+      | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
           [ Invitation.Created (contacts, command.experiment)

@@ -179,10 +179,6 @@ let () =
             "create invitations"
             `Quick
             Matcher_test.create_invitations_model
-        ; test_case
-            "create invitations with skipped contacts"
-            `Quick
-            Matcher_test.create_unskipped_invitations_model
         ] )
     ]
 ;;

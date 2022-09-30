@@ -1,8 +1,3 @@
-val count_of_rate
-  :  int
-  -> Mailing.Rate.t
-  -> (int, Pool_common.Message.error) result
-
 val i18n_templates
   :  Pool_database.Label.t
   -> Experiment.t
@@ -11,10 +6,17 @@ val i18n_templates
 
 val find_contacts_by_mailing
   :  Pool_database.Label.t
-  -> ?interval:int
   -> Mailing.t
+  -> int
   -> (Experiment.t
-     * Contact.t list
      * Contact.t list
      * (Pool_common.Language.t * (I18n.t * I18n.t)) list)
      Lwt.t
+
+val match_invitations
+  :  ?interval:Sihl.Time.duration
+  -> Pool_database.Label.t list
+  -> unit Lwt.t
+
+val lifecycle : Sihl.Container.lifecycle
+val register : unit -> Sihl.Container.Service.t

@@ -35,35 +35,10 @@ let create_invitations_model () =
   let contacts = Model.[ create_contact (); create_contact () ] in
   let languages = Pool_common.Language.all in
   let i18n_templates = Test_utils.i18n_templates languages in
-  let skip_contacts = [] in
   let events =
-    { mailing; experiment; contacts; skip_contacts; i18n_templates }
-    |> CCList.pure
-    |> handle
+    { mailing; experiment; contacts; i18n_templates } |> CCList.pure |> handle
   in
   let expected = expected_events experiment contacts i18n_templates in
-  Test_utils.check_result expected events
-;;
-
-let create_unskipped_invitations_model () =
-  let open Cqrs_command.Matcher_command.Run in
-  let mailing = Model.create_mailing () in
-  let experiment = Model.create_experiment () in
-  let contact_one = Model.create_contact () in
-  let contact_two = Model.create_contact () in
-  let languages = Pool_common.Language.all in
-  let i18n_templates = Test_utils.i18n_templates languages in
-  let events =
-    { mailing
-    ; experiment
-    ; contacts = [ contact_one; contact_two ]
-    ; skip_contacts = [ contact_one ]
-    ; i18n_templates
-    }
-    |> CCList.pure
-    |> handle
-  in
-  let expected = expected_events experiment [ contact_two ] i18n_templates in
   Test_utils.check_result expected events
 ;;
 
@@ -72,13 +47,16 @@ let create_invitations_repo _ () =
   let pool = Test_utils.Data.database_label in
   let%lwt () =
     Mailing.find_current pool
-    >|> Lwt_list.iter_s (fun mailing ->
+    >|> Lwt_list.iter_s (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->
           let open Cqrs_command.Matcher_command.Run in
-          let%lwt experiment, contacts, skip_contacts, i18n_templates =
-            Matcher.find_contacts_by_mailing pool mailing
+          let%lwt experiment, contacts, i18n_templates =
+            Matcher.find_contacts_by_mailing
+              pool
+              mailing
+              (Mailing.Rate.value rate)
           in
           let events =
-            { mailing; experiment; contacts; skip_contacts; i18n_templates }
+            { mailing; experiment; contacts; i18n_templates }
             |> CCList.pure
             |> handle
           in

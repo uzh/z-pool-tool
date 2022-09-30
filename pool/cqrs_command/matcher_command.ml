@@ -5,7 +5,6 @@ module Run : sig
     { mailing : Mailing.t
     ; experiment : Experiment.t
     ; contacts : Contact.t list
-    ; skip_contacts : Contact.t list
     ; i18n_templates : (Pool_common.Language.t * (I18n.t * I18n.t)) list
     }
 
@@ -19,24 +18,16 @@ end = struct
     { mailing : Mailing.t
     ; experiment : Experiment.t
     ; contacts : Contact.t list
-    ; skip_contacts : Contact.t list
     ; i18n_templates : (Pool_common.Language.t * (I18n.t * I18n.t)) list
     }
 
   let handle =
     let open CCFun.Infix in
-    CCList.map
-      (fun { experiment; contacts; skip_contacts; i18n_templates; _ } ->
+    CCList.map (fun { experiment; contacts; i18n_templates; _ } ->
       let open Invitation_command in
       let languages = Pool_common.Language.all in
-      let command =
-        Create.
-          { experiment
-          ; contacts
-          ; invited_contacts = skip_contacts |> CCList.map Contact.id
-          }
-      in
-      Create.handle ~skip_already_invited:true command languages i18n_templates)
+      let command = Create.{ experiment; contacts; invited_contacts = [] } in
+      Create.handle command languages i18n_templates)
     %> CCList.all_ok
     %> CCResult.map CCList.flatten
   ;;
