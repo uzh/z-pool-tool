@@ -129,7 +129,24 @@ end
 
 module Validation : sig
   type raw = string * string
+  type raw_list = raw list
 
+  module Number : sig
+    val schema
+      :  (string * string) list
+      -> ((int -> (int, Pool_common.Message.error) result) * (string * string))
+         list
+  end
+
+  module Text : sig
+    val schema
+      :  (string * string) list
+      -> ((string -> (string, Pool_common.Message.error) result)
+         * (string * string))
+         list
+  end
+
+  val raw_list_of_yojson : Yojson.Safe.t -> raw_list
   val all : (string * [> `Number ] * FieldType.t) list
 end
 
@@ -222,6 +239,7 @@ val get_disabled : t -> Disabled.t
 val get_admin : t -> Admin.t
 val get_field_type : t -> FieldType.t
 val get_validation_strings : t -> (string * string) list
+val validation_to_yojson : t -> Yojson.Safe.t
 
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t

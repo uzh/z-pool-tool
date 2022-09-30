@@ -42,6 +42,11 @@ let suite =
               guest_cannot_update_language
           ; test_case "use parametric roles" `Quick operator_works
           ] )
+    ; ( "partial_update"
+      , Partial_update.
+          [ test_case "update with old version" `Quick update_with_old_version
+          ; test_case "update custom field answer" `Quick update_custom_field
+          ] )
     ]
 ;;
 
@@ -61,6 +66,5 @@ let () =
   Lwt_main.run
     (let%lwt () = Test_utils.setup_test () in
      let%lwt _ = Sihl.Container.start_services services in
-     let%lwt _ = Alcotest_lwt.run "integration" @@ suite in
-     Alcotest_lwt.run "lwt commands" @@ Command_lwt_tests.command)
+     Alcotest_lwt.run "integration" @@ suite)
 ;;

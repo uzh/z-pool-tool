@@ -47,6 +47,36 @@ module Data = struct
       admin
     |> CCResult.get_exn
   ;;
+
+  let answer_id = Answer.Id.create ()
+
+  let to_public (m : Custom_field.t) =
+    let open Custom_field in
+    let validation_schema schema =
+      let validation = validation_to_yojson m in
+      Custom_field.(Validation.(validation |> raw_list_of_yojson |> schema))
+    in
+    let field_type = get_field_type m in
+    let id = get_id m in
+    let hint = get_hint m in
+    let name = get_name m in
+    let answer_version = 0 |> Pool_common.Version.of_int in
+    match field_type with
+    | FieldType.Number ->
+      let answer =
+        Answer.{ id = answer_id; version = answer_version; value = 3 }
+        |> CCOption.pure
+      in
+      let validation = validation_schema Validation.Number.schema in
+      Public.(Public.Number { id; name; hint; validation; required; answer })
+    | FieldType.Text ->
+      let answer =
+        Answer.{ id = answer_id; version = answer_version; value = "test" }
+        |> CCOption.pure
+      in
+      let validation = validation_schema Validation.Text.schema in
+      Public.(Text { id; name; hint; validation; required; answer })
+  ;;
 end
 
 let database_label = Test_utils.Data.database_label
