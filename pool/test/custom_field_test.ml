@@ -89,22 +89,21 @@ let database_label = Test_utils.Data.database_label
 
 let create () =
   let open CCResult in
+  let custom_field = Data.custom_text_field () in
+  let id = Custom_field.get_id custom_field in
   let events =
     Data.data
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Create.handle
-          ~id:(Data.id ())
+          ~id
           Data.sys_languages
           Data.name
           Data.hint
           Data.validation_data
   in
   let expected =
-    Ok
-      [ Custom_field.Created (Data.custom_text_field ())
-        |> Pool_event.custom_field
-      ]
+    Ok [ Custom_field.Created custom_field |> Pool_event.custom_field ]
   in
   Alcotest.(
     check
@@ -138,22 +137,20 @@ let create_with_missing_name () =
 
 let update () =
   let open CCResult in
+  let custom_field = Data.custom_text_field () in
   let events =
     Data.data
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Update.handle
           Data.sys_languages
-          (Data.custom_text_field ())
+          custom_field
           Data.name
           Data.hint
           Data.validation_data
   in
   let expected =
-    Ok
-      [ Custom_field.Updated (Data.custom_text_field ())
-        |> Pool_event.custom_field
-      ]
+    Ok [ Custom_field.Updated custom_field |> Pool_event.custom_field ]
   in
   Alcotest.(
     check
