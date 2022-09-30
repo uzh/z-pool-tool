@@ -134,16 +134,13 @@ module Validation : sig
   module Number : sig
     val schema
       :  (string * string) list
-      -> ((int -> (int, Pool_common.Message.error) result) * (string * string))
-         list
+      -> ((int -> (int, Pool_common.Message.error) result) * raw) list
   end
 
   module Text : sig
     val schema
       :  (string * string) list
-      -> ((string -> (string, Pool_common.Message.error) result)
-         * (string * string))
-         list
+      -> ((string -> (string, Pool_common.Message.error) result) * raw) list
   end
 
   val raw_list_of_yojson : Yojson.Safe.t -> raw_list

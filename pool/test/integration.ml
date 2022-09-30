@@ -46,6 +46,10 @@ let suite =
       , Partial_update.
           [ test_case "update with old version" `Quick update_with_old_version
           ; test_case "update custom field answer" `Quick update_custom_field
+          ; test_case
+              "update custom field with invalid answer"
+              `Quick
+              update_custom_field_with_invalid_answer
           ] )
     ]
 ;;

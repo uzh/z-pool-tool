@@ -8,7 +8,7 @@ module Data = struct
   open Custom_field
 
   let sys_languages = Pool_common.Language.[ En; De ]
-  let id = Id.create ()
+  let id = Id.create
   let model = Model.Contact
   let field_type = FieldType.Text
   let admin_hint = "hint"
@@ -27,7 +27,7 @@ module Data = struct
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
   ;;
 
-  let custom_field =
+  let custom_field ?validation field_type =
     let get = CCResult.get_exn in
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
@@ -36,16 +36,22 @@ module Data = struct
       Admin.{ hint = Some admin_hint; overwrite = Overwrite.create false }
     in
     Custom_field.create
-      ~id
+      ~id:(id ())
       field_type
       model
       name
       hint
-      validation_data
+      (validation |> CCOption.value ~default:validation_data)
       required
       disabled
       admin
     |> CCResult.get_exn
+  ;;
+
+  let custom_text_field ?validation () = custom_field ?validation FieldType.Text
+
+  let custom_number_field ?validation () =
+    custom_field ?validation FieldType.Number
   ;;
 
   let answer_id = Answer.Id.create ()
@@ -88,14 +94,17 @@ let create () =
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Create.handle
-          ~id:Data.id
+          ~id:(Data.id ())
           Data.sys_languages
           Data.name
           Data.hint
           Data.validation_data
   in
   let expected =
-    Ok [ Custom_field.Created Data.custom_field |> Pool_event.custom_field ]
+    Ok
+      [ Custom_field.Created (Data.custom_text_field ())
+        |> Pool_event.custom_field
+      ]
   in
   Alcotest.(
     check
@@ -112,7 +121,7 @@ let create_with_missing_name () =
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Create.handle
-          ~id:Data.id
+          ~id:Data.(id ())
           Data.sys_languages
           (Data.name |> CCList.hd |> CCList.pure)
           Data.hint
@@ -135,13 +144,16 @@ let update () =
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Update.handle
           Data.sys_languages
-          Data.custom_field
+          (Data.custom_text_field ())
           Data.name
           Data.hint
           Data.validation_data
   in
   let expected =
-    Ok [ Custom_field.Updated Data.custom_field |> Pool_event.custom_field ]
+    Ok
+      [ Custom_field.Updated (Data.custom_text_field ())
+        |> Pool_event.custom_field
+      ]
   in
   Alcotest.(
     check

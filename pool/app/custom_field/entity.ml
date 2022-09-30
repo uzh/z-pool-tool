@@ -167,7 +167,7 @@ module Validation = struct
              |> CCInt.of_string
              >|= fun max str ->
              if CCString.length str > max
-             then Error (Message.TextLengthMin max)
+             then Error (Message.TextLengthMax max)
              else Ok str
            | _ -> None)
           |> CCOption.map (fun r -> r, (key, value)))
