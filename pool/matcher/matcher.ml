@@ -232,7 +232,7 @@ let stop_matcher : (unit -> unit) option ref = ref None
 
 let start_matcher () =
   let open Lwt.Infix in
-  let interval = Sihl.Time.OneMinute in
+  let interval = Sihl.Time.TenMinutes in
   Logs.debug (fun m -> m "Start matcher");
   let scheduled_function () =
     Logs.info (fun m -> m "Running matcher");
