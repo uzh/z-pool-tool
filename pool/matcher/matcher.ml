@@ -128,18 +128,17 @@ let calculate_mailing_limits ?interval pool_based_mailings =
   let max_total_invitations =
     CCFloat.(limit * (factor / 100.) |> to_int) |> count_of_rate ?interval
   in
-  let pool_based_total =
-    CCList.map
-      (fun (pool, mailings) ->
-        let pool_total =
-          CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
-            rate |> Mailing.Rate.value |> count_of_rate ?interval)
-          %> sum
-        in
-        pool, mailings, pool_total mailings)
-      pool_based_mailings
+  let total =
+    pool_based_mailings
+    |> CCList.fold_left
+         (fun init (_, mailings) ->
+           init
+           :: (mailings
+              |> CCList.map (fun ({ Mailing.rate; _ } : Mailing.t) ->
+                   rate |> Mailing.Rate.value |> count_of_rate ?interval))
+           |> sum)
+         0
   in
-  let total = CCList.fold_left (fun m (_, _, k) -> m + k) 0 pool_based_total in
   let reduce_factor = CCFloat.(of_int max_total_invitations / of_int total) in
   pool_based_mailings
   |> CCList.map (fun (pool, mailings) ->
@@ -181,25 +180,7 @@ let match_invitations ?interval pools =
   in
   let create_events =
     let open Cqrs_command.Matcher_command.Run in
-    Lwt_list.map_s (fun (pool, limited_mailings) ->
-      limited_mailings
-      |> Lwt_list.map_s (fun (mailing, limit) ->
-           let%lwt experiment, contacts, i18n_templates =
-             find_contacts_by_mailing pool mailing limit
-           in
-           { mailing; experiment; contacts; i18n_templates } |> Lwt.return)
-      ||> handle
-      >|= fun events -> pool, events)
-  in
-  let map_ok_or_log_error =
-    CCList.filter_map
-      (fun
-        (pool_events :
-          ( Pool_database.Label.t * Pool_event.t list
-          , Pool_common.Message.error )
-          result)
-      ->
-      match pool_events with
+    let ok_or_log_error = function
       | Ok (pool, events) when CCList.is_empty events ->
         Logs.info (fun m ->
           m "Matcher: No actions for pool %a" Pool_database.Label.pp pool);
@@ -209,13 +190,24 @@ let match_invitations ?interval pools =
         let (_ : Pool_common.Message.error) =
           Pool_common.Utils.with_log_error err
         in
-        None)
+        None
+    in
+    Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
+      limited_mailings
+      |> Lwt_list.map_s (fun (mailing, limit) ->
+           let%lwt experiment, contacts, i18n_templates =
+             find_contacts_by_mailing pool mailing limit
+           in
+           { mailing; experiment; contacts; i18n_templates } |> Lwt.return)
+      ||> handle
+      >|= (fun events -> pool, events)
+      ||> ok_or_log_error)
   in
   let handle_events =
     Lwt_list.iter_s (fun (pool, events) ->
       Logs.info (fun m ->
         m
-          "Matcher: Sending %4d intivation email for tenant %a"
+          "Matcher: Sending %4d intivation emails for tenant %a"
           (count_mails events)
           Pool_database.Label.pp
           pool);
@@ -224,7 +216,6 @@ let match_invitations ?interval pools =
   pool_based_mailings
   |> calculate_mailing_limits ?interval
   |> create_events
-  ||> map_ok_or_log_error
   >|> handle_events
 ;;
 
@@ -235,7 +226,7 @@ let start_matcher () =
   let interval = Sihl.Time.TenMinutes in
   Logs.debug (fun m -> m "Start matcher");
   let scheduled_function () =
-    Logs.info (fun m -> m "Running matcher");
+    Logs.info (fun m -> m "Matcher: Run");
     Pool_tenant.find_all ()
     >|= CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
     >>= match_invitations ~interval
