@@ -42,6 +42,9 @@ let suite =
               guest_cannot_update_language
           ; test_case "use parametric roles" `Quick operator_works
           ] )
+    ; ( "matcher"
+      , Matcher_test.
+          [ test_case "send invitations" `Quick create_invitations_repo ] )
     ]
 ;;
 

@@ -125,6 +125,26 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
+  let find_of_mailing =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_mailing
+        ON pool_experiments.id = pool_mailing.experiment_id
+      WHERE pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_experiments_sql
+    |> Caqti_type.string ->! Repo_entity.t
+  ;;
+
+  let find_of_mailing pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_of_mailing
+      (id |> Pool_common.Id.value)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ;;
+
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -173,6 +193,7 @@ end
 let find = Sql.find
 let find_all = Sql.find_all
 let find_of_session = Sql.find_of_session
+let find_of_mailing = Sql.find_of_mailing
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy

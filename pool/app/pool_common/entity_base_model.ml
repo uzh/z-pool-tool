@@ -71,6 +71,7 @@ module String = struct
   type t = string [@@deriving eq, show, sexp_of, yojson]
 
   let value m = m
+  let of_string m = m
 
   let create field str =
     if CCString.is_empty str
@@ -95,6 +96,7 @@ module type StringSig = sig
   val yojson_of_t : t -> Yojson.Safe.t
   val create : string -> (t, Entity_message.error) result
   val value : t -> string
+  val of_string : string -> t
 
   val schema
     :  unit

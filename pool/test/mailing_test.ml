@@ -1,17 +1,9 @@
 module MailingCommand = Cqrs_command.Mailing_command
 module Conformist = Pool_common.Utils.PoolConformist
 module Field = Pool_common.Message.Field
+module Model = Test_utils.Model
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
-
-let check_result expected generated =
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
-;;
 
 module Data = struct
   let norm_ptime m =
@@ -92,7 +84,7 @@ let create_mailing () =
 
 let create () =
   let open MailingCommand.Create in
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let mailing = create_mailing () in
   let events =
     Data.Mailing.create
@@ -107,7 +99,7 @@ let create () =
         |> Pool_event.mailing
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let create_with_distribution () =
@@ -123,7 +115,7 @@ let create_with_distribution () =
       ]
   in
   let mailing = { mailing with distribution = Some distribution } in
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let urlencoded () =
     distribution
     |> CCList.map (fun (field, sort) ->
@@ -150,12 +142,12 @@ let create_with_distribution () =
         |> Pool_event.mailing
       ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;
 
 let create_end_before_start () =
   let open MailingCommand.Create in
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let events =
     Data.Mailing.create_end_before_start
     |> Http_utils.remove_empty_values
@@ -164,5 +156,5 @@ let create_end_before_start () =
     |> handle ~id:Data.Mailing.id experiment
   in
   let expected = Error Pool_common.Message.EndBeforeStart in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;

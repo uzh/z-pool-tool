@@ -8,9 +8,11 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     env:
-      SIHL_ENV: test
+      EMAIL_RATE_LIMIT: 3600
+      MATCHER_MAX_CAPACITY: 80
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
+      SIHL_ENV: test
       TEST_EMAIL: test@econ.uzh.ch
 
     services:
