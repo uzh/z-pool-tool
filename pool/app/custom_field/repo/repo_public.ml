@@ -197,7 +197,7 @@ module Sql = struct
     |> Repo_entity_answer.Write.t ->. Caqti_type.unit
   ;;
 
-  let[@warning "-40"] upsert_answer pool entity_uuid t =
+  let upsert_answer pool entity_uuid t =
     let exec =
       Utils.Database.exec (Database.Label.value pool) upsert_answer_request
     in
@@ -208,7 +208,7 @@ module Sql = struct
       answer
       |> CCOption.map_or
            ~default:Lwt.return_unit
-           (fun ({ id; value; version } : int Entity_answer.t) ->
+           (fun { Entity.Answer.id; value; version } ->
            Repo_entity_answer.Write.of_entity
              id
              field_id
@@ -221,7 +221,7 @@ module Sql = struct
       answer
       |> CCOption.map_or
            ~default:Lwt.return_unit
-           (fun ({ id; value; version } : string Entity_answer.t) ->
+           (fun { Entity.Answer.id; value; version } ->
            Repo_entity_answer.Write.of_entity
              id
              field_id

@@ -3,7 +3,6 @@ open Sexplib.Conv
 module Field = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
-  (* TODO: Fix this: when to use fst or se*)
   let custom _ fmt t =
     let _, name = t in
     Format.pp_print_string fmt name
@@ -30,9 +29,7 @@ module Field = struct
     | CreatedAt [@name "created_at"] [@printer go "created_at"]
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
-    (* TODO: Are both fields required? *)
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
-      (* TODO: Are both fields required? *)
     | CustomHtmx of (string * string) [@name "custom"]
         [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
