@@ -3,6 +3,7 @@ module Admins = Page_admin_admins
 module Assignment = Page_admin_assignments
 module Contact = Page_admin_contact
 module CustomFields = Page_admin_custom_fields
+module CustomFieldOptions = Page_admin_custom_field_options
 module Experiments = Page_admin_experiments
 module I18n = Page_admin_i18n
 module Location = Page_admin_location

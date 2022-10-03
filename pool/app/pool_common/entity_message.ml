@@ -30,6 +30,8 @@ module Field = struct
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomFieldOption [@name "custom_field_option"]
+        [@printer go "custom_field_option"]
     | CustomHtmx of (string * string) [@name "custom"]
         [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
@@ -216,6 +218,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidOptionSelected
   | InvalidHtmxRequest
   | InvitationSubjectAndTextRequired
   | LoginProvideDetails

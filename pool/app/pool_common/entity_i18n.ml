@@ -92,6 +92,7 @@ type hint =
 
 type confirmable =
   | CancelSession
+  | DeleteCustomFieldOption
   | DeleteEmailSuffix
   | DeleteExperiment
   | DeleteFile

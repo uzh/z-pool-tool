@@ -148,6 +148,11 @@ let custom_field_to_htmx_value =
   function
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Select ({ Public.answer; _ }, options) ->
+    answer
+    >|= (fun a -> a.Answer.value)
+    |> fun value ->
+    { show = SelectOption.show_id; options; selected = value } |> select
   | Public.Text { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> text
 ;;

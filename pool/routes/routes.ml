@@ -251,7 +251,21 @@ module Admin = struct
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
     let custom_fields =
-      let specific = CustomField.[ get "/edit" edit; post "" update ] in
+      let options =
+        let specific =
+          CustomFieldOption.
+            [ get "/edit" edit; post "" update; post "/delete" delete ]
+        in
+        CustomFieldOption.
+          [ get "/new" new_form
+          ; post "" create
+          ; choose ~scope:(CustomFieldOption |> url_key) specific
+          ]
+      in
+      let specific =
+        CustomField.
+          [ get "/edit" edit; post "" update; choose ~scope:"options" options ]
+      in
       CustomField.
         [ get "" index
         ; post "" create

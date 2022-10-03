@@ -4,6 +4,54 @@ module Message = Pool_common.Message
 
 let base_path = "/admin/custom-fields"
 
+let input_by_lang ?(required = false) language tenant_languages field value_fnc =
+  let open Pool_common in
+  let group_class = Elements.group_class [] `Horizontal in
+  CCList.map
+    (fun lang ->
+      let required =
+        required
+        && CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
+      in
+      let label_text =
+        lang
+        |> Language.field_of_t
+        |> Utils.field_to_string language
+        |> CCString.capitalize_ascii
+      in
+      let id =
+        Format.asprintf "%s-%s" (Message.Field.show field) (Language.show lang)
+      in
+      let input_element =
+        let attrs =
+          [ a_input_type `Text
+          ; a_id id
+          ; a_name
+              (Format.asprintf
+                 "%s[%s]"
+                 (Message.Field.show field)
+                 (Language.show lang))
+          ; a_value (value_fnc lang)
+          ]
+        in
+        div
+          ~a:[ a_class [ "input-group" ] ]
+          [ input ~a:(if required then a_required () :: attrs else attrs) () ]
+      in
+      div
+        ~a:[ a_class group_class ]
+        [ label
+            ~a:[ a_label_for id ]
+            [ txt
+                (if required
+                then Format.asprintf "%s *" label_text
+                else label_text)
+            ]
+        ; input_element
+        ])
+    Pool_common.Language.all
+;;
+
 let form
   ?(custom_field : Custom_field.t option)
   Pool_context.{ language; csrf; _ }
@@ -27,55 +75,8 @@ let form
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
   let field_type = CCOption.map field_type custom_field in
-  let input_by_lang ?(required = false) field value_fnc =
-    let open Pool_common in
-    let group_class = Elements.group_class [] `Horizontal in
-    CCList.map
-      (fun lang ->
-        let required =
-          required
-          && CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
-        in
-        let label_text =
-          lang
-          |> Language.field_of_t
-          |> Utils.field_to_string language
-          |> CCString.capitalize_ascii
-        in
-        let id =
-          Format.asprintf
-            "%s-%s"
-            (Message.Field.show field)
-            (Language.show lang)
-        in
-        let input_element =
-          let attrs =
-            [ a_input_type `Text
-            ; a_id id
-            ; a_name
-                (Format.asprintf
-                   "%s[%s]"
-                   (Message.Field.show field)
-                   (Language.show lang))
-            ; a_value (value_fnc lang)
-            ]
-          in
-          div
-            ~a:[ a_class [ "input-group" ] ]
-            [ input ~a:(if required then a_required () :: attrs else attrs) () ]
-        in
-        div
-          ~a:[ a_class group_class ]
-          [ label
-              ~a:[ a_label_for id ]
-              [ txt
-                  (if required
-                  then Format.asprintf "%s *" label_text
-                  else label_text)
-              ]
-          ; input_element
-          ])
-      Pool_common.Language.all
+  let input_by_lang ?required =
+    input_by_lang ?required language tenant_languages
   in
   let name_inputs =
     input_by_lang ~required:true Message.Field.Name (fun lang ->
@@ -166,108 +167,199 @@ let form
       ; script (Unsafe.data functions)
       ]
   in
-  form
-    ~a:
-      [ a_method `Post
-      ; a_action (Sihl.Web.externalize_path action)
-      ; a_class [ "stack-lg" ]
+  let select_options_html =
+    let empty = txt "" in
+    match custom_field with
+    | None -> empty
+    | Some m ->
+      (match m with
+       | Select (_, options) ->
+         let make_link url control =
+           let url =
+             Format.asprintf
+               "%s/%s/options/%s"
+               base_path
+               (m |> id |> Id.value)
+               url
+             |> Sihl.Web.externalize_path
+           in
+           a
+             ~a:[ a_href url ]
+             [ txt Pool_common.(control |> Utils.control_to_string language) ]
+         in
+         let list =
+           div
+             ~a:[ a_class [ "stack" ] ]
+             (CCList.map
+                (fun option ->
+                  let make_url path =
+                    Format.asprintf
+                      "%s/%s/options/%s/%s"
+                      base_path
+                      (id m |> Id.value)
+                      (option.SelectOption.id |> Id.value)
+                      path
+                    |> Sihl.Web.externalize_path
+                  in
+                  div
+                    ~a:
+                      [ a_class
+                          [ "flexrow"
+                          ; "flex-gap"
+                          ; "justify-between"
+                          ; "align-center"
+                          ]
+                      ]
+                    [ div [ txt (SelectOption.name language option) ]
+                    ; div
+                        ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                        [ a
+                            ~a:[ a_href (make_url "edit") ]
+                            [ txt
+                                Pool_common.(
+                                  Message.(Edit None)
+                                  |> Utils.control_to_string language)
+                            ]
+                        ; form
+                            ~a:
+                              [ a_method `Post
+                              ; a_action (make_url "delete")
+                              ; a_user_data
+                                  "confirmable"
+                                  Pool_common.(
+                                    Utils.confirmable_to_string
+                                      language
+                                      I18n.DeleteCustomFieldOption)
+                              ]
+                            [ Component.csrf_element csrf ()
+                            ; submit_element
+                                ~submit_type:`Error
+                                language
+                                Message.(Delete None)
+                                ()
+                            ]
+                        ]
+                    ])
+                options)
+         in
+         div
+           [ h2
+               ~a:[ a_class [ "heading-2" ] ]
+               [ txt
+                   (Message.Field.CustomFieldOption
+                   |> Pool_common.Utils.field_to_string language
+                   |> CCString.capitalize_ascii)
+               ]
+           ; p [ make_link "new" Message.(Add (Some Field.CustomFieldOption)) ]
+           ; list
+           ]
+       | Number _ | Text _ -> empty)
+  in
+  [ form
+      ~a:
+        [ a_method `Post
+        ; a_action (Sihl.Web.externalize_path action)
+        ; a_class [ "stack-lg" ]
+        ]
+      [ csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          [ selector
+              language
+              Message.Field.Model
+              Model.show
+              Model.all
+              (CCOption.map model custom_field)
+              ~add_empty:true
+              ~required:true
+              ~flash_fetcher
+              ()
+          ; selector
+              language
+              Message.Field.FieldType
+              FieldType.show
+              FieldType.all
+              field_type
+              ~add_empty:true
+              ~required:true
+              ~flash_fetcher
+              ()
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ h4
+              ~a:[ a_class [ "heading-4" ] ]
+              [ txt
+                  Pool_common.(
+                    Message.Field.Name
+                    |> Utils.field_to_string language
+                    |> CCString.capitalize_ascii)
+              ]
+          ; div ~a:[ a_class [ "stack" ] ] name_inputs
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ h4
+              ~a:[ a_class [ "heading-4" ] ]
+              [ txt
+                  Pool_common.(
+                    Message.Field.Hint
+                    |> Utils.field_to_string language
+                    |> CCString.capitalize_ascii)
+              ]
+          ; div ~a:[ a_class [ "stack" ] ] hint_inputs
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ h4
+              ~a:[ a_class [ "heading-4" ] ]
+              [ txt
+                  Pool_common.(I18n.Validation |> Utils.text_to_string language)
+              ]
+          ]
+      ; validation_subform
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ h4
+              ~a:[ a_class [ "heading-4" ] ]
+              [ txt
+                  Pool_common.(
+                    Message.Field.Admin
+                    |> Utils.field_to_string language
+                    |> CCString.capitalize_ascii)
+              ]
+          ; input_element
+              language
+              `Text
+              Message.Field.AdminHint
+              ~orientation:`Horizontal
+              ~value:
+                (value (fun f ->
+                   (f |> admin).Admin.hint
+                   |> CCOption.map_or ~default:"" Admin.Hint.value))
+              ~flash_fetcher
+          ; checkbox_element Message.Field.Overwrite (fun f ->
+              (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
+          ]
+      ; div
+          ~a:[ a_class [ "stack" ] ]
+          [ checkbox_element Message.Field.Required (fun f ->
+              f |> required |> Required.value)
+          ; checkbox_element Message.Field.Disabled (fun f ->
+              f |> disabled |> Disabled.value)
+          ; submit_element
+              language
+              Message.(
+                let field = Some Field.CustomField in
+                match custom_field with
+                | None -> Create field
+                | Some _ -> Update field)
+              ~submit_type:`Success
+              ()
+          ]
       ]
-    [ csrf_element csrf ()
-    ; div
-        ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-        [ selector
-            language
-            Message.Field.Model
-            Model.show
-            Model.all
-            (CCOption.map model custom_field)
-            ~add_empty:true
-            ~required:true
-            ~flash_fetcher
-            ()
-        ; selector
-            language
-            Message.Field.FieldType
-            FieldType.show
-            FieldType.all
-            field_type
-            ~add_empty:true
-            ~required:true
-            ~flash_fetcher
-            ()
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt
-                Pool_common.(
-                  Message.Field.Name
-                  |> Utils.field_to_string language
-                  |> CCString.capitalize_ascii)
-            ]
-        ; div ~a:[ a_class [ "stack" ] ] name_inputs
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt
-                Pool_common.(
-                  Message.Field.Hint
-                  |> Utils.field_to_string language
-                  |> CCString.capitalize_ascii)
-            ]
-        ; div ~a:[ a_class [ "stack" ] ] hint_inputs
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt Pool_common.(I18n.Validation |> Utils.text_to_string language)
-            ]
-        ]
-    ; validation_subform
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ h4
-            ~a:[ a_class [ "heading-4" ] ]
-            [ txt
-                Pool_common.(
-                  Message.Field.Admin
-                  |> Utils.field_to_string language
-                  |> CCString.capitalize_ascii)
-            ]
-        ; input_element
-            language
-            `Text
-            Message.Field.AdminHint
-            ~orientation:`Horizontal
-            ~value:
-              (value (fun f ->
-                 (f |> admin).Admin.hint
-                 |> CCOption.map_or ~default:"" Admin.Hint.value))
-            ~flash_fetcher
-        ; checkbox_element Message.Field.Overwrite (fun f ->
-            (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ checkbox_element Message.Field.Required (fun f ->
-            f |> required |> Required.value)
-        ; checkbox_element Message.Field.Disabled (fun f ->
-            f |> disabled |> Disabled.value)
-        ; submit_element
-            language
-            Message.(
-              let field = Some Field.CustomField in
-              match custom_field with
-              | None -> Create field
-              | Some _ -> Update field)
-            ~submit_type:`Success
-            ()
-        ]
-    ]
+  ; select_options_html
+  ]
 ;;
 
 let detail
@@ -286,8 +378,12 @@ let detail
           else Update (Some Field.CustomField)))
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
-    [ h1 [ txt title ]; form ?custom_field context sys_languages flash_fetcher ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    [ h1 [ txt title ]
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        (form ?custom_field context sys_languages flash_fetcher)
+    ]
 ;;
 
 let index field_list Pool_context.{ language; _ } =

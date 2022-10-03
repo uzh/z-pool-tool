@@ -92,6 +92,7 @@ end
 module FieldType : sig
   type t =
     | Number
+    | Select
     | Text
 
   val equal : t -> t -> bool
@@ -161,8 +162,34 @@ type 'a custom_field =
   ; admin : Admin.t
   }
 
+module SelectOption : sig
+  module Id : sig
+    type t = Id.t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val create : unit -> t
+    val of_string : string -> t
+    val value : t -> string
+  end
+
+  type t =
+    { id : Id.t
+    ; name : Name.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val show_id : t -> string
+  val name : Pool_common.Language.t -> t -> string
+  val create : ?id:Id.t -> Name.t -> t
+end
+
 type t =
   | Number of int custom_field
+  | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
 
 val equal : t -> t -> bool
@@ -171,6 +198,7 @@ val show : t -> string
 
 val create
   :  ?id:Id.t
+  -> ?select_options:SelectOption.t list
   -> FieldType.t
   -> Model.t
   -> Name.t
@@ -203,6 +231,7 @@ module Public : sig
 
   type t =
     | Number of int public
+    | Select of SelectOption.t public * SelectOption.t list
     | Text of string public
 
   val equal : t -> t -> bool
@@ -213,7 +242,6 @@ module Public : sig
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val version : t -> Pool_common.Version.t option
-  val answer_to_string : t -> string option
   val required : t -> Required.t
 
   val to_common_field
@@ -242,6 +270,9 @@ val validation_to_yojson : t -> Yojson.Safe.t
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | OptionCreated of (Id.t * SelectOption.t)
+  | OptionDestroyed of SelectOption.t
+  | OptionUpdated of SelectOption.t
   | Updated of t
 
 val equal_event : event -> event -> bool
@@ -292,3 +323,8 @@ val all_required_answered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> bool Lwt.t
+
+val find_option
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (SelectOption.t, Pool_common.Message.error) result Lwt.t

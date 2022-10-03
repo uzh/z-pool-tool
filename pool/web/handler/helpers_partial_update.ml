@@ -170,8 +170,13 @@ let update ?contact req =
               | Ok field ->
                 let value =
                   match field with
+                  (* TODO: Can I use HTMX.custom_field_to_htmx?? Try, if flash
+                     fetcher works to keep current value *)
                   | Public.Number _ -> value |> CCInt.of_string |> Htmx.number
                   | Public.Text _ -> value |> CCOption.pure |> Htmx.text
+                  | Public.Select (field, options) ->
+                    Htmx.custom_field_to_htmx_value
+                      (Public.Select (field, options))
                 in
                 Htmx.custom_field_to_htmx
                   ~value

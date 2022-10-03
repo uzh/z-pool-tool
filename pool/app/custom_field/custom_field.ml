@@ -14,3 +14,4 @@ let find_multiple_by_contact = Repo_public.find_multiple_by_contact
 let find_by_contact = Repo_public.find_by_contact
 let upsert_answer = Repo_public.upsert_answer
 let all_required_answered = Repo_public.all_required_answered
+let find_option = Repo_option.find

@@ -456,11 +456,11 @@ let selector
 
 let custom_field_to_input ?flash_fetcher language custom_field =
   let open Custom_field in
+  let open CCOption in
   let label = Public.to_common_field language custom_field in
   let help = Public.to_common_hint language custom_field in
   let required = Public.required custom_field |> Required.value in
-  let create input_type =
-    let value = Public.answer_to_string custom_field in
+  let create input_type value =
     input_element
       ?flash_fetcher
       ?value
@@ -471,6 +471,20 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       label
   in
   match custom_field with
-  | Public.Number _ -> create `Number
-  | Public.Text _ -> create `Text
+  | Public.Number { Public.answer; _ } ->
+    answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
+  | Public.Text { Public.answer; _ } ->
+    answer >|= (fun a -> a.Answer.value) |> create `Text
+  | Public.Select (Public.{ answer; _ }, options) ->
+    let value = answer >|= fun a -> a.Answer.value in
+    selector
+      ?flash_fetcher
+      ?help
+      ~required
+      language
+      label
+      SelectOption.show_id
+      options
+      value
+      ()
 ;;

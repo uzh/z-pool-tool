@@ -1,6 +1,22 @@
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
+let get_field_type m = m.Repo_entity.Public.field_type
+let id m = m.Repo_entity.Public.id
+
+let get_options pool m =
+  Repo.get_options pool Repo_entity.Public.to_entity get_field_type id m
+;;
+
+let get_options_of_multiple pool fields =
+  Repo.get_options_of_multiple
+    pool
+    Repo_entity.Public.to_entity
+    get_field_type
+    id
+    fields
+;;
+
 module Sql = struct
   let answers_left_join =
     {sql|
@@ -59,7 +75,7 @@ module Sql = struct
       find_request
       (id |> Entity.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
-    >|= Repo_entity.Public.to_entity
+    |>> get_options pool
   ;;
 
   let find_all_by_contact_request required =
@@ -83,7 +99,7 @@ module Sql = struct
       (Database.Label.value pool)
       (find_all_by_contact_request required)
       (Pool_common.Id.value id, Entity.Model.(show Contact))
-    >|= CCList.map Repo_entity.Public.to_entity
+    >>= get_options_of_multiple pool
   ;;
 
   let find_multiple_by_contact_request ids =
@@ -123,7 +139,7 @@ module Sql = struct
       find_multiple_by_contact_request ids |> pt ->* Repo_entity.Public.t
     in
     Utils.Database.collect (pool |> Database.Label.value) request pv
-    >|= CCList.map Repo_entity.Public.to_entity
+    >>= get_options_of_multiple pool
   ;;
 
   let find_by_contact_request =
@@ -147,7 +163,7 @@ module Sql = struct
       , Entity.Model.(show Contact)
       , Entity.Id.value field_id )
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
-    >|= Repo_entity.Public.to_entity
+    |>> get_options pool
   ;;
 
   let all_required_answered_request =
@@ -214,6 +230,19 @@ module Sql = struct
              field_id
              entity_uuid
              (CCInt.to_string value)
+             version
+           |> exec)
+    | Select ({ id; answer; _ }, _) ->
+      let field_id = id in
+      answer
+      |> CCOption.map_or
+           ~default:Lwt.return_unit
+           (fun { Entity.Answer.id; value; version } ->
+           Repo_entity_answer.Write.of_entity
+             id
+             field_id
+             entity_uuid
+             Entity.SelectOption.(value.Entity.SelectOption.id |> Id.value)
              version
            |> exec)
     | Text { id; answer; _ } ->
