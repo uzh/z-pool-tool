@@ -146,6 +146,7 @@ let update ?contact req =
                Htmx.
                  { show = Pool_common.Language.show
                  ; options = tenant_languages
+                 ; option_formatter = None
                  ; selected =
                      value |> Pool_common.Language.create |> CCResult.to_opt
                  }
@@ -176,6 +177,7 @@ let update ?contact req =
                   | Public.Text _ -> value |> CCOption.pure |> Htmx.text
                   | Public.Select (field, options) ->
                     Htmx.custom_field_to_htmx_value
+                      language
                       (Public.Select (field, options))
                 in
                 Htmx.custom_field_to_htmx

@@ -29,7 +29,7 @@ let find_multiple_request ids =
   let where =
     Format.asprintf
       {sql|
-      WHERE pool_custom_field_options.uuid in ( %s )
+      WHERE pool_custom_field_options.custom_field_option_uuid in ( %s )
     |sql}
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
