@@ -107,7 +107,7 @@ end = struct
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
-    let id = Custom_field.get_id custom_field in
+    let id = Custom_field.id custom_field in
     let* t =
       Custom_field.create
         ~id

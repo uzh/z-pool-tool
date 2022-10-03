@@ -14,7 +14,7 @@ let form
   let action =
     match custom_field with
     | None -> base_path
-    | Some f -> Format.asprintf "%s/%s" base_path (f |> get_id |> Id.value)
+    | Some f -> Format.asprintf "%s/%s" base_path (f |> id |> Id.value)
   in
   let checkbox_element ?orientation ?help ?(default = false) field fnc =
     checkbox_element
@@ -26,7 +26,7 @@ let form
       ~flash_fetcher
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
-  let field_type = CCOption.map get_field_type custom_field in
+  let field_type = CCOption.map field_type custom_field in
   let input_by_lang ?(required = false) field value_fnc =
     let open Pool_common in
     let group_class = Elements.group_class [] `Horizontal in
@@ -81,7 +81,7 @@ let form
     input_by_lang ~required:true Message.Field.Name (fun lang ->
       let open CCOption in
       custom_field
-      >|= (fun f -> get_name f)
+      >|= (fun f -> name f)
       >>= Name.find_opt lang
       >|= Name.value_name
       |> value ~default:"")
@@ -90,7 +90,7 @@ let form
     input_by_lang Message.Field.Hint (fun lang ->
       let open CCOption in
       custom_field
-      >|= (fun f -> get_hint f)
+      >|= (fun f -> hint f)
       >>= Hint.find_opt lang
       >|= Hint.value_hint
       |> value ~default:"")
@@ -98,7 +98,7 @@ let form
   let validation_subform =
     let current_values =
       custom_field
-      |> CCOption.map_or ~default:[] (fun f -> f |> get_validation_strings)
+      |> CCOption.map_or ~default:[] (fun f -> f |> validation_strings)
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
@@ -180,7 +180,7 @@ let form
             Message.Field.Model
             Model.show
             Model.all
-            (CCOption.map get_model custom_field)
+            (CCOption.map model custom_field)
             ~add_empty:true
             ~required:true
             ~flash_fetcher
@@ -245,18 +245,18 @@ let form
             ~orientation:`Horizontal
             ~value:
               (value (fun f ->
-                 (f |> get_admin).Admin.hint
+                 (f |> admin).Admin.hint
                  |> CCOption.map_or ~default:"" Admin.Hint.value))
             ~flash_fetcher
         ; checkbox_element Message.Field.Overwrite (fun f ->
-            (f |> get_admin).Admin.overwrite |> Admin.Overwrite.value)
+            (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ checkbox_element Message.Field.Required (fun f ->
-            f |> get_required |> Required.value)
+            f |> required |> Required.value)
         ; checkbox_element Message.Field.Disabled (fun f ->
-            f |> get_disabled |> Disabled.value)
+            f |> disabled |> Disabled.value)
         ; submit_element
             language
             Message.(
@@ -298,7 +298,7 @@ let index field_list Pool_context.{ language; _ } =
       (fun field ->
         [ txt
             (field
-            |> get_name
+            |> name
             |> Name.find_opt language
             |> CCOption.map_or ~default:"-" Name.value_name)
         ; a
@@ -308,7 +308,7 @@ let index field_list Pool_context.{ language; _ } =
                      (Format.asprintf
                         "%s/%s/edit"
                         base_path
-                        (field |> get_id |> Id.value)))
+                        (field |> id |> Id.value)))
               ]
             [ txt Pool_common.(Message.More |> Utils.control_to_string language)
             ]

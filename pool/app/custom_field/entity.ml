@@ -326,28 +326,28 @@ module Public = struct
       >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
   ;;
 
-  let get_id (t : t) =
+  let id (t : t) =
     match t with
     | Number { id; _ } | Text { id; _ } -> id
   ;;
 
-  let get_name_value lang (t : t) =
+  let name_value lang (t : t) =
     match t with
     | Number { name; _ } | Text { name; _ } ->
       Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
   ;;
 
-  let get_hint lang (t : t) =
+  let hint lang (t : t) =
     match t with
     | Number { hint; _ } | Text { hint; _ } -> Hint.find_opt lang hint
   ;;
 
-  let get_required (t : t) =
+  let required (t : t) =
     match t with
     | Number { required; _ } | Text { required; _ } -> required
   ;;
 
-  let get_version (t : t) =
+  let version (t : t) =
     match t with
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
     | Text { answer; _ } -> answer |> CCOption.map Answer.version
@@ -362,53 +362,53 @@ module Public = struct
   ;;
 
   let to_common_field language m =
-    let id = get_id m in
-    let name = get_name_value language m in
+    let id = id m in
+    let name = name_value language m in
     Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
   ;;
 
   let to_common_hint language m =
     let open CCOption in
-    get_hint language m
+    hint language m
     >|= Hint.value_hint
     >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
 end
 
-let get_id = function
+let id = function
   | Number { id; _ } | Text { id; _ } -> id
 ;;
 
-let get_model = function
+let model = function
   | Number { model; _ } | Text { model; _ } -> model
 ;;
 
-let get_name = function
+let name = function
   | Number { name; _ } | Text { name; _ } -> name
 ;;
 
-let get_hint = function
+let hint = function
   | Number { hint; _ } | Text { hint; _ } -> hint
 ;;
 
-let get_required = function
+let required = function
   | Number { required; _ } | Text { required; _ } -> required
 ;;
 
-let get_disabled = function
+let disabled = function
   | Number { disabled; _ } | Text { disabled; _ } -> disabled
 ;;
 
-let get_admin = function
+let admin = function
   | Number { admin; _ } | Text { admin; _ } -> admin
 ;;
 
-let get_field_type = function
+let field_type = function
   | Number _ -> FieldType.Number
   | Text _ -> FieldType.Text
 ;;
 
-let get_validation_strings =
+let validation_strings =
   let open Validation in
   function
   | Number { validation; _ } -> validation |> to_strings Number.all

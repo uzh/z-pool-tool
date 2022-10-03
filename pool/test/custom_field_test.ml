@@ -62,10 +62,11 @@ module Data = struct
       let validation = validation_to_yojson m in
       Custom_field.(Validation.(validation |> raw_list_of_yojson |> schema))
     in
-    let field_type = get_field_type m in
-    let id = get_id m in
-    let hint = get_hint m in
-    let name = get_name m in
+    let field_type = field_type m in
+    let id = id m in
+    let hint = hint m in
+    let name = name m in
+    let required = required m in
     let answer_version = 0 |> Pool_common.Version.of_int in
     match field_type with
     | FieldType.Number ->
@@ -74,14 +75,14 @@ module Data = struct
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.(Public.Number { id; name; hint; validation; required; answer })
+      Public.Number { Public.id; name; hint; validation; required; answer }
     | FieldType.Text ->
       let answer =
         Answer.{ id = answer_id; version = answer_version; value = "test" }
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.(Text { id; name; hint; validation; required; answer })
+      Public.Text { Public.id; name; hint; validation; required; answer }
   ;;
 end
 
@@ -90,7 +91,7 @@ let database_label = Test_utils.Data.database_label
 let create () =
   let open CCResult in
   let custom_field = Data.custom_text_field () in
-  let id = Custom_field.get_id custom_field in
+  let id = Custom_field.id custom_field in
   let events =
     Data.data
     |> Http_utils.format_request_boolean_values boolean_fields

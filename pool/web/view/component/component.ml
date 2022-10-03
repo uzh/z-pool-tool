@@ -458,7 +458,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   let open Custom_field in
   let label = Public.to_common_field language custom_field in
   let help = Public.to_common_hint language custom_field in
-  let required = Public.get_required custom_field |> Required.value in
+  let required = Public.required custom_field |> Required.value in
   let create input_type =
     let value = Public.answer_to_string custom_field in
     input_element

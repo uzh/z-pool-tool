@@ -60,7 +60,7 @@ let update_custom_field _ () =
       Contact.validate_partial_update
         contact
         database_label
-        (field, version, new_value, Some (Public.get_id public))
+        (field, version, new_value, Some (Public.id public))
     in
     let expected =
       let[@warning "-4"] expected_field =
@@ -106,7 +106,7 @@ let update_custom_field_with_invalid_answer _ () =
       Contact.validate_partial_update
         contact
         database_label
-        (field, version, new_value, Some (Public.get_id public))
+        (field, version, new_value, Some (Public.id public))
     in
     let expected = Error Pool_common.Message.(TextLengthMax 10) in
     Alcotest.(

@@ -103,15 +103,15 @@ end
 module Write = struct
   let of_entity (t : t) =
     Write.
-      { id = get_id t
-      ; model = get_model t
-      ; name = get_name t
-      ; hint = get_hint t
+      { id = id t
+      ; model = model t
+      ; name = name t
+      ; hint = hint t
       ; validation = Entity.validation_to_yojson t
-      ; field_type = get_field_type t
-      ; required = get_required t
-      ; disabled = get_disabled t
-      ; admin = get_admin t
+      ; field_type = field_type t
+      ; required = required t
+      ; disabled = disabled t
+      ; admin = admin t
       }
   ;;
 
@@ -188,7 +188,6 @@ module Public = struct
     }
 
   let to_entity { id; name; hint; validation; field_type; required; answer } =
-    let open Public in
     let validation_schema schema =
       Validation.(validation |> raw_list_of_yojson |> schema)
     in
@@ -201,7 +200,7 @@ module Public = struct
           |> CCOption.map (Entity_answer.create ~id ~version))
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.Number { id; name; hint; validation; required; answer }
+      Public.Number { Public.id; name; hint; validation; required; answer }
     | FieldType.Text ->
       let answer =
         answer
@@ -209,7 +208,7 @@ module Public = struct
              value |> Entity_answer.create ~id ~version)
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.Text { id; name; hint; validation; required; answer }
+      Public.Text { Public.id; name; hint; validation; required; answer }
   ;;
 
   let t =

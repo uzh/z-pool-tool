@@ -155,11 +155,11 @@ let custom_field_to_htmx_value =
 let custom_field_to_htmx ?value language custom_field =
   let to_html m = create m language in
   let open Custom_field in
-  let field_id = Public.get_id custom_field in
+  let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
   let label = Public.to_common_field language custom_field in
   let version =
-    Public.get_version custom_field
+    Public.version custom_field
     |> CCOption.value ~default:(Pool_common.Version.create ())
   in
   let value =

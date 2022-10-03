@@ -180,7 +180,7 @@ let completition_post req =
               let open CCOption in
               ( CCList.assoc_opt
                   ~eq:CCString.equal
-                  Custom_field.(f |> Public.get_id |> Id.value)
+                  Custom_field.(f |> Public.id |> Id.value)
                   urlencoded
                 >>= CCList.head_opt
                 |> value ~default:""

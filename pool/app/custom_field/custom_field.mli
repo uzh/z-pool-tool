@@ -209,12 +209,12 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val validate : string -> t -> (t, Pool_common.Message.error) result
-  val get_id : t -> Id.t
-  val get_name_value : Pool_common.Language.t -> t -> string
-  val get_hint : Pool_common.Language.t -> t -> Hint.hint option
-  val get_version : t -> Pool_common.Version.t option
+  val id : t -> Id.t
+  val name_value : Pool_common.Language.t -> t -> string
+  val hint : Pool_common.Language.t -> t -> Hint.hint option
+  val version : t -> Pool_common.Version.t option
   val answer_to_string : t -> string option
-  val get_required : t -> Required.t
+  val required : t -> Required.t
 
   val to_common_field
     :  Pool_common.Language.t
@@ -228,15 +228,15 @@ module Public : sig
 end
 
 val boolean_fields : Pool_common.Message.Field.t list
-val get_id : t -> Id.t
-val get_model : t -> Model.t
-val get_name : t -> Name.t
-val get_hint : t -> Hint.t
-val get_required : t -> Required.t
-val get_disabled : t -> Disabled.t
-val get_admin : t -> Admin.t
-val get_field_type : t -> FieldType.t
-val get_validation_strings : t -> (string * string) list
+val id : t -> Id.t
+val model : t -> Model.t
+val name : t -> Name.t
+val hint : t -> Hint.t
+val required : t -> Required.t
+val disabled : t -> Disabled.t
+val admin : t -> Admin.t
+val field_type : t -> FieldType.t
+val validation_strings : t -> (string * string) list
 val validation_to_yojson : t -> Yojson.Safe.t
 
 type event =

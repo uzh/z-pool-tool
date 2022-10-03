@@ -226,7 +226,6 @@ module PartialUpdate = struct
     | _ ->
       let open Lwt_result.Syntax in
       let open Lwt_result.Infix in
-      let open Custom_field in
       let* custom_field =
         field_id
         |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
@@ -235,7 +234,7 @@ module PartialUpdate = struct
         >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
       in
       let old_v =
-        Public.get_version custom_field
+        Custom_field.Public.version custom_field
         |> CCOption.value ~default:(Pool_common.Version.create ())
       in
       custom_field |> check_version old_v |> Lwt_result.lift >|= custom
