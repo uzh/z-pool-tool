@@ -1,13 +1,8 @@
 (library
  (name custom_field)
  (libraries
-  contact
-  email
-  experiment
-  session
   guardian
   pool_common
-  pool_user
   ptime
   role
   service

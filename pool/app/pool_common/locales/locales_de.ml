@@ -21,6 +21,7 @@ let field_to_string =
   | CustomField -> "Feld"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
+  | CustomHtmx (label, _) -> label
   | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
@@ -92,6 +93,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
@@ -144,7 +146,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
 ;;
 
 let success_to_string : success -> string = function
@@ -241,6 +245,7 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvitationSubjectAndTextRequired ->
     "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
@@ -281,6 +286,7 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->

@@ -76,16 +76,23 @@ module Elements = struct
       ]
   ;;
 
+  let error language = function
+    | None -> []
+    | Some error ->
+      [ span
+          ~a:[ a_class [ "help"; "error-message" ] ]
+          [ txt (error |> Pool_common.(Utils.error_to_string language)) ]
+      ]
+  ;;
+
   let apply_orientation attributes = function
     | `Vertical -> input ~a:attributes ()
     | `Horizontal ->
       div ~a:[ a_class [ "input-group" ] ] [ input ~a:attributes () ]
   ;;
 
-  let identifier ?identifier language name =
-    CCOption.value
-      identifier
-      ~default:(Pool_common.Utils.field_to_string language name)
+  let identifier ?identifier name =
+    CCOption.value identifier ~default:(Pool_common.Message.Field.show name)
     |> CCString.replace ~which:`All ~sub:" " ~by:"_"
   ;;
 end
@@ -110,6 +117,7 @@ let input_element
   ?(required = false)
   ?flash_fetcher
   ?value
+  ?error
   ?(additional_attributes = [])
   language
   input_type
@@ -117,23 +125,27 @@ let input_element
   =
   let input_label = Elements.input_label language name label_field required in
   let value = flash_fetched_value flash_fetcher value name in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     let attrs =
       Elements.attributes input_type name id [ a_value value ]
       @ additional_attributes
     in
-    if required then a_required () :: attrs else attrs
+    let attrs = if required then a_required () :: attrs else attrs in
+    if CCOption.is_some error then a_class [ "has-error" ] :: attrs else attrs
   in
   match input_type with
   | `Hidden -> input ~a:attributes ()
   | _ ->
     let group_class = Elements.group_class classnames orientation in
     let help = Elements.help language help in
+    let error = Elements.error language error in
     let input_element = Elements.apply_orientation attributes orientation in
     div
       ~a:[ a_class group_class ]
-      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ] @ help)
+      ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
+      @ help
+      @ error)
 ;;
 
 let flatpicker_element
@@ -178,7 +190,7 @@ let flatpicker_element
         ; disable_past, "disable-past", "true"
         ]
   in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     Elements.attributes
       input_type
@@ -206,6 +218,7 @@ let checkbox_element
   ?flash_fetcher
   ?(required = false)
   ?(value = false)
+  ?(additional_attributes = [])
   language
   name
   =
@@ -221,7 +234,7 @@ let checkbox_element
     | true -> [ a_checked () ]
     | false -> []
   in
-  let id = Elements.identifier ?identifier language name in
+  let id = Elements.identifier ?identifier name in
   let attributes =
     Elements.attributes `Checkbox name id value_attrs
     |> fun attrs ->
@@ -229,7 +242,9 @@ let checkbox_element
   in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
-  let input_element = Elements.apply_orientation attributes orientation in
+  let input_element =
+    Elements.apply_orientation (attributes @ additional_attributes) orientation
+  in
   div
     ~a:[ a_class group_class ]
     [ div
@@ -437,4 +452,25 @@ let selector
         ]
     ; div help
     ]
+;;
+
+let custom_field_to_input ?flash_fetcher language custom_field =
+  let open Custom_field in
+  let label = Public.to_common_field language custom_field in
+  let help = Public.to_common_hint language custom_field in
+  let required = Public.required custom_field |> Required.value in
+  let create input_type =
+    let value = Public.answer_to_string custom_field in
+    input_element
+      ?flash_fetcher
+      ?value
+      ?help
+      ~required
+      language
+      input_type
+      label
+  in
+  match custom_field with
+  | Public.Number _ -> create `Number
+  | Public.Text _ -> create `Text
 ;;

@@ -22,8 +22,6 @@ let () =
             "update language of user"
             `Quick
             Contact_test.update_language
-        ; test_case "update if user is paused" `Quick Contact_test.update_paused
-        ; test_case "update user" `Quick Contact_test.update_full
         ; test_case "update password" `Quick Contact_test.update_password
         ; test_case
             "update password with wrong current password"

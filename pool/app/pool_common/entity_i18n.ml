@@ -21,6 +21,7 @@ type t =
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
+  | ProfileCompletitionTitle
   | RateTotalSent of int
   | Reminder
   | ResetPasswordLink
@@ -70,6 +71,7 @@ type nav_link =
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
   | I18nText of string

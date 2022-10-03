@@ -5,16 +5,16 @@ module Message = Pool_common.Message
 let base_path = "/admin/custom-fields"
 
 let form
-  ?custom_field
+  ?(custom_field : Custom_field.t option)
   Pool_context.{ language; csrf; _ }
-  sys_languages
+  tenant_languages
   flash_fetcher
   =
   let open Custom_field in
   let action =
     match custom_field with
     | None -> base_path
-    | Some f -> Format.asprintf "%s/%s" base_path (f.id |> Id.value)
+    | Some f -> Format.asprintf "%s/%s" base_path (f |> id |> Id.value)
   in
   let checkbox_element ?orientation ?help ?(default = false) field fnc =
     checkbox_element
@@ -25,11 +25,17 @@ let form
       ~value:(custom_field |> CCOption.map_or ~default fnc)
       ~flash_fetcher
   in
+  let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
+  let field_type = CCOption.map field_type custom_field in
   let input_by_lang ?(required = false) field value_fnc =
     let open Pool_common in
     let group_class = Elements.group_class [] `Horizontal in
     CCList.map
       (fun lang ->
+        let required =
+          required
+          && CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
+        in
         let label_text =
           lang
           |> Language.field_of_t
@@ -69,13 +75,14 @@ let form
               ]
           ; input_element
           ])
-      sys_languages
+      Pool_common.Language.all
   in
   let name_inputs =
     input_by_lang ~required:true Message.Field.Name (fun lang ->
       let open CCOption in
       custom_field
-      >>= (fun f -> Name.find_opt f.name lang)
+      >|= (fun f -> name f)
+      >>= Name.find_opt lang
       >|= Name.value_name
       |> value ~default:"")
   in
@@ -83,15 +90,15 @@ let form
     input_by_lang Message.Field.Hint (fun lang ->
       let open CCOption in
       custom_field
-      >>= (fun f -> Hint.find_opt f.hint lang)
+      >|= (fun f -> hint f)
+      >>= Hint.find_opt lang
       >|= Hint.value_hint
       |> value ~default:"")
   in
   let validation_subform =
     let current_values =
       custom_field
-      |> CCOption.map_or ~default:[] (fun f ->
-           f.validation |> Validation.to_strings)
+      |> CCOption.map_or ~default:[] (fun f -> f |> validation_strings)
     in
     let rule_input field_type name input_type value disabled =
       let prefixed_name =
@@ -144,22 +151,18 @@ let form
       [ div
           ~a:[ a_class [ "flexcolumn"; "stack" ] ]
           (CCList.map
-             (fun (field_type, rules) ->
-               CCList.map
-                 (fun (name, input_type) ->
-                   let value =
-                     CCList.assoc_opt ~eq:CCString.equal name current_values
-                     |> CCOption.value ~default:""
-                   in
-                   let disabled =
-                     custom_field
-                     |> CCOption.map_or ~default:true (fun field ->
-                          not (FieldType.equal field.field_type field_type))
-                   in
-                   rule_input field_type name input_type value disabled)
-                 rules)
-             Validation.all
-          |> CCList.flatten)
+             (fun (key, input_type, validation_type) ->
+               let value =
+                 CCList.assoc_opt ~eq:CCString.equal key current_values
+                 |> CCOption.value ~default:""
+               in
+               let disabled =
+                 field_type
+                 |> CCOption.map_or ~default:false (fun t ->
+                      FieldType.equal validation_type t |> not)
+               in
+               rule_input validation_type key input_type value disabled)
+             Validation.all)
       ; script (Unsafe.data functions)
       ]
   in
@@ -177,7 +180,7 @@ let form
             Message.Field.Model
             Model.show
             Model.all
-            (CCOption.map (fun f -> f.model) custom_field)
+            (CCOption.map model custom_field)
             ~add_empty:true
             ~required:true
             ~flash_fetcher
@@ -187,7 +190,7 @@ let form
             Message.Field.FieldType
             FieldType.show
             FieldType.all
-            (CCOption.map (fun f -> f.field_type) custom_field)
+            field_type
             ~add_empty:true
             ~required:true
             ~flash_fetcher
@@ -241,20 +244,19 @@ let form
             Message.Field.AdminHint
             ~orientation:`Horizontal
             ~value:
-              (let open CCOption in
-              custom_field
-              >>= (fun f -> f.admin.Admin.hint >|= Admin.Hint.value)
-              |> value ~default:"")
+              (value (fun f ->
+                 (f |> admin).Admin.hint
+                 |> CCOption.map_or ~default:"" Admin.Hint.value))
             ~flash_fetcher
         ; checkbox_element Message.Field.Overwrite (fun f ->
-            f.admin.Admin.overwrite |> Admin.Overwrite.value)
+            (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ checkbox_element Message.Field.Required (fun f ->
-            f.required |> Required.value)
+            f |> required |> Required.value)
         ; checkbox_element Message.Field.Disabled (fun f ->
-            f.disabled |> Disabled.value)
+            f |> disabled |> Disabled.value)
         ; submit_element
             language
             Message.(
@@ -295,7 +297,9 @@ let index field_list Pool_context.{ language; _ } =
     CCList.map
       (fun field ->
         [ txt
-            (Name.find_opt field.name language
+            (field
+            |> name
+            |> Name.find_opt language
             |> CCOption.map_or ~default:"-" Name.value_name)
         ; a
             ~a:
@@ -304,7 +308,7 @@ let index field_list Pool_context.{ language; _ } =
                      (Format.asprintf
                         "%s/%s/edit"
                         base_path
-                        (field.id |> Custom_field.Id.value)))
+                        (field |> id |> Id.value)))
               ]
             [ txt Pool_common.(Message.More |> Utils.control_to_string language)
             ]

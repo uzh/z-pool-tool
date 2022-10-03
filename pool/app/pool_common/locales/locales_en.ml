@@ -21,6 +21,7 @@ let field_to_string =
   | CustomField -> "field"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
+  | CustomHtmx (label, _) -> label
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
@@ -93,6 +94,7 @@ let field_to_string =
   | Password -> "password"
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
+  | Profile -> "profile"
   | PublicTitle -> "public title"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
@@ -145,7 +147,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "To continue, you need to answer the following questions."
 ;;
 
 let success_to_string : success -> string = function
@@ -232,6 +236,7 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | InvalidHtmxRequest -> "Invalid request."
   | InvitationSubjectAndTextRequired ->
     "Please enter both a subject and a text for the session invitation."
   | LoginProvideDetails -> "Please provide email and password"
@@ -263,6 +268,7 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""

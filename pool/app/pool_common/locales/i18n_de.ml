@@ -25,6 +25,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | ProfileCompletitionTitle -> "Profilvervollständigung"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
@@ -99,6 +100,7 @@ let hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."

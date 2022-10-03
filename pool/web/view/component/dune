@@ -1,3 +1,11 @@
 (library
  (name component)
- (libraries experiment http_utils pool_location service session sihl tyxml))
+ (libraries
+  custom_field
+  experiment
+  http_utils
+  pool_location
+  service
+  session
+  sihl
+  tyxml))

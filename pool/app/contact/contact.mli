@@ -48,12 +48,33 @@ type t =
   ; updated_at : Ptime.t
   }
 
+module PartialUpdate : sig
+  type t =
+    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
+    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
+    | Paused of Pool_common.Version.t * Pool_user.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
+
+  val increment_version : t -> t
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+end
+
+val validate_partial_update
+  :  t
+  -> Pool_database.Label.t
+  -> Pool_common.Message.Field.t
+     * Pool_common.Version.t
+     * string
+     * Custom_field.Id.t option
+  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
+
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
-val version_selector : t -> string -> Pool_common.Version.t option
 val show : t -> string
 
 val find
@@ -103,25 +124,15 @@ type create =
   ; language : Pool_common.Language.t option
   }
 
-type update = Event.update =
-  { firstname : Pool_user.Firstname.t
-  ; lastname : Pool_user.Lastname.t
-  ; paused : Pool_user.Paused.t
-  ; language : Pool_common.Language.t option
-  }
-
 type event =
   | Created of create
-  | FirstnameUpdated of t * Pool_user.Firstname.t
-  | LastnameUpdated of t * Pool_user.Lastname.t
-  | PausedUpdated of t * Pool_user.Paused.t
+  | Updated of PartialUpdate.t * t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -132,10 +143,6 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
-val firstnameupdated : t -> Pool_user.Firstname.t -> event
-val lastnameupdated : t -> Pool_user.Lastname.t -> event
-val pausedupdated : t -> Pool_user.Paused.t -> event
-val languageupdated : t -> Pool_common.Language.t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit

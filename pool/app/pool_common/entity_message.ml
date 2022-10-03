@@ -3,6 +3,11 @@ open Sexplib.Conv
 module Field = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
+  let custom _ fmt t =
+    let _, name = t in
+    Format.pp_print_string fmt name
+  ;;
+
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -25,6 +30,8 @@ module Field = struct
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomHtmx of (string * string) [@name "custom"]
+        [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
     | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
@@ -113,6 +120,7 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
+    | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
@@ -208,6 +216,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidHtmxRequest
   | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
@@ -236,6 +245,7 @@ type error =
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
+  | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
@@ -281,7 +291,10 @@ type success =
   | Updated of Field.t
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
+type info =
+  | Info of string
+  | RequiredFieldsMissing
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string

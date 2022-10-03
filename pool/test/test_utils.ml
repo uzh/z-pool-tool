@@ -5,6 +5,10 @@ end
 (* Testable *)
 let event = Alcotest.testable Pool_event.pp Pool_event.equal
 
+let partial_update =
+  Alcotest.testable Contact.PartialUpdate.pp Contact.PartialUpdate.equal
+;;
+
 let tenant_smtp_auth =
   Alcotest.testable Pool_tenant.SmtpAuth.pp Pool_tenant.SmtpAuth.equal
 ;;

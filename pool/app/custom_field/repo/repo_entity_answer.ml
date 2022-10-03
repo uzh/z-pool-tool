@@ -1,30 +1,52 @@
 open Entity_answer
+module Common = Pool_common
+module Repo = Common.Repo
 
-module Answer = struct
-  include Answer
-
-  let t =
-    let encode t =
-      t |> yojson_of_t |> Yojson.Safe.to_string |> CCResult.return
-    in
-    let decode s =
-      let read s = s |> Yojson.Safe.from_string |> t_of_yojson in
-      try Ok (read s) with
-      | _ ->
-        Error
-          Pool_common.(
-            Utils.error_to_string Language.En Message.(Invalid Field.Answer))
-    in
-    Caqti_type.(custom ~encode ~decode string)
-  ;;
+module Value = struct
+  let t = Caqti_type.string
 end
 
+type repo =
+  { id : Id.t
+  ; value : string
+  ; version : Common.Version.t
+  }
+[@@deriving eq, show]
+
 let t =
-  let encode m = Ok (m.id, (m.answer, m.version)) in
-  let decode (id, (answer, version)) = Ok { id; answer; version } in
+  let encode (m : repo) = Ok (m.id, (m.value, m.version)) in
+  let decode (id, (value, version)) = Ok ({ id; value; version } : repo) in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2 Pool_common.Repo.Id.t (tup2 Answer.t Pool_common.Repo.Version.t)))
+    custom ~encode ~decode (tup2 Repo.Id.t (tup2 Value.t Repo.Version.t)))
 ;;
+
+module Write = struct
+  type t =
+    { id : Id.t
+    ; custom_field_uuid : Id.t
+    ; entity_uuid : Id.t
+    ; value : string
+    ; version : Common.Version.t
+    }
+  [@@deriving show, eq]
+
+  let of_entity id custom_field_uuid entity_uuid value version =
+    { id; custom_field_uuid; entity_uuid; value; version }
+  ;;
+
+  let t =
+    let encode (m : t) =
+      Ok (m.id, (m.custom_field_uuid, (m.entity_uuid, (m.value, m.version))))
+    in
+    let decode (id, (custom_field_uuid, (entity_uuid, (value, version)))) =
+      Ok { id; custom_field_uuid; entity_uuid; value; version }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Repo.Id.t
+           (tup2 Repo.Id.t (tup2 Repo.Id.t (tup2 Value.t Repo.Version.t)))))
+  ;;
+end

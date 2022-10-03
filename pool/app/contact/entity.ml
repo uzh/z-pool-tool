@@ -127,14 +127,6 @@ let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
-let version_selector p = function
-  | "firstname" -> Some p.firstname_version
-  | "lastname" -> Some p.lastname_version
-  | "paused" -> Some p.paused_version
-  | "language" -> Some p.language_version
-  | _ -> None
-;;
-
 module Preview = struct
   type t =
     { user : Sihl_user.t
@@ -152,3 +144,101 @@ module Preview = struct
     m.user.Sihl_user.email |> User.EmailAddress.of_string
   ;;
 end
+
+module PartialUpdate = struct
+  module PoolField = Pool_common.Message.Field
+  module Conformist = Pool_common.Utils.PoolConformist
+
+  type t =
+    | Firstname of Pool_common.Version.t * User.Firstname.t
+    | Lastname of Pool_common.Version.t * User.Lastname.t
+    | Paused of Pool_common.Version.t * User.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
+  [@@deriving eq, show, variants]
+
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
+    | Custom custom_field ->
+      let open Custom_field in
+      let open Public in
+      Custom
+        (match custom_field with
+         | Number ({ answer; _ } as public) ->
+           answer
+           |> CCOption.map_or ~default:custom_field (fun a ->
+                let answer = Answer.increment_version a |> CCOption.pure in
+                Number { public with answer })
+         | Text ({ answer; _ } as public) ->
+           answer
+           |> CCOption.map_or ~default:custom_field (fun a ->
+                let answer = Answer.increment_version a |> CCOption.pure in
+                Text { public with answer }))
+  ;;
+
+  let validate contact tenand_db (field, version, value, field_id) =
+    let check_version old_v t =
+      let open Pool_common.Version in
+      if old_v |> value > (version |> value)
+      then Error Pool_common.Message.(MeantimeUpdate field)
+      else Ok t
+    in
+    let validate schema =
+      let schema =
+        Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
+      in
+      Conformist.decode_and_validate
+        schema
+        [ field |> Pool_common.Message.Field.show, [ value ] ]
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    in
+    let open CCResult in
+    match[@warning "-4"] field with
+    | PoolField.Firstname ->
+      User.Firstname.schema
+      |> validate
+      >|= (fun m -> Firstname (version, m))
+      >>= check_version contact.firstname_version
+      |> Lwt.return
+    | PoolField.Lastname ->
+      User.Lastname.schema
+      |> validate
+      >|= (fun m -> Lastname (version, m))
+      >>= check_version contact.lastname_version
+      |> Lwt.return
+    | PoolField.Paused ->
+      User.Paused.schema
+      |> validate
+      >|= (fun m -> Paused (version, m))
+      >>= check_version contact.paused_version
+      |> Lwt.return
+    | PoolField.Language ->
+      (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+      |> validate
+      >|= (fun m -> Language (version, m))
+      >>= check_version contact.language_version
+      |> Lwt.return
+    | _ ->
+      let open Lwt_result.Syntax in
+      let open Lwt_result.Infix in
+      let* custom_field =
+        field_id
+        |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
+        |> Lwt_result.lift
+        >>= Custom_field.find_by_contact tenand_db (id contact)
+        >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
+      in
+      let old_v =
+        Custom_field.Public.version custom_field
+        |> CCOption.value ~default:(Pool_common.Version.create ())
+      in
+      custom_field |> check_version old_v |> Lwt_result.lift >|= custom
+  ;;
+end
+
+let validate_partial_update = PartialUpdate.validate

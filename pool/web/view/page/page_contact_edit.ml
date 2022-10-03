@@ -26,44 +26,59 @@ let personal_details_form
   csrf
   user_update_csrf
   language
+  query_language
   action
   tenant_languages
   contact
   custom_fields
   =
   let open Contact in
-  let form_attrs action =
-    [ a_method `Post
-    ; a_action (Sihl.Web.externalize_path action)
-    ; a_class [ "stack" ]
-    ]
-  in
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let action = externalize action in
+  let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
+  let htmx_create field = Htmx.create field language ~hx_post:action () in
   let custom_fields_form =
-    let open Custom_field in
     custom_fields
-    |> CCList.map (fun field ->
-         div
-           [ txt
-               (Name.find_opt field.Public.name language
-               |> CCOption.map_or ~default:"-" Name.value_name)
-           ])
+    |> CCList.map (fun custom_field ->
+         Htmx.custom_field_to_htmx language custom_field ~hx_post:action ())
   in
+  let open Message in
   form
-    ~a:(form_attrs action)
-    (CCList.flatten
-       [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
-       ; CCList.map
-           (fun htmx_element ->
-             Htmx.create htmx_element language ~hx_post:action ())
-           Htmx.
-             [ Firstname (contact.firstname_version, contact |> firstname)
-             ; Lastname (contact.lastname_version, contact |> lastname)
-             ; Paused (contact.paused_version, contact.paused)
-             ; Language
-                 (contact.language_version, contact.language, tenant_languages)
-             ]
-       ]
-    @ custom_fields_form)
+    ~a:form_attrs
+    [ div
+        ~a:[ a_class [ "stack" ] ]
+        (Component.csrf_element csrf ~id:user_update_csrf ()
+        :: CCList.map
+             (fun (version, field, value) ->
+               Htmx.create_entity version field value |> htmx_create)
+             Htmx.
+               [ ( contact.firstname_version
+                 , Field.Firstname
+                 , Text
+                     (contact
+                     |> Contact.firstname
+                     |> User.Firstname.value
+                     |> CCOption.pure) )
+               ; ( contact.lastname_version
+                 , Field.Lastname
+                 , Text
+                     (contact
+                     |> Contact.lastname
+                     |> User.Lastname.value
+                     |> CCOption.pure) )
+               ; ( contact.language_version
+                 , Field.Language
+                 , Select
+                     { show = Pool_common.Language.show
+                     ; options = tenant_languages
+                     ; selected = contact.language
+                     } )
+               ; ( contact.paused_version
+                 , Field.Paused
+                 , Checkbox (contact.paused |> User.Paused.value) )
+               ])
+    ; div ~a:[ a_class [ "stack" ] ] custom_fields_form
+    ]
 ;;
 
 let detail contact Pool_context.{ language; query_language; _ } =
@@ -104,7 +119,7 @@ let personal_details
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
-  let action = HttpUtils.path_with_language query_language "/user/update" in
+  let action = Htmx.contact_profile_hx_post in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -112,6 +127,7 @@ let personal_details
             csrf
             user_update_csrf
             language
+            query_language
             action
             tenant_languages
             contact

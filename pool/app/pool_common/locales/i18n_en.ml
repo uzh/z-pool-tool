@@ -22,6 +22,7 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
+  | ProfileCompletitionTitle -> "Profile completition"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -92,6 +93,7 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."

@@ -3,27 +3,19 @@ module Answer : sig
     include Pool_common.Model.IdSig
   end
 
-  module Answer : sig
-    type t =
-      | Text of string
-      | Number of int
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-  end
-
-  type t =
+  type 'a t =
     { id : Id.t
-    ; answer : Answer.t
+    ; value : 'a
     ; version : Pool_common.Version.t
     }
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
+  val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
+  val create : ?id:Id.t -> ?version:Pool_common.Version.t -> 'a -> 'a t
+  val id : 'a t -> Id.t
+  val version : 'a t -> Pool_common.Version.t
+  val increment_version : 'a t -> 'a t
 end
 
 module Id : sig
@@ -65,7 +57,7 @@ module Name : sig
   val show : t -> name
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val find_opt : t -> Pool_common.Language.t -> name option
+  val find_opt : Pool_common.Language.t -> t -> name option
 
   val create
     :  Pool_common.Language.t list
@@ -90,7 +82,7 @@ module Hint : sig
   val show : t -> hint
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val find_opt : t -> Pool_common.Language.t -> hint option
+  val find_opt : Pool_common.Language.t -> t -> hint option
 
   val create
     :  (Pool_common.Language.t * string) list
@@ -110,51 +102,6 @@ module FieldType : sig
   val schema
     :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-end
-
-module Validation : sig
-  module Text : sig
-    type t =
-      | TextLengthMin of int
-      | TextLengthMax of int
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-
-    val validate
-      :  t list
-      -> string
-      -> (string, Pool_common.Message.error) result
-  end
-
-  module Number : sig
-    type t =
-      | NumberMin of int
-      | NumberMax of int
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val t_of_yojson : Yojson.Safe.t -> t
-    val yojson_of_t : t -> Yojson.Safe.t
-    val validate : t list -> int -> (int, Pool_common.Message.error) result
-  end
-
-  type t =
-    | Text of Text.t list
-    | Number of Number.t list
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
-  val schema : (string * string) list -> FieldType.t -> t
-  val to_strings : t -> (string * string) list
-  val all : (FieldType.t * (string * [> `Number ]) list) list
 end
 
 module Required : sig
@@ -180,53 +127,120 @@ module Admin : sig
     }
 end
 
-type t =
+module Validation : sig
+  type raw = string * string
+  type raw_list = raw list
+
+  module Number : sig
+    val schema
+      :  (string * string) list
+      -> ((int -> (int, Pool_common.Message.error) result) * raw) list
+  end
+
+  module Text : sig
+    val schema
+      :  (string * string) list
+      -> ((string -> (string, Pool_common.Message.error) result) * raw) list
+  end
+
+  val raw_list_of_yojson : Yojson.Safe.t -> raw_list
+  val all : (string * [> `Number ] * FieldType.t) list
+end
+
+type 'a validation =
+  ('a -> ('a, Pool_common.Message.error) result) * Validation.raw
+
+type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; field_type : FieldType.t
-  ; validation : Validation.t
+  ; validation : 'a validation list
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
-  ; created_at : Pool_common.CreatedAt.t
-  ; updated_at : Pool_common.UpdatedAt.t
   }
 
+type t =
+  | Number of int custom_field
+  | Text of string custom_field
+
 val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
+val show : t -> string
 
 val create
   :  ?id:Id.t
+  -> FieldType.t
   -> Model.t
   -> Name.t
   -> Hint.t
-  -> FieldType.t
-  -> Validation.t
+  -> (string * string) list
   -> Required.t
   -> Disabled.t
   -> Admin.t
   -> (t, Pool_common.Message.error) result
 
 module Public : sig
-  type t =
+  type 'a public =
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; field_type : FieldType.t
-    ; validation : Validation.t
+    ; validation : 'a validation list
     ; required : Required.t
-    ; answer : Answer.t option
+    ; answer : 'a Answer.t option
     }
+
+  val equal_public : ('a -> 'a -> bool) -> 'a public -> 'a public -> bool
+
+  val pp_public
+    :  (Format.formatter -> 'a -> unit)
+    -> Format.formatter
+    -> 'a public
+    -> unit
+
+  val show_public : (Format.formatter -> 'a -> unit) -> 'a public -> string
+
+  type t =
+    | Number of int public
+    | Text of string public
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val validate : string -> t -> (t, Pool_common.Message.error) result
+  val id : t -> Id.t
+  val name_value : Pool_common.Language.t -> t -> string
+  val hint : Pool_common.Language.t -> t -> Hint.hint option
+  val version : t -> Pool_common.Version.t option
+  val answer_to_string : t -> string option
+  val required : t -> Required.t
+
+  val to_common_field
+    :  Pool_common.Language.t
+    -> t
+    -> Pool_common.Message.Field.t
+
+  val to_common_hint
+    :  Pool_common.Language.t
+    -> t
+    -> Pool_common.I18n.hint option
 end
 
 val boolean_fields : Pool_common.Message.Field.t list
+val id : t -> Id.t
+val model : t -> Model.t
+val name : t -> Name.t
+val hint : t -> Hint.t
+val required : t -> Required.t
+val disabled : t -> Disabled.t
+val admin : t -> Admin.t
+val field_type : t -> FieldType.t
+val validation_strings : t -> (string * string) list
+val validation_to_yojson : t -> Yojson.Safe.t
 
 type event =
+  | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
   | Updated of t
 
@@ -239,9 +253,42 @@ val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find
   :  Pool_database.Label.t
   -> Id.t
-  -> (t, Entity.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all_for_contact
+val find_public
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (Public.t, Pool_common.Message.error) result Lwt.t
+
+val find_all_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
+
+val find_all_required_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Public.t list Lwt.t
+
+val find_multiple_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Pool_common.Id.t list
+  -> Public.t list Lwt.t
+
+val find_by_contact
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Id.t
+  -> (Public.t, Pool_common.Message.error) result Lwt.t
+
+val upsert_answer
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Public.t
+  -> unit Lwt.t
+
+val all_required_answered
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> bool Lwt.t

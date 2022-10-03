@@ -60,10 +60,8 @@ module Validation = struct
   include Validation
 
   let t =
-    let encode = encode_yojson yojson_of_t in
-    let decode =
-      decode_yojson t_of_yojson Pool_common.Message.Field.Validation
-    in
+    let encode = encode_yojson CCFun.id in
+    let decode = decode_yojson CCFun.id Pool_common.Message.Field.Validation in
     Caqti_type.(custom ~encode ~decode string)
   ;;
 end
@@ -105,16 +103,41 @@ end
 module Write = struct
   let of_entity (t : t) =
     Write.
-      { id = t.id
-      ; model = t.model
-      ; name = t.name
-      ; hint = t.hint
-      ; field_type = t.field_type
-      ; validation = t.validation
-      ; required = t.required
-      ; disabled = t.disabled
-      ; admin = t.admin
+      { id = id t
+      ; model = model t
+      ; name = name t
+      ; hint = hint t
+      ; validation = Entity.validation_to_yojson t
+      ; field_type = field_type t
+      ; required = required t
+      ; disabled = disabled t
+      ; admin = admin t
       }
+  ;;
+
+  let to_entity
+    Entity.Write.
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation
+      ; field_type
+      ; required
+      ; disabled
+      ; admin
+      }
+    =
+    let validation_schema schema =
+      Validation.(validation |> raw_list_of_yojson |> schema)
+    in
+    match (field_type : FieldType.t) with
+    | FieldType.Number ->
+      let validation = validation_schema Validation.Number.schema in
+      Number { id; model; name; hint; validation; required; disabled; admin }
+    | FieldType.Text ->
+      let validation = validation_schema Validation.Text.schema in
+      Text { id; model; name; hint; validation; required; disabled; admin }
   ;;
 
   let t =
@@ -154,19 +177,49 @@ module Write = struct
 end
 
 module Public = struct
+  type repo =
+    { id : Id.t
+    ; name : Name.t
+    ; hint : Hint.t
+    ; validation : Yojson.Safe.t
+    ; field_type : FieldType.t
+    ; required : Required.t
+    ; answer : Repo_entity_answer.repo option
+    }
+
+  let to_entity { id; name; hint; validation; field_type; required; answer } =
+    let validation_schema schema =
+      Validation.(validation |> raw_list_of_yojson |> schema)
+    in
+    match field_type with
+    | FieldType.Number ->
+      let answer =
+        CCOption.bind answer (fun Repo_entity_answer.{ id; value; version } ->
+          value
+          |> CCInt.of_string
+          |> CCOption.map (Entity_answer.create ~id ~version))
+      in
+      let validation = validation_schema Validation.Number.schema in
+      Public.Number { Public.id; name; hint; validation; required; answer }
+    | FieldType.Text ->
+      let answer =
+        answer
+        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
+             value |> Entity_answer.create ~id ~version)
+      in
+      let validation = validation_schema Validation.Text.schema in
+      Public.Text { Public.id; name; hint; validation; required; answer }
+  ;;
+
   let t =
-    let open Public in
-    let encode m =
-      Ok
-        ( m.Public.id
-        , ( m.name
-          , (m.hint, (m.field_type, (m.validation, (m.required, m.answer)))) )
-        )
+    let encode _ =
+      failwith
+        Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
     let decode
-      (id, (name, (hint, (field_type, (validation, (required, answer))))))
+      (id, (name, (hint, (validation, (field_type, (required, answer))))))
       =
-      Ok { id; name; hint; field_type; validation; required; answer }
+      Ok { id; name; hint; validation; field_type; required; answer }
     in
     Caqti_type.(
       custom
@@ -179,47 +232,34 @@ module Public = struct
               (tup2
                  Hint.t
                  (tup2
-                    FieldType.t
-                    (tup2 Validation.t (tup2 Required.t (option Answer.t))))))))
+                    Validation.t
+                    (tup2 FieldType.t (tup2 Required.t (option Answer.t))))))))
   ;;
 end
 
 let t =
-  let encode m =
-    Ok
-      ( m.id
-      , ( m.model
-        , ( m.name
-          , ( m.hint
-            , ( m.field_type
-              , ( m.validation
-                , ( m.required
-                  , (m.disabled, (m.admin, (m.created_at, m.updated_at))) ) ) )
-            ) ) ) )
+  let encode _ =
+    failwith
+      Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
   in
   let decode
     ( id
     , ( model
-      , ( name
-        , ( hint
-          , ( field_type
-            , ( validation
-              , (required, (disabled, (admin, (created_at, updated_at)))) ) ) )
-        ) ) )
+      , (name, (hint, (field_type, (validation, (required, (disabled, admin))))))
+      ) )
     =
-    Ok
-      { id
-      ; model
-      ; name
-      ; hint
-      ; field_type
-      ; validation
-      ; required
-      ; disabled
-      ; admin
-      ; created_at
-      ; updated_at
-      }
+    let open CCResult in
+    let validation_schema schema =
+      Validation.(validation |> raw_list_of_yojson |> schema)
+    in
+    match field_type with
+    | FieldType.Number ->
+      let validation = validation_schema Validation.Number.schema in
+      Ok
+        (Number { id; model; name; hint; validation; required; disabled; admin })
+    | FieldType.Text ->
+      let validation = validation_schema Validation.Text.schema in
+      Ok (Text { id; model; name; hint; validation; required; disabled; admin })
   in
   Caqti_type.(
     custom
@@ -237,13 +277,5 @@ let t =
                      FieldType.t
                      (tup2
                         Validation.t
-                        (tup2
-                           Required.t
-                           (tup2
-                              Disabled.t
-                              (tup2
-                                 Admin.t
-                                 (tup2
-                                    Common.Repo.CreatedAt.t
-                                    Common.Repo.UpdatedAt.t)))))))))))
+                        (tup2 Required.t (tup2 Disabled.t Admin.t)))))))))
 ;;
