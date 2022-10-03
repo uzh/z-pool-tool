@@ -142,15 +142,14 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let custom_field_to_htmx_value custom_field =
+let custom_field_to_htmx_value =
+  let open CCOption in
   let open Custom_field in
-  match custom_field with
-  | Public.Number field ->
-    let answer = field.Public.answer in
-    answer |> CCOption.map (fun a -> a.Answer.value) |> number
-  | Public.Text field ->
-    let answer = field.Public.answer in
-    answer |> CCOption.map (fun a -> a.Answer.value) |> text
+  function
+  | Public.Number { Public.answer; _ } ->
+    answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Text { Public.answer; _ } ->
+    answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
 let custom_field_to_htmx ?value language custom_field =

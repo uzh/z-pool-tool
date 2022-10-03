@@ -459,7 +459,8 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   let label = Public.to_common_field language custom_field in
   let help = Public.to_common_hint language custom_field in
   let required = Public.get_required custom_field |> Required.value in
-  let create value input_type =
+  let create input_type =
+    let value = Public.answer_to_string custom_field in
     input_element
       ?flash_fetcher
       ?value
@@ -470,14 +471,6 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       label
   in
   match custom_field with
-  | Public.Number field ->
-    let answer = field.Public.answer in
-    let value =
-      answer |> CCOption.map (fun a -> a.Answer.value |> CCInt.to_string)
-    in
-    create value `Number
-  | Public.Text field ->
-    let answer = field.Public.answer in
-    let value = answer |> CCOption.map (fun a -> a.Answer.value) in
-    create value `Text
+  | Public.Number _ -> create `Number
+  | Public.Text _ -> create `Text
 ;;

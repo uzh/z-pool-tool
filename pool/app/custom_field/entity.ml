@@ -87,7 +87,7 @@ module FieldType = struct
     CCList.range min max
     |> CCList.map of_enum
     |> CCList.all_some
-    |> CCOption.get_exn_or "Models: Could not create list of all\nmodels!"
+    |> CCOption.get_exn_or "Models: Could not create list of all models!"
   ;;
 
   let create s =
@@ -351,6 +351,14 @@ module Public = struct
     match t with
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
     | Text { answer; _ } -> answer |> CCOption.map Answer.version
+  ;;
+
+  let answer_to_string (t : t) =
+    let open CCOption in
+    match t with
+    | Number { answer; _ } ->
+      answer >|= fun a -> a.Answer.value |> CCInt.to_string
+    | Text { answer; _ } -> answer >|= fun a -> a.Answer.value
   ;;
 
   let to_common_field language m =

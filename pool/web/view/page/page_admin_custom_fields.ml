@@ -248,14 +248,14 @@ let form
                  (f |> get_admin).Admin.hint
                  |> CCOption.map_or ~default:"" Admin.Hint.value))
             ~flash_fetcher
-        ; checkbox_element Pool_common.Message.Field.Overwrite (fun f ->
+        ; checkbox_element Message.Field.Overwrite (fun f ->
             (f |> get_admin).Admin.overwrite |> Admin.Overwrite.value)
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ checkbox_element Pool_common.Message.Field.Required (fun f ->
+        [ checkbox_element Message.Field.Required (fun f ->
             f |> get_required |> Required.value)
-        ; checkbox_element Pool_common.Message.Field.Disabled (fun f ->
+        ; checkbox_element Message.Field.Disabled (fun f ->
             f |> get_disabled |> Disabled.value)
         ; submit_element
             language

@@ -42,7 +42,7 @@ let personal_details_form
     |> CCList.map (fun custom_field ->
          Htmx.custom_field_to_htmx language custom_field ~hx_post:action ())
   in
-  let open Pool_common.Message in
+  let open Message in
   form
     ~a:form_attrs
     [ div

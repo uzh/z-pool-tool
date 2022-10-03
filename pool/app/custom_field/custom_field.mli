@@ -213,6 +213,7 @@ module Public : sig
   val get_name_value : Pool_common.Language.t -> t -> string
   val get_hint : Pool_common.Language.t -> t -> Hint.hint option
   val get_version : t -> Pool_common.Version.t option
+  val answer_to_string : t -> string option
   val get_required : t -> Required.t
 
   val to_common_field
