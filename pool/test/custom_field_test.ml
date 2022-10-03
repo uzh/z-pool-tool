@@ -1,4 +1,5 @@
 module CustomFieldCommand = Cqrs_command.Custom_field_command
+module CustomFieldOptionCommand = Cqrs_command.Custom_field_option_command
 module Message = Pool_common.Message
 
 let boolean_fields =
@@ -49,6 +50,7 @@ module Data = struct
   ;;
 
   let custom_text_field ?validation () = custom_field ?validation FieldType.Text
+  let custom_select_field () = custom_field ~validation:[] FieldType.Select
 
   let custom_number_field ?validation () =
     custom_field ?validation FieldType.Number
@@ -161,6 +163,34 @@ let update () =
   in
   let expected =
     Ok [ Custom_field.Updated custom_field |> Pool_event.custom_field ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let create_option () =
+  let select_field = Data.custom_select_field () in
+  let option_id = Custom_field.Id.create () in
+  let name =
+    Custom_field.Name.create Data.sys_languages Data.name |> CCResult.get_exn
+  in
+  let option = Custom_field.SelectOption.create ~id:option_id name in
+  let events =
+    CustomFieldOptionCommand.Create.handle
+      ~id:option_id
+      Data.sys_languages
+      select_field
+      Data.name
+  in
+  let expected =
+    Ok
+      [ Custom_field.OptionCreated (Custom_field.id select_field, option)
+        |> Pool_event.custom_field
+      ]
   in
   Alcotest.(
     check
