@@ -12,7 +12,14 @@ let check_result expected generated =
       generated)
 ;;
 
-let contact_info = Test_utils.contact_info
+let contact_info email_address =
+  ( email_address
+  , "password"
+  , "Jane"
+  , "Doe"
+  , Contact.RecruitmentChannel.(Friend |> show)
+  , Some Language.En )
+;;
 
 let sign_up_contact contact_info =
   let email_address, password, firstname, lastname, recruitment_channel, _ =

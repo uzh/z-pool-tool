@@ -145,7 +145,7 @@ val boolean_fields : Pool_common.Message.Field.t list
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
@@ -158,7 +158,12 @@ val find_public
 val find_of_session
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_of_mailing
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_by_contact
   :  Pool_database.Label.t

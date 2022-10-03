@@ -89,6 +89,8 @@ val find_multiple
 
 val find_filtered
   :  Pool_database.Label.t
+  -> ?order_by:string
+  -> ?limit:int
   -> Pool_common.Id.t
   -> string
   -> t list Lwt.t

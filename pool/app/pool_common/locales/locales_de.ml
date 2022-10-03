@@ -58,6 +58,7 @@ let field_to_string =
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Institution -> "Institution"
+  | Interval -> "Interval"
   | Invitation -> "Einladung"
   | InvitationSubject -> "Einladungsbetreff"
   | InvitationText -> "Einladungstext"

@@ -1,5 +1,7 @@
 module Id = struct
   include Pool_common.Id
+
+  let to_common m = m
 end
 
 module StartAt = struct
@@ -85,13 +87,18 @@ module Distribution = struct
   let value m = m
 
   let get_order_element m =
-    m
-    |> CCList.map (fun (field, order) ->
-         CCString.concat
-           " "
-           [ field |> Pool_common.Message.Field.show; order |> SortOrder.show ])
-    |> CCString.concat ", "
-    |> Format.asprintf "ORDER BY %s"
+    if CCList.is_empty m
+    then ""
+    else
+      m
+      |> CCList.map (fun (field, order) ->
+           CCString.concat
+             " "
+             [ field |> Pool_common.Message.Field.show
+             ; order |> SortOrder.show
+             ])
+      |> CCString.concat ", "
+      |> Format.asprintf "ORDER BY %s"
   ;;
 
   let schema () =

@@ -106,7 +106,7 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let find_filtered_request filter =
+let find_filtered_request ?(order_by = "") ?limit filter =
   let open Caqti_request.Infix in
   Format.asprintf
     {sql|
@@ -132,16 +132,21 @@ let find_filtered_request filter =
             pool_assignments.session_id IN (
               SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE($1, '-', '')))
             )
+      %s
+      %s
     |sql}
     filter
+    order_by
+    (limit
+    |> CCOption.map_or ~default:"" (fun n -> Format.asprintf "LIMIT %d" n))
   |> find_request_sql
   |> Caqti_type.string ->* Repo_model.t
 ;;
 
-let find_filtered pool experiment_id filter =
+let find_filtered pool ?order_by ?limit experiment_id filter =
   Utils.Database.collect
     (Pool_database.Label.value pool)
-    (find_filtered_request filter)
+    (find_filtered_request ?order_by ?limit filter)
     (experiment_id |> Pool_common.Id.value)
 ;;
 

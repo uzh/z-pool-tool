@@ -12,6 +12,8 @@ let commands =
   ; SessionReminder.tenant_specific_session_reminder
   ; Contact.all_profile_update_triggers
   ; Contact.tenant_specific_profile_update_trigger
+  ; Matcher.run_tenant
+  ; Matcher.run_all
   ]
 ;;
 
@@ -24,6 +26,7 @@ let services =
   ; Service.EmailTemplate.register ()
   ; Service.Queue.register ()
   ; Service.Storage.register ()
+  ; Matcher.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router
   ]
 ;;

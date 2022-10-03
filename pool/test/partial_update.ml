@@ -18,7 +18,7 @@ let save_custom_fields custom_field contact =
 let update_with_old_version _ () =
   let%lwt () =
     let open CCResult in
-    let contact = Test_utils.create_contact () in
+    let contact = Test_utils.Model.create_contact () in
     let language = Language.De in
     let contact =
       Contact.
@@ -48,7 +48,7 @@ let update_custom_field _ () =
   let%lwt () =
     let open CCResult in
     let open Custom_field in
-    let contact = Test_utils.create_contact () in
+    let contact = Test_utils.Model.create_contact () in
     let custom_field = Custom_field_test.Data.custom_text_field () in
     let public = Custom_field_test.Data.to_public custom_field in
     let%lwt () = save_custom_fields custom_field contact in
@@ -91,7 +91,7 @@ let update_custom_field_with_invalid_answer _ () =
   let%lwt () =
     let open CCResult in
     let open Custom_field in
-    let contact = Test_utils.create_contact () in
+    let contact = Test_utils.Model.create_contact () in
     let validation = [ "text_length_max", "10" ] in
     let custom_field =
       Custom_field_test.Data.custom_text_field ~validation ()

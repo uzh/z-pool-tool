@@ -51,6 +51,9 @@ let suite =
               `Quick
               update_custom_field_with_invalid_answer
           ] )
+    ; ( "matcher"
+      , Matcher_test.
+          [ test_case "send invitations" `Quick create_invitations_repo ] )
     ]
 ;;
 

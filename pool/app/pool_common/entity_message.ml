@@ -77,6 +77,7 @@ module Field = struct
     | InactiveUserWarning [@name "inactive_user_warning"]
         [@printer go "inactive_user_warning"]
     | Institution [@name "institution"] [@printer go "institution"]
+    | Interval [@name "interval"] [@printer go "interval"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
     | InvitationCount [@name "invitation_count"]
         [@printer go "invitation_count"]
