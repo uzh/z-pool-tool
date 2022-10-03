@@ -61,7 +61,6 @@ let login_post req =
        in
        let contact user =
          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-         |> Lwt_result.map_error (fun err -> err)
        in
        user
        |> Admin.user_is_admin tenant_db

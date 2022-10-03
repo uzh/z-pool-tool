@@ -1,14 +1,14 @@
 module CustomFieldCommand = Cqrs_command.Custom_field_command
+module Message = Pool_common.Message
 
 let boolean_fields =
-  Custom_field.boolean_fields |> CCList.map Pool_common.Message.Field.show
+  Custom_field.boolean_fields |> CCList.map Message.Field.show
 ;;
 
 module Data = struct
   open Custom_field
 
   let sys_languages = Pool_common.Language.[ En; De ]
-  let id = Id.create
   let model = Model.Contact
   let field_type = FieldType.Text
   let admin_hint = "hint"
@@ -19,7 +19,7 @@ module Data = struct
   let required = false |> Required.create
 
   let data =
-    Pool_common.Message.
+    Message.
       [ Field.(Model |> show), model |> Model.show
       ; Field.(FieldType |> show), field_type |> FieldType.show
       ; Field.(AdminHint |> show), admin_hint
@@ -36,7 +36,7 @@ module Data = struct
       Admin.{ hint = Some admin_hint; overwrite = Overwrite.create false }
     in
     Custom_field.create
-      ~id:(id ())
+      ~id:(Id.create ())
       field_type
       model
       name
@@ -121,13 +121,13 @@ let create_with_missing_name () =
     |> Http_utils.format_request_boolean_values boolean_fields
     |> CustomFieldCommand.base_decode
     >>= CustomFieldCommand.Create.handle
-          ~id:Data.(id ())
+          ~id:(Custom_field.Id.create ())
           Data.sys_languages
           (Data.name |> CCList.hd |> CCList.pure)
           Data.hint
           Data.validation_data
   in
-  let expected = Error Pool_common.Message.(AllLanguagesRequired Field.Name) in
+  let expected = Error Message.(AllLanguagesRequired Field.Name) in
   Alcotest.(
     check
       (result (list Test_utils.event) Test_utils.error)

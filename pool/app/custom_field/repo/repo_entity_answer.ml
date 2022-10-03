@@ -1,4 +1,6 @@
 open Entity_answer
+module Common = Pool_common
+module Repo = Common.Repo
 
 module Value = struct
   let t = Caqti_type.string
@@ -7,7 +9,7 @@ end
 type repo =
   { id : Id.t
   ; value : string
-  ; version : Pool_common.Version.t
+  ; version : Common.Version.t
   }
 [@@deriving eq, show]
 
@@ -15,10 +17,7 @@ let t =
   let encode (m : repo) = Ok (m.id, (m.value, m.version)) in
   let decode (id, (value, version)) = Ok ({ id; value; version } : repo) in
   Caqti_type.(
-    custom
-      ~encode
-      ~decode
-      (tup2 Pool_common.Repo.Id.t (tup2 Value.t Pool_common.Repo.Version.t)))
+    custom ~encode ~decode (tup2 Repo.Id.t (tup2 Value.t Repo.Version.t)))
 ;;
 
 module Write = struct
@@ -27,7 +26,7 @@ module Write = struct
     ; custom_field_uuid : Id.t
     ; entity_uuid : Id.t
     ; value : string
-    ; version : Pool_common.Version.t
+    ; version : Common.Version.t
     }
   [@@deriving show, eq]
 
@@ -47,11 +46,7 @@ module Write = struct
         ~encode
         ~decode
         (tup2
-           Pool_common.Repo.Id.t
-           (tup2
-              Pool_common.Repo.Id.t
-              (tup2
-                 Pool_common.Repo.Id.t
-                 (tup2 Value.t Pool_common.Repo.Version.t)))))
+           Repo.Id.t
+           (tup2 Repo.Id.t (tup2 Repo.Id.t (tup2 Value.t Repo.Version.t)))))
   ;;
 end

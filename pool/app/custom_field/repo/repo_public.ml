@@ -55,7 +55,7 @@ module Sql = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+      (Database.Label.value pool)
       find_request
       (id |> Entity.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
@@ -80,7 +80,7 @@ module Sql = struct
   let find_all_by_contact ?(required = false) pool id =
     let open Lwt.Infix in
     Utils.Database.collect
-      (Pool_database.Label.value pool)
+      (Database.Label.value pool)
       (find_all_by_contact_request required)
       (Pool_common.Id.value id, Entity.Model.(show Contact))
     >|= CCList.map Repo_entity.Public.to_entity
@@ -122,7 +122,7 @@ module Sql = struct
     let request =
       find_multiple_by_contact_request ids |> pt ->* Repo_entity.Public.t
     in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+    Utils.Database.collect (pool |> Database.Label.value) request pv
     >|= CCList.map Repo_entity.Public.to_entity
   ;;
 
@@ -135,13 +135,13 @@ module Sql = struct
       AND pool_custom_fields.uuid = UNHEX(REPLACE($3, '-', ''))
     |sql}
       select_sql
-    |> Caqti_type.(tup3 string string string ->! Repo_entity.Public.t)
+    |> Caqti_type.(tup3 string string string) ->! Repo_entity.Public.t
   ;;
 
   let find_by_contact pool contact_id field_id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+      (Database.Label.value pool)
       find_by_contact_request
       ( Pool_common.Id.value contact_id
       , Entity.Model.(show Contact)
@@ -168,7 +168,7 @@ module Sql = struct
   let all_required_answered pool contact_id =
     let open Lwt.Infix in
     Utils.Database.find
-      (Pool_database.Label.value pool)
+      (Database.Label.value pool)
       all_required_answered_request
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
     >|= CCInt.equal 0

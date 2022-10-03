@@ -54,11 +54,11 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result { Pool_context.csrf; tenant_db; language; query_language; _ } =
+    let open Utils.Lwt_result.Syntax in
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
     in
-    let open Utils.Lwt_result.Syntax in
     let* contact =
       match contact with
       | Some contact -> Lwt_result.return contact
@@ -116,7 +116,6 @@ let update ?contact req =
         match partial_update with
         | Ok partial_update ->
           partial_update
-          (* CustomFields: It updates on error?? *)
           |> Contact.PartialUpdate.increment_version
           |> fun m ->
           Htmx.partial_update_to_htmx

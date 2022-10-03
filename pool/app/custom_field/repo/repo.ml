@@ -32,7 +32,7 @@ module Sql = struct
   ;;
 
   let find_all pool =
-    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
+    Utils.Database.collect (Database.Label.value pool) find_all_request
   ;;
 
   let find_request =
@@ -49,7 +49,7 @@ module Sql = struct
   let find pool id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
-      (Pool_database.Label.value pool)
+      (Database.Label.value pool)
       find_request
       (id |> Entity.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)

@@ -24,7 +24,7 @@ let update_with_old_version _ () =
       Contact.
         { contact with language_version = 1 |> Pool_common.Version.of_int }
     in
-    let field = Pool_common.Message.Field.Language in
+    let field = Message.Field.Language in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
       Contact.validate_partial_update
@@ -32,7 +32,7 @@ let update_with_old_version _ () =
         database_label
         (field, version, Pool_common.Language.show language, None)
     in
-    let expected = Error Pool_common.Message.(MeantimeUpdate field) in
+    let expected = Error Message.(MeantimeUpdate field) in
     Alcotest.(
       check
         (result Test_utils.partial_update Test_utils.error)
@@ -108,7 +108,7 @@ let update_custom_field_with_invalid_answer _ () =
         database_label
         (field, version, new_value, Some (Public.id public))
     in
-    let expected = Error Pool_common.Message.(TextLengthMax 10) in
+    let expected = Error Message.(TextLengthMax 10) in
     Alcotest.(
       check
         (result Test_utils.partial_update Test_utils.error)

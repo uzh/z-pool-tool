@@ -17,7 +17,6 @@ let show usage req =
        in
        let* contact =
          Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-         |> Lwt_result.map_error (fun err -> err)
        in
        match usage with
        | `Overview ->
