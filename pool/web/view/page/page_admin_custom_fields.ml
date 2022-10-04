@@ -4,6 +4,17 @@ module Message = Pool_common.Message
 
 let base_path = "/admin/custom-fields"
 
+let make_option_url field option path =
+  let open Custom_field in
+  Format.asprintf
+    "%s/%s/options/%s/%s"
+    base_path
+    (id field |> Id.value)
+    (option.SelectOption.id |> Id.value)
+    path
+  |> Sihl.Web.externalize_path
+;;
+
 let input_by_lang ?(required = false) language tenant_languages field value_fnc =
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
@@ -188,59 +199,68 @@ let form
              [ txt Pool_common.(control |> Utils.control_to_string language) ]
          in
          let list =
-           div
-             ~a:[ a_class [ "stack" ] ]
-             (CCList.map
-                (fun option ->
-                  let make_url path =
-                    Format.asprintf
-                      "%s/%s/options/%s/%s"
+           form
+             ~a:
+               [ a_method `Post
+               ; a_action
+                   (Format.asprintf
+                      "%s/%s/sort-options"
                       base_path
-                      (id m |> Id.value)
-                      (option.SelectOption.id |> Id.value)
-                      path
-                    |> Sihl.Web.externalize_path
-                  in
-                  div
-                    ~a:
-                      [ a_class
-                          [ "flexrow"
-                          ; "flex-gap"
-                          ; "justify-between"
-                          ; "align-center"
-                          ]
-                      ]
-                    [ div [ txt (SelectOption.name language option) ]
-                    ; div
-                        ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-                        [ a
-                            ~a:[ a_href (make_url "edit") ]
-                            [ txt
-                                Pool_common.(
-                                  Message.(Edit None)
-                                  |> Utils.control_to_string language)
+                      (m |> id |> Id.value)
+                   |> Sihl.Web.externalize_path)
+               ; a_class [ "stack" ]
+               ]
+             (CCList.cons
+                (div
+                   ~a:[ a_user_data "sortable" "" ]
+                   (CCList.map
+                      (fun option ->
+                        div
+                          ~a:
+                            [ a_class
+                                [ "flexrow"
+                                ; "flex-gap"
+                                ; "justify-between"
+                                ; "align-center"
+                                ]
+                            ; a_user_data "sortable-item" ""
+                            ; a_draggable true
                             ]
-                        ; form
-                            ~a:
-                              [ a_method `Post
-                              ; a_action (make_url "delete")
-                              ; a_user_data
-                                  "confirmable"
-                                  Pool_common.(
-                                    Utils.confirmable_to_string
-                                      language
-                                      I18n.DeleteCustomFieldOption)
+                          [ div [ txt (SelectOption.name language option) ]
+                          ; div
+                              [ input
+                                  ~a:
+                                    [ a_input_type `Hidden
+                                    ; a_name
+                                        Message.Field.(
+                                          CustomFieldOption |> array_key)
+                                    ; a_value (Id.value option.SelectOption.id)
+                                    ]
+                                  ()
                               ]
-                            [ Component.csrf_element csrf ()
-                            ; submit_element
-                                ~submit_type:`Error
-                                language
-                                Message.(Delete None)
-                                ()
-                            ]
-                        ]
-                    ])
-                options)
+                          ; div
+                              ~a:
+                                [ a_class
+                                    [ "flexrow"; "flex-gap"; "align-center" ]
+                                ]
+                              [ a
+                                  ~a:
+                                    [ a_href (make_option_url m option "edit") ]
+                                  [ txt
+                                      Pool_common.(
+                                        Message.(Edit None)
+                                        |> Utils.control_to_string language)
+                                  ]
+                              ]
+                          ])
+                      options))
+                [ csrf_element csrf ()
+                ; submit_element
+                    language
+                    Message.UpdateOrder
+                    ~submit_type:`Success
+                    ()
+                ])
          in
          div
            [ h2

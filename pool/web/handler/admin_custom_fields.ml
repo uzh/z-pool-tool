@@ -26,10 +26,6 @@ let find_assocs_in_urlencoded urlencoded field encoder =
     urlencoded
 ;;
 
-let id req field encode =
-  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
-;;
-
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
@@ -70,7 +66,8 @@ let new_form req = form req
 
 let edit req =
   let id =
-    id req Pool_common.Message.Field.CustomField Custom_field.Id.of_string
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.CustomField
+    |> Custom_field.Id.of_string
   in
   form ~id req
 ;;
@@ -148,7 +145,60 @@ let create = write
 
 let update req =
   let id =
-    id req Pool_common.Message.Field.CustomField Custom_field.Id.of_string
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.CustomField
+    |> Custom_field.Id.of_string
   in
   write ~id req
+;;
+
+let sort_options req =
+  let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
+  let custom_field_id =
+    HttpUtils.get_field_router_param req Pool_common.Message.Field.CustomField
+    |> Custom_field.Id.of_string
+  in
+  let redirect_path =
+    Format.asprintf
+      "/admin/custom-fields/%s/edit"
+      (Custom_field.Id.value custom_field_id)
+  in
+  let result { Pool_context.tenant_db; _ } =
+    Lwt_result.map_error (fun err -> err, redirect_path, [])
+    @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
+       let%lwt ids =
+         Sihl.Web.Request.urlencoded_list
+           Pool_common.Message.Field.(CustomFieldOption |> array_key)
+           req
+       in
+       let%lwt options =
+         let open Lwt.Infix in
+         let open Custom_field in
+         find_option_by_field tenant_db (id custom_field)
+         >|= fun options ->
+         CCList.filter_map
+           (fun id ->
+             CCList.find_opt
+               (fun option -> Id.equal (Id.of_string id) option.SelectOption.id)
+               options)
+           ids
+       in
+       let events =
+         options
+         |> Cqrs_command.Custom_field_command.SortOptions.handle
+         |> Lwt_result.lift
+       in
+       let handle events =
+         let%lwt (_ : unit list) =
+           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           redirect_path
+           [ Message.set
+               ~success:[ Pool_common.Message.(Updated Field.CustomField) ]
+           ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
 ;;

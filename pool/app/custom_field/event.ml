@@ -6,6 +6,7 @@ type event =
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionUpdated of SelectOption.t
+  | OptionsSorted of SelectOption.t list
   | Updated of t
 [@@deriving eq, show, variants]
 
@@ -16,5 +17,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | OptionCreated (field_id, t) -> Repo_option.insert pool field_id t
   | OptionDestroyed t -> Repo_option.destroy pool t
   | OptionUpdated t -> Repo_option.update pool t
+  | OptionsSorted t ->
+    CCList.map (fun o -> o.SelectOption.id) t |> Repo_option.sort_options pool
   | Updated t -> Repo.update pool t
 ;;

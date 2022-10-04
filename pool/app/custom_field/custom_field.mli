@@ -273,6 +273,7 @@ type event =
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
   | OptionUpdated of SelectOption.t
+  | OptionsSorted of SelectOption.t list
   | Updated of t
 
 val equal_event : event -> event -> bool
@@ -328,3 +329,8 @@ val find_option
   :  Pool_database.Label.t
   -> Id.t
   -> (SelectOption.t, Pool_common.Message.error) result Lwt.t
+
+val find_option_by_field
+  :  Pool_database.Label.t
+  -> Id.t
+  -> SelectOption.t list Lwt.t

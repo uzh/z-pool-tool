@@ -3,13 +3,17 @@ module Message = HttpUtils.Message
 
 let create_layout req = General.create_tenant_layout `Admin req
 
-let get_id field req =
-  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field
+let get_option_id req =
+  HttpUtils.get_field_router_param
+    req
+    Pool_common.Message.Field.CustomFieldOption
   |> Custom_field.Id.of_string
 ;;
 
-let get_option_id = get_id Pool_common.Message.Field.CustomFieldOption
-let get_field_id = get_id Pool_common.Message.Field.CustomField
+let get_field_id req =
+  HttpUtils.get_field_router_param req Pool_common.Message.Field.CustomField
+  |> Custom_field.Id.of_string
+;;
 
 let index req =
   let open Utils.Lwt_result.Infix in

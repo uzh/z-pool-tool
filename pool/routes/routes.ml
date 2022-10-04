@@ -264,7 +264,11 @@ module Admin = struct
       in
       let specific =
         CustomField.
-          [ get "/edit" edit; post "" update; choose ~scope:"options" options ]
+          [ get "/edit" edit
+          ; post "" update
+          ; post "sort-options" sort_options
+          ; choose ~scope:"options" options
+          ]
       in
       CustomField.
         [ get "" index

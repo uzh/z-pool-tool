@@ -367,6 +367,7 @@ let control_to_string = function
   | SignUp -> format_submit "registrieren" None
   | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
+  | UpdateOrder -> "Reihenfolge anpassen"
 ;;
 
 let to_string = function

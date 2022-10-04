@@ -341,6 +341,7 @@ let control_to_string = function
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
+  | UpdateOrder -> "update order"
 ;;
 
 let to_string = function

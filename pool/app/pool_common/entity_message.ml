@@ -345,6 +345,7 @@ type control =
   | SignUp
   | Stop of Field.t option
   | Update of Field.t option
+  | UpdateOrder
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 let to_conformist_error error_list =

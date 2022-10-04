@@ -22,6 +22,7 @@ let select_sql =
       pool_custom_field_options.name
     FROM pool_custom_field_options
     %s
+     ORDER BY pool_custom_field_options.position ASC
   |sql}
 ;;
 
@@ -145,4 +146,27 @@ let destroy pool m =
     (Pool_database.Label.value pool)
     destroy_request
     Entity.SelectOption.(m.id |> Id.value)
+;;
+
+let update_position_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_custom_field_options
+      SET
+        position = $1
+      WHERE uuid = UNHEX(REPLACE($2, '-', ''))
+  |sql}
+  |> Caqti_type.(tup2 int string ->. Caqti_type.unit)
+;;
+
+let sort_options pool ids =
+  let open Lwt.Infix in
+  Lwt_list.mapi_s
+    (fun index id ->
+      Utils.Database.exec
+        (Database.Label.value pool)
+        update_position_request
+        (index, Entity.Id.value id))
+    ids
+  >|= CCFun.const ()
 ;;

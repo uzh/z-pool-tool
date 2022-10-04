@@ -15,7 +15,18 @@ let create_custom_field_options_table =
     |sql}
 ;;
 
+let add_order_column_to_custom_field_options =
+  Sihl.Database.Migration.create_step
+    ~label:"add order column to custom field options table"
+    {sql|
+      ALTER TABLE pool_custom_field_options
+        ADD COLUMN position tinyint DEFAULT 0 AFTER name
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "custom_field_options" |> add_step create_custom_field_options_table)
+    empty "custom_field_options"
+    |> add_step create_custom_field_options_table
+    |> add_step add_order_column_to_custom_field_options)
 ;;
