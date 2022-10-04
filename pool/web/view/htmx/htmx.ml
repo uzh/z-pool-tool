@@ -79,6 +79,7 @@ let create
   ?hx_post
   ?error
   ?success
+  ?flash_fetcher
   ()
   =
   let input_class =
@@ -97,11 +98,15 @@ let create
         ()
   in
   let default s = Option.value ~default:"" s in
+  let fetched_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+      field |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
   match value with
   | Text str ->
     Component.input_element
       ~classnames
-      ~value:(str |> default)
+      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
       ~additional_attributes
       ?error
       ?help
@@ -111,7 +116,10 @@ let create
   | Number n ->
     Component.input_element
       ~classnames
-      ~value:(n |> CCOption.map CCInt.to_string |> default)
+      ~value:
+        (fetched_value
+        |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
+        )
       ~additional_attributes
       ?error
       ?help
