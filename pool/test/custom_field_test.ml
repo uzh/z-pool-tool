@@ -174,7 +174,7 @@ let update () =
 
 let create_option () =
   let select_field = Data.custom_select_field () in
-  let option_id = Custom_field.Id.create () in
+  let option_id = Custom_field.SelectOption.Id.create () in
   let name =
     Custom_field.Name.create Data.sys_languages Data.name |> CCResult.get_exn
   in

@@ -164,14 +164,7 @@ type 'a custom_field =
 
 module SelectOption : sig
   module Id : sig
-    type t = Id.t
-
-    val equal : t -> t -> bool
-    val pp : Format.formatter -> t -> unit
-    val show : t -> string
-    val create : unit -> t
-    val of_string : string -> t
-    val value : t -> string
+    include Pool_common.Model.IdSig
   end
 
   type t =

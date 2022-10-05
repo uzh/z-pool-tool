@@ -30,7 +30,8 @@ let option_form
   let action =
     match custom_field_option with
     | None -> base_path
-    | Some o -> Format.asprintf "%s/%s" base_path (o.SelectOption.id |> Id.value)
+    | Some o ->
+      Format.asprintf "%s/%s" base_path SelectOption.(o.id |> Id.value)
   in
   let name_inputs =
     Page_admin_custom_fields.input_by_lang

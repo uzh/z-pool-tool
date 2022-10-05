@@ -10,7 +10,7 @@ let make_option_url field option path =
     "%s/%s/options/%s/%s"
     base_path
     (id field |> Id.value)
-    (option.SelectOption.id |> Id.value)
+    (option.SelectOption.id |> SelectOption.Id.value)
     path
   |> Sihl.Web.externalize_path
 ;;
@@ -234,7 +234,7 @@ let form
                                     ; a_name
                                         Message.Field.(
                                           CustomFieldOption |> array_key)
-                                    ; a_value (Id.value option.SelectOption.id)
+                                    ; a_value SelectOption.(Id.value option.id)
                                     ]
                                   ()
                               ]

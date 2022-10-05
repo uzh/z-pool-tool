@@ -6,7 +6,7 @@ module Create : sig
   type t = command
 
   val handle
-    :  ?id:Custom_field.Id.t
+    :  ?id:Custom_field.SelectOption.Id.t
     -> Pool_common.Language.t list
     -> Custom_field.t
     -> t
