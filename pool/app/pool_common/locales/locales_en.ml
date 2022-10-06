@@ -19,6 +19,7 @@ let field_to_string =
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
   | CustomField -> "field"
+  | CustomFieldOption -> "option"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomHtmx (label, _) -> label
@@ -236,6 +237,7 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | InvalidOptionSelected -> "Invalid option selected."
   | InvalidHtmxRequest -> "Invalid request."
   | InvitationSubjectAndTextRequired ->
     "Please enter both a subject and a text for the session invitation."
@@ -339,6 +341,7 @@ let control_to_string = function
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
+  | UpdateOrder -> "update order"
 ;;
 
 let to_string = function

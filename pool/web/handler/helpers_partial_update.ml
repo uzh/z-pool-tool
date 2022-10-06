@@ -59,6 +59,10 @@ let update ?contact req =
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)
     in
+    let flash_fetcher key =
+      CCList.assoc_opt ~eq:CCString.equal key urlencoded
+      |> CCFun.flip CCOption.bind CCList.head_opt
+    in
     let* contact =
       match contact with
       | Some contact -> Lwt_result.return contact
@@ -146,6 +150,7 @@ let update ?contact req =
                Htmx.
                  { show = Pool_common.Language.show
                  ; options = tenant_languages
+                 ; option_formatter = None
                  ; selected =
                      value |> Pool_common.Language.create |> CCResult.to_opt
                  }
@@ -168,22 +173,18 @@ let update ?contact req =
                     ~actions:[ Message.set ~error:[ error ] ]
                     ())
               | Ok field ->
-                let value =
-                  match field with
-                  | Public.Number _ -> value |> CCInt.of_string |> Htmx.number
-                  | Public.Text _ -> value |> CCOption.pure |> Htmx.text
-                in
                 Htmx.custom_field_to_htmx
-                  ~value
                   language
                   field
                   ~hx_post
                   ~error
+                  ~flash_fetcher
                   ()
                 |> html_response))
       in
       let%lwt () =
         match events with
+        (* This case cannot occur, cqrs handler always returns an Ok result *)
         | Error _ -> Lwt.return_unit
         | Ok events ->
           events |> Lwt_list.iter_s (Pool_event.handle_event tenant_db)

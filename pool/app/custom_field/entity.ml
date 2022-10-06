@@ -74,6 +74,7 @@ end
 module FieldType = struct
   type t =
     | Number [@name "number"] [@printer printer "number"]
+    | Select [@name "select"] [@printer printer "select"]
     | Text [@name "text"] [@printer printer "text"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
@@ -240,13 +241,35 @@ type 'a custom_field =
   }
 [@@deriving eq, show]
 
+module SelectOption = struct
+  module Id = struct
+    include Pool_common.Id
+  end
+
+  type t =
+    { id : Id.t
+    ; name : Name.t
+    }
+  [@@deriving eq, show]
+
+  let show_id (m : t) = m.id |> Id.value
+
+  let name lang (t : t) =
+    Name.find_opt lang t.name |> CCOption.get_exn_or "Cannot find field name."
+  ;;
+
+  let create ?(id = Id.create ()) name = { id; name }
+end
+
 type t =
   | Number of int custom_field
+  | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
 [@@deriving eq, show]
 
 let create
   ?(id = Pool_common.Id.create ())
+  ?(select_options = [])
   field_type
   model
   name
@@ -264,6 +287,11 @@ let create
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
     Ok (Text { id; model; name; hint; validation; required; disabled; admin })
+  | FieldType.Select ->
+    Ok
+      (Select
+         ( { id; model; name; hint; validation = []; required; disabled; admin }
+         , select_options ))
 ;;
 
 module Write = struct
@@ -294,8 +322,48 @@ module Public = struct
 
   type t =
     | Number of int public
+    | Select of SelectOption.t public * SelectOption.t list
     | Text of string public
   [@@deriving eq, show]
+
+  let id (t : t) =
+    match t with
+    | Number { id; _ } | Select ({ id; _ }, _) | Text { id; _ } -> id
+  ;;
+
+  let name_value lang (t : t) =
+    match t with
+    | Number { name; _ } | Select ({ name; _ }, _) | Text { name; _ } ->
+      Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
+  ;;
+
+  let hint lang (t : t) =
+    match t with
+    | Number { hint; _ } | Select ({ hint; _ }, _) | Text { hint; _ } ->
+      Hint.find_opt lang hint
+  ;;
+
+  let required (t : t) =
+    match t with
+    | Number { required; _ }
+    | Select ({ required; _ }, _)
+    | Text { required; _ } -> required
+  ;;
+
+  let version (t : t) =
+    match t with
+    | Number { answer; _ } -> answer |> CCOption.map Answer.version
+    | Select ({ answer; _ }, _) -> answer |> CCOption.map Answer.version
+    | Text { answer; _ } -> answer |> CCOption.map Answer.version
+  ;;
+
+  let answer_id =
+    let id a = a |> CCOption.map Answer.id in
+    function
+    | (Number { answer; _ } : t) -> id answer
+    | Select ({ answer; _ }, _) -> id answer
+    | Text { answer; _ } -> id answer
+  ;;
 
   let validate value (m : t) =
     let open CCResult.Infix in
@@ -305,10 +373,10 @@ module Public = struct
         (Ok value)
         rules
     in
+    let id = answer_id m in
+    let version = version m in
     match m with
-    | Number ({ validation; answer; _ } as public) ->
-      let id = answer |> CCOption.map Answer.id in
-      let version = answer |> CCOption.map Answer.version in
+    | Number ({ validation; _ } as public) ->
       value
       |> CCInt.of_string
       |> CCOption.to_result Pool_common.Message.(NotANumber value)
@@ -317,48 +385,23 @@ module Public = struct
       |> go validation
       >|= Answer.create ?id ?version
       >|= fun a : t -> Number { public with answer = a |> CCOption.pure }
-    | Text ({ validation; answer; _ } as public) ->
-      let id = answer |> CCOption.map Answer.id in
-      let version = answer |> CCOption.map Answer.version in
+    | Select (public, options) ->
+      let value = value |> SelectOption.Id.of_string in
+      let selected =
+        CCList.find_opt
+          (fun option -> SelectOption.Id.equal option.SelectOption.id value)
+          options
+      in
+      selected
+      |> CCOption.to_result Pool_common.Message.InvalidOptionSelected
+      >|= Answer.create ?id ?version
+      >|= fun a : t ->
+      Select ({ public with answer = a |> CCOption.pure }, options)
+    | Text ({ validation; _ } as public) ->
       value
       |> go validation
       >|= Answer.create ?id ?version
       >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
-  ;;
-
-  let id (t : t) =
-    match t with
-    | Number { id; _ } | Text { id; _ } -> id
-  ;;
-
-  let name_value lang (t : t) =
-    match t with
-    | Number { name; _ } | Text { name; _ } ->
-      Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
-  ;;
-
-  let hint lang (t : t) =
-    match t with
-    | Number { hint; _ } | Text { hint; _ } -> Hint.find_opt lang hint
-  ;;
-
-  let required (t : t) =
-    match t with
-    | Number { required; _ } | Text { required; _ } -> required
-  ;;
-
-  let version (t : t) =
-    match t with
-    | Number { answer; _ } -> answer |> CCOption.map Answer.version
-    | Text { answer; _ } -> answer |> CCOption.map Answer.version
-  ;;
-
-  let answer_to_string (t : t) =
-    let open CCOption in
-    match t with
-    | Number { answer; _ } ->
-      answer >|= fun a -> a.Answer.value |> CCInt.to_string
-    | Text { answer; _ } -> answer >|= fun a -> a.Answer.value
   ;;
 
   let to_common_field language m =
@@ -376,35 +419,38 @@ module Public = struct
 end
 
 let id = function
-  | Number { id; _ } | Text { id; _ } -> id
+  | Number { id; _ } | Select ({ id; _ }, _) | Text { id; _ } -> id
 ;;
 
 let model = function
-  | Number { model; _ } | Text { model; _ } -> model
+  | Number { model; _ } | Select ({ model; _ }, _) | Text { model; _ } -> model
 ;;
 
 let name = function
-  | Number { name; _ } | Text { name; _ } -> name
+  | Number { name; _ } | Select ({ name; _ }, _) | Text { name; _ } -> name
 ;;
 
 let hint = function
-  | Number { hint; _ } | Text { hint; _ } -> hint
+  | Number { hint; _ } | Select ({ hint; _ }, _) | Text { hint; _ } -> hint
 ;;
 
 let required = function
-  | Number { required; _ } | Text { required; _ } -> required
+  | Number { required; _ } | Select ({ required; _ }, _) | Text { required; _ }
+    -> required
 ;;
 
 let disabled = function
-  | Number { disabled; _ } | Text { disabled; _ } -> disabled
+  | Number { disabled; _ } | Select ({ disabled; _ }, _) | Text { disabled; _ }
+    -> disabled
 ;;
 
 let admin = function
-  | Number { admin; _ } | Text { admin; _ } -> admin
+  | Number { admin; _ } | Select ({ admin; _ }, _) | Text { admin; _ } -> admin
 ;;
 
 let field_type = function
   | Number _ -> FieldType.Number
+  | Select _ -> FieldType.Select
   | Text _ -> FieldType.Text
 ;;
 
@@ -412,11 +458,13 @@ let validation_strings =
   let open Validation in
   function
   | Number { validation; _ } -> validation |> to_strings Number.all
+  | Select _ -> []
   | Text { validation; _ } -> validation |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
   | Number { validation; _ } -> Validation.encode_to_yojson validation
+  | Select _ -> "[]" |> Yojson.Safe.from_string
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;
 

@@ -51,6 +51,7 @@ let personal_details_form
         :: CCList.map
              (fun (version, field, value) ->
                Htmx.create_entity version field value |> htmx_create)
+               (* TODO: Reuse htmx functions? *)
              Htmx.
                [ ( contact.firstname_version
                  , Field.Firstname
@@ -71,6 +72,7 @@ let personal_details_form
                  , Select
                      { show = Pool_common.Language.show
                      ; options = tenant_languages
+                     ; option_formatter = None
                      ; selected = contact.language
                      } )
                ; ( contact.paused_version

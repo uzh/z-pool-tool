@@ -1,4 +1,5 @@
 module CustomFieldCommand = Cqrs_command.Custom_field_command
+module CustomFieldOptionCommand = Cqrs_command.Custom_field_option_command
 module Message = Pool_common.Message
 
 let boolean_fields =
@@ -49,6 +50,7 @@ module Data = struct
   ;;
 
   let custom_text_field ?validation () = custom_field ?validation FieldType.Text
+  let custom_select_field () = custom_field ~validation:[] FieldType.Select
 
   let custom_number_field ?validation () =
     custom_field ?validation FieldType.Number
@@ -56,7 +58,7 @@ module Data = struct
 
   let answer_id = Answer.Id.create ()
 
-  let to_public (m : Custom_field.t) =
+  let to_public ?(field_options = []) (m : Custom_field.t) =
     let open Custom_field in
     let validation_schema schema =
       let validation = validation_to_yojson m in
@@ -76,6 +78,15 @@ module Data = struct
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number { Public.id; name; hint; validation; required; answer }
+    | FieldType.Select ->
+      let answer =
+        CCList.head_opt field_options
+        |> CCOption.map (fun option ->
+             Answer.{ id = answer_id; version = answer_version; value = option })
+      in
+      Public.Select
+        ( { Public.id; name; hint; validation = []; required; answer }
+        , field_options )
     | FieldType.Text ->
       let answer =
         Answer.{ id = answer_id; version = answer_version; value = "test" }
@@ -152,6 +163,34 @@ let update () =
   in
   let expected =
     Ok [ Custom_field.Updated custom_field |> Pool_event.custom_field ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let create_option () =
+  let select_field = Data.custom_select_field () in
+  let option_id = Custom_field.SelectOption.Id.create () in
+  let name =
+    Custom_field.Name.create Data.sys_languages Data.name |> CCResult.get_exn
+  in
+  let option = Custom_field.SelectOption.create ~id:option_id name in
+  let events =
+    CustomFieldOptionCommand.Create.handle
+      ~id:option_id
+      Data.sys_languages
+      select_field
+      Data.name
+  in
+  let expected =
+    Ok
+      [ Custom_field.OptionCreated (Custom_field.id select_field, option)
+        |> Pool_event.custom_field
+      ]
   in
   Alcotest.(
     check

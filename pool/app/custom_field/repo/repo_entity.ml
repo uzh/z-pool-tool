@@ -100,6 +100,33 @@ module Admin = struct
   ;;
 end
 
+module Option = struct
+  open Entity.SelectOption
+
+  type repo = Pool_common.Id.t * t
+
+  let t =
+    let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
+    let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 Pool_common.Repo.Id.t (tup2 Pool_common.Repo.Id.t Name.t)))
+  ;;
+
+  let to_entity = snd
+  let of_entity field_id m = field_id, m
+
+  module Write = struct
+    let t =
+      let encode m = Ok (m.SelectOption.id, m.name) in
+      let decode (id, name) = Ok { id; name } in
+      Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
+    ;;
+  end
+end
+
 module Write = struct
   let of_entity (t : t) =
     Write.
@@ -113,31 +140,6 @@ module Write = struct
       ; disabled = disabled t
       ; admin = admin t
       }
-  ;;
-
-  let to_entity
-    Entity.Write.
-      { id
-      ; model
-      ; name
-      ; hint
-      ; validation
-      ; field_type
-      ; required
-      ; disabled
-      ; admin
-      }
-    =
-    let validation_schema schema =
-      Validation.(validation |> raw_list_of_yojson |> schema)
-    in
-    match (field_type : FieldType.t) with
-    | FieldType.Number ->
-      let validation = validation_schema Validation.Number.schema in
-      Number { id; model; name; hint; validation; required; disabled; admin }
-    | FieldType.Text ->
-      let validation = validation_schema Validation.Text.schema in
-      Text { id; model; name; hint; validation; required; disabled; admin }
   ;;
 
   let t =
@@ -187,7 +189,10 @@ module Public = struct
     ; answer : Repo_entity_answer.repo option
     }
 
-  let to_entity { id; name; hint; validation; field_type; required; answer } =
+  let to_entity
+    select_options
+    { id; name; hint; validation; field_type; required; answer }
+    =
     let validation_schema schema =
       Validation.(validation |> raw_list_of_yojson |> schema)
     in
@@ -201,6 +206,27 @@ module Public = struct
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number { Public.id; name; hint; validation; required; answer }
+    | FieldType.Select ->
+      let answer =
+        answer
+        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
+             value
+             |> Entity.SelectOption.Id.of_string
+             |> fun selected ->
+             CCList.find
+               (fun (_, o) ->
+                 Entity.SelectOption.Id.equal o.SelectOption.id selected)
+               select_options
+             |> fun (_, value) -> Entity_answer.create ~id ~version value)
+      in
+      let options =
+        CCList.filter_map
+          (fun (field_id, option) ->
+            if Pool_common.Id.equal field_id id then Some option else None)
+          select_options
+      in
+      Public.Select
+        ({ Public.id; name; hint; validation = []; required; answer }, options)
     | FieldType.Text ->
       let answer =
         answer
@@ -237,6 +263,18 @@ module Public = struct
   ;;
 end
 
+type repo =
+  { id : Id.t
+  ; model : Model.t
+  ; name : Name.t
+  ; hint : Hint.t
+  ; field_type : FieldType.t
+  ; validation : Yojson.Safe.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; admin : Admin.t
+  }
+
 let t =
   let encode _ =
     failwith
@@ -249,17 +287,17 @@ let t =
       ) )
     =
     let open CCResult in
-    let validation_schema schema =
-      Validation.(validation |> raw_list_of_yojson |> schema)
-    in
-    match field_type with
-    | FieldType.Number ->
-      let validation = validation_schema Validation.Number.schema in
-      Ok
-        (Number { id; model; name; hint; validation; required; disabled; admin })
-    | FieldType.Text ->
-      let validation = validation_schema Validation.Text.schema in
-      Ok (Text { id; model; name; hint; validation; required; disabled; admin })
+    Ok
+      { id
+      ; model
+      ; name
+      ; hint
+      ; field_type
+      ; validation
+      ; required
+      ; disabled
+      ; admin
+      }
   in
   Caqti_type.(
     custom
@@ -278,4 +316,30 @@ let t =
                      (tup2
                         Validation.t
                         (tup2 Required.t (tup2 Disabled.t Admin.t)))))))))
+;;
+
+let to_entity
+  select_options
+  { id; model; name; hint; validation; field_type; required; disabled; admin }
+  =
+  let validation_schema schema =
+    Validation.(validation |> raw_list_of_yojson |> schema)
+  in
+  match field_type with
+  | FieldType.Number ->
+    let validation = validation_schema Validation.Number.schema in
+    Number { id; model; name; hint; validation; required; disabled; admin }
+  | FieldType.Select ->
+    let options =
+      CCList.filter_map
+        (fun (field_id, option) ->
+          if Pool_common.Id.equal field_id id then Some option else None)
+        select_options
+    in
+    Select
+      ( { id; model; name; hint; validation = []; required; disabled; admin }
+      , options )
+  | FieldType.Text ->
+    let validation = validation_schema Validation.Text.schema in
+    Text { id; model; name; hint; validation; required; disabled; admin }
 ;;

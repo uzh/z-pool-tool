@@ -13,7 +13,7 @@ let index experiment_list Pool_context.{ language; _ } =
               [ txt (Experiment.PublicTitle.value experiment.public_title) ]
           ]
       ; div
-          ~a:[ a_class [ "flexrow"; "space-between"; "flex-gap" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
           [ div
               ~a:[ a_class [ "grow" ] ]
               [ txt (Experiment.Description.value experiment.description) ]

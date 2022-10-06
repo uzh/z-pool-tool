@@ -1,5 +1,27 @@
 module Database = Pool_database
 
+let get_options pool to_entity field_type id m =
+  let open Lwt.Infix in
+  (if Entity.FieldType.(equal Select (field_type m))
+  then Repo_option.find_by_field pool (id m)
+  else [] |> Lwt.return)
+  >|= fun options -> to_entity options m
+;;
+
+let get_options_of_multiple pool to_entity field_type id fields =
+  let open Lwt.Infix in
+  fields
+  |> CCList.filter_map (fun m ->
+       if Entity.FieldType.(equal Select (field_type m))
+       then Some (id m)
+       else None)
+  |> Repo_option.find_by_multiple_fields pool
+  >|= fun options -> fields |> CCList.map (to_entity options)
+;;
+
+let get_field_type m = m.Repo_entity.field_type
+let get_id m = m.Repo_entity.id
+
 module Sql = struct
   let select_sql =
     {sql|
@@ -31,8 +53,10 @@ module Sql = struct
     select_sql |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all pool =
-    Utils.Database.collect (Database.Label.value pool) find_all_request
+  let find_all pool () =
+    let open Lwt.Infix in
+    Utils.Database.collect (Database.Label.value pool) find_all_request ()
+    >>= get_options_of_multiple pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let find_request =
@@ -53,6 +77,7 @@ module Sql = struct
       find_request
       (id |> Entity.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    |>> get_options pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let insert_sql =

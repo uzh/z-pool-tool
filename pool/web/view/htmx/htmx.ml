@@ -49,6 +49,7 @@ let hx_attributes field version ?action ?(additional_attributes = []) () =
 type 'a selector =
   { show : 'a -> string
   ; options : 'a list
+  ; option_formatter : ('a -> string) option
   ; selected : 'a option
   }
 
@@ -78,6 +79,7 @@ let create
   ?hx_post
   ?error
   ?success
+  ?flash_fetcher
   ()
   =
   let input_class =
@@ -96,11 +98,15 @@ let create
         ()
   in
   let default s = Option.value ~default:"" s in
+  let fetched_value =
+    CCOption.bind flash_fetcher (fun flash_fetcher ->
+      field |> Pool_common.Message.Field.show |> flash_fetcher)
+  in
   match value with
   | Text str ->
     Component.input_element
       ~classnames
-      ~value:(str |> default)
+      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
       ~additional_attributes
       ?error
       ?help
@@ -110,7 +116,10 @@ let create
   | Number n ->
     Component.input_element
       ~classnames
-      ~value:(n |> CCOption.map CCInt.to_string |> default)
+      ~value:
+        (fetched_value
+        |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
+        )
       ~additional_attributes
       ?error
       ?help
@@ -125,10 +134,11 @@ let create
       ?help
       language
       field
-  | Select { show; options; selected } ->
+  | Select { show; options; option_formatter; selected } ->
     Component.selector
       ~attributes:additional_attributes
       ?help
+      ?option_formatter
       language
       field
       show
@@ -142,12 +152,22 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let custom_field_to_htmx_value =
+let custom_field_to_htmx_value language =
   let open CCOption in
   let open Custom_field in
   function
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Select ({ Public.answer; _ }, options) ->
+    answer
+    >|= (fun a -> a.Answer.value)
+    |> fun value ->
+    { show = SelectOption.show_id
+    ; options
+    ; option_formatter = Some SelectOption.(name language)
+    ; selected = value
+    }
+    |> select
   | Public.Text { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> text
 ;;
@@ -163,7 +183,9 @@ let custom_field_to_htmx ?value language custom_field =
     |> CCOption.value ~default:(Pool_common.Version.create ())
   in
   let value =
-    value |> CCOption.value ~default:(custom_field_to_htmx_value custom_field)
+    value
+    |> CCOption.value
+         ~default:(custom_field_to_htmx_value language custom_field)
   in
   let help = Public.to_common_hint language custom_field in
   { version
@@ -202,6 +224,7 @@ let partial_update_to_htmx language sys_languages =
       (Select
          { show = Pool_common.Language.show
          ; options = sys_languages
+         ; option_formatter = None
          ; selected = lang
          })
     |> to_html

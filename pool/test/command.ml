@@ -171,6 +171,10 @@ let () =
             `Quick
             Custom_field_test.create_with_missing_name
         ; test_case "update custom field" `Quick Custom_field_test.update
+        ; test_case
+            "crate custom field option"
+            `Quick
+            Custom_field_test.create_option
         ] )
     ; ( "matcher"
       , [ test_case

@@ -136,6 +136,7 @@ let hint_to_string = function
 let confirmable_to_string confirmable =
   (match confirmable with
    | CancelSession -> "session", "cancel"
+   | DeleteCustomFieldOption -> "option", "delete"
    | DeleteEmailSuffix -> "email suffix", "delete"
    | DeleteExperiment -> "experiment", "delete"
    | DeleteFile -> "the file", "delete"
