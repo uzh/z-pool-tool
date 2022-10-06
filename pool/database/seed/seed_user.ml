@@ -18,10 +18,19 @@ type persons = person list [@@deriving show, yojson]
 let create_rand_persons n_persons =
   let open Cohttp in
   let open Cohttp_lwt_unix in
+  let min_allowed = 1 in
+  let max_allowed = 100 in
+  if n_persons < min_allowed && n_persons > max_allowed
+  then
+    Logs.warn (fun m ->
+      m
+        "Contact generator: Limit number! (Allowed range from %d to %d)"
+        min_allowed
+        max_allowed);
   let api_url =
     Format.asprintf
       "https://random-data-api.com/api/v2/users?size=%d"
-      (max 1 n_persons)
+      (max min_allowed (min max_allowed n_persons))
   in
   let%lwt resp, body = Client.get (Uri.of_string api_url) in
   let code = resp |> Response.status |> Code.code_of_status in
