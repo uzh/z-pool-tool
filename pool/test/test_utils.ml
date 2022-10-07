@@ -99,7 +99,7 @@ let i18n_templates languages =
 ;;
 
 module Model = struct
-  let create_contact () =
+  let create_contact ?(with_terms_accepted = true) () =
     Contact.
       { user =
           Sihl_user.
@@ -124,7 +124,9 @@ module Model = struct
             }
       ; recruitment_channel = RecruitmentChannel.Friend
       ; terms_accepted_at =
-          Pool_user.TermsAccepted.create_now () |> CCOption.pure
+          (if with_terms_accepted
+          then Pool_user.TermsAccepted.create_now () |> CCOption.pure
+          else None)
       ; language = Some Pool_common.Language.En
       ; experiment_type_preference = None
       ; paused = Pool_user.Paused.create false
@@ -380,5 +382,37 @@ module Model = struct
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
+  ;;
+end
+
+module Repo = struct
+  let create_contact pool () =
+    let open Lwt.Infix in
+    let contact = Model.create_contact ~with_terms_accepted:false () in
+    let verified =
+      if contact.Contact.user.Sihl_user.confirmed
+      then Contact.[ Verified contact ]
+      else []
+    in
+    let%lwt () =
+      [ Contact.(
+          Created
+            { user_id = Contact.id contact
+            ; email = Contact.email_address contact
+            ; password =
+                contact.Contact.user.Sihl_user.password
+                |> Pool_user.Password.create
+                |> get_or_failwith_pool_error
+            ; firstname = Contact.firstname contact
+            ; lastname = Contact.lastname contact
+            ; recruitment_channel = contact.recruitment_channel
+            ; terms_accepted_at = None
+            ; language = contact.language
+            })
+      ]
+      @ verified
+      |> Lwt_list.iter_s (Contact.handle_event pool)
+    in
+    contact |> Contact.id |> Contact.find pool >|= get_or_failwith_pool_error
   ;;
 end

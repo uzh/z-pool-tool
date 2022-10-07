@@ -3,6 +3,57 @@ module Id = Pool_common.Id
 
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
+type person =
+  { uid : string
+  ; email : string
+  ; first_name : string
+  ; last_name : string
+  ; gender : string
+  ; date_of_birth : string
+  }
+[@@deriving show, yojson] [@@yojson.allow_extra_fields]
+
+type persons = person list [@@deriving show, yojson]
+
+let create_rand_persons n_persons =
+  let open Cohttp in
+  let open Cohttp_lwt_unix in
+  let min_allowed = 1 in
+  let max_allowed = 100 in
+  if n_persons < min_allowed && n_persons > max_allowed
+  then
+    Logs.warn (fun m ->
+      m
+        "Contact generator: Limit number! (Allowed range from %d to %d)"
+        min_allowed
+        max_allowed);
+  let api_url =
+    Format.asprintf
+      "https://random-data-api.com/api/v2/users?size=%d"
+      (max min_allowed (min max_allowed n_persons))
+  in
+  let%lwt resp, body = Client.get (Uri.of_string api_url) in
+  let code = resp |> Response.status |> Code.code_of_status in
+  if code = 200
+  then (
+    let%lwt json = Cohttp_lwt.Body.to_string body in
+    json |> Yojson.Safe.from_string |> persons_of_yojson |> Lwt.return)
+  else failwith "Could not find or decode any person data."
+;;
+
+let create_persons n_persons =
+  let chunk_size = 100 in
+  let sum = CCList.fold_left ( + ) 0 in
+  let%lwt persons_chunked =
+    n_persons
+    |> CCFun.flip CCList.repeat [ 1 ]
+    |> CCList.chunks chunk_size
+    |> CCList.map sum
+    |> Lwt_list.map_s create_rand_persons
+  in
+  CCList.flatten persons_chunked |> Lwt.return
+;;
+
 let admins db_pool =
   let data =
     [ "The", "One", "admin@example.com", `Operator
@@ -42,82 +93,57 @@ let admins db_pool =
 ;;
 
 let contacts db_pool =
+  let n_contacts = 200 in
+  let ctx = Pool_tenant.to_ctx db_pool in
+  let combinations =
+    let open CCList in
+    let channels = Contact.RecruitmentChannel.all in
+    let languages = Pool_common.Language.[ Some En; Some De; None ] in
+    let terms_accepted_at = [ Some (Ptime_clock.now ()); None ] in
+    let booleans = [ true; false ] in
+    (fun a b c d e f -> a, b, c, d, e, f)
+    <$> channels
+    <*> languages
+    <*> terms_accepted_at
+    <*> booleans
+    <*> booleans
+    <*> booleans
+  in
+  let%lwt persons = create_persons n_contacts in
+  let () =
+    if n_contacts < CCList.length combinations
+    then
+      Logs.warn (fun m ->
+        m
+          "User seed: only %d out of %d possible combinations covered!"
+          n_contacts
+          (CCList.length combinations));
+    ()
+  in
   let users =
-    [ ( Id.create ()
-      , "Hansruedi"
-      , "Rüdisüli"
-      , "one@test.com"
-      , Contact.RecruitmentChannel.Friend
-      , Some Pool_common.Language.De
-      , Some (Ptime_clock.now ())
-      , false
-      , false
-      , true )
-    ; ( Id.create ()
-      , "Jane"
-      , "Doe"
-      , "two@test.com"
-      , Contact.RecruitmentChannel.Online
-      , Some Pool_common.Language.En
-      , Some (Ptime_clock.now ())
-      , false
-      , false
-      , true )
-    ; ( Id.create ()
-      , "John"
-      , "Dorrian"
-      , "three@mail.com"
-      , Contact.RecruitmentChannel.Lecture
-      , Some Pool_common.Language.De
-      , Some (Ptime_clock.now ())
-      , true
-      , false
-      , true )
-    ; ( Id.create ()
-      , "Kevin"
-      , "McCallistor"
-      , "four@mail.com"
-      , Contact.RecruitmentChannel.Mailing
-      , Some Pool_common.Language.En
-      , Some (Ptime_clock.now ())
-      , true
-      , false
-      , true )
-    ; ( Id.create ()
-      , "Hello"
-      , "Kitty"
-      , "five@mail.com"
-      , Contact.RecruitmentChannel.Online
-      , None
-      , Some (Ptime_clock.now ())
-      , true
-      , true
-      , true )
-    ; ( Id.create ()
-      , "Dr."
-      , "Murphy"
-      , "six@mail.com"
-      , Contact.RecruitmentChannel.Friend
-      , None
-      , Some (Ptime_clock.now ())
-      , true
-      , true
-      , false )
-    ; ( Id.create ()
-      , "Mr."
-      , "Do not accept terms"
-      , "seven@mail.com"
-      , Contact.RecruitmentChannel.Friend
-      , Some Pool_common.Language.En
-      , None
-      , true
-      , true
-      , false )
-    ]
+    persons
+    |> CCList.mapi (fun idx person ->
+         let channel, language, terms_accepted_at, paused, disabled, verified =
+           CCList.get_at_idx_exn
+             (idx mod CCList.length combinations)
+             combinations
+         in
+         ( person.uid |> Id.of_string
+         , person.first_name |> User.Firstname.of_string
+         , person.last_name |> User.Lastname.of_string
+         , person.email |> User.EmailAddress.of_string
+         , language
+         , channel
+         , terms_accepted_at |> CCOption.map User.TermsAccepted.create
+         , paused
+         , disabled
+         , verified ))
   in
   let password =
     Sys.getenv_opt "POOL_USER_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"user"
+    |> User.Password.create
+    |> Pool_common.Utils.get_or_failwith
   in
   let%lwt () =
     let open Lwt.Infix in
@@ -127,40 +153,38 @@ let contacts db_pool =
            , firstname
            , lastname
            , email
-           , recruitment_channel
            , language
+           , recruitment_channel
            , terms_accepted_at
            , _
            , _
            , _ ) ->
-        let ctx = Pool_tenant.to_ctx db_pool in
-        let%lwt user = Service.User.find_by_email_opt ~ctx email in
+        let%lwt user =
+          Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
+        in
+        Lwt.return
+        @@
         match user with
         | None ->
           [ Contact.Created
               { Contact.user_id
-              ; email = email |> User.EmailAddress.of_string
-              ; password =
-                  password
-                  |> User.Password.create
-                  |> Pool_common.Utils.get_or_failwith
-              ; firstname = firstname |> User.Firstname.of_string
-              ; lastname = lastname |> User.Lastname.of_string
+              ; email
+              ; password
+              ; firstname
+              ; lastname
               ; recruitment_channel
-              ; terms_accepted_at =
-                  CCOption.map User.TermsAccepted.create terms_accepted_at
+              ; terms_accepted_at
               ; language
               }
           ]
           @ contacts
-          |> Lwt.return
         | Some { Sihl_user.id; _ } ->
           Logs.debug (fun m ->
             m
               "Contact already exists (%s): %s"
               (db_pool |> Pool_database.Label.value)
               id);
-          contacts |> Lwt.return)
+          contacts)
       []
       users
     >>= Lwt_list.iter_s (Contact.handle_event db_pool)
