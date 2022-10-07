@@ -101,12 +101,13 @@ let contacts db_pool =
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
     let terms_accepted_at = [ Some (Ptime_clock.now ()); None ] in
     let booleans = [ true; false ] in
-    channels
-    |> product (fun b a -> a, b) languages
-    |> product (fun c (a, b) -> a, b, c) terms_accepted_at
-    |> product (fun d (a, b, c) -> a, b, c, d) booleans
-    |> product (fun e (a, b, c, d) -> a, b, c, d, e) booleans
-    |> product (fun f (a, b, c, d, e) -> a, b, c, d, e, f) booleans
+    (fun a b c d e f -> a, b, c, d, e, f)
+    <$> channels
+    <*> languages
+    <*> terms_accepted_at
+    <*> booleans
+    <*> booleans
+    <*> booleans
   in
   let%lwt persons = create_persons n_contacts in
   let () =
