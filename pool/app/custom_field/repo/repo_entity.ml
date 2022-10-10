@@ -194,7 +194,7 @@ module Public = struct
     { id; name; hint; validation; field_type; required; answer }
     =
     let validation_schema schema =
-      Validation.(validation |> raw_list_of_yojson |> schema)
+      Validation.(validation |> raw_of_yojson |> schema)
     in
     match field_type with
     | FieldType.Number ->
@@ -226,7 +226,14 @@ module Public = struct
           select_options
       in
       Public.Select
-        ({ Public.id; name; hint; validation = []; required; answer }, options)
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; answer
+          }
+        , options )
     | FieldType.Text ->
       let answer =
         answer
@@ -323,7 +330,7 @@ let to_entity
   { id; model; name; hint; validation; field_type; required; disabled; admin }
   =
   let validation_schema schema =
-    Validation.(validation |> raw_list_of_yojson |> schema)
+    Validation.(validation |> raw_of_yojson |> schema)
   in
   match field_type with
   | FieldType.Number ->
@@ -337,7 +344,15 @@ let to_entity
         select_options
     in
     Select
-      ( { id; model; name; hint; validation = []; required; disabled; admin }
+      ( { id
+        ; model
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; disabled
+        ; admin
+        }
       , options )
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in

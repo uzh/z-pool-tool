@@ -62,7 +62,7 @@ module Data = struct
     let open Custom_field in
     let validation_schema schema =
       let validation = validation_to_yojson m in
-      Custom_field.(Validation.(validation |> raw_list_of_yojson |> schema))
+      Custom_field.(Validation.(validation |> raw_of_yojson |> schema))
     in
     let field_type = field_type m in
     let id = id m in
@@ -85,7 +85,13 @@ module Data = struct
              Answer.{ id = answer_id; version = answer_version; value = option })
       in
       Public.Select
-        ( { Public.id; name; hint; validation = []; required; answer }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; answer
+          }
         , field_options )
     | FieldType.Text ->
       let answer =

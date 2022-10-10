@@ -137,8 +137,12 @@ end
 module Validation = struct
   let printer m fmt _ = Format.pp_print_string fmt m
 
-  type raw = string * string [@@deriving show, eq, yojson]
-  type raw_list = raw list [@@deriving show, eq, yojson]
+  type raw = (string * string) list [@@deriving show, eq, yojson]
+
+  type 'a t =
+    (('a -> ('a, Pool_common.Message.error) result) * raw
+    [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
+  [@@deriving show, eq]
 
   module Ptime = struct
     include Ptime
@@ -152,27 +156,30 @@ module Validation = struct
     let text_max_length = "text_length_max"
 
     let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          (match key with
-           | _ when CCString.equal key text_min_length ->
-             value
-             |> CCInt.of_string
-             >|= fun min str ->
-             if CCString.length str < min
-             then Error (Message.TextLengthMin min)
-             else Ok str
-           | _ when CCString.equal key text_max_length ->
-             value
-             |> CCInt.of_string
-             >|= fun max str ->
-             if CCString.length str > max
-             then Error (Message.TextLengthMax max)
-             else Ok str
-           | _ -> None)
-          |> CCOption.map (fun r -> r, (key, value)))
-        data
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule_value) ->
+              rule_value
+              |> CCInt.of_string
+              |> CCOption.map_or ~default:result (fun rule_value ->
+                   match key with
+                   | _ when CCString.equal key text_min_length ->
+                     result
+                     >>= fun value ->
+                     if CCString.length value < rule_value
+                     then Error (Message.TextLengthMin rule_value)
+                     else Ok value
+                   | _ when CCString.equal key text_max_length ->
+                     result
+                     >>= fun value ->
+                     if CCString.length value > rule_value
+                     then Error (Message.TextLengthMax rule_value)
+                     else Ok value
+                   | _ -> result))
+            (Ok value)
+            data)
+      , data )
     ;;
 
     let all = [ text_min_length, `Number; text_max_length, `Number ]
@@ -183,35 +190,41 @@ module Validation = struct
     let number_max = "number_max"
 
     let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          (match key with
-           | _ when CCString.equal key number_min ->
-             value
-             |> CCInt.of_string
-             >|= fun min i ->
-             if i < min then Error (Message.NumberMin min) else Ok i
-           | _ when CCString.equal key number_max ->
-             value
-             |> CCInt.of_string
-             >|= fun max i ->
-             if i > max then Error (Message.NumberMax max) else Ok i
-           | _ -> None)
-          |> CCOption.map (fun r -> r, (key, value)))
-        data
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule_value) ->
+              rule_value
+              |> CCInt.of_string
+              |> CCOption.map_or ~default:result (fun rule_value ->
+                   match key with
+                   | _ when CCString.equal key number_min ->
+                     result
+                     >>= fun value ->
+                     if value < rule_value
+                     then Error (Message.NumberMin rule_value)
+                     else Ok value
+                   | _ when CCString.equal key number_max ->
+                     result
+                     >>= fun value ->
+                     if value > rule_value
+                     then Error (Message.NumberMax rule_value)
+                     else Ok value
+                   | _ -> result))
+            (Ok value)
+            data)
+      , data )
     ;;
 
     let all = [ number_min, `Number; number_max, `Number ]
   end
 
-  let encode_to_yojson t =
-    t |> CCList.map (fun (_, raw) -> raw) |> yojson_of_raw_list
-  ;;
+  let pure = CCResult.pure, []
+  let encode_to_yojson t = t |> snd |> yojson_of_raw
 
   let to_strings all m =
     m
-    |> CCList.filter_map (fun (_, (key, value)) ->
+    |> CCList.filter_map (fun (key, value) ->
          CCList.find_opt (fun (k, _) -> CCString.equal k key) all
          |> CCOption.map (CCFun.const (key, value)))
   ;;
@@ -224,17 +237,12 @@ module Validation = struct
   ;;
 end
 
-type 'a validation =
-  (('a -> ('a, Pool_common.Message.error) result) * Validation.raw
-  [@equal fun (_, raw1) (_, raw2) -> Validation.equal_raw raw1 raw2])
-[@@deriving show, eq]
-
 type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; validation : 'a validation list
+  ; validation : 'a Validation.t
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
@@ -290,7 +298,15 @@ let create
   | FieldType.Select ->
     Ok
       (Select
-         ( { id; model; name; hint; validation = []; required; disabled; admin }
+         ( { id
+           ; model
+           ; name
+           ; hint
+           ; validation = Validation.pure
+           ; required
+           ; disabled
+           ; admin
+           }
          , select_options ))
 ;;
 
@@ -314,7 +330,7 @@ module Public = struct
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; validation : 'a validation list
+    ; validation : 'a Validation.t
     ; required : Required.t
     ; answer : 'a Answer.t option
     }
@@ -367,12 +383,7 @@ module Public = struct
 
   let validate value (m : t) =
     let open CCResult.Infix in
-    let go rules value =
-      CCList.fold_left
-        (fun result (rule, _) -> result >>= rule)
-        (Ok value)
-        rules
-    in
+    let go validation value = validation |> fst |> fun rule -> rule value in
     let id = answer_id m in
     let version = version m in
     match m with
@@ -457,9 +468,9 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Number { validation; _ } -> validation |> to_strings Number.all
+  | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Select _ -> []
-  | Text { validation; _ } -> validation |> to_strings Text.all
+  | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function

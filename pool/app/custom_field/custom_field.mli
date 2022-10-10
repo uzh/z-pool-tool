@@ -129,34 +129,32 @@ module Admin : sig
 end
 
 module Validation : sig
-  type raw = string * string
-  type raw_list = raw list
+  type raw = (string * string) list
+  type 'a t = ('a -> ('a, Pool_common.Message.error) result) * raw
 
   module Number : sig
     val schema
       :  (string * string) list
-      -> ((int -> (int, Pool_common.Message.error) result) * raw) list
+      -> (int -> (int, Pool_common.Message.error) result) * raw
   end
 
   module Text : sig
     val schema
       :  (string * string) list
-      -> ((string -> (string, Pool_common.Message.error) result) * raw) list
+      -> (string -> (string, Pool_common.Message.error) result) * raw
   end
 
-  val raw_list_of_yojson : Yojson.Safe.t -> raw_list
+  val raw_of_yojson : Yojson.Safe.t -> raw
   val all : (string * [> `Number ] * FieldType.t) list
+  val pure : 'a t
 end
-
-type 'a validation =
-  ('a -> ('a, Pool_common.Message.error) result) * Validation.raw
 
 type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; validation : 'a validation list
+  ; validation : 'a Validation.t
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
@@ -207,7 +205,7 @@ module Public : sig
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; validation : 'a validation list
+    ; validation : 'a Validation.t
     ; required : Required.t
     ; answer : 'a Answer.t option
     }
