@@ -151,6 +151,7 @@ let create
       ~attributes:additional_attributes
       ?help
       ?option_formatter
+      ~add_empty:true
       language
       field
       show

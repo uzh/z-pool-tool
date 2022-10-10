@@ -482,6 +482,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ?help
       ~required
       ~option_formatter:SelectOption.(name language)
+      ~add_empty:true
       language
       label
       SelectOption.show_id
