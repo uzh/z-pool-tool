@@ -22,7 +22,19 @@ let create_custom_fields_table =
     |sql}
 ;;
 
+let add_admin_boolean_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"add admin boolean fields to custom fields table"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        ADD COLUMN admin_view_only boolean NOT NULL DEFAULT 0 AFTER admin_overwrite,
+        ADD COLUMN admin_input_only boolean NOT NULL DEFAULT 0 AFTER admin_view_only
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "custom_fields" |> add_step create_custom_fields_table)
+    empty "custom_fields"
+    |> add_step create_custom_fields_table
+    |> add_step add_admin_boolean_columns)
 ;;

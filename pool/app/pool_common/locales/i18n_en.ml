@@ -93,6 +93,11 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | CustomFieldAdminViewOnly ->
+    Format.asprintf
+      "This option implies \"%s\"."
+      (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
+      |> CCString.capitalize_ascii)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \

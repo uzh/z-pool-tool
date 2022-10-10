@@ -93,10 +93,30 @@ module Admin = struct
     let t = Caqti_type.bool
   end
 
+  module ViewOnly = struct
+    include ViewOnly
+
+    let t = Caqti_type.bool
+  end
+
+  module InputOnly = struct
+    include InputOnly
+
+    let t = Caqti_type.bool
+  end
+
   let t =
-    let encode m = Ok (m.Admin.hint, m.overwrite) in
-    let decode (hint, overwrite) = Ok { hint; overwrite } in
-    Caqti_type.(custom ~encode ~decode (tup2 (option Hint.t) Overwrite.t))
+    let encode m =
+      Ok (m.Admin.hint, (m.overwrite, (m.view_only, m.input_only)))
+    in
+    let decode (hint, (overwrite, (view_only, input_only))) =
+      Ok { hint; overwrite; view_only; input_only }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 (option Hint.t) (tup2 Overwrite.t (tup2 ViewOnly.t InputOnly.t))))
   ;;
 end
 

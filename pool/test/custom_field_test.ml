@@ -34,7 +34,12 @@ module Data = struct
     let hint = Hint.create hint |> get in
     let admin_hint = Admin.Hint.create admin_hint |> get in
     let admin =
-      Admin.{ hint = Some admin_hint; overwrite = Overwrite.create false }
+      Admin.
+        { hint = Some admin_hint
+        ; overwrite = Overwrite.create false
+        ; view_only = ViewOnly.create false
+        ; input_only = InputOnly.create false
+        }
     in
     Custom_field.create
       ~id:(Id.create ())
@@ -197,6 +202,30 @@ let create_option () =
       [ Custom_field.OptionCreated (Custom_field.id select_field, option)
         |> Pool_event.custom_field
       ]
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
+
+let create_with_missing_admin_option () =
+  let open CCResult in
+  let events =
+    (Data.data @ Message.[ Field.(AdminViewOnly |> show, [ "on" ]) ])
+    |> Http_utils.format_request_boolean_values boolean_fields
+    |> CustomFieldCommand.base_decode
+    >>= CustomFieldCommand.Create.handle
+          ~id:(Custom_field.Id.create ())
+          Data.sys_languages
+          Data.name
+          Data.hint
+          Data.validation_data
+  in
+  let expected =
+    Error Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
   in
   Alcotest.(
     check

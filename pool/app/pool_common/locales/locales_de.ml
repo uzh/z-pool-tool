@@ -4,6 +4,8 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AdminInputOnly -> "Eingabe nur durch Admins"
+  | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AdminHint -> "Hint für Administratoren"
   | Answer -> "Antwort"
   | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
@@ -241,6 +243,11 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
+  | FieldRequiresCheckbox (field, required) ->
+    Format.asprintf
+      "Die Option \"%s\" benötigt \"%s\"."
+      (field_to_string field)
+      (field_to_string required)
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

@@ -175,6 +175,10 @@ let () =
             "crate custom field option"
             `Quick
             Custom_field_test.create_option
+        ; test_case
+            "create with missing admin option"
+            `Quick
+            Custom_field_test.create_with_missing_admin_option
         ] )
     ; ( "matcher"
       , [ test_case

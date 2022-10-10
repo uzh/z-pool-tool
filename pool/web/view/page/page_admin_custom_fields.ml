@@ -360,6 +360,25 @@ let form
               ~flash_fetcher
           ; checkbox_element Message.Field.Overwrite (fun f ->
               (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
+          ; checkbox_element Message.Field.AdminInputOnly (fun f ->
+              (f |> admin).Admin.input_only |> Admin.InputOnly.value)
+          ; checkbox_element
+              ~help:Pool_common.I18n.CustomFieldAdminViewOnly
+              Message.Field.AdminViewOnly
+              (fun f -> (f |> admin).Admin.view_only |> Admin.ViewOnly.value)
+          ; (Format.asprintf
+               {js|
+                var toggle = document.querySelector("[name='%s']");
+                var target = document.querySelector("[name='%s']");
+                toggle.addEventListener("change", function(e) {
+                  if(e.currentTarget.checked) {
+                    target.checked = true;
+                  }
+                })
+              |js}
+               Message.Field.(show AdminViewOnly)
+               Message.Field.(show AdminInputOnly)
+            |> fun js -> script (Unsafe.data js))
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]

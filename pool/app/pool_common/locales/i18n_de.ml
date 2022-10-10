@@ -100,6 +100,11 @@ let hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | CustomFieldAdminViewOnly ->
+    Format.asprintf
+      "Diese Option impliziert \"%s\"."
+      (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
+      |> CCString.capitalize_ascii)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \

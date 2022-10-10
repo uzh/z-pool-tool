@@ -122,10 +122,27 @@ module Admin : sig
     include Pool_common.Model.BooleanSig
   end
 
+  module ViewOnly : sig
+    include Pool_common.Model.BooleanSig
+  end
+
+  module InputOnly : sig
+    include Pool_common.Model.BooleanSig
+  end
+
   type t =
     { hint : Hint.t option
     ; overwrite : Overwrite.t
+    ; view_only : ViewOnly.t
+    ; input_only : InputOnly.t
     }
+
+  val create
+    :  Hint.t option
+    -> Overwrite.t
+    -> ViewOnly.t
+    -> InputOnly.t
+    -> (t, Pool_common.Message.error) result
 end
 
 module Validation : sig

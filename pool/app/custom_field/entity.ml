@@ -127,11 +127,33 @@ module Admin = struct
     let schema = schema Pool_common.Message.Field.Overwrite
   end
 
+  module ViewOnly = struct
+    include Pool_common.Model.Boolean
+
+    let schema = schema Pool_common.Message.Field.AdminViewOnly
+  end
+
+  module InputOnly = struct
+    include Pool_common.Model.Boolean
+
+    let schema = schema Pool_common.Message.Field.AdminInputOnly
+  end
+
   type t =
     { hint : Hint.t option
     ; overwrite : Overwrite.t
+    ; view_only : ViewOnly.t
+    ; input_only : InputOnly.t
     }
   [@@deriving eq, show]
+
+  let create hint overwrite view_only input_only =
+    if view_only && not input_only
+    then
+      Error
+        Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
+    else Ok { hint; overwrite; view_only; input_only }
+  ;;
 end
 
 module Validation = struct
@@ -479,4 +501,7 @@ let validation_to_yojson = function
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;
 
-let boolean_fields = Pool_common.Message.Field.[ Required; Disabled; Overwrite ]
+let boolean_fields =
+  Pool_common.Message.Field.
+    [ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
+;;

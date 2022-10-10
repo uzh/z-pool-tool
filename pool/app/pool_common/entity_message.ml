@@ -11,6 +11,8 @@ module Field = struct
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
+    | AdminInputOnly [@name "admin_input_only"] [@printer go "admin_input_only"]
+    | AdminViewOnly [@name "admin_view_only"] [@printer go "admin_view_only"]
     | Answer [@name "answer"] [@printer go "answer"]
     | AllowUninvitedSignup [@name "allow_uninvited_signup"]
         [@printer go "allow_uninvited_signup"]
@@ -215,6 +217,7 @@ type error =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
+  | FieldRequiresCheckbox of (Field.t * Field.t)
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
