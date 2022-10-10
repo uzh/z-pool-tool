@@ -12,7 +12,7 @@ let form
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
             Pool_common.(
-              Utils.text_to_string language I18n.ProfileCompletitionTitle)
+              Utils.text_to_string language I18n.ProfileCompletionTitle)
         ]
     ; form
         ~a:
@@ -21,7 +21,7 @@ let form
           ; a_action
               (Http_utils.externalize_path_with_lang
                  query_language
-                 "/user/completition")
+                 "/user/completion")
           ]
         Component.(
           (csrf_element csrf ()

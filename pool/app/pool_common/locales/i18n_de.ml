@@ -25,7 +25,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
-  | ProfileCompletitionTitle -> "Profilvervollständigung"
+  | ProfileCompletionTitle -> "Profilvervollständigung"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
