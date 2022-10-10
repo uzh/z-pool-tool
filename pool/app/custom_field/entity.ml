@@ -354,6 +354,8 @@ module Public = struct
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : 'a Answer.t option
     }
   [@@deriving eq, show]
@@ -388,6 +390,20 @@ module Public = struct
     | Text { required; _ } -> required
   ;;
 
+  let admin_overwrite (t : t) =
+    match t with
+    | Number { admin_overwrite; _ }
+    | Select ({ admin_overwrite; _ }, _)
+    | Text { admin_overwrite; _ } -> admin_overwrite
+  ;;
+
+  let admin_input_only (t : t) =
+    match t with
+    | Number { admin_input_only; _ }
+    | Select ({ admin_input_only; _ }, _)
+    | Text { admin_input_only; _ } -> admin_input_only
+  ;;
+
   let version (t : t) =
     match t with
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
@@ -401,6 +417,12 @@ module Public = struct
     | (Number { answer; _ } : t) -> id answer
     | Select ({ answer; _ }, _) -> id answer
     | Text { answer; _ } -> id answer
+  ;;
+
+  let is_disabled is_admin m =
+    if is_admin
+    then m |> admin_overwrite |> Admin.Overwrite.value |> not
+    else m |> admin_input_only |> Admin.InputOnly.value
   ;;
 
   let validate value (m : t) =

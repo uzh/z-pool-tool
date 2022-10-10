@@ -50,6 +50,14 @@ let suite =
               "update custom field with invalid answer"
               `Quick
               update_custom_field_with_invalid_answer
+          ; test_case
+              "update admin input only field as user"
+              `Quick
+              update_admin_input_only_field_as_user
+          ; test_case
+              "update non overwrite field as admin"
+              `Quick
+              update_non_overwrite_field_as_admin
           ] )
     ; ( "matcher"
       , Matcher_test.

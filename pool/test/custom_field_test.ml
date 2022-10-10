@@ -9,6 +9,7 @@ let boolean_fields =
 module Data = struct
   open Custom_field
 
+  let get = CCResult.get_exn
   let sys_languages = Pool_common.Language.[ En; De ]
   let model = Model.Contact
   let field_type = FieldType.Text
@@ -28,19 +29,19 @@ module Data = struct
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
   ;;
 
-  let custom_field ?validation field_type =
-    let get = CCResult.get_exn in
+  let admin =
+    let admin_hint = Admin.Hint.create admin_hint |> get in
+    Admin.
+      { hint = Some admin_hint
+      ; overwrite = Overwrite.create false
+      ; view_only = ViewOnly.create false
+      ; input_only = InputOnly.create false
+      }
+  ;;
+
+  let custom_field ?validation ?(admin = admin) field_type =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
-    let admin_hint = Admin.Hint.create admin_hint |> get in
-    let admin =
-      Admin.
-        { hint = Some admin_hint
-        ; overwrite = Overwrite.create false
-        ; view_only = ViewOnly.create false
-        ; input_only = InputOnly.create false
-        }
-    in
     Custom_field.create
       ~id:(Id.create ())
       field_type
@@ -54,7 +55,10 @@ module Data = struct
     |> CCResult.get_exn
   ;;
 
-  let custom_text_field ?validation () = custom_field ?validation FieldType.Text
+  let custom_text_field ?validation ?admin () =
+    custom_field ?validation ?admin FieldType.Text
+  ;;
+
   let custom_select_field () = custom_field ~validation:[] FieldType.Select
 
   let custom_number_field ?validation () =
@@ -74,6 +78,8 @@ module Data = struct
     let hint = hint m in
     let name = name m in
     let required = required m in
+    let admin_overwrite = (admin m).Admin.overwrite in
+    let admin_input_only = (admin m).Admin.input_only in
     let answer_version = 0 |> Pool_common.Version.of_int in
     match field_type with
     | FieldType.Number ->
@@ -82,7 +88,16 @@ module Data = struct
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.Number { Public.id; name; hint; validation; required; answer }
+      Public.Number
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
@@ -95,6 +110,8 @@ module Data = struct
           ; hint
           ; validation = Validation.pure
           ; required
+          ; admin_overwrite
+          ; admin_input_only
           ; answer
           }
         , field_options )
@@ -104,7 +121,16 @@ module Data = struct
         |> CCOption.pure
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.Text { Public.id; name; hint; validation; required; answer }
+      Public.Text
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
   ;;
 end
 

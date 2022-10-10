@@ -186,7 +186,12 @@ module PartialUpdate = struct
                 Text { public with answer }))
   ;;
 
-  let validate contact tenand_db (field, version, value, field_id) =
+  let validate
+    ?(is_admin = false)
+    contact
+    tenand_db
+    (field, version, value, field_id)
+    =
     let check_version old_v t =
       let open Pool_common.Version in
       if old_v |> value > (version |> value)
@@ -231,11 +236,19 @@ module PartialUpdate = struct
     | _ ->
       let open Lwt_result.Syntax in
       let open Lwt_result.Infix in
+      let check_permission m =
+        Lwt_result.lift
+        @@
+        if Custom_field.Public.is_disabled is_admin m
+        then Error Pool_common.Message.NotEligible
+        else Ok m
+      in
       let* custom_field =
         field_id
         |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
         |> Lwt_result.lift
-        >>= Custom_field.find_by_contact tenand_db (id contact)
+        >>= Custom_field.find_by_contact ~is_admin tenand_db (id contact)
+        >>= check_permission
         >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
       in
       let old_v =

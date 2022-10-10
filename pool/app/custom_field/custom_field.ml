@@ -4,7 +4,10 @@ include Event
 let find_all = Repo.find_all
 let find = Repo.find
 let find_public = Repo_public.find
-let find_all_by_contact pool id = Repo_public.find_all_by_contact pool id
+
+let find_all_by_contact ?is_admin pool id =
+  Repo_public.find_all_by_contact ?is_admin pool id
+;;
 
 let find_all_required_by_contact pool id =
   Repo_public.find_all_required_by_contact pool id

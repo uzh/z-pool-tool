@@ -20,30 +20,40 @@ let admin_profile_hx_post id =
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
-let hx_attributes field version ?action ?(additional_attributes = []) () =
-  let name = Pool_common.Message.Field.(field |> show) in
-  let params, vals =
-    let base_vals =
-      [ "version", version |> Pool_common.Version.value |> CCInt.to_string
-      ; "field", name
-      ]
+let[@warning "-27"] hx_attributes
+  field
+  version
+  ?action
+  ?(additional_attributes = [])
+  ?(disabled = false)
+  ()
+  =
+  if disabled
+  then [ a_disabled () ]
+  else (
+    let name = Pool_common.Message.Field.(field |> show) in
+    let params, vals =
+      let base_vals =
+        [ "version", version |> Pool_common.Version.value |> CCInt.to_string
+        ; "field", name
+        ]
+      in
+      CCList.fold_left
+        (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
+        (hx_base_params, base_vals)
+        additional_attributes
     in
-    CCList.fold_left
-      (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
-      (hx_base_params, base_vals)
-      additional_attributes
-  in
-  [ hx_swap "outerHTML"
-  ; hx_params (CCString.concat ", " (CCList.cons name params))
-  ; hx_target "closest .form-group"
-  ; hx_vals
-      (Format.asprintf
-         {|{%s}|}
-         (vals
-         |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
-         |> CCString.concat ", "))
-  ]
-  @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
+    [ hx_swap "outerHTML"
+    ; hx_params (CCString.concat ", " (CCList.cons name params))
+    ; hx_target "closest .form-group"
+    ; hx_vals
+        (Format.asprintf
+           {|{%s}|}
+           (vals
+           |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+           |> CCString.concat ", "))
+    ]
+    @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ]))
 ;;
 
 type 'a selector =
@@ -80,6 +90,7 @@ let create
   ?error
   ?success
   ?flash_fetcher
+  ?disabled
   ()
   =
   let input_class =
@@ -95,6 +106,7 @@ let create
         version
         ?action:hx_post
         ?additional_attributes:htmx_attributes
+        ?disabled
         ()
   in
   let default s = Option.value ~default:"" s in
@@ -172,8 +184,8 @@ let custom_field_to_htmx_value language =
     answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_to_htmx ?value language custom_field =
-  let to_html m = create m language in
+let custom_field_to_htmx ?value language is_admin custom_field =
+  let to_html disabled m = create ~disabled m language in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
@@ -187,6 +199,7 @@ let custom_field_to_htmx ?value language custom_field =
     |> CCOption.value
          ~default:(custom_field_to_htmx_value language custom_field)
   in
+  let disabled = Public.is_disabled is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
   { version
   ; field = label
@@ -194,11 +207,11 @@ let custom_field_to_htmx ?value language custom_field =
   ; htmx_attributes = Some htmx_attributes
   ; help
   }
-  |> to_html
+  |> to_html disabled
 ;;
 
-let partial_update_to_htmx language sys_languages =
-  let to_html m = create m language in
+let partial_update_to_htmx language sys_languages is_admin =
+  let to_html m = create ~disabled:false m language in
   let open Contact.PartialUpdate in
   let open Pool_common.Message in
   function
@@ -228,5 +241,5 @@ let partial_update_to_htmx language sys_languages =
          ; selected = lang
          })
     |> to_html
-  | Custom field -> custom_field_to_htmx language field
+  | Custom field -> custom_field_to_htmx language is_admin field
 ;;

@@ -206,12 +206,23 @@ module Public = struct
     ; validation : Yojson.Safe.t
     ; field_type : FieldType.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : Repo_entity_answer.repo option
     }
 
   let to_entity
     select_options
-    { id; name; hint; validation; field_type; required; answer }
+    { id
+    ; name
+    ; hint
+    ; validation
+    ; field_type
+    ; required
+    ; admin_overwrite
+    ; admin_input_only
+    ; answer
+    }
     =
     let validation_schema schema =
       Validation.(validation |> raw_of_yojson |> schema)
@@ -225,7 +236,16 @@ module Public = struct
           |> CCOption.map (Entity_answer.create ~id ~version))
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.Number { Public.id; name; hint; validation; required; answer }
+      Public.Number
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     | FieldType.Select ->
       let answer =
         answer
@@ -251,6 +271,8 @@ module Public = struct
           ; hint
           ; validation = Validation.pure
           ; required
+          ; admin_overwrite
+          ; admin_input_only
           ; answer
           }
         , options )
@@ -261,7 +283,16 @@ module Public = struct
              value |> Entity_answer.create ~id ~version)
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.Text { Public.id; name; hint; validation; required; answer }
+      Public.Text
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
   ;;
 
   let t =
@@ -270,9 +301,25 @@ module Public = struct
         Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
     let decode
-      (id, (name, (hint, (validation, (field_type, (required, answer))))))
+      ( id
+      , ( name
+        , ( hint
+          , ( validation
+            , ( field_type
+              , (required, (admin_overwrite, (admin_input_only, answer))) ) ) )
+        ) )
       =
-      Ok { id; name; hint; validation; field_type; required; answer }
+      Ok
+        { id
+        ; name
+        ; hint
+        ; validation
+        ; field_type
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     in
     Caqti_type.(
       custom
@@ -286,7 +333,13 @@ module Public = struct
                  Hint.t
                  (tup2
                     Validation.t
-                    (tup2 FieldType.t (tup2 Required.t (option Answer.t))))))))
+                    (tup2
+                       FieldType.t
+                       (tup2
+                          Required.t
+                          (tup2
+                             Admin.Overwrite.t
+                             (tup2 Admin.InputOnly.t (option Answer.t))))))))))
   ;;
 end
 

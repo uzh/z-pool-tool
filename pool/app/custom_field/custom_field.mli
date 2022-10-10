@@ -224,6 +224,8 @@ module Public : sig
     ; hint : Hint.t
     ; validation : 'a Validation.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : 'a Answer.t option
     }
 
@@ -251,6 +253,9 @@ module Public : sig
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val version : t -> Pool_common.Version.t option
   val required : t -> Required.t
+  val admin_overwrite : t -> Admin.Overwrite.t
+  val admin_input_only : t -> Admin.InputOnly.t
+  val is_disabled : bool -> t -> bool
 
   val to_common_field
     :  Pool_common.Language.t
@@ -301,7 +306,8 @@ val find_public
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
 val find_all_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
 
@@ -311,13 +317,15 @@ val find_all_required_by_contact
   -> Public.t list Lwt.t
 
 val find_multiple_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Pool_common.Id.t list
   -> Public.t list Lwt.t
 
 val find_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t

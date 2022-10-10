@@ -69,6 +69,7 @@ let edit
   contact
   custom_fields
   =
+  let is_admin = true in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
@@ -81,6 +82,7 @@ let edit
         tenant_languages
         contact
         custom_fields
+        is_admin
     ; p
         [ a
             ~a:
