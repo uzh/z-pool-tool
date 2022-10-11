@@ -259,6 +259,7 @@ module Public : sig
   val admin_overwrite : t -> Admin.Overwrite.t
   val admin_input_only : t -> Admin.InputOnly.t
   val is_disabled : bool -> t -> bool
+  val increment_version : t -> t
 
   val to_common_field
     :  Pool_common.Language.t

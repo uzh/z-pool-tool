@@ -20,7 +20,7 @@ let admin_profile_hx_post id =
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
 
-let[@warning "-27"] hx_attributes
+let hx_attributes
   field
   version
   ?action
@@ -188,15 +188,17 @@ let custom_field_to_htmx_value language =
     answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_to_htmx ?value language is_admin custom_field =
+let custom_field_to_htmx ?version ?value language is_admin custom_field =
   let to_html disabled m = create ~disabled m language in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
   let label = Public.to_common_field language custom_field in
   let version =
-    Public.version custom_field
-    |> CCOption.value ~default:(Pool_common.Version.create ())
+    let open CCOption in
+    version
+    <+> Public.version custom_field
+    |> value ~default:(Pool_common.Version.create ())
   in
   let value =
     value
