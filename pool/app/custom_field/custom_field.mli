@@ -91,6 +91,7 @@ end
 
 module FieldType : sig
   type t =
+    | Boolean
     | Number
     | Select
     | Text
@@ -196,6 +197,7 @@ module SelectOption : sig
 end
 
 type t =
+  | Boolean of bool custom_field
   | Number of int custom_field
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
@@ -240,6 +242,7 @@ module Public : sig
   val show_public : (Format.formatter -> 'a -> unit) -> 'a public -> string
 
   type t =
+    | Boolean of bool public
     | Number of int public
     | Select of SelectOption.t public * SelectOption.t list
     | Text of string public

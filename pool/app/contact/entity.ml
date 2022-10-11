@@ -169,6 +169,11 @@ module PartialUpdate = struct
       let open Public in
       Custom
         (match custom_field with
+         | Boolean ({ answer; _ } as public) ->
+           answer
+           |> CCOption.map_or ~default:custom_field (fun a ->
+                let answer = Answer.increment_version a |> CCOption.pure in
+                Boolean { public with answer })
          | Number ({ answer; _ } as public) ->
            answer
            |> CCOption.map_or ~default:custom_field (fun a ->

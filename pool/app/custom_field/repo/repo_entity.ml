@@ -228,6 +228,22 @@ module Public = struct
       Validation.(validation |> raw_of_yojson |> schema)
     in
     match field_type with
+    | FieldType.Boolean ->
+      let answer =
+        answer
+        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
+             value |> Utils.Bool.of_string |> Entity_answer.create ~id ~version)
+      in
+      Public.Boolean
+        { Public.id
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     | FieldType.Number ->
       let answer =
         CCOption.bind answer (fun Repo_entity_answer.{ id; value; version } ->
@@ -406,6 +422,17 @@ let to_entity
     Validation.(validation |> raw_of_yojson |> schema)
   in
   match field_type with
+  | FieldType.Boolean ->
+    Boolean
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation = Validation.pure
+      ; required
+      ; disabled
+      ; admin
+      }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
     Number { id; model; name; hint; validation; required; disabled; admin }

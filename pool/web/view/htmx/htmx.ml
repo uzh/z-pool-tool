@@ -144,6 +144,7 @@ let create
       ~classnames
       ~value:boolean
       ?help
+      ?error
       language
       field
   | Select { show; options; option_formatter; selected } ->
@@ -169,6 +170,8 @@ let custom_field_to_htmx_value language =
   let open CCOption in
   let open Custom_field in
   function
+  | Public.Boolean { Public.answer; _ } ->
+    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> checkbox
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> number
   | Public.Select ({ Public.answer; _ }, options) ->

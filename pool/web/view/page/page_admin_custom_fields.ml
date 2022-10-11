@@ -273,7 +273,7 @@ let form
            ; p [ make_link "new" Message.(Add (Some Field.CustomFieldOption)) ]
            ; list
            ]
-       | Number _ | Text _ -> empty)
+       | Boolean _ | Number _ | Text _ -> empty)
   in
   [ form
       ~a:

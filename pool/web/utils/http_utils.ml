@@ -154,8 +154,6 @@ let validate_email_existance pool email =
   | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
 ;;
 
-let handled_true_values = [ "on"; "checked"; "true" ]
-
 let handle_boolean_values update urlencoded values =
   let urlencoded = urlencoded |> CCList.to_seq |> StringMap.of_seq in
   CCList.fold_left update urlencoded values |> StringMap.to_seq |> CCList.of_seq
@@ -163,7 +161,7 @@ let handle_boolean_values update urlencoded values =
 
 let intersection_to_bool_string values =
   values
-  |> CCList.inter ~eq:CCString.equal handled_true_values
+  |> CCList.inter ~eq:CCString.equal Utils.Bool.handled_true_values
   |> CCList.is_empty
   |> not
   |> string_of_bool

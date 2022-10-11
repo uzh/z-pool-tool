@@ -238,6 +238,19 @@ module Sql = struct
     in
     let open Entity.Public in
     match t with
+    | Boolean { id; answer; _ } ->
+      let field_id = id in
+      answer
+      |> CCOption.map_or
+           ~default:Lwt.return_unit
+           (fun { Entity.Answer.id; value; version } ->
+           Repo_entity_answer.Write.of_entity
+             id
+             field_id
+             entity_uuid
+             (Utils.Bool.to_string value)
+             version
+           |> exec)
     | Number { id; answer; _ } ->
       let field_id = id in
       answer

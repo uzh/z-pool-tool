@@ -214,6 +214,7 @@ let checkbox_element
   ?(classnames = [])
   ?label_field
   ?help
+  ?error
   ?identifier
   ?flash_fetcher
   ?(required = false)
@@ -242,6 +243,7 @@ let checkbox_element
   in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
+  let error = Elements.error language error in
   let input_element =
     Elements.apply_orientation (attributes @ additional_attributes) orientation
   in
@@ -249,7 +251,8 @@ let checkbox_element
     ~a:[ a_class group_class ]
     [ div
         ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
-        @ help)
+        @ help
+        @ error)
     ]
 ;;
 
@@ -471,6 +474,10 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       label
   in
   match custom_field with
+  | Public.Boolean { Public.answer; _ } ->
+    answer
+    >|= (fun a -> a.Answer.value)
+    |> fun value -> checkbox_element ?value language label
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
   | Public.Text { Public.answer; _ } ->
