@@ -28,12 +28,20 @@ let find_assocs_in_urlencoded urlencoded field encoder =
 
 let index req =
   let open Utils.Lwt_result.Infix in
+  let open Custom_field in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt field_list = Custom_field.find_all tenant_db () in
-       Page.Admin.CustomFields.index field_list context
-       |> create_layout ~active_navigation:"/admin/custom-fields" req context
-       >|= Sihl.Web.Response.of_html
+    @@
+    let model =
+      let open CCOption in
+      HttpUtils.get_field_router_param_opt req Message.Field.Model
+      >>= (fun s -> s |> Model.create |> of_result)
+      |> value ~default:Model.Contact
+    in
+    let%lwt field_list = find_by_model tenant_db model in
+    Page.Admin.CustomFields.index field_list model context
+    |> create_layout ~active_navigation:"/admin/custom-fields" req context
+    >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -50,9 +58,15 @@ let form ?id req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
+    let query_model =
+      let open CCOption in
+      Sihl.Web.Request.query Message.Field.(show Model) req
+      >>= fun s -> s |> Custom_field.Model.create |> of_result
+    in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail
       ?custom_field
+      ?query_model
       context
       sys_languages
       flash_fetcher

@@ -59,6 +59,26 @@ module Sql = struct
     >>= get_options_of_multiple pool Repo_entity.to_entity get_field_type get_id
   ;;
 
+  let find_by_model_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      {sql|
+    %s
+    WHERE pool_custom_fields.model = $1
+    |sql}
+      select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_by_model pool model =
+    let open Lwt.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_by_model_request
+      (Entity.Model.show model)
+    >>= get_options_of_multiple pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     Format.asprintf
@@ -155,6 +175,7 @@ module Sql = struct
 end
 
 let find_all = Sql.find_all
+let find_by_model = Sql.find_by_model
 let find = Sql.find
 let insert = Sql.insert
 let update = Sql.update

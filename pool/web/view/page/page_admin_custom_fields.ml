@@ -15,6 +15,47 @@ let make_option_url field option path =
   |> Sihl.Web.externalize_path
 ;;
 
+let custom_fields_layout language active html =
+  let open Custom_field in
+  let subnav_links =
+    let url field = Format.asprintf "/admin/custom-fields/%s" field in
+    Model.(
+      all
+      |> CCList.map (fun f ->
+           ( f |> show |> CCString.capitalize_ascii
+           , f |> show |> url
+           , equal active f )))
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
+        ]
+    ; Component.Navigation.make_subnav subnav_links
+    ; h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt (active |> Model.show |> CCString.capitalize_ascii) ]
+    ; p
+        [ a
+            ~a:
+              [ a_href
+                  ((Message.Field.Model, active |> Model.show)
+                  |> CCList.pure
+                  |> Message.add_field_query_params
+                       (Format.asprintf "%s/new" base_path)
+                  |> Sihl.Web.externalize_path)
+              ]
+            [ txt
+                Pool_common.(
+                  Message.(Add (Some Field.CustomField))
+                  |> Utils.control_to_string language)
+            ]
+        ]
+    ; html
+    ]
+;;
+
 let input_by_lang ?(required = false) language tenant_languages field value_fnc =
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
@@ -65,6 +106,7 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
 
 let form
   ?(custom_field : Custom_field.t option)
+  ?query_model
   Pool_context.{ language; csrf; _ }
   tenant_languages
   flash_fetcher
@@ -289,7 +331,8 @@ let form
               Message.Field.Model
               Model.show
               Model.all
-              (CCOption.map model custom_field)
+              (let open CCOption in
+              map model custom_field <+> query_model)
               ~add_empty:true
               ~required:true
               ~flash_fetcher
@@ -403,6 +446,7 @@ let form
 
 let detail
   ?custom_field
+  ?query_model
   (Pool_context.{ language; _ } as context)
   sys_languages
   flash_fetcher
@@ -421,11 +465,11 @@ let detail
     [ h1 [ txt title ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        (form ?custom_field context sys_languages flash_fetcher)
+        (form ?custom_field ?query_model context sys_languages flash_fetcher)
     ]
 ;;
 
-let index field_list Pool_context.{ language; _ } =
+let index field_list active Pool_context.{ language; _ } =
   let thead = Message.Field.[ Some Title; None ] in
   let rows =
     let open Custom_field in
@@ -451,26 +495,7 @@ let index field_list Pool_context.{ language; _ } =
       field_list
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
-        ]
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf "%s/new" base_path))
-              ]
-            [ txt
-                Pool_common.(
-                  Message.(Add (Some Field.CustomField))
-                  |> Utils.control_to_string language)
-            ]
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped language ~thead rows ]
-    ]
+    ~a:[ a_class [ "stack" ] ]
+    [ Table.horizontal_table `Striped language ~thead rows ]
+  |> custom_fields_layout language active
 ;;

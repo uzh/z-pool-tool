@@ -15,18 +15,6 @@ let get_field_id req =
   |> Custom_field.Id.of_string
 ;;
 
-let index req =
-  let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt field_list = Custom_field.find_all tenant_db () in
-       Page.Admin.CustomFields.index field_list context
-       |> create_layout ~active_navigation:"/admin/custom-fields" req context
-       >|= Sihl.Web.Response.of_html
-  in
-  result |> HttpUtils.extract_happy_path req
-;;
-
 let form ?id req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in

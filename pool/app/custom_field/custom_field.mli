@@ -34,6 +34,7 @@ module Model : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val all : t list
+  val create : string -> (t, Pool_common.Message.error) result
 
   val schema
     :  unit
@@ -298,6 +299,7 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 
 val find
   :  Pool_database.Label.t

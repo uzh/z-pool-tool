@@ -275,6 +275,7 @@ module Admin = struct
         ; post "" create
         ; get "/new" new_form
         ; choose ~scope:(CustomField |> url_key) specific
+        ; get (Model |> url_key) index
         ]
     in
     choose
