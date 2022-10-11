@@ -191,11 +191,12 @@ module Sql = struct
       SELECT count(*) questions FROM pool_custom_fields
       %s
       WHERE pool_custom_fields.model = $2
-      AND pool_custom_fields.disabled = 0
+      %s
       AND pool_custom_fields.required = 1
       AND pool_custom_field_answers.value IS NULL
       |sql}
       answers_left_join
+      (base_filter_conditions false)
     |> Caqti_type.(tup2 string string ->! int)
   ;;
 
