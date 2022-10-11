@@ -177,28 +177,34 @@ module Validation = struct
     let text_min_length = "text_length_min"
     let text_max_length = "text_length_max"
 
+    let check_min_length rule_value value =
+      if CCString.length value > rule_value
+      then Ok value
+      else Error (Message.TextLengthMin rule_value)
+    ;;
+
+    let check_max_length rule_value value =
+      if CCString.length value < rule_value
+      then Ok value
+      else Error (Message.TextLengthMax rule_value)
+    ;;
+
     let schema data =
       let open CCResult in
       ( (fun value ->
           CCList.fold_left
             (fun result (key, rule_value) ->
-              rule_value
-              |> CCInt.of_string
-              |> CCOption.map_or ~default:result (fun rule_value ->
-                   match key with
-                   | _ when CCString.equal key text_min_length ->
-                     result
-                     >>= fun value ->
-                     if CCString.length value < rule_value
-                     then Error (Message.TextLengthMin rule_value)
-                     else Ok value
-                   | _ when CCString.equal key text_max_length ->
-                     result
-                     >>= fun value ->
-                     if CCString.length value > rule_value
-                     then Error (Message.TextLengthMax rule_value)
-                     else Ok value
-                   | _ -> result))
+              let map_or = CCOption.map_or ~default:result in
+              match key with
+              | _ when CCString.equal key text_min_length ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_min_length rule)
+              | _ when CCString.equal key text_max_length ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_max_length rule)
+              | _ -> result)
             (Ok value)
             data)
       , data )
@@ -211,28 +217,34 @@ module Validation = struct
     let number_min = "number_min"
     let number_max = "number_max"
 
+    let check_min rule_value value =
+      if value > rule_value
+      then Ok value
+      else Error (Message.NumberMin rule_value)
+    ;;
+
+    let check_max rule_value value =
+      if value < rule_value
+      then Ok value
+      else Error (Message.NumberMax rule_value)
+    ;;
+
     let schema data =
       let open CCResult in
       ( (fun value ->
           CCList.fold_left
-            (fun result (key, rule_value) ->
-              rule_value
-              |> CCInt.of_string
-              |> CCOption.map_or ~default:result (fun rule_value ->
-                   match key with
-                   | _ when CCString.equal key number_min ->
-                     result
-                     >>= fun value ->
-                     if value < rule_value
-                     then Error (Message.NumberMin rule_value)
-                     else Ok value
-                   | _ when CCString.equal key number_max ->
-                     result
-                     >>= fun value ->
-                     if value > rule_value
-                     then Error (Message.NumberMax rule_value)
-                     else Ok value
-                   | _ -> result))
+            (fun result (key, rule) ->
+              let map_or = CCOption.map_or ~default:result in
+              match key with
+              | _ when CCString.equal key number_min ->
+                rule
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_min rule)
+              | _ when CCString.equal key number_max ->
+                rule
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_max rule)
+              | _ -> result)
             (Ok value)
             data)
       , data )
