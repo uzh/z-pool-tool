@@ -2,17 +2,10 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let make_link language field url control =
-  let url =
-    Format.asprintf
-      "/admin/custom-fields/%s/%s"
-      Custom_field.(field |> id |> Id.value)
-      url
-    |> Sihl.Web.externalize_path
-  in
-  a
-    ~a:[ a_href url ]
-    [ txt Pool_common.(control |> Utils.control_to_string language) ]
+let base_path field =
+  let open Custom_field in
+  let base = Page_admin_custom_fields.base_field_path (model field) in
+  Format.asprintf "%s/%s/options" base (field |> id |> Id.value)
 ;;
 
 let option_form
@@ -22,16 +15,11 @@ let option_form
   tenant_languages
   =
   let open Custom_field in
-  let base_path =
-    Format.asprintf
-      "/admin/custom-fields/%s/options"
-      Custom_field.(custom_field |> id |> Id.value)
-  in
   let action =
+    let base = base_path custom_field in
     match custom_field_option with
-    | None -> base_path
-    | Some o ->
-      Format.asprintf "%s/%s" base_path SelectOption.(o.id |> Id.value)
+    | None -> base
+    | Some o -> Format.asprintf "%s/%s" base SelectOption.(o.id |> Id.value)
   in
   let name_inputs =
     Page_admin_custom_fields.input_by_lang
@@ -93,6 +81,7 @@ let detail
               (Page_admin_custom_fields.make_option_url
                  custom_field
                  option
+                 Custom_field.(model custom_field)
                  "delete")
           ; a_user_data
               "confirmable"

@@ -10,47 +10,59 @@ let get_group_id req =
   |> Custom_field.Group.Id.of_string
 ;;
 
-let model_from_query = Admin_custom_fields.model_from_query
+let with_model = Admin_custom_fields.with_model
 
-let form ?id req =
+let form ?id req model =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
+    Lwt_result.map_error (fun err ->
+      ( err
+      , Format.asprintf
+          "/admin/custom-fields/%s"
+          (Custom_field.Model.show model) ))
     @@ let* custom_field_group =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
               Custom_field.find_group tenant_db id >|= CCOption.pure)
        in
-       let query_model = model_from_query req in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt sys_languages = Settings.find_languages tenant_db in
        Page.Admin.CustomFieldGroups.detail
          ?custom_field_group
-         ?query_model
+         model
          context
          sys_languages
-         flash_fetcher
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let new_form req = form req
+let new_form req = with_model req (form req)
 
 let edit req =
-  let id = req |> get_group_id in
-  form ~id req
+  let id = get_group_id req in
+  with_model req (form ~id req)
 ;;
 
-let write ?id req =
+let write ?id req model =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
-  let error_path = Format.asprintf "/admin/custom-fields" in
+  let redirect_path =
+    Format.asprintf "/admin/custom-fields/%s" (Custom_field.Model.show model)
+  in
+  let error_path =
+    match id with
+    | None -> Format.asprintf "%s/group/new" redirect_path
+    | Some id ->
+      Format.asprintf
+        "%s/group/%s/edit"
+        redirect_path
+        (Custom_field.Group.Id.value id)
+  in
   let field_names =
     let open Pool_common in
     let encode_lang t = t |> Language.create |> CCResult.to_opt in
@@ -62,48 +74,39 @@ let write ?id req =
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
-    @@ let%lwt urlencoded =
-         Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
-       in
-       let events =
-         let%lwt sys_languages = Settings.find_languages tenant_db in
-         match id with
-         | None ->
-           let open CCResult in
-           Cqrs_command.Custom_field_group_command.(
-             urlencoded
-             |> default_decode
-             >>= Create.handle sys_languages field_names
-             |> Lwt_result.lift)
-         | Some id ->
-           let* custom_field_group = id |> Custom_field.find_group tenant_db in
-           let open CCResult in
-           Cqrs_command.Custom_field_group_command.(
-             urlencoded
-             |> default_decode
-             >>= Update.handle sys_languages custom_field_group field_names
-             |> Lwt_result.lift)
-       in
-       let handle events =
-         let%lwt (_ : unit list) =
-           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-         in
-         Http_utils.redirect_to_with_actions
-           error_path
-           [ Message.set
-               ~success:[ Pool_common.Message.(Created Field.CustomFieldGroup) ]
-           ]
-       in
-       events |>> handle
+    @@
+    let events =
+      let%lwt sys_languages = Settings.find_languages tenant_db in
+      match id with
+      | None ->
+        Cqrs_command.Custom_field_group_command.(
+          Create.handle sys_languages field_names model |> Lwt_result.lift)
+      | Some id ->
+        let* custom_field_group = id |> Custom_field.find_group tenant_db in
+        Cqrs_command.Custom_field_group_command.(
+          Update.handle sys_languages custom_field_group field_names model
+          |> Lwt_result.lift)
+    in
+    let handle events =
+      let%lwt (_ : unit list) =
+        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      in
+      Http_utils.redirect_to_with_actions
+        redirect_path
+        [ Message.set
+            ~success:[ Pool_common.Message.(Created Field.CustomFieldGroup) ]
+        ]
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let create req = write req
+let create req = with_model req (write req)
 
 let update req =
   let id = req |> get_group_id in
-  write ~id req
+  with_model req (write ~id req)
 ;;
 
 let delete req =

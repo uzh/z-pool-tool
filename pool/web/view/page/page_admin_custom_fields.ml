@@ -2,32 +2,40 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let base_path = "/admin/custom-fields"
-let base_group_path = "/admin/custom-field-groups"
+let base_path model =
+  model |> Custom_field.Model.show |> Format.asprintf "/admin/custom-fields/%s"
+;;
 
-let make_option_url field option path =
+let base_field_path model = model |> base_path |> Format.asprintf "%s/field"
+
+let specific_field_path model field =
+  model
+  |> base_field_path
+  |> Format.asprintf "%s/%s" Custom_field.(id field |> Id.value)
+;;
+
+let base_group_path model = model |> base_path |> Format.asprintf "%s/group"
+
+let make_option_url field option current_model path =
   let open Custom_field in
   Format.asprintf
     "%s/%s/options/%s/%s"
-    base_path
+    (base_field_path current_model)
     (id field |> Id.value)
     (option.SelectOption.id |> SelectOption.Id.value)
     path
   |> Sihl.Web.externalize_path
 ;;
 
-let custom_fields_layout language active html =
+let custom_fields_layout language current_model html =
   let open Custom_field in
   let subnav_links =
-    let url field =
-      (Message.Field.Model, Model.show field)
-      |> CCList.pure
-      |> Message.add_field_query_params base_path
-    in
     Model.(
       all
       |> CCList.map (fun f ->
-           f |> show |> CCString.capitalize_ascii, f |> url, equal active f))
+           ( f |> show |> CCString.capitalize_ascii
+           , f |> base_path
+           , equal current_model f )))
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -38,7 +46,7 @@ let custom_fields_layout language active html =
     ; Component.Navigation.make_subnav subnav_links
     ; h2
         ~a:[ a_class [ "heading-2" ] ]
-        [ txt (active |> Model.show |> CCString.capitalize_ascii) ]
+        [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ div
@@ -46,10 +54,7 @@ let custom_fields_layout language active html =
             [ a
                 ~a:
                   [ a_href
-                      ((Message.Field.Model, active |> Model.show)
-                      |> CCList.pure
-                      |> Message.add_field_query_params
-                           (Format.asprintf "%s/new" base_path)
+                      (Format.asprintf "%s/new" (base_field_path current_model)
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
@@ -60,10 +65,7 @@ let custom_fields_layout language active html =
             ; a
                 ~a:
                   [ a_href
-                      ((Message.Field.Model, active |> Model.show)
-                      |> CCList.pure
-                      |> Message.add_field_query_params
-                           (Format.asprintf "%s/new" base_group_path)
+                      (Format.asprintf "%s/new" (base_group_path current_model)
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
@@ -78,6 +80,7 @@ let custom_fields_layout language active html =
 ;;
 
 let input_by_lang ?(required = false) language tenant_languages field value_fnc =
+  (* TODO: add flash fetcher *)
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
   CCList.map
@@ -127,7 +130,7 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
 
 let form
   ?(custom_field : Custom_field.t option)
-  ?query_model
+  current_model
   Pool_context.{ language; csrf; _ }
   tenant_languages
   flash_fetcher
@@ -135,8 +138,12 @@ let form
   let open Custom_field in
   let action =
     match custom_field with
-    | None -> base_path
-    | Some f -> Format.asprintf "%s/%s" base_path (f |> id |> Id.value)
+    | None -> base_field_path current_model
+    | Some f ->
+      Format.asprintf
+        "%s/%s"
+        (base_field_path current_model)
+        (f |> id |> Id.value)
   in
   let checkbox_element ?orientation ?help ?(default = false) field fnc =
     checkbox_element
@@ -252,7 +259,7 @@ let form
            let url =
              Format.asprintf
                "%s/%s/options/%s"
-               base_path
+               (base_field_path (model m))
                (m |> id |> Id.value)
                url
              |> Sihl.Web.externalize_path
@@ -266,11 +273,11 @@ let form
              ~a:
                [ a_method `Post
                ; a_action
-                   (Format.asprintf
-                      "%s/%s/sort-options"
-                      base_path
-                      (m |> id |> Id.value)
-                   |> Sihl.Web.externalize_path)
+                   (Sihl.Web.externalize_path
+                      (Format.asprintf
+                         "%s/%s/sort-options"
+                         (base_field_path (model m))
+                         (m |> id |> Id.value)))
                ; a_class [ "stack" ]
                ]
              (CCList.cons
@@ -308,7 +315,13 @@ let form
                                 ]
                               [ a
                                   ~a:
-                                    [ a_href (make_option_url m option "edit") ]
+                                    [ a_href
+                                        (make_option_url
+                                           m
+                                           option
+                                           current_model
+                                           "edit")
+                                    ]
                                   [ txt
                                       Pool_common.(
                                         Message.(Edit None)
@@ -351,12 +364,9 @@ let form
               language
               Message.Field.Model
               Model.show
-              Model.all
-              (let open CCOption in
-              map model custom_field <+> query_model)
-              ~add_empty:true
-              ~required:true
-              ~flash_fetcher
+              [ current_model ]
+              (CCOption.pure current_model)
+              ~attributes:[ a_disabled () ]
               ()
           ; selector
               language
@@ -467,7 +477,7 @@ let form
 
 let detail
   ?custom_field
-  ?query_model
+  current_model
   (Pool_context.{ language; _ } as context)
   sys_languages
   flash_fetcher
@@ -486,11 +496,11 @@ let detail
     [ h1 [ txt title ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        (form ?custom_field ?query_model context sys_languages flash_fetcher)
+        (form ?custom_field current_model context sys_languages flash_fetcher)
     ]
 ;;
 
-let index field_list active Pool_context.{ language; _ } =
+let index field_list current_model Pool_context.{ language; _ } =
   let thead = Message.Field.[ Some Title; None ] in
   let rows =
     let open Custom_field in
@@ -507,7 +517,7 @@ let index field_list active Pool_context.{ language; _ } =
                   (Sihl.Web.externalize_path
                      (Format.asprintf
                         "%s/%s/edit"
-                        base_path
+                        (base_field_path current_model)
                         (field |> id |> Id.value)))
               ]
             [ txt Pool_common.(Message.More |> Utils.control_to_string language)
@@ -518,5 +528,5 @@ let index field_list active Pool_context.{ language; _ } =
   div
     ~a:[ a_class [ "stack" ] ]
     [ Table.horizontal_table `Striped language ~thead rows ]
-  |> custom_fields_layout language active
+  |> custom_fields_layout language current_model
 ;;

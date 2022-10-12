@@ -251,43 +251,50 @@ module Admin = struct
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
     let custom_fields =
-      let options =
-        let specific =
-          CustomFieldOption.
-            [ get "/edit" edit; post "" update; post "/delete" delete ]
-        in
-        CustomFieldOption.
-          [ get "/new" new_form
-          ; post "" create
-          ; choose ~scope:(CustomFieldOption |> url_key) specific
-          ]
-      in
       let specific =
+        let options =
+          let specific =
+            CustomFieldOption.
+              [ get "/edit" edit; post "" update; post "/delete" delete ]
+          in
+          CustomFieldOption.
+            [ get "/new" new_form
+            ; post "" create
+            ; choose ~scope:(CustomFieldOption |> url_key) specific
+            ]
+        in
         CustomField.
-          [ get "/edit" edit
+          [ get "edit" edit
           ; post "" update
           ; post "sort-options" sort_options
           ; choose ~scope:"options" options
           ]
       in
-      CustomField.
-        [ get "" index
-        ; post "" create
+      let open CustomField in
+      let fields =
+        [ post "" create
         ; get "/new" new_form
         ; choose ~scope:(CustomField |> url_key) specific
-          (* ; get (Model |> url_key) index *)
         ]
-    in
-    let custom_field_groups =
-      let specific =
-        CustomFieldGroup.
-          [ get "/edit" edit; post "" update; post "/delete" delete ]
       in
-      CustomFieldGroup.
-        [ get "/new" new_form
-        ; post "" create
-        ; choose ~scope:(CustomFieldGroup |> url_key) specific
+      let groups =
+        let specific =
+          CustomFieldGroup.
+            [ get "/edit" edit; post "" update; post "/delete" delete ]
+        in
+        CustomFieldGroup.
+          [ get "/new" new_form
+          ; post "" create
+          ; choose ~scope:(CustomFieldGroup |> url_key) specific
+          ]
+      in
+      let models =
+        [ get "" index
+        ; choose ~scope:"field" fields
+        ; choose ~scope:"group" groups
         ]
+      in
+      [ get "" redirect; choose ~scope:(Model |> url_key) models ]
     in
     choose
       ~middlewares
@@ -301,7 +308,6 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
-      ; choose ~scope:"/custom-field-groups" custom_field_groups
       ]
   ;;
 end

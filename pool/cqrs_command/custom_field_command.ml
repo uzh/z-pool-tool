@@ -1,8 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
 type command =
-  { model : Custom_field.Model.t
-  ; field_type : Custom_field.FieldType.t
+  { field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
   ; admin_hint : Custom_field.Admin.Hint.t option
@@ -12,7 +11,6 @@ type command =
   }
 
 let base_command
-  model
   field_type
   required
   disabled
@@ -21,8 +19,7 @@ let base_command
   admin_view_only
   admin_input_only
   =
-  { model
-  ; field_type
+  { field_type
   ; required
   ; disabled
   ; admin_hint
@@ -37,8 +34,7 @@ let base_schema =
   Pool_common.Utils.PoolConformist.(
     make
       Field.
-        [ Model.schema ()
-        ; FieldType.schema ()
+        [ FieldType.schema ()
         ; Required.schema ()
         ; Disabled.schema ()
         ; Conformist.optional @@ Admin.Hint.schema ()
@@ -60,6 +56,7 @@ module Create : sig
   val handle
     :  ?id:Custom_field.Id.t
     -> Pool_common.Language.t list
+    -> Custom_field.Model.t
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
     -> (string * string) list
@@ -73,11 +70,11 @@ end = struct
   let handle
     ?id
     sys_languages
+    model
     name
     hint
     validation
-    { model
-    ; field_type
+    { field_type
     ; required
     ; disabled
     ; admin_hint
@@ -136,8 +133,7 @@ end = struct
     name
     hint
     validation
-    { model
-    ; field_type
+    { field_type
     ; required
     ; disabled
     ; admin_hint
@@ -161,7 +157,7 @@ end = struct
       Custom_field.create
         ~id
         field_type
-        model
+        Custom_field.(model custom_field)
         name
         hint
         validation

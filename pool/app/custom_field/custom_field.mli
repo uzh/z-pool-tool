@@ -369,10 +369,10 @@ val all_required_answered
 
 val find_option
   :  Pool_database.Label.t
-  -> Id.t
+  -> SelectOption.Id.t
   -> (SelectOption.t, Pool_common.Message.error) result Lwt.t
 
-val find_option_by_field
+val find_options_by_field
   :  Pool_database.Label.t
   -> Id.t
   -> SelectOption.t list Lwt.t

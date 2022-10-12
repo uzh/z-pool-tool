@@ -6,16 +6,16 @@ let base_path = Page_admin_custom_fields.base_group_path
 
 let form
   ?(custom_field_group : Custom_field.Group.t option)
-  ?query_model
+  current_model
   Pool_context.{ language; csrf; _ }
   tenant_languages
-  flash_fetcher
   =
   let open Custom_field in
   let action =
     match custom_field_group with
-    | None -> base_path
-    | Some g -> Format.asprintf "%s/%s" base_path Group.(g.id |> Id.value)
+    | None -> base_path current_model
+    | Some g ->
+      Format.asprintf "%s/%s" (base_path current_model) Group.(g.id |> Id.value)
   in
   let input_by_lang ?required =
     Page_admin_custom_fields.input_by_lang ?required language tenant_languages
@@ -40,12 +40,9 @@ let form
         language
         Message.Field.Model
         Model.show
-        Model.all
-        (let open CCOption in
-        custom_field_group >|= (fun g -> g.Group.model) <+> query_model)
-        ~add_empty:true
-        ~required:true
-        ~flash_fetcher
+        [ current_model ]
+        (CCOption.pure current_model)
+        ~attributes:[ a_disabled () ]
         ()
     ; div
         ~a:[ a_class [ "stack" ] ]
@@ -73,10 +70,9 @@ let form
 
 let detail
   ?custom_field_group
-  ?query_model
+  current_model
   (Pool_context.{ language; _ } as context)
   sys_langauges
-  flash_fetcher
   =
   let title =
     Pool_common.(
@@ -90,6 +86,6 @@ let detail
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1 [ txt title ]
-    ; form ?custom_field_group ?query_model context sys_langauges flash_fetcher
+    ; form ?custom_field_group current_model context sys_langauges
     ]
 ;;
