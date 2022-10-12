@@ -99,6 +99,7 @@ let update ?contact req =
       in
       let%lwt partial_update =
         Contact.validate_partial_update
+          ~is_admin
           contact
           tenant_db
           (field, version, value, field_id)
@@ -125,6 +126,7 @@ let update ?contact req =
           Htmx.partial_update_to_htmx
             language
             tenant_languages
+            is_admin
             m
             ~hx_post
             ~success:true
@@ -175,6 +177,7 @@ let update ?contact req =
               | Ok field ->
                 Htmx.custom_field_to_htmx
                   language
+                  is_admin
                   field
                   ~hx_post
                   ~error

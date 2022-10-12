@@ -87,28 +87,28 @@ let update_custom_field _ () =
   Lwt.return_unit
 ;;
 
-let update_custom_field_with_invalid_answer _ () =
+let partial_update_exec
+  ?is_admin
+  ?(custom_field = Custom_field_test.Data.custom_text_field ())
+  ?(value = "testvalue")
+  expected
+  ()
+  =
   let%lwt () =
-    let open CCResult in
     let open Custom_field in
     let contact = Test_utils.Model.create_contact () in
-    let validation = [ "text_length_max", "10" ] in
-    let custom_field =
-      Custom_field_test.Data.custom_text_field ~validation ()
-    in
     let public = Custom_field_test.Data.to_public custom_field in
     let%lwt () = save_custom_fields custom_field contact in
     let language = Pool_common.Language.En in
     let field = Public.to_common_field language public in
-    let new_value = "this value is longer than 10" in
     let%lwt partial_update =
       let version = 0 |> Pool_common.Version.of_int in
       Contact.validate_partial_update
+        ?is_admin
         contact
         database_label
-        (field, version, new_value, Some (Public.id public))
+        (field, version, value, Some (Public.id public))
     in
-    let expected = Error Message.(TextLengthMax 10) in
     Alcotest.(
       check
         (result Test_utils.partial_update Test_utils.error)
@@ -118,4 +118,38 @@ let update_custom_field_with_invalid_answer _ () =
     |> Lwt.return
   in
   Lwt.return_unit
+;;
+
+let update_custom_field_with_invalid_answer _ () =
+  let validation = [ "text_length_max", "10" ] in
+  let custom_field = Custom_field_test.Data.custom_text_field ~validation () in
+  let value = "this value is longer than 10" in
+  let expected = Error Message.(TextLengthMax 10) in
+  partial_update_exec ~custom_field ~value expected ()
+;;
+
+let update_admin_input_only_field_as_user _ () =
+  let open Custom_field in
+  let admin =
+    Admin.
+      { Custom_field_test.Data.admin with
+        input_only = true |> InputOnly.create
+      }
+  in
+  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
+  let expected = Error Message.NotEligible in
+  partial_update_exec ~custom_field expected ()
+;;
+
+let update_non_overwrite_field_as_admin _ () =
+  let open Custom_field in
+  let admin =
+    Admin.
+      { Custom_field_test.Data.admin with
+        overwrite = false |> Overwrite.create
+      }
+  in
+  let custom_field = Custom_field_test.Data.custom_text_field ~admin () in
+  let expected = Error Message.NotEligible in
+  partial_update_exec ~is_admin:true ~custom_field expected ()
 ;;

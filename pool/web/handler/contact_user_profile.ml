@@ -128,7 +128,7 @@ let update_password req =
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let completition req =
+let completion req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
@@ -146,14 +146,14 @@ let completition req =
     let%lwt custom_fields =
       Custom_field.find_all_required_by_contact tenant_db (Contact.id contact)
     in
-    Page.Contact.completition context flash_fetcher custom_fields
+    Page.Contact.completion context flash_fetcher custom_fields
     |> create_layout req ~active_navigation:"/user" context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let completition_post req =
+let completion_post req =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let%lwt urlencoded =
@@ -165,7 +165,7 @@ let completition_post req =
     Lwt_result.map_error (fun err ->
       HttpUtils.(
         ( err
-        , path_with_language query_language "/user/completition"
+        , path_with_language query_language "/user/completion"
         , [ urlencoded_to_flash urlencoded ] )))
     @@ let* contact = HttpUtils.get_current_contact tenant_db req in
        let%lwt custom_fields =

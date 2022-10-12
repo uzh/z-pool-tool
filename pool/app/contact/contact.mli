@@ -62,7 +62,8 @@ module PartialUpdate : sig
 end
 
 val validate_partial_update
-  :  t
+  :  ?is_admin:bool
+  -> t
   -> Pool_database.Label.t
   -> Pool_common.Message.Field.t
      * Pool_common.Version.t

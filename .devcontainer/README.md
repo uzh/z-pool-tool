@@ -51,10 +51,7 @@ If any changes were made to files in `.devcontainer` folder the Container should
     - `MYSQL_DATABASE=test_econ`
 1. Run migrations and seeds for the test databases
     ```
-    opam config exec -- dune exec --root . pool/run/run.exe migrate.root
-    opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
-    opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
-    opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+    make test-migrate
     ```
 1. Run `make test`
 

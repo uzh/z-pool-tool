@@ -100,8 +100,8 @@ module Contact = struct
     ; post "/user/update" UserProfile.update
     ; post "/user/update-email" UserProfile.update_email
     ; post "/user/update-password" UserProfile.update_password
-    ; get "/user/completition" UserProfile.completition
-    ; post "/user/completition" UserProfile.completition_post
+    ; get "/user/completion" UserProfile.completion
+    ; post "/user/completion" UserProfile.completion_post
     ; choose ~scope:"/experiments" experiments
     ]
   ;;

@@ -8,6 +8,15 @@ let get_options pool m =
   Repo.get_options pool Repo_entity.Public.to_entity get_field_type id m
 ;;
 
+let base_filter_conditions is_admin =
+  let base = {sql|
+    AND pool_custom_fields.disabled = 0
+  |sql} in
+  if is_admin
+  then base
+  else Format.asprintf "%s AND pool_custom_fields.admin_view_only = 0 " base
+;;
+
 let get_options_of_multiple pool fields =
   Repo.get_options_of_multiple
     pool
@@ -42,6 +51,8 @@ module Sql = struct
         pool_custom_fields.validation,
         pool_custom_fields.field_type,
         pool_custom_fields.required,
+        pool_custom_fields.admin_overwrite,
+        pool_custom_fields.admin_input_only,
         LOWER(CONCAT(
           SUBSTR(HEX(pool_custom_field_answers.uuid), 1, 8), '-',
           SUBSTR(HEX(pool_custom_field_answers.uuid), 9, 4), '-',
@@ -78,38 +89,40 @@ module Sql = struct
     |>> get_options pool
   ;;
 
-  let find_all_by_contact_request required =
+  let find_all_by_contact_request required is_admin =
     let open Caqti_request.Infix in
     let where =
       Format.asprintf
         {sql|
         WHERE pool_custom_fields.model = $2
-        AND pool_custom_fields.disabled = 0
+        %s
         %s
       |sql}
+        (base_filter_conditions is_admin)
         (if required then "AND pool_custom_fields.required = 1" else "")
     in
     Format.asprintf "%s \n %s" select_sql where
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 
-  let find_all_by_contact ?(required = false) pool id =
+  let find_all_by_contact ?(required = false) ?(is_admin = false) pool id =
     let open Lwt.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
-      (find_all_by_contact_request required)
+      (find_all_by_contact_request required is_admin)
       (Pool_common.Id.value id, Entity.Model.(show Contact))
     >>= get_options_of_multiple pool
   ;;
 
-  let find_multiple_by_contact_request ids =
+  let find_multiple_by_contact_request is_admin ids =
     let where =
       Format.asprintf
         {sql|
         WHERE pool_custom_fields.model = $2
-        AND pool_custom_fields.disabled = 0
+        %s
         AND pool_custom_fields.uuid in ( %s )
       |sql}
+        (base_filter_conditions is_admin)
         (CCList.mapi
            (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 3))
            ids
@@ -118,7 +131,7 @@ module Sql = struct
     Format.asprintf "%s \n %s" select_sql where
   ;;
 
-  let find_multiple_by_contact pool contact_id ids =
+  let find_multiple_by_contact ?(is_admin = false) pool contact_id ids =
     if CCList.is_empty ids
     then Lwt.return []
     else
@@ -139,29 +152,31 @@ module Sql = struct
       in
       let (Dynparam.Pack (pt, pv)) = dyn in
       let request =
-        find_multiple_by_contact_request ids |> pt ->* Repo_entity.Public.t
+        find_multiple_by_contact_request is_admin ids
+        |> pt ->* Repo_entity.Public.t
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
       >>= get_options_of_multiple pool
   ;;
 
-  let find_by_contact_request =
+  let find_by_contact_request is_admin =
     let open Caqti_request.Infix in
     Format.asprintf
       {sql|%s
       WHERE pool_custom_fields.model = $2
-      AND pool_custom_fields.disabled = 0
+      %s
       AND pool_custom_fields.uuid = UNHEX(REPLACE($3, '-', ''))
     |sql}
       select_sql
+      (base_filter_conditions is_admin)
     |> Caqti_type.(tup3 string string string) ->! Repo_entity.Public.t
   ;;
 
-  let find_by_contact pool contact_id field_id =
+  let find_by_contact ?(is_admin = false) pool contact_id field_id =
     let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
-      find_by_contact_request
+      (find_by_contact_request is_admin)
       ( Pool_common.Id.value contact_id
       , Entity.Model.(show Contact)
       , Entity.Id.value field_id )
@@ -176,11 +191,12 @@ module Sql = struct
       SELECT count(*) questions FROM pool_custom_fields
       %s
       WHERE pool_custom_fields.model = $2
-      AND pool_custom_fields.disabled = 0
+      %s
       AND pool_custom_fields.required = 1
       AND pool_custom_field_answers.value IS NULL
       |sql}
       answers_left_join
+      (base_filter_conditions false)
     |> Caqti_type.(tup2 string string ->! int)
   ;;
 

@@ -75,7 +75,7 @@ let login_post req =
           | true -> success ()
           | false ->
             redirect
-              "/user/completition"
+              "/user/completion"
               [ Message.set
                   ~info:[ Pool_common.Message.(RequiredFieldsMissing) ]
               ])

@@ -22,7 +22,7 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
-  | ProfileCompletitionTitle -> "Profile completition"
+  | ProfileCompletionTitle -> "Profile completion"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -93,6 +93,11 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | CustomFieldAdminViewOnly ->
+    Format.asprintf
+      "This option implies \"%s\"."
+      (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
+      |> CCString.capitalize_ascii)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \

@@ -127,18 +127,44 @@ module Admin = struct
     let schema = schema Pool_common.Message.Field.Overwrite
   end
 
+  module ViewOnly = struct
+    include Pool_common.Model.Boolean
+
+    let schema = schema Pool_common.Message.Field.AdminViewOnly
+  end
+
+  module InputOnly = struct
+    include Pool_common.Model.Boolean
+
+    let schema = schema Pool_common.Message.Field.AdminInputOnly
+  end
+
   type t =
     { hint : Hint.t option
     ; overwrite : Overwrite.t
+    ; view_only : ViewOnly.t
+    ; input_only : InputOnly.t
     }
   [@@deriving eq, show]
+
+  let create hint overwrite view_only input_only =
+    if view_only && not input_only
+    then
+      Error
+        Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
+    else Ok { hint; overwrite; view_only; input_only }
+  ;;
 end
 
 module Validation = struct
   let printer m fmt _ = Format.pp_print_string fmt m
 
-  type raw = string * string [@@deriving show, eq, yojson]
-  type raw_list = raw list [@@deriving show, eq, yojson]
+  type raw = (string * string) list [@@deriving show, eq, yojson]
+
+  type 'a t =
+    (('a -> ('a, Pool_common.Message.error) result) * raw
+    [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
+  [@@deriving show, eq]
 
   module Ptime = struct
     include Ptime
@@ -151,28 +177,37 @@ module Validation = struct
     let text_min_length = "text_length_min"
     let text_max_length = "text_length_max"
 
+    let check_min_length rule_value value =
+      if CCString.length value > rule_value
+      then Ok value
+      else Error (Message.TextLengthMin rule_value)
+    ;;
+
+    let check_max_length rule_value value =
+      if CCString.length value < rule_value
+      then Ok value
+      else Error (Message.TextLengthMax rule_value)
+    ;;
+
     let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          (match key with
-           | _ when CCString.equal key text_min_length ->
-             value
-             |> CCInt.of_string
-             >|= fun min str ->
-             if CCString.length str < min
-             then Error (Message.TextLengthMin min)
-             else Ok str
-           | _ when CCString.equal key text_max_length ->
-             value
-             |> CCInt.of_string
-             >|= fun max str ->
-             if CCString.length str > max
-             then Error (Message.TextLengthMax max)
-             else Ok str
-           | _ -> None)
-          |> CCOption.map (fun r -> r, (key, value)))
-        data
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule_value) ->
+              let map_or = CCOption.map_or ~default:result in
+              match key with
+              | _ when CCString.equal key text_min_length ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_min_length rule)
+              | _ when CCString.equal key text_max_length ->
+                rule_value
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_max_length rule)
+              | _ -> result)
+            (Ok value)
+            data)
+      , data )
     ;;
 
     let all = [ text_min_length, `Number; text_max_length, `Number ]
@@ -182,36 +217,48 @@ module Validation = struct
     let number_min = "number_min"
     let number_max = "number_max"
 
+    let check_min rule_value value =
+      if value > rule_value
+      then Ok value
+      else Error (Message.NumberMin rule_value)
+    ;;
+
+    let check_max rule_value value =
+      if value < rule_value
+      then Ok value
+      else Error (Message.NumberMax rule_value)
+    ;;
+
     let schema data =
-      let open CCOption in
-      CCList.filter_map
-        (fun (key, value) ->
-          (match key with
-           | _ when CCString.equal key number_min ->
-             value
-             |> CCInt.of_string
-             >|= fun min i ->
-             if i < min then Error (Message.NumberMin min) else Ok i
-           | _ when CCString.equal key number_max ->
-             value
-             |> CCInt.of_string
-             >|= fun max i ->
-             if i > max then Error (Message.NumberMax max) else Ok i
-           | _ -> None)
-          |> CCOption.map (fun r -> r, (key, value)))
-        data
+      let open CCResult in
+      ( (fun value ->
+          CCList.fold_left
+            (fun result (key, rule) ->
+              let map_or = CCOption.map_or ~default:result in
+              match key with
+              | _ when CCString.equal key number_min ->
+                rule
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_min rule)
+              | _ when CCString.equal key number_max ->
+                rule
+                |> CCInt.of_string
+                |> map_or (fun rule -> result >>= check_max rule)
+              | _ -> result)
+            (Ok value)
+            data)
+      , data )
     ;;
 
     let all = [ number_min, `Number; number_max, `Number ]
   end
 
-  let encode_to_yojson t =
-    t |> CCList.map (fun (_, raw) -> raw) |> yojson_of_raw_list
-  ;;
+  let pure = CCResult.pure, []
+  let encode_to_yojson t = t |> snd |> yojson_of_raw
 
   let to_strings all m =
     m
-    |> CCList.filter_map (fun (_, (key, value)) ->
+    |> CCList.filter_map (fun (key, value) ->
          CCList.find_opt (fun (k, _) -> CCString.equal k key) all
          |> CCOption.map (CCFun.const (key, value)))
   ;;
@@ -224,17 +271,12 @@ module Validation = struct
   ;;
 end
 
-type 'a validation =
-  (('a -> ('a, Pool_common.Message.error) result) * Validation.raw
-  [@equal fun (_, raw1) (_, raw2) -> Validation.equal_raw raw1 raw2])
-[@@deriving show, eq]
-
 type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; validation : 'a validation list
+  ; validation : 'a Validation.t
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
@@ -290,7 +332,15 @@ let create
   | FieldType.Select ->
     Ok
       (Select
-         ( { id; model; name; hint; validation = []; required; disabled; admin }
+         ( { id
+           ; model
+           ; name
+           ; hint
+           ; validation = Validation.pure
+           ; required
+           ; disabled
+           ; admin
+           }
          , select_options ))
 ;;
 
@@ -314,8 +364,10 @@ module Public = struct
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; validation : 'a validation list
+    ; validation : 'a Validation.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : 'a Answer.t option
     }
   [@@deriving eq, show]
@@ -350,6 +402,20 @@ module Public = struct
     | Text { required; _ } -> required
   ;;
 
+  let admin_overwrite (t : t) =
+    match t with
+    | Number { admin_overwrite; _ }
+    | Select ({ admin_overwrite; _ }, _)
+    | Text { admin_overwrite; _ } -> admin_overwrite
+  ;;
+
+  let admin_input_only (t : t) =
+    match t with
+    | Number { admin_input_only; _ }
+    | Select ({ admin_input_only; _ }, _)
+    | Text { admin_input_only; _ } -> admin_input_only
+  ;;
+
   let version (t : t) =
     match t with
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
@@ -365,14 +431,15 @@ module Public = struct
     | Text { answer; _ } -> id answer
   ;;
 
+  let is_disabled is_admin m =
+    if is_admin
+    then m |> admin_overwrite |> Admin.Overwrite.value |> not
+    else m |> admin_input_only |> Admin.InputOnly.value
+  ;;
+
   let validate value (m : t) =
     let open CCResult.Infix in
-    let go rules value =
-      CCList.fold_left
-        (fun result (rule, _) -> result >>= rule)
-        (Ok value)
-        rules
-    in
+    let go validation value = validation |> fst |> fun rule -> rule value in
     let id = answer_id m in
     let version = version m in
     match m with
@@ -457,9 +524,9 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Number { validation; _ } -> validation |> to_strings Number.all
+  | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Select _ -> []
-  | Text { validation; _ } -> validation |> to_strings Text.all
+  | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
@@ -468,4 +535,7 @@ let validation_to_yojson = function
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;
 
-let boolean_fields = Pool_common.Message.Field.[ Required; Disabled; Overwrite ]
+let boolean_fields =
+  Pool_common.Message.Field.
+    [ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
+;;

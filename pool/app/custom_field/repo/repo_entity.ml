@@ -93,10 +93,30 @@ module Admin = struct
     let t = Caqti_type.bool
   end
 
+  module ViewOnly = struct
+    include ViewOnly
+
+    let t = Caqti_type.bool
+  end
+
+  module InputOnly = struct
+    include InputOnly
+
+    let t = Caqti_type.bool
+  end
+
   let t =
-    let encode m = Ok (m.Admin.hint, m.overwrite) in
-    let decode (hint, overwrite) = Ok { hint; overwrite } in
-    Caqti_type.(custom ~encode ~decode (tup2 (option Hint.t) Overwrite.t))
+    let encode m =
+      Ok (m.Admin.hint, (m.overwrite, (m.view_only, m.input_only)))
+    in
+    let decode (hint, (overwrite, (view_only, input_only))) =
+      Ok { hint; overwrite; view_only; input_only }
+    in
+    Caqti_type.(
+      custom
+        ~encode
+        ~decode
+        (tup2 (option Hint.t) (tup2 Overwrite.t (tup2 ViewOnly.t InputOnly.t))))
   ;;
 end
 
@@ -186,15 +206,26 @@ module Public = struct
     ; validation : Yojson.Safe.t
     ; field_type : FieldType.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : Repo_entity_answer.repo option
     }
 
   let to_entity
     select_options
-    { id; name; hint; validation; field_type; required; answer }
+    { id
+    ; name
+    ; hint
+    ; validation
+    ; field_type
+    ; required
+    ; admin_overwrite
+    ; admin_input_only
+    ; answer
+    }
     =
     let validation_schema schema =
-      Validation.(validation |> raw_list_of_yojson |> schema)
+      Validation.(validation |> raw_of_yojson |> schema)
     in
     match field_type with
     | FieldType.Number ->
@@ -205,7 +236,16 @@ module Public = struct
           |> CCOption.map (Entity_answer.create ~id ~version))
       in
       let validation = validation_schema Validation.Number.schema in
-      Public.Number { Public.id; name; hint; validation; required; answer }
+      Public.Number
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     | FieldType.Select ->
       let answer =
         answer
@@ -226,7 +266,16 @@ module Public = struct
           select_options
       in
       Public.Select
-        ({ Public.id; name; hint; validation = []; required; answer }, options)
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; answer
+          }
+        , options )
     | FieldType.Text ->
       let answer =
         answer
@@ -234,7 +283,16 @@ module Public = struct
              value |> Entity_answer.create ~id ~version)
       in
       let validation = validation_schema Validation.Text.schema in
-      Public.Text { Public.id; name; hint; validation; required; answer }
+      Public.Text
+        { Public.id
+        ; name
+        ; hint
+        ; validation
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
   ;;
 
   let t =
@@ -243,9 +301,25 @@ module Public = struct
         Pool_common.(Message.ReadOnlyModel |> Utils.error_to_string Language.En)
     in
     let decode
-      (id, (name, (hint, (validation, (field_type, (required, answer))))))
+      ( id
+      , ( name
+        , ( hint
+          , ( validation
+            , ( field_type
+              , (required, (admin_overwrite, (admin_input_only, answer))) ) ) )
+        ) )
       =
-      Ok { id; name; hint; validation; field_type; required; answer }
+      Ok
+        { id
+        ; name
+        ; hint
+        ; validation
+        ; field_type
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     in
     Caqti_type.(
       custom
@@ -259,7 +333,13 @@ module Public = struct
                  Hint.t
                  (tup2
                     Validation.t
-                    (tup2 FieldType.t (tup2 Required.t (option Answer.t))))))))
+                    (tup2
+                       FieldType.t
+                       (tup2
+                          Required.t
+                          (tup2
+                             Admin.Overwrite.t
+                             (tup2 Admin.InputOnly.t (option Answer.t))))))))))
   ;;
 end
 
@@ -323,7 +403,7 @@ let to_entity
   { id; model; name; hint; validation; field_type; required; disabled; admin }
   =
   let validation_schema schema =
-    Validation.(validation |> raw_list_of_yojson |> schema)
+    Validation.(validation |> raw_of_yojson |> schema)
   in
   match field_type with
   | FieldType.Number ->
@@ -337,7 +417,15 @@ let to_entity
         select_options
     in
     Select
-      ( { id; model; name; hint; validation = []; required; disabled; admin }
+      ( { id
+        ; model
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; disabled
+        ; admin
+        }
       , options )
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in

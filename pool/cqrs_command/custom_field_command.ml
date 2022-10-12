@@ -5,14 +5,31 @@ type command =
   ; field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
-  ; admin : Custom_field.Admin.t
+  ; admin_hint : Custom_field.Admin.Hint.t option
+  ; admin_overwrite : Custom_field.Admin.Overwrite.t
+  ; admin_view_only : Custom_field.Admin.ViewOnly.t
+  ; admin_input_only : Custom_field.Admin.InputOnly.t
   }
 
-let base_command model field_type required disabled admin_hint admin_overwrite =
-  let admin =
-    Custom_field.Admin.{ hint = admin_hint; overwrite = admin_overwrite }
-  in
-  { model; field_type; required; disabled; admin }
+let base_command
+  model
+  field_type
+  required
+  disabled
+  admin_hint
+  admin_overwrite
+  admin_view_only
+  admin_input_only
+  =
+  { model
+  ; field_type
+  ; required
+  ; disabled
+  ; admin_hint
+  ; admin_overwrite
+  ; admin_view_only
+  ; admin_input_only
+  }
 ;;
 
 let base_schema =
@@ -26,6 +43,8 @@ let base_schema =
         ; Disabled.schema ()
         ; Conformist.optional @@ Admin.Hint.schema ()
         ; Admin.Overwrite.schema ()
+        ; Admin.ViewOnly.schema ()
+        ; Admin.InputOnly.schema ()
         ]
       base_command)
 ;;
@@ -57,11 +76,26 @@ end = struct
     name
     hint
     validation
-    { model; field_type; required; disabled; admin }
+    { model
+    ; field_type
+    ; required
+    ; disabled
+    ; admin_hint
+    ; admin_overwrite
+    ; admin_view_only
+    ; admin_input_only
+    }
     =
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
+    let* admin =
+      Custom_field.Admin.create
+        admin_hint
+        admin_overwrite
+        admin_view_only
+        admin_input_only
+    in
     let* t =
       Custom_field.create
         ?id
@@ -102,11 +136,26 @@ end = struct
     name
     hint
     validation
-    { model; field_type; required; disabled; admin }
+    { model
+    ; field_type
+    ; required
+    ; disabled
+    ; admin_hint
+    ; admin_overwrite
+    ; admin_view_only
+    ; admin_input_only
+    }
     =
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
+    let* admin =
+      Custom_field.Admin.create
+        admin_hint
+        admin_overwrite
+        admin_view_only
+        admin_input_only
+    in
     let id = Custom_field.id custom_field in
     let* t =
       Custom_field.create

@@ -4,7 +4,14 @@ let create pool =
   let open CCFun in
   let open Custom_field in
   let system_languages = Pool_common.Language.all in
-  let admin = Admin.{ hint = None; overwrite = false |> Overwrite.create } in
+  let admin =
+    Admin.
+      { hint = None
+      ; overwrite = false |> Overwrite.create
+      ; view_only = false |> ViewOnly.create
+      ; input_only = false |> InputOnly.create
+      }
+  in
   let education_options = [ "Bachelor"; "Master"; "Phd" ] in
   let data =
     [ ( "Hair color"

@@ -4,6 +4,8 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AdminInputOnly -> "input only by admins"
+  | AdminViewOnly -> "only visible for admins"
   | AdminHint -> "hint for admins"
   | Answer -> "answer"
   | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
@@ -232,6 +234,11 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
+  | FieldRequiresCheckbox (field, required) ->
+    Format.asprintf
+      "The option \"%s\" requires \"%s\"."
+      (field_to_string field)
+      (field_to_string required)
   | FollowUpIsEarlierThanMain ->
     "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->

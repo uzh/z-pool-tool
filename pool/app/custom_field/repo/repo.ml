@@ -42,8 +42,8 @@ module Sql = struct
         pool_custom_fields.disabled,
         pool_custom_fields.admin_hint,
         pool_custom_fields.admin_overwrite,
-        pool_custom_fields.created_at,
-        pool_custom_fields.updated_at
+        pool_custom_fields.admin_view_only,
+        pool_custom_fields.admin_input_only
       FROM pool_custom_fields
     |sql}
   ;;
@@ -92,9 +92,13 @@ module Sql = struct
         required,
         disabled,
         admin_hint,
-        admin_overwrite
+        admin_overwrite,
+        admin_view_only,
+        admin_input_only
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
+        ?,
         ?,
         ?,
         ?,
@@ -133,7 +137,9 @@ module Sql = struct
         required = $7,
         disabled = $8,
         admin_hint = $9,
-        admin_overwrite = $10
+        admin_overwrite = $10,
+        admin_view_only = $11,
+        admin_input_only = $12
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

@@ -31,6 +31,7 @@ let personal_details_form
   tenant_languages
   contact
   custom_fields
+  is_admin
   =
   let open Contact in
   let externalize = HttpUtils.externalize_path_with_lang query_language in
@@ -40,7 +41,12 @@ let personal_details_form
   let custom_fields_form =
     custom_fields
     |> CCList.map (fun custom_field ->
-         Htmx.custom_field_to_htmx language custom_field ~hx_post:action ())
+         Htmx.custom_field_to_htmx
+           language
+           is_admin
+           custom_field
+           ~hx_post:action
+           ())
   in
   let open Message in
   form
@@ -122,6 +128,7 @@ let personal_details
   Pool_context.{ language; query_language; csrf; _ }
   =
   let action = Htmx.contact_profile_hx_post in
+  let is_admin = false in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -134,6 +141,7 @@ let personal_details
             tenant_languages
             contact
             custom_fields
+            is_admin
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/user") ]

@@ -122,41 +122,56 @@ module Admin : sig
     include Pool_common.Model.BooleanSig
   end
 
+  module ViewOnly : sig
+    include Pool_common.Model.BooleanSig
+  end
+
+  module InputOnly : sig
+    include Pool_common.Model.BooleanSig
+  end
+
   type t =
     { hint : Hint.t option
     ; overwrite : Overwrite.t
+    ; view_only : ViewOnly.t
+    ; input_only : InputOnly.t
     }
+
+  val create
+    :  Hint.t option
+    -> Overwrite.t
+    -> ViewOnly.t
+    -> InputOnly.t
+    -> (t, Pool_common.Message.error) result
 end
 
 module Validation : sig
-  type raw = string * string
-  type raw_list = raw list
+  type raw = (string * string) list
+  type 'a t = ('a -> ('a, Pool_common.Message.error) result) * raw
 
   module Number : sig
     val schema
       :  (string * string) list
-      -> ((int -> (int, Pool_common.Message.error) result) * raw) list
+      -> (int -> (int, Pool_common.Message.error) result) * raw
   end
 
   module Text : sig
     val schema
       :  (string * string) list
-      -> ((string -> (string, Pool_common.Message.error) result) * raw) list
+      -> (string -> (string, Pool_common.Message.error) result) * raw
   end
 
-  val raw_list_of_yojson : Yojson.Safe.t -> raw_list
+  val raw_of_yojson : Yojson.Safe.t -> raw
   val all : (string * [> `Number ] * FieldType.t) list
+  val pure : 'a t
 end
-
-type 'a validation =
-  ('a -> ('a, Pool_common.Message.error) result) * Validation.raw
 
 type 'a custom_field =
   { id : Id.t
   ; model : Model.t
   ; name : Name.t
   ; hint : Hint.t
-  ; validation : 'a validation list
+  ; validation : 'a Validation.t
   ; required : Required.t
   ; disabled : Disabled.t
   ; admin : Admin.t
@@ -207,8 +222,10 @@ module Public : sig
     { id : Id.t
     ; name : Name.t
     ; hint : Hint.t
-    ; validation : 'a validation list
+    ; validation : 'a Validation.t
     ; required : Required.t
+    ; admin_overwrite : Admin.Overwrite.t
+    ; admin_input_only : Admin.InputOnly.t
     ; answer : 'a Answer.t option
     }
 
@@ -236,6 +253,9 @@ module Public : sig
   val hint : Pool_common.Language.t -> t -> Hint.hint option
   val version : t -> Pool_common.Version.t option
   val required : t -> Required.t
+  val admin_overwrite : t -> Admin.Overwrite.t
+  val admin_input_only : t -> Admin.InputOnly.t
+  val is_disabled : bool -> t -> bool
 
   val to_common_field
     :  Pool_common.Language.t
@@ -286,7 +306,8 @@ val find_public
   -> (Public.t, Pool_common.Message.error) result Lwt.t
 
 val find_all_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Public.t list Lwt.t
 
@@ -296,13 +317,15 @@ val find_all_required_by_contact
   -> Public.t list Lwt.t
 
 val find_multiple_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Pool_common.Id.t list
   -> Public.t list Lwt.t
 
 val find_by_contact
-  :  Pool_database.Label.t
+  :  ?is_admin:bool
+  -> Pool_database.Label.t
   -> Pool_common.Id.t
   -> Id.t
   -> (Public.t, Pool_common.Message.error) result Lwt.t
