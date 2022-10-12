@@ -1,12 +1,16 @@
 open Entity
+module Group = Entity_group
 
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | GroupCreated of Group.t
+  | GroupDestroyed of Group.t
+  | GroupUpdated of Group.t
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
-  | OptionUpdated of SelectOption.t
   | OptionsSorted of SelectOption.t list
+  | OptionUpdated of SelectOption.t
   | Updated of t
 [@@deriving eq, show, variants]
 
@@ -14,6 +18,9 @@ let handle_event pool : event -> unit Lwt.t = function
   | AnswerUpserted (t, entity_uuid) ->
     Repo_public.upsert_answer pool entity_uuid t
   | Created t -> Repo.insert pool t
+  | GroupCreated t -> Repo_group.insert pool t
+  | GroupDestroyed t -> Repo_group.destroy pool t
+  | GroupUpdated t -> Repo_group.update pool t
   | OptionCreated (field_id, t) -> Repo_option.insert pool field_id t
   | OptionDestroyed t -> Repo_option.destroy pool t
   | OptionUpdated t -> Repo_option.update pool t

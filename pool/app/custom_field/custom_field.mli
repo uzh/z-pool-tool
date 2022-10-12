@@ -273,6 +273,23 @@ module Public : sig
     -> Pool_common.I18n.hint option
 end
 
+module Group : sig
+  module Id : sig
+    include Pool_common.Model.IdSig
+  end
+
+  type t =
+    { id : Id.t
+    ; model : Model.t
+    ; name : Name.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : ?id:Id.t -> Model.t -> Name.t -> t
+end
+
 val boolean_fields : Pool_common.Message.Field.t list
 val id : t -> Id.t
 val model : t -> Model.t
@@ -288,10 +305,13 @@ val validation_to_yojson : t -> Yojson.Safe.t
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | GroupCreated of Group.t
+  | GroupDestroyed of Group.t
+  | GroupUpdated of Group.t
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
-  | OptionUpdated of SelectOption.t
   | OptionsSorted of SelectOption.t list
+  | OptionUpdated of SelectOption.t
   | Updated of t
 
 val equal_event : event -> event -> bool
@@ -356,3 +376,13 @@ val find_option_by_field
   :  Pool_database.Label.t
   -> Id.t
   -> SelectOption.t list Lwt.t
+
+val find_group
+  :  Pool_database.Label.t
+  -> Group.Id.t
+  -> (Group.t, Pool_common.Message.error) result Lwt.t
+
+val find_groups_by_model
+  :  Pool_database.Label.t
+  -> Model.t
+  -> Group.t list Lwt.t

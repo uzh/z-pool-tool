@@ -7,6 +7,12 @@ let boolean_fields =
   Custom_field.boolean_fields |> CCList.map Message.Field.show
 ;;
 
+let model_from_query req =
+  let open CCOption in
+  Sihl.Web.Request.query Message.Field.(show Model) req
+  >>= fun s -> s |> Custom_field.Model.create |> of_result
+;;
+
 let find_assocs_in_urlencoded urlencoded field encoder =
   let field = Message.Field.show field in
   CCList.filter_map
@@ -32,18 +38,22 @@ let index req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@
-    let model =
-      let open CCOption in
-      HttpUtils.get_field_router_param_opt req Message.Field.Model
-      >>= (fun s -> s |> Model.create |> of_result)
-      |> value ~default:Model.Contact
-    in
+    let model = model_from_query req |> CCOption.value ~default:Model.Contact in
     let%lwt field_list = find_by_model tenant_db model in
     Page.Admin.CustomFields.index field_list model context
     |> create_layout ~active_navigation:"/admin/custom-fields" req context
     >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
+;;
+
+let redirect _ =
+  let open Custom_field in
+  Model.all
+  |> CCList.head_opt
+  |> CCOption.map_or ~default:"/admin/dashboard" (fun model ->
+       model |> Model.show |> Format.asprintf "/admin/custom-fields/%s")
+  |> Http_utils.redirect_to
 ;;
 
 let form ?id req =
@@ -58,11 +68,7 @@ let form ?id req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
-    let query_model =
-      let open CCOption in
-      Sihl.Web.Request.query Message.Field.(show Model) req
-      >>= fun s -> s |> Custom_field.Model.create |> of_result
-    in
+    let query_model = model_from_query req in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail
       ?custom_field

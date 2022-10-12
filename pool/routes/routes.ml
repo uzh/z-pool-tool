@@ -275,7 +275,18 @@ module Admin = struct
         ; post "" create
         ; get "/new" new_form
         ; choose ~scope:(CustomField |> url_key) specific
-        ; get (Model |> url_key) index
+          (* ; get (Model |> url_key) index *)
+        ]
+    in
+    let custom_field_groups =
+      let specific =
+        CustomFieldGroup.
+          [ get "/edit" edit; post "" update; post "/delete" delete ]
+      in
+      CustomFieldGroup.
+        [ get "/new" new_form
+        ; post "" create
+        ; choose ~scope:(CustomFieldGroup |> url_key) specific
         ]
     in
     choose
@@ -290,6 +301,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:"/custom-field-groups" custom_field_groups
       ]
   ;;
 end

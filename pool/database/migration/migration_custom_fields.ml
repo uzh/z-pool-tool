@@ -32,9 +32,19 @@ let add_admin_boolean_columns =
     |sql}
 ;;
 
+let add_group_column_to_custom_fields =
+  Sihl.Database.Migration.create_step
+    ~label:"add group column to custom fields"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        ADD COLUMN custom_field_group_uuid binary(16) AFTER disabled
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_fields"
     |> add_step create_custom_fields_table
-    |> add_step add_admin_boolean_columns)
+    |> add_step add_admin_boolean_columns
+    |> add_step add_group_column_to_custom_fields)
 ;;

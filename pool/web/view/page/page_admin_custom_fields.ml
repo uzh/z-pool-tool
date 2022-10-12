@@ -3,6 +3,7 @@ open Component
 module Message = Pool_common.Message
 
 let base_path = "/admin/custom-fields"
+let base_group_path = "/admin/custom-field-groups"
 
 let make_option_url field option path =
   let open Custom_field in
@@ -18,13 +19,15 @@ let make_option_url field option path =
 let custom_fields_layout language active html =
   let open Custom_field in
   let subnav_links =
-    let url field = Format.asprintf "/admin/custom-fields/%s" field in
+    let url field =
+      (Message.Field.Model, Model.show field)
+      |> CCList.pure
+      |> Message.add_field_query_params base_path
+    in
     Model.(
       all
       |> CCList.map (fun f ->
-           ( f |> show |> CCString.capitalize_ascii
-           , f |> show |> url
-           , equal active f )))
+           f |> show |> CCString.capitalize_ascii, f |> url, equal active f))
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -36,23 +39,41 @@ let custom_fields_layout language active html =
     ; h2
         ~a:[ a_class [ "heading-2" ] ]
         [ txt (active |> Model.show |> CCString.capitalize_ascii) ]
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  ((Message.Field.Model, active |> Model.show)
-                  |> CCList.pure
-                  |> Message.add_field_query_params
-                       (Format.asprintf "%s/new" base_path)
-                  |> Sihl.Web.externalize_path)
-              ]
-            [ txt
-                Pool_common.(
-                  Message.(Add (Some Field.CustomField))
-                  |> Utils.control_to_string language)
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ div
+            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+            [ a
+                ~a:
+                  [ a_href
+                      ((Message.Field.Model, active |> Model.show)
+                      |> CCList.pure
+                      |> Message.add_field_query_params
+                           (Format.asprintf "%s/new" base_path)
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.(Add (Some Field.CustomField))
+                      |> Utils.control_to_string language)
+                ]
+            ; a
+                ~a:
+                  [ a_href
+                      ((Message.Field.Model, active |> Model.show)
+                      |> CCList.pure
+                      |> Message.add_field_query_params
+                           (Format.asprintf "%s/new" base_group_path)
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.(Add (Some Field.CustomFieldGroup))
+                      |> Utils.control_to_string language)
+                ]
             ]
+        ; html
         ]
-    ; html
     ]
 ;;
 

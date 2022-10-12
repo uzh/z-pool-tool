@@ -1,5 +1,6 @@
 include Entity
 include Event
+module Group = Entity_group
 
 let find_all = Repo.find_all
 let find_by_model = Repo.find_by_model
@@ -24,3 +25,6 @@ let find_option_by_field pool id =
   let open Lwt.Infix in
   Repo_option.find_by_field pool id >|= CCList.map Repo_entity.Option.to_entity
 ;;
+
+let find_group = Repo_group.find
+let find_groups_by_model = Repo_group.find_by_model
