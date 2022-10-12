@@ -1,12 +1,10 @@
 module HttpUtils = Http_utils
-module Message = HttpUtils.Message
+module Message = Pool_common.Message
 
 let create_layout req = General.create_tenant_layout `Admin req
 
 let get_group_id req =
-  HttpUtils.get_field_router_param
-    req
-    Pool_common.Message.Field.CustomFieldGroup
+  HttpUtils.get_field_router_param req Message.Field.CustomFieldGroup
   |> Custom_field.Group.Id.of_string
 ;;
 
@@ -92,14 +90,14 @@ let write ?id req model =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
       in
       let success =
-        let open Pool_common.Message in
+        let open Message in
         if CCOption.is_some id
         then Updated Field.CustomFieldGroup
         else Created Field.CustomFieldGroup
       in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set ~success:[ success ] ]
+        [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
   in
@@ -136,10 +134,57 @@ let delete req =
     let%lwt () = Pool_event.handle_events tenant_db events in
     Http_utils.redirect_to_with_actions
       redirect_path
-      [ Message.set
-          ~success:[ Pool_common.Message.(Deleted Field.CustomFieldGroup) ]
+      [ HttpUtils.Message.set
+          ~success:[ Message.(Deleted Field.CustomFieldGroup) ]
       ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
+;;
+
+let sort req =
+  let handler req model =
+    let open Utils.Lwt_result.Infix in
+    let redirect_path =
+      Format.asprintf "/admin/custom-fields/%s" (Custom_field.Model.show model)
+    in
+    let result { Pool_context.tenant_db; _ } =
+      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      @@ let%lwt ids =
+           Sihl.Web.Request.urlencoded_list
+             Message.Field.(CustomFieldGroup |> array_key)
+             req
+         in
+         let%lwt groups =
+           let open Lwt.Infix in
+           Custom_field.find_groups_by_model tenant_db model
+           >|= fun options ->
+           CCList.filter_map
+             (fun id ->
+               CCList.find_opt
+                 Custom_field.Group.(
+                   fun (option : t) -> Id.equal (Id.of_string id) option.id)
+                 options)
+             ids
+         in
+         let events =
+           groups
+           |> Cqrs_command.Custom_field_group_command.Sort.handle
+           |> Lwt_result.lift
+         in
+         let handle events =
+           let%lwt (_ : unit list) =
+             Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+           in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ HttpUtils.Message.set
+                 ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+             ]
+         in
+         events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path_with_actions req
+  in
+  with_model req (handler req)
 ;;

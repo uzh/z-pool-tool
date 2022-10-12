@@ -308,6 +308,7 @@ type event =
   | Created of t
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
+  | GroupsSorted of Group.t list
   | GroupUpdated of Group.t
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t

@@ -538,7 +538,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
           [ a_method `Post
           ; a_action
               (Sihl.Web.externalize_path
-                 (Format.asprintf "%s/sort-options" (base_path current_model)))
+                 (Format.asprintf "%s/group/sort" (base_path current_model)))
           ; a_class [ "stack" ]
           ]
         (CCList.cons

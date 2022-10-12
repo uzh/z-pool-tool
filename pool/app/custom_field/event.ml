@@ -6,6 +6,7 @@ type event =
   | Created of t
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
+  | GroupsSorted of Group.t list
   | GroupUpdated of Group.t
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
@@ -20,6 +21,8 @@ let handle_event pool : event -> unit Lwt.t = function
   | Created t -> Repo.insert pool t
   | GroupCreated t -> Repo_group.insert pool t
   | GroupDestroyed t -> Repo_group.destroy pool t
+  | GroupsSorted t ->
+    CCList.map (fun o -> o.Group.id) t |> Repo_group.sort_groups pool
   | GroupUpdated t -> Repo_group.update pool t
   | OptionCreated (field_id, t) -> Repo_option.insert pool field_id t
   | OptionDestroyed t -> Repo_option.destroy pool t

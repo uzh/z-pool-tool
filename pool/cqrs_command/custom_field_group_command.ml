@@ -55,3 +55,15 @@ end = struct
 
   let effects = [ `Create, `Role `Admin ]
 end
+
+module Sort : sig
+  type t = Custom_field.Group.t list
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Ocauth.Authorizer.effect list
+end = struct
+  type t = Custom_field.Group.t list
+
+  let handle t = Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
+  let effects = [ `Create, `Role `Admin ]
+end

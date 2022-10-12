@@ -285,6 +285,7 @@ module Admin = struct
         CustomFieldGroup.
           [ get "/new" new_form
           ; post "" create
+          ; post "sort" sort
           ; choose ~scope:(CustomFieldGroup |> url_key) specific
           ]
       in
