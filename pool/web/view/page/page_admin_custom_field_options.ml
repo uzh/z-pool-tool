@@ -13,6 +13,7 @@ let option_form
   custom_field
   Pool_context.{ language; csrf; _ }
   tenant_languages
+  flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -26,12 +27,13 @@ let option_form
       ~required:true
       language
       tenant_languages
-      Message.Field.Name
-      (fun lang ->
-      let open CCOption in
+      flash_fetcher
       custom_field_option
-      >|= (fun f -> f.SelectOption.name)
-      >>= Name.find_opt lang
+      Message.Field.Name
+      (fun lang o ->
+      let open CCOption in
+      o.SelectOption.name
+      |> Name.find_opt lang
       >|= Name.value_name
       |> value ~default:"")
   in
@@ -60,6 +62,7 @@ let detail
   custom_field
   (Pool_context.{ language; csrf; _ } as context)
   sys_languages
+  flash_fetcher
   =
   let title =
     Pool_common.(
@@ -99,7 +102,12 @@ let detail
     [ h1 [ txt title ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ option_form ?custom_field_option custom_field context sys_languages
+        [ option_form
+            ?custom_field_option
+            custom_field
+            context
+            sys_languages
+            flash_fetcher
         ; delete_form
         ; p
             [ a

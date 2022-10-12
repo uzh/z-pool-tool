@@ -89,11 +89,7 @@ let update_request =
   |> Repo_entity_group.t ->. Caqti_type.unit
 ;;
 
-let update pool t =
-  let () = Caqti_request.pp Format.std_formatter update_request in
-  print_endline "XXXXXXXXXXX";
-  Utils.Database.exec (Database.Label.value pool) update_request t
-;;
+let update pool = Utils.Database.exec (Database.Label.value pool) update_request
 
 let destroy_request =
   let open Caqti_request.Infix in

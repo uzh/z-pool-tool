@@ -9,6 +9,7 @@ let form
   current_model
   Pool_context.{ language; csrf; _ }
   tenant_languages
+  flash_fetcher
   =
   let open Custom_field in
   let action =
@@ -18,14 +19,18 @@ let form
       Format.asprintf "%s/%s" (base_path current_model) Group.(g.id |> Id.value)
   in
   let input_by_lang ?required =
-    Page_admin_custom_fields.input_by_lang ?required language tenant_languages
+    Page_admin_custom_fields.input_by_lang
+      ?required
+      language
+      tenant_languages
+      flash_fetcher
+      custom_field_group
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang ->
+    input_by_lang ~required:true Message.Field.Name (fun lang g ->
       let open CCOption in
-      custom_field_group
-      >|= (fun g -> g.Group.name)
-      >>= Name.find_opt lang
+      g.Group.name
+      |> Name.find_opt lang
       >|= Name.value_name
       |> value ~default:"")
   in
@@ -73,6 +78,7 @@ let detail
   current_model
   (Pool_context.{ language; _ } as context)
   sys_langauges
+  flash_fetcher
   =
   let title =
     Pool_common.(
@@ -86,6 +92,6 @@ let detail
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1 [ txt title ]
-    ; form ?custom_field_group current_model context sys_langauges
+    ; form ?custom_field_group current_model context sys_langauges flash_fetcher
     ]
 ;;

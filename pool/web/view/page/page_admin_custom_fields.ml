@@ -79,8 +79,15 @@ let custom_fields_layout language current_model html =
     ]
 ;;
 
-let input_by_lang ?(required = false) language tenant_languages field value_fnc =
-  (* TODO: add flash fetcher *)
+let input_by_lang
+  ?(required = false)
+  language
+  tenant_languages
+  flash_fetcher
+  elm
+  field
+  value_fnc
+  =
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
   CCList.map
@@ -98,6 +105,16 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
       let id =
         Format.asprintf "%s-%s" (Message.Field.show field) (Language.show lang)
       in
+      let value =
+        let open CCOption in
+        flash_fetcher
+          (Format.asprintf
+             "%s[%s]"
+             (Message.Field.show field)
+             (Language.show lang))
+        <+> (elm >|= value_fnc lang)
+        |> value ~default:""
+      in
       let input_element =
         let attrs =
           [ a_input_type `Text
@@ -107,7 +124,7 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
                  "%s[%s]"
                  (Message.Field.show field)
                  (Language.show lang))
-          ; a_value (value_fnc lang)
+          ; a_value value
           ]
         in
         div
@@ -157,25 +174,17 @@ let field_form
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
   let field_type = CCOption.map field_type custom_field in
   let input_by_lang ?required =
-    input_by_lang ?required language tenant_languages
+    input_by_lang ?required language tenant_languages flash_fetcher custom_field
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang ->
+    input_by_lang ~required:true Message.Field.Name (fun lang f ->
       let open CCOption in
-      custom_field
-      >|= (fun f -> name f)
-      >>= Name.find_opt lang
-      >|= Name.value_name
-      |> value ~default:"")
+      f |> name |> Name.find_opt lang >|= Name.value_name |> value ~default:"")
   in
   let hint_inputs =
-    input_by_lang Message.Field.Hint (fun lang ->
+    input_by_lang Message.Field.Hint (fun lang f ->
       let open CCOption in
-      custom_field
-      >|= (fun f -> hint f)
-      >>= Hint.find_opt lang
-      >|= Hint.value_hint
-      |> value ~default:"")
+      f |> hint |> Hint.find_opt lang >|= Hint.value_hint |> value ~default:"")
   in
   let validation_subform =
     let current_values =

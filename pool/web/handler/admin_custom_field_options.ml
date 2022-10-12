@@ -51,11 +51,13 @@ let form ?id req custom_field =
               Custom_field.find_option tenant_db id >|= CCOption.pure)
        in
        let%lwt sys_languages = Settings.find_languages tenant_db in
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
          custom_field
          context
          sys_languages
+         flash_fetcher
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in

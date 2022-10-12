@@ -24,12 +24,14 @@ let form ?id req model =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
               Custom_field.find_group tenant_db id >|= CCOption.pure)
        in
+       let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt sys_languages = Settings.find_languages tenant_db in
        Page.Admin.CustomFieldGroups.detail
          ?custom_field_group
          model
          context
          sys_languages
+         flash_fetcher
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
