@@ -91,11 +91,15 @@ let write ?id req model =
       let%lwt (_ : unit list) =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
       in
+      let success =
+        let open Pool_common.Message in
+        if CCOption.is_some id
+        then Updated Field.CustomFieldGroup
+        else Created Field.CustomFieldGroup
+      in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Created Field.CustomFieldGroup) ]
-        ]
+        [ Message.set ~success:[ success ] ]
     in
     events |>> handle
   in

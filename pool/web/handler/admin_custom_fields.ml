@@ -51,8 +51,9 @@ let index req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let* model = model_from_router req |> Lwt_result.lift in
+       let%lwt group_list = Custom_field.find_groups_by_model tenant_db model in
        let%lwt field_list = find_by_model tenant_db model in
-       Page.Admin.CustomFields.index field_list model context
+       Page.Admin.CustomFields.index field_list group_list model context
        |> create_layout ~active_navigation:"/admin/custom-fields" req context
        >|= Sihl.Web.Response.of_html
   in
@@ -171,10 +172,15 @@ let write ?id req model =
       let%lwt (_ : unit list) =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
       in
+      let success =
+        let open Pool_common.Message in
+        if CCOption.is_some id
+        then Updated Field.CustomField
+        else Created Field.CustomField
+      in
       Http_utils.redirect_to_with_actions
         redirect_path
-        [ HttpUtils.Message.set ~success:[ Message.(Created Field.CustomField) ]
-        ]
+        [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
   in

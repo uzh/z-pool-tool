@@ -288,6 +288,7 @@ module Group : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val create : ?id:Id.t -> Model.t -> Name.t -> t
+  val name : Pool_common.Language.t -> t -> string
 end
 
 val boolean_fields : Pool_common.Message.Field.t list

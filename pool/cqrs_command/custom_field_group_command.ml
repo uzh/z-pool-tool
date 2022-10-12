@@ -32,10 +32,10 @@ module Update : sig
 
   val effects : Ocauth.Authorizer.effect list
 end = struct
-  let handle sys_languages group name model =
+  let handle sys_languages group names model =
     let open CCResult in
-    let* name = Custom_field.Name.create sys_languages name in
-    let group = Custom_field.Group.{ group with model; name } in
+    let* names = Custom_field.Name.create sys_languages names in
+    let group = Custom_field.Group.{ group with model; name = names } in
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 

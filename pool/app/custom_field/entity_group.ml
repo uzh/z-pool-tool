@@ -10,3 +10,8 @@ type t =
 [@@deriving eq, show]
 
 let create ?(id = Id.create ()) model name = { id; model; name }
+
+let name lang (t : t) =
+  Entity.Name.find_opt lang t.name
+  |> CCOption.get_exn_or "Cannot find field name."
+;;

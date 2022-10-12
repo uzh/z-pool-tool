@@ -79,21 +79,26 @@ let insert pool = Utils.Database.exec (Database.Label.value pool) insert_request
 let update_request =
   let open Caqti_request.Infix in
   {sql|
-    UPDATE pool_custom_field_options
+    UPDATE pool_custom_field_groups
     SET
-      name = $2
+      name = $2,
+      name = $3
     WHERE
       uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Repo_entity_group.t ->. Caqti_type.unit
 ;;
 
-let update pool = Utils.Database.exec (Database.Label.value pool) update_request
+let update pool t =
+  let () = Caqti_request.pp Format.std_formatter update_request in
+  print_endline "XXXXXXXXXXX";
+  Utils.Database.exec (Database.Label.value pool) update_request t
+;;
 
 let destroy_request =
   let open Caqti_request.Infix in
   {sql|
-    DELETE FROM pool_custom_field_options
+    DELETE FROM pool_custom_field_groups
     WHERE uuid = UNHEX(REPLACE($1, '-', ''))
   |sql}
   |> Caqti_type.(string ->. unit)
@@ -109,7 +114,7 @@ let destroy pool m =
 let update_position_request =
   let open Caqti_request.Infix in
   {sql|
-    UPDATE pool_custom_field_options
+    UPDATE pool_custom_field_groups
       SET
         position = $1
       WHERE uuid = UNHEX(REPLACE($2, '-', ''))
@@ -117,7 +122,7 @@ let update_position_request =
   |> Caqti_type.(tup2 int string ->. Caqti_type.unit)
 ;;
 
-let sort_options pool ids =
+let sort_groups pool ids =
   let open Lwt.Infix in
   Lwt_list.mapi_s
     (fun index id ->

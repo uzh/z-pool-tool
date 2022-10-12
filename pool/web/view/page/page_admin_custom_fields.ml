@@ -128,7 +128,7 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
     Pool_common.Language.all
 ;;
 
-let form
+let field_form
   ?(custom_field : Custom_field.t option)
   current_model
   Pool_context.{ language; csrf; _ }
@@ -496,11 +496,17 @@ let detail
     [ h1 [ txt title ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        (form ?custom_field current_model context sys_languages flash_fetcher)
+        (field_form
+           ?custom_field
+           current_model
+           context
+           sys_languages
+           flash_fetcher)
     ]
 ;;
 
-let index field_list current_model Pool_context.{ language; _ } =
+let index field_list group_list current_model Pool_context.{ language; csrf; _ }
+  =
   let thead = Message.Field.[ Some Title; None ] in
   let rows =
     let open Custom_field in
@@ -525,8 +531,98 @@ let index field_list current_model Pool_context.{ language; _ } =
         ])
       field_list
   in
+  let groups_html =
+    let list =
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Sihl.Web.externalize_path
+                 (Format.asprintf "%s/sort-options" (base_path current_model)))
+          ; a_class [ "stack" ]
+          ]
+        (CCList.cons
+           (div
+              ~a:[ a_user_data "sortable" "" ]
+              (CCList.map
+                 (fun group ->
+                   let open Custom_field in
+                   div
+                     ~a:
+                       [ a_class
+                           [ "flexrow"
+                           ; "flex-gap"
+                           ; "justify-between"
+                           ; "align-center"
+                           ]
+                       ; a_user_data "sortable-item" ""
+                       ; a_draggable true
+                       ]
+                     [ div [ txt Group.(group |> name language) ]
+                     ; div
+                         [ input
+                             ~a:
+                               [ a_input_type `Hidden
+                               ; a_name
+                                   Message.Field.(CustomFieldGroup |> array_key)
+                               ; a_value Group.(Id.value group.id)
+                               ]
+                             ()
+                         ]
+                     ; div
+                         ~a:
+                           [ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                         [ a
+                             ~a:
+                               [ a_href
+                                   (Format.asprintf
+                                      "%s/group/%s/edit"
+                                      (base_path current_model)
+                                      Group.(Id.value group.id)
+                                   |> Sihl.Web.externalize_path)
+                               ]
+                             [ txt
+                                 Pool_common.(
+                                   Message.(Edit None)
+                                   |> Utils.control_to_string language)
+                             ]
+                         ]
+                     ])
+                 group_list))
+           [ csrf_element csrf ()
+           ; submit_element
+               language
+               Message.UpdateOrder
+               ~submit_type:`Success
+               ()
+           ])
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              (Message.Field.CustomFieldGroup
+              |> Pool_common.Utils.field_to_string language
+              |> CCString.capitalize_ascii)
+          ]
+      ; p
+          [ a
+              ~a:
+                [ a_href
+                    (Format.asprintf "%s/group/new" (base_path current_model)
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(
+                    Message.(Create (Some Field.CustomFieldGroup))
+                    |> Utils.control_to_string language)
+              ]
+          ]
+      ; list
+      ]
+  in
   div
-    ~a:[ a_class [ "stack" ] ]
-    [ Table.horizontal_table `Striped language ~thead rows ]
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ Table.horizontal_table `Striped language ~thead rows; groups_html ]
   |> custom_fields_layout language current_model
 ;;
