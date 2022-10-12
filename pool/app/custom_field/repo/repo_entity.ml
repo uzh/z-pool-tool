@@ -224,6 +224,7 @@ module Public = struct
     ; answer
     }
     =
+    let open CCOption.Infix in
     let validation_schema schema =
       Validation.(validation |> raw_of_yojson |> schema)
     in
@@ -231,8 +232,8 @@ module Public = struct
     | FieldType.Boolean ->
       let answer =
         answer
-        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
-             value |> Utils.Bool.of_string |> Entity_answer.create ~id ~version)
+        >|= fun { Answer.id; value; version } ->
+        value |> Utils.Bool.of_string |> Entity_answer.create ~id ~version
       in
       Public.Boolean
         { Public.id
@@ -246,10 +247,9 @@ module Public = struct
         }
     | FieldType.Number ->
       let answer =
-        CCOption.bind answer (fun Repo_entity_answer.{ id; value; version } ->
-          value
-          |> CCInt.of_string
-          |> CCOption.map (Entity_answer.create ~id ~version))
+        answer
+        >>= fun Answer.{ id; value; version } ->
+        value |> CCInt.of_string >|= Entity_answer.create ~id ~version
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
@@ -264,16 +264,17 @@ module Public = struct
         }
     | FieldType.Select ->
       let answer =
+        let open SelectOption in
         answer
-        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
-             value
-             |> Entity.SelectOption.Id.of_string
-             |> fun selected ->
-             CCList.find
-               (fun (_, o) ->
-                 Entity.SelectOption.Id.equal o.SelectOption.id selected)
-               select_options
-             |> fun (_, value) -> Entity_answer.create ~id ~version value)
+        >|= fun Answer.{ id; value; version } ->
+        value
+        |> Id.of_string
+        |> fun selected ->
+        CCList.find
+          (fun (_, { SelectOption.id; _ }) -> Id.equal id selected)
+          select_options
+        |> snd
+        |> Entity_answer.create ~id ~version
       in
       let options =
         CCList.filter_map
@@ -295,8 +296,8 @@ module Public = struct
     | FieldType.Text ->
       let answer =
         answer
-        |> CCOption.map (fun Repo_entity_answer.{ id; value; version } ->
-             value |> Entity_answer.create ~id ~version)
+        >|= fun Answer.{ id; value; version } ->
+        value |> Entity_answer.create ~id ~version
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text

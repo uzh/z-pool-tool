@@ -505,29 +505,20 @@ module Public = struct
       >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
   ;;
 
-  let increment_version (t : t) =
-    let go a = a |> Answer.increment_version |> CCOption.pure in
-    match t with
-    | Boolean ({ answer; _ } as public) ->
-      answer
-      |> CCOption.map_or ~default:t (fun a ->
-           let answer = a |> go in
-           Boolean { public with answer })
-    | Number ({ answer; _ } as public) ->
-      answer
-      |> CCOption.map_or ~default:t (fun a ->
-           let answer = a |> go in
-           Number { public with answer })
-    | Select (({ answer; _ } as public), options) ->
-      answer
-      |> CCOption.map_or ~default:t (fun a ->
-           let answer = a |> go in
-           Select ({ public with answer }, options))
-    | Text ({ answer; _ } as public) ->
-      answer
-      |> CCOption.map_or ~default:t (fun a ->
-           let answer = a |> go in
-           Text { public with answer })
+  let increment_version : t -> t =
+    let increment ({ answer; _ } as public) =
+      match answer with
+      | Some answer ->
+        { public with
+          answer = answer |> Answer.increment_version |> CCOption.pure
+        }
+      | None -> public
+    in
+    function
+    | Boolean public -> Boolean (public |> increment)
+    | Number public -> Number (public |> increment)
+    | Select (public, options) -> Select (public |> increment, options)
+    | Text public -> Text (public |> increment)
   ;;
 
   let to_common_field language m =
