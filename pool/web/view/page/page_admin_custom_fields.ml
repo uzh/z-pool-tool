@@ -2,30 +2,57 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let base_path model =
-  model |> Custom_field.Model.show |> Format.asprintf "/admin/custom-fields/%s"
-;;
+module Url = struct
+  open Custom_field
 
-let base_field_path model = model |> base_path |> Format.asprintf "%s/field"
+  let concat = CCString.concat "/"
+  let fallback_path = "/admin/custom-fields"
+  let index_path m = [ fallback_path; Model.show m ] |> concat
 
-let specific_field_path model field =
-  model
-  |> base_field_path
-  |> Format.asprintf "%s/%s" Custom_field.(id field |> Id.value)
-;;
+  module Field = struct
+    let field_key = "field"
+    let create_path m = [ index_path m; field_key ] |> concat
+    let new_path m = [ index_path m; field_key; "new" ] |> concat
 
-let base_group_path model = model |> base_path |> Format.asprintf "%s/group"
+    let detail_path (m, id) =
+      [ index_path m; field_key; id |> Id.value ] |> concat
+    ;;
 
-let make_option_url field option current_model path =
-  let open Custom_field in
-  Format.asprintf
-    "%s/%s/options/%s/%s"
-    (base_field_path current_model)
-    (id field |> Id.value)
-    (option.SelectOption.id |> SelectOption.Id.value)
-    path
-  |> Sihl.Web.externalize_path
-;;
+    let edit_path (m, id) = [ detail_path (m, id); "edit" ] |> concat
+  end
+
+  module Option = struct
+    open SelectOption
+
+    let options_key = "options"
+    let index_path = Field.detail_path
+    let new_path field = [ index_path field; options_key; "new" ] |> concat
+    let create_path field = [ Field.detail_path field; options_key ] |> concat
+
+    let detail_path field id =
+      [ index_path field; options_key; id |> Id.value ] |> concat
+    ;;
+
+    let edit_path field id = [ detail_path field id; "edit" ] |> concat
+    let delete_path field id = [ detail_path field id; "delete" ] |> concat
+  end
+
+  module Group = struct
+    open Group
+
+    let group_key = "group"
+    let index_path = index_path
+    let new_path m = [ index_path m; group_key; "new" ] |> concat
+    let create_path m = [ index_path m; group_key ] |> concat
+
+    let detail_path (model, id) =
+      [ index_path model; group_key; id |> Id.value ] |> concat
+    ;;
+
+    let edit_path group = [ detail_path group; "edit" ] |> concat
+    let delete_path group = [ detail_path group; "delete" ] |> concat
+  end
+end
 
 let custom_fields_layout language current_model html =
   let open Custom_field in
@@ -34,7 +61,7 @@ let custom_fields_layout language current_model html =
       all
       |> CCList.map (fun f ->
            ( f |> show |> CCString.capitalize_ascii
-           , f |> base_path
+           , f |> Url.index_path
            , equal current_model f )))
   in
   div
@@ -54,7 +81,7 @@ let custom_fields_layout language current_model html =
             [ a
                 ~a:
                   [ a_href
-                      (Format.asprintf "%s/new" (base_field_path current_model)
+                      (Url.Field.new_path current_model
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
@@ -65,7 +92,9 @@ let custom_fields_layout language current_model html =
             ; a
                 ~a:
                   [ a_href
-                      (Format.asprintf "%s/new" (base_group_path current_model)
+                      (Format.asprintf
+                         "%s/new"
+                         (Url.Group.new_path current_model)
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
@@ -155,12 +184,8 @@ let field_form
   let open Custom_field in
   let action =
     match custom_field with
-    | None -> base_field_path current_model
-    | Some f ->
-      Format.asprintf
-        "%s/%s"
-        (base_field_path current_model)
-        (f |> id |> Id.value)
+    | None -> Url.Field.create_path current_model
+    | Some f -> Url.Field.detail_path (model f, id f)
   in
   let checkbox_element ?orientation ?help ?(default = false) field fnc =
     checkbox_element
@@ -264,29 +289,14 @@ let field_form
     | Some m ->
       (match m with
        | Select (_, options) ->
-         let make_link url control =
-           let url =
-             Format.asprintf
-               "%s/%s/options/%s"
-               (base_field_path (model m))
-               (m |> id |> Id.value)
-               url
-             |> Sihl.Web.externalize_path
-           in
-           a
-             ~a:[ a_href url ]
-             [ txt Pool_common.(control |> Utils.control_to_string language) ]
-         in
          let list =
            form
              ~a:
                [ a_method `Post
                ; a_action
                    (Sihl.Web.externalize_path
-                      (Format.asprintf
-                         "%s/%s/sort-options"
-                         (base_field_path (model m))
-                         (m |> id |> Id.value)))
+                      (Url.Field.detail_path (model m, id m)
+                      |> Format.asprintf "%s/sort-options"))
                ; a_class [ "stack" ]
                ]
              (CCList.cons
@@ -325,11 +335,10 @@ let field_form
                               [ a
                                   ~a:
                                     [ a_href
-                                        (make_option_url
-                                           m
-                                           option
-                                           current_model
-                                           "edit")
+                                        (Url.Option.edit_path
+                                           (model m, id m)
+                                           option.SelectOption.id
+                                        |> Sihl.Web.externalize_path)
                                     ]
                                   [ txt
                                       Pool_common.(
@@ -355,7 +364,19 @@ let field_form
                    |> Pool_common.Utils.field_to_string language
                    |> CCString.capitalize_ascii)
                ]
-           ; p [ make_link "new" Message.(Add (Some Field.CustomFieldOption)) ]
+           ; p
+               [ a
+                   ~a:
+                     [ a_href
+                         (Url.Option.new_path (model m, id m)
+                         |> Sihl.Web.externalize_path)
+                     ]
+                   [ txt
+                       Pool_common.(
+                         Message.(Add (Some Field.CustomFieldOption))
+                         |> Utils.control_to_string language)
+                   ]
+               ]
            ; list
            ]
        | Boolean _ | Number _ | Text _ -> empty)
@@ -529,11 +550,8 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
         ; a
             ~a:
               [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "%s/%s/edit"
-                        (base_field_path current_model)
-                        (field |> id |> Id.value)))
+                  (Url.Field.edit_path (model field, id field)
+                  |> Sihl.Web.externalize_path)
               ]
             [ txt Pool_common.(Message.More |> Utils.control_to_string language)
             ]
@@ -546,8 +564,9 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
         ~a:
           [ a_method `Post
           ; a_action
-              (Sihl.Web.externalize_path
-                 (Format.asprintf "%s/group/sort" (base_path current_model)))
+              (Url.Group.index_path current_model
+              |> Format.asprintf "%s/group/sort"
+              |> Sihl.Web.externalize_path)
           ; a_class [ "stack" ]
           ]
         (CCList.cons
@@ -584,10 +603,8 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                          [ a
                              ~a:
                                [ a_href
-                                   (Format.asprintf
-                                      "%s/group/%s/edit"
-                                      (base_path current_model)
-                                      Group.(Id.value group.id)
+                                   (Url.Group.edit_path
+                                      Group.(group.model, group.id)
                                    |> Sihl.Web.externalize_path)
                                ]
                              [ txt
@@ -618,7 +635,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
           [ a
               ~a:
                 [ a_href
-                    (Format.asprintf "%s/group/new" (base_path current_model)
+                    (Url.Group.new_path current_model
                     |> Sihl.Web.externalize_path)
                 ]
               [ txt

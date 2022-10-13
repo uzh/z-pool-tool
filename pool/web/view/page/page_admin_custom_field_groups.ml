@@ -1,8 +1,7 @@
 open Tyxml.Html
 open Component
 module Message = Pool_common.Message
-
-let base_path = Page_admin_custom_fields.base_group_path
+module Url = Page_admin_custom_fields.Url
 
 let form
   ?(custom_field_group : Custom_field.Group.t option)
@@ -14,9 +13,8 @@ let form
   let open Custom_field in
   let action =
     match custom_field_group with
-    | None -> base_path current_model
-    | Some g ->
-      Format.asprintf "%s/%s" (base_path current_model) Group.(g.id |> Id.value)
+    | None -> Url.Group.create_path current_model
+    | Some g -> Url.Group.detail_path Group.(g.model, g.id)
   in
   let input_by_lang ?required =
     Page_admin_custom_fields.input_by_lang

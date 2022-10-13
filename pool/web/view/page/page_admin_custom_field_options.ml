@@ -1,12 +1,7 @@
 open Tyxml.Html
 open Component
 module Message = Pool_common.Message
-
-let base_path field =
-  let open Custom_field in
-  let base = Page_admin_custom_fields.base_field_path (model field) in
-  Format.asprintf "%s/%s/options" base (field |> id |> Id.value)
-;;
+module Url = Page_admin_custom_fields.Url
 
 let option_form
   ?(custom_field_option : Custom_field.SelectOption.t option)
@@ -17,10 +12,10 @@ let option_form
   =
   let open Custom_field in
   let action =
-    let base = base_path custom_field in
+    let field = model custom_field, id custom_field in
     match custom_field_option with
-    | None -> base
-    | Some o -> Format.asprintf "%s/%s" base SelectOption.(o.id |> Id.value)
+    | None -> Url.Option.create_path field
+    | Some o -> Url.Option.detail_path field o.SelectOption.id
   in
   let name_inputs =
     Page_admin_custom_fields.input_by_lang
@@ -81,11 +76,10 @@ let detail
         ~a:
           [ a_method `Post
           ; a_action
-              (Page_admin_custom_fields.make_option_url
-                 custom_field
-                 option
-                 Custom_field.(model custom_field)
-                 "delete")
+              Custom_field.(
+                Url.Option.delete_path
+                  (model custom_field, id custom_field)
+                  option.SelectOption.id)
           ; a_user_data
               "confirmable"
               Pool_common.(
@@ -113,9 +107,8 @@ let detail
             [ a
                 ~a:
                   [ a_href
-                      (Format.asprintf
-                         "/admin/custom-fields/%s/edit"
-                         Custom_field.(id custom_field |> Id.value)
+                      (Url.Field.edit_path
+                         Custom_field.(model custom_field, id custom_field)
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt

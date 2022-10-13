@@ -1,5 +1,6 @@
 module HttpUtils = Http_utils
 module Message = Pool_common.Message
+module Url = Page.Admin.CustomFields.Url
 
 let create_layout req = General.create_tenant_layout `Admin req
 
@@ -15,13 +16,13 @@ let model_from_router req =
   >>= fun s -> s |> Model.create
 ;;
 
-let with_model req fnc =
+let get_model fnc req =
   let model = model_from_router req in
   match model with
-  | Ok model -> model |> fnc
+  | Ok model -> model |> fnc req
   | Error err ->
     Http_utils.redirect_to_with_actions
-      "/admin/custom-fields"
+      Url.fallback_path
       [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
@@ -54,7 +55,7 @@ let index req =
        let%lwt group_list = Custom_field.find_groups_by_model tenant_db model in
        let%lwt field_list = find_by_model tenant_db model in
        Page.Admin.CustomFields.index field_list group_list model context
-       |> create_layout ~active_navigation:"/admin/custom-fields" req context
+       |> create_layout ~active_navigation:Url.fallback_path req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
@@ -64,8 +65,7 @@ let redirect _ =
   let open Custom_field in
   Model.all
   |> CCList.head_opt
-  |> CCOption.map_or ~default:"/admin/dashboard" (fun model ->
-       model |> Model.show |> Format.asprintf "/admin/custom-fields/%s")
+  |> CCOption.map_or ~default:"/admin/dashboard" Url.index_path
   |> Http_utils.redirect_to
 ;;
 
@@ -73,11 +73,7 @@ let form ?id req model =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err ->
-      ( err
-      , model
-        |> Custom_field.Model.show
-        |> Format.asprintf "/admin/custom-fields/%s" ))
+    Lwt_result.map_error (fun err -> err, Url.index_path model)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* custom_field =
@@ -98,14 +94,14 @@ let form ?id req model =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let new_form req = with_model req (form req)
+let new_form req = get_model form req
 
 let edit req =
   let id =
     HttpUtils.get_field_router_param req Message.Field.CustomField
     |> Custom_field.Id.of_string
   in
-  with_model req (form ~id req)
+  get_model (form ~id) req
 ;;
 
 let write ?id req model =
@@ -123,17 +119,10 @@ let write ?id req model =
     , go Message.Field.Hint encode_lang
     , go Message.Field.Validation CCOption.pure )
   in
-  let redirect_path =
-    Format.asprintf "/admin/custom-fields/%s" (Custom_field.Model.show model)
-  in
   let error_path =
     match id with
-    | None -> Format.asprintf "%s/field/new" redirect_path
-    | Some id ->
-      Format.asprintf
-        "%s/field/%s/edit"
-        redirect_path
-        (Custom_field.Id.value id)
+    | None -> Url.Field.new_path model
+    | Some id -> Url.Field.edit_path (model, id)
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
@@ -179,7 +168,7 @@ let write ?id req model =
         else Created Field.CustomField
       in
       Http_utils.redirect_to_with_actions
-        redirect_path
+        (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
@@ -187,14 +176,14 @@ let write ?id req model =
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let create req = with_model req (write req)
+let create req = get_model write req
 
 let update req =
   let id =
     HttpUtils.get_field_router_param req Message.Field.CustomField
     |> Custom_field.Id.of_string
   in
-  with_model req (write ~id req)
+  get_model (write ~id) req
 ;;
 
 let sort_options req =
@@ -205,12 +194,7 @@ let sort_options req =
       HttpUtils.get_field_router_param req Message.Field.CustomField
       |> Custom_field.Id.of_string
     in
-    let redirect_path =
-      Format.asprintf
-        "/admin/custom-fields/%s/field/%s/edit"
-        (Custom_field.Model.show model)
-        (Custom_field.Id.value custom_field_id)
-    in
+    let redirect_path = Url.Field.edit_path (model, custom_field_id) in
     let result { Pool_context.tenant_db; _ } =
       Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
@@ -251,5 +235,5 @@ let sort_options req =
     in
     result |> HttpUtils.extract_happy_path_with_actions req
   in
-  with_model req (handler req)
+  get_model handler req
 ;;
