@@ -6,6 +6,12 @@ let form
   flash_fetcher
   custom_fields
   =
+  let custom_fields_form =
+    let to_html field =
+      Component.custom_field_to_input ~flash_fetcher language field
+    in
+    Page_contact_edit.grouped_custom_fields_form language custom_fields to_html
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -24,10 +30,7 @@ let form
                  "/user/completion")
           ]
         Component.(
-          (csrf_element csrf ()
-          :: CCList.map
-               (custom_field_to_input ~flash_fetcher language)
-               custom_fields)
+          (csrf_element csrf () :: custom_fields_form)
           @ [ submit_element
                 language
                 Message.(Save None)

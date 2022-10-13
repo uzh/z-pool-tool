@@ -81,11 +81,13 @@ let form ?id req model =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
+    let%lwt groups = Custom_field.find_groups_by_model tenant_db model in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail
       ?custom_field
       model
       context
+      groups
       sys_languages
       flash_fetcher
     |> create_layout req context

@@ -1,6 +1,5 @@
 include Entity
 include Event
-module Group = Entity_group
 
 let find_all = Repo.find_all
 let find_by_model = Repo.find_by_model

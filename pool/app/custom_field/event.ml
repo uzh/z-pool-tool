@@ -1,5 +1,4 @@
 open Entity
-module Group = Entity_group
 
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t

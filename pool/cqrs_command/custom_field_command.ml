@@ -4,6 +4,7 @@ type command =
   { field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
+  ; custom_field_group_id : Custom_field.Group.Id.t option
   ; admin_hint : Custom_field.Admin.Hint.t option
   ; admin_overwrite : Custom_field.Admin.Overwrite.t
   ; admin_view_only : Custom_field.Admin.ViewOnly.t
@@ -14,6 +15,7 @@ let base_command
   field_type
   required
   disabled
+  custom_field_group_id
   admin_hint
   admin_overwrite
   admin_view_only
@@ -22,6 +24,7 @@ let base_command
   { field_type
   ; required
   ; disabled
+  ; custom_field_group_id
   ; admin_hint
   ; admin_overwrite
   ; admin_view_only
@@ -37,6 +40,7 @@ let base_schema =
         [ FieldType.schema ()
         ; Required.schema ()
         ; Disabled.schema ()
+        ; Conformist.optional @@ Group.Id.schema ()
         ; Conformist.optional @@ Admin.Hint.schema ()
         ; Admin.Overwrite.schema ()
         ; Admin.ViewOnly.schema ()
@@ -77,6 +81,7 @@ end = struct
     { field_type
     ; required
     ; disabled
+    ; custom_field_group_id
     ; admin_hint
     ; admin_overwrite
     ; admin_view_only
@@ -103,6 +108,7 @@ end = struct
         validation
         required
         disabled
+        custom_field_group_id
         admin
     in
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
@@ -136,6 +142,7 @@ end = struct
     { field_type
     ; required
     ; disabled
+    ; custom_field_group_id
     ; admin_hint
     ; admin_overwrite
     ; admin_view_only
@@ -163,6 +170,7 @@ end = struct
         validation
         required
         disabled
+        custom_field_group_id
         admin
     in
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]

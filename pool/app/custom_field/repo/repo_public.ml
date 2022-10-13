@@ -5,7 +5,7 @@ let get_field_type m = m.Repo_entity.Public.field_type
 let id m = m.Repo_entity.Public.id
 
 let get_options pool m =
-  Repo.get_options pool Repo_entity.Public.to_entity get_field_type id m
+  Repo.to_entity pool Repo_entity.Public.to_entity get_field_type id m
 ;;
 
 let base_filter_conditions is_admin =
@@ -18,12 +18,20 @@ let base_filter_conditions is_admin =
 ;;
 
 let get_options_of_multiple pool fields =
-  Repo.get_options_of_multiple
+  Repo.multiple_to_entity
     pool
     Repo_entity.Public.to_entity
     get_field_type
     id
     fields
+;;
+
+let to_grouped_public pool model fields =
+  let%lwt groups = Repo_group.find_by_model pool model in
+  let%lwt options =
+    Repo.get_options_of_multiple pool get_field_type id fields
+  in
+  Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
 ;;
 
 module Sql = struct
@@ -51,6 +59,13 @@ module Sql = struct
         pool_custom_fields.validation,
         pool_custom_fields.field_type,
         pool_custom_fields.required,
+        LOWER(CONCAT(
+          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 1, 8), '-',
+          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 9, 4), '-',
+          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 13, 4), '-',
+          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 17, 4), '-',
+          SUBSTR(HEX(pool_custom_fields.custom_field_group_uuid), 21)
+        )),
         pool_custom_fields.admin_overwrite,
         pool_custom_fields.admin_input_only,
         LOWER(CONCAT(
@@ -89,7 +104,7 @@ module Sql = struct
     |>> get_options pool
   ;;
 
-  let find_all_by_contact_request required is_admin =
+  let find_all_by_model_request required is_admin =
     let open Caqti_request.Infix in
     let where =
       Format.asprintf
@@ -105,13 +120,13 @@ module Sql = struct
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 
-  let find_all_by_contact ?(required = false) ?(is_admin = false) pool id =
+  let find_all_by_model model ?(required = false) ?(is_admin = false) pool id =
     let open Lwt.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
-      (find_all_by_contact_request required is_admin)
-      (Pool_common.Id.value id, Entity.Model.(show Contact))
-    >>= get_options_of_multiple pool
+      (find_all_by_model_request required is_admin)
+      (Pool_common.Id.value id, Entity.Model.show model)
+    >>= to_grouped_public pool model
   ;;
 
   let find_multiple_by_contact_request is_admin ids =
@@ -293,8 +308,8 @@ module Sql = struct
   ;;
 end
 
-let find_all_by_contact = Sql.find_all_by_contact
-let find_all_required_by_contact = Sql.find_all_by_contact ~required:true
+let find_all_by_contact = Sql.find_all_by_model Entity.Model.Contact
+let find_all_required_by_contact = find_all_by_contact ~required:true
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer

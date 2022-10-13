@@ -1,4 +1,4 @@
-open Entity_group
+open Entity.Group
 module Repo = Pool_common.Repo
 
 let t =

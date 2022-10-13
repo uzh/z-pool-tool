@@ -158,6 +158,7 @@ module Write = struct
       ; field_type = field_type t
       ; required = required t
       ; disabled = disabled t
+      ; custom_field_group_id = group_id t
       ; admin = admin t
       }
   ;;
@@ -171,7 +172,10 @@ module Write = struct
           , ( m.name
             , ( m.hint
               , ( m.field_type
-                , (m.validation, (m.required, (m.disabled, m.admin))) ) ) ) ) )
+                , ( m.validation
+                  , ( m.required
+                    , (m.disabled, (m.custom_field_group_id, m.admin)) ) ) ) )
+            ) ) )
     in
     let decode _ =
       failwith
@@ -194,7 +198,11 @@ module Write = struct
                        FieldType.t
                        (tup2
                           Validation.t
-                          (tup2 Required.t (tup2 Disabled.t Admin.t)))))))))
+                          (tup2
+                             Required.t
+                             (tup2
+                                Disabled.t
+                                (tup2 (option Common.Repo.Id.t) Admin.t))))))))))
   ;;
 end
 
@@ -206,6 +214,7 @@ module Public = struct
     ; validation : Yojson.Safe.t
     ; field_type : FieldType.t
     ; required : Required.t
+    ; custom_field_group_id : Group.Id.t option
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
     ; answer : Repo_entity_answer.repo option
@@ -222,6 +231,7 @@ module Public = struct
     ; admin_overwrite
     ; admin_input_only
     ; answer
+    ; _
     }
     =
     let open CCOption.Infix in
@@ -312,6 +322,32 @@ module Public = struct
         }
   ;;
 
+  let to_grouped_entities select_options (groups : Entity.Group.t list) fields =
+    let grouped, ungrouped =
+      CCList.fold_left
+        (fun (grouped, ungrouped) (field : repo) ->
+          let to_entity = to_entity select_options in
+          match field.custom_field_group_id with
+          | Some id -> (id, to_entity field) :: grouped, ungrouped
+          | None -> grouped, to_entity field :: ungrouped)
+        ([], [])
+        fields
+    in
+    CCList.map
+      (fun group ->
+        let fields =
+          CCList.filter_map
+            (fun (id, field) ->
+              match Group.Id.equal id group.Group.id with
+              | true -> Some field
+              | false -> None)
+            grouped
+        in
+        Group.{ Public.id = group.id; name = group.name; fields })
+      groups
+    |> fun groups -> groups, ungrouped
+  ;;
+
   let t =
     let encode _ =
       failwith
@@ -323,8 +359,9 @@ module Public = struct
         , ( hint
           , ( validation
             , ( field_type
-              , (required, (admin_overwrite, (admin_input_only, answer))) ) ) )
-        ) )
+              , ( required
+                , ( custom_field_group_id
+                  , (admin_overwrite, (admin_input_only, answer)) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -335,6 +372,7 @@ module Public = struct
         ; required
         ; admin_overwrite
         ; admin_input_only
+        ; custom_field_group_id
         ; answer
         }
     in
@@ -355,8 +393,10 @@ module Public = struct
                        (tup2
                           Required.t
                           (tup2
-                             Admin.Overwrite.t
-                             (tup2 Admin.InputOnly.t (option Answer.t))))))))))
+                             (option Common.Repo.Id.t)
+                             (tup2
+                                Admin.Overwrite.t
+                                (tup2 Admin.InputOnly.t (option Answer.t)))))))))))
   ;;
 end
 
@@ -369,6 +409,7 @@ type repo =
   ; validation : Yojson.Safe.t
   ; required : Required.t
   ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
   }
 
@@ -380,7 +421,11 @@ let t =
   let decode
     ( id
     , ( model
-      , (name, (hint, (field_type, (validation, (required, (disabled, admin))))))
+      , ( name
+        , ( hint
+          , ( field_type
+            , ( validation
+              , (required, (disabled, (custom_field_group_id, admin))) ) ) ) )
       ) )
     =
     let open CCResult in
@@ -393,6 +438,7 @@ let t =
       ; validation
       ; required
       ; disabled
+      ; custom_field_group_id
       ; admin
       }
   in
@@ -412,12 +458,26 @@ let t =
                      FieldType.t
                      (tup2
                         Validation.t
-                        (tup2 Required.t (tup2 Disabled.t Admin.t)))))))))
+                        (tup2
+                           Required.t
+                           (tup2
+                              Disabled.t
+                              (tup2 (option Common.Repo.Id.t) Admin.t))))))))))
 ;;
 
 let to_entity
   select_options
-  { id; model; name; hint; validation; field_type; required; disabled; admin }
+  { id
+  ; model
+  ; name
+  ; hint
+  ; validation
+  ; field_type
+  ; required
+  ; disabled
+  ; custom_field_group_id
+  ; admin
+  }
   =
   let validation_schema schema =
     Validation.(validation |> raw_of_yojson |> schema)
@@ -432,11 +492,22 @@ let to_entity
       ; validation = Validation.pure
       ; required
       ; disabled
+      ; custom_field_group_id
       ; admin
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
-    Number { id; model; name; hint; validation; required; disabled; admin }
+    Number
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation
+      ; required
+      ; disabled
+      ; custom_field_group_id
+      ; admin
+      }
   | FieldType.Select ->
     let options =
       CCList.filter_map
@@ -452,10 +523,21 @@ let to_entity
         ; validation = Validation.pure
         ; required
         ; disabled
+        ; custom_field_group_id
         ; admin
         }
       , options )
   | FieldType.Text ->
     let validation = validation_schema Validation.Text.schema in
-    Text { id; model; name; hint; validation; required; disabled; admin }
+    Text
+      { id
+      ; model
+      ; name
+      ; hint
+      ; validation
+      ; required
+      ; disabled
+      ; custom_field_group_id
+      ; admin
+      }
 ;;

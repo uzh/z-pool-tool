@@ -104,7 +104,7 @@ let destroy pool m =
   Utils.Database.exec
     (Pool_database.Label.value pool)
     destroy_request
-    Entity_group.(m.id |> Id.value)
+    Entity.Group.(m.id |> Id.value)
 ;;
 
 let update_position_request =

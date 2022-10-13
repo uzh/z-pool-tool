@@ -39,14 +39,6 @@ let form
       ; a_class [ "stack-lg" ]
       ]
     [ csrf_element csrf ()
-    ; selector
-        language
-        Message.Field.Model
-        Model.show
-        [ current_model ]
-        (CCOption.pure current_model)
-        ~attributes:[ a_disabled () ]
-        ()
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ h4
@@ -89,7 +81,8 @@ let detail
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 [ txt title ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
+    ; Page_admin_custom_fields.model_subtitle language current_model
     ; form ?custom_field_group current_model context sys_langauges flash_fetcher
     ]
 ;;

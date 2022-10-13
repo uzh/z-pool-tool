@@ -54,6 +54,22 @@ module Url = struct
   end
 end
 
+let model_subtitle language model =
+  div
+    [ p
+        [ strong
+            [ txt
+                (Format.asprintf
+                   "%s: "
+                   Pool_common.(
+                     Utils.field_to_string language Message.Field.Model
+                     |> CCString.capitalize_ascii))
+            ]
+        ; txt (Custom_field.Model.show model |> CCString.capitalize_ascii)
+        ]
+    ]
+;;
+
 let custom_fields_layout language current_model html =
   let open Custom_field in
   let subnav_links =
@@ -92,9 +108,7 @@ let custom_fields_layout language current_model html =
             ; a
                 ~a:
                   [ a_href
-                      (Format.asprintf
-                         "%s/new"
-                         (Url.Group.new_path current_model)
+                      (Url.Group.new_path current_model
                       |> Sihl.Web.externalize_path)
                   ]
                 [ txt
@@ -178,6 +192,7 @@ let field_form
   ?(custom_field : Custom_field.t option)
   current_model
   Pool_context.{ language; csrf; _ }
+  groups
   tenant_languages
   flash_fetcher
   =
@@ -381,7 +396,8 @@ let field_form
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
-  [ form
+  [ model_subtitle language current_model
+  ; form
       ~a:
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
@@ -392,14 +408,6 @@ let field_form
           ~a:[ a_class [ "switcher"; "flex-gap" ] ]
           [ selector
               language
-              Message.Field.Model
-              Model.show
-              [ current_model ]
-              (CCOption.pure current_model)
-              ~attributes:[ a_disabled () ]
-              ()
-          ; selector
-              language
               Message.Field.FieldType
               FieldType.show
               FieldType.all
@@ -408,6 +416,22 @@ let field_form
               ~required:true
               ~flash_fetcher
               ()
+          ; Group.(
+              selector
+                language
+                Message.Field.CustomFieldGroup
+                show_id
+                groups
+                Custom_field.(
+                  let open CCOption in
+                  custom_field
+                  >>= group_id
+                  >>= fun id ->
+                  CCList.find_opt Group.(fun (g : t) -> Id.equal g.id id) groups)
+                ~option_formatter:(name language)
+                ~add_empty:true
+                ~flash_fetcher
+                ())
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -509,6 +533,7 @@ let detail
   ?custom_field
   current_model
   (Pool_context.{ language; _ } as context)
+  groups
   sys_languages
   flash_fetcher
   =
@@ -523,13 +548,14 @@ let detail
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 [ txt title ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         (field_form
            ?custom_field
            current_model
            context
+           groups
            sys_languages
            flash_fetcher)
     ]
@@ -537,16 +563,26 @@ let detail
 
 let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
-  let thead = Message.Field.[ Some Title; None ] in
+  let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
   let rows =
     let open Custom_field in
+    let open CCOption in
     CCList.map
       (fun field ->
         [ txt
             (field
             |> name
             |> Name.find_opt language
-            |> CCOption.map_or ~default:"-" Name.value_name)
+            |> map_or ~default:"-" Name.value_name)
+        ; txt
+            (field
+            |> group_id
+            >>= (fun id ->
+                  CCList.find_opt
+                    Group.(fun (g : t) -> Id.equal g.id id)
+                    group_list
+                  >|= Group.name language)
+            |> value ~default:"")
         ; a
             ~a:
               [ a_href

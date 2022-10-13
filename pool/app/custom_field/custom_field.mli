@@ -168,17 +168,6 @@ module Validation : sig
   val pure : 'a t
 end
 
-type 'a custom_field =
-  { id : Id.t
-  ; model : Model.t
-  ; name : Name.t
-  ; hint : Hint.t
-  ; validation : 'a Validation.t
-  ; required : Required.t
-  ; disabled : Disabled.t
-  ; admin : Admin.t
-  }
-
 module SelectOption : sig
   module Id : sig
     include Pool_common.Model.IdSig
@@ -196,29 +185,6 @@ module SelectOption : sig
   val name : Pool_common.Language.t -> t -> string
   val create : ?id:Id.t -> Name.t -> t
 end
-
-type t =
-  | Boolean of bool custom_field
-  | Number of int custom_field
-  | Select of SelectOption.t custom_field * SelectOption.t list
-  | Text of string custom_field
-
-val equal : t -> t -> bool
-val pp : Format.formatter -> t -> unit
-val show : t -> string
-
-val create
-  :  ?id:Id.t
-  -> ?select_options:SelectOption.t list
-  -> FieldType.t
-  -> Model.t
-  -> Name.t
-  -> Hint.t
-  -> (string * string) list
-  -> Required.t
-  -> Disabled.t
-  -> Admin.t
-  -> (t, Pool_common.Message.error) result
 
 module Public : sig
   type 'a public =
@@ -289,7 +255,57 @@ module Group : sig
   val show : t -> string
   val create : ?id:Id.t -> Model.t -> Name.t -> t
   val name : Pool_common.Language.t -> t -> string
+  val show_id : t -> string
+
+  module Public : sig
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      ; fields : Public.t list
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val name : Pool_common.Language.t -> t -> string
+  end
 end
+
+type 'a custom_field =
+  { id : Id.t
+  ; model : Model.t
+  ; name : Name.t
+  ; hint : Hint.t
+  ; validation : 'a Validation.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin : Admin.t
+  }
+
+type t =
+  | Boolean of bool custom_field
+  | Number of int custom_field
+  | Select of SelectOption.t custom_field * SelectOption.t list
+  | Text of string custom_field
+
+val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
+val show : t -> string
+
+val create
+  :  ?id:Id.t
+  -> ?select_options:SelectOption.t list
+  -> FieldType.t
+  -> Model.t
+  -> Name.t
+  -> Hint.t
+  -> (string * string) list
+  -> Required.t
+  -> Disabled.t
+  -> Group.Id.t option
+  -> Admin.t
+  -> (t, Pool_common.Message.error) result
 
 val boolean_fields : Pool_common.Message.Field.t list
 val id : t -> Id.t
@@ -298,6 +314,7 @@ val name : t -> Name.t
 val hint : t -> Hint.t
 val required : t -> Required.t
 val disabled : t -> Disabled.t
+val group_id : t -> Group.Id.t option
 val admin : t -> Admin.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
@@ -337,12 +354,12 @@ val find_all_by_contact
   :  ?is_admin:bool
   -> Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_multiple_by_contact
   :  ?is_admin:bool
