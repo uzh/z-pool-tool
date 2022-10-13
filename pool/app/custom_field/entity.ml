@@ -17,7 +17,7 @@ module Model = struct
     | Session [@name "session"] [@printer printer "session"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
-  let field = Pool_common.Message.Field.Model
+  let field = Message.Field.Model
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -32,7 +32,7 @@ module Model = struct
 
   let create s =
     try Ok (read s) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Message.(Invalid field)
   ;;
 
   let value = show
@@ -56,7 +56,7 @@ module Name = struct
       sys_languages
     |> function
     | [] -> Ok names
-    | _ -> Error Pool_common.Message.(AllLanguagesRequired Field.Name)
+    | _ -> Error Message.(AllLanguagesRequired Field.Name)
   ;;
 end
 
@@ -79,7 +79,7 @@ module FieldType = struct
     | Text [@name "text"] [@printer printer "text"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
-  let field = Pool_common.Message.Field.FieldType
+  let field = Message.Field.FieldType
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -94,7 +94,7 @@ module FieldType = struct
 
   let create s =
     try Ok (read s) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Message.(Invalid field)
   ;;
 
   let value = show
@@ -104,13 +104,13 @@ end
 module Required = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.Required
+  let schema = schema Message.Field.Required
 end
 
 module Disabled = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.Disabled
+  let schema = schema Message.Field.Disabled
 end
 
 module Admin = struct
@@ -125,19 +125,19 @@ module Admin = struct
   module Overwrite = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.Overwrite
+    let schema = schema Message.Field.Overwrite
   end
 
   module ViewOnly = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.AdminViewOnly
+    let schema = schema Message.Field.AdminViewOnly
   end
 
   module InputOnly = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.AdminInputOnly
+    let schema = schema Message.Field.AdminInputOnly
   end
 
   type t =
@@ -163,7 +163,7 @@ module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
   type 'a t =
-    (('a -> ('a, Pool_common.Message.error) result) * raw
+    (('a -> ('a, Message.error) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
 
@@ -399,7 +399,7 @@ module Public = struct
     | Number ({ validation; _ } as public) ->
       value
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(NotANumber value)
+      |> CCOption.to_result Message.(NotANumber value)
       >>= fun i ->
       i
       |> go validation
@@ -413,7 +413,7 @@ module Public = struct
           options
       in
       selected
-      |> CCOption.to_result Pool_common.Message.InvalidOptionSelected
+      |> CCOption.to_result Message.InvalidOptionSelected
       >|= Answer.create ?id ?version
       >|= fun a : t ->
       Select ({ public with answer = a |> CCOption.pure }, options)
@@ -443,7 +443,7 @@ module Public = struct
   let to_common_field language m =
     let id = id m in
     let name = name_value language m in
-    Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
+    Message.(Field.CustomHtmx (name, id |> Id.value))
   ;;
 
   let to_common_hint language m =
@@ -665,8 +665,7 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Pool_common.Message.Field.
-    [ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
+  Message.Field.[ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
 ;;
 
 module Write = struct
