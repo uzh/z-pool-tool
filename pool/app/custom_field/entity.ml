@@ -73,6 +73,7 @@ end
 
 module FieldType = struct
   type t =
+    | Boolean [@name "boolean"] [@printer printer "boolean"]
     | Number [@name "number"] [@printer printer "number"]
     | Select [@name "select"] [@printer printer "select"]
     | Text [@name "text"] [@printer printer "text"]
@@ -304,6 +305,7 @@ module SelectOption = struct
 end
 
 type t =
+  | Boolean of bool custom_field
   | Number of int custom_field
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
@@ -323,6 +325,18 @@ let create
   =
   let open CCResult in
   match (field_type : FieldType.t) with
+  | FieldType.Boolean ->
+    Ok
+      (Boolean
+         { id
+         ; model
+         ; name
+         ; hint
+         ; validation = Validation.pure
+         ; required
+         ; disabled
+         ; admin
+         })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
     Ok (Number { id; model; name; hint; validation; required; disabled; admin })
@@ -373,6 +387,7 @@ module Public = struct
   [@@deriving eq, show]
 
   type t =
+    | Boolean of bool public
     | Number of int public
     | Select of SelectOption.t public * SelectOption.t list
     | Text of string public
@@ -380,23 +395,32 @@ module Public = struct
 
   let id (t : t) =
     match t with
-    | Number { id; _ } | Select ({ id; _ }, _) | Text { id; _ } -> id
+    | Boolean { id; _ }
+    | Number { id; _ }
+    | Select ({ id; _ }, _)
+    | Text { id; _ } -> id
   ;;
 
   let name_value lang (t : t) =
     match t with
-    | Number { name; _ } | Select ({ name; _ }, _) | Text { name; _ } ->
+    | Boolean { name; _ }
+    | Number { name; _ }
+    | Select ({ name; _ }, _)
+    | Text { name; _ } ->
       Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
   ;;
 
   let hint lang (t : t) =
     match t with
-    | Number { hint; _ } | Select ({ hint; _ }, _) | Text { hint; _ } ->
-      Hint.find_opt lang hint
+    | Boolean { hint; _ }
+    | Number { hint; _ }
+    | Select ({ hint; _ }, _)
+    | Text { hint; _ } -> Hint.find_opt lang hint
   ;;
 
   let required (t : t) =
     match t with
+    | Boolean { required; _ }
     | Number { required; _ }
     | Select ({ required; _ }, _)
     | Text { required; _ } -> required
@@ -404,6 +428,7 @@ module Public = struct
 
   let admin_overwrite (t : t) =
     match t with
+    | Boolean { admin_overwrite; _ }
     | Number { admin_overwrite; _ }
     | Select ({ admin_overwrite; _ }, _)
     | Text { admin_overwrite; _ } -> admin_overwrite
@@ -411,6 +436,7 @@ module Public = struct
 
   let admin_input_only (t : t) =
     match t with
+    | Boolean { admin_input_only; _ }
     | Number { admin_input_only; _ }
     | Select ({ admin_input_only; _ }, _)
     | Text { admin_input_only; _ } -> admin_input_only
@@ -418,6 +444,7 @@ module Public = struct
 
   let version (t : t) =
     match t with
+    | Boolean { answer; _ } -> answer |> CCOption.map Answer.version
     | Number { answer; _ } -> answer |> CCOption.map Answer.version
     | Select ({ answer; _ }, _) -> answer |> CCOption.map Answer.version
     | Text { answer; _ } -> answer |> CCOption.map Answer.version
@@ -426,7 +453,8 @@ module Public = struct
   let answer_id =
     let id a = a |> CCOption.map Answer.id in
     function
-    | (Number { answer; _ } : t) -> id answer
+    | (Boolean { answer; _ } : t) -> id answer
+    | Number { answer; _ } -> id answer
     | Select ({ answer; _ }, _) -> id answer
     | Text { answer; _ } -> id answer
   ;;
@@ -443,6 +471,12 @@ module Public = struct
     let id = answer_id m in
     let version = version m in
     match m with
+    | Boolean public ->
+      value
+      |> Utils.Bool.of_string
+      |> Answer.create ?id ?version
+      |> (fun a : t -> Boolean { public with answer = a |> CCOption.pure })
+      |> CCResult.pure
     | Number ({ validation; _ } as public) ->
       value
       |> CCInt.of_string
@@ -471,6 +505,22 @@ module Public = struct
       >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
   ;;
 
+  let increment_version : t -> t =
+    let increment ({ answer; _ } as public) =
+      match answer with
+      | Some answer ->
+        { public with
+          answer = answer |> Answer.increment_version |> CCOption.pure
+        }
+      | None -> public
+    in
+    function
+    | Boolean public -> Boolean (public |> increment)
+    | Number public -> Number (public |> increment)
+    | Select (public, options) -> Select (public |> increment, options)
+    | Text public -> Text (public |> increment)
+  ;;
+
   let to_common_field language m =
     let id = id m in
     let name = name_value language m in
@@ -486,36 +536,56 @@ module Public = struct
 end
 
 let id = function
-  | Number { id; _ } | Select ({ id; _ }, _) | Text { id; _ } -> id
+  | Boolean { id; _ }
+  | Number { id; _ }
+  | Select ({ id; _ }, _)
+  | Text { id; _ } -> id
 ;;
 
 let model = function
-  | Number { model; _ } | Select ({ model; _ }, _) | Text { model; _ } -> model
+  | Boolean { model; _ }
+  | Number { model; _ }
+  | Select ({ model; _ }, _)
+  | Text { model; _ } -> model
 ;;
 
 let name = function
-  | Number { name; _ } | Select ({ name; _ }, _) | Text { name; _ } -> name
+  | Boolean { name; _ }
+  | Number { name; _ }
+  | Select ({ name; _ }, _)
+  | Text { name; _ } -> name
 ;;
 
 let hint = function
-  | Number { hint; _ } | Select ({ hint; _ }, _) | Text { hint; _ } -> hint
+  | Boolean { hint; _ }
+  | Number { hint; _ }
+  | Select ({ hint; _ }, _)
+  | Text { hint; _ } -> hint
 ;;
 
 let required = function
-  | Number { required; _ } | Select ({ required; _ }, _) | Text { required; _ }
-    -> required
+  | Boolean { required; _ }
+  | Number { required; _ }
+  | Select ({ required; _ }, _)
+  | Text { required; _ } -> required
 ;;
 
 let disabled = function
-  | Number { disabled; _ } | Select ({ disabled; _ }, _) | Text { disabled; _ }
-    -> disabled
+  | Boolean { disabled; _ }
+  | Number { disabled; _ }
+  | Select ({ disabled; _ }, _)
+  | Text { disabled; _ } -> disabled
 ;;
 
 let admin = function
-  | Number { admin; _ } | Select ({ admin; _ }, _) | Text { admin; _ } -> admin
+  | Boolean { admin; _ }
+  | Number { admin; _ }
+  | Select ({ admin; _ }, _)
+  | Text { admin; _ } -> admin
 ;;
 
 let field_type = function
+  | Boolean _ -> FieldType.Boolean
   | Number _ -> FieldType.Number
   | Select _ -> FieldType.Select
   | Text _ -> FieldType.Text
@@ -524,14 +594,14 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
+  | Boolean _ | Select _ -> []
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
-  | Select _ -> []
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
+  | Boolean _ | Select _ -> "[]" |> Yojson.Safe.from_string
   | Number { validation; _ } -> Validation.encode_to_yojson validation
-  | Select _ -> "[]" |> Yojson.Safe.from_string
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;
 

@@ -82,6 +82,21 @@ module Data = struct
     let admin_input_only = (admin m).Admin.input_only in
     let answer_version = 0 |> Pool_common.Version.of_int in
     match field_type with
+    | FieldType.Boolean ->
+      let answer =
+        Answer.{ id = answer_id; version = answer_version; value = true }
+        |> CCOption.pure
+      in
+      Public.Boolean
+        { Public.id
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; admin_overwrite
+        ; admin_input_only
+        ; answer
+        }
     | FieldType.Number ->
       let answer =
         Answer.{ id = answer_id; version = answer_version; value = 3 }

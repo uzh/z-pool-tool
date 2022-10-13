@@ -165,25 +165,7 @@ module PartialUpdate = struct
     | Paused (version, value) -> paused (version |> increment) value
     | Language (version, value) -> language (version |> increment) value
     | Custom custom_field ->
-      let open Custom_field in
-      let open Public in
-      Custom
-        (match custom_field with
-         | Number ({ answer; _ } as public) ->
-           answer
-           |> CCOption.map_or ~default:custom_field (fun a ->
-                let answer = Answer.increment_version a |> CCOption.pure in
-                Number { public with answer })
-         | Select (({ answer; _ } as public), options) ->
-           answer
-           |> CCOption.map_or ~default:custom_field (fun a ->
-                let answer = Answer.increment_version a |> CCOption.pure in
-                Select ({ public with answer }, options))
-         | Text ({ answer; _ } as public) ->
-           answer
-           |> CCOption.map_or ~default:custom_field (fun a ->
-                let answer = Answer.increment_version a |> CCOption.pure in
-                Text { public with answer }))
+      Custom (Custom_field.Public.increment_version custom_field)
   ;;
 
   let validate

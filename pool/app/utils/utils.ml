@@ -34,11 +34,16 @@ module Url = struct
 end
 
 module Bool = struct
+  let handled_true_values = [ "on"; "checked"; "true" ]
+
   let to_result err value =
     match value with
     | true -> Ok ()
     | false -> Error err
   ;;
+
+  let of_string s = CCList.mem ~eq:CCString.equal s handled_true_values
+  let to_string = Bool.to_string
 end
 
 module Html = struct

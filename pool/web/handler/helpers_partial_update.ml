@@ -179,6 +179,7 @@ let update ?contact req =
                   language
                   is_admin
                   field
+                  ~version
                   ~hx_post
                   ~error
                   ~flash_fetcher
