@@ -3,6 +3,7 @@ open Entity
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | FieldsSorted of t list
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
@@ -18,6 +19,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | AnswerUpserted (t, entity_uuid) ->
     Repo_public.upsert_answer pool entity_uuid t
   | Created t -> Repo.insert pool t
+  | FieldsSorted t -> CCList.map (fun f -> id f) t |> Repo.sort_fields pool
   | GroupCreated t -> Repo_group.insert pool t
   | GroupDestroyed t -> Repo_group.destroy pool t
   | GroupsSorted t ->

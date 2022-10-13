@@ -323,6 +323,7 @@ val validation_to_yojson : t -> Yojson.Safe.t
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | FieldsSorted of t list
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
   | GroupsSorted of Group.t list
@@ -339,6 +340,7 @@ val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
+val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
 
 val find
   :  Pool_database.Label.t

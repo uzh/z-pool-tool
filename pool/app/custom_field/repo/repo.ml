@@ -27,8 +27,17 @@ let get_field_type m = m.Repo_entity.field_type
 let get_id m = m.Repo_entity.id
 
 module Sql = struct
-  let select_sql =
+  let default_order = "ORDER BY pool_custom_fields.position ASC"
+
+  let order_by_group =
     {sql|
+      ORDER BY pool_custom_fields.custom_field_group_uuid DESC, pool_custom_fields.position ASC
+    |sql}
+  ;;
+
+  let select_sql ?(order_by = default_order) where =
+    Format.asprintf
+      {sql|
       SELECT
         LOWER(CONCAT(
           SUBSTR(HEX(pool_custom_fields.uuid), 1, 8), '-',
@@ -56,12 +65,18 @@ module Sql = struct
         pool_custom_fields.admin_view_only,
         pool_custom_fields.admin_input_only
       FROM pool_custom_fields
+      %s
+      %s
     |sql}
+      where
+      order_by
   ;;
 
   let find_all_request =
     let open Caqti_request.Infix in
-    select_sql |> Caqti_type.unit ->* Repo_entity.t
+    ""
+    |> select_sql ~order_by:order_by_group
+    |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
   let find_all pool () =
@@ -72,12 +87,8 @@ module Sql = struct
 
   let find_by_model_request =
     let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-    %s
-    WHERE pool_custom_fields.model = $1
-    |sql}
-      select_sql
+    {sql| WHERE pool_custom_fields.model = $1 |sql}
+    |> select_sql ~order_by:order_by_group
     |> Caqti_type.string ->* Repo_entity.t
   ;;
 
@@ -90,14 +101,26 @@ module Sql = struct
     >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
+  let find_by_group_request =
+    let open Caqti_request.Infix in
+    {sql| WHERE pool_custom_fields.custom_field_group_uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+    |> select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_by_group pool group =
+    let open Lwt.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_by_group_request
+      (group |> Entity.Group.Id.value)
+    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-        %s
-        WHERE pool_custom_fields.uuid = UNHEX(REPLACE(?, '-', ''))
-      |sql}
-      select_sql
+    {sql| WHERE pool_custom_fields.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
+    |> select_sql
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
@@ -186,10 +209,34 @@ module Sql = struct
       update_request
       (t |> Repo_entity.Write.of_entity)
   ;;
+
+  let update_position_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_custom_fields
+        SET
+          position = $1
+        WHERE uuid = UNHEX(REPLACE($2, '-', ''))
+    |sql}
+    |> Caqti_type.(tup2 int string ->. Caqti_type.unit)
+  ;;
 end
 
 let find_all = Sql.find_all
 let find_by_model = Sql.find_by_model
+let find_by_group = Sql.find_by_group
 let find = Sql.find
 let insert = Sql.insert
 let update = Sql.update
+
+let sort_fields pool ids =
+  let open Lwt.Infix in
+  Lwt_list.mapi_s
+    (fun index id ->
+      Utils.Database.exec
+        (Database.Label.value pool)
+        Sql.update_position_request
+        (index, Entity.Id.value id))
+    ids
+  >|= CCFun.const ()
+;;

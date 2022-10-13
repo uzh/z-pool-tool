@@ -41,10 +41,20 @@ let add_group_column_to_custom_fields =
     |sql}
 ;;
 
+let add_position_to_custom_fields =
+  Sihl.Database.Migration.create_step
+    ~label:"add position to custom fields"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        ADD COLUMN position tinyint DEFAULT 0 AFTER admin_input_only
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_fields"
     |> add_step create_custom_fields_table
     |> add_step add_admin_boolean_columns
-    |> add_step add_group_column_to_custom_fields)
+    |> add_step add_group_column_to_custom_fields
+    |> add_step add_position_to_custom_fields)
 ;;

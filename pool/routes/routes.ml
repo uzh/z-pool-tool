@@ -251,6 +251,7 @@ module Admin = struct
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
     let custom_fields =
+      let open CustomField in
       let specific =
         let options =
           let specific =
@@ -270,7 +271,6 @@ module Admin = struct
           ; choose ~scope:"options" options
           ]
       in
-      let open CustomField in
       let fields =
         [ post "" create
         ; get "/new" new_form
@@ -280,7 +280,11 @@ module Admin = struct
       let groups =
         let specific =
           CustomFieldGroup.
-            [ get "/edit" edit; post "" update; post "/delete" delete ]
+            [ get "/edit" edit
+            ; post "" update
+            ; post "/delete" delete
+            ; post "sort-fields" soft_fields
+            ]
         in
         CustomFieldGroup.
           [ get "/new" new_form

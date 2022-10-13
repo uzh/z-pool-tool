@@ -19,7 +19,9 @@ let form ?id req model =
     @@ let* custom_field_group =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Custom_field.find_group tenant_db id >|= CCOption.pure)
+              let* group = Custom_field.find_group tenant_db id in
+              let%lwt fields = Custom_field.find_by_group tenant_db id in
+              (group, fields) |> CCOption.pure |> Lwt_result.return)
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let%lwt sys_languages = Settings.find_languages tenant_db in
@@ -160,6 +162,54 @@ let sort req =
          let events =
            groups
            |> Cqrs_command.Custom_field_group_command.Sort.handle
+           |> Lwt_result.lift
+         in
+         let handle events =
+           let%lwt (_ : unit list) =
+             Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+           in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ HttpUtils.Message.set
+                 ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+             ]
+         in
+         events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path_with_actions req
+  in
+  get_model handler req
+;;
+
+let soft_fields req =
+  let handler req model =
+    let open Utils.Lwt_result.Infix in
+    let open Lwt_result.Syntax in
+    let group_id = get_group_id req in
+    let redirect_path = Url.Group.edit_path (model, group_id) in
+    let result { Pool_context.tenant_db; _ } =
+      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      @@ let* group = group_id |> Custom_field.find_group tenant_db in
+         let%lwt ids =
+           Sihl.Web.Request.urlencoded_list
+             Message.Field.(CustomField |> array_key)
+             req
+         in
+         let%lwt fields =
+           let open Lwt.Infix in
+           let open Custom_field in
+           find_by_group tenant_db Group.(group.id)
+           >|= fun fields ->
+           CCList.filter_map
+             (fun idx ->
+               CCList.find_opt
+                 (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
+                 fields)
+             ids
+         in
+         let events =
+           fields
+           |> Cqrs_command.Custom_field_command.Sort.handle
            |> Lwt_result.lift
          in
          let handle events =

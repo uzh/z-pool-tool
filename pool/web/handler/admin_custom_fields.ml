@@ -220,7 +220,7 @@ let sort_options req =
          in
          let events =
            options
-           |> Cqrs_command.Custom_field_command.SortOptions.handle
+           |> Cqrs_command.Custom_field_option_command.Sort.handle
            |> Lwt_result.lift
          in
          let handle events =

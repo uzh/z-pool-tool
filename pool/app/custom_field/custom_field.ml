@@ -3,6 +3,7 @@ include Event
 
 let find_all = Repo.find_all
 let find_by_model = Repo.find_by_model
+let find_by_group = Repo.find_by_group
 let find = Repo.find
 let find_public = Repo_public.find
 

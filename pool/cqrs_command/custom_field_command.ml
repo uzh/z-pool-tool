@@ -179,14 +179,14 @@ end = struct
   let effects = [ `Create, `Role `Admin ]
 end
 
-module SortOptions : sig
-  type t = Custom_field.SelectOption.t list
+module Sort : sig
+  type t = Custom_field.t list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val effects : Ocauth.Authorizer.effect list
 end = struct
-  type t = Custom_field.SelectOption.t list
+  type t = Custom_field.t list
 
-  let handle t = Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
+  let handle t = Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   let effects = [ `Create, `Role `Admin ]
 end
