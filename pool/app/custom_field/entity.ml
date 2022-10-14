@@ -462,12 +462,7 @@ module Group = struct
   module Id = struct
     include Pool_common.Id
 
-    let schema () =
-      Pool_common.Utils.schema_decoder
-        (Utils.fcn_ok of_string)
-        value
-        Message.Field.CustomFieldGroup
-    ;;
+    let schema = schema ~field:Message.Field.CustomFieldGroup
   end
 
   type t =

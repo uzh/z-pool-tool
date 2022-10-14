@@ -1,14 +1,7 @@
 module Id : sig
-  include Pool_common.Model.BaseSig
+  include Pool_common.Model.IdSig
 
-  val create : unit -> t
-  val of_string : string -> t
-  val value : t -> string
   val to_common : t -> Pool_common.Id.t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module StartAt : sig

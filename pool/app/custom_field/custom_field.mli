@@ -242,6 +242,10 @@ end
 module Group : sig
   module Id : sig
     include Pool_common.Model.IdSig
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type t =
