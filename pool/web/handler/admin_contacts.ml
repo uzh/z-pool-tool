@@ -35,9 +35,7 @@ let detail_view action req =
     | `Edit ->
       let user_update_csrf = Htmx.user_update_csrf in
       let* tenant_languages =
-        Pool_context.Tenant.find req
-        |> Lwt_result.lift
-        >|= fun c -> c.Pool_context.Tenant.tenant_languages
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
       let%lwt custom_fields =
         Custom_field.find_all_by_contact

@@ -38,7 +38,9 @@ let form ?id req =
               Custom_field.find_option tenant_db id >|= CCOption.pure)
        in
        let* custom_field = req |> get_field_id |> Custom_field.find tenant_db in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
          custom_field
@@ -90,7 +92,11 @@ let write ?id req =
     @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
        let events =
          let open Lwt_result.Syntax in
-         let%lwt sys_languages = Settings.find_languages tenant_db in
+         let* sys_languages =
+           Pool_context.Tenant.find req
+           |> Lwt_result.lift
+           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+         in
          match id with
          | None ->
            Cqrs_command.Custom_field_option_command.Create.handle

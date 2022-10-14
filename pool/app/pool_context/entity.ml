@@ -55,4 +55,9 @@ module Tenant = struct
 
   let find = find_context key
   let set = set_context key
+
+  let get_tenant_languages req =
+    let open CCResult in
+    req |> find >|= fun c -> c.tenant_languages
+  ;;
 end

@@ -50,7 +50,9 @@ let form ?id req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
-    let%lwt sys_languages = Settings.find_languages tenant_db in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
     Page.Admin.CustomFields.detail
       ?custom_field
       context
@@ -100,7 +102,9 @@ let write ?id req =
     @@
     let events =
       let open Lwt_result.Syntax in
-      let%lwt sys_languages = Settings.find_languages tenant_db in
+      let* sys_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
       let* decoded =
         urlencoded
         |> Cqrs_command.Custom_field_command.base_decode

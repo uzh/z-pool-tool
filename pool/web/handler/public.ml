@@ -99,7 +99,11 @@ let not_found req =
       Lwt_result.map_error (fun err ->
         err, Http_utils.path_with_language query_language "/error")
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
-         let%lwt tenant_languages = Settings.find_languages tenant_db in
+         let* tenant_languages =
+           Pool_context.Tenant.find req
+           |> Lwt_result.lift
+           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+         in
          let req =
            Pool_context.Tenant.set
              req

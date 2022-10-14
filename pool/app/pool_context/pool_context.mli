@@ -28,4 +28,8 @@ module Tenant : sig
   val key : t Rock.Context.key
   val find : Rock.Request.t -> (t, Pool_common.Message.error) result
   val set : Rock.Request.t -> t -> Rock.Request.t
+
+  val get_tenant_languages
+    :  Rock.Request.t
+    -> (Pool_common.Language.t list, Pool_common.Message.error) result
 end
