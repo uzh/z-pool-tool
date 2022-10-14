@@ -59,8 +59,8 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      let%lwt (_ : unit) =
+        Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
       in
       Http_utils.redirect_to_with_actions
         redirect_path

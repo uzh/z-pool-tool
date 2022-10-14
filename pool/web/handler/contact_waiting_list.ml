@@ -43,8 +43,8 @@ let handle req action =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      let%lwt (_ : unit) =
+        Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
       in
       let success_message =
         let open Pool_common.Message in
