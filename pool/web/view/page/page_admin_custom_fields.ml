@@ -537,18 +537,9 @@ let detail
   sys_languages
   flash_fetcher
   =
-  let title =
-    Pool_common.(
-      Utils.control_to_string
-        language
-        Message.(
-          if CCOption.is_none custom_field
-          then Create (Some Field.CustomField)
-          else Update (Some Field.CustomField)))
-  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
+    [ Partials.form_title language Message.Field.CustomField custom_field
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         (field_form

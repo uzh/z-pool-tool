@@ -59,15 +59,6 @@ let detail
   sys_languages
   flash_fetcher
   =
-  let title =
-    Pool_common.(
-      Utils.control_to_string
-        language
-        Message.(
-          if CCOption.is_none custom_field_option
-          then Create (Some Field.CustomFieldOption)
-          else Update (Some Field.CustomFieldOption)))
-  in
   let delete_form =
     match custom_field_option with
     | None -> txt ""
@@ -93,7 +84,10 @@ let detail
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 [ txt title ]
+    [ Partials.form_title
+        language
+        Message.Field.CustomFieldOption
+        custom_field_option
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ option_form

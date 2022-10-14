@@ -155,18 +155,12 @@ let detail
   sys_langauges
   flash_fetcher
   =
-  let title =
-    Pool_common.(
-      Utils.control_to_string
-        language
-        Message.(
-          if CCOption.is_none custom_field_group
-          then Create (Some Field.CustomFieldGroup)
-          else Update (Some Field.CustomFieldGroup)))
-  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt title ]
+    [ Partials.form_title
+        language
+        Message.Field.CustomFieldGroup
+        custom_field_group
     ; Page_admin_custom_fields.model_subtitle language current_model
     ; form ?custom_field_group current_model context sys_langauges flash_fetcher
     ]
