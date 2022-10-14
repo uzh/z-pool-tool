@@ -420,7 +420,7 @@ let field_form
               selector
                 language
                 Message.Field.CustomFieldGroup
-                show_id
+                Group.(fun (g : t) -> g.id |> Id.value)
                 groups
                 Custom_field.(
                   let open CCOption in

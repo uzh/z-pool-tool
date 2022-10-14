@@ -19,7 +19,7 @@ let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
 ;;
 
-let get_field_router_param_opt req field =
+let find_field_router_param_opt req field =
   try Some (get_field_router_param req field) with
   | _ -> None
 ;;

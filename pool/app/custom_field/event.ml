@@ -16,19 +16,19 @@ type event =
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | AnswerUpserted (t, entity_uuid) ->
-    Repo_public.upsert_answer pool entity_uuid t
-  | Created t -> Repo.insert pool t
-  | FieldsSorted t -> CCList.map (fun f -> id f) t |> Repo.sort_fields pool
-  | GroupCreated t -> Repo_group.insert pool t
-  | GroupDestroyed t -> Repo_group.destroy pool t
-  | GroupsSorted t ->
-    CCList.map (fun o -> o.Group.id) t |> Repo_group.sort_groups pool
-  | GroupUpdated t -> Repo_group.update pool t
-  | OptionCreated (field_id, t) -> Repo_option.insert pool field_id t
-  | OptionDestroyed t -> Repo_option.destroy pool t
-  | OptionUpdated t -> Repo_option.update pool t
-  | OptionsSorted t ->
-    CCList.map (fun o -> o.SelectOption.id) t |> Repo_option.sort_options pool
-  | Updated t -> Repo.update pool t
+  | AnswerUpserted (m, entity_uuid) ->
+    Repo_public.upsert_answer pool entity_uuid m
+  | Created m -> Repo.insert pool m
+  | FieldsSorted m -> CCList.map (fun m -> id m) m |> Repo.sort_fields pool
+  | GroupCreated m -> Repo_group.insert pool m
+  | GroupDestroyed m -> Repo_group.destroy pool m
+  | GroupsSorted m ->
+    CCList.map (fun m -> m.Group.id) m |> Repo_group.sort_groups pool
+  | GroupUpdated m -> Repo_group.update pool m
+  | OptionCreated (field_id, m) -> Repo_option.insert pool field_id m
+  | OptionDestroyed m -> Repo_option.destroy pool m
+  | OptionUpdated m -> Repo_option.update pool m
+  | OptionsSorted m ->
+    CCList.map (fun m -> m.SelectOption.id) m |> Repo_option.sort_options pool
+  | Updated m -> Repo.update pool m
 ;;

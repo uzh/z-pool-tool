@@ -286,7 +286,9 @@ module SelectOption = struct
   let show_id (m : t) = m.id |> Id.value
 
   let name lang (t : t) =
-    Name.find_opt lang t.name |> CCOption.get_exn_or "Cannot find field name."
+    Name.find_opt lang t.name
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> Pool_common.Utils.get_or_failwith
   ;;
 
   let create ?(id = Id.create ()) name = { id; name }
@@ -326,7 +328,9 @@ module Public = struct
     | Number { name; _ }
     | Select ({ name; _ }, _)
     | Text { name; _ } ->
-      Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
+      Name.find_opt lang name
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
   ;;
 
   let hint lang (t : t) =
@@ -476,10 +480,10 @@ module Group = struct
   let create ?(id = Id.create ()) model name = { id; model; name }
 
   let name lang (t : t) =
-    Name.find_opt lang t.name |> CCOption.get_exn_or "Cannot find field name."
+    Name.find_opt lang t.name
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> Pool_common.Utils.get_or_failwith
   ;;
-
-  let show_id (m : t) = m.id |> Id.value
 
   module Public = struct
     type t =
@@ -490,7 +494,9 @@ module Group = struct
     [@@deriving eq, show]
 
     let name lang (t : t) =
-      Name.find_opt lang t.name |> CCOption.get_exn_or "Cannot find field name."
+      Name.find_opt lang t.name
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
     ;;
   end
 end

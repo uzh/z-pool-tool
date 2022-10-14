@@ -11,7 +11,7 @@ let boolean_fields =
 let model_from_router req =
   let open Custom_field in
   let open CCResult in
-  HttpUtils.get_field_router_param_opt req Message.Field.Model
+  HttpUtils.find_field_router_param_opt req Message.Field.Model
   |> CCOption.to_result Message.(NotFound Field.Model)
   >>= fun s -> s |> Model.create
 ;;
@@ -121,10 +121,11 @@ let write ?id req model =
     , go Message.Field.Hint encode_lang
     , go Message.Field.Validation CCOption.pure )
   in
-  let error_path =
+  let error_path, success =
+    let open Pool_common.Message in
     match id with
-    | None -> Url.Field.new_path model
-    | Some id -> Url.Field.edit_path (model, id)
+    | None -> Url.Field.new_path model, Updated Field.CustomField
+    | Some id -> Url.Field.edit_path (model, id), Created Field.CustomField
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
@@ -162,12 +163,6 @@ let write ?id req model =
     let handle events =
       let%lwt (_ : unit list) =
         Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
-      let success =
-        let open Pool_common.Message in
-        if CCOption.is_some id
-        then Updated Field.CustomField
-        else Created Field.CustomField
       in
       Http_utils.redirect_to_with_actions
         (Url.index_path model)

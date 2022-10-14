@@ -255,7 +255,6 @@ module Group : sig
   val show : t -> string
   val create : ?id:Id.t -> Model.t -> Name.t -> t
   val name : Pool_common.Language.t -> t -> string
-  val show_id : t -> string
 
   module Public : sig
     type t =
