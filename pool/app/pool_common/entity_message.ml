@@ -255,6 +255,7 @@ type error =
   | SessionTenantNotFound
   | ReadOnlyModel
   | ReminderSubjectAndTextRequired
+  | RequiredFieldsMissing
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
@@ -299,10 +300,7 @@ type success =
   | Updated of Field.t
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-type info =
-  | Info of string
-  | RequiredFieldsMissing
-[@@deriving eq, show, yojson, variants, sexp_of]
+type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string
