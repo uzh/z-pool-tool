@@ -54,6 +54,13 @@ let find_exn req =
 
 let set = set_context key
 
+let find_contact { user; _ } =
+  match user with
+  | Some (Contact c) -> Ok c
+  | None | Some (Admin _) | Some (Root _) ->
+    Error PoolError.(NotFound Field.User)
+;;
+
 module Tenant = struct
   type t =
     { tenant : Pool_tenant.t

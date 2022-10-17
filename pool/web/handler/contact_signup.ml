@@ -85,11 +85,15 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
     let open Lwt_result.Syntax in
     let open Pool_common.Message in
     let%lwt redirect_path =
-      let%lwt user = Http_utils.user_from_session tenant_db req in
+      let user =
+        Pool_context.find_contact context
+        |> CCResult.map (fun contact -> contact.Contact.user)
+        |> CCOption.of_result
+      in
       CCOption.bind user (fun user ->
         Some (General.dashboard_path tenant_db user))
       |> CCOption.value ~default:("/login" |> Lwt.return)
@@ -111,7 +115,7 @@ let email_verification req =
        >>= Email.find_unverified_by_address tenant_db
        |> Lwt_result.map_error (fun _ -> Field.(Invalid Token))
      in
-     let* contact = Contact.find tenant_db (Email.user_id email) in
+     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
      let* events =
        match contact.Contact.user.Sihl.Contract.User.confirmed with
        | false ->
@@ -134,12 +138,12 @@ let terms req =
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; language; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/login")
-    @@ let* user =
-         Http_utils.user_from_session tenant_db req
-         ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-       in
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* terms = Settings.terms_and_conditions tenant_db language in
-       Page.Contact.terms user.Sihl_user.id terms context
+       Page.Contact.terms
+         Contact.(contact |> id |> Pool_common.Id.value)
+         terms
+         context
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in

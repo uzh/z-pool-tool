@@ -7,14 +7,6 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   Service.User.Web.user_from_session ~ctx req
 ;;
 
-(* TODO[timhub]: remove as soon we added current user to the context *)
-let get_current_contact tenant_db req =
-  let open Utils.Lwt_result.Infix in
-  Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-  >>= Contact.find_by_user tenant_db
-;;
-
 let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
 ;;

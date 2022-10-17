@@ -28,6 +28,7 @@ val create
 val find : Rock.Request.t -> (t, Pool_common.Message.error) result
 val find_exn : Rock.Request.t -> t
 val set : Rock.Request.t -> t -> Rock.Request.t
+val find_contact : t -> (Contact.t, Pool_common.Message.error) result
 
 module Tenant : sig
   type t =
