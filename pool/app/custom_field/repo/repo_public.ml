@@ -116,7 +116,8 @@ module Sql = struct
         (base_filter_conditions is_admin)
         (if required then "AND pool_custom_fields.required = 1" else "")
     in
-    Format.asprintf "%s \n %s" select_sql where
+    let order = {sql| ORDER BY pool_custom_fields.position ASC |sql} in
+    Format.asprintf "%s \n %s \n %s" select_sql where order
     |> Caqti_type.(tup2 string string ->* Repo_entity.Public.t)
   ;;
 

@@ -322,30 +322,33 @@ module Public = struct
         }
   ;;
 
-  let to_grouped_entities select_options (groups : Entity.Group.t list) fields =
-    let grouped, ungrouped =
+  let to_grouped_entities select_options groups fields =
+    let to_entity = to_entity select_options in
+    let partition_map fields { Group.id; _ } =
       CCList.fold_left
-        (fun (grouped, ungrouped) (field : repo) ->
-          let to_entity = to_entity select_options in
-          match field.custom_field_group_id with
-          | Some id -> (id, to_entity field) :: grouped, ungrouped
-          | None -> grouped, to_entity field :: ungrouped)
+        (fun (of_group, rest) (field : repo) ->
+          CCOption.map_or
+            ~default:false
+            (fun group_id -> Pool_common.Id.equal group_id id)
+            field.custom_field_group_id
+          |> function
+          | true -> of_group @ [ field |> to_entity ], rest
+          | false -> of_group, rest @ [ field ])
         ([], [])
         fields
     in
-    CCList.map
-      (fun group ->
-        let fields =
-          CCList.filter_map
-            (fun (id, field) ->
-              match Group.Id.equal id group.Group.id with
-              | true -> Some field
-              | false -> None)
-            grouped
-        in
-        Group.{ Public.id = group.id; name = group.name; fields })
-      groups
-    |> fun groups -> groups, ungrouped
+    let groups, ungrouped =
+      CCList.fold_left
+        (fun (groups, fields) group ->
+          let of_group, rest = partition_map fields group in
+          let group =
+            Group.{ Public.id = group.id; name = group.name; fields = of_group }
+          in
+          CCList.append groups [ group ], rest)
+        ([], fields)
+        groups
+    in
+    groups, ungrouped |> CCList.map to_entity
   ;;
 
   let t =
