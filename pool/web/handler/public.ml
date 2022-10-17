@@ -124,29 +124,13 @@ let asset req =
   |> Lwt.return
 ;;
 
-let error req =
+let error _ =
   let error_page (title, note) =
     Page.Utils.error_page_terminatory title note ()
   in
-  let%lwt tenant_error =
-    let open Lwt_result.Syntax in
-    let* ({ Pool_context.tenant_db; _ } as context) =
-      Pool_context.find req |> Lwt_result.lift
-    in
-    let* _ = Pool_tenant.find_by_label tenant_db in
-    ( Common.Message.TerminatoryTenantErrorTitle
-    , Common.Message.TerminatoryTenantError )
-    |> error_page
-    |> General.create_tenant_layout req context
-  in
-  (match tenant_error with
-   | Ok tenant_error -> tenant_error
-   | Error _ ->
-     ( Common.Message.TerminatoryRootErrorTitle
-     , Common.Message.TerminatoryRootError )
-     |> error_page
-     |> fun html ->
-     Page.Layout.create_root_layout html Pool_common.Language.En None None ())
+  (Common.Message.TerminatoryRootErrorTitle, Common.Message.TerminatoryRootError)
+  |> error_page
+  |> Page.Layout.create_error_layout
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

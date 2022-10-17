@@ -261,3 +261,19 @@ let create_root_layout children language message user ?active_navigation () =
        ; scripts
        ])
 ;;
+
+let create_error_layout children =
+  let title_text = "Pool Tool" in
+  let page_title = title (txt title_text) in
+  let scripts =
+    script
+      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      (txt "")
+  in
+  let content = main_tag [ children ] in
+  html
+    (head page_title ([ charset; viewport; favicon ] @ global_stylesheets))
+    (body
+       ~a:[ a_class body_tag_classnames ]
+       [ header title_text; content; footer title_text; scripts ])
+;;
