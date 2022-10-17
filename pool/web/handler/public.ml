@@ -124,9 +124,10 @@ let asset req =
   |> Lwt.return
 ;;
 
-let error _ =
+let error req =
+  let query_lang = Http_utils.find_query_lang req in
   let error_page (title, note) =
-    Page.Utils.error_page_terminatory title note ()
+    Page.Utils.error_page_terminatory ?lang:query_lang title note ()
   in
   (Common.Message.TerminatoryRootErrorTitle, Common.Message.TerminatoryRootError)
   |> error_page
