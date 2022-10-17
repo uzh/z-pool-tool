@@ -189,7 +189,7 @@ let completion_post req =
          |> Lwt_result.lift
        in
        let handle events =
-         let%lwt (_ : unit) =
+         let%lwt () =
            Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
          in
          Http_utils.(

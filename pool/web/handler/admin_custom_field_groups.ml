@@ -80,9 +80,7 @@ let write ?id req model =
           |> Lwt_result.lift)
     in
     let handle events =
-      let%lwt (_ : unit) =
-        Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       let success =
         let open Message in
         if CCOption.is_some id
@@ -163,7 +161,7 @@ let sort req =
            |> Lwt_result.lift
          in
          let handle events =
-           let%lwt (_ : unit) =
+           let%lwt () =
              Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
            in
            Http_utils.redirect_to_with_actions
@@ -211,7 +209,7 @@ let soft_fields req =
            |> Lwt_result.lift
          in
          let handle events =
-           let%lwt (_ : unit) =
+           let%lwt () =
              Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
            in
            Http_utils.redirect_to_with_actions

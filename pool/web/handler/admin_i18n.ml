@@ -59,9 +59,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit) =
-        Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Pool_common.Message.(Updated Field.I18n) ] ]
