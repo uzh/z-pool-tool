@@ -1,10 +1,29 @@
 module HttpUtils = Http_utils
 module Message = Pool_common.Message
+module Url = Page.Admin.CustomFields.Url
 
 let create_layout req = General.create_tenant_layout `Admin req
 
 let boolean_fields =
   Custom_field.boolean_fields |> CCList.map Message.Field.show
+;;
+
+let model_from_router req =
+  let open Custom_field in
+  let open CCResult in
+  HttpUtils.find_field_router_param_opt req Message.Field.Model
+  |> CCOption.to_result Message.(NotFound Field.Model)
+  >>= fun s -> s |> Model.create
+;;
+
+let get_model fnc req =
+  let model = model_from_router req in
+  match model with
+  | Ok model -> model |> fnc req
+  | Error err ->
+    Http_utils.redirect_to_with_actions
+      Url.fallback_path
+      [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
 let find_assocs_in_urlencoded urlencoded field encoder =
@@ -28,21 +47,33 @@ let find_assocs_in_urlencoded urlencoded field encoder =
 
 let index req =
   let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
+  let open Custom_field in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt field_list = Custom_field.find_all tenant_db () in
-       Page.Admin.CustomFields.index field_list context
-       |> create_layout ~active_navigation:"/admin/custom-fields" req context
+    @@ let* model = model_from_router req |> Lwt_result.lift in
+       let%lwt group_list = Custom_field.find_groups_by_model tenant_db model in
+       let%lwt field_list = find_by_model tenant_db model in
+       Page.Admin.CustomFields.index field_list group_list model context
+       |> create_layout ~active_navigation:Url.fallback_path req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let form ?id req =
+let redirect _ =
+  let open Custom_field in
+  Model.all
+  |> CCList.head_opt
+  |> CCOption.map_or ~default:"/admin/dashboard" Url.index_path
+  |> Http_utils.redirect_to
+;;
+
+let form ?id req model =
   let open Utils.Lwt_result.Infix in
   let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/custom-fields")
+    Lwt_result.map_error (fun err -> err, Url.index_path model)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* custom_field =
@@ -50,10 +81,13 @@ let form ?id req =
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
+    let%lwt groups = Custom_field.find_groups_by_model tenant_db model in
     let%lwt sys_languages = Settings.find_languages tenant_db in
     Page.Admin.CustomFields.detail
       ?custom_field
+      model
       context
+      groups
       sys_languages
       flash_fetcher
     |> create_layout req context
@@ -62,17 +96,17 @@ let form ?id req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let new_form req = form req
+let new_form req = get_model form req
 
 let edit req =
   let id =
     HttpUtils.get_field_router_param req Message.Field.CustomField
     |> Custom_field.Id.of_string
   in
-  form ~id req
+  get_model (form ~id) req
 ;;
 
-let write ?id req =
+let write ?id req model =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
@@ -87,12 +121,11 @@ let write ?id req =
     , go Message.Field.Hint encode_lang
     , go Message.Field.Validation CCOption.pure )
   in
-  let redirect_path = "/admin/custom-fields" in
-  let error_path =
+  let error_path, success =
+    let open Pool_common.Message in
     match id with
-    | None -> Format.asprintf "%s/new" redirect_path
-    | Some id ->
-      Format.asprintf "%s/%s/edit" redirect_path (Custom_field.Id.value id)
+    | None -> Url.Field.new_path model, Updated Field.CustomField
+    | Some id -> Url.Field.edit_path (model, id), Created Field.CustomField
   in
   let result { Pool_context.tenant_db; _ } =
     Lwt_result.map_error (fun err ->
@@ -110,6 +143,7 @@ let write ?id req =
       | None ->
         Cqrs_command.Custom_field_command.Create.handle
           sys_languages
+          model
           field_names
           field_hints
           validations
@@ -127,78 +161,74 @@ let write ?id req =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
-        redirect_path
-        [ HttpUtils.Message.set ~success:[ Message.(Created Field.CustomField) ]
-        ]
+        (Url.index_path model)
+        [ HttpUtils.Message.set ~success:[ success ] ]
     in
     events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-let create = write
+let create req = get_model write req
 
 let update req =
   let id =
     HttpUtils.get_field_router_param req Message.Field.CustomField
     |> Custom_field.Id.of_string
   in
-  write ~id req
+  get_model (write ~id) req
 ;;
 
 let sort_options req =
-  let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
-  let custom_field_id =
-    HttpUtils.get_field_router_param req Message.Field.CustomField
-    |> Custom_field.Id.of_string
-  in
-  let redirect_path =
-    Format.asprintf
-      "/admin/custom-fields/%s/edit"
-      (Custom_field.Id.value custom_field_id)
-  in
-  let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path, [])
-    @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
-       let%lwt ids =
-         Sihl.Web.Request.urlencoded_list
-           Message.Field.(CustomFieldOption |> array_key)
-           req
-       in
-       let%lwt options =
-         let open Lwt.Infix in
-         let open Custom_field in
-         find_option_by_field tenant_db (id custom_field)
-         >|= fun options ->
-         CCList.filter_map
-           (fun id ->
-             CCList.find_opt
-               SelectOption.(
-                 fun (option : t) -> Id.equal (Id.of_string id) option.id)
-               options)
-           ids
-       in
-       let events =
-         options
-         |> Cqrs_command.Custom_field_command.SortOptions.handle
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt (_ : unit list) =
-           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+  let handler req model =
+    let open Utils.Lwt_result.Infix in
+    let open Lwt_result.Syntax in
+    let custom_field_id =
+      HttpUtils.get_field_router_param req Message.Field.CustomField
+      |> Custom_field.Id.of_string
+    in
+    let redirect_path = Url.Field.edit_path (model, custom_field_id) in
+    let result { Pool_context.tenant_db; _ } =
+      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
+         let%lwt ids =
+           Sihl.Web.Request.urlencoded_list
+             Message.Field.(CustomFieldOption |> array_key)
+             req
          in
-         Http_utils.redirect_to_with_actions
-           redirect_path
-           [ HttpUtils.Message.set
-               ~success:[ Message.(Updated Field.CustomField) ]
-           ]
-       in
-       events |>> handle
+         let%lwt options =
+           let open Lwt.Infix in
+           let open Custom_field in
+           find_options_by_field tenant_db (id custom_field)
+           >|= fun options ->
+           CCList.filter_map
+             (fun id ->
+               CCList.find_opt
+                 SelectOption.(
+                   fun (option : t) -> Id.equal (Id.of_string id) option.id)
+                 options)
+             ids
+         in
+         let events =
+           options
+           |> Cqrs_command.Custom_field_option_command.Sort.handle
+           |> Lwt_result.lift
+         in
+         let handle events =
+           let%lwt () =
+             Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ HttpUtils.Message.set
+                 ~success:[ Message.(Updated Field.CustomField) ]
+             ]
+         in
+         events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path_with_actions req
   in
-  result |> HttpUtils.extract_happy_path_with_actions req
+  get_model handler req
 ;;

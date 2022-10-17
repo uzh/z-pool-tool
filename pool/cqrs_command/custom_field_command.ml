@@ -1,10 +1,10 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
 type command =
-  { model : Custom_field.Model.t
-  ; field_type : Custom_field.FieldType.t
+  { field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
   ; disabled : Custom_field.Disabled.t
+  ; custom_field_group_id : Custom_field.Group.Id.t option
   ; admin_hint : Custom_field.Admin.Hint.t option
   ; admin_overwrite : Custom_field.Admin.Overwrite.t
   ; admin_view_only : Custom_field.Admin.ViewOnly.t
@@ -12,19 +12,19 @@ type command =
   }
 
 let base_command
-  model
   field_type
   required
   disabled
+  custom_field_group_id
   admin_hint
   admin_overwrite
   admin_view_only
   admin_input_only
   =
-  { model
-  ; field_type
+  { field_type
   ; required
   ; disabled
+  ; custom_field_group_id
   ; admin_hint
   ; admin_overwrite
   ; admin_view_only
@@ -37,10 +37,10 @@ let base_schema =
   Pool_common.Utils.PoolConformist.(
     make
       Field.
-        [ Model.schema ()
-        ; FieldType.schema ()
+        [ FieldType.schema ()
         ; Required.schema ()
         ; Disabled.schema ()
+        ; Conformist.optional @@ Group.Id.schema ()
         ; Conformist.optional @@ Admin.Hint.schema ()
         ; Admin.Overwrite.schema ()
         ; Admin.ViewOnly.schema ()
@@ -60,6 +60,7 @@ module Create : sig
   val handle
     :  ?id:Custom_field.Id.t
     -> Pool_common.Language.t list
+    -> Custom_field.Model.t
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
     -> (string * string) list
@@ -73,13 +74,14 @@ end = struct
   let handle
     ?id
     sys_languages
+    model
     name
     hint
     validation
-    { model
-    ; field_type
+    { field_type
     ; required
     ; disabled
+    ; custom_field_group_id
     ; admin_hint
     ; admin_overwrite
     ; admin_view_only
@@ -106,6 +108,7 @@ end = struct
         validation
         required
         disabled
+        custom_field_group_id
         admin
     in
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
@@ -136,10 +139,10 @@ end = struct
     name
     hint
     validation
-    { model
-    ; field_type
+    { field_type
     ; required
     ; disabled
+    ; custom_field_group_id
     ; admin_hint
     ; admin_overwrite
     ; admin_view_only
@@ -161,12 +164,13 @@ end = struct
       Custom_field.create
         ~id
         field_type
-        model
+        Custom_field.(model custom_field)
         name
         hint
         validation
         required
         disabled
+        custom_field_group_id
         admin
     in
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
@@ -175,14 +179,14 @@ end = struct
   let effects = [ `Create, `Role `Admin ]
 end
 
-module SortOptions : sig
-  type t = Custom_field.SelectOption.t list
+module Sort : sig
+  type t = Custom_field.t list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
   val effects : Ocauth.Authorizer.effect list
 end = struct
-  type t = Custom_field.SelectOption.t list
+  type t = Custom_field.t list
 
-  let handle t = Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
+  let handle t = Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   let effects = [ `Create, `Role `Admin ]
 end

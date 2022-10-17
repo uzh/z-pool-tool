@@ -34,6 +34,7 @@ module Model : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val all : t list
+  val create : string -> (t, Pool_common.Message.error) result
 
   val schema
     :  unit
@@ -167,17 +168,6 @@ module Validation : sig
   val pure : 'a t
 end
 
-type 'a custom_field =
-  { id : Id.t
-  ; model : Model.t
-  ; name : Name.t
-  ; hint : Hint.t
-  ; validation : 'a Validation.t
-  ; required : Required.t
-  ; disabled : Disabled.t
-  ; admin : Admin.t
-  }
-
 module SelectOption : sig
   module Id : sig
     include Pool_common.Model.IdSig
@@ -195,29 +185,6 @@ module SelectOption : sig
   val name : Pool_common.Language.t -> t -> string
   val create : ?id:Id.t -> Name.t -> t
 end
-
-type t =
-  | Boolean of bool custom_field
-  | Number of int custom_field
-  | Select of SelectOption.t custom_field * SelectOption.t list
-  | Text of string custom_field
-
-val equal : t -> t -> bool
-val pp : Format.formatter -> t -> unit
-val show : t -> string
-
-val create
-  :  ?id:Id.t
-  -> ?select_options:SelectOption.t list
-  -> FieldType.t
-  -> Model.t
-  -> Name.t
-  -> Hint.t
-  -> (string * string) list
-  -> Required.t
-  -> Disabled.t
-  -> Admin.t
-  -> (t, Pool_common.Message.error) result
 
 module Public : sig
   type 'a public =
@@ -272,6 +239,77 @@ module Public : sig
     -> Pool_common.I18n.hint option
 end
 
+module Group : sig
+  module Id : sig
+    include Pool_common.Model.IdSig
+
+    val schema
+      :  unit
+      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  end
+
+  type t =
+    { id : Id.t
+    ; model : Model.t
+    ; name : Name.t
+    }
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+  val create : ?id:Id.t -> Model.t -> Name.t -> t
+  val name : Pool_common.Language.t -> t -> string
+
+  module Public : sig
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      ; fields : Public.t list
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val name : Pool_common.Language.t -> t -> string
+  end
+end
+
+type 'a custom_field =
+  { id : Id.t
+  ; model : Model.t
+  ; name : Name.t
+  ; hint : Hint.t
+  ; validation : 'a Validation.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin : Admin.t
+  }
+
+type t =
+  | Boolean of bool custom_field
+  | Number of int custom_field
+  | Select of SelectOption.t custom_field * SelectOption.t list
+  | Text of string custom_field
+
+val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
+val show : t -> string
+
+val create
+  :  ?id:Id.t
+  -> ?select_options:SelectOption.t list
+  -> FieldType.t
+  -> Model.t
+  -> Name.t
+  -> Hint.t
+  -> (string * string) list
+  -> Required.t
+  -> Disabled.t
+  -> Group.Id.t option
+  -> Admin.t
+  -> (t, Pool_common.Message.error) result
+
 val boolean_fields : Pool_common.Message.Field.t list
 val id : t -> Id.t
 val model : t -> Model.t
@@ -279,6 +317,7 @@ val name : t -> Name.t
 val hint : t -> Hint.t
 val required : t -> Required.t
 val disabled : t -> Disabled.t
+val group_id : t -> Group.Id.t option
 val admin : t -> Admin.t
 val field_type : t -> FieldType.t
 val validation_strings : t -> (string * string) list
@@ -287,10 +326,15 @@ val validation_to_yojson : t -> Yojson.Safe.t
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | FieldsSorted of t list
+  | GroupCreated of Group.t
+  | GroupDestroyed of Group.t
+  | GroupsSorted of Group.t list
+  | GroupUpdated of Group.t
   | OptionCreated of (Id.t * SelectOption.t)
   | OptionDestroyed of SelectOption.t
-  | OptionUpdated of SelectOption.t
   | OptionsSorted of SelectOption.t list
+  | OptionUpdated of SelectOption.t
   | Updated of t
 
 val equal_event : event -> event -> bool
@@ -298,6 +342,8 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
+val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
 
 val find
   :  Pool_database.Label.t
@@ -313,12 +359,12 @@ val find_all_by_contact
   :  ?is_admin:bool
   -> Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_all_required_by_contact
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Public.t list Lwt.t
+  -> (Group.Public.t list * Public.t list) Lwt.t
 
 val find_multiple_by_contact
   :  ?is_admin:bool
@@ -347,10 +393,20 @@ val all_required_answered
 
 val find_option
   :  Pool_database.Label.t
-  -> Id.t
+  -> SelectOption.Id.t
   -> (SelectOption.t, Pool_common.Message.error) result Lwt.t
 
-val find_option_by_field
+val find_options_by_field
   :  Pool_database.Label.t
   -> Id.t
   -> SelectOption.t list Lwt.t
+
+val find_group
+  :  Pool_database.Label.t
+  -> Group.Id.t
+  -> (Group.t, Pool_common.Message.error) result Lwt.t
+
+val find_groups_by_model
+  :  Pool_database.Label.t
+  -> Model.t
+  -> Group.t list Lwt.t

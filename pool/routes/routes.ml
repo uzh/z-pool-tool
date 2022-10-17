@@ -185,7 +185,7 @@ module Admin = struct
         in
         Session.
           [ get "" list
-          ; get "create" new_form
+          ; get "/create" new_form
           ; post "" create
           ; choose ~scope:"/:session" specific
           ]
@@ -251,31 +251,55 @@ module Admin = struct
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
     let custom_fields =
-      let options =
-        let specific =
-          CustomFieldOption.
-            [ get "/edit" edit; post "" update; post "/delete" delete ]
-        in
-        CustomFieldOption.
-          [ get "/new" new_form
-          ; post "" create
-          ; choose ~scope:(CustomFieldOption |> url_key) specific
-          ]
-      in
+      let open CustomField in
       let specific =
+        let options =
+          let specific =
+            CustomFieldOption.
+              [ get "/edit" edit; post "" update; post "/delete" delete ]
+          in
+          CustomFieldOption.
+            [ get "/new" new_form
+            ; post "" create
+            ; choose ~scope:(CustomFieldOption |> url_key) specific
+            ]
+        in
         CustomField.
           [ get "/edit" edit
           ; post "" update
-          ; post "sort-options" sort_options
+          ; post "/sort-options" sort_options
           ; choose ~scope:"options" options
           ]
       in
-      CustomField.
-        [ get "" index
-        ; post "" create
+      let fields =
+        [ post "" create
         ; get "/new" new_form
         ; choose ~scope:(CustomField |> url_key) specific
         ]
+      in
+      let groups =
+        let specific =
+          CustomFieldGroup.
+            [ get "/edit" edit
+            ; post "" update
+            ; post "/delete" delete
+            ; post "sort-fields" soft_fields
+            ]
+        in
+        CustomFieldGroup.
+          [ get "/new" new_form
+          ; post "" create
+          ; post "/sort" sort
+          ; choose ~scope:(CustomFieldGroup |> url_key) specific
+          ]
+      in
+      let models =
+        [ get "" index
+        ; choose ~scope:"field" fields
+        ; choose ~scope:"group" groups
+        ]
+      in
+      [ get "" redirect; choose ~scope:(Model |> url_key) models ]
     in
     choose
       ~middlewares

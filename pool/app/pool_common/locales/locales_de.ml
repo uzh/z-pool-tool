@@ -21,6 +21,7 @@ let field_to_string =
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
   | CustomField -> "Feld"
+  | CustomFieldGroup -> "Gruppe"
   | CustomFieldOption -> "Option"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"

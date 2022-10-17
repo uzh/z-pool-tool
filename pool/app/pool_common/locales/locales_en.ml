@@ -21,6 +21,7 @@ let field_to_string =
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
   | CustomField -> "field"
+  | CustomFieldGroup -> "group"
   | CustomFieldOption -> "option"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
@@ -321,7 +322,7 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
-  | Ascending -> "ascending"
+  | Ascending -> format_submit "ascending" None
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -329,13 +330,13 @@ let control_to_string = function
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
-  | Descending -> "descending"
+  | Descending -> format_submit "descending" None
   | Disable -> format_submit "disable" None
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
-  | More -> "more"
+  | More -> format_submit "more" None
   | PleaseSelect -> "please select"
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
@@ -344,11 +345,11 @@ let control_to_string = function
   | Send field -> format_submit "send" field
   | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
-  | Show -> "show"
+  | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
-  | UpdateOrder -> "update order"
+  | UpdateOrder -> format_submit "update order" None
 ;;
 
 let to_string = function

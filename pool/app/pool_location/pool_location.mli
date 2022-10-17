@@ -82,11 +82,7 @@ end
 
 module Mapping : sig
   module Id : sig
-    include Pool_common.Model.BaseSig
-
-    val create : unit -> t
-    val value : t -> string
-    val of_string : string -> t
+    include Pool_common.Model.IdSig
   end
 
   module Label : sig
@@ -167,11 +163,7 @@ module Mapping : sig
 end
 
 module Id : sig
-  include Pool_common.Model.BaseSig
-
-  val create : unit -> t
-  val value : t -> string
-  val of_string : string -> t
+  include Pool_common.Model.IdSig
 end
 
 module Name : sig

@@ -12,7 +12,8 @@ module type IdSig = sig
   val to_uuidm : t -> Uuidm.t
 
   val schema
-    :  unit
+    :  ?field:Entity_message.Field.t
+    -> unit
     -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
 end
 
