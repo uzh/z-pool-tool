@@ -77,13 +77,19 @@ let context role () =
       | Some user ->
         let open Pool_context in
         (match role with
-         | `Admin -> user |> admin |> Lwt.return_some
+         | `Admin ->
+           (match%lwt Admin.user_is_admin pool user with
+            | false -> Lwt.return_none
+            | true -> user |> admin |> Lwt.return_some)
          | `Contact ->
            user
            |> Contact.find_by_user pool
            ||> CCResult.to_opt
            ||> CCOption.map contact
-         | `Root -> user |> root |> Lwt.return_some)
+         | `Root ->
+           (match Sihl_user.is_admin user with
+            | false -> Lwt.return_none
+            | true -> user |> root |> Lwt.return_some))
     in
     let%lwt context =
       let* query_lang, language, tenant_db, user =

@@ -6,12 +6,11 @@ module Update = Root_tenant_update
 module Database = Pool_database
 
 let tenants req =
-  let ({ Pool_context.csrf; message; _ } as context) =
-    Pool_context.find_exn req
-  in
+  let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
   let%lwt root_list = Root.find_all () in
-  Page.Root.Tenant.list csrf tenant_list root_list message context
+  Page.Root.Tenant.list tenant_list root_list context
+  |> General.create_root_layout ~active_navigation:"/root/tenants" context
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;
@@ -117,7 +116,10 @@ let tenant_detail req =
       |> Pool_common.Id.of_string
     in
     let* tenant = Pool_tenant.find id in
-    Page.Root.Tenant.detail tenant context |> Response.of_html |> Lwt.return_ok
+    Page.Root.Tenant.detail tenant context
+    |> General.create_root_layout context
+    |> Response.of_html
+    |> Lwt.return_ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;

@@ -3,7 +3,7 @@ module Login = Public_login
 module Common = Pool_common
 module Database = Pool_database
 
-let create_layout req = General.create_tenant_layout `Contact req
+let create_layout req = General.create_tenant_layout req
 
 let root_redirect req =
   Http_utils.redirect_to
@@ -83,6 +83,7 @@ let email_confirmation_note req =
   result |> Http_utils.extract_happy_path req
 ;;
 
+(* TODO: Make sure the correct layout is used *)
 let not_found req =
   let result
     ({ Pool_context.language; query_language; tenant_db; _ } as context)
@@ -92,7 +93,7 @@ let not_found req =
     let html = Page.Utils.error_page_not_found language () in
     match Http_utils.is_req_from_root_host req with
     | true ->
-      Page.Layout.create_root_layout html None language ()
+      General.create_root_layout context html
       |> Sihl.Web.Response.of_html
       |> Lwt_result.return
     | false ->
@@ -128,6 +129,7 @@ let asset req =
   |> Lwt.return
 ;;
 
+(* TODO: Make sure the correct layout is used *)
 let error req =
   let error_page (title, note) =
     Page.Utils.error_page_terminatory title note ()
@@ -141,7 +143,7 @@ let error req =
     ( Common.Message.TerminatoryTenantErrorTitle
     , Common.Message.TerminatoryTenantError )
     |> error_page
-    |> General.create_tenant_layout `Contact req context
+    |> General.create_tenant_layout req context
   in
   (match tenant_error with
    | Ok tenant_error -> tenant_error
@@ -150,7 +152,7 @@ let error req =
      , Common.Message.TerminatoryRootError )
      |> error_page
      |> fun html ->
-     Page.Layout.create_root_layout html None Pool_common.Language.En ())
+     Page.Layout.create_root_layout html Pool_common.Language.En None None ())
   |> Sihl.Web.Response.of_html
   |> Lwt.return
 ;;

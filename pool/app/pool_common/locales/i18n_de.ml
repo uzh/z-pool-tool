@@ -83,6 +83,7 @@ let nav_link_to_string = function
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
   | LoginInformation -> "Anmeldeinformationen"
+  | Login -> "Login"
   | Logout -> "Logout"
   | Mailings -> "Versand"
   | Overview -> "Übersicht"

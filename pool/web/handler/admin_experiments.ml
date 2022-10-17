@@ -5,7 +5,7 @@ module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let id req field encode =
   Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode

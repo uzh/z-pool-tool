@@ -57,6 +57,7 @@ type nav_link =
   | Invitations
   | Locations
   | LoginInformation
+  | Login
   | Logout
   | Mailings
   | Overview

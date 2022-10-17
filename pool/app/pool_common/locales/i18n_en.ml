@@ -75,6 +75,7 @@ let nav_link_to_string = function
   | I18n -> "Translations"
   | Invitations -> "Invitations"
   | LoginInformation -> "Login information"
+  | Login -> "Login"
   | Locations -> "Locations"
   | Logout -> "Logout"
   | Mailings -> "Mailings"

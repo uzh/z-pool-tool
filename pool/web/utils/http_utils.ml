@@ -244,9 +244,9 @@ let externalize_path_with_lang lang path =
 
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
 
-let invalid_session_redirect req query_lang =
+let invalid_session_redirect ?(login_path = "/login") req query_lang =
   redirect_to_with_actions
-    (path_with_language query_lang "/login")
+    (path_with_language query_lang login_path)
     [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
     ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
     ]

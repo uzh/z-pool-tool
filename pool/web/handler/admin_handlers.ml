@@ -9,7 +9,7 @@ module Location = Admin_location
 module CustomField = Admin_custom_fields
 module CustomFieldOption = Admin_custom_field_options
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let dashboard req =
   let result context =

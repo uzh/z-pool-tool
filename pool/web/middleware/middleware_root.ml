@@ -6,28 +6,26 @@ let from_root_only () =
     | true -> handler req
     | false ->
       let html = Page.Utils.error_page_not_found language () in
-      Page.Layout.create_root_layout html None language ()
+      Page.Layout.create_root_layout html Pool_common.Language.En None None ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return
   in
   Rock.Middleware.create ~name:"root.only" ~filter
 ;;
 
-let require_root ~login_path_f =
-  let open Utils.Lwt_result.Infix in
-  let fail_action = () |> login_path_f |> Http_utils.redirect_to in
+let require_root () =
+  let fail_action req =
+    Http_utils.invalid_session_redirect ~login_path:"/root/login" req None
+  in
   let filter handler req =
-    Service.User.Web.user_from_session
-      ~ctx:(Pool_tenant.to_ctx Pool_database.root)
-      req
-    >|> function
-    | Some user ->
-      user
-      |> Sihl_user.is_admin
-      |> (function
-      | false -> fail_action
-      | true -> handler req)
-    | None -> fail_action
+    let context = Pool_context.find req in
+    let open Pool_context in
+    match context with
+    | Error _ -> fail_action req
+    | Ok { user; _ } ->
+      (match user with
+       | None | Some (Contact _) | Some (Admin _) -> fail_action req
+       | Some (Root _) -> handler req)
   in
   Rock.Middleware.create ~name:"user.require.root" ~filter
 ;;
