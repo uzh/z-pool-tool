@@ -129,7 +129,6 @@ let asset req =
   |> Lwt.return
 ;;
 
-(* TODO: Make sure the correct layout is used *)
 let error req =
   let error_page (title, note) =
     Page.Utils.error_page_terminatory title note ()

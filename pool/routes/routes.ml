@@ -26,7 +26,6 @@ module Public = struct
     choose
       [ get "/" Handler.Public.root_redirect
       ; get "/custom/assets/:id/:filename" Handler.Public.asset
-      ; get "/error" Handler.Public.error
       ]
   ;;
 
@@ -47,6 +46,7 @@ module Public = struct
             ; post "/request-reset-password" Login.request_reset_password_post
             ; get "/reset-password" Login.reset_password_get
             ; post "/reset-password" Login.reset_password_post
+            ; get "/error" Handler.Public.error
             ]
         ])
   ;;

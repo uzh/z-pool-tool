@@ -1,4 +1,4 @@
-let context role () =
+let context context () =
   let tenant_db_of_request req
     : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
     =
@@ -76,16 +76,15 @@ let context role () =
       | None -> Lwt.return_none
       | Some user ->
         let open Pool_context in
-        (match role with
-         | `Admin ->
+        (match context with
+         | `Contact | `Admin ->
            (match%lwt Admin.user_is_admin pool user with
-            | false -> Lwt.return_none
+            | false ->
+              user
+              |> Contact.find_by_user pool
+              ||> CCResult.to_opt
+              ||> CCOption.map contact
             | true -> user |> admin |> Lwt.return_some)
-         | `Contact ->
-           user
-           |> Contact.find_by_user pool
-           ||> CCResult.to_opt
-           ||> CCOption.map contact
          | `Root ->
            (match Sihl_user.is_admin user with
             | false -> Lwt.return_none
@@ -93,7 +92,7 @@ let context role () =
     in
     let%lwt context =
       let* query_lang, language, tenant_db, user =
-        match role with
+        match context with
         | `Admin ->
           let* tenant_db = tenant_db_of_request req in
           let%lwt user = find_user tenant_db in
