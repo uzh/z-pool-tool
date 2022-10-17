@@ -1,17 +1,31 @@
 module PoolError = Pool_common.Message
 open Sexplib.Conv
 
+module Sihl_user = struct
+  include Sihl_user
+
+  let equal m k = CCString.equal m.id k.id
+  let sexp_of_t t = t.id |> fun s -> Sexplib0.Sexp.Atom s
+end
+
+type user =
+  | Admin of Sihl_user.t
+  | Contact of Contact.t
+  | Root of Sihl_user.t
+[@@deriving sexp_of, variants]
+
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; tenant_db : Pool_database.Label.t
   ; message : PoolError.Collection.t option
   ; csrf : string
+  ; user : user option
   }
 [@@deriving sexp_of]
 
-let create (query_language, language, tenant_db, message, csrf) =
-  { query_language; language; tenant_db; message; csrf }
+let create (query_language, language, tenant_db, message, csrf, user) =
+  { query_language; language; tenant_db; message; csrf; user }
 ;;
 
 let find_context key req =

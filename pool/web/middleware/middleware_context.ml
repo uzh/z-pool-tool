@@ -1,4 +1,4 @@
-let context user () =
+let context role () =
   let tenant_db_of_request req
     : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
     =
@@ -67,21 +67,44 @@ let context user () =
         (Sihl.Web.Flash.find_alert req)
         Pool_common.Message.Collection.of_string
     in
+    let find_user pool =
+      let open Utils.Lwt_result.Infix in
+      let%lwt user =
+        Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
+      in
+      match user with
+      | None -> Lwt.return_none
+      | Some user ->
+        let open Pool_context in
+        (match role with
+         | `Admin -> user |> admin |> Lwt.return_some
+         | `Contact ->
+           user
+           |> Contact.find_by_user pool
+           ||> CCResult.to_opt
+           ||> CCOption.map contact
+         | `Root -> user |> root |> Lwt.return_some)
+    in
     let%lwt context =
-      let* query_lang, language, tenant_db =
-        match user with
-        | `Root ->
-          Lwt_result.return (None, Pool_common.Language.En, Pool_database.root)
+      let* query_lang, language, tenant_db, user =
+        match role with
         | `Admin ->
           let* tenant_db = tenant_db_of_request req in
-          Lwt_result.return (None, Pool_common.Language.En, tenant_db)
+          let%lwt user = find_user tenant_db in
+          Lwt_result.return (None, Pool_common.Language.En, tenant_db, user)
         | `Contact ->
           let* tenant_db = tenant_db_of_request req in
+          let%lwt user = find_user tenant_db in
           let%lwt language = language_from_request req tenant_db in
-          Lwt_result.return (query_lang, language, tenant_db)
+          Lwt_result.return (query_lang, language, tenant_db, user)
+        | `Root ->
+          let pool = Pool_database.root in
+          let%lwt user = find_user pool in
+          Lwt_result.return (None, Pool_common.Language.En, pool, user)
       in
       Lwt_result.return
-        (Pool_context.create (query_lang, language, tenant_db, message, csrf))
+        (Pool_context.create
+           (query_lang, language, tenant_db, message, csrf, user))
     in
     match context with
     | Ok context -> context |> Pool_context.set req |> handler

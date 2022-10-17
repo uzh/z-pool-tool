@@ -1,9 +1,19 @@
+type user =
+  | Admin of Sihl_user.t
+  | Contact of Contact.t
+  | Root of Sihl_user.t
+
+val admin : Sihl_user.t -> user
+val contact : Contact.t -> user
+val root : Sihl_user.t -> user
+
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; tenant_db : Pool_tenant.Database.Label.t
   ; message : Pool_common.Message.Collection.t option
   ; csrf : string
+  ; user : user option
   }
 
 val create
@@ -12,6 +22,7 @@ val create
      * Pool_tenant.Database.Label.t
      * Pool_common.Message.Collection.t option
      * string
+     * user option
   -> t
 
 val find : Rock.Request.t -> (t, Pool_common.Message.error) result
