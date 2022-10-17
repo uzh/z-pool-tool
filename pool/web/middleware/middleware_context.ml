@@ -67,7 +67,7 @@ let context context () =
         (Sihl.Web.Flash.find_alert req)
         Pool_common.Message.Collection.of_string
     in
-    let find_user pool =
+    let find_tenant_user pool =
       let open Utils.Lwt_result.Infix in
       let%lwt user =
         Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
@@ -76,40 +76,43 @@ let context context () =
       | None -> Lwt.return_none
       | Some user ->
         let open Pool_context in
-        (match context with
-         | `Contact | `Admin ->
-           (match%lwt Admin.user_is_admin pool user with
-            | false ->
-              user
-              |> Contact.find_by_user pool
-              ||> CCResult.to_opt
-              ||> CCOption.map contact
-            | true -> user |> admin |> Lwt.return_some)
-         | `Root ->
-           (match Sihl_user.is_admin user with
-            | false -> Lwt.return_none
-            | true -> user |> root |> Lwt.return_some))
+        (match%lwt Admin.user_is_admin pool user with
+         | false ->
+           user
+           |> Contact.find_by_user pool
+           ||> CCResult.to_opt
+           ||> CCOption.map contact
+         | true -> user |> admin |> Lwt.return_some)
     in
+    let is_root_request = Http_utils.is_req_from_root_host req in
     let%lwt context =
-      let* query_lang, language, tenant_db, user =
-        match context with
-        | `Admin ->
-          let* tenant_db = tenant_db_of_request req in
-          let%lwt user = find_user tenant_db in
-          Lwt_result.return (None, Pool_common.Language.En, tenant_db, user)
-        | `Contact ->
-          let* tenant_db = tenant_db_of_request req in
-          let%lwt user = find_user tenant_db in
-          let%lwt language = language_from_request req tenant_db in
-          Lwt_result.return (query_lang, language, tenant_db, user)
-        | `Root ->
-          let pool = Pool_database.root in
-          let%lwt user = find_user pool in
-          Lwt_result.return (None, Pool_common.Language.En, pool, user)
-      in
-      Lwt_result.return
-        (Pool_context.create
-           (query_lang, language, tenant_db, message, csrf, user))
+      match is_root_request with
+      | true ->
+        let pool = Pool_database.root in
+        let%lwt user =
+          let open Lwt.Infix in
+          Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
+          >|= CCFun.flip CCOption.bind (fun user ->
+                if Sihl_user.is_admin user
+                then Some (Pool_context.root user)
+                else None)
+        in
+        Pool_context.create
+          (None, Pool_common.Language.En, pool, message, csrf, user)
+        |> Lwt_result.return
+      | false ->
+        let* tenant_db = tenant_db_of_request req in
+        let%lwt user = find_tenant_user tenant_db in
+        (match context with
+         | `Admin ->
+           Pool_context.create
+             (None, Pool_common.Language.En, tenant_db, message, csrf, user)
+           |> Lwt_result.return
+         | `Contact ->
+           let%lwt language = language_from_request req tenant_db in
+           Pool_context.create
+             (query_lang, language, tenant_db, message, csrf, user)
+           |> Lwt_result.return)
     in
     match context with
     | Ok context -> context |> Pool_context.set req |> handler

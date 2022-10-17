@@ -296,7 +296,7 @@ end
 module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context `Root ()
+    ; CustomMiddleware.Context.context `Admin ()
     ]
   ;;
 
