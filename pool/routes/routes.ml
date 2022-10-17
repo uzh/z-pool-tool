@@ -185,7 +185,7 @@ module Admin = struct
         in
         Session.
           [ get "" list
-          ; get "create" new_form
+          ; get "/create" new_form
           ; post "" create
           ; choose ~scope:"/:session" specific
           ]
@@ -265,9 +265,9 @@ module Admin = struct
             ]
         in
         CustomField.
-          [ get "edit" edit
+          [ get "/edit" edit
           ; post "" update
-          ; post "sort-options" sort_options
+          ; post "/sort-options" sort_options
           ; choose ~scope:"options" options
           ]
       in
@@ -289,7 +289,7 @@ module Admin = struct
         CustomFieldGroup.
           [ get "/new" new_form
           ; post "" create
-          ; post "sort" sort
+          ; post "/sort" sort
           ; choose ~scope:(CustomFieldGroup |> url_key) specific
           ]
       in

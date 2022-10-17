@@ -46,7 +46,7 @@ let create pool =
       , FieldType.Select
       , languge_level_options
       , Some language_group )
-    ; ( "Age"
+    ; ( "Nr. of siblings"
       , Model.Contact
       , Some "Hint"
       , []

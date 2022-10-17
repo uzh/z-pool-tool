@@ -52,16 +52,15 @@ let write ?id req model =
   in
   let redirect_path = Url.index_path model in
   let error_path =
-    match id with
+    id
+    |> function
     | None -> Url.Group.new_path model
     | Some id -> Url.Group.edit_path (model, id)
   in
   let field_names =
     let open Pool_common in
     let encode_lang t = t |> Language.create |> CCResult.to_opt in
-    let go field =
-      Admin_custom_fields.find_assocs_in_urlencoded urlencoded field
-    in
+    let go = Admin_custom_fields.find_assocs_in_urlencoded urlencoded in
     go Message.Field.Name encode_lang
   in
   let result { Pool_context.tenant_db; _ } =
@@ -116,12 +115,11 @@ let delete req =
       let open Utils.Lwt_result.Syntax in
       let open Utils.Lwt_result.Infix in
       let* events =
+        let open CCFun.Infix in
         id
         |> Custom_field.find_group tenant_db
-        >>= fun g ->
-        g
-        |> Cqrs_command.Custom_field_group_command.Destroy.handle
-        |> Lwt_result.lift
+        >>= Cqrs_command.Custom_field_group_command.Destroy.handle
+            %> Lwt_result.lift
       in
       let%lwt () = Pool_event.handle_events tenant_db events in
       Http_utils.redirect_to_with_actions
