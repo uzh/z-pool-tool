@@ -140,6 +140,8 @@ let create
       field
   | Checkbox boolean ->
     Component.checkbox_element
+      ~as_switch:true
+      ~orientation:`Vertical
       ~additional_attributes
       ~classnames
       ~value:boolean

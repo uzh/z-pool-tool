@@ -210,6 +210,7 @@ let flatpicker_element
 ;;
 
 let checkbox_element
+  ?(as_switch = false)
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?label_field
@@ -241,19 +242,31 @@ let checkbox_element
     |> fun attrs ->
     if required then CCList.cons (a_required ()) attrs else attrs
   in
+  let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
   let error = Elements.error language error in
   let input_element =
-    Elements.apply_orientation (attributes @ additional_attributes) orientation
+    let checkbox =
+      let base = input ~a:attributes () in
+      if as_switch
+      then
+        div
+          [ label
+              ~a:[ a_class [ "switch" ] ]
+              [ base; span ~a:[ a_class [ "slider" ] ] [] ]
+          ]
+      else base
+    in
+    match orientation with
+    | `Vertical -> checkbox
+    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
   in
   div
     ~a:[ a_class group_class ]
-    [ div
-        ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
-        @ help
-        @ error)
-    ]
+    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
+    @ help
+    @ error)
 ;;
 
 let input_element_file
@@ -477,7 +490,13 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   | Public.Boolean { Public.answer; _ } ->
     answer
     >|= (fun a -> a.Answer.value)
-    |> fun value -> checkbox_element ?value language label
+    |> fun value ->
+    checkbox_element
+      ~as_switch:true
+      ~orientation:`Vertical
+      ?value
+      language
+      label
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
   | Public.Text { Public.answer; _ } ->
