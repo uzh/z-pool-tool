@@ -146,7 +146,7 @@ let update ?contact req =
            | Field.Firstname ->
              Htmx.Text (value |> CCOption.pure) |> create_htmx
            | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Paused -> Htmx.Checkbox false |> create_htmx
+           | Field.Paused -> Htmx.Boolean false |> create_htmx
            | Field.Language ->
              Htmx.Select
                Htmx.

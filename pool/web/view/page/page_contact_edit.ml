@@ -90,7 +90,7 @@ let personal_details_form
                      } )
                ; ( contact.paused_version
                  , Field.Paused
-                 , Checkbox (contact.paused |> User.Paused.value) )
+                 , Boolean (contact.paused |> User.Paused.value) )
                ])
     ; div
         ~a:[ a_class [ "stack-lg" ] ]

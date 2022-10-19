@@ -64,10 +64,10 @@ type 'a selector =
   }
 
 type 'a value =
-  | Text of string option
+  | Boolean of bool
   | Number of int option
-  | Checkbox of bool
   | Select of 'a selector
+  | Text of string option
 [@@deriving variants]
 
 type 'a t =
@@ -138,7 +138,7 @@ let create
       language
       `Number
       field
-  | Checkbox boolean ->
+  | Boolean boolean ->
     Component.checkbox_element
       ~as_switch:true
       ~orientation:`Vertical
@@ -173,7 +173,7 @@ let custom_field_to_htmx_value language =
   let open Custom_field in
   function
   | Public.Boolean { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> checkbox
+    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
   | Public.Number { Public.answer; _ } ->
     answer >|= (fun a -> a.Answer.value) |> number
   | Public.Select ({ Public.answer; _ }, options) ->
@@ -236,7 +236,7 @@ let partial_update_to_htmx language sys_languages is_admin =
       (Text (lastname |> User.Lastname.value |> CCOption.pure))
     |> to_html
   | Paused (v, paused) ->
-    create_entity v Field.Paused (Checkbox (paused |> User.Paused.value))
+    create_entity v Field.Paused (Boolean (paused |> User.Paused.value))
     |> to_html
   | Language (v, lang) ->
     create_entity
