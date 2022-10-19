@@ -378,7 +378,10 @@ module Public = struct
 
   let is_disabled is_admin m =
     if is_admin
-    then m |> admin_overwrite |> Admin.Overwrite.value |> not
+    then
+      (m |> admin_overwrite |> Admin.Overwrite.value
+      || m |> admin_input_only |> Admin.InputOnly.value)
+      |> not
     else m |> admin_input_only |> Admin.InputOnly.value
   ;;
 
