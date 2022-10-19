@@ -94,6 +94,11 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | CustomFieldAdminInputOnly ->
+    Format.asprintf
+      "This option excludes \"%s\"."
+      (Locales_en.field_to_string Entity_message.Field.Required
+      |> CCString.capitalize_ascii)
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "This option implies \"%s\"."

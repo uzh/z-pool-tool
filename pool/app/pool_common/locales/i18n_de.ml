@@ -101,6 +101,11 @@ let hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | CustomFieldAdminInputOnly ->
+    Format.asprintf
+      "Diese Option schliesst \"%s\" aus."
+      (Locales_de.field_to_string Entity_message.Field.Required
+      |> CCString.capitalize_ascii)
   | CustomFieldAdminViewOnly ->
     Format.asprintf
       "Diese Option impliziert \"%s\"."

@@ -72,6 +72,7 @@ type nav_link =
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | CustomFieldAdminInputOnly
   | CustomFieldAdminViewOnly
   | CustomHtmx of string
   | DirectRegistrationDisbled

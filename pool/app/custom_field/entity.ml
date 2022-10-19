@@ -149,11 +149,8 @@ module Admin = struct
   [@@deriving eq, show]
 
   let create hint overwrite view_only input_only =
-    if view_only && not input_only
-    then
-      Error
-        Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
-    else Ok { hint; overwrite; view_only; input_only }
+    let input_only = if view_only then true else input_only in
+    Ok { hint; overwrite; view_only; input_only }
   ;;
 end
 
@@ -527,6 +524,7 @@ let create
   admin
   =
   let open CCResult in
+  let required = if admin.Admin.input_only then false else required in
   match (field_type : FieldType.t) with
   | FieldType.Boolean ->
     Ok
