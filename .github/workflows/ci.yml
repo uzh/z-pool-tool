@@ -157,9 +157,7 @@ jobs:
     name: Release a new version
     runs-on: ubuntu-latest
     needs: [build, assets]
-    on:
-      push:
-        tags: ['*']
+    if: github.ref_type == 'tag'
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v3
