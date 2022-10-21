@@ -229,7 +229,7 @@ module PartialUpdate = struct
         |> Lwt_result.lift
         >>= Custom_field.find_by_contact ~is_admin tenand_db (id contact)
         >>= check_permission
-        >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
+        >>= fun f -> f |> Custom_field.validate tenand_db value
       in
       let old_v =
         Custom_field.Public.version custom_field

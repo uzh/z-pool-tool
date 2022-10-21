@@ -246,15 +246,15 @@ module Public = struct
         value |> Utils.Bool.of_string |> Entity_answer.create ~id ~version
       in
       Public.Boolean
-        { Public.id
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
     | FieldType.Number ->
       let answer =
         answer
@@ -263,15 +263,15 @@ module Public = struct
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
     | FieldType.Select ->
       let answer =
         let open SelectOption in
@@ -300,9 +300,32 @@ module Public = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
-          ; answer
           }
-        , options )
+        , options
+        , answer )
+    | FieldType.MultiSelect ->
+      (* let answer = let open SelectOption in answer >|= fun Answer.{ id;
+         value; version } -> value |> Id.of_string |> fun selected ->
+         CCList.find (fun (_, { SelectOption.id; _ }) -> Id.equal id selected)
+         select_options |> snd |> CCList.pure |> Entity_answer.create ~id
+         ~version in *)
+      let options =
+        CCList.filter_map
+          (fun (field_id, option) ->
+            if Pool_common.Id.equal field_id id then Some option else None)
+          select_options
+      in
+      Public.MultiSelect
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , options
+        , [] )
     | FieldType.Text ->
       let answer =
         answer
@@ -311,15 +334,15 @@ module Public = struct
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
   ;;
 
   let to_grouped_entities select_options groups fields =
@@ -519,6 +542,25 @@ let to_entity
         select_options
     in
     Select
+      ( { id
+        ; model
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; disabled
+        ; custom_field_group_id
+        ; admin
+        }
+      , options )
+  | FieldType.MultiSelect ->
+    let options =
+      CCList.filter_map
+        (fun (field_id, option) ->
+          if Pool_common.Id.equal field_id id then Some option else None)
+        select_options
+    in
+    MultiSelect
       ( { id
         ; model
         ; name

@@ -93,6 +93,7 @@ end
 module FieldType : sig
   type t =
     | Boolean
+    | MultiSelect
     | Number
     | Select
     | Text
@@ -101,6 +102,7 @@ module FieldType : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val all : t list
+  val to_string : t -> string
 
   val schema
     :  unit
@@ -184,6 +186,11 @@ module SelectOption : sig
   val show_id : t -> string
   val name : Pool_common.Language.t -> t -> string
   val create : ?id:Id.t -> Name.t -> t
+
+  val to_common_field
+    :  Pool_common.Language.t
+    -> t
+    -> Pool_common.Message.Field.t
 end
 
 module Public : sig
@@ -195,7 +202,6 @@ module Public : sig
     ; required : Required.t
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
-    ; answer : 'a Answer.t option
     }
 
   val equal_public : ('a -> 'a -> bool) -> 'a public -> 'a public -> bool
@@ -209,15 +215,21 @@ module Public : sig
   val show_public : (Format.formatter -> 'a -> unit) -> 'a public -> string
 
   type t =
-    | Boolean of bool public
-    | Number of int public
-    | Select of SelectOption.t public * SelectOption.t list
-    | Text of string public
+    | Boolean of bool public * bool Answer.t option
+    | MultiSelect of
+        SelectOption.t list public
+        * SelectOption.t list
+        * SelectOption.t Answer.t list
+    | Number of int public * int Answer.t option
+    | Select of
+        SelectOption.t public
+        * SelectOption.t list
+        * SelectOption.t Answer.t option
+    | Text of string public * string Answer.t option
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val validate : string -> t -> (t, Pool_common.Message.error) result
   val id : t -> Id.t
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
@@ -289,6 +301,7 @@ type 'a custom_field =
 type t =
   | Boolean of bool custom_field
   | Number of int custom_field
+  | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
 
@@ -410,3 +423,9 @@ val find_groups_by_model
   :  Pool_database.Label.t
   -> Model.t
   -> Group.t list Lwt.t
+
+val validate
+  :  Pool_database.Label.t
+  -> string
+  -> Public.t
+  -> (Public.t, Pool_common.Message.error) Lwt_result.t

@@ -311,7 +311,7 @@ let field_form
     | None -> empty
     | Some m ->
       (match m with
-       | Select (_, options) ->
+       | Select (_, options) | MultiSelect (_, options) ->
          let list =
            form
              ~a:
@@ -420,6 +420,7 @@ let field_form
               FieldType.show
               FieldType.all
               field_type
+              ~option_formatter:FieldType.to_string
               ~add_empty:true
               ~required:true
               ~flash_fetcher

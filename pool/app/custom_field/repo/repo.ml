@@ -1,8 +1,13 @@
 module Database = Pool_database
 
+let has_options field_type m =
+  Entity.FieldType.(
+    equal Select (field_type m) || equal MultiSelect (field_type m))
+;;
+
 let to_entity pool to_entity field_type id m =
   let open Lwt.Infix in
-  (if Entity.FieldType.(equal Select (field_type m))
+  (if has_options field_type m
   then Repo_option.find_by_field pool (id m)
   else [] |> Lwt.return)
   >|= fun options -> to_entity options m
@@ -11,9 +16,7 @@ let to_entity pool to_entity field_type id m =
 let get_options_of_multiple pool field_type id fields =
   fields
   |> CCList.filter_map (fun m ->
-       if Entity.FieldType.(equal Select (field_type m))
-       then Some (id m)
-       else None)
+       if has_options field_type m then Some (id m) else None)
   |> Repo_option.find_by_multiple_fields pool
 ;;
 

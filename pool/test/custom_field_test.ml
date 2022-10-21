@@ -88,15 +88,33 @@ module Data = struct
         |> CCOption.pure
       in
       Public.Boolean
-        { Public.id
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
+    | FieldType.MultiSelect ->
+      (* TODO: Test functionality*)
+      let answer =
+        CCList.head_opt field_options
+        |> CCOption.map (fun option ->
+             Answer.{ id = answer_id; version = answer_version; value = option })
+      in
+      Public.Select
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , field_options
+        , answer )
     | FieldType.Number ->
       let answer =
         Answer.{ id = answer_id; version = answer_version; value = 3 }
@@ -104,15 +122,15 @@ module Data = struct
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
@@ -127,9 +145,9 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
-          ; answer
           }
-        , field_options )
+        , field_options
+        , answer )
     | FieldType.Text ->
       let answer =
         Answer.{ id = answer_id; version = answer_version; value = "test" }
@@ -137,15 +155,15 @@ module Data = struct
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          }
+        , answer )
   ;;
 end
 

@@ -149,6 +149,7 @@ let completion_post req =
          |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
        in
        let events =
+         let open Cqrs_command.Custom_field_answer_command.UpdateMultiple in
          custom_fields
          |> CCList.map (fun f ->
               let open CCOption in
@@ -159,9 +160,10 @@ let completion_post req =
                 >>= CCList.head_opt
                 |> value ~default:""
               , f ))
-         |> Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
-              (Contact.id contact)
-         |> Lwt_result.lift
+         |> Lwt_list.map_s (fun (value, field) ->
+              Custom_field.validate tenant_db value field
+              >>= fun f -> f |> handle (Contact.id contact) |> Lwt_result.lift)
+         ||> CCList.all_ok
        in
        let handle events =
          let%lwt () =

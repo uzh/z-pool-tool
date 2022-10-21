@@ -74,10 +74,15 @@ end
 module FieldType = struct
   type t =
     | Boolean [@name "boolean"] [@printer printer "boolean"]
+    | MultiSelect [@name "multi_select"] [@printer printer "multi_select"]
     | Number [@name "number"] [@printer printer "number"]
     | Select [@name "select"] [@printer printer "select"]
     | Text [@name "text"] [@printer printer "text"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
+
+  let to_string t =
+    t |> show |> CCString.replace ~sub:"_" ~by:" " |> CCString.capitalize_ascii
+  ;;
 
   let field = Message.Field.FieldType
 
@@ -286,6 +291,11 @@ module SelectOption = struct
   ;;
 
   let create ?(id = Id.create ()) name = { id; name }
+
+  let to_common_field language m =
+    let name = name language m in
+    Pool_common.Message.(Field.CustomHtmx (name, m.id |> Id.value))
+  ;;
 end
 
 module Public = struct
@@ -297,31 +307,40 @@ module Public = struct
     ; required : Required.t
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
-    ; answer : 'a Answer.t option
     }
   [@@deriving eq, show]
 
+  (* TODO: Create tuples?? so MultiSelect can have a list of answers? *)
   type t =
-    | Boolean of bool public
-    | Number of int public
-    | Select of SelectOption.t public * SelectOption.t list
-    | Text of string public
-  [@@deriving eq, show]
+    | Boolean of bool public * bool Answer.t option
+    | MultiSelect of
+        SelectOption.t list public
+        * SelectOption.t list
+        * SelectOption.t Answer.t list
+    | Number of int public * int Answer.t option
+    | Select of
+        SelectOption.t public
+        * SelectOption.t list
+        * SelectOption.t Answer.t option
+    | Text of string public * string Answer.t option
+  [@@deriving eq, show, variants]
 
   let id (t : t) =
     match t with
-    | Boolean { id; _ }
-    | Number { id; _ }
-    | Select ({ id; _ }, _)
-    | Text { id; _ } -> id
+    | Boolean ({ id; _ }, _)
+    | MultiSelect ({ id; _ }, _, _)
+    | Number ({ id; _ }, _)
+    | Select ({ id; _ }, _, _)
+    | Text ({ id; _ }, _) -> id
   ;;
 
   let name_value lang (t : t) =
     match t with
-    | Boolean { name; _ }
-    | Number { name; _ }
-    | Select ({ name; _ }, _)
-    | Text { name; _ } ->
+    | Boolean ({ name; _ }, _)
+    | MultiSelect ({ name; _ }, _, _)
+    | Number ({ name; _ }, _)
+    | Select ({ name; _ }, _, _)
+    | Text ({ name; _ }, _) ->
       Name.find_opt lang name
       |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
       |> Pool_common.Utils.get_or_failwith
@@ -329,51 +348,60 @@ module Public = struct
 
   let hint lang (t : t) =
     match t with
-    | Boolean { hint; _ }
-    | Number { hint; _ }
-    | Select ({ hint; _ }, _)
-    | Text { hint; _ } -> Hint.find_opt lang hint
+    | Boolean ({ hint; _ }, _)
+    | MultiSelect ({ hint; _ }, _, _)
+    | Number ({ hint; _ }, _)
+    | Select ({ hint; _ }, _, _)
+    | Text ({ hint; _ }, _) -> Hint.find_opt lang hint
   ;;
 
   let required (t : t) =
     match t with
-    | Boolean { required; _ }
-    | Number { required; _ }
-    | Select ({ required; _ }, _)
-    | Text { required; _ } -> required
+    | Boolean ({ required; _ }, _)
+    | MultiSelect ({ required; _ }, _, _)
+    | Number ({ required; _ }, _)
+    | Select ({ required; _ }, _, _)
+    | Text ({ required; _ }, _) -> required
   ;;
 
   let admin_overwrite (t : t) =
     match t with
-    | Boolean { admin_overwrite; _ }
-    | Number { admin_overwrite; _ }
-    | Select ({ admin_overwrite; _ }, _)
-    | Text { admin_overwrite; _ } -> admin_overwrite
+    | Boolean ({ admin_overwrite; _ }, _)
+    | MultiSelect ({ admin_overwrite; _ }, _, _)
+    | Number ({ admin_overwrite; _ }, _)
+    | Select ({ admin_overwrite; _ }, _, _)
+    | Text ({ admin_overwrite; _ }, _) -> admin_overwrite
   ;;
 
   let admin_input_only (t : t) =
     match t with
-    | Boolean { admin_input_only; _ }
-    | Number { admin_input_only; _ }
-    | Select ({ admin_input_only; _ }, _)
-    | Text { admin_input_only; _ } -> admin_input_only
+    | Boolean ({ admin_input_only; _ }, _)
+    | MultiSelect ({ admin_input_only; _ }, _, _)
+    | Number ({ admin_input_only; _ }, _)
+    | Select ({ admin_input_only; _ }, _, _)
+    | Text ({ admin_input_only; _ }, _) -> admin_input_only
   ;;
 
   let version (t : t) =
     match t with
-    | Boolean { answer; _ } -> answer |> CCOption.map Answer.version
-    | Number { answer; _ } -> answer |> CCOption.map Answer.version
-    | Select ({ answer; _ }, _) -> answer |> CCOption.map Answer.version
-    | Text { answer; _ } -> answer |> CCOption.map Answer.version
+    | Boolean (_, answer) -> answer |> CCOption.map Answer.version
+    (* TODO: How to determine version? *)
+    | MultiSelect (_, _, answer) ->
+      answer |> CCList.head_opt |> CCOption.map Answer.version
+    | Number (_, answer) -> answer |> CCOption.map Answer.version
+    | Select (_, _, answer) -> answer |> CCOption.map Answer.version
+    | Text (_, answer) -> answer |> CCOption.map Answer.version
   ;;
 
   let answer_id =
     let id a = a |> CCOption.map Answer.id in
     function
-    | (Boolean { answer; _ } : t) -> id answer
-    | Number { answer; _ } -> id answer
-    | Select ({ answer; _ }, _) -> id answer
-    | Text { answer; _ } -> id answer
+    | Boolean (_, answer) -> answer |> id
+    (* TODO: How to determine id? *)
+    | MultiSelect (_, _, answer) -> answer |> CCList.head_opt |> id
+    | Number (_, answer) -> answer |> id
+    | Select (_, _, answer) -> answer |> id
+    | Text (_, answer) -> answer |> id
   ;;
 
   let is_disabled is_admin m =
@@ -385,60 +413,21 @@ module Public = struct
     else m |> admin_input_only |> Admin.InputOnly.value
   ;;
 
-  let validate value (m : t) =
-    let open CCResult.Infix in
-    let go validation value = validation |> fst |> fun rule -> rule value in
-    let id = answer_id m in
-    let version = version m in
-    match m with
-    | Boolean public ->
-      value
-      |> Utils.Bool.of_string
-      |> Answer.create ?id ?version
-      |> (fun a : t -> Boolean { public with answer = a |> CCOption.pure })
-      |> CCResult.pure
-    | Number ({ validation; _ } as public) ->
-      value
-      |> CCInt.of_string
-      |> CCOption.to_result Message.(NotANumber value)
-      >>= fun i ->
-      i
-      |> go validation
-      >|= Answer.create ?id ?version
-      >|= fun a : t -> Number { public with answer = a |> CCOption.pure }
-    | Select (public, options) ->
-      let value = value |> SelectOption.Id.of_string in
-      let selected =
-        CCList.find_opt
-          (fun option -> SelectOption.Id.equal option.SelectOption.id value)
-          options
-      in
-      selected
-      |> CCOption.to_result Message.InvalidOptionSelected
-      >|= Answer.create ?id ?version
-      >|= fun a : t ->
-      Select ({ public with answer = a |> CCOption.pure }, options)
-    | Text ({ validation; _ } as public) ->
-      value
-      |> go validation
-      >|= Answer.create ?id ?version
-      >|= fun a : t -> Text { public with answer = a |> CCOption.pure }
-  ;;
-
   let increment_version : t -> t =
-    let increment ({ answer; _ } as public) =
-      match answer with
-      | Some answer ->
-        { public with
-          answer = answer |> Answer.increment_version |> CCOption.pure
-        }
-      | None -> public
-    in
+    let increment = Answer.increment_version in
+    let open CCOption in
     function
-    | Boolean public -> Boolean (public |> increment)
-    | Number public -> Number (public |> increment)
-    | Select (public, options) -> Select (public |> increment, options)
-    | Text public -> Text (public |> increment)
+    | Boolean (public, answer) -> answer >|= increment |> boolean public
+    | MultiSelect (public, options, answer) ->
+      answer
+      |> CCList.head_opt
+      >|= increment
+      |> map_or ~default:[] CCList.pure
+      |> multiselect public options
+    | Number (public, answer) -> answer >|= increment |> number public
+    | Select (public, options, answer) ->
+      answer >|= increment |> select public options
+    | Text (public, answer) -> answer >|= increment |> text public
   ;;
 
   let to_common_field language m =
@@ -509,6 +498,7 @@ type 'a custom_field =
 type t =
   | Boolean of bool custom_field
   | Number of int custom_field
+  | MultiSelect of SelectOption.t list custom_field * SelectOption.t list
   | Select of SelectOption.t custom_field * SelectOption.t list
   | Text of string custom_field
 [@@deriving eq, show]
@@ -570,6 +560,20 @@ let create
          ; custom_field_group_id
          ; admin
          })
+  | FieldType.MultiSelect ->
+    Ok
+      (MultiSelect
+         ( { id
+           ; model
+           ; name
+           ; hint
+           ; validation = Validation.pure
+           ; required
+           ; disabled
+           ; custom_field_group_id
+           ; admin
+           }
+         , select_options ))
   | FieldType.Select ->
     Ok
       (Select
@@ -589,6 +593,7 @@ let create
 let id = function
   | Boolean { id; _ }
   | Number { id; _ }
+  | MultiSelect ({ id; _ }, _)
   | Select ({ id; _ }, _)
   | Text { id; _ } -> id
 ;;
@@ -596,6 +601,7 @@ let id = function
 let model = function
   | Boolean { model; _ }
   | Number { model; _ }
+  | MultiSelect ({ model; _ }, _)
   | Select ({ model; _ }, _)
   | Text { model; _ } -> model
 ;;
@@ -603,6 +609,7 @@ let model = function
 let name = function
   | Boolean { name; _ }
   | Number { name; _ }
+  | MultiSelect ({ name; _ }, _)
   | Select ({ name; _ }, _)
   | Text { name; _ } -> name
 ;;
@@ -610,6 +617,7 @@ let name = function
 let hint = function
   | Boolean { hint; _ }
   | Number { hint; _ }
+  | MultiSelect ({ hint; _ }, _)
   | Select ({ hint; _ }, _)
   | Text { hint; _ } -> hint
 ;;
@@ -617,6 +625,7 @@ let hint = function
 let required = function
   | Boolean { required; _ }
   | Number { required; _ }
+  | MultiSelect ({ required; _ }, _)
   | Select ({ required; _ }, _)
   | Text { required; _ } -> required
 ;;
@@ -624,6 +633,7 @@ let required = function
 let disabled = function
   | Boolean { disabled; _ }
   | Number { disabled; _ }
+  | MultiSelect ({ disabled; _ }, _)
   | Select ({ disabled; _ }, _)
   | Text { disabled; _ } -> disabled
 ;;
@@ -631,6 +641,7 @@ let disabled = function
 let group_id = function
   | Boolean { custom_field_group_id; _ }
   | Number { custom_field_group_id; _ }
+  | MultiSelect ({ custom_field_group_id; _ }, _)
   | Select ({ custom_field_group_id; _ }, _)
   | Text { custom_field_group_id; _ } -> custom_field_group_id
 ;;
@@ -638,6 +649,7 @@ let group_id = function
 let admin = function
   | Boolean { admin; _ }
   | Number { admin; _ }
+  | MultiSelect ({ admin; _ }, _)
   | Select ({ admin; _ }, _)
   | Text { admin; _ } -> admin
 ;;
@@ -645,6 +657,7 @@ let admin = function
 let field_type = function
   | Boolean _ -> FieldType.Boolean
   | Number _ -> FieldType.Number
+  | MultiSelect _ -> FieldType.MultiSelect
   | Select _ -> FieldType.Select
   | Text _ -> FieldType.Text
 ;;
@@ -652,13 +665,13 @@ let field_type = function
 let validation_strings =
   let open Validation in
   function
-  | Boolean _ | Select _ -> []
+  | Boolean _ | Select _ | MultiSelect _ -> []
   | Number { validation; _ } -> validation |> snd |> to_strings Number.all
   | Text { validation; _ } -> validation |> snd |> to_strings Text.all
 ;;
 
 let validation_to_yojson = function
-  | Boolean _ | Select _ -> "[]" |> Yojson.Safe.from_string
+  | Boolean _ | Select _ | MultiSelect _ -> "[]" |> Yojson.Safe.from_string
   | Number { validation; _ } -> Validation.encode_to_yojson validation
   | Text { validation; _ } -> Validation.encode_to_yojson validation
 ;;

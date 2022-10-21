@@ -259,14 +259,14 @@ let checkbox_element
       else base
     in
     match orientation with
-    | `Vertical -> checkbox
-    | `Horizontal -> div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
+    | `Vertical ->
+      div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ]
+    | `Horizontal ->
+      div
+        ~a:[ a_class [ "input-group" ] ]
+        [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
   in
-  div
-    ~a:[ a_class group_class ]
-    ([ label ~a:[ a_label_for id ] [ txt input_label ]; input_element ]
-    @ help
-    @ error)
+  div ~a:[ a_class group_class ] ([ input_element ] @ help @ error)
 ;;
 
 let input_element_file
@@ -468,51 +468,4 @@ let selector
         ]
     ; div help
     ]
-;;
-
-let custom_field_to_input ?flash_fetcher language custom_field =
-  let open Custom_field in
-  let open CCOption in
-  let label = Public.to_common_field language custom_field in
-  let help = Public.to_common_hint language custom_field in
-  let required = Public.required custom_field |> Required.value in
-  let create input_type value =
-    input_element
-      ?flash_fetcher
-      ?value
-      ?help
-      ~required
-      language
-      input_type
-      label
-  in
-  match custom_field with
-  | Public.Boolean { Public.answer; _ } ->
-    answer
-    >|= (fun a -> a.Answer.value)
-    |> fun value ->
-    checkbox_element
-      ~as_switch:true
-      ~orientation:`Vertical
-      ?value
-      language
-      label
-  | Public.Number { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
-  | Public.Text { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> create `Text
-  | Public.Select (Public.{ answer; _ }, options) ->
-    let value = answer >|= fun a -> a.Answer.value in
-    selector
-      ?flash_fetcher
-      ?help
-      ~required
-      ~option_formatter:SelectOption.(name language)
-      ~add_empty:true
-      language
-      label
-      SelectOption.show_id
-      options
-      value
-      ()
 ;;

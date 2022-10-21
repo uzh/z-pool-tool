@@ -28,3 +28,63 @@ let find_options_by_field pool id =
 
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
+
+let validate pool value (m : Public.t) =
+  let open Public in
+  let open CCResult.Infix in
+  let go validation value = validation |> fst |> fun rule -> rule value in
+  let id = answer_id m in
+  let version = version m in
+  match m with
+  | Boolean (public, _) ->
+    value
+    |> Utils.Bool.of_string
+    |> Answer.create ?id ?version
+    |> (fun a : t -> Boolean (public, a |> CCOption.pure))
+    |> Lwt_result.return
+  | MultiSelect (public, options, answers) ->
+    (* Could just the updated answer be passed to the repo and deleted, if
+       already existing? *)
+    let open Lwt_result.Syntax in
+    let* option = value |> SelectOption.Id.of_string |> Repo_option.find pool in
+    let answers =
+      CCList.find_opt
+        (fun { Answer.value; _ } -> SelectOption.equal value option)
+        answers
+      |> function
+      | None -> Answer.create ?id ?version option :: answers
+      | Some answer ->
+        CCList.remove ~eq:(Answer.equal SelectOption.equal) ~key:answer answers
+    in
+    (MultiSelect (public, options, answers) : t) |> Lwt_result.return
+  | Number (({ validation; _ } as public), _) ->
+    let res =
+      value
+      |> CCInt.of_string
+      |> CCOption.to_result Message.(NotANumber value)
+      >>= fun i ->
+      i
+      |> go validation
+      >|= Answer.create ?id ?version
+      >|= fun a : t -> (Number (public, a |> CCOption.pure) : t)
+    in
+    res |> Lwt_result.lift
+  | Select (public, options, _) ->
+    let value = value |> SelectOption.Id.of_string in
+    let selected =
+      CCList.find_opt
+        (fun option -> SelectOption.Id.equal option.SelectOption.id value)
+        options
+    in
+    selected
+    |> CCOption.to_result Message.InvalidOptionSelected
+    >|= Answer.create ?id ?version
+    >|= (fun a : t -> Select (public, options, a |> CCOption.pure))
+    |> Lwt_result.lift
+  | Text (({ validation; _ } as public), _) ->
+    value
+    |> go validation
+    >|= Answer.create ?id ?version
+    >|= (fun a : t -> Text (public, a |> CCOption.pure))
+    |> Lwt_result.lift
+;;

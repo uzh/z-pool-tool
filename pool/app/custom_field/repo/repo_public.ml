@@ -225,6 +225,26 @@ module Sql = struct
     >|= CCInt.equal 0
   ;;
 
+  let insert_answer_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INSERT INTO pool_custom_field_answers (
+        uuid,
+        custom_field_uuid,
+        entity_uuid,
+        value,
+        version
+      ) VALUES (
+        UNHEX(REPLACE($1, '-', '')),
+        UNHEX(REPLACE($2, '-', '')),
+        UNHEX(REPLACE($3, '-', '')),
+        $4,
+        $5
+      )
+      |sql}
+    |> Repo_entity_answer.Write.t ->. Caqti_type.unit
+  ;;
+
   let upsert_answer_request =
     let open Caqti_request.Infix in
     {sql|
@@ -248,26 +268,57 @@ module Sql = struct
     |> Repo_entity_answer.Write.t ->. Caqti_type.unit
   ;;
 
+  let delete_all_answers_of_multiselect_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_custom_field_answers
+      WHERE custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
+      AND entity_uuid = UNHEX(REPLACE($2, '-', ''))
+    |sql}
+    |> Caqti_type.(tup2 string string ->. unit)
+  ;;
+
+  let delete_all_answers_of_multiselect pool field_id entity_id =
+    Utils.Database.exec
+      (Pool_database.Label.value pool)
+      delete_all_answers_of_multiselect_request
+      Pool_common.Id.(field_id |> value, entity_id |> value)
+  ;;
+
   let upsert_answer pool entity_uuid t =
-    let exec =
+    let upsert =
       Utils.Database.exec (Database.Label.value pool) upsert_answer_request
     in
     let open Entity.Public in
     match t with
-    | Boolean { id; answer; _ } ->
+    | Boolean ({ id; _ }, answer) ->
       let field_id = id in
       answer
       |> CCOption.map_or
            ~default:Lwt.return_unit
-           (fun { Entity.Answer.id; value; version } ->
+           (fun { Entity.Answer.id; value; version; _ } ->
            Repo_entity_answer.Write.of_entity
              id
              field_id
              entity_uuid
              (Utils.Bool.to_string value)
              version
-           |> exec)
-    | Number { id; answer; _ } ->
+           |> upsert)
+    | MultiSelect ({ id; _ }, _, answers) ->
+      let field_id = id in
+      let%lwt () =
+        delete_all_answers_of_multiselect pool field_id entity_uuid
+      in
+      answers
+      |> Lwt_list.iter_s (fun { Entity_answer.id; value; version } ->
+           Repo_entity_answer.Write.of_entity
+             id
+             field_id
+             entity_uuid
+             (value |> Entity.SelectOption.show_id)
+             version
+           |> upsert)
+    | Number ({ id; _ }, answer) ->
       let field_id = id in
       answer
       |> CCOption.map_or
@@ -279,8 +330,8 @@ module Sql = struct
              entity_uuid
              (CCInt.to_string value)
              version
-           |> exec)
-    | Select ({ id; answer; _ }, _) ->
+           |> upsert)
+    | Select ({ id; _ }, _, answer) ->
       let field_id = id in
       answer
       |> CCOption.map_or
@@ -292,8 +343,8 @@ module Sql = struct
              entity_uuid
              Entity.SelectOption.(value.Entity.SelectOption.id |> Id.value)
              version
-           |> exec)
-    | Text { id; answer; _ } ->
+           |> upsert)
+    | Text ({ id; _ }, answer) ->
       let field_id = id in
       answer
       |> CCOption.map_or
@@ -305,7 +356,7 @@ module Sql = struct
              entity_uuid
              value
              version
-           |> exec)
+           |> upsert)
   ;;
 end
 

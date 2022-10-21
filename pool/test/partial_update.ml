@@ -64,14 +64,13 @@ let update_custom_field _ () =
     in
     let expected =
       let[@warning "-4"] expected_field =
-        let open Public in
         match public with
-        | Public.Text p ->
+        | Public.Text (p, answer) ->
           let answer =
-            p.answer
+            answer
             |> CCOption.map (fun a -> Answer.{ a with value = new_value })
           in
-          Public.Text { p with answer }
+          Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
       in
       Ok Contact.PartialUpdate.(Custom expected_field)

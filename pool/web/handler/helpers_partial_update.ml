@@ -5,17 +5,17 @@ let parse_urlencoded tenant_db language urlencoded =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
-  let find_param name err =
+  let find_param_opt name =
     let open CCOption in
-    CCList.assoc_opt ~eq:CCString.equal name urlencoded
-    >>= CCList.head_opt
-    |> to_result err
-    |> Lwt_result.lift
+    CCList.assoc_opt ~eq:CCString.equal name urlencoded >>= CCList.head_opt
   in
-  let%lwt field_id =
-    find_param Htmx.field_id_key ()
-    ||> CCOption.of_result
-    ||> CCOption.map Custom_field.Id.of_string
+  let find_param name err =
+    name |> find_param_opt |> CCOption.to_result err |> Lwt_result.lift
+  in
+  let field_id =
+    Htmx.field_id_key
+    |> find_param_opt
+    |> CCOption.map Custom_field.Id.of_string
   in
   let* field_str = find_param "field" InvalidHtmxRequest in
   let* field =
@@ -41,7 +41,12 @@ let parse_urlencoded tenant_db language urlencoded =
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
     |> Lwt_result.lift
   in
-  let* value = find_param field_str InvalidHtmxRequest in
+  let* value =
+    match field_id, find_param_opt Htmx.multi_select_key with
+    | Some _, Some param when CCString.equal param Htmx.multi_select_value ->
+      field_str |> Lwt_result.return
+    | _ -> find_param field_str InvalidHtmxRequest
+  in
   (field, version, value, field_id) |> Lwt_result.return
 ;;
 
