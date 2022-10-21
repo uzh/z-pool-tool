@@ -66,7 +66,7 @@ let count_of_rate ?(interval = Sihl.Time.OneMinute) rate =
   let interval_to_seconds =
     CCFun.(Sihl.Time.duration_to_span %> Ptime.Span.to_float_s)
   in
-  CCFloat.(of_int rate / 60. * (interval |> interval_to_seconds) |> round)
+  CCFloat.(of_int rate / 3600. * (interval |> interval_to_seconds) |> round)
   |> CCInt.of_float
 ;;
 
@@ -187,9 +187,8 @@ let match_invitations ?interval pools =
         None
       | Ok m -> Some m
       | Error err ->
-        let (_ : Pool_common.Message.error) =
-          Pool_common.Utils.with_log_error err
-        in
+        let open Pool_common in
+        let (_ : Message.error) = Utils.with_log_error err in
         None
     in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
