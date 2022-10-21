@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let invitation_templte_data tenant_db system_languages =
+let invitation_template_data tenant_db system_languages =
   let open Lwt_result.Syntax in
   let%lwt res =
     Lwt_list.map_s
@@ -103,7 +103,7 @@ let create req =
        let* system_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
-       let* i18n_texts = invitation_templte_data tenant_db system_languages in
+       let* i18n_texts = invitation_template_data tenant_db system_languages in
        let%lwt invited_contacts =
          Invitation.find_multiple_by_experiment_and_contacts
            tenant_db
@@ -154,7 +154,7 @@ let resend req =
        let* system_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
-       let* i18n_texts = invitation_templte_data tenant_db system_languages in
+       let* i18n_texts = invitation_template_data tenant_db system_languages in
        let events =
          let open Cqrs_command.Invitation_command.Resend in
          handle { invitation; experiment } system_languages i18n_texts

@@ -1,18 +1,13 @@
 module PoolError = Pool_common.Message
 open Sexplib.Conv
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-  let sexp_of_t t = t.id |> fun s -> Sexplib0.Sexp.Atom s
-end
-
+(* TODO: Sihl_user.t for Admin and Root are placeholders and should be replaced,
+   when guadrian is implemented *)
 type user =
-  | Admin of Sihl_user.t
+  | Admin of Pool_common.Sihl_user.t
   | Contact of Contact.t
-  | Root of Sihl_user.t
-[@@deriving sexp_of, variants]
+  | Root of Pool_common.Sihl_user.t
+[@@deriving eq, sexp_of, variants]
 
 type t =
   { query_language : Pool_common.Language.t option

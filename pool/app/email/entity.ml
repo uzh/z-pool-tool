@@ -2,12 +2,6 @@ module PoolError = Pool_common.Message
 module Database = Pool_database
 module User = Pool_user
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-end
-
 module Sihl_email = struct
   include Sihl_email
 

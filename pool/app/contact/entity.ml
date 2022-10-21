@@ -1,11 +1,5 @@
 module User = Pool_user
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-end
-
 module RecruitmentChannel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 

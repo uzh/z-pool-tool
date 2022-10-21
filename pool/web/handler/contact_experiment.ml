@@ -9,10 +9,10 @@ let index req =
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt expermient_list =
+       let%lwt experiment_list =
          Experiment.find_all_public_by_contact tenant_db contact
        in
-       Page.Contact.Experiment.index expermient_list context
+       Page.Contact.Experiment.index experiment_list context
        |> create_layout ~active_navigation:"/experiments" req context
        >|= Sihl.Web.Response.of_html
   in

@@ -93,9 +93,7 @@ let write ?id req =
        let events =
          let open Lwt_result.Syntax in
          let* sys_languages =
-           Pool_context.Tenant.find req
-           |> Lwt_result.lift
-           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+           Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
          in
          match id with
          | None ->

@@ -148,12 +148,12 @@ module Tenant = struct
     let open Pool_common.I18n in
     let open Pool_context in
     let to_main_nav = to_main_nav language query_language active_navigation in
-    let language_switch () = i18n_links tenant_languages active_lang in
+    let language_switch = i18n_links tenant_languages active_lang in
     let not_logged_in = [ "/login", Login ] |> to_main_nav in
     let logout = "/logout", Logout in
     let nav_links =
       match user with
-      | None -> [ not_logged_in; language_switch () ]
+      | None -> [ not_logged_in; language_switch ]
       | Some user ->
         (match user with
          | Admin _ ->
@@ -170,10 +170,11 @@ module Tenant = struct
            |> to_main_nav
            |> CCList.pure
          | Contact _ ->
-           [ "/experiments", Experiments; "/user", Profile; logout ]
-           |> to_main_nav
-           |> CCList.pure
-         | Root _ -> [ not_logged_in; language_switch () ])
+           [ [ "/experiments", Experiments; "/user", Profile; logout ]
+             |> to_main_nav
+           ; language_switch
+           ]
+         | Root _ -> [ not_logged_in ])
     in
     nav_links
   ;;

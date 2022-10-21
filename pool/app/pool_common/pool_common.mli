@@ -380,6 +380,12 @@ module ExperimentType : sig
   val all : t list
 end
 
+module Sihl_user : sig
+  include module type of Sihl.Contract.User
+
+  val sexp_of_t : Sihl_user.t -> Ppx_sexp_conv_lib.Sexp.t
+end
+
 module Repo : sig
   module Id : sig
     type t = Id.t
