@@ -16,7 +16,10 @@ let create ?(id = Id.create ()) ?(version = Pool_common.Version.create ()) value
 
 let id { id; _ } = id
 let version { version; _ } = version
+let set_version version m = { m with version }
 
-let increment_version m =
-  { m with version = Pool_common.Version.increment (version m) }
+let answer_meta answer =
+  answer
+  |> CCOption.map_or ~default:(None, None) (fun { id; version; _ } ->
+       Some id, Some version)
 ;;

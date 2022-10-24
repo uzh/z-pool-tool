@@ -310,7 +310,6 @@ module Public = struct
     }
   [@@deriving eq, show]
 
-  (* TODO: Create tuples?? so MultiSelect can have a list of answers? *)
   type t =
     | Boolean of bool public * bool Answer.t option
     | MultiSelect of
@@ -382,28 +381,6 @@ module Public = struct
     | Text ({ admin_input_only; _ }, _) -> admin_input_only
   ;;
 
-  let version (t : t) =
-    match t with
-    | Boolean (_, answer) -> answer |> CCOption.map Answer.version
-    (* TODO: How to determine version? *)
-    | MultiSelect (_, _, answer) ->
-      answer |> CCList.head_opt |> CCOption.map Answer.version
-    | Number (_, answer) -> answer |> CCOption.map Answer.version
-    | Select (_, _, answer) -> answer |> CCOption.map Answer.version
-    | Text (_, answer) -> answer |> CCOption.map Answer.version
-  ;;
-
-  let answer_id =
-    let id a = a |> CCOption.map Answer.id in
-    function
-    | Boolean (_, answer) -> answer |> id
-    (* TODO: How to determine id? *)
-    | MultiSelect (_, _, answer) -> answer |> CCList.head_opt |> id
-    | Number (_, answer) -> answer |> id
-    | Select (_, _, answer) -> answer |> id
-    | Text (_, answer) -> answer |> id
-  ;;
-
   let is_disabled is_admin m =
     if is_admin
     then
@@ -413,21 +390,17 @@ module Public = struct
     else m |> admin_input_only |> Admin.InputOnly.value
   ;;
 
-  let increment_version : t -> t =
-    let increment = Answer.increment_version in
+  let set_version v =
+    let open Answer in
     let open CCOption in
     function
-    | Boolean (public, answer) -> answer >|= increment |> boolean public
+    | Boolean (public, answer) -> answer >|= set_version v |> boolean public
     | MultiSelect (public, options, answer) ->
-      answer
-      |> CCList.head_opt
-      >|= increment
-      |> map_or ~default:[] CCList.pure
-      |> multiselect public options
-    | Number (public, answer) -> answer >|= increment |> number public
+      answer |> CCList.map (set_version v) |> multiselect public options
+    | Number (public, answer) -> answer >|= set_version v |> number public
     | Select (public, options, answer) ->
-      answer >|= increment |> select public options
-    | Text (public, answer) -> answer >|= increment |> text public
+      answer >|= set_version v |> select public options
+    | Text (public, answer) -> answer >|= set_version v |> text public
   ;;
 
   let to_common_field language m =

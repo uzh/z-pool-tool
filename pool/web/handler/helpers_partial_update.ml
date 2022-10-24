@@ -1,7 +1,7 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
-let parse_urlencoded tenant_db language urlencoded =
+let parse_urlencoded tenant_db language urlencoded contact_id =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
@@ -29,7 +29,7 @@ let parse_urlencoded tenant_db language urlencoded =
       field_id
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
-      >>= Custom_field.find_public tenant_db
+      >>= Custom_field.find_by_contact tenant_db contact_id
       >|= fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
@@ -90,7 +90,8 @@ let update ?contact req =
       Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
     in
     let* field, version, value, field_id =
-      parse_urlencoded tenant_db language urlencoded ||> with_redirect back_path
+      parse_urlencoded tenant_db language urlencoded Contact.(contact |> id)
+      ||> with_redirect back_path
     in
     let%lwt response =
       let open CCResult in
@@ -125,14 +126,11 @@ let update ?contact req =
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
-          partial_update
-          |> Contact.PartialUpdate.increment_version
-          |> fun m ->
           Htmx.partial_update_to_htmx
             language
             tenant_languages
             is_admin
-            m
+            partial_update
             ~hx_post
             ~success:true
             ()
@@ -140,7 +138,7 @@ let update ?contact req =
         | Error error ->
           let create_htmx ?htmx_attributes ?(field = field) value =
             Htmx.create
-              (Htmx.create_entity ?htmx_attributes version field value)
+              (Htmx.create_entity ?htmx_attributes field value)
               language
               ~hx_post
               ~error
@@ -149,18 +147,20 @@ let update ?contact req =
           in
           (match[@warning "-4"] field with
            | Field.Firstname ->
-             Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Paused -> Htmx.Boolean false |> create_htmx
+             Htmx.Text (value |> CCOption.pure, version) |> create_htmx
+           | Field.Lastname ->
+             Htmx.Text (value |> CCOption.pure, version) |> create_htmx
+           | Field.Paused -> Htmx.Boolean (false, version) |> create_htmx
            | Field.Language ->
-             Htmx.Select
-               Htmx.
-                 { show = Pool_common.Language.show
-                 ; options = tenant_languages
-                 ; option_formatter = None
-                 ; selected =
-                     value |> Pool_common.Language.create |> CCResult.to_opt
-                 }
+             Htmx.(
+               Select
+                 ( { show = Pool_common.Language.show
+                   ; options = tenant_languages
+                   ; option_formatter = None
+                   ; selected =
+                       value |> Pool_common.Language.create |> CCResult.to_opt
+                   }
+                 , version ))
              |> create_htmx
            | _ ->
              let open Custom_field in

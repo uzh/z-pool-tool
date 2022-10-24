@@ -4,8 +4,28 @@ module Dynparam = Utils.Database.Dynparam
 let get_field_type m = m.Repo_entity.Public.field_type
 let id m = m.Repo_entity.Public.id
 
+let has_options m =
+  Entity.FieldType.(
+    equal Select (get_field_type m) || equal MultiSelect (get_field_type m))
+;;
+
 let get_options pool m =
-  Repo.to_entity pool Repo_entity.Public.to_entity get_field_type id m
+  if has_options m then Repo_option.find_by_field pool (id m) else Lwt.return []
+;;
+
+let get_options_of_multiple pool fields =
+  fields
+  |> CCList.filter_map (fun m ->
+       if has_options m then Some m.Repo_entity.Public.id else None)
+  |> Repo_option.find_by_multiple_fields pool
+;;
+
+let to_grouped_public pool model fields =
+  let%lwt groups = Repo_group.find_by_model pool model in
+  let%lwt options =
+    Repo.get_options_of_multiple pool get_field_type id fields
+  in
+  Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
 ;;
 
 let base_filter_conditions is_admin =
@@ -15,23 +35,6 @@ let base_filter_conditions is_admin =
   if is_admin
   then base
   else Format.asprintf "%s AND pool_custom_fields.admin_view_only = 0 " base
-;;
-
-let get_options_of_multiple pool fields =
-  Repo.multiple_to_entity
-    pool
-    Repo_entity.Public.to_entity
-    get_field_type
-    id
-    fields
-;;
-
-let to_grouped_public pool model fields =
-  let%lwt groups = Repo_group.find_by_model pool model in
-  let%lwt options =
-    Repo.get_options_of_multiple pool get_field_type id fields
-  in
-  Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
 ;;
 
 module Sql = struct
@@ -81,27 +84,6 @@ module Sql = struct
       %s
     |sql}
       answers_left_join
-  ;;
-
-  let find_request =
-    let open Caqti_request.Infix in
-    Format.asprintf
-      {sql|
-        %s
-        WHERE pool_custom_fields.uuid = UNHEX(REPLACE($1, '-', ''))
-      |sql}
-      select_sql
-    |> Caqti_type.string ->! Repo_entity.Public.t
-  ;;
-
-  let find pool id =
-    let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
-      (Database.Label.value pool)
-      find_request
-      (id |> Entity.Id.value)
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
-    |>> get_options pool
   ;;
 
   let find_all_by_model_request required is_admin =
@@ -172,7 +154,9 @@ module Sql = struct
         |> pt ->* Repo_entity.Public.t
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
-      >>= get_options_of_multiple pool
+      >>= fun fields ->
+      let%lwt options = get_options_of_multiple pool fields in
+      fields |> Repo_entity.Public.to_ungrouped_entities options |> Lwt.return
   ;;
 
   let find_by_contact_request is_admin =
@@ -185,19 +169,28 @@ module Sql = struct
     |sql}
       select_sql
       (base_filter_conditions is_admin)
-    |> Caqti_type.(tup3 string string string) ->! Repo_entity.Public.t
+    |> Caqti_type.(tup3 string string string) ->* Repo_entity.Public.t
   ;;
 
   let find_by_contact ?(is_admin = false) pool contact_id field_id =
     let open Utils.Lwt_result.Infix in
-    Utils.Database.find_opt
+    Utils.Database.collect
       (Database.Label.value pool)
       (find_by_contact_request is_admin)
       ( Pool_common.Id.value contact_id
       , Entity.Model.(show Contact)
       , Entity.Id.value field_id )
-    ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
-    |>> get_options pool
+    >|> fun field_list ->
+    let%lwt options =
+      field_list
+      |> CCList.head_opt
+      |> CCOption.map_or ~default:(Lwt.return []) (fun field ->
+           get_options pool field)
+    in
+    Repo_entity.Public.to_ungrouped_entities options field_list
+    |> CCList.head_opt
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.CustomField)
+    |> Lwt_result.lift
   ;;
 
   let all_required_answered_request =
@@ -263,7 +256,7 @@ module Sql = struct
       )
       ON DUPLICATE KEY UPDATE
       value = VALUES(value),
-      version = VALUES(version) + 1
+      version = VALUES(version)
       |sql}
     |> Repo_entity_answer.Write.t ->. Caqti_type.unit
   ;;
@@ -365,5 +358,4 @@ let find_all_required_by_contact = find_all_by_contact ~required:true
 let find_multiple_by_contact = Sql.find_multiple_by_contact
 let find_by_contact = Sql.find_by_contact
 let upsert_answer = Sql.upsert_answer
-let find = Sql.find
 let all_required_answered = Sql.all_required_answered

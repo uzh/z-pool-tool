@@ -155,15 +155,13 @@ module PartialUpdate = struct
     | Custom of Custom_field.Public.t
   [@@deriving eq, show, variants]
 
-  let increment_version =
-    let increment = Pool_common.Version.increment in
-    function
-    | Firstname (version, value) -> firstname (version |> increment) value
-    | Lastname (version, value) -> lastname (version |> increment) value
-    | Paused (version, value) -> paused (version |> increment) value
-    | Language (version, value) -> language (version |> increment) value
+  let set_version version = function
+    | Firstname (_, value) -> firstname version value
+    | Lastname (_, value) -> lastname version value
+    | Paused (_, value) -> paused version value
+    | Language (_, value) -> language version value
     | Custom custom_field ->
-      Custom (Custom_field.Public.increment_version custom_field)
+      Custom (Custom_field.Public.set_version version custom_field)
   ;;
 
   let validate
@@ -176,7 +174,10 @@ module PartialUpdate = struct
       let open Pool_common.Version in
       if old_v |> value > (version |> value)
       then Error Pool_common.Message.(MeantimeUpdate field)
-      else Ok t
+      else
+        t
+        |> set_version (version |> Pool_common.Version.increment)
+        |> CCResult.pure
     in
     let validate schema =
       let schema =
@@ -232,10 +233,27 @@ module PartialUpdate = struct
         >>= fun f -> f |> Custom_field.validate tenand_db value
       in
       let old_v =
-        Custom_field.Public.version custom_field
+        let open CCOption.Infix in
+        let open Custom_field in
+        let open Public in
+        let version = Answer.version in
+        (match custom_field with
+         | Boolean (_, answer) -> answer >|= version
+         | MultiSelect (_, _, answers) ->
+           answers
+           |> CCList.find_opt
+                SelectOption.(
+                  fun a ->
+                    Id.equal
+                      a.Answer.value.SelectOption.id
+                      (value |> SelectOption.Id.of_string))
+           >|= version
+         | Number (_, answer) -> answer >|= version
+         | Select (_, _, answer) -> answer >|= version
+         | Text (_, answer) -> answer >|= version)
         |> CCOption.value ~default:(Pool_common.Version.create ())
       in
-      custom_field |> check_version old_v |> Lwt_result.lift >|= custom
+      custom_field |> custom |> check_version old_v |> Lwt_result.lift
   ;;
 end
 

@@ -15,7 +15,7 @@ module Answer : sig
   val create : ?id:Id.t -> ?version:Pool_common.Version.t -> 'a -> 'a t
   val id : 'a t -> Id.t
   val version : 'a t -> Pool_common.Version.t
-  val increment_version : 'a t -> 'a t
+  val set_version : Pool_common.Version.t -> 'a t -> 'a t
 end
 
 module Id : sig
@@ -233,12 +233,11 @@ module Public : sig
   val id : t -> Id.t
   val name_value : Pool_common.Language.t -> t -> string
   val hint : Pool_common.Language.t -> t -> Hint.hint option
-  val version : t -> Pool_common.Version.t option
   val required : t -> Required.t
   val admin_overwrite : t -> Admin.Overwrite.t
   val admin_input_only : t -> Admin.InputOnly.t
   val is_disabled : bool -> t -> bool
-  val increment_version : t -> t
+  val set_version : Pool_common.Version.t -> t -> t
 
   val to_common_field
     :  Pool_common.Language.t
@@ -362,11 +361,6 @@ val find
   :  Pool_database.Label.t
   -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
-
-val find_public
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (Public.t, Pool_common.Message.error) result Lwt.t
 
 val find_all_by_contact
   :  ?is_admin:bool

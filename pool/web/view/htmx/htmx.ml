@@ -59,7 +59,6 @@ let hx_attributes
     @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ]))
 ;;
 
-(* TODO :Can I use to common field here as well? *)
 type 'a selector =
   { show : 'a -> string
   ; options : 'a list
@@ -70,35 +69,33 @@ type 'a selector =
 type 'a multi_select =
   { show : 'a -> string
   ; options : 'a list
-  ; selected : 'a list
+  ; selected : ('a * Version.t) list
   ; to_common_field : 'a -> Pool_common.Message.Field.t
   }
 
 type 'a value =
-  | Boolean of bool
+  | Boolean of bool * Version.t
   | MultiSelect of 'a multi_select
-  | Number of int option
-  | Select of 'a selector
-  | Text of string option
+  | Number of int option * Version.t
+  | Select of 'a selector * Version.t
+  | Text of string option * Version.t
 [@@deriving variants]
 
 type 'a t =
-  { version : Version.t
-  ; field : Pool_common.Message.Field.t
+  { field : Pool_common.Message.Field.t
   ; value : 'a value
   ; help : Pool_common.I18n.hint option
   ; htmx_attributes : (string * string) list option
   }
 
-let create_entity ?help ?htmx_attributes version field value =
-  { version; field; value; help; htmx_attributes }
+let create_entity ?help ?htmx_attributes field value =
+  { field; value; help; htmx_attributes }
 ;;
 
 let multi_select
   language
   { show; options; selected; to_common_field }
   field
-  version
   htmx_attributes
   ?(classnames = [])
   ?hx_post
@@ -111,11 +108,13 @@ let multi_select
     (fun option ->
       let field = to_common_field option in
       let name = field |> Pool_common.Message.Field.show in
-      let is_checked =
-        CCList.mem
-          ~eq:(fun o1 o2 -> CCString.equal (show o1) (show o2))
-          option
+      let answer =
+        CCList.find_opt
+          (fun (s, _) -> CCString.equal (show s) (show option))
           selected
+      in
+      let version =
+        CCOption.map_or ~default:(Pool_common.Version.create ()) snd answer
       in
       let htmx_attributes =
         hx_attributes
@@ -127,7 +126,9 @@ let multi_select
           ()
       in
       let input_elm =
-        let checked = if is_checked then [ a_checked () ] else [] in
+        let checked =
+          if CCOption.is_some answer then [ a_checked () ] else []
+        in
         input
           ~a:
             ([ a_input_type `Checkbox; a_name name; a_id name ]
@@ -151,7 +152,7 @@ let multi_select
 ;;
 
 let create
-  ({ version; field; value; help; htmx_attributes } : 'a t)
+  ({ field; value; help; htmx_attributes } : 'a t)
   language
   ?(classnames = [])
   ?hx_post
@@ -167,7 +168,7 @@ let create
     | _, _ -> []
   in
   let classnames = classnames @ input_class in
-  let additional_attributes =
+  let additional_attributes version =
     [ a_class input_class ]
     @ hx_attributes
         field
@@ -183,11 +184,11 @@ let create
       field |> Pool_common.Message.Field.show |> flash_fetcher)
   in
   match value with
-  | Boolean boolean ->
+  | Boolean (boolean, version) ->
     Component.checkbox_element
       ~as_switch:true
       ~orientation:`Horizontal
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes version)
       ~classnames
       ~value:boolean
       ?help
@@ -199,7 +200,6 @@ let create
       language
       t
       field
-      version
       (htmx_attributes
       |> CCOption.map_or
            ~default:multi_select_htmx_attributes
@@ -210,22 +210,22 @@ let create
       ?error
       ?disabled
       ()
-  | Number n ->
+  | Number (n, version) ->
     Component.input_element
       ~classnames
       ~value:
         (fetched_value
         |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
         )
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes version)
       ?error
       ?help
       language
       `Number
       field
-  | Select { show; options; option_formatter; selected } ->
+  | Select ({ show; options; option_formatter; selected }, version) ->
     Component.selector
-      ~attributes:additional_attributes
+      ~attributes:(additional_attributes version)
       ?help
       ?option_formatter
       ~add_empty:true
@@ -235,11 +235,11 @@ let create
       options
       selected
       ()
-  | Text str ->
+  | Text (str, version) ->
     Component.input_element
       ~classnames
       ~value:(fetched_value |> CCOption.value ~default:(str |> default))
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes version)
       ?error
       ?help
       language
@@ -252,15 +252,21 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let custom_field_to_htmx_value language =
+let custom_field_to_htmx_value ?version language =
   let open CCOption in
   let open Custom_field in
+  let answer_version answer =
+    version
+    <+> (answer >|= Answer.version)
+    |> value ~default:(Pool_common.Version.create ())
+  in
   function
   | Public.Boolean (_, answer) ->
-    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
+    let value = answer >|= (fun a -> a.Answer.value) |> value ~default:false in
+    boolean value (answer_version answer)
   | Public.MultiSelect (_, options, answers) ->
     answers
-    |> CCList.map (fun { Answer.value; _ } -> value)
+    |> CCList.map (fun { Answer.value; version; _ } -> value, version)
     |> fun selected ->
     ({ show = SelectOption.show_id
      ; options
@@ -269,19 +275,24 @@ let custom_field_to_htmx_value language =
      }
       : 'a multi_select)
     |> multiselect
-  | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Number (_, answer) ->
+    let value = answer >|= fun a -> a.Answer.value in
+    number value (answer_version answer)
   | Public.Select (_, options, answer) ->
-    answer
-    >|= (fun a -> a.Answer.value)
-    |> fun value ->
-    ({ show = SelectOption.show_id
-     ; options
-     ; option_formatter = Some SelectOption.(name language)
-     ; selected = value
-     }
-      : 'a selector)
-    |> select
-  | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
+    let value =
+      answer
+      >|= (fun a -> a.Answer.value)
+      |> fun value : 'a selector ->
+      { show = SelectOption.show_id
+      ; options
+      ; option_formatter = Some SelectOption.(name language)
+      ; selected = value
+      }
+    in
+    select value (answer_version answer)
+  | Public.Text (_, answer) ->
+    let value = answer >|= fun a -> a.Answer.value in
+    text value (answer_version answer)
 ;;
 
 let custom_field_to_htmx ?version ?value language is_admin custom_field =
@@ -290,25 +301,14 @@ let custom_field_to_htmx ?version ?value language is_admin custom_field =
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
   let label = Public.to_common_field language custom_field in
-  let version =
-    let open CCOption in
-    version
-    <+> Public.version custom_field
-    |> value ~default:(Pool_common.Version.create ())
-  in
   let value =
     value
     |> CCOption.value
-         ~default:(custom_field_to_htmx_value language custom_field)
+         ~default:(custom_field_to_htmx_value ?version language custom_field)
   in
   let disabled = Public.is_disabled is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
-  { version
-  ; field = label
-  ; value
-  ; htmx_attributes = Some htmx_attributes
-  ; help
-  }
+  { field = label; value; htmx_attributes = Some htmx_attributes; help }
   |> to_html disabled
 ;;
 
@@ -319,29 +319,27 @@ let partial_update_to_htmx language sys_languages is_admin =
   function
   | Firstname (v, firstname) ->
     create_entity
-      v
       Field.Firstname
-      (Text (firstname |> User.Firstname.value |> CCOption.pure))
+      (text (firstname |> User.Firstname.value |> CCOption.pure) v)
     |> to_html
   | Lastname (v, lastname) ->
     create_entity
-      v
       Field.Lastname
-      (Text (lastname |> User.Lastname.value |> CCOption.pure))
+      (text (lastname |> User.Lastname.value |> CCOption.pure) v)
     |> to_html
   | Paused (v, paused) ->
-    create_entity v Field.Paused (Boolean (paused |> User.Paused.value))
+    create_entity Field.Paused (boolean (paused |> User.Paused.value) v)
     |> to_html
   | Language (v, lang) ->
     create_entity
-      v
       Field.Language
       (Select
-         { show = Pool_common.Language.show
-         ; options = sys_languages
-         ; option_formatter = None
-         ; selected = lang
-         })
+         ( { show = Pool_common.Language.show
+           ; options = sys_languages
+           ; option_formatter = None
+           ; selected = lang
+           }
+         , v ))
     |> to_html
   | Custom field -> custom_field_to_htmx language is_admin field
 ;;
