@@ -24,6 +24,8 @@ let check_result ?(msg = "succeeds") =
   check (result (list event) error) msg
 ;;
 
+let custom_field_admin = Custom_field.Admin.(Alcotest.testable pp equal)
+
 (* Helper functions *)
 
 let setup_test () =

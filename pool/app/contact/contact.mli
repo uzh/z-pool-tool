@@ -58,6 +58,7 @@ module PartialUpdate : sig
 
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
+  val increment_version : t -> t
 end
 
 val validate_partial_update

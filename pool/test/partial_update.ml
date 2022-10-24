@@ -73,7 +73,7 @@ let update_custom_field _ () =
           Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
       in
-      Ok Contact.PartialUpdate.(Custom expected_field)
+      Ok Contact.PartialUpdate.(Custom expected_field |> increment_version)
     in
     Alcotest.(
       check

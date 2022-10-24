@@ -144,6 +144,9 @@ module Admin : sig
     -> ViewOnly.t
     -> InputOnly.t
     -> (t, Pool_common.Message.error) result
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
 end
 
 module Validation : sig

@@ -269,26 +269,22 @@ let create_option () =
 ;;
 
 let create_with_missing_admin_option () =
-  let open CCResult in
-  let events =
-    (Data.data @ Message.[ Field.(AdminViewOnly |> show, [ "on" ]) ])
-    |> Http_utils.format_request_boolean_values boolean_fields
-    |> CustomFieldCommand.base_decode
-    >>= CustomFieldCommand.Create.handle
-          ~id:(Custom_field.Id.create ())
-          Data.sys_languages
-          Data.model
-          Data.name
-          Data.hint
-          Data.validation_data
+  let open Custom_field.Admin in
+  let overwrite = true |> Overwrite.create in
+  let view_only = true |> ViewOnly.create in
+  let hint = None in
+  let admin =
+    let input_only = false |> InputOnly.create in
+    create hint overwrite view_only input_only
   in
   let expected =
-    Error Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
+    let input_only = true |> InputOnly.create in
+    create hint overwrite view_only input_only
   in
   Alcotest.(
     check
-      (result (list Test_utils.event) Test_utils.error)
+      (result Test_utils.custom_field_admin Test_utils.error)
       "succeeds"
-      expected
-      events)
+      admin
+      expected)
 ;;
