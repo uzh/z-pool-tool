@@ -6,16 +6,13 @@ module Answer : sig
   type 'a t =
     { id : Id.t
     ; value : 'a
-    ; version : Pool_common.Version.t
     }
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
   val show : (Format.formatter -> 'a -> unit) -> 'a t -> string
-  val create : ?id:Id.t -> ?version:Pool_common.Version.t -> 'a -> 'a t
+  val create : ?id:Id.t -> 'a -> 'a t
   val id : 'a t -> Id.t
-  val version : 'a t -> Pool_common.Version.t
-  val set_version : Pool_common.Version.t -> 'a t -> 'a t
 end
 
 module Id : sig
@@ -202,6 +199,7 @@ module Public : sig
     ; required : Required.t
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
+    ; version : Pool_common.Version.t
     }
 
   val equal_public : ('a -> 'a -> bool) -> 'a public -> 'a public -> bool
@@ -237,7 +235,8 @@ module Public : sig
   val admin_overwrite : t -> Admin.Overwrite.t
   val admin_input_only : t -> Admin.InputOnly.t
   val is_disabled : bool -> t -> bool
-  val set_version : Pool_common.Version.t -> t -> t
+  val version : t -> Pool_common.Version.t
+  val increment_version : t -> t
 
   val to_common_field
     :  Pool_common.Language.t

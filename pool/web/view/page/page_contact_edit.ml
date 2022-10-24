@@ -63,35 +63,34 @@ let personal_details_form
         ~a:[ a_class [ "stack" ] ]
         (Component.csrf_element csrf ~id:user_update_csrf ()
         :: CCList.map
-             (fun (field, value) ->
-               Htmx.create_entity field value |> htmx_create)
+             (fun (version, field, value) ->
+               Htmx.create_entity version field value |> htmx_create)
              Htmx.
-               [ ( Field.Firstname
+               [ ( contact.firstname_version
+                 , Field.Firstname
                  , Text
-                     ( contact
-                       |> Contact.firstname
-                       |> User.Firstname.value
-                       |> CCOption.pure
-                     , contact.firstname_version ) )
-               ; ( Field.Lastname
+                     (contact
+                     |> Contact.firstname
+                     |> User.Firstname.value
+                     |> CCOption.pure) )
+               ; ( contact.lastname_version
+                 , Field.Lastname
                  , Text
-                     ( contact
-                       |> Contact.lastname
-                       |> User.Lastname.value
-                       |> CCOption.pure
-                     , contact.lastname_version ) )
-               ; ( Field.Language
+                     (contact
+                     |> Contact.lastname
+                     |> User.Lastname.value
+                     |> CCOption.pure) )
+               ; ( contact.language_version
+                 , Field.Language
                  , Select
-                     ( { show = Pool_common.Language.show
-                       ; options = tenant_languages
-                       ; option_formatter = None
-                       ; selected = contact.language
-                       }
-                     , contact.language_version ) )
-               ; ( Field.Paused
-                 , Boolean
-                     ( contact.paused |> User.Paused.value
-                     , contact.paused_version ) )
+                     { show = Pool_common.Language.show
+                     ; options = tenant_languages
+                     ; option_formatter = None
+                     ; selected = contact.language
+                     } )
+               ; ( contact.paused_version
+                 , Field.Paused
+                 , Boolean (contact.paused |> User.Paused.value) )
                ])
     ; div
         ~a:[ a_class [ "stack-lg" ] ]

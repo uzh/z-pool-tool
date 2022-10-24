@@ -155,29 +155,28 @@ module PartialUpdate = struct
     | Custom of Custom_field.Public.t
   [@@deriving eq, show, variants]
 
-  let set_version version = function
-    | Firstname (_, value) -> firstname version value
-    | Lastname (_, value) -> lastname version value
-    | Paused (_, value) -> paused version value
-    | Language (_, value) -> language version value
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
     | Custom custom_field ->
-      Custom (Custom_field.Public.set_version version custom_field)
+      Custom (Custom_field.Public.increment_version custom_field)
   ;;
 
   let validate
     ?(is_admin = false)
     contact
     tenand_db
-    (field, version, value, field_id)
+    (field, current_version, value, field_id)
     =
     let check_version old_v t =
       let open Pool_common.Version in
-      if old_v |> value > (version |> value)
+      if old_v |> value > (current_version |> value)
       then Error Pool_common.Message.(MeantimeUpdate field)
-      else
-        t
-        |> set_version (version |> Pool_common.Version.increment)
-        |> CCResult.pure
+      else t |> increment_version |> CCResult.pure
     in
     let validate schema =
       let schema =
@@ -193,25 +192,25 @@ module PartialUpdate = struct
     | PoolField.Firstname ->
       User.Firstname.schema
       |> validate
-      >|= (fun m -> Firstname (version, m))
+      >|= (fun m -> Firstname (current_version, m))
       >>= check_version contact.firstname_version
       |> Lwt.return
     | PoolField.Lastname ->
       User.Lastname.schema
       |> validate
-      >|= (fun m -> Lastname (version, m))
+      >|= (fun m -> Lastname (current_version, m))
       >>= check_version contact.lastname_version
       |> Lwt.return
     | PoolField.Paused ->
       User.Paused.schema
       |> validate
-      >|= (fun m -> Paused (version, m))
+      >|= (fun m -> Paused (current_version, m))
       >>= check_version contact.paused_version
       |> Lwt.return
     | PoolField.Language ->
       (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
       |> validate
-      >|= (fun m -> Language (version, m))
+      >|= (fun m -> Language (current_version, m))
       >>= check_version contact.language_version
       |> Lwt.return
     | _ ->
@@ -233,25 +232,8 @@ module PartialUpdate = struct
         >>= fun f -> f |> Custom_field.validate tenand_db value
       in
       let old_v =
-        let open CCOption.Infix in
         let open Custom_field in
-        let open Public in
-        let version = Answer.version in
-        (match custom_field with
-         | Boolean (_, answer) -> answer >|= version
-         | MultiSelect (_, _, answers) ->
-           answers
-           |> CCList.find_opt
-                SelectOption.(
-                  fun a ->
-                    Id.equal
-                      a.Answer.value.SelectOption.id
-                      (value |> SelectOption.Id.of_string))
-           >|= version
-         | Number (_, answer) -> answer >|= version
-         | Select (_, _, answer) -> answer >|= version
-         | Text (_, answer) -> answer >|= version)
-        |> CCOption.value ~default:(Pool_common.Version.create ())
+        Public.version custom_field
       in
       custom_field |> custom |> check_version old_v |> Lwt_result.lift
   ;;

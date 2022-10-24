@@ -138,7 +138,7 @@ let update ?contact req =
         | Error error ->
           let create_htmx ?htmx_attributes ?(field = field) value =
             Htmx.create
-              (Htmx.create_entity ?htmx_attributes field value)
+              (Htmx.create_entity ?htmx_attributes version field value)
               language
               ~hx_post
               ~error
@@ -147,20 +147,18 @@ let update ?contact req =
           in
           (match[@warning "-4"] field with
            | Field.Firstname ->
-             Htmx.Text (value |> CCOption.pure, version) |> create_htmx
-           | Field.Lastname ->
-             Htmx.Text (value |> CCOption.pure, version) |> create_htmx
-           | Field.Paused -> Htmx.Boolean (false, version) |> create_htmx
+             Htmx.Text (value |> CCOption.pure) |> create_htmx
+           | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
+           | Field.Paused -> Htmx.Boolean false |> create_htmx
            | Field.Language ->
-             Htmx.(
-               Select
-                 ( { show = Pool_common.Language.show
-                   ; options = tenant_languages
-                   ; option_formatter = None
-                   ; selected =
-                       value |> Pool_common.Language.create |> CCResult.to_opt
-                   }
-                 , version ))
+             Htmx.Select
+               Htmx.
+                 { show = Pool_common.Language.show
+                 ; options = tenant_languages
+                 ; option_formatter = None
+                 ; selected =
+                     value |> Pool_common.Language.create |> CCResult.to_opt
+                 }
              |> create_htmx
            | _ ->
              let open Custom_field in

@@ -307,6 +307,7 @@ module Public = struct
     ; required : Required.t
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
+    ; version : Pool_common.Version.t
     }
   [@@deriving eq, show]
 
@@ -390,17 +391,24 @@ module Public = struct
     else m |> admin_input_only |> Admin.InputOnly.value
   ;;
 
-  let set_version v =
-    let open Answer in
-    let open CCOption in
-    function
-    | Boolean (public, answer) -> answer >|= set_version v |> boolean public
+  let version = function
+    | Boolean (public, _) -> public.version
+    | MultiSelect (public, _, _) -> public.version
+    | Number (public, _) -> public.version
+    | Select (public, _, _) -> public.version
+    | Text (public, _) -> public.version
+  ;;
+
+  let increment_version t =
+    let version = t |> version |> Pool_common.Version.increment in
+    match t with
+    | Boolean (public, answer) -> boolean { public with version } answer
     | MultiSelect (public, options, answer) ->
-      answer |> CCList.map (set_version v) |> multiselect public options
-    | Number (public, answer) -> answer >|= set_version v |> number public
+      multiselect { public with version } options answer
+    | Number (public, answer) -> number { public with version } answer
     | Select (public, options, answer) ->
-      answer >|= set_version v |> select public options
-    | Text (public, answer) -> answer >|= set_version v |> text public
+      select { public with version } options answer
+    | Text (public, answer) -> text { public with version } answer
   ;;
 
   let to_common_field language m =

@@ -34,15 +34,13 @@ let validate pool value (m : Public.t) =
   let go validation value = validation |> fst |> fun rule -> rule value in
   match m with
   | Boolean (public, answer) ->
-    let id, version = Answer.answer_meta answer in
+    let id = Answer.id_opt answer in
     value
     |> Utils.Bool.of_string
-    |> Answer.create ?id ?version
+    |> Answer.create ?id
     |> (fun a : t -> Boolean (public, a |> CCOption.pure))
     |> Lwt_result.return
   | MultiSelect (public, options, answers) ->
-    (* Could just the updated answer be passed to the repo and deleted, if
-       already existing? *)
     let open Lwt_result.Syntax in
     let* option = value |> SelectOption.Id.of_string |> Repo_option.find pool in
     let answers =
@@ -56,7 +54,7 @@ let validate pool value (m : Public.t) =
     in
     (MultiSelect (public, options, answers) : t) |> Lwt_result.return
   | Number (({ validation; _ } as public), answer) ->
-    let id, version = Answer.answer_meta answer in
+    let id = Answer.id_opt answer in
     let res =
       value
       |> CCInt.of_string
@@ -64,12 +62,12 @@ let validate pool value (m : Public.t) =
       >>= fun i ->
       i
       |> go validation
-      >|= Answer.create ?id ?version
+      >|= Answer.create ?id
       >|= fun a : t -> (Number (public, a |> CCOption.pure) : t)
     in
     res |> Lwt_result.lift
   | Select (public, options, answer) ->
-    let id, version = Answer.answer_meta answer in
+    let id = Answer.id_opt answer in
     let value = value |> SelectOption.Id.of_string in
     let selected =
       CCList.find_opt
@@ -78,14 +76,14 @@ let validate pool value (m : Public.t) =
     in
     selected
     |> CCOption.to_result Message.InvalidOptionSelected
-    >|= Answer.create ?id ?version
+    >|= Answer.create ?id
     >|= (fun a : t -> Select (public, options, a |> CCOption.pure))
     |> Lwt_result.lift
   | Text (({ validation; _ } as public), answer) ->
-    let id, version = Answer.answer_meta answer in
+    let id = Answer.id_opt answer in
     value
     |> go validation
-    >|= Answer.create ?id ?version
+    >|= Answer.create ?id
     >|= (fun a : t -> Text (public, a |> CCOption.pure))
     |> Lwt_result.lift
 ;;

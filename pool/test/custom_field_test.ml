@@ -80,13 +80,10 @@ module Data = struct
     let required = required m in
     let admin_overwrite = (admin m).Admin.overwrite in
     let admin_input_only = (admin m).Admin.input_only in
-    let answer_version = 0 |> Pool_common.Version.of_int in
+    let version = 0 |> Pool_common.Version.of_int in
     match field_type with
     | FieldType.Boolean ->
-      let answer =
-        Answer.{ id = answer_id; version = answer_version; value = true }
-        |> CCOption.pure
-      in
+      let answer = Answer.{ id = answer_id; value = true } |> CCOption.pure in
       Public.Boolean
         ( { Public.id
           ; name
@@ -95,6 +92,7 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
+          ; version
           }
         , answer )
     | FieldType.MultiSelect ->
@@ -102,7 +100,7 @@ module Data = struct
       let answer =
         CCList.head_opt field_options
         |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; version = answer_version; value = option })
+             Answer.{ id = answer_id; value = option })
       in
       Public.Select
         ( { Public.id
@@ -112,14 +110,12 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
+          ; version
           }
         , field_options
         , answer )
     | FieldType.Number ->
-      let answer =
-        Answer.{ id = answer_id; version = answer_version; value = 3 }
-        |> CCOption.pure
-      in
+      let answer = Answer.{ id = answer_id; value = 3 } |> CCOption.pure in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
         ( { Public.id
@@ -129,13 +125,14 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
+          ; version
           }
         , answer )
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
         |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; version = answer_version; value = option })
+             Answer.{ id = answer_id; value = option })
       in
       Public.Select
         ( { Public.id
@@ -145,14 +142,12 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
+          ; version
           }
         , field_options
         , answer )
     | FieldType.Text ->
-      let answer =
-        Answer.{ id = answer_id; version = answer_version; value = "test" }
-        |> CCOption.pure
-      in
+      let answer = Answer.{ id = answer_id; value = "test" } |> CCOption.pure in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
         ( { Public.id
@@ -162,6 +157,7 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
+          ; version
           }
         , answer )
   ;;
