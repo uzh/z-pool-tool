@@ -96,13 +96,14 @@ module Data = struct
           }
         , answer )
     | FieldType.MultiSelect ->
-      (* TODO: Test functionality*)
       let answer =
-        CCList.head_opt field_options
+        field_options
+        |> CCList.head_opt
         |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; value = option })
+             Answer.{ id = answer_id; value = option } |> CCList.pure)
+        |> CCOption.value ~default:[]
       in
-      Public.Select
+      Public.MultiSelect
         ( { Public.id
           ; name
           ; hint
