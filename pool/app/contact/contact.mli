@@ -28,7 +28,7 @@ module NumberOfAssignments : sig
 end
 
 type t =
-  { user : Sihl_user.t
+  { user : Service.User.t
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option

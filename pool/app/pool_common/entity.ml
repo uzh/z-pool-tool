@@ -271,10 +271,3 @@ module ExperimentType = struct
       PoolError.Field.ExperimentType
   ;;
 end
-
-module Sihl_user = struct
-  include Service.User
-  include Sihl_user
-
-  let sexp_of_t t = t.id |> fun s -> Sexplib0.Sexp.Atom s
-end

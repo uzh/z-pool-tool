@@ -4,9 +4,9 @@ open Sexplib.Conv
 (* TODO: Sihl_user.t for Admin and Root are placeholders and should be replaced,
    when guadrian is implemented *)
 type user =
-  | Admin of Pool_common.Sihl_user.t
+  | Admin of Service.User.t
   | Contact of Contact.t
-  | Root of Pool_common.Sihl_user.t
+  | Root of Service.User.t
 [@@deriving eq, sexp_of, variants]
 
 type t =
