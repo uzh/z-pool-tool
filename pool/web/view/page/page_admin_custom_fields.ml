@@ -220,7 +220,7 @@ let field_form
       ~flash_fetcher
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
-  let field_type = CCOption.map field_type custom_field in
+  let field_type_opt = CCOption.map field_type custom_field in
   let input_by_lang ?required =
     input_by_lang ?required language tenant_languages flash_fetcher custom_field
   in
@@ -296,7 +296,7 @@ let field_form
                  |> CCOption.value ~default:""
                in
                let disabled =
-                 field_type
+                 field_type_opt
                  |> CCOption.map_or ~default:false (fun t ->
                       FieldType.equal validation_type t |> not)
                in
@@ -419,7 +419,7 @@ let field_form
               Message.Field.FieldType
               FieldType.show
               FieldType.all
-              field_type
+              field_type_opt
               ~option_formatter:FieldType.to_string
               ~add_empty:true
               ~required:true
@@ -516,7 +516,8 @@ let field_form
               ~disabled:
                 (custom_field
                 |> CCOption.map_or ~default:false (fun f ->
-                     (f |> admin).Admin.input_only |> Admin.InputOnly.value))
+                     (f |> admin).Admin.input_only |> Admin.InputOnly.value
+                     || FieldType.(equal (f |> field_type) MultiSelect)))
               Message.Field.Required
               (fun f -> f |> required |> Required.value)
           ; checkbox_element Message.Field.Disabled (fun f ->
@@ -536,6 +537,7 @@ let field_form
               var adminViewOnly = document.querySelector("[name='%s']");
               var adminInputOnly = document.querySelector("[name='%s']");
               var required = document.querySelector("[name='%s']");
+              var fieldType = document.querySelector("[name='%s']");
 
               function triggerEvent(elm, name) {
                 var event = document.createEvent("HTMLEvents");
@@ -556,10 +558,16 @@ let field_form
                   adminInputOnly.disabled = false;
                 }
               })
+
+              fieldType.addEventListener("change", function(e) {
+                required.disabled = (e.currentTarget.value === "%s")
+              })
          |js}
            Message.Field.(show AdminViewOnly)
            Message.Field.(show AdminInputOnly)
            Message.Field.(show Required)
+           Message.Field.(show FieldType)
+           FieldType.(show MultiSelect)
         |> fun js -> script (Unsafe.data js))
       ]
   ; select_options_html

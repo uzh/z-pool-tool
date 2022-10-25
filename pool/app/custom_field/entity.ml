@@ -549,7 +549,10 @@ let create
            ; name
            ; hint
            ; validation = Validation.pure
-           ; required
+           ; required =
+               false
+               (* TODO: add a default Option and allow Multi Selects to be
+                  required. *)
            ; disabled
            ; custom_field_group_id
            ; admin
