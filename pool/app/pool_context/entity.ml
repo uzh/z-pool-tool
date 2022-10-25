@@ -1,8 +1,8 @@
 module PoolError = Pool_common.Message
 open Sexplib.Conv
 
-(* TODO: Sihl_user.t for Admin and Root are placeholders and should be replaced,
-   when guadrian is implemented *)
+(* TODO: Service.User.t for Admin and Root are placeholders and should be
+   replaced, when guadrian is implemented *)
 type user =
   | Admin of Service.User.t
   | Contact of Contact.t

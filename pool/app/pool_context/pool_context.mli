@@ -1,11 +1,11 @@
 type user =
-  | Admin of Sihl_user.t
+  | Admin of Service.User.t
   | Contact of Contact.t
-  | Root of Sihl_user.t
+  | Root of Service.User.t
 
-val admin : Sihl_user.t -> user
+val admin : Service.User.t -> user
 val contact : Contact.t -> user
-val root : Sihl_user.t -> user
+val root : Service.User.t -> user
 
 type t =
   { query_language : Pool_common.Language.t option
