@@ -399,6 +399,14 @@ module Public = struct
     | Text (public, _) -> public.version
   ;;
 
+  let field_type = function
+    | Boolean _ -> FieldType.Boolean
+    | Number _ -> FieldType.Number
+    | MultiSelect _ -> FieldType.MultiSelect
+    | Select _ -> FieldType.Select
+    | Text _ -> FieldType.Text
+  ;;
+
   let increment_version t =
     let version = t |> version |> Pool_common.Version.increment in
     match t with

@@ -239,6 +239,7 @@ module Public : sig
   val admin_input_only : t -> Admin.InputOnly.t
   val is_disabled : bool -> t -> bool
   val version : t -> Pool_common.Version.t
+  val field_type : t -> FieldType.t
   val increment_version : t -> t
 
   val to_common_field

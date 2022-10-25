@@ -144,65 +144,52 @@ let completion_post req =
         ( err
         , path_with_language query_language "/user/completion"
         , [ urlencoded_to_flash urlencoded ] )))
-    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt custom_fields =
-         urlencoded
-         |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
-         |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
-       in
-       let* custom_fields, multi_select_events =
-         let open Lwt.Infix in
-         let open Cqrs_command.Custom_field_answer_command.UpdateMultiple in
-         Lwt_list.fold_left_s
-           (fun (fields, events) field ->
-             let open Custom_field in
-             match[@warning "-4"] field with
-             | Public.MultiSelect (public, options, _) ->
-               req
-               |> Sihl.Web.Request.urlencoded_list
-                    (field
-                    |> Public.to_common_field language
-                    |> Pool_common.Message.Field.array_key)
-               >|= validate_multiselect (public, options)
-               >|= handle (Contact.id contact)
-               >|= fun event -> fields, event :: events
-             | field -> (field :: fields, events) |> Lwt.return)
-           ([], [])
-           custom_fields
-         >|= fun (fields, events) ->
-         events |> CCList.all_ok |> CCResult.map (fun events -> fields, events)
-       in
-       let events =
-         let open Cqrs_command.Custom_field_answer_command.UpdateMultiple in
-         custom_fields
-         |> CCList.map (fun f ->
-              let open CCOption in
-              ( CCList.assoc_opt
-                  ~eq:CCString.equal
-                  Custom_field.(f |> Public.id |> Id.value)
-                  urlencoded
-                >>= CCList.head_opt
-                |> value ~default:""
-              , f ))
-         |> Lwt_list.map_s (fun (value, field) ->
-              Custom_field.validate_htmx tenant_db value field
-              >>= fun f -> f |> handle (Contact.id contact) |> Lwt_result.lift)
-         ||> CCList.all_ok
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s
-             (Pool_event.handle_event tenant_db)
-             (events @ multi_select_events)
-         in
-         Http_utils.(
-           redirect_to_with_actions
-             "/dashboard"
-             [ Message.set
-                 ~success:[ Pool_common.Message.(Updated Field.Profile) ]
-             ])
-       in
-       events |>> handle
+    @@
+    let open Custom_field in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+    let%lwt custom_fields =
+      urlencoded
+      |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
+      |> find_multiple_by_contact tenant_db (Contact.id contact)
+    in
+    let events =
+      let open Utils.Lwt_result.Infix in
+      let open Public in
+      let handle =
+        Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
+          (Contact.id contact)
+      in
+      Lwt_list.map_s
+        (fun field ->
+          let id = field |> Public.id |> Id.value in
+          match field with
+          | MultiSelect (public, options, _) ->
+            req
+            |> Sihl.Web.Request.urlencoded_list
+                 (field
+                 |> Public.to_common_field language
+                 |> Pool_common.Message.Field.array_key)
+            ||> validate_multiselect (public, options)
+            ||> handle
+          | Boolean _ | Number _ | Select _ | Text _ ->
+            CCList.assoc_opt ~eq:CCString.equal id urlencoded
+            |> CCFun.flip CCOption.bind CCList.head_opt
+            |> CCOption.value ~default:""
+            |> fun value ->
+            validate_htmx tenant_db value field
+            >>= fun field -> handle field |> Lwt_result.lift)
+        custom_fields
+      ||> CCList.all_ok
+    in
+    let handle events =
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      Http_utils.(
+        redirect_to_with_actions
+          "/dashboard"
+          [ Message.set ~success:[ Pool_common.Message.(Updated Field.Profile) ]
+          ])
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
