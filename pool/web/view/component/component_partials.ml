@@ -88,3 +88,16 @@ let location_to_html ?(public = false) language (location : Pool_location.t) =
   |> CCList.filter_map CCFun.id
   |> div ~a:[ a_class [ "stack-sm" ] ]
 ;;
+
+let form_title ?(level = `H1) language field m =
+  let open Pool_common in
+  let text =
+    let open Message in
+    (if CCOption.is_none m then Create (Some field) else Update (Some field))
+    |> Utils.control_to_string language
+    |> txt
+  in
+  match level with
+  | `H1 -> h1 ~a:[ a_class [ "heading-1" ] ] [ text ]
+  | `H2 -> h1 ~a:[ a_class [ "heading-2" ] ] [ text ]
+;;

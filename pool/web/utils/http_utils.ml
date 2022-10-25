@@ -11,6 +11,11 @@ let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
 ;;
 
+let find_field_router_param_opt req field =
+  try Some (get_field_router_param req field) with
+  | _ -> None
+;;
+
 let find_query_lang req =
   let open CCOption.Infix in
   Sihl.Web.Request.query Pool_common.Message.Field.(Language |> show) req

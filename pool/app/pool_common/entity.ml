@@ -11,11 +11,8 @@ module Id = struct
   let value m = m
   let to_uuidm m = Uuidm.of_string m |> CCOption.get_exn_or "Invalid UUID"
 
-  let schema () =
-    Pool_common_utils.schema_decoder
-      (Utils.fcn_ok of_string)
-      value
-      PoolError.Field.Id
+  let schema ?(field = PoolError.Field.Id) () =
+    Pool_common_utils.schema_decoder (Utils.fcn_ok of_string) value field
   ;;
 end
 

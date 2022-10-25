@@ -22,8 +22,7 @@ module Data = struct
 
   let data =
     Message.
-      [ Field.(Model |> show), model |> Model.show
-      ; Field.(FieldType |> show), field_type |> FieldType.show
+      [ Field.(FieldType |> show), field_type |> FieldType.show
       ; Field.(AdminHint |> show), admin_hint
       ]
     |> CCList.map (fun (f, l) -> f, l |> CCList.pure)
@@ -51,6 +50,7 @@ module Data = struct
       (validation |> CCOption.value ~default:validation_data)
       required
       disabled
+      None
       admin
     |> CCResult.get_exn
   ;;
@@ -162,6 +162,7 @@ let create () =
     >>= CustomFieldCommand.Create.handle
           ~id
           Data.sys_languages
+          Data.model
           Data.name
           Data.hint
           Data.validation_data
@@ -186,6 +187,7 @@ let create_with_missing_name () =
     >>= CustomFieldCommand.Create.handle
           ~id:(Custom_field.Id.create ())
           Data.sys_languages
+          Data.model
           (Data.name |> CCList.hd |> CCList.pure)
           Data.hint
           Data.validation_data
@@ -261,6 +263,7 @@ let create_with_missing_admin_option () =
     >>= CustomFieldCommand.Create.handle
           ~id:(Custom_field.Id.create ())
           Data.sys_languages
+          Data.model
           Data.name
           Data.hint
           Data.validation_data

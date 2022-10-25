@@ -17,7 +17,7 @@ module Model = struct
     | Session [@name "session"] [@printer printer "session"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
-  let field = Pool_common.Message.Field.Model
+  let field = Message.Field.Model
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -32,7 +32,7 @@ module Model = struct
 
   let create s =
     try Ok (read s) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Message.(Invalid field)
   ;;
 
   let value = show
@@ -56,7 +56,7 @@ module Name = struct
       sys_languages
     |> function
     | [] -> Ok names
-    | _ -> Error Pool_common.Message.(AllLanguagesRequired Field.Name)
+    | _ -> Error Message.(AllLanguagesRequired Field.Name)
   ;;
 end
 
@@ -79,7 +79,7 @@ module FieldType = struct
     | Text [@name "text"] [@printer printer "text"]
   [@@deriving eq, show { with_path = false }, yojson, enum]
 
-  let field = Pool_common.Message.Field.FieldType
+  let field = Message.Field.FieldType
 
   let read m =
     m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
@@ -94,7 +94,7 @@ module FieldType = struct
 
   let create s =
     try Ok (read s) with
-    | _ -> Error Pool_common.Message.(Invalid field)
+    | _ -> Error Message.(Invalid field)
   ;;
 
   let value = show
@@ -104,13 +104,13 @@ end
 module Required = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.Required
+  let schema = schema Message.Field.Required
 end
 
 module Disabled = struct
   include Pool_common.Model.Boolean
 
-  let schema = schema Pool_common.Message.Field.Disabled
+  let schema = schema Message.Field.Disabled
 end
 
 module Admin = struct
@@ -125,19 +125,19 @@ module Admin = struct
   module Overwrite = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.Overwrite
+    let schema = schema Message.Field.Overwrite
   end
 
   module ViewOnly = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.AdminViewOnly
+    let schema = schema Message.Field.AdminViewOnly
   end
 
   module InputOnly = struct
     include Pool_common.Model.Boolean
 
-    let schema = schema Pool_common.Message.Field.AdminInputOnly
+    let schema = schema Message.Field.AdminInputOnly
   end
 
   type t =
@@ -163,7 +163,7 @@ module Validation = struct
   type raw = (string * string) list [@@deriving show, eq, yojson]
 
   type 'a t =
-    (('a -> ('a, Pool_common.Message.error) result) * raw
+    (('a -> ('a, Message.error) result) * raw
     [@equal fun (_, raw1) (_, raw2) -> equal_raw raw1 raw2])
   [@@deriving show, eq]
 
@@ -269,18 +269,6 @@ module Validation = struct
   ;;
 end
 
-type 'a custom_field =
-  { id : Id.t
-  ; model : Model.t
-  ; name : Name.t
-  ; hint : Hint.t
-  ; validation : 'a Validation.t
-  ; required : Required.t
-  ; disabled : Disabled.t
-  ; admin : Admin.t
-  }
-[@@deriving eq, show]
-
 module SelectOption = struct
   module Id = struct
     include Pool_common.Id
@@ -295,79 +283,12 @@ module SelectOption = struct
   let show_id (m : t) = m.id |> Id.value
 
   let name lang (t : t) =
-    Name.find_opt lang t.name |> CCOption.get_exn_or "Cannot find field name."
+    Name.find_opt lang t.name
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> Pool_common.Utils.get_or_failwith
   ;;
 
   let create ?(id = Id.create ()) name = { id; name }
-end
-
-type t =
-  | Boolean of bool custom_field
-  | Number of int custom_field
-  | Select of SelectOption.t custom_field * SelectOption.t list
-  | Text of string custom_field
-[@@deriving eq, show]
-
-let create
-  ?(id = Pool_common.Id.create ())
-  ?(select_options = [])
-  field_type
-  model
-  name
-  hint
-  validation
-  required
-  disabled
-  admin
-  =
-  let open CCResult in
-  match (field_type : FieldType.t) with
-  | FieldType.Boolean ->
-    Ok
-      (Boolean
-         { id
-         ; model
-         ; name
-         ; hint
-         ; validation = Validation.pure
-         ; required
-         ; disabled
-         ; admin
-         })
-  | FieldType.Number ->
-    let validation = Validation.Number.schema validation in
-    Ok (Number { id; model; name; hint; validation; required; disabled; admin })
-  | FieldType.Text ->
-    let validation = Validation.Text.schema validation in
-    Ok (Text { id; model; name; hint; validation; required; disabled; admin })
-  | FieldType.Select ->
-    Ok
-      (Select
-         ( { id
-           ; model
-           ; name
-           ; hint
-           ; validation = Validation.pure
-           ; required
-           ; disabled
-           ; admin
-           }
-         , select_options ))
-;;
-
-module Write = struct
-  type t =
-    { id : Id.t
-    ; model : Model.t
-    ; name : Name.t
-    ; hint : Hint.t
-    ; validation : Yojson.Safe.t
-    ; field_type : FieldType.t
-    ; required : Required.t
-    ; disabled : Disabled.t
-    ; admin : Admin.t
-    }
-  [@@deriving eq, show]
 end
 
 module Public = struct
@@ -404,7 +325,9 @@ module Public = struct
     | Number { name; _ }
     | Select ({ name; _ }, _)
     | Text { name; _ } ->
-      Name.find_opt lang name |> CCOption.get_exn_or "Cannot find field name."
+      Name.find_opt lang name
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
   ;;
 
   let hint lang (t : t) =
@@ -477,7 +400,7 @@ module Public = struct
     | Number ({ validation; _ } as public) ->
       value
       |> CCInt.of_string
-      |> CCOption.to_result Pool_common.Message.(NotANumber value)
+      |> CCOption.to_result Message.(NotANumber value)
       >>= fun i ->
       i
       |> go validation
@@ -491,7 +414,7 @@ module Public = struct
           options
       in
       selected
-      |> CCOption.to_result Pool_common.Message.InvalidOptionSelected
+      |> CCOption.to_result Message.InvalidOptionSelected
       >|= Answer.create ?id ?version
       >|= fun a : t ->
       Select ({ public with answer = a |> CCOption.pure }, options)
@@ -521,7 +444,7 @@ module Public = struct
   let to_common_field language m =
     let id = id m in
     let name = name_value language m in
-    Pool_common.Message.(Field.CustomHtmx (name, id |> Id.value))
+    Message.(Field.CustomHtmx (name, id |> Id.value))
   ;;
 
   let to_common_hint language m =
@@ -531,6 +454,136 @@ module Public = struct
     >|= fun h -> Pool_common.I18n.CustomHtmx h
   ;;
 end
+
+module Group = struct
+  module Id = struct
+    include Pool_common.Id
+
+    let schema = schema ~field:Message.Field.CustomFieldGroup
+  end
+
+  type t =
+    { id : Id.t
+    ; model : Model.t
+    ; name : Name.t
+    }
+  [@@deriving eq, show]
+
+  let create ?(id = Id.create ()) model name = { id; model; name }
+
+  let name lang (t : t) =
+    Name.find_opt lang t.name
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> Pool_common.Utils.get_or_failwith
+  ;;
+
+  module Public = struct
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      ; fields : Public.t list
+      }
+    [@@deriving eq, show]
+
+    let name lang (t : t) =
+      Name.find_opt lang t.name
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
+    ;;
+  end
+end
+
+type 'a custom_field =
+  { id : Id.t
+  ; model : Model.t
+  ; name : Name.t
+  ; hint : Hint.t
+  ; validation : 'a Validation.t
+  ; required : Required.t
+  ; disabled : Disabled.t
+  ; custom_field_group_id : Group.Id.t option
+  ; admin : Admin.t
+  }
+[@@deriving eq, show]
+
+type t =
+  | Boolean of bool custom_field
+  | Number of int custom_field
+  | Select of SelectOption.t custom_field * SelectOption.t list
+  | Text of string custom_field
+[@@deriving eq, show]
+
+let create
+  ?(id = Pool_common.Id.create ())
+  ?(select_options = [])
+  field_type
+  model
+  name
+  hint
+  validation
+  required
+  disabled
+  custom_field_group_id
+  admin
+  =
+  let open CCResult in
+  match (field_type : FieldType.t) with
+  | FieldType.Boolean ->
+    Ok
+      (Boolean
+         { id
+         ; model
+         ; name
+         ; hint
+         ; validation = Validation.pure
+         ; required
+         ; disabled
+         ; custom_field_group_id
+         ; admin
+         })
+  | FieldType.Number ->
+    let validation = Validation.Number.schema validation in
+    Ok
+      (Number
+         { id
+         ; model
+         ; name
+         ; hint
+         ; validation
+         ; required
+         ; disabled
+         ; custom_field_group_id
+         ; admin
+         })
+  | FieldType.Text ->
+    let validation = Validation.Text.schema validation in
+    Ok
+      (Text
+         { id
+         ; model
+         ; name
+         ; hint
+         ; validation
+         ; required
+         ; disabled
+         ; custom_field_group_id
+         ; admin
+         })
+  | FieldType.Select ->
+    Ok
+      (Select
+         ( { id
+           ; model
+           ; name
+           ; hint
+           ; validation = Validation.pure
+           ; required
+           ; disabled
+           ; custom_field_group_id
+           ; admin
+           }
+         , select_options ))
+;;
 
 let id = function
   | Boolean { id; _ }
@@ -574,6 +627,13 @@ let disabled = function
   | Text { disabled; _ } -> disabled
 ;;
 
+let group_id = function
+  | Boolean { custom_field_group_id; _ }
+  | Number { custom_field_group_id; _ }
+  | Select ({ custom_field_group_id; _ }, _)
+  | Text { custom_field_group_id; _ } -> custom_field_group_id
+;;
+
 let admin = function
   | Boolean { admin; _ }
   | Number { admin; _ }
@@ -603,6 +663,21 @@ let validation_to_yojson = function
 ;;
 
 let boolean_fields =
-  Pool_common.Message.Field.
-    [ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
+  Message.Field.[ Required; Disabled; Overwrite; AdminInputOnly; AdminViewOnly ]
 ;;
+
+module Write = struct
+  type t =
+    { id : Id.t
+    ; model : Model.t
+    ; name : Name.t
+    ; hint : Hint.t
+    ; validation : Yojson.Safe.t
+    ; field_type : FieldType.t
+    ; required : Required.t
+    ; disabled : Disabled.t
+    ; custom_field_group_id : Group.Id.t option
+    ; admin : Admin.t
+    }
+  [@@deriving eq, show]
+end

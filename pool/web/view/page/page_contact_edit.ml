@@ -22,6 +22,21 @@ let contact_profile_layout language title ?active html =
     ]
 ;;
 
+let grouped_custom_fields_form language custom_fields to_html =
+  let open Custom_field in
+  let groups, ungrouped_fields = custom_fields in
+  div ~a:[ a_class [ "stack" ] ] (CCList.map to_html ungrouped_fields)
+  :: CCList.map
+       (fun (Group.Public.{ fields; _ } as group) ->
+         div
+           [ h2
+               ~a:[ a_class [ "heading-2" ] ]
+               [ txt Group.(Public.name language group) ]
+           ; div ~a:[ a_class [ "stack" ] ] (fields |> CCList.map to_html)
+           ])
+       groups
+;;
+
 let personal_details_form
   csrf
   user_update_csrf
@@ -38,15 +53,8 @@ let personal_details_form
   let action = externalize action in
   let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
   let htmx_create field = Htmx.create field language ~hx_post:action () in
-  let custom_fields_form =
-    custom_fields
-    |> CCList.map (fun custom_field ->
-         Htmx.custom_field_to_htmx
-           language
-           is_admin
-           custom_field
-           ~hx_post:action
-           ())
+  let custom_field_to_html field =
+    Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
   in
   let open Message in
   form
@@ -57,7 +65,6 @@ let personal_details_form
         :: CCList.map
              (fun (version, field, value) ->
                Htmx.create_entity version field value |> htmx_create)
-               (* TODO: Reuse htmx functions? *)
              Htmx.
                [ ( contact.firstname_version
                  , Field.Firstname
@@ -85,7 +92,9 @@ let personal_details_form
                  , Field.Paused
                  , Checkbox (contact.paused |> User.Paused.value) )
                ])
-    ; div ~a:[ a_class [ "stack" ] ] custom_fields_form
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        (grouped_custom_fields_form language custom_fields custom_field_to_html)
     ]
 ;;
 

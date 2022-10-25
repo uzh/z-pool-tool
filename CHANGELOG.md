@@ -1,0 +1,1 @@
+ - [@mabiede] initialize auto-release and changelog file

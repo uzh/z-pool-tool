@@ -16,8 +16,9 @@ module Model : sig
     val to_uuidm : t -> Uuidm.t
 
     val schema
-      :  unit
-      -> (Message.error, t) Pool_common_utils.PoolConformist.Field.t
+      :  ?field:Entity_message.Field.t
+      -> unit
+      -> (Entity_message.error, t) Pool_common_utils.PoolConformist.Field.t
   end
 
   module Boolean : sig

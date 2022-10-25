@@ -32,6 +32,8 @@ module Field = struct
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomFieldGroup [@name "custom_field_group"]
+        [@printer go "custom_field_group"]
     | CustomFieldOption [@name "custom_field_option"]
         [@printer go "custom_field_option"]
     | CustomHtmx of (string * string) [@name "custom"]

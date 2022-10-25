@@ -2,20 +2,135 @@ open Tyxml.Html
 open Component
 module Message = Pool_common.Message
 
-let base_path = "/admin/custom-fields"
+module Url = struct
+  open Custom_field
 
-let make_option_url field option path =
-  let open Custom_field in
-  Format.asprintf
-    "%s/%s/options/%s/%s"
-    base_path
-    (id field |> Id.value)
-    (option.SelectOption.id |> SelectOption.Id.value)
-    path
-  |> Sihl.Web.externalize_path
+  let concat = CCString.concat "/"
+  let fallback_path = "/admin/custom-fields"
+  let index_path m = [ fallback_path; Model.show m ] |> concat
+
+  module Field = struct
+    let field_key = "field"
+    let create_path m = [ index_path m; field_key ] |> concat
+    let new_path m = [ index_path m; field_key; "new" ] |> concat
+
+    let detail_path (m, id) =
+      [ index_path m; field_key; id |> Id.value ] |> concat
+    ;;
+
+    let edit_path (m, id) = [ detail_path (m, id); "edit" ] |> concat
+  end
+
+  module Option = struct
+    open SelectOption
+
+    let options_key = "options"
+    let index_path = Field.detail_path
+    let new_path field = [ index_path field; options_key; "new" ] |> concat
+    let create_path field = [ Field.detail_path field; options_key ] |> concat
+
+    let detail_path field id =
+      [ index_path field; options_key; id |> Id.value ] |> concat
+    ;;
+
+    let edit_path field id = [ detail_path field id; "edit" ] |> concat
+    let delete_path field id = [ detail_path field id; "delete" ] |> concat
+  end
+
+  module Group = struct
+    open Group
+
+    let group_key = "group"
+    let index_path = index_path
+    let new_path m = [ index_path m; group_key; "new" ] |> concat
+    let create_path m = [ index_path m; group_key ] |> concat
+
+    let detail_path (model, id) =
+      [ index_path model; group_key; id |> Id.value ] |> concat
+    ;;
+
+    let edit_path group = [ detail_path group; "edit" ] |> concat
+    let delete_path group = [ detail_path group; "delete" ] |> concat
+  end
+end
+
+let model_subtitle language model =
+  div
+    [ p
+        [ strong
+            [ txt
+                (Format.asprintf
+                   "%s: "
+                   Pool_common.(
+                     Utils.field_to_string language Message.Field.Model
+                     |> CCString.capitalize_ascii))
+            ]
+        ; txt (Custom_field.Model.show model |> CCString.capitalize_ascii)
+        ]
+    ]
 ;;
 
-let input_by_lang ?(required = false) language tenant_languages field value_fnc =
+let custom_fields_layout language current_model html =
+  let open Custom_field in
+  let subnav_links =
+    Model.(
+      all
+      |> CCList.map (fun f ->
+           ( f |> show |> CCString.capitalize_ascii
+           , f |> Url.index_path
+           , equal current_model f )))
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
+        ]
+    ; Component.Navigation.make_subnav subnav_links
+    ; h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
+    ; div
+        ~a:[ a_class [ "stack" ] ]
+        [ div
+            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+            [ a
+                ~a:
+                  [ a_href
+                      (Url.Field.new_path current_model
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.(Add (Some Field.CustomField))
+                      |> Utils.control_to_string language)
+                ]
+            ; a
+                ~a:
+                  [ a_href
+                      (Url.Group.new_path current_model
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ txt
+                    Pool_common.(
+                      Message.(Add (Some Field.CustomFieldGroup))
+                      |> Utils.control_to_string language)
+                ]
+            ]
+        ; html
+        ]
+    ]
+;;
+
+let input_by_lang
+  ?(required = false)
+  language
+  tenant_languages
+  flash_fetcher
+  elm
+  field
+  value_fnc
+  =
   let open Pool_common in
   let group_class = Elements.group_class [] `Horizontal in
   CCList.map
@@ -33,6 +148,16 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
       let id =
         Format.asprintf "%s-%s" (Message.Field.show field) (Language.show lang)
       in
+      let value =
+        let open CCOption in
+        flash_fetcher
+          (Format.asprintf
+             "%s[%s]"
+             (Message.Field.show field)
+             (Language.show lang))
+        <+> (elm >|= value_fnc lang)
+        |> value ~default:""
+      in
       let input_element =
         let attrs =
           [ a_input_type `Text
@@ -42,7 +167,7 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
                  "%s[%s]"
                  (Message.Field.show field)
                  (Language.show lang))
-          ; a_value (value_fnc lang)
+          ; a_value value
           ]
         in
         div
@@ -63,17 +188,19 @@ let input_by_lang ?(required = false) language tenant_languages field value_fnc 
     Pool_common.Language.all
 ;;
 
-let form
+let field_form
   ?(custom_field : Custom_field.t option)
+  current_model
   Pool_context.{ language; csrf; _ }
+  groups
   tenant_languages
   flash_fetcher
   =
   let open Custom_field in
   let action =
     match custom_field with
-    | None -> base_path
-    | Some f -> Format.asprintf "%s/%s" base_path (f |> id |> Id.value)
+    | None -> Url.Field.create_path current_model
+    | Some f -> Url.Field.detail_path (model f, id f)
   in
   let checkbox_element ?orientation ?help ?(default = false) field fnc =
     checkbox_element
@@ -87,25 +214,17 @@ let form
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
   let field_type = CCOption.map field_type custom_field in
   let input_by_lang ?required =
-    input_by_lang ?required language tenant_languages
+    input_by_lang ?required language tenant_languages flash_fetcher custom_field
   in
   let name_inputs =
-    input_by_lang ~required:true Message.Field.Name (fun lang ->
+    input_by_lang ~required:true Message.Field.Name (fun lang f ->
       let open CCOption in
-      custom_field
-      >|= (fun f -> name f)
-      >>= Name.find_opt lang
-      >|= Name.value_name
-      |> value ~default:"")
+      f |> name |> Name.find_opt lang >|= Name.value_name |> value ~default:"")
   in
   let hint_inputs =
-    input_by_lang Message.Field.Hint (fun lang ->
+    input_by_lang Message.Field.Hint (fun lang f ->
       let open CCOption in
-      custom_field
-      >|= (fun f -> hint f)
-      >>= Hint.find_opt lang
-      >|= Hint.value_hint
-      |> value ~default:"")
+      f |> hint |> Hint.find_opt lang >|= Hint.value_hint |> value ~default:"")
   in
   let validation_subform =
     let current_values =
@@ -185,29 +304,14 @@ let form
     | Some m ->
       (match m with
        | Select (_, options) ->
-         let make_link url control =
-           let url =
-             Format.asprintf
-               "%s/%s/options/%s"
-               base_path
-               (m |> id |> Id.value)
-               url
-             |> Sihl.Web.externalize_path
-           in
-           a
-             ~a:[ a_href url ]
-             [ txt Pool_common.(control |> Utils.control_to_string language) ]
-         in
          let list =
            form
              ~a:
                [ a_method `Post
                ; a_action
-                   (Format.asprintf
-                      "%s/%s/sort-options"
-                      base_path
-                      (m |> id |> Id.value)
-                   |> Sihl.Web.externalize_path)
+                   (Sihl.Web.externalize_path
+                      (Url.Field.detail_path (model m, id m)
+                      |> Format.asprintf "%s/sort-options"))
                ; a_class [ "stack" ]
                ]
              (CCList.cons
@@ -245,7 +349,12 @@ let form
                                 ]
                               [ a
                                   ~a:
-                                    [ a_href (make_option_url m option "edit") ]
+                                    [ a_href
+                                        (Url.Option.edit_path
+                                           (model m, id m)
+                                           option.SelectOption.id
+                                        |> Sihl.Web.externalize_path)
+                                    ]
                                   [ txt
                                       Pool_common.(
                                         Message.(Edit None)
@@ -270,12 +379,25 @@ let form
                    |> Pool_common.Utils.field_to_string language
                    |> CCString.capitalize_ascii)
                ]
-           ; p [ make_link "new" Message.(Add (Some Field.CustomFieldOption)) ]
+           ; p
+               [ a
+                   ~a:
+                     [ a_href
+                         (Url.Option.new_path (model m, id m)
+                         |> Sihl.Web.externalize_path)
+                     ]
+                   [ txt
+                       Pool_common.(
+                         Message.(Add (Some Field.CustomFieldOption))
+                         |> Utils.control_to_string language)
+                   ]
+               ]
            ; list
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
-  [ form
+  [ model_subtitle language current_model
+  ; form
       ~a:
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
@@ -286,16 +408,6 @@ let form
           ~a:[ a_class [ "switcher"; "flex-gap" ] ]
           [ selector
               language
-              Message.Field.Model
-              Model.show
-              Model.all
-              (CCOption.map model custom_field)
-              ~add_empty:true
-              ~required:true
-              ~flash_fetcher
-              ()
-          ; selector
-              language
               Message.Field.FieldType
               FieldType.show
               FieldType.all
@@ -304,6 +416,22 @@ let form
               ~required:true
               ~flash_fetcher
               ()
+          ; Group.(
+              selector
+                language
+                Message.Field.CustomFieldGroup
+                Group.(fun (g : t) -> g.id |> Id.value)
+                groups
+                Custom_field.(
+                  let open CCOption in
+                  custom_field
+                  >>= group_id
+                  >>= fun id ->
+                  CCList.find_opt Group.(fun (g : t) -> Id.equal g.id id) groups)
+                ~option_formatter:(name language)
+                ~add_empty:true
+                ~flash_fetcher
+                ())
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
@@ -403,74 +531,151 @@ let form
 
 let detail
   ?custom_field
+  current_model
   (Pool_context.{ language; _ } as context)
+  groups
   sys_languages
   flash_fetcher
   =
-  let title =
-    Pool_common.(
-      Utils.control_to_string
-        language
-        Message.(
-          if CCOption.is_none custom_field
-          then Create (Some Field.CustomField)
-          else Update (Some Field.CustomField)))
-  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1 [ txt title ]
+    [ Partials.form_title language Message.Field.CustomField custom_field
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
-        (form ?custom_field context sys_languages flash_fetcher)
+        (field_form
+           ?custom_field
+           current_model
+           context
+           groups
+           sys_languages
+           flash_fetcher)
     ]
 ;;
 
-let index field_list Pool_context.{ language; _ } =
-  let thead = Message.Field.[ Some Title; None ] in
+let index field_list group_list current_model Pool_context.{ language; csrf; _ }
+  =
+  let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
   let rows =
     let open Custom_field in
+    let open CCOption in
     CCList.map
       (fun field ->
         [ txt
             (field
             |> name
             |> Name.find_opt language
-            |> CCOption.map_or ~default:"-" Name.value_name)
+            |> map_or ~default:"-" Name.value_name)
+        ; txt
+            (field
+            |> group_id
+            >>= (fun id ->
+                  CCList.find_opt
+                    Group.(fun (g : t) -> Id.equal g.id id)
+                    group_list
+                  >|= Group.name language)
+            |> value ~default:"")
         ; a
             ~a:
               [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "%s/%s/edit"
-                        base_path
-                        (field |> id |> Id.value)))
+                  (Url.Field.edit_path (model field, id field)
+                  |> Sihl.Web.externalize_path)
               ]
             [ txt Pool_common.(Message.More |> Utils.control_to_string language)
             ]
         ])
       field_list
   in
-  div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
-        ]
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf "%s/new" base_path))
+  let groups_html =
+    let list =
+      form
+        ~a:
+          [ a_method `Post
+          ; a_action
+              (Url.Group.index_path current_model
+              |> Format.asprintf "%s/group/sort"
+              |> Sihl.Web.externalize_path)
+          ; a_class [ "stack" ]
+          ]
+        (CCList.cons
+           (div
+              ~a:[ a_user_data "sortable" "" ]
+              (CCList.map
+                 (fun group ->
+                   let open Custom_field in
+                   div
+                     ~a:
+                       [ a_class
+                           [ "flexrow"
+                           ; "flex-gap"
+                           ; "justify-between"
+                           ; "align-center"
+                           ]
+                       ; a_user_data "sortable-item" ""
+                       ; a_draggable true
+                       ]
+                     [ div [ txt Group.(group |> name language) ]
+                     ; div
+                         [ input
+                             ~a:
+                               [ a_input_type `Hidden
+                               ; a_name
+                                   Message.Field.(CustomFieldGroup |> array_key)
+                               ; a_value Group.(Id.value group.id)
+                               ]
+                             ()
+                         ]
+                     ; div
+                         ~a:
+                           [ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                         [ a
+                             ~a:
+                               [ a_href
+                                   (Url.Group.edit_path
+                                      Group.(group.model, group.id)
+                                   |> Sihl.Web.externalize_path)
+                               ]
+                             [ txt
+                                 Pool_common.(
+                                   Message.(Edit None)
+                                   |> Utils.control_to_string language)
+                             ]
+                         ]
+                     ])
+                 group_list))
+           [ csrf_element csrf ()
+           ; submit_element
+               language
+               Message.UpdateOrder
+               ~submit_type:`Success
+               ()
+           ])
+    in
+    div
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt
+              (Message.Field.CustomFieldGroup
+              |> Pool_common.Utils.field_to_string language
+              |> CCString.capitalize_ascii)
+          ]
+      ; p
+          [ a
+              ~a:
+                [ a_href
+                    (Url.Group.new_path current_model
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(
+                    Message.(Create (Some Field.CustomFieldGroup))
+                    |> Utils.control_to_string language)
               ]
-            [ txt
-                Pool_common.(
-                  Message.(Add (Some Field.CustomField))
-                  |> Utils.control_to_string language)
-            ]
-        ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped language ~thead rows ]
-    ]
+          ]
+      ; list
+      ]
+  in
+  div
+    ~a:[ a_class [ "stack-lg" ] ]
+    [ Table.horizontal_table `Striped language ~thead rows; groups_html ]
+  |> custom_fields_layout language current_model
 ;;
