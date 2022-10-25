@@ -7,14 +7,6 @@ let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   Service.User.Web.user_from_session ~ctx req
 ;;
 
-(* TODO[timhub]: remove as soon we added current user to the context *)
-let get_current_contact tenant_db req =
-  let open Utils.Lwt_result.Infix in
-  Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx tenant_db) req
-  ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-  >>= Contact.find_by_user tenant_db
-;;
-
 let get_field_router_param req field =
   Sihl.Web.Router.param req Pool_common.Message.Field.(field |> show)
 ;;
@@ -248,3 +240,11 @@ let externalize_path_with_lang lang path =
 ;;
 
 let add_line_breaks = Utils.Html.handle_line_breaks Tyxml.Html.span
+
+let invalid_session_redirect ?(login_path = "/login") req query_lang =
+  redirect_to_with_actions
+    (path_with_language query_lang login_path)
+    [ Message.set ~error:[ Pool_common.Message.SessionInvalid ]
+    ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
+    ]
+;;

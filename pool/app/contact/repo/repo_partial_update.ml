@@ -33,7 +33,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
   let open PartialUpdate in
   match field with
   | Firstname (version, value) ->
-    let%lwt (_ : Entity.Sihl_user.t) =
+    let%lwt (_ : Sihl_user.t) =
       update_sihl_user
         pool
         ~firstname:(value |> Pool_user.Firstname.value)
@@ -48,7 +48,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
         |sql} )
     |> update_user_table
   | Lastname (version, value) ->
-    let%lwt (_ : Entity.Sihl_user.t) =
+    let%lwt (_ : Sihl_user.t) =
       update_sihl_user
         pool
         ~lastname:(value |> Pool_user.Lastname.value)

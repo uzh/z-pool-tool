@@ -22,21 +22,34 @@ let dashboard_path tenant_db user =
 ;;
 
 let create_tenant_layout
-  layout_context
   req
   ?active_navigation
-  Pool_context.{ language; query_language; message; _ }
+  Pool_context.{ language; query_language; message; user; _ }
   children
   =
   let open Lwt_result.Syntax in
   let* tenant_context = Pool_context.Tenant.find req |> Lwt_result.lift in
   Page.Layout.Tenant.create_layout
-    layout_context
     children
     tenant_context
+    user
     message
     language
     query_language
     active_navigation
   |> Lwt_result.return
+;;
+
+let create_root_layout
+  ?active_navigation
+  Pool_context.{ language; message; user; _ }
+  children
+  =
+  Page.Layout.create_root_layout
+    children
+    language
+    message
+    user
+    ?active_navigation
+    ()
 ;;

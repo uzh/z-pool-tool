@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 module I18nMap = CCMap.Make (struct
   type t = I18n.Key.t

@@ -58,7 +58,7 @@ module Language = struct
 end
 
 module Version = struct
-  type t = int [@@deriving eq, show, yojson]
+  type t = int [@@deriving eq, show, yojson, sexp_of]
 
   let value m = m
   let create () = 0

@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let get_group_id req =
   HttpUtils.get_field_router_param req Message.Field.CustomFieldGroup

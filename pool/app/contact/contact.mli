@@ -28,7 +28,7 @@ module NumberOfAssignments : sig
 end
 
 type t =
-  { user : Sihl_user.t
+  { user : Service.User.t
   ; recruitment_channel : RecruitmentChannel.t
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
@@ -76,6 +76,7 @@ val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
+val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
 
 val find

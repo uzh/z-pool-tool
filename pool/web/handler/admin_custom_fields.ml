@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = Pool_common.Message
 module Url = Page.Admin.CustomFields.Url
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let boolean_fields =
   Custom_field.boolean_fields |> CCList.map Message.Field.show
@@ -82,7 +82,9 @@ let form ?id req model =
            Custom_field.find tenant_db id >|= CCOption.pure)
     in
     let%lwt groups = Custom_field.find_groups_by_model tenant_db model in
-    let%lwt sys_languages = Settings.find_languages tenant_db in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
     Page.Admin.CustomFields.detail
       ?custom_field
       model
@@ -133,7 +135,9 @@ let write ?id req model =
     @@
     let events =
       let open Lwt_result.Syntax in
-      let%lwt sys_languages = Settings.find_languages tenant_db in
+      let* sys_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
       let* decoded =
         urlencoded
         |> Cqrs_command.Custom_field_command.base_decode

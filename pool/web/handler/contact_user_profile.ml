@@ -11,13 +11,7 @@ let show usage req =
     let open Utils.Lwt_result.Infix in
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err -> err, "/login")
-    @@ let* user =
-         Http_utils.user_from_session tenant_db req
-         ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-       in
-       let* contact =
-         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-       in
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
        | `Overview ->
          Page.Contact.detail contact context
@@ -57,20 +51,14 @@ let login_information = show `LoginInformation
 let update = Helpers.PartialUpdate.update
 
 let update_email req =
-  let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
-    @@ let* contact =
-         Http_utils.user_from_session tenant_db req
-         ||> CCOption.to_result (NotFound Field.User)
-         >>= fun user ->
-         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-       in
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes tenant_db
@@ -99,19 +87,13 @@ let update_email req =
 ;;
 
 let update_password req =
-  let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
-    @@ let* contact =
-         Http_utils.user_from_session tenant_db req
-         ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-         >>= fun user ->
-         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-       in
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* events =
          let open CCResult.Infix in
          Command.UpdatePassword.(decode urlencoded >>= handle contact)
@@ -135,14 +117,7 @@ let completion req =
     Lwt_result.map_error (fun err -> err, "/login")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* user =
-      Http_utils.user_from_session tenant_db req
-      ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
-    in
-    let* contact =
-      Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-      |> Lwt_result.map_error (fun err -> err)
-    in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
       Custom_field.find_all_required_by_contact tenant_db (Contact.id contact)
     in
@@ -161,13 +136,13 @@ let completion_post req =
     ||> HttpUtils.format_request_boolean_values []
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
     Lwt_result.map_error (fun err ->
       HttpUtils.(
         ( err
         , path_with_language query_language "/user/completion"
         , [ urlencoded_to_flash urlencoded ] )))
-    @@ let* contact = HttpUtils.get_current_contact tenant_db req in
+    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt custom_fields =
          urlencoded
          |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)

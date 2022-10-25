@@ -224,6 +224,7 @@ module Version : sig
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
+  val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
   val show : t -> string
   val value : t -> int
   val create : unit -> t

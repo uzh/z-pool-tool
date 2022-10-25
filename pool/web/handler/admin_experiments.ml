@@ -5,7 +5,7 @@ module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let id req field encode =
   Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
@@ -30,12 +30,15 @@ let index req =
 
 let new_form req =
   let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
   let error_path = "/admin/experiments" in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result context =
     Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let%lwt sys_languages = Settings.find_languages tenant_db in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
     Page.Admin.Experiments.create context sys_languages flash_fetcher
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -91,7 +94,9 @@ let detail edit req =
        |> Lwt.return_ok
      | true ->
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        Page.Admin.Experiments.edit
          experiment
          context

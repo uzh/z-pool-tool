@@ -125,7 +125,7 @@ module Admin = struct
   let middlewares =
     [ CustomMiddleware.Context.context `Admin ()
     ; CustomMiddleware.Tenant.valid_tenant ()
-    ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
+    ; CustomMiddleware.Admin.require_admin ()
     ]
   ;;
 
@@ -320,13 +320,13 @@ end
 module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context `Root ()
+    ; CustomMiddleware.Context.context `Admin ()
     ]
   ;;
 
   let public_routes =
     let open Handler.Root in
-    [ get "" (forward_to_entrypoint "/root/tenants")
+    [ get "" (forward_to_entrypoint "/root/login")
     ; get "/login" Login.login_get
     ; post "/login" Login.login_post
     ; get "/logout" Login.logout
@@ -337,10 +337,7 @@ module Root = struct
     ]
   ;;
 
-  let locked_middlewares =
-    [ CustomMiddleware.Root.require_root ~login_path_f:(fun () -> "/root/login")
-    ]
-  ;;
+  let locked_middlewares = [ CustomMiddleware.Root.require_root () ]
 
   let locked_routes =
     let open Pool_common.Message.Field in

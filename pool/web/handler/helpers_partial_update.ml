@@ -53,7 +53,9 @@ let update ?contact req =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
-  let result { Pool_context.csrf; tenant_db; language; query_language; _ } =
+  let result
+    ({ Pool_context.csrf; tenant_db; language; query_language; _ } as context)
+    =
     let open Utils.Lwt_result.Syntax in
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
@@ -67,11 +69,9 @@ let update ?contact req =
       match contact with
       | Some contact -> Lwt_result.return contact
       | None ->
-        Http_utils.user_from_session tenant_db req
-        ||> CCOption.to_result (NotFound Field.User)
-        >>= (fun { Sihl_user.id; _ } ->
-              Contact.find tenant_db (id |> Pool_common.Id.of_string))
-        ||> with_redirect "/login"
+        Pool_context.find_contact context
+        |> with_redirect "/login"
+        |> Lwt_result.lift
     in
     let back_path =
       if is_admin

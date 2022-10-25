@@ -1,11 +1,5 @@
 module User = Pool_user
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-end
-
 module RecruitmentChannel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
@@ -74,8 +68,8 @@ type t =
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.Model.Ptime.t
+  ; updated_at : Pool_common.Model.Ptime.t
   }
 [@@deriving eq, show]
 
@@ -126,6 +120,10 @@ let fullname m = m.user |> User.user_fullname
 let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
+
+let sexp_of_t t =
+  t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
+;;
 
 module Preview = struct
   type t =

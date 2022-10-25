@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Url = Page.Admin.CustomFields.Url
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let get_option_id req =
   HttpUtils.get_field_router_param
@@ -44,7 +44,10 @@ let form ?id req custom_field =
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
               Custom_field.find_option tenant_db id >|= CCOption.pure)
        in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* custom_field = req |> get_field_id |> Custom_field.find tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.CustomFieldOptions.detail
          ?custom_field_option
@@ -91,7 +94,9 @@ let write ?id req custom_field =
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
-      let%lwt sys_languages = Settings.find_languages tenant_db in
+      let* sys_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
       match id with
       | None ->
         Cqrs_command.Custom_field_option_command.Create.handle

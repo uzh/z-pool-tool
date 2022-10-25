@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let to_ctx = Pool_tenant.to_ctx
-let create_layout req = General.create_tenant_layout `Contact req
+let create_layout req = General.create_tenant_layout req
 
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in

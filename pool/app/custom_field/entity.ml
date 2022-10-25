@@ -168,10 +168,7 @@ module Validation = struct
   [@@deriving show, eq]
 
   module Ptime = struct
-    include Ptime
-
-    let t_of_yojson = Pool_common.Model.Ptime.t_of_yojson
-    let yojson_of_t = Pool_common.Model.Ptime.yojson_of_t
+    include Pool_common.Model.Ptime
   end
 
   module Text = struct
