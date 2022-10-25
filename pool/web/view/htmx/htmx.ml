@@ -59,7 +59,6 @@ let hx_attributes
     @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ]))
 ;;
 
-(* TODO :Can I use to common field here as well? *)
 type 'a selector =
   { show : 'a -> string
   ; options : 'a list
@@ -67,16 +66,9 @@ type 'a selector =
   ; selected : 'a option
   }
 
-type 'a multi_select =
-  { show : 'a -> string
-  ; options : 'a list
-  ; selected : 'a list
-  ; to_common_field : 'a -> Pool_common.Message.Field.t
-  }
-
 type 'a value =
   | Boolean of bool
-  | MultiSelect of 'a multi_select
+  | MultiSelect of 'a Component.multi_select
   | Number of int option
   | Select of 'a selector
   | Text of string option
@@ -92,62 +84,6 @@ type 'a t =
 
 let create_entity ?help ?htmx_attributes version field value =
   { version; field; value; help; htmx_attributes }
-;;
-
-let multi_select
-  language
-  { show; options; selected; to_common_field }
-  field
-  version
-  htmx_attributes
-  ?(classnames = [])
-  ?hx_post
-  ?error
-  ?disabled
-  ()
-  =
-  let error = Component.Elements.error language error in
-  CCList.map
-    (fun option ->
-      let field = to_common_field option in
-      let name = field |> Pool_common.Message.Field.show in
-      let is_checked =
-        CCList.mem
-          ~eq:(fun o1 o2 -> CCString.equal (show o1) (show o2))
-          option
-          selected
-      in
-      let htmx_attributes =
-        hx_attributes
-          field
-          version
-          ?additional_attributes:htmx_attributes
-          ?action:hx_post
-          ?disabled
-          ()
-      in
-      let input_elm =
-        let checked = if is_checked then [ a_checked () ] else [] in
-        input
-          ~a:
-            ([ a_input_type `Checkbox; a_name name; a_id name ]
-            @ checked
-            @ htmx_attributes)
-          ()
-      in
-      let label =
-        label
-          ~a:[ a_label_for name ]
-          [ txt Pool_common.(Utils.field_to_string language field) ]
-      in
-      div [ input_elm; label ])
-    options
-  |> fun options_html ->
-  div
-    ~a:[ a_class ([ "form-group"; "horizontal" ] @ classnames) ]
-    [ label [ txt Pool_common.(Utils.field_to_string language field) ]
-    ; div ~a:[ a_class [ "input-group" ] ] (options_html @ error)
-    ]
 ;;
 
 let create
@@ -195,21 +131,7 @@ let create
       language
       field
   | MultiSelect t ->
-    multi_select
-      language
-      t
-      field
-      version
-      (htmx_attributes
-      |> CCOption.map_or
-           ~default:multi_select_htmx_attributes
-           (CCList.append multi_select_htmx_attributes)
-      |> CCOption.pure)
-      ~classnames
-      ?hx_post
-      ?error
-      ?disabled
-      ()
+    Component.multi_select language t field ~classnames ?error ()
   | Number n ->
     Component.input_element
       ~classnames
@@ -252,22 +174,39 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let custom_field_to_htmx_value language =
+let custom_field_to_htmx_value ?hx_post language is_disabled =
   let open CCOption in
   let open Custom_field in
   function
   | Public.Boolean (_, answer) ->
     answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
-  | Public.MultiSelect (_, options, answers) ->
+  | Public.MultiSelect ({ Public.id; version; _ }, options, answers) ->
+    let attributes select_option =
+      if is_disabled
+      then [ a_disabled () ]
+      else (
+        let base =
+          custom_field_htmx_attributes id @ multi_select_htmx_attributes
+        in
+        let field = SelectOption.to_common_field language select_option in
+        hx_attributes
+          field
+          version
+          ?action:hx_post
+          ~additional_attributes:base
+          ~disabled:is_disabled
+          ())
+    in
     answers
     |> CCList.map (fun { Answer.value; _ } -> value)
     |> fun selected ->
-    ({ show = SelectOption.show_id
-     ; options
-     ; selected
-     ; to_common_field = SelectOption.to_common_field language
-     }
-      : 'a multi_select)
+    Component.
+      { options
+      ; selected
+      ; to_label = SelectOption.name language
+      ; to_value = SelectOption.show_id
+      ; additional_attributes = Some attributes
+      }
     |> multiselect
   | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
   | Public.Select (_, options, answer) ->
@@ -284,34 +223,37 @@ let custom_field_to_htmx_value language =
   | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_to_htmx ?version ?value language is_admin custom_field =
+let custom_field_to_htmx ?version ?value language is_admin custom_field ?hx_post
+  =
   let to_html disabled m = create ~disabled m language in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
-  let label = Public.to_common_field language custom_field in
+  let field = Public.to_common_field language custom_field in
   let version = CCOption.value ~default:(Public.version custom_field) version in
+  let disabled = Public.is_disabled is_admin custom_field in
   let value =
     value
     |> CCOption.value
-         ~default:(custom_field_to_htmx_value language custom_field)
+         ~default:
+           (custom_field_to_htmx_value ?hx_post language disabled custom_field)
   in
-  let disabled = Public.is_disabled is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
-  { version
-  ; field = label
-  ; value
-  ; htmx_attributes = Some htmx_attributes
-  ; help
-  }
-  |> to_html disabled
+  { version; field; value; htmx_attributes = Some htmx_attributes; help }
+  |> to_html disabled ?hx_post
 ;;
 
-let partial_update_to_htmx language sys_languages is_admin =
-  let to_html (m : 'a t) = create ~disabled:false m language in
+let partial_update_to_htmx
+  language
+  sys_languages
+  is_admin
+  partial_update
+  ?hx_post
+  =
+  let to_html (m : 'a t) = create ?hx_post ~disabled:false m language in
   let open Contact.PartialUpdate in
   let open Pool_common.Message in
-  function
+  match partial_update with
   | Firstname (v, firstname) ->
     create_entity
       v
@@ -338,5 +280,5 @@ let partial_update_to_htmx language sys_languages is_admin =
          ; selected = lang
          })
     |> to_html
-  | Custom field -> custom_field_to_htmx language is_admin field
+  | Custom field -> custom_field_to_htmx language is_admin field ?hx_post
 ;;

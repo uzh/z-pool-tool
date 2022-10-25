@@ -28,7 +28,7 @@ let find_options_by_field pool id =
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
 
-let validate pool value (m : Public.t) =
+let validate_htmx pool value (m : Public.t) =
   let open Public in
   let open CCResult.Infix in
   let go validation value = validation |> fst |> fun rule -> rule value in
@@ -86,4 +86,14 @@ let validate pool value (m : Public.t) =
     >|= Answer.create ?id
     >|= (fun a : t -> Text (public, a |> CCOption.pure))
     |> Lwt_result.lift
+;;
+
+let validate_multiselect (public, options) values =
+  let ids = values |> CCList.map SelectOption.Id.of_string in
+  options
+  |> CCList.filter_map (fun ({ SelectOption.id; _ } as option) ->
+       if CCList.mem ~eq:SelectOption.Id.equal id ids
+       then Answer.create option |> CCOption.pure
+       else None)
+  |> fun answers -> Public.multiselect public options answers
 ;;

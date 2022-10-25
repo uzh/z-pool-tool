@@ -286,7 +286,7 @@ module SelectOption = struct
 
   let name lang (t : t) =
     Name.find_opt lang t.name
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.Name)
+    |> CCOption.to_result Message.(NotFound Field.Name)
     |> Pool_common.Utils.get_or_failwith
   ;;
 
@@ -294,7 +294,7 @@ module SelectOption = struct
 
   let to_common_field language m =
     let name = name language m in
-    Pool_common.Message.(Field.CustomHtmx (name, m.id |> Id.value))
+    Message.(Field.CustomHtmx (name, m.id |> Id.value))
   ;;
 end
 

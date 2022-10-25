@@ -4,7 +4,7 @@ module Message = Pool_common.Message
 let custom_field_to_input ?flash_fetcher language custom_field =
   let open Custom_field in
   let open CCOption in
-  let label = Public.to_common_field language custom_field in
+  let field = Public.to_common_field language custom_field in
   let help = Public.to_common_hint language custom_field in
   let required = Public.required custom_field |> Required.value in
   let create input_type value =
@@ -15,9 +15,9 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ~required
       language
       input_type
-      label
+      field
   in
-  match[@warning "-27"] custom_field with
+  match custom_field with
   | Public.Boolean (_, answer) ->
     answer
     >|= (fun a -> a.Answer.value)
@@ -27,13 +27,19 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ~orientation:`Horizontal
       ?value
       language
-      label
-  | Public.MultiSelect (_, answer, options) ->
-    failwith "TODO"
-    (* let value = answer |> CCOption.map_or ~default:[] (fun a ->
-       a.Answer.value) in Htmx.multi_select ?help ~required
-       ~option_formatter:SelectOption.(name language) language label
-       SelectOption.show_id options value () *)
+      field
+  | Public.MultiSelect (_, options, answers) ->
+    let selected = CCList.map (fun { Answer.value; _ } -> value) answers in
+    let t =
+      Component.
+        { options
+        ; selected
+        ; to_label = SelectOption.name language
+        ; to_value = SelectOption.show_id
+        ; additional_attributes = None
+        }
+    in
+    Component.multi_select language t field ()
   | Public.Number (_, answer) ->
     answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
   | Public.Text (_, answer) ->
@@ -47,7 +53,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ~option_formatter:SelectOption.(name language)
       ~add_empty:true
       language
-      label
+      field
       SelectOption.show_id
       options
       value

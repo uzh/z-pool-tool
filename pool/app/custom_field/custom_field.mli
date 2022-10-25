@@ -420,8 +420,13 @@ val find_groups_by_model
   -> Model.t
   -> Group.t list Lwt.t
 
-val validate
+val validate_htmx
   :  Pool_database.Label.t
   -> string
   -> Public.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
+
+val validate_multiselect
+  :  SelectOption.t list Public.public * SelectOption.t list
+  -> string list
+  -> Public.t

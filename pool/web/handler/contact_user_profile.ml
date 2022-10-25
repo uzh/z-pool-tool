@@ -136,7 +136,9 @@ let completion_post req =
     ||> HttpUtils.format_request_boolean_values []
     ||> HttpUtils.remove_empty_values
   in
-  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
+  let result
+    ({ Pool_context.tenant_db; query_language; language; _ } as context)
+    =
     Lwt_result.map_error (fun err ->
       HttpUtils.(
         ( err
@@ -147,6 +149,28 @@ let completion_post req =
          urlencoded
          |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
          |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
+       in
+       let* custom_fields, multi_select_events =
+         let open Lwt.Infix in
+         let open Cqrs_command.Custom_field_answer_command.UpdateMultiple in
+         Lwt_list.fold_left_s
+           (fun (fields, events) field ->
+             let open Custom_field in
+             match[@warning "-4"] field with
+             | Public.MultiSelect (public, options, _) ->
+               req
+               |> Sihl.Web.Request.urlencoded_list
+                    (field
+                    |> Public.to_common_field language
+                    |> Pool_common.Message.Field.array_key)
+               >|= validate_multiselect (public, options)
+               >|= handle (Contact.id contact)
+               >|= fun event -> fields, event :: events
+             | field -> (field :: fields, events) |> Lwt.return)
+           ([], [])
+           custom_fields
+         >|= fun (fields, events) ->
+         events |> CCList.all_ok |> CCResult.map (fun events -> fields, events)
        in
        let events =
          let open Cqrs_command.Custom_field_answer_command.UpdateMultiple in
@@ -161,13 +185,15 @@ let completion_post req =
                 |> value ~default:""
               , f ))
          |> Lwt_list.map_s (fun (value, field) ->
-              Custom_field.validate tenant_db value field
+              Custom_field.validate_htmx tenant_db value field
               >>= fun f -> f |> handle (Contact.id contact) |> Lwt_result.lift)
          ||> CCList.all_ok
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s
+             (Pool_event.handle_event tenant_db)
+             (events @ multi_select_events)
          in
          Http_utils.(
            redirect_to_with_actions
