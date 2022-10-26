@@ -1,13 +1,16 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
-let parse_urlencoded tenant_db language urlencoded contact_id =
+let parse_urlencoded req tenant_db language urlencoded contact_id =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
+  let find_param_list name =
+    CCList.assoc_opt ~eq:CCString.equal name urlencoded
+  in
   let find_param_opt name =
     let open CCOption in
-    CCList.assoc_opt ~eq:CCString.equal name urlencoded >>= CCList.head_opt
+    name |> find_param_list >>= CCList.head_opt
   in
   let find_param name err =
     name |> find_param_opt |> CCOption.to_result err |> Lwt_result.lift
@@ -44,8 +47,11 @@ let parse_urlencoded tenant_db language urlencoded contact_id =
   let* value =
     match field_id, find_param_opt Htmx.multi_select_key with
     | Some _, Some param when CCString.equal param Htmx.multi_select_value ->
-      field_str |> Lwt_result.return
-    | _ -> find_param field_str InvalidHtmxRequest
+      HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
+    | _ ->
+      find_param_list field_str
+      |> CCOption.to_result InvalidHtmxRequest
+      |> Lwt_result.lift
   in
   (field, version, value, field_id) |> Lwt_result.return
 ;;
@@ -90,7 +96,7 @@ let update ?contact req =
       Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
     in
     let* field, version, value, field_id =
-      parse_urlencoded tenant_db language urlencoded Contact.(contact |> id)
+      parse_urlencoded req tenant_db language urlencoded Contact.(contact |> id)
       ||> with_redirect back_path
     in
     let%lwt response =
@@ -147,8 +153,9 @@ let update ?contact req =
           in
           (match[@warning "-4"] field with
            | Field.Firstname ->
-             Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
+             Htmx.Text (value |> CCList.head_opt) |> create_htmx
+           | Field.Lastname ->
+             Htmx.Text (value |> CCList.head_opt) |> create_htmx
            | Field.Paused -> Htmx.Boolean false |> create_htmx
            | Field.Language ->
              Htmx.Select
@@ -157,7 +164,8 @@ let update ?contact req =
                  ; options = tenant_languages
                  ; option_formatter = None
                  ; selected =
-                     value |> Pool_common.Language.create |> CCResult.to_opt
+                     CCOption.bind (value |> CCList.head_opt) (fun value ->
+                       value |> Pool_common.Language.create |> CCResult.to_opt)
                  }
              |> create_htmx
            | _ ->

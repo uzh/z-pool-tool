@@ -474,16 +474,16 @@ type 'a multi_select =
   ; selected : 'a list
   ; to_label : 'a -> string
   ; to_value : 'a -> string
-  ; additional_attributes :
-      ('a -> Html_types.input_attrib attrib list_wrap) option
   }
 
 let multi_select
   language
-  { options; selected; to_label; to_value; additional_attributes }
+  { options; selected; to_label; to_value }
   group_field
+  ?additional_attributes
   ?(classnames = [])
   ?error
+  ?(disabled = false)
   ()
   =
   let error = Elements.error language error in
@@ -496,12 +496,9 @@ let multi_select
           option
           selected
       in
-      let attrs =
-        additional_attributes
-        |> CCOption.map_or ~default:[] (fun attrs -> attrs option)
-      in
       let input_elm =
         let checked = if is_checked then [ a_checked () ] else [] in
+        let disabled = if disabled then [ a_disabled () ] else [] in
         input
           ~a:
             ([ a_input_type `Checkbox
@@ -510,7 +507,7 @@ let multi_select
              ; a_value value
              ]
             @ checked
-            @ attrs)
+            @ disabled)
           ()
       in
       let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
@@ -522,8 +519,14 @@ let multi_select
     input ~a:[ a_input_type `Hidden; a_name group_name; a_value group_name ] ()
     :: options_html
   in
+  let attrs =
+    let base = [ a_class ([ "form-group"; "horizontal" ] @ classnames) ] in
+    match additional_attributes, disabled with
+    | Some attrs, false -> base @ attrs
+    | _ -> base
+  in
   div
-    ~a:[ a_class ([ "form-group"; "horizontal" ] @ classnames) ]
+    ~a:attrs
     [ label [ txt Pool_common.(Utils.field_to_string language group_field) ]
     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
     ]

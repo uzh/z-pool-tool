@@ -67,7 +67,7 @@ val validate_partial_update
   -> Pool_database.Label.t
   -> Pool_common.Message.Field.t
      * Pool_common.Version.t
-     * string
+     * string list
      * Custom_field.Id.t option
   -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 

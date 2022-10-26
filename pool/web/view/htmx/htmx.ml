@@ -23,11 +23,36 @@ let multi_select_key = "multi"
 let multi_select_value = "true"
 let multi_select_htmx_attributes = [ multi_select_key, multi_select_value ]
 
+let base_hx_attributes name version ?action ?(additional_attributes = []) () =
+  let params, vals =
+    let base_vals =
+      [ "version", version |> Pool_common.Version.value |> CCInt.to_string
+      ; "field", name
+      ]
+    in
+    CCList.fold_left
+      (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
+      (hx_base_params, base_vals)
+      additional_attributes
+  in
+  [ hx_swap "outerHTML"
+  ; hx_params (CCString.concat ", " (CCList.cons name params))
+  ; hx_target "closest .form-group"
+  ; hx_vals
+      (Format.asprintf
+         {|{%s}|}
+         (vals
+         |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+         |> CCString.concat ", "))
+  ]
+  @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
+;;
+
 let hx_attributes
   field
   version
   ?action
-  ?(additional_attributes = [])
+  ?additional_attributes
   ?(disabled = false)
   ()
   =
@@ -35,28 +60,15 @@ let hx_attributes
   then [ a_disabled () ]
   else (
     let name = Pool_common.Message.Field.(field |> show) in
-    let params, vals =
-      let base_vals =
-        [ "version", version |> Pool_common.Version.value |> CCInt.to_string
-        ; "field", name
-        ]
-      in
-      CCList.fold_left
-        (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
-        (hx_base_params, base_vals)
-        additional_attributes
-    in
-    [ hx_swap "outerHTML"
-    ; hx_params (CCString.concat ", " (CCList.cons name params))
-    ; hx_target "closest .form-group"
-    ; hx_vals
-        (Format.asprintf
-           {|{%s}|}
-           (vals
-           |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
-           |> CCString.concat ", "))
-    ]
-    @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ]))
+    base_hx_attributes name version ?action ?additional_attributes ())
+;;
+
+let hx_multi_attributes field version ?action ?(additional_attributes = []) () =
+  let name = Pool_common.Message.Field.(field |> array_key) in
+  let additional_attributes =
+    additional_attributes @ multi_select_htmx_attributes
+  in
+  base_hx_attributes name version ?action ~additional_attributes ()
 ;;
 
 type 'a selector =
@@ -103,7 +115,7 @@ let create
     | _, _ -> []
   in
   let classnames = classnames @ input_class in
-  let additional_attributes =
+  let additional_attributes () =
     [ a_class input_class ]
     @ hx_attributes
         field
@@ -123,7 +135,7 @@ let create
     Component.checkbox_element
       ~as_switch:true
       ~orientation:`Horizontal
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes ())
       ~classnames
       ~value:boolean
       ?help
@@ -131,7 +143,24 @@ let create
       language
       field
   | MultiSelect t ->
-    Component.multi_select language t field ~classnames ?error ()
+    let additional_attributes =
+      [ a_class input_class ]
+      @ hx_multi_attributes
+          field
+          version
+          ?action:hx_post
+          ?additional_attributes:htmx_attributes
+          ()
+    in
+    Component.multi_select
+      language
+      t
+      field
+      ~additional_attributes
+      ~classnames
+      ?error
+      ?disabled
+      ()
   | Number n ->
     Component.input_element
       ~classnames
@@ -139,7 +168,7 @@ let create
         (fetched_value
         |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
         )
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes ())
       ?error
       ?help
       language
@@ -147,7 +176,7 @@ let create
       field
   | Select { show; options; option_formatter; selected } ->
     Component.selector
-      ~attributes:additional_attributes
+      ~attributes:(additional_attributes ())
       ?help
       ?option_formatter
       ~add_empty:true
@@ -161,7 +190,7 @@ let create
     Component.input_element
       ~classnames
       ~value:(fetched_value |> CCOption.value ~default:(str |> default))
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes ())
       ?error
       ?help
       language
@@ -174,29 +203,13 @@ let csrf_element_swap csrf ?id =
   input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
-let custom_field_to_htmx_value ?hx_post language is_disabled =
+let custom_field_to_htmx_value language =
   let open CCOption in
   let open Custom_field in
   function
   | Public.Boolean (_, answer) ->
     answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
-  | Public.MultiSelect ({ Public.id; version; _ }, options, answers) ->
-    let attributes select_option =
-      if is_disabled
-      then [ a_disabled () ]
-      else (
-        let base =
-          custom_field_htmx_attributes id @ multi_select_htmx_attributes
-        in
-        let field = SelectOption.to_common_field language select_option in
-        hx_attributes
-          field
-          version
-          ?action:hx_post
-          ~additional_attributes:base
-          ~disabled:is_disabled
-          ())
-    in
+  | Public.MultiSelect (_, options, answers) ->
     answers
     |> CCList.map (fun { Answer.value; _ } -> value)
     |> fun selected ->
@@ -205,7 +218,6 @@ let custom_field_to_htmx_value ?hx_post language is_disabled =
       ; selected
       ; to_label = SelectOption.name language
       ; to_value = SelectOption.show_id
-      ; additional_attributes = Some attributes
       }
     |> multiselect
   | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
@@ -235,8 +247,7 @@ let custom_field_to_htmx ?version ?value language is_admin custom_field ?hx_post
   let value =
     value
     |> CCOption.value
-         ~default:
-           (custom_field_to_htmx_value ?hx_post language disabled custom_field)
+         ~default:(custom_field_to_htmx_value language custom_field)
   in
   let help = Public.to_common_hint language custom_field in
   { version; field; value; htmx_attributes = Some htmx_attributes; help }

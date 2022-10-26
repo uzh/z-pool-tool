@@ -184,7 +184,7 @@ module PartialUpdate = struct
       in
       Conformist.decode_and_validate
         schema
-        [ field |> Pool_common.Message.Field.show, [ value ] ]
+        [ field |> Pool_common.Message.Field.show, value ]
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     in
     let open CCResult in
@@ -229,7 +229,7 @@ module PartialUpdate = struct
         |> Lwt_result.lift
         >>= Custom_field.find_by_contact ~is_admin tenand_db (id contact)
         >>= check_permission
-        >>= fun f -> f |> Custom_field.validate_htmx tenand_db value
+        >>= fun f -> f |> Custom_field.validate_htmx value |> Lwt_result.lift
       in
       let old_v =
         let open Custom_field in

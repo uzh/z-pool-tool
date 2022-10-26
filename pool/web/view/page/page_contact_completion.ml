@@ -36,7 +36,6 @@ let custom_field_to_input ?flash_fetcher language custom_field =
         ; selected
         ; to_label = SelectOption.name language
         ; to_value = SelectOption.show_id
-        ; additional_attributes = None
         }
     in
     Component.multi_select language t field ()

@@ -162,22 +162,19 @@ let completion_post req =
       Lwt_list.map_s
         (fun field ->
           let id = field |> Public.id |> Id.value in
-          match field with
-          | MultiSelect (public, options, _) ->
-            req
-            |> Sihl.Web.Request.urlencoded_list
-                 (field
-                 |> Public.to_common_field language
-                 |> Pool_common.Message.Field.array_key)
-            ||> validate_multiselect (public, options)
-            ||> handle
-          | Boolean _ | Number _ | Select _ | Text _ ->
-            CCList.assoc_opt ~eq:CCString.equal id urlencoded
-            |> CCFun.flip CCOption.bind CCList.head_opt
-            |> CCOption.value ~default:""
-            |> fun value ->
-            validate_htmx tenant_db value field
-            >>= fun field -> handle field |> Lwt_result.lift)
+          (match field with
+           | MultiSelect _ ->
+             req
+             |> HttpUtils.htmx_urlencoded_list
+                  (field
+                  |> Public.to_common_field language
+                  |> Pool_common.Message.Field.array_key)
+           | Boolean _ | Number _ | Select _ | Text _ ->
+             CCList.assoc_opt ~eq:CCString.equal id urlencoded
+             |> CCOption.value ~default:[]
+             |> Lwt.return)
+          ||> CCFun.flip validate_htmx field
+          >>= fun field -> handle field |> Lwt_result.lift)
         custom_fields
       ||> CCList.all_ok
     in

@@ -28,7 +28,7 @@ let find_options_by_field pool id =
 let find_group = Repo_group.find
 let find_groups_by_model = Repo_group.find_by_model
 
-let validate_htmx pool value (m : Public.t) =
+let validate_htmx value (m : Public.t) =
   let open Public in
   let open CCResult.Infix in
   let go validation value = validation |> fst |> fun rule -> rule value in
@@ -36,56 +36,60 @@ let validate_htmx pool value (m : Public.t) =
   | Boolean (public, answer) ->
     let id = Answer.id_opt answer in
     value
-    |> Utils.Bool.of_string
+    |> CCList.head_opt
+    |> CCOption.map_or ~default:false Utils.Bool.of_string
     |> Answer.create ?id
     |> (fun a : t -> Boolean (public, a |> CCOption.pure))
-    |> Lwt_result.return
-  | MultiSelect (public, options, answers) ->
-    let open Lwt_result.Syntax in
-    let* option = value |> SelectOption.Id.of_string |> Repo_option.find pool in
-    let answers =
-      CCList.find_opt
-        (fun { Answer.value; _ } -> SelectOption.equal value option)
-        answers
-      |> function
-      | None -> Answer.create option :: answers
-      | Some answer ->
-        CCList.remove ~eq:(Answer.equal SelectOption.equal) ~key:answer answers
-    in
-    (MultiSelect (public, options, answers) : t) |> Lwt_result.return
+    |> CCResult.return
+  | MultiSelect (public, options, _) ->
+    value
+    |> CCList.map (fun value ->
+         let id = value |> SelectOption.Id.of_string in
+         CCList.find_opt
+           (fun option -> SelectOption.Id.equal option.SelectOption.id id)
+           options
+         |> CCOption.to_result
+              Pool_common.Message.(Invalid Field.CustomFieldOption)
+         >|= Answer.create)
+    |> CCList.all_ok
+    >|= fun answers : t -> MultiSelect (public, options, answers)
   | Number (({ validation; _ } as public), answer) ->
     let id = Answer.id_opt answer in
-    let res =
-      value
-      |> CCInt.of_string
-      |> CCOption.to_result Message.(NotANumber value)
-      >>= fun i ->
-      i
-      |> go validation
-      >|= Answer.create ?id
-      >|= fun a : t -> (Number (public, a |> CCOption.pure) : t)
-    in
-    res |> Lwt_result.lift
+    value
+    |> CCList.head_opt
+    |> CCOption.to_result Pool_common.Message.NoValue
+    >>= fun value ->
+    value
+    |> CCInt.of_string
+    |> CCOption.to_result Message.(NotANumber value)
+    >>= fun i ->
+    i
+    |> go validation
+    >|= Answer.create ?id
+    >|= fun a : t -> (Number (public, a |> CCOption.pure) : t)
   | Select (public, options, answer) ->
     let id = Answer.id_opt answer in
-    let value = value |> SelectOption.Id.of_string in
     let selected =
-      CCList.find_opt
-        (fun option -> SelectOption.Id.equal option.SelectOption.id value)
-        options
+      value
+      |> CCList.head_opt
+      |> CCOption.map SelectOption.Id.of_string
+      |> CCFun.flip CCOption.bind (fun id ->
+           CCList.find_opt
+             (fun option -> SelectOption.Id.equal option.SelectOption.id id)
+             options)
     in
     selected
     |> CCOption.to_result Message.InvalidOptionSelected
     >|= Answer.create ?id
-    >|= (fun a : t -> Select (public, options, a |> CCOption.pure))
-    |> Lwt_result.lift
+    >|= fun a : t -> Select (public, options, a |> CCOption.pure)
   | Text (({ validation; _ } as public), answer) ->
     let id = Answer.id_opt answer in
     value
-    |> go validation
+    |> CCList.head_opt
+    |> CCOption.to_result Pool_common.Message.NoValue
+    >>= go validation
     >|= Answer.create ?id
-    >|= (fun a : t -> Text (public, a |> CCOption.pure))
-    |> Lwt_result.lift
+    >|= fun a : t -> Text (public, a |> CCOption.pure)
 ;;
 
 let validate_multiselect (public, options) values =
