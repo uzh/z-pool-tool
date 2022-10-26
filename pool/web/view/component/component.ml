@@ -507,7 +507,8 @@ let multi_select
              ; a_value value
              ]
             @ checked
-            @ disabled)
+            @ disabled
+            @ CCOption.value ~default:[] additional_attributes)
           ()
       in
       let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
@@ -519,14 +520,8 @@ let multi_select
     input ~a:[ a_input_type `Hidden; a_name group_name; a_value group_name ] ()
     :: options_html
   in
-  let attrs =
-    let base = [ a_class ([ "form-group"; "horizontal" ] @ classnames) ] in
-    match additional_attributes, disabled with
-    | Some attrs, false -> base @ attrs
-    | _ -> base
-  in
   div
-    ~a:attrs
+    ~a:[ a_class ([ "form-group"; "horizontal" ] @ classnames) ]
     [ label [ txt Pool_common.(Utils.field_to_string language group_field) ]
     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
     ]
