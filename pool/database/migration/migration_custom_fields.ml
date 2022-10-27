@@ -50,11 +50,21 @@ let add_position_to_custom_fields =
     |sql}
 ;;
 
+let change_position_datatype =
+  Sihl.Database.Migration.create_step
+    ~label:"change position datatype"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        MODIFY position int
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_fields"
     |> add_step create_custom_fields_table
     |> add_step add_admin_boolean_columns
     |> add_step add_group_column_to_custom_fields
-    |> add_step add_position_to_custom_fields)
+    |> add_step add_position_to_custom_fields
+    |> add_step change_position_datatype)
 ;;

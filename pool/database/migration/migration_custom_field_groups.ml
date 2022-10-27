@@ -16,7 +16,18 @@ let create_custom_field_groups_table =
     |sql}
 ;;
 
+let change_position_datatype =
+  Sihl.Database.Migration.create_step
+    ~label:"change position datatype"
+    {sql|
+      ALTER TABLE pool_custom_field_groups
+        MODIFY position int
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
-    empty "custom_field_groups" |> add_step create_custom_field_groups_table)
+    empty "custom_field_groups"
+    |> add_step create_custom_field_groups_table
+    |> add_step change_position_datatype)
 ;;

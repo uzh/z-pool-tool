@@ -60,11 +60,13 @@ let insert_sql =
     INSERT INTO pool_custom_field_groups (
       uuid,
       model,
-      name
+      name,
+      position
     ) VALUES (
       UNHEX(REPLACE($1, '-', '')),
       $2,
-      $3
+      $3,
+      (SELECT COUNT(*) FROM pool_custom_field_groups AS g)
     )
   |sql}
 ;;

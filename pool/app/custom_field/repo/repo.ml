@@ -152,22 +152,27 @@ module Sql = struct
         admin_hint,
         admin_overwrite,
         admin_view_only,
-        admin_input_only
+        admin_input_only,
+        position
       ) VALUES (
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?
-      )
+        UNHEX(REPLACE($1, '-', '')),
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        UNHEX(REPLACE($9, '-', '')),
+        $10,
+        $11,
+        $12,
+        $13,
+        (SELECT
+          COUNT(*)
+          FROM pool_custom_fields AS f
+          WHERE f.model = $2)
+        )
     |sql}
   ;;
 

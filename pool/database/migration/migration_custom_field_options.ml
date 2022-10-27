@@ -24,9 +24,19 @@ let add_order_column_to_custom_field_options =
     |sql}
 ;;
 
+let change_position_datatype =
+  Sihl.Database.Migration.create_step
+    ~label:"change position datatype"
+    {sql|
+      ALTER TABLE pool_custom_field_options
+        MODIFY position int
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_options"
     |> add_step create_custom_field_options_table
-    |> add_step add_order_column_to_custom_field_options)
+    |> add_step add_order_column_to_custom_field_options
+    |> add_step change_position_datatype)
 ;;
