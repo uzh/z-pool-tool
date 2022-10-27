@@ -22,28 +22,12 @@ let favicon =
 ;;
 
 let global_stylesheets =
-  let styles =
-    [ ( "https://www.econ.uzh.ch/static/staging/projects/cdn/framework/vlatest/main.css"
-      , false )
-    ; ( "https://www.econ.uzh.ch/static/staging/projects/cdn/framework/vlatest/font/icons.css"
-      , false )
-    ; "/assets/index.css", true
-    ]
-    |> CCList.map (fun (url, externalize) ->
-         link
-           ~rel:[ `Stylesheet ]
-           ~href:(if externalize then Sihl.Web.externalize_path url else url)
-           ())
-  in
-  CCList.cons
-    (script
-       ~a:
-         [ a_src
-             "https://www.econ.uzh.ch/static/staging/projects/cdn/framework/vlatest/main.js"
-         ; a_defer ()
-         ]
-       (txt ""))
-    styles
+  [ "/assets/index.css", true ]
+  |> CCList.map (fun (url, externalize) ->
+       link
+         ~rel:[ `Stylesheet ]
+         ~href:(if externalize then Sihl.Web.externalize_path url else url)
+         ())
 ;;
 
 let header ?(children = []) title =
