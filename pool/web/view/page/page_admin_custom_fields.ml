@@ -202,9 +202,17 @@ let field_form
     | None -> Url.Field.create_path current_model
     | Some f -> Url.Field.detail_path (model f, id f)
   in
-  let checkbox_element ?orientation ?help ?(default = false) field fnc =
+  let checkbox_element
+    ?(disabled = false)
+    ?orientation
+    ?help
+    ?(default = false)
+    field
+    fnc
+    =
     checkbox_element
       language
+      ~additional_attributes:(if disabled then [ a_disabled () ] else [])
       ?orientation
       ?help
       field
@@ -212,7 +220,7 @@ let field_form
       ~flash_fetcher
   in
   let value = CCFun.flip (CCOption.map_or ~default:"") custom_field in
-  let field_type = CCOption.map field_type custom_field in
+  let field_type_opt = CCOption.map field_type custom_field in
   let input_by_lang ?required =
     input_by_lang ?required language tenant_languages flash_fetcher custom_field
   in
@@ -288,7 +296,7 @@ let field_form
                  |> CCOption.value ~default:""
                in
                let disabled =
-                 field_type
+                 field_type_opt
                  |> CCOption.map_or ~default:false (fun t ->
                       FieldType.equal validation_type t |> not)
                in
@@ -303,7 +311,7 @@ let field_form
     | None -> empty
     | Some m ->
       (match m with
-       | Select (_, options) ->
+       | Select (_, options) | MultiSelect (_, options) ->
          let list =
            form
              ~a:
@@ -411,7 +419,8 @@ let field_form
               Message.Field.FieldType
               FieldType.show
               FieldType.all
-              field_type
+              field_type_opt
+              ~option_formatter:FieldType.to_string
               ~add_empty:true
               ~required:true
               ~flash_fetcher
@@ -488,30 +497,29 @@ let field_form
               ~flash_fetcher
           ; checkbox_element Message.Field.Overwrite (fun f ->
               (f |> admin).Admin.overwrite |> Admin.Overwrite.value)
-          ; checkbox_element Message.Field.AdminInputOnly (fun f ->
-              (f |> admin).Admin.input_only |> Admin.InputOnly.value)
+          ; checkbox_element
+              ~disabled:
+                (custom_field
+                |> CCOption.map_or ~default:false (fun f ->
+                     (f |> admin).Admin.view_only |> Admin.ViewOnly.value))
+              ~help:Pool_common.I18n.CustomFieldAdminInputOnly
+              Message.Field.AdminInputOnly
+              (fun f -> (f |> admin).Admin.input_only |> Admin.InputOnly.value)
           ; checkbox_element
               ~help:Pool_common.I18n.CustomFieldAdminViewOnly
               Message.Field.AdminViewOnly
               (fun f -> (f |> admin).Admin.view_only |> Admin.ViewOnly.value)
-          ; (Format.asprintf
-               {js|
-                var toggle = document.querySelector("[name='%s']");
-                var target = document.querySelector("[name='%s']");
-                toggle.addEventListener("change", function(e) {
-                  if(e.currentTarget.checked) {
-                    target.checked = true;
-                  }
-                })
-              |js}
-               Message.Field.(show AdminViewOnly)
-               Message.Field.(show AdminInputOnly)
-            |> fun js -> script (Unsafe.data js))
           ]
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ checkbox_element Message.Field.Required (fun f ->
-              f |> required |> Required.value)
+          [ checkbox_element
+              ~disabled:
+                (custom_field
+                |> CCOption.map_or ~default:false (fun f ->
+                     (f |> admin).Admin.input_only |> Admin.InputOnly.value
+                     || FieldType.(equal (f |> field_type) MultiSelect)))
+              Message.Field.Required
+              (fun f -> f |> required |> Required.value)
           ; checkbox_element Message.Field.Disabled (fun f ->
               f |> disabled |> Disabled.value)
           ; submit_element
@@ -524,6 +532,41 @@ let field_form
               ~submit_type:`Success
               ()
           ]
+      ; (Format.asprintf
+           {js|
+              var adminViewOnly = document.querySelector("[name='%s']");
+              var adminInputOnly = document.querySelector("[name='%s']");
+              var required = document.querySelector("[name='%s']");
+              var fieldType = document.querySelector("[name='%s']");
+
+              function triggerEvent(elm, name) {
+                var event = document.createEvent("HTMLEvents");
+                event.initEvent(name, false, true);
+                elm.dispatchEvent(event);
+              }
+
+              adminInputOnly.addEventListener("change", function(e) {
+                required.disabled = e.currentTarget.checked;
+              })
+
+              adminViewOnly.addEventListener("change", function(e) {
+                adminInputOnly.disabled = e.currentTarget.checked;
+                if(e.currentTarget.checked) {
+                  adminInputOnly.checked = true;
+                  triggerEvent(adminInputOnly, 'change');
+                }
+              })
+
+              fieldType.addEventListener("change", function(e) {
+                required.disabled = (e.currentTarget.value === "%s")
+              })
+         |js}
+           Message.Field.(show AdminViewOnly)
+           Message.Field.(show AdminInputOnly)
+           Message.Field.(show Required)
+           Message.Field.(show FieldType)
+           FieldType.(show MultiSelect)
+        |> fun js -> script (Unsafe.data js))
       ]
   ; select_options_html
   ]

@@ -142,6 +142,19 @@ let urlencoded_to_flash urlencoded =
          m, k |> CCList.head_opt |> CCOption.get_or ~default:""))
 ;;
 
+(* This is required as HTMX sends "undefined" if all checkboxes are unchecked *)
+let htmx_urlencoded_list key req =
+  let%lwt lst = Sihl.Web.Request.urlencoded_list key req in
+  Lwt.return
+  @@
+  match lst with
+  | [ hd ] ->
+    if CCString.equal "undefined" (hd |> CCString.lowercase_ascii)
+    then []
+    else lst
+  | _ -> lst
+;;
+
 (* TODO[timhub]: hide information, at least on public site *)
 let validate_email_existance pool email =
   let open Lwt.Infix in

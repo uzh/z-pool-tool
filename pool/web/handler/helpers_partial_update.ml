@@ -1,21 +1,24 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
-let parse_urlencoded tenant_db language urlencoded =
+let parse_urlencoded req tenant_db language urlencoded contact_id =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
-  let find_param name err =
-    let open CCOption in
+  let find_param_list name =
     CCList.assoc_opt ~eq:CCString.equal name urlencoded
-    >>= CCList.head_opt
-    |> to_result err
-    |> Lwt_result.lift
   in
-  let%lwt field_id =
-    find_param Htmx.field_id_key ()
-    ||> CCOption.of_result
-    ||> CCOption.map Custom_field.Id.of_string
+  let find_param_opt name =
+    let open CCOption in
+    name |> find_param_list >>= CCList.head_opt
+  in
+  let find_param name err =
+    name |> find_param_opt |> CCOption.to_result err |> Lwt_result.lift
+  in
+  let field_id =
+    Htmx.field_id_key
+    |> find_param_opt
+    |> CCOption.map Custom_field.Id.of_string
   in
   let* field_str = find_param "field" InvalidHtmxRequest in
   let* field =
@@ -29,7 +32,7 @@ let parse_urlencoded tenant_db language urlencoded =
       field_id
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
-      >>= Custom_field.find_public tenant_db
+      >>= Custom_field.find_by_contact tenant_db contact_id
       >|= fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
@@ -41,7 +44,15 @@ let parse_urlencoded tenant_db language urlencoded =
     |> CCOption.to_result Pool_common.Message.(Invalid Field.Version)
     |> Lwt_result.lift
   in
-  let* value = find_param field_str InvalidHtmxRequest in
+  let* value =
+    match field_id, find_param_opt Htmx.multi_select_key with
+    | Some _, Some param when CCString.equal param Htmx.multi_select_value ->
+      HttpUtils.htmx_urlencoded_list field_str req |> Lwt_result.ok
+    | _ ->
+      find_param_list field_str
+      |> CCOption.to_result InvalidHtmxRequest
+      |> Lwt_result.lift
+  in
   (field, version, value, field_id) |> Lwt_result.return
 ;;
 
@@ -85,7 +96,8 @@ let update ?contact req =
       Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
     in
     let* field, version, value, field_id =
-      parse_urlencoded tenant_db language urlencoded ||> with_redirect back_path
+      parse_urlencoded req tenant_db language urlencoded Contact.(contact |> id)
+      ||> with_redirect back_path
     in
     let%lwt response =
       let open CCResult in
@@ -120,14 +132,11 @@ let update ?contact req =
         let open Pool_common.Message in
         match partial_update with
         | Ok partial_update ->
-          partial_update
-          |> Contact.PartialUpdate.increment_version
-          |> fun m ->
           Htmx.partial_update_to_htmx
             language
             tenant_languages
             is_admin
-            m
+            partial_update
             ~hx_post
             ~success:true
             ()
@@ -144,9 +153,10 @@ let update ?contact req =
           in
           (match[@warning "-4"] field with
            | Field.Firstname ->
-             Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Lastname -> Htmx.Text (value |> CCOption.pure) |> create_htmx
-           | Field.Paused -> Htmx.Checkbox false |> create_htmx
+             Htmx.Text (value |> CCList.head_opt) |> create_htmx
+           | Field.Lastname ->
+             Htmx.Text (value |> CCList.head_opt) |> create_htmx
+           | Field.Paused -> Htmx.Boolean false |> create_htmx
            | Field.Language ->
              Htmx.Select
                Htmx.
@@ -154,7 +164,8 @@ let update ?contact req =
                  ; options = tenant_languages
                  ; option_formatter = None
                  ; selected =
-                     value |> Pool_common.Language.create |> CCResult.to_opt
+                     CCOption.bind (value |> CCList.head_opt) (fun value ->
+                       value |> Pool_common.Language.create |> CCResult.to_opt)
                  }
              |> create_htmx
            | _ ->

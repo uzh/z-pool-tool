@@ -56,9 +56,9 @@ module PartialUpdate : sig
     | Language of Pool_common.Version.t * Pool_common.Language.t option
     | Custom of Custom_field.Public.t
 
-  val increment_version : t -> t
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
+  val increment_version : t -> t
 end
 
 val validate_partial_update
@@ -67,7 +67,7 @@ val validate_partial_update
   -> Pool_database.Label.t
   -> Pool_common.Message.Field.t
      * Pool_common.Version.t
-     * string
+     * string list
      * Custom_field.Id.t option
   -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 

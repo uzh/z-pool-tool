@@ -94,9 +94,10 @@ module Tenant = struct
       ; Migration_location_file_mapping.migration ()
       ; Migration_mailing.migration ()
       ; Migration_custom_fields.migration ()
-      ; Migration_custom_field_ansers.migration ()
+      ; Migration_custom_field_answers.migration ()
       ; Migration_custom_field_options.migration ()
       ; Migration_custom_field_groups.migration ()
+      ; Migration_custom_field_answer_versions.migration ()
       ]
   ;;
 

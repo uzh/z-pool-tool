@@ -217,6 +217,7 @@ module Public = struct
     ; custom_field_group_id : Group.Id.t option
     ; admin_overwrite : Admin.Overwrite.t
     ; admin_input_only : Admin.InputOnly.t
+    ; version : Pool_common.Version.t option
     ; answer : Repo_entity_answer.repo option
     }
 
@@ -231,52 +232,59 @@ module Public = struct
     ; admin_overwrite
     ; admin_input_only
     ; answer
+    ; version
     ; _
     }
+    answers
     =
     let open CCOption.Infix in
     let validation_schema schema =
       Validation.(validation |> raw_of_yojson |> schema)
     in
+    let version =
+      CCOption.value ~default:(Pool_common.Version.create ()) version
+    in
     match field_type with
     | FieldType.Boolean ->
       let answer =
         answer
-        >|= fun { Answer.id; value; version } ->
-        value |> Utils.Bool.of_string |> Entity_answer.create ~id ~version
+        >|= fun { Answer.id; value } ->
+        value |> Utils.Bool.of_string |> Entity_answer.create ~id
       in
       Public.Boolean
-        { Public.id
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
     | FieldType.Number ->
       let answer =
         answer
-        >>= fun Answer.{ id; value; version } ->
-        value |> CCInt.of_string >|= Entity_answer.create ~id ~version
+        >>= fun Answer.{ id; value } ->
+        value |> CCInt.of_string >|= Entity_answer.create ~id
       in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
     | FieldType.Select ->
       let answer =
         let open SelectOption in
         answer
-        >|= fun Answer.{ id; value; version } ->
+        >|= fun Answer.{ id; value } ->
         value
         |> Id.of_string
         |> fun selected ->
@@ -284,7 +292,7 @@ module Public = struct
           (fun (_, { SelectOption.id; _ }) -> Id.equal id selected)
           select_options
         |> snd
-        |> Entity_answer.create ~id ~version
+        |> Entity_answer.create ~id
       in
       let options =
         CCList.filter_map
@@ -300,44 +308,92 @@ module Public = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
-          ; answer
+          ; version
           }
-        , options )
+        , options
+        , answer )
+    | FieldType.MultiSelect ->
+      let options =
+        CCList.filter_map
+          (fun (field_id, option) ->
+            if Pool_common.Id.equal field_id id then Some option else None)
+          select_options
+      in
+      let answers =
+        let open SelectOption in
+        answers
+        |> CCList.filter_map (fun Answer.{ id; value } ->
+             value
+             |> Id.of_string
+             |> fun selected ->
+             CCList.find_opt
+               (fun { SelectOption.id; _ } -> Id.equal id selected)
+               options
+             >|= Entity_answer.create ~id)
+      in
+      Public.MultiSelect
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , options
+        , answers )
     | FieldType.Text ->
       let answer =
-        answer
-        >|= fun Answer.{ id; value; version } ->
-        value |> Entity_answer.create ~id ~version
+        answer >|= fun Answer.{ id; value } -> value |> Entity_answer.create ~id
       in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
+  ;;
+
+  let group_fields =
+    CCList.group_by ~eq:(fun (f1 : repo) f2 -> Id.equal f1.id f2.id)
+  ;;
+
+  let single_to_entity options field_list =
+    let fst = CCList.hd field_list in
+    field_list
+    |> CCList.filter_map (fun field -> field.answer)
+    |> to_entity options fst
+  ;;
+
+  let to_ungrouped_entities select_options fields =
+    let to_entity = single_to_entity select_options in
+    fields |> group_fields |> CCList.map to_entity
   ;;
 
   let to_grouped_entities select_options groups fields =
-    let to_entity = to_entity select_options in
+    let to_entity = single_to_entity select_options in
     let partition_map fields { Group.id; _ } =
       CCList.fold_left
-        (fun (of_group, rest) (field : repo) ->
+        (fun (of_group, rest) (fields : repo list) ->
+          let ({ custom_field_group_id; _ } : repo) = CCList.hd fields in
           CCOption.map_or
             ~default:false
             (fun group_id -> Pool_common.Id.equal group_id id)
-            field.custom_field_group_id
+            custom_field_group_id
           |> function
-          | true -> of_group @ [ field |> to_entity ], rest
-          | false -> of_group, rest @ [ field ])
+          | true -> of_group @ [ fields |> to_entity ], rest
+          | false -> of_group, rest @ [ fields ])
         ([], [])
         fields
     in
-    let groups, ungrouped =
+    let grouped, ungrouped =
       CCList.fold_left
         (fun (groups, fields) group ->
           let of_group, rest = partition_map fields group in
@@ -345,10 +401,10 @@ module Public = struct
             Group.{ Public.id = group.id; name = group.name; fields = of_group }
           in
           CCList.append groups [ group ], rest)
-        ([], fields)
+        ([], group_fields fields)
         groups
     in
-    groups, ungrouped |> CCList.map to_entity
+    grouped, ungrouped |> CCList.map to_entity
   ;;
 
   let t =
@@ -364,7 +420,8 @@ module Public = struct
             , ( field_type
               , ( required
                 , ( custom_field_group_id
-                  , (admin_overwrite, (admin_input_only, answer)) ) ) ) ) ) ) )
+                  , (admin_overwrite, (admin_input_only, (answer, version))) )
+                ) ) ) ) ) )
       =
       Ok
         { id
@@ -377,6 +434,7 @@ module Public = struct
         ; admin_input_only
         ; custom_field_group_id
         ; answer
+        ; version
         }
     in
     Caqti_type.(
@@ -399,7 +457,11 @@ module Public = struct
                              (option Common.Repo.Id.t)
                              (tup2
                                 Admin.Overwrite.t
-                                (tup2 Admin.InputOnly.t (option Answer.t)))))))))))
+                                (tup2
+                                   Admin.InputOnly.t
+                                   (tup2
+                                      (option Answer.t)
+                                      (option Common.Repo.Version.t))))))))))))
   ;;
 end
 
@@ -519,6 +581,25 @@ let to_entity
         select_options
     in
     Select
+      ( { id
+        ; model
+        ; name
+        ; hint
+        ; validation = Validation.pure
+        ; required
+        ; disabled
+        ; custom_field_group_id
+        ; admin
+        }
+      , options )
+  | FieldType.MultiSelect ->
+    let options =
+      CCList.filter_map
+        (fun (field_id, option) ->
+          if Pool_common.Id.equal field_id id then Some option else None)
+        select_options
+    in
+    MultiSelect
       ( { id
         ; model
         ; name

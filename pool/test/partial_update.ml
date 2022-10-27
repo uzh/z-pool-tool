@@ -30,7 +30,7 @@ let update_with_old_version _ () =
       Contact.validate_partial_update
         contact
         database_label
-        (field, version, Pool_common.Language.show language, None)
+        (field, version, [ Pool_common.Language.show language ], None)
     in
     let expected = Error Message.(MeantimeUpdate field) in
     Alcotest.(
@@ -60,21 +60,20 @@ let update_custom_field _ () =
       Contact.validate_partial_update
         contact
         database_label
-        (field, version, new_value, Some (Public.id public))
+        (field, version, [ new_value ], Some (Public.id public))
     in
     let expected =
       let[@warning "-4"] expected_field =
-        let open Public in
         match public with
-        | Public.Text p ->
+        | Public.Text (p, answer) ->
           let answer =
-            p.answer
+            answer
             |> CCOption.map (fun a -> Answer.{ a with value = new_value })
           in
-          Public.Text { p with answer }
+          Public.Text (p, answer)
         | _ -> failwith "Wrong field type"
       in
-      Ok Contact.PartialUpdate.(Custom expected_field)
+      Ok Contact.PartialUpdate.(Custom expected_field |> increment_version)
     in
     Alcotest.(
       check
@@ -107,7 +106,7 @@ let partial_update_exec
         ?is_admin
         contact
         database_label
-        (field, version, value, Some (Public.id public))
+        (field, version, [ value ], Some (Public.id public))
     in
     Alcotest.(
       check

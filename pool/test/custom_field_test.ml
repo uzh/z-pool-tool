@@ -80,44 +80,60 @@ module Data = struct
     let required = required m in
     let admin_overwrite = (admin m).Admin.overwrite in
     let admin_input_only = (admin m).Admin.input_only in
-    let answer_version = 0 |> Pool_common.Version.of_int in
+    let version = 0 |> Pool_common.Version.of_int in
     match field_type with
     | FieldType.Boolean ->
-      let answer =
-        Answer.{ id = answer_id; version = answer_version; value = true }
-        |> CCOption.pure
-      in
+      let answer = Answer.{ id = answer_id; value = true } |> CCOption.pure in
       Public.Boolean
-        { Public.id
-        ; name
-        ; hint
-        ; validation = Validation.pure
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
-    | FieldType.Number ->
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
+    | FieldType.MultiSelect ->
       let answer =
-        Answer.{ id = answer_id; version = answer_version; value = 3 }
-        |> CCOption.pure
+        field_options
+        |> CCList.head_opt
+        |> CCOption.map (fun option ->
+             Answer.{ id = answer_id; value = option } |> CCList.pure)
+        |> CCOption.value ~default:[]
       in
+      Public.MultiSelect
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation = Validation.pure
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , field_options
+        , answer )
+    | FieldType.Number ->
+      let answer = Answer.{ id = answer_id; value = 3 } |> CCOption.pure in
       let validation = validation_schema Validation.Number.schema in
       Public.Number
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
     | FieldType.Select ->
       let answer =
         CCList.head_opt field_options
         |> CCOption.map (fun option ->
-             Answer.{ id = answer_id; version = answer_version; value = option })
+             Answer.{ id = answer_id; value = option })
       in
       Public.Select
         ( { Public.id
@@ -127,25 +143,24 @@ module Data = struct
           ; required
           ; admin_overwrite
           ; admin_input_only
-          ; answer
+          ; version
           }
-        , field_options )
+        , field_options
+        , answer )
     | FieldType.Text ->
-      let answer =
-        Answer.{ id = answer_id; version = answer_version; value = "test" }
-        |> CCOption.pure
-      in
+      let answer = Answer.{ id = answer_id; value = "test" } |> CCOption.pure in
       let validation = validation_schema Validation.Text.schema in
       Public.Text
-        { Public.id
-        ; name
-        ; hint
-        ; validation
-        ; required
-        ; admin_overwrite
-        ; admin_input_only
-        ; answer
-        }
+        ( { Public.id
+          ; name
+          ; hint
+          ; validation
+          ; required
+          ; admin_overwrite
+          ; admin_input_only
+          ; version
+          }
+        , answer )
   ;;
 end
 
@@ -255,26 +270,22 @@ let create_option () =
 ;;
 
 let create_with_missing_admin_option () =
-  let open CCResult in
-  let events =
-    (Data.data @ Message.[ Field.(AdminViewOnly |> show, [ "on" ]) ])
-    |> Http_utils.format_request_boolean_values boolean_fields
-    |> CustomFieldCommand.base_decode
-    >>= CustomFieldCommand.Create.handle
-          ~id:(Custom_field.Id.create ())
-          Data.sys_languages
-          Data.model
-          Data.name
-          Data.hint
-          Data.validation_data
+  let open Custom_field.Admin in
+  let overwrite = true |> Overwrite.create in
+  let view_only = true |> ViewOnly.create in
+  let hint = None in
+  let admin =
+    let input_only = false |> InputOnly.create in
+    create hint overwrite view_only input_only
   in
   let expected =
-    Error Message.(FieldRequiresCheckbox Field.(AdminViewOnly, AdminInputOnly))
+    let input_only = true |> InputOnly.create in
+    create hint overwrite view_only input_only
   in
   Alcotest.(
     check
-      (result (list Test_utils.event) Test_utils.error)
+      (result Test_utils.custom_field_admin Test_utils.error)
       "succeeds"
-      expected
-      events)
+      admin
+      expected)
 ;;

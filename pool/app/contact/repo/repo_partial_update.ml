@@ -39,10 +39,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
         ~firstname:(value |> Pool_user.Firstname.value)
         contact
     in
-    ( dyn
-      |> Dynparam.add
-           Pool_common.Repo.Version.t
-           Pool_common.Version.(version |> increment)
+    ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
           firstname_version = $3
         |sql} )
@@ -54,10 +51,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
         ~lastname:(value |> Pool_user.Lastname.value)
         contact
     in
-    ( dyn
-      |> Dynparam.add
-           Pool_common.Repo.Version.t
-           Pool_common.Version.(version |> increment)
+    ( dyn |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
             lastname_version = $3
           |sql} )
@@ -65,9 +59,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
   | Paused (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.bool (value |> Pool_user.Paused.value)
-      |> Dynparam.add
-           Pool_common.Repo.Version.t
-           Pool_common.Version.(version |> increment)
+      |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
               paused = $3,
               paused_version = $4
@@ -77,9 +69,7 @@ let partial_update pool (field : Entity.PartialUpdate.t) contact =
   | Language (version, value) ->
     ( dyn
       |> Dynparam.add Caqti_type.(option Pool_common.Repo.Language.t) value
-      |> Dynparam.add
-           Pool_common.Repo.Version.t
-           Pool_common.Version.(version |> increment)
+      |> Dynparam.add Pool_common.Repo.Version.t version
     , {sql|
                 language = $3,
                 language_version = $4

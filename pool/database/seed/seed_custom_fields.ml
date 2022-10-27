@@ -27,8 +27,38 @@ let create pool =
   let groups = [ education_group; language_group ] in
   let education_options = [ "Bachelor"; "Master"; "Phd" ] in
   let languge_level_options = [ "Beginner"; "Intermediate"; "Advanced" ] in
+  let research_interest_options =
+    [ "Environmental Economics"
+    ; "Development Economics"
+    ; "Technological Change & Innovation"
+    ; "Neuroeconomics"
+    ; "Behavioral Economics"
+    ; "International Trade"
+    ; "Macroeconomics"
+    ; "Public Economics"
+    ; "Economic Theory"
+    ; "Organizational Economics"
+    ; "Political Economy"
+    ; "Econometrics"
+    ; "Economic History"
+    ; "Financial Markets"
+    ; "Industrial Organization"
+    ; "Labor Economics"
+    ; "Education & Health"
+    ; "Economics of Institutions"
+    ]
+  in
   let data =
-    [ ( "Mother tongue"
+    [ ( "Research interests"
+      , Model.Contact
+      , None
+      , []
+      , true
+      , false
+      , FieldType.MultiSelect
+      , research_interest_options
+      , None )
+    ; ( "Mother tongue"
       , Model.Contact
       , Some "Hint"
       , []

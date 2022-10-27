@@ -4,12 +4,13 @@ module Navigation = Component_nav
 module Partials = Component_partials
 module MessageTextElements = Component_message_text_elements
 module Icon = Component_icon
+module Field = Pool_common.Message.Field
 open Tyxml.Html
 
 let language_select
   options
   selected
-  ?(field = Pool_common.Message.Field.Language)
+  ?(field = Field.Language)
   ?(attributes = [])
   ()
   =
@@ -53,9 +54,7 @@ module Elements = struct
 
   let attributes input_type name id additional_attributes =
     let base_attributes = [ a_input_type input_type; a_id id ] in
-    additional_attributes
-    @ base_attributes
-    @ [ a_name (name |> Pool_common.Message.Field.show) ]
+    additional_attributes @ base_attributes @ [ a_name (name |> Field.show) ]
   ;;
 
   let group_class classnames orientation =
@@ -92,7 +91,7 @@ module Elements = struct
   ;;
 
   let identifier ?identifier name =
-    CCOption.value identifier ~default:(Pool_common.Message.Field.show name)
+    CCOption.value identifier ~default:(Field.show name)
     |> CCString.replace ~which:`All ~sub:" " ~by:"_"
   ;;
 end
@@ -100,7 +99,7 @@ end
 let flash_fetched_value fetcher value name =
   let old_value =
     CCOption.bind fetcher (fun flash_fetcher ->
-      name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Field.show |> flash_fetcher)
   in
   let open CCOption.Infix in
   old_value <+> value |> CCOption.get_or ~default:""
@@ -210,6 +209,7 @@ let flatpicker_element
 ;;
 
 let checkbox_element
+  ?(as_switch = false)
   ?(orientation = `Vertical)
   ?(classnames = [])
   ?label_field
@@ -226,7 +226,7 @@ let checkbox_element
   let input_label = Elements.input_label language name label_field required in
   let value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
-      name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Field.show |> flash_fetcher)
     |> CCOption.map (fun s -> CCString.equal "true" s)
     |> CCOption.value ~default:value
   in
@@ -241,19 +241,31 @@ let checkbox_element
     |> fun attrs ->
     if required then CCList.cons (a_required ()) attrs else attrs
   in
+  let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
   let help = Elements.help language help in
   let error = Elements.error language error in
   let input_element =
-    Elements.apply_orientation (attributes @ additional_attributes) orientation
+    let checkbox =
+      let base = input ~a:attributes () in
+      if as_switch
+      then
+        div
+          [ label
+              ~a:[ a_class [ "switch" ] ]
+              [ base; span ~a:[ a_class [ "slider" ] ] [] ]
+          ]
+      else base
+    in
+    match orientation with
+    | `Vertical ->
+      div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ]
+    | `Horizontal ->
+      div
+        ~a:[ a_class [ "input-group" ] ]
+        [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
   in
-  div
-    ~a:[ a_class group_class ]
-    [ div
-        ([ input_element; label ~a:[ a_label_for id ] [ txt input_label ] ]
-        @ help
-        @ error)
-    ]
+  div ~a:[ a_class group_class ] ([ input_element ] @ help @ error)
 ;;
 
 let input_element_file
@@ -266,7 +278,7 @@ let input_element_file
   field
   =
   let input_label = Elements.input_label language field label_field required in
-  let name = Pool_common.Message.Field.(field |> show) in
+  let name = Field.(field |> show) in
   let visible_part =
     let placeholder =
       span
@@ -316,7 +328,7 @@ let textarea_element
   =
   let input_label = Elements.input_label language name label_field required in
   let textarea_attributes =
-    let base = [ a_name (name |> Pool_common.Message.Field.show) ] in
+    let base = [ a_name (name |> Field.show) ] in
     match required with
     | true -> base @ [ a_required () ]
     | false -> base
@@ -324,7 +336,7 @@ let textarea_element
   let ( <+> ) = CCOption.( <+> ) in
   let old_value =
     CCOption.bind flash_fetcher (fun flash_fetcher ->
-      name |> Pool_common.Message.Field.show |> flash_fetcher)
+      name |> Field.show |> flash_fetcher)
   in
   let value = old_value <+> value |> CCOption.get_or ~default:"" in
   let textarea =
@@ -392,12 +404,12 @@ let selector
   ?(add_empty = false)
   ()
   =
-  let name = Pool_common.Message.Field.(show field) in
+  let name = Field.(show field) in
   let input_label = Elements.input_label language field None required in
   let selected =
     let open CCOption in
     bind flash_fetcher (fun flash_fetcher ->
-      field |> Pool_common.Message.Field.show |> flash_fetcher)
+      field |> Field.show |> flash_fetcher)
     <+> map show selected
   in
   let options =
@@ -457,43 +469,60 @@ let selector
     ]
 ;;
 
-let custom_field_to_input ?flash_fetcher language custom_field =
-  let open Custom_field in
-  let open CCOption in
-  let label = Public.to_common_field language custom_field in
-  let help = Public.to_common_hint language custom_field in
-  let required = Public.required custom_field |> Required.value in
-  let create input_type value =
-    input_element
-      ?flash_fetcher
-      ?value
-      ?help
-      ~required
-      language
-      input_type
-      label
+type 'a multi_select =
+  { options : 'a list
+  ; selected : 'a list
+  ; to_label : 'a -> string
+  ; to_value : 'a -> string
+  }
+
+let multi_select
+  language
+  { options; selected; to_label; to_value }
+  group_field
+  ?additional_attributes
+  ?(classnames = [])
+  ?error
+  ?(disabled = false)
+  ()
+  =
+  let error = Elements.error language error in
+  CCList.map
+    (fun option ->
+      let value = to_value option in
+      let is_checked =
+        CCList.mem
+          ~eq:(fun o1 o2 -> CCString.equal (to_value o1) (to_value o2))
+          option
+          selected
+      in
+      let input_elm =
+        let checked = if is_checked then [ a_checked () ] else [] in
+        let disabled = if disabled then [ a_disabled () ] else [] in
+        input
+          ~a:
+            ([ a_input_type `Checkbox
+             ; a_name (group_field |> Field.array_key)
+             ; a_id value
+             ; a_value value
+             ]
+            @ checked
+            @ disabled
+            @ CCOption.value ~default:[] additional_attributes)
+          ()
+      in
+      let label = label ~a:[ a_label_for value ] [ txt (option |> to_label) ] in
+      div [ input_elm; label ])
+    options
+  |> fun options_html ->
+  let inputs =
+    let group_name = Pool_common.(Message.Field.show group_field) in
+    input ~a:[ a_input_type `Hidden; a_name group_name; a_value group_name ] ()
+    :: options_html
   in
-  match custom_field with
-  | Public.Boolean { Public.answer; _ } ->
-    answer
-    >|= (fun a -> a.Answer.value)
-    |> fun value -> checkbox_element ?value language label
-  | Public.Number { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
-  | Public.Text { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> create `Text
-  | Public.Select (Public.{ answer; _ }, options) ->
-    let value = answer >|= fun a -> a.Answer.value in
-    selector
-      ?flash_fetcher
-      ?help
-      ~required
-      ~option_formatter:SelectOption.(name language)
-      ~add_empty:true
-      language
-      label
-      SelectOption.show_id
-      options
-      value
-      ()
+  div
+    ~a:[ a_class ([ "form-group"; "horizontal" ] @ classnames) ]
+    [ label [ txt Pool_common.(Utils.field_to_string language group_field) ]
+    ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
+    ]
 ;;

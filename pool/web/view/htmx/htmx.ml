@@ -19,12 +19,40 @@ let admin_profile_hx_post id =
 
 let field_id_key = "field_id"
 let custom_field_htmx_attributes id = [ field_id_key, Custom_field.Id.value id ]
+let multi_select_key = "multi"
+let multi_select_value = "true"
+let multi_select_htmx_attributes = [ multi_select_key, multi_select_value ]
+
+let base_hx_attributes name version ?action ?(additional_attributes = []) () =
+  let params, vals =
+    let base_vals =
+      [ "version", version |> Pool_common.Version.value |> CCInt.to_string
+      ; "field", name
+      ]
+    in
+    CCList.fold_left
+      (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
+      (hx_base_params, base_vals)
+      additional_attributes
+  in
+  [ hx_swap "outerHTML"
+  ; hx_params (CCString.concat ", " (CCList.cons name params))
+  ; hx_target "closest .form-group"
+  ; hx_vals
+      (Format.asprintf
+         {|{%s}|}
+         (vals
+         |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
+         |> CCString.concat ", "))
+  ]
+  @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ])
+;;
 
 let hx_attributes
   field
   version
   ?action
-  ?(additional_attributes = [])
+  ?additional_attributes
   ?(disabled = false)
   ()
   =
@@ -32,28 +60,15 @@ let hx_attributes
   then [ a_disabled () ]
   else (
     let name = Pool_common.Message.Field.(field |> show) in
-    let params, vals =
-      let base_vals =
-        [ "version", version |> Pool_common.Version.value |> CCInt.to_string
-        ; "field", name
-        ]
-      in
-      CCList.fold_left
-        (fun (params, vals) (key, value) -> key :: params, (key, value) :: vals)
-        (hx_base_params, base_vals)
-        additional_attributes
-    in
-    [ hx_swap "outerHTML"
-    ; hx_params (CCString.concat ", " (CCList.cons name params))
-    ; hx_target "closest .form-group"
-    ; hx_vals
-        (Format.asprintf
-           {|{%s}|}
-           (vals
-           |> CCList.map (fun (k, v) -> Format.asprintf "\"%s\": \"%s\"" k v)
-           |> CCString.concat ", "))
-    ]
-    @ CCOption.(CCList.filter_map CCFun.id [ action >|= hx_post ]))
+    base_hx_attributes name version ?action ?additional_attributes ())
+;;
+
+let hx_multi_attributes field version ?action ?(additional_attributes = []) () =
+  let name = Pool_common.Message.Field.(field |> array_key) in
+  let additional_attributes =
+    additional_attributes @ multi_select_htmx_attributes
+  in
+  base_hx_attributes name version ?action ~additional_attributes ()
 ;;
 
 type 'a selector =
@@ -64,10 +79,11 @@ type 'a selector =
   }
 
 type 'a value =
-  | Text of string option
+  | Boolean of bool
+  | MultiSelect of 'a Component.multi_select
   | Number of int option
-  | Checkbox of bool
   | Select of 'a selector
+  | Text of string option
 [@@deriving variants]
 
 type 'a t =
@@ -99,7 +115,7 @@ let create
     | _, _ -> []
   in
   let classnames = classnames @ input_class in
-  let additional_attributes =
+  let additional_attributes () =
     [ a_class input_class ]
     @ hx_attributes
         field
@@ -115,16 +131,36 @@ let create
       field |> Pool_common.Message.Field.show |> flash_fetcher)
   in
   match value with
-  | Text str ->
-    Component.input_element
+  | Boolean boolean ->
+    Component.checkbox_element
+      ~as_switch:true
+      ~orientation:`Horizontal
+      ~additional_attributes:(additional_attributes ())
       ~classnames
-      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
-      ~additional_attributes
-      ?error
+      ~value:boolean
       ?help
+      ?error
       language
-      `Text
       field
+  | MultiSelect t ->
+    let additional_attributes =
+      [ a_class input_class ]
+      @ hx_multi_attributes
+          field
+          version
+          ?action:hx_post
+          ?additional_attributes:htmx_attributes
+          ()
+    in
+    Component.multi_select
+      language
+      t
+      field
+      ~additional_attributes
+      ~classnames
+      ?error
+      ?disabled
+      ()
   | Number n ->
     Component.input_element
       ~classnames
@@ -132,24 +168,15 @@ let create
         (fetched_value
         |> CCOption.value ~default:(n |> CCOption.map CCInt.to_string |> default)
         )
-      ~additional_attributes
+      ~additional_attributes:(additional_attributes ())
       ?error
       ?help
       language
       `Number
       field
-  | Checkbox boolean ->
-    Component.checkbox_element
-      ~additional_attributes
-      ~classnames
-      ~value:boolean
-      ?help
-      ?error
-      language
-      field
   | Select { show; options; option_formatter; selected } ->
     Component.selector
-      ~attributes:additional_attributes
+      ~attributes:(additional_attributes ())
       ?help
       ?option_formatter
       ~add_empty:true
@@ -159,6 +186,16 @@ let create
       options
       selected
       ()
+  | Text str ->
+    Component.input_element
+      ~classnames
+      ~value:(fetched_value |> CCOption.value ~default:(str |> default))
+      ~additional_attributes:(additional_attributes ())
+      ?error
+      ?help
+      language
+      `Text
+      field
 ;;
 
 (* Use this CSRF element as HTMX response in POSTs*)
@@ -170,57 +207,64 @@ let custom_field_to_htmx_value language =
   let open CCOption in
   let open Custom_field in
   function
-  | Public.Boolean { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> checkbox
-  | Public.Number { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> number
-  | Public.Select ({ Public.answer; _ }, options) ->
+  | Public.Boolean (_, answer) ->
+    answer >|= (fun a -> a.Answer.value) |> value ~default:false |> boolean
+  | Public.MultiSelect (_, options, answers) ->
+    answers
+    |> CCList.map (fun { Answer.value; _ } -> value)
+    |> fun selected ->
+    Component.
+      { options
+      ; selected
+      ; to_label = SelectOption.name language
+      ; to_value = SelectOption.show_id
+      }
+    |> multiselect
+  | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
+  | Public.Select (_, options, answer) ->
     answer
     >|= (fun a -> a.Answer.value)
     |> fun value ->
-    { show = SelectOption.show_id
-    ; options
-    ; option_formatter = Some SelectOption.(name language)
-    ; selected = value
-    }
+    ({ show = SelectOption.show_id
+     ; options
+     ; option_formatter = Some SelectOption.(name language)
+     ; selected = value
+     }
+      : 'a selector)
     |> select
-  | Public.Text { Public.answer; _ } ->
-    answer >|= (fun a -> a.Answer.value) |> text
+  | Public.Text (_, answer) -> answer >|= (fun a -> a.Answer.value) |> text
 ;;
 
-let custom_field_to_htmx ?version ?value language is_admin custom_field =
+let custom_field_to_htmx ?version ?value language is_admin custom_field ?hx_post
+  =
   let to_html disabled m = create ~disabled m language in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
-  let label = Public.to_common_field language custom_field in
-  let version =
-    let open CCOption in
-    version
-    <+> Public.version custom_field
-    |> value ~default:(Pool_common.Version.create ())
-  in
+  let field = Public.to_common_field language custom_field in
+  let version = CCOption.value ~default:(Public.version custom_field) version in
+  let disabled = Public.is_disabled is_admin custom_field in
   let value =
     value
     |> CCOption.value
          ~default:(custom_field_to_htmx_value language custom_field)
   in
-  let disabled = Public.is_disabled is_admin custom_field in
   let help = Public.to_common_hint language custom_field in
-  { version
-  ; field = label
-  ; value
-  ; htmx_attributes = Some htmx_attributes
-  ; help
-  }
-  |> to_html disabled
+  { version; field; value; htmx_attributes = Some htmx_attributes; help }
+  |> to_html disabled ?hx_post
 ;;
 
-let partial_update_to_htmx language sys_languages is_admin =
-  let to_html m = create ~disabled:false m language in
+let partial_update_to_htmx
+  language
+  sys_languages
+  is_admin
+  partial_update
+  ?hx_post
+  =
+  let to_html (m : 'a t) = create ?hx_post ~disabled:false m language in
   let open Contact.PartialUpdate in
   let open Pool_common.Message in
-  function
+  match partial_update with
   | Firstname (v, firstname) ->
     create_entity
       v
@@ -234,7 +278,7 @@ let partial_update_to_htmx language sys_languages is_admin =
       (Text (lastname |> User.Lastname.value |> CCOption.pure))
     |> to_html
   | Paused (v, paused) ->
-    create_entity v Field.Paused (Checkbox (paused |> User.Paused.value))
+    create_entity v Field.Paused (Boolean (paused |> User.Paused.value))
     |> to_html
   | Language (v, lang) ->
     create_entity
@@ -247,5 +291,5 @@ let partial_update_to_htmx language sys_languages is_admin =
          ; selected = lang
          })
     |> to_html
-  | Custom field -> custom_field_to_htmx language is_admin field
+  | Custom field -> custom_field_to_htmx language is_admin field ?hx_post
 ;;

@@ -170,13 +170,13 @@ module PartialUpdate = struct
     ?(is_admin = false)
     contact
     tenand_db
-    (field, version, value, field_id)
+    (field, current_version, value, field_id)
     =
     let check_version old_v t =
       let open Pool_common.Version in
-      if old_v |> value > (version |> value)
+      if old_v |> value > (current_version |> value)
       then Error Pool_common.Message.(MeantimeUpdate field)
-      else Ok t
+      else t |> increment_version |> CCResult.pure
     in
     let validate schema =
       let schema =
@@ -184,7 +184,7 @@ module PartialUpdate = struct
       in
       Conformist.decode_and_validate
         schema
-        [ field |> Pool_common.Message.Field.show, [ value ] ]
+        [ field |> Pool_common.Message.Field.show, value ]
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     in
     let open CCResult in
@@ -192,25 +192,25 @@ module PartialUpdate = struct
     | PoolField.Firstname ->
       User.Firstname.schema
       |> validate
-      >|= (fun m -> Firstname (version, m))
+      >|= (fun m -> Firstname (current_version, m))
       >>= check_version contact.firstname_version
       |> Lwt.return
     | PoolField.Lastname ->
       User.Lastname.schema
       |> validate
-      >|= (fun m -> Lastname (version, m))
+      >|= (fun m -> Lastname (current_version, m))
       >>= check_version contact.lastname_version
       |> Lwt.return
     | PoolField.Paused ->
       User.Paused.schema
       |> validate
-      >|= (fun m -> Paused (version, m))
+      >|= (fun m -> Paused (current_version, m))
       >>= check_version contact.paused_version
       |> Lwt.return
     | PoolField.Language ->
       (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
       |> validate
-      >|= (fun m -> Language (version, m))
+      >|= (fun m -> Language (current_version, m))
       >>= check_version contact.language_version
       |> Lwt.return
     | _ ->
@@ -229,13 +229,13 @@ module PartialUpdate = struct
         |> Lwt_result.lift
         >>= Custom_field.find_by_contact ~is_admin tenand_db (id contact)
         >>= check_permission
-        >>= fun f -> f |> Custom_field.Public.validate value |> Lwt_result.lift
+        >>= fun f -> f |> Custom_field.validate_htmx value |> Lwt_result.lift
       in
       let old_v =
-        Custom_field.Public.version custom_field
-        |> CCOption.value ~default:(Pool_common.Version.create ())
+        let open Custom_field in
+        Public.version custom_field
       in
-      custom_field |> check_version old_v |> Lwt_result.lift >|= custom
+      custom_field |> custom |> check_version old_v |> Lwt_result.lift
   ;;
 end
 

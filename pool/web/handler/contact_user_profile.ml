@@ -136,45 +136,57 @@ let completion_post req =
     ||> HttpUtils.format_request_boolean_values []
     ||> HttpUtils.remove_empty_values
   in
-  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
+  let result
+    ({ Pool_context.tenant_db; query_language; language; _ } as context)
+    =
     Lwt_result.map_error (fun err ->
       HttpUtils.(
         ( err
         , path_with_language query_language "/user/completion"
         , [ urlencoded_to_flash urlencoded ] )))
-    @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let%lwt custom_fields =
-         urlencoded
-         |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
-         |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
-       in
-       let events =
-         custom_fields
-         |> CCList.map (fun f ->
-              let open CCOption in
-              ( CCList.assoc_opt
-                  ~eq:CCString.equal
-                  Custom_field.(f |> Public.id |> Id.value)
-                  urlencoded
-                >>= CCList.head_opt
-                |> value ~default:""
-              , f ))
-         |> Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
-              (Contact.id contact)
-         |> Lwt_result.lift
-       in
-       let handle events =
-         let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
-         in
-         Http_utils.(
-           redirect_to_with_actions
-             "/dashboard"
-             [ Message.set
-                 ~success:[ Pool_common.Message.(Updated Field.Profile) ]
-             ])
-       in
-       events |>> handle
+    @@
+    let open Custom_field in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+    let%lwt custom_fields =
+      urlencoded
+      |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
+      |> find_multiple_by_contact tenant_db (Contact.id contact)
+    in
+    let events =
+      let open Utils.Lwt_result.Infix in
+      let open Public in
+      let handle =
+        Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
+          (Contact.id contact)
+      in
+      Lwt_list.map_s
+        (fun field ->
+          let id = field |> Public.id |> Id.value in
+          (match field with
+           | MultiSelect _ ->
+             req
+             |> HttpUtils.htmx_urlencoded_list
+                  (field
+                  |> Public.to_common_field language
+                  |> Pool_common.Message.Field.array_key)
+           | Boolean _ | Number _ | Select _ | Text _ ->
+             CCList.assoc_opt ~eq:CCString.equal id urlencoded
+             |> CCOption.value ~default:[]
+             |> Lwt.return)
+          ||> CCFun.flip validate_htmx field
+          >>= fun field -> handle field |> Lwt_result.lift)
+        custom_fields
+      ||> CCList.all_ok
+    in
+    let handle events =
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      Http_utils.(
+        redirect_to_with_actions
+          "/dashboard"
+          [ Message.set ~success:[ Pool_common.Message.(Updated Field.Profile) ]
+          ])
+    in
+    events |>> handle
   in
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
