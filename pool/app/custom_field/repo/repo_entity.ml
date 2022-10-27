@@ -320,7 +320,6 @@ module Public = struct
           select_options
       in
       let answers =
-        let open CCOption in
         let open SelectOption in
         answers
         |> CCList.filter_map (fun Answer.{ id; value } ->
@@ -363,7 +362,7 @@ module Public = struct
   ;;
 
   let group_fields =
-    CCList.group_by ~eq:(fun (f1 : repo) f2 -> Pool_common.Id.equal f1.id f2.id)
+    CCList.group_by ~eq:(fun (f1 : repo) f2 -> Id.equal f1.id f2.id)
   ;;
 
   let single_to_entity options field_list =

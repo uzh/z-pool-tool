@@ -148,7 +148,10 @@ let htmx_urlencoded_list key req =
   Lwt.return
   @@
   match lst with
-  | [ "undefined" ] -> []
+  | [ hd ] ->
+    if CCString.equal "undefined" (hd |> CCString.lowercase_ascii)
+    then []
+    else lst
   | _ -> lst
 ;;
 

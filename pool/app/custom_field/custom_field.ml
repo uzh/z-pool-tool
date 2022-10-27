@@ -62,11 +62,9 @@ let validate_htmx value (m : Public.t) =
     value
     |> CCInt.of_string
     |> CCOption.to_result Message.(NotANumber value)
-    >>= fun i ->
-    i
-    |> go validation
+    >>= go validation
     >|= Answer.create ?id
-    >|= fun a : t -> (Number (public, a |> CCOption.pure) : t)
+    >|= fun a : t -> Number (public, a |> CCOption.pure)
   | Select (public, options, answer) ->
     let id = Answer.id_opt answer in
     let selected =

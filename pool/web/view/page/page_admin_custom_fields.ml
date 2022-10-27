@@ -550,12 +550,10 @@ let field_form
               })
 
               adminViewOnly.addEventListener("change", function(e) {
+                adminInputOnly.disabled = e.currentTarget.checked;
                 if(e.currentTarget.checked) {
                   adminInputOnly.checked = true;
                   triggerEvent(adminInputOnly, 'change');
-                  adminInputOnly.disabled = true;
-                } else {
-                  adminInputOnly.disabled = false;
                 }
               })
 

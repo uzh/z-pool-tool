@@ -194,8 +194,7 @@ module Sql = struct
     let%lwt options =
       field_list
       |> CCList.head_opt
-      |> CCOption.map_or ~default:(Lwt.return []) (fun field ->
-           get_options pool field)
+      |> CCOption.map_or ~default:(Lwt.return []) (get_options pool)
     in
     Repo_entity.Public.to_ungrouped_entities options field_list
     |> CCList.head_opt
