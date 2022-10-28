@@ -256,7 +256,7 @@ let sort_fields req ?group () =
       in
       let%lwt fields =
         match group with
-        | None -> find_ungrouped tenant_db current_model
+        | None -> find_ungrouped_by_model tenant_db current_model
         | Some group -> find_by_group tenant_db group
       in
       let fields =

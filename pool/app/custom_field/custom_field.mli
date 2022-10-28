@@ -359,7 +359,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
-val find_ungrouped : Pool_database.Label.t -> Model.t -> t list Lwt.t
+val find_ungrouped_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 
 val find
   :  Pool_database.Label.t

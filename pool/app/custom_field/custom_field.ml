@@ -4,7 +4,7 @@ include Event
 let find_all = Repo.find_all
 let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group
-let find_ungrouped = Repo.find_ungrouped
+let find_ungrouped_by_model = Repo.find_ungrouped_by_model
 let find = Repo.find
 
 let find_all_by_contact ?is_admin pool id =
