@@ -1,6 +1,7 @@
 (library
  (name component)
  (libraries
+  custom_field
   experiment
   filter
   http_utils

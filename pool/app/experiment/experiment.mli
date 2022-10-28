@@ -1,73 +1,23 @@
 module Id = Pool_common.Id
 
 module Title : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module PublicTitle : sig
-  type t = string
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> string
-  val create : t -> (t, Pool_common.Message.error) result
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module Description : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 module DirectRegistrationDisabled : sig
-  type t
-
-  val equal : t -> t -> t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 end
 
 module RegistrationDisabled : sig
-  type t
-
-  val equal : t -> t -> t
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : bool -> t
-  val value : t -> bool
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 end
 
 module AllowUninvitedSignup : sig
@@ -86,33 +36,15 @@ end
 
 module InvitationTemplate : sig
   module Subject : sig
-    type t
+    include Pool_common.Model.StringSig
 
-    val equal : t -> t -> bool
-    val show : t -> t
-    val create : string -> (t, Pool_common.Message.error) result
     val of_string : string -> t
-    val value : t -> string
-    val pp : Format.formatter -> t -> unit
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   module Text : sig
-    type t
+    include Pool_common.Model.StringSig
 
-    val equal : t -> t -> bool
-    val show : t -> t
-    val create : string -> (t, Pool_common.Message.error) result
     val of_string : string -> t
-    val value : t -> string
-    val pp : Format.formatter -> t -> unit
-
-    val schema
-      :  unit
-      -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
   type t =
@@ -208,16 +140,14 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val boolean_fields : Pool_common.Message.Field.t list
 
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all
-  :  Pool_database.Label.t
-  -> unit
-  -> (t list, Pool_common.Message.error) result Lwt.t
+val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_public
   :  Pool_database.Label.t
@@ -228,7 +158,12 @@ val find_public
 val find_of_session
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t, Repo_entity.Common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_of_mailing
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_by_contact
   :  Pool_database.Label.t

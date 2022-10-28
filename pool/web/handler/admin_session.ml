@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 (* Use this to extract ids from requests, the params are not named :id, because
    two ids appear in a route *)
@@ -23,7 +23,7 @@ let location urlencoded tenant_db =
   >>= Pool_location.find tenant_db
 ;;
 
-let reschedule_messages tenant_db session =
+let reschedule_messages tenant_db sys_languages session =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let create_message sys_languages contact (session : Session.t) template =
@@ -43,7 +43,6 @@ let reschedule_messages tenant_db session =
       (("name", name) :: session_overview)
   in
   let* assignments = Assignment.find_by_session tenant_db session.Session.id in
-  let%lwt sys_languages = Settings.find_languages tenant_db in
   let* default_language =
     CCList.head_opt sys_languages
     |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
@@ -113,7 +112,9 @@ let new_form req =
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt locations = Pool_location.find_all tenant_db in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        Page.Admin.Session.new_form
          context
          experiment
@@ -189,7 +190,9 @@ let detail req page =
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt locations = Pool_location.find_all tenant_db in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        Page.Admin.Session.edit
          context
          experiment
@@ -266,10 +269,13 @@ let update_handler action req =
         let* (decoded : Session.reschedule) =
           urlencoded |> decode |> Lwt_result.lift
         in
+        let* system_languages =
+          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+        in
         let (Session.{ start; duration } : Session.reschedule) = decoded in
         let* messages =
           Session.{ session with start; duration }
-          |> reschedule_messages tenant_db
+          |> reschedule_messages tenant_db system_languages
         in
         decoded
         |> handle ?parent_session:parent follow_ups session messages
@@ -341,7 +347,9 @@ let follow_up req =
     let* parent_session = Session.find tenant_db session_id in
     let* experiment = Experiment.find tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let%lwt sys_languages = Settings.find_languages tenant_db in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
     let%lwt locations = Pool_location.find_all tenant_db in
     Page.Admin.Session.follow_up
       context

@@ -1,5 +1,6 @@
 open Sexplib.Conv
 module PoolError = Entity_message
+module Model = Entity_base_model
 
 (* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
@@ -10,11 +11,8 @@ module Id = struct
   let value m = m
   let to_uuidm m = Uuidm.of_string m |> CCOption.get_exn_or "Invalid UUID"
 
-  let schema () =
-    Pool_common_utils.schema_decoder
-      (Utils.fcn_ok of_string)
-      value
-      PoolError.Field.Id
+  let schema ?(field = PoolError.Field.Id) () =
+    Pool_common_utils.schema_decoder (Utils.fcn_ok of_string) value field
   ;;
 end
 
@@ -60,7 +58,7 @@ module Language = struct
 end
 
 module Version = struct
-  type t = int [@@deriving eq, show, yojson]
+  type t = int [@@deriving eq, show, yojson, sexp_of]
 
   let value m = m
   let create () = 0
@@ -69,19 +67,17 @@ module Version = struct
 end
 
 module CreatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Model.Ptime
 
+  let equal c1 c2 = if Sihl.Configuration.is_test () then true else equal c1 c2
   let create = Ptime_clock.now
-  let value m = m
-  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module UpdatedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Model.Ptime
 
+  let equal c1 c2 = if Sihl.Configuration.is_test () then true else equal c1 c2
   let create = Ptime_clock.now
-  let value m = m
-  let sexp_of_t = Utils_time.ptime_to_sexp
 end
 
 module File = struct

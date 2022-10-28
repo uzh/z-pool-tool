@@ -25,6 +25,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | ProfileCompletionTitle -> "Profilvervollständigung"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
   | LocationListTitle -> "Standorte"
   | LocationNewTitle -> "Neuer Standort erstellen"
@@ -67,6 +68,7 @@ let to_string = function
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
   | UserProfileTitle -> "Benutzerprofil"
+  | Validation -> "Validierung"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
 
@@ -74,12 +76,14 @@ let nav_link_to_string = function
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
   | Contacts -> "Konktakte"
+  | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | I18n -> "Übersetzungen"
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
   | LoginInformation -> "Anmeldeinformationen"
+  | Login -> "Login"
   | Logout -> "Logout"
   | Mailings -> "Versand"
   | Overview -> "Übersicht"
@@ -97,6 +101,17 @@ let hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | CustomFieldAdminInputOnly ->
+    Format.asprintf
+      "Diese Option schliesst \"%s\" aus."
+      (Locales_de.field_to_string Entity_message.Field.Required
+      |> CCString.capitalize_ascii)
+  | CustomFieldAdminViewOnly ->
+    Format.asprintf
+      "Diese Option impliziert \"%s\"."
+      (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
+      |> CCString.capitalize_ascii)
+  | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
      setzen, aber nicht direkt für das Experiment einschreiben."
@@ -141,6 +156,7 @@ let hint_to_string = function
 let confirmable_to_string confirmable =
   (match confirmable with
    | CancelSession -> "die Session", "absagen"
+   | DeleteCustomFieldOption -> "das Option", "löschen"
    | DeleteEmailSuffix -> "das Suffix", "löschen"
    | DeleteExperiment -> "das Experiment", "löschen"
    | DeleteFile -> "die Datei", "löschen"

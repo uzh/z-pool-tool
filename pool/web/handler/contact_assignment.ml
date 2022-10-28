@@ -13,12 +13,11 @@ let create req =
   let redirect_path =
     Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
   in
-  let result context =
+  let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Lwt_result.Syntax in
-    let tenant_db = context.Pool_context.tenant_db in
-    let* contact = HttpUtils.get_current_contact tenant_db req in
+    let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let* experiment = Experiment.find_public tenant_db experiment_id contact in
     let* session = Session.find_public tenant_db id in
     let* waiting_list =
@@ -57,9 +56,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set

@@ -45,47 +45,19 @@ module Password : sig
 end
 
 module Firstname : sig
-  type t
+  include Pool_common.Model.StringSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Lastname : sig
-  type t
+  include Pool_common.Model.StringSig
 
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val create : string -> (t, Pool_common.Message.error) result
   val of_string : string -> t
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Paused : sig
-  type t
-
-  val equal : t -> t -> bool
-  val pp : Format.formatter -> t -> unit
-  val show : t -> string
-  val value : t -> bool
-  val create : bool -> t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.BooleanSig
 end
 
 module Disabled : sig
@@ -104,9 +76,9 @@ module TermsAccepted : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t option -> t
+  val create : Ptime.t -> t
   val create_now : unit -> t
-  val value : t -> Ptime.t option
+  val value : t -> Ptime.t
 end
 
 module Verified : sig
@@ -115,9 +87,9 @@ module Verified : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t option -> t
+  val create : Ptime.t -> t
   val create_now : unit -> t
-  val value : t -> Ptime.t option
+  val value : t -> Ptime.t
 end
 
 module EmailAddress : sig
@@ -147,10 +119,9 @@ module EmailVerified : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : Ptime.t option -> t
+  val create : Ptime.t -> t
   val create_now : unit -> t
-  val value : t -> Ptime.t option
-  val is_some : t -> bool
+  val value : t -> Ptime.t
 end
 
 module Repo : sig
@@ -163,15 +134,15 @@ module Repo : sig
   end
 
   module TermsAccepted : sig
-    val t : Ptime.t option Caqti_type.t
+    val t : Ptime.t Caqti_type.t
   end
 
   module Verified : sig
-    val t : Ptime.t option Caqti_type.t
+    val t : Ptime.t Caqti_type.t
   end
 
   module EmailVerified : sig
-    val t : Ptime.t option Caqti_type.t
+    val t : Ptime.t Caqti_type.t
   end
 
   module EmailAddress : sig

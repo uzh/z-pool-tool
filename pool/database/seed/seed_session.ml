@@ -37,9 +37,7 @@ let session_data =
 let create pool =
   let open CCFun in
   let open Pool_common.Utils in
-  let%lwt experiments =
-    Experiment.find_all pool () |> Lwt.map CCResult.get_exn
-  in
+  let%lwt experiments = Experiment.find_all pool () in
   let%lwt locations = Pool_location.find_all pool in
   let%lwt () =
     Lwt_list.iter_s

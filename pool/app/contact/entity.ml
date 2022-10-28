@@ -1,11 +1,5 @@
 module User = Pool_user
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-end
-
 module RecruitmentChannel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
@@ -60,13 +54,13 @@ end
 type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : User.TermsAccepted.t
+  ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : User.Paused.t
   ; disabled : User.Disabled.t
-  ; verified : User.Verified.t
-  ; email_verified : User.EmailVerified.t
+  ; verified : User.Verified.t option
+  ; email_verified : User.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
@@ -74,8 +68,8 @@ type t =
   ; paused_version : Pool_common.Version.t
   ; language_version : Pool_common.Version.t
   ; experiment_type_preference_version : Pool_common.Version.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
+  ; created_at : Pool_common.Model.Ptime.t
+  ; updated_at : Pool_common.Model.Ptime.t
   }
 [@@deriving eq, show]
 
@@ -83,13 +77,13 @@ module Write = struct
   type t =
     { user_id : Pool_common.Id.t
     ; recruitment_channel : RecruitmentChannel.t
-    ; terms_accepted_at : User.TermsAccepted.t
+    ; terms_accepted_at : User.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
     ; paused : User.Paused.t
     ; disabled : User.Disabled.t
-    ; verified : User.Verified.t
-    ; email_verified : User.EmailVerified.t
+    ; verified : User.Verified.t option
+    ; email_verified : User.EmailVerified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     ; firstname_version : Pool_common.Version.t
@@ -127,12 +121,8 @@ let firstname m = m.user |> User.user_firstname
 let lastname m = m.user |> User.user_lastname
 let email_address m = m.user.Sihl_user.email |> User.EmailAddress.of_string
 
-let version_selector p = function
-  | "firstname" -> Some p.firstname_version
-  | "lastname" -> Some p.lastname_version
-  | "paused" -> Some p.paused_version
-  | "language" -> Some p.language_version
-  | _ -> None
+let sexp_of_t t =
+  t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
 module Preview = struct
@@ -140,7 +130,7 @@ module Preview = struct
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
     ; paused : User.Paused.t
-    ; verified : User.Verified.t
+    ; verified : User.Verified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     }
@@ -152,3 +142,101 @@ module Preview = struct
     m.user.Sihl_user.email |> User.EmailAddress.of_string
   ;;
 end
+
+module PartialUpdate = struct
+  module PoolField = Pool_common.Message.Field
+  module Conformist = Pool_common.Utils.PoolConformist
+
+  type t =
+    | Firstname of Pool_common.Version.t * User.Firstname.t
+    | Lastname of Pool_common.Version.t * User.Lastname.t
+    | Paused of Pool_common.Version.t * User.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
+  [@@deriving eq, show, variants]
+
+  let increment_version =
+    let increment = Pool_common.Version.increment in
+    function
+    | Firstname (version, value) -> firstname (version |> increment) value
+    | Lastname (version, value) -> lastname (version |> increment) value
+    | Paused (version, value) -> paused (version |> increment) value
+    | Language (version, value) -> language (version |> increment) value
+    | Custom custom_field ->
+      Custom (Custom_field.Public.increment_version custom_field)
+  ;;
+
+  let validate
+    ?(is_admin = false)
+    contact
+    tenand_db
+    (field, current_version, value, field_id)
+    =
+    let check_version old_v t =
+      let open Pool_common.Version in
+      if old_v |> value > (current_version |> value)
+      then Error Pool_common.Message.(MeantimeUpdate field)
+      else t |> increment_version |> CCResult.pure
+    in
+    let validate schema =
+      let schema =
+        Pool_common.Utils.PoolConformist.(make Field.[ schema () ] CCFun.id)
+      in
+      Conformist.decode_and_validate
+        schema
+        [ field |> Pool_common.Message.Field.show, value ]
+      |> CCResult.map_err Pool_common.Message.to_conformist_error
+    in
+    let open CCResult in
+    match[@warning "-4"] field with
+    | PoolField.Firstname ->
+      User.Firstname.schema
+      |> validate
+      >|= (fun m -> Firstname (current_version, m))
+      >>= check_version contact.firstname_version
+      |> Lwt.return
+    | PoolField.Lastname ->
+      User.Lastname.schema
+      |> validate
+      >|= (fun m -> Lastname (current_version, m))
+      >>= check_version contact.lastname_version
+      |> Lwt.return
+    | PoolField.Paused ->
+      User.Paused.schema
+      |> validate
+      >|= (fun m -> Paused (current_version, m))
+      >>= check_version contact.paused_version
+      |> Lwt.return
+    | PoolField.Language ->
+      (fun () -> Conformist.optional @@ Pool_common.Language.schema ())
+      |> validate
+      >|= (fun m -> Language (current_version, m))
+      >>= check_version contact.language_version
+      |> Lwt.return
+    | _ ->
+      let open Lwt_result.Syntax in
+      let open Lwt_result.Infix in
+      let check_permission m =
+        Lwt_result.lift
+        @@
+        if Custom_field.Public.is_disabled is_admin m
+        then Error Pool_common.Message.NotEligible
+        else Ok m
+      in
+      let* custom_field =
+        field_id
+        |> CCOption.to_result Pool_common.Message.InvalidHtmxRequest
+        |> Lwt_result.lift
+        >>= Custom_field.find_by_contact ~is_admin tenand_db (id contact)
+        >>= check_permission
+        >>= fun f -> f |> Custom_field.validate_htmx value |> Lwt_result.lift
+      in
+      let old_v =
+        let open Custom_field in
+        Public.version custom_field
+      in
+      custom_field |> custom |> check_version old_v |> Lwt_result.lift
+  ;;
+end
+
+let validate_partial_update = PartialUpdate.validate

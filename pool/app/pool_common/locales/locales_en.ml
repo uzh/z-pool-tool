@@ -4,6 +4,10 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "admin"
+  | AdminInputOnly -> "input only by admins"
+  | AdminViewOnly -> "only visible for admins"
+  | AdminHint -> "hint for admins"
+  | Answer -> "answer"
   | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
@@ -17,8 +21,12 @@ let field_to_string =
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
+  | CustomField -> "field"
+  | CustomFieldGroup -> "group"
+  | CustomFieldOption -> "option"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
+  | CustomHtmx (label, _) -> label
   | Database -> "database"
   | DatabaseLabel -> "database label"
   | DatabaseUrl -> "database url"
@@ -39,6 +47,7 @@ let field_to_string =
   | End -> "end"
   | Experiment -> "experiment"
   | ExperimentType -> "experiment type"
+  | FieldType -> "field type"
   | File -> "file"
   | FileMapping -> "file mapping"
   | FileMimeType -> "mime type"
@@ -48,6 +57,7 @@ let field_to_string =
   | Firstname -> "firstname"
   | FollowUpSession -> "follow-up session"
   | From -> "from"
+  | Hint -> "hint"
   | Host -> "host"
   | I18n -> "translation"
   | Icon -> "icon"
@@ -55,6 +65,7 @@ let field_to_string =
   | InactiveUserDisableAfter -> "disable inactive user after"
   | InactiveUserWarning -> "warn inactive user"
   | Institution -> "institution"
+  | Interval -> "interval"
   | Invitation -> "invitation"
   | InvitationCount -> "no. invitations"
   | InvitationSubject -> "invitation subject"
@@ -74,11 +85,13 @@ let field_to_string =
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
   | MinParticipants -> "minimum participants"
+  | Model -> "model"
   | Name -> "name"
   | NewPassword -> "new password"
   | Order -> "order"
   | Operator -> "operator"
   | Overbook -> "overbook"
+  | Overwrite -> "overwrite"
   | Page -> "page"
   | Participant -> "participant"
   | ParticipantCount -> "number of participants"
@@ -89,6 +102,7 @@ let field_to_string =
   | PasswordConfirmation -> "password confirmation"
   | Paused -> "paused"
   | Predicate -> "predicate"
+  | Profile -> "profile"
   | PublicTitle -> "public title"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
@@ -96,6 +110,7 @@ let field_to_string =
   | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
+  | Required -> "required"
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
@@ -136,6 +151,7 @@ let field_to_string =
   | User -> "user"
   | Value -> "value"
   | VerifiedAt -> "verified at"
+  | Validation -> "validation"
   | Version -> "version"
   | Virtual -> "virtual"
   | WaitingList -> "waiting list"
@@ -143,7 +159,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "To continue, you need to answer the following questions."
 ;;
 
 let success_to_string : success -> string = function
@@ -184,6 +202,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Please provide '"
+      (field |> field_to_string)
+      "' in all languages."
   | AlreadyInPast -> "In minimum the starting point is in the past."
   | AlreadySignedUpForExperiment ->
     "You are already signed up for this experiment."
@@ -220,11 +243,18 @@ let rec error_to_string = function
   | EndBeforeStart -> "End is before start time."
   | ExperimentSessionCountNotZero ->
     "Sessions exist for this experiment. It cannot be deleted."
+  | FieldRequiresCheckbox (field, required) ->
+    Format.asprintf
+      "The option \"%s\" requires \"%s\"."
+      (field_to_string field)
+      (field_to_string required)
   | FollowUpIsEarlierThanMain ->
     "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | InvalidOptionSelected -> "Invalid option selected."
+  | InvalidHtmxRequest -> "Invalid request."
   | InvitationSubjectAndTextRequired ->
     "Please enter both a subject and a text for the session invitation."
   | LoginProvideDetails -> "Please provide email and password"
@@ -247,6 +277,8 @@ let rec error_to_string = function
   | NotHandled field -> Format.asprintf "Field '%s' is not handled." field
   | NotInTimeRange -> "Not in specified time slot."
   | NoValue -> "No value provided."
+  | NumberMax i -> Format.asprintf "Must not be larger than %i." i
+  | NumberMin i -> Format.asprintf "Must not be smaller than %i." i
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
@@ -254,6 +286,7 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
@@ -276,6 +309,8 @@ let rec error_to_string = function
     "An error occurred"
   | TermsAndConditionsMissing -> "Terms and conditions have to be added first."
   | TermsAndConditionsNotAccepted -> "Terms and conditions not accepted"
+  | TextLengthMax i -> Format.asprintf "Must not be longer than %i." i
+  | TextLengthMin i -> Format.asprintf "Must not be shorter than %i." i
   | TimeInPast -> "Time is in the past!"
   | TimeSpanPositive -> "Time span must be positive!"
   | TokenAlreadyUsed -> "The token was already used."
@@ -295,7 +330,7 @@ let control_to_string = function
   | Accept field -> format_submit "accept" field
   | Add field -> format_submit "add" field
   | AddToWaitingList -> "Sign up for the waiting list"
-  | Ascending -> "ascending"
+  | Ascending -> format_submit "ascending" None
   | Assign field -> format_submit "assign" field
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
@@ -303,13 +338,13 @@ let control_to_string = function
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
-  | Descending -> "descending"
+  | Descending -> format_submit "descending" None
   | Disable -> format_submit "disable" None
   | Edit field -> format_submit "edit" field
   | Enable -> format_submit "enable" None
   | Enroll -> format_submit "enroll" None
   | Login -> format_submit "login" None
-  | More -> "more"
+  | More -> format_submit "more" None
   | PleaseSelect -> "please select"
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
@@ -318,10 +353,11 @@ let control_to_string = function
   | Send field -> format_submit "send" field
   | Reschedule field -> format_submit "reschedule" field
   | SendResetLink -> format_submit "send reset link" None
-  | Show -> "show"
+  | Show -> format_submit "show" None
   | SignUp -> format_submit "sign up" None
   | Stop field -> format_submit "stop" field
   | Update field -> format_submit "update" field
+  | UpdateOrder -> format_submit "update order" None
 ;;
 
 let to_string = function

@@ -99,6 +99,13 @@ let build_nav_link (url, title) language query_language active_navigation =
        else nav_link)
 ;;
 
+let to_main_nav language query_language active_navigation lst =
+  lst
+  |> CCList.map (fun item ->
+       build_nav_link item language query_language active_navigation)
+  |> nav ~a:[ a_class [ "main-nav" ] ]
+;;
+
 module Tenant = struct
   let i18n_links tenant_languages active_lang =
     let link_classes = [ "nav-link" ] in
@@ -130,32 +137,52 @@ module Tenant = struct
          tenant_languages)
   ;;
 
-  (* TODO[timhub]: * differ between login status *)
-  let navigation layout_context language query_language active_navigation =
+  let navigation
+    user
+    language
+    query_language
+    active_navigation
+    tenant_languages
+    active_lang
+    =
+    let open Pool_common.I18n in
+    let open Pool_context in
+    let to_main_nav = to_main_nav language query_language active_navigation in
+    let language_switch = i18n_links tenant_languages active_lang in
+    let not_logged_in = [ "/login", Login ] |> to_main_nav in
+    let logout = "/logout", Logout in
     let nav_links =
-      let open Pool_common.I18n in
-      (match layout_context with
-       | `Contact -> [ "/experiments", Experiments; "/user", Profile ]
-       | `Admin ->
-         [ "/admin/dashboard", Dashboard
-         ; "/admin/experiments", Experiments
-         ; "/admin/locations", Locations
-         ; "/admin/settings", Settings
-         ; "/admin/i18n", I18n
-         ; "/admin/contacts", Contacts
-         ; "/admin/admins", Admins
-         ])
-      @ [ "/logout", Logout ]
-      |> CCList.map (fun item ->
-           build_nav_link item language query_language active_navigation)
+      match user with
+      | None -> [ not_logged_in; language_switch ]
+      | Some user ->
+        (match user with
+         | Admin _ ->
+           [ "/admin/dashboard", Dashboard
+           ; "/admin/experiments", Experiments
+           ; "/admin/custom-fields", CustomFields
+           ; "/admin/locations", Locations
+           ; "/admin/settings", Settings
+           ; "/admin/i18n", I18n
+           ; "/admin/contacts", Contacts
+           ; "/admin/admins", Admins
+           ; logout
+           ]
+           |> to_main_nav
+           |> CCList.pure
+         | Contact _ ->
+           [ [ "/experiments", Experiments; "/user", Profile; logout ]
+             |> to_main_nav
+           ; language_switch
+           ]
+         | Root _ -> [ not_logged_in ])
     in
-    nav ~a:[ a_class [ "main-nav" ] ] nav_links
+    nav_links
   ;;
 
   let create_layout
-    layout_context
     children
     Pool_context.Tenant.{ tenant_languages; tenant }
+    user
     message
     active_lang
     query_language
@@ -178,14 +205,15 @@ module Tenant = struct
         (txt "")
     in
     let header_content =
-      let navigation =
-        navigation layout_context active_lang query_language active_navigation
-      in
-      (fun html -> [ div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] html ])
-      @@
-      match layout_context with
-      | `Admin -> [ navigation ]
-      | `Contact -> [ navigation; i18n_links tenant_languages active_lang ]
+      navigation
+        user
+        active_lang
+        query_language
+        active_navigation
+        tenant_languages
+        active_lang
+      |> fun nav ->
+      nav |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] |> CCList.pure
     in
     let content = main_tag [ message; children ] in
     html
@@ -202,20 +230,22 @@ module Tenant = struct
   ;;
 end
 
-let create_root_layout children message lang ?active_navigation () =
-  (* TODO[timhub]: * differ between login status *)
+let create_root_layout children language message user ?active_navigation () =
   let navigation =
-    let nav_links =
-      let open Pool_common.I18n in
-      [ "/root/tenants", Tenants ]
-      |> CCList.map (fun item ->
-           build_nav_link item Pool_common.Language.En None active_navigation)
+    let to_main_nav =
+      to_main_nav Pool_common.Language.En None active_navigation
     in
-    nav ~a:[ a_class [ "main-nav" ] ] nav_links
+    let open Pool_common.I18n in
+    let open Pool_context in
+    let not_logged_in = [ "/root/login", Login ] in
+    (match user with
+     | None | Some (Contact _) | Some (Admin _) -> not_logged_in
+     | Some (Root _) -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
+    |> to_main_nav
   in
   let title_text = "Pool Tool" in
   let page_title = title (txt title_text) in
-  let message = Message.create message lang () in
+  let message = Message.create message language () in
   let scripts =
     script
       ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
@@ -231,4 +261,20 @@ let create_root_layout children message lang ?active_navigation () =
        ; footer title_text
        ; scripts
        ])
+;;
+
+let create_error_layout children =
+  let title_text = "Pool Tool" in
+  let page_title = title (txt title_text) in
+  let scripts =
+    script
+      ~a:[ a_src (Sihl.Web.externalize_path "/assets/index.js"); a_defer () ]
+      (txt "")
+  in
+  let content = main_tag [ children ] in
+  html
+    (head page_title ([ charset; viewport; favicon ] @ global_stylesheets))
+    (body
+       ~a:[ a_class body_tag_classnames ]
+       [ header title_text; content; footer title_text; scripts ])
 ;;

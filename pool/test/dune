@@ -7,11 +7,13 @@
   assignment
   caqti-driver-mariadb
   contact
+  custom_field
   cqrs_command
   database
   experiment
   http_utils
   invitation
+  matcher
   pool_database
   pool_event
   pool_location

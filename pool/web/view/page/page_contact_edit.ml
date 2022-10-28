@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component
 module Message = Pool_common.Message
+module HttpUtils = Http_utils
 
 let contact_profile_layout language title ?active html =
   let open Pool_common in
@@ -22,36 +23,80 @@ let contact_profile_layout language title ?active html =
     ]
 ;;
 
+let grouped_custom_fields_form language custom_fields to_html =
+  let open Custom_field in
+  let groups, ungrouped_fields = custom_fields in
+  div ~a:[ a_class [ "stack" ] ] (CCList.map to_html ungrouped_fields)
+  :: CCList.map
+       (fun (Group.Public.{ fields; _ } as group) ->
+         div
+           [ h2
+               ~a:[ a_class [ "heading-2" ] ]
+               [ txt Group.(Public.name language group) ]
+           ; div ~a:[ a_class [ "stack" ] ] (fields |> CCList.map to_html)
+           ])
+       groups
+;;
+
 let personal_details_form
   csrf
   user_update_csrf
   language
+  query_language
   action
   tenant_languages
   contact
+  custom_fields
+  is_admin
   =
   let open Contact in
-  let form_attrs action =
-    [ a_method `Post
-    ; a_action (Sihl.Web.externalize_path action)
-    ; a_class [ "stack" ]
-    ]
+  let externalize = HttpUtils.externalize_path_with_lang query_language in
+  let action = externalize action in
+  let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
+  let htmx_create field = Htmx.create field language ~hx_post:action () in
+  let custom_field_to_html field =
+    Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
   in
+  let open Message in
   form
-    ~a:(form_attrs action)
-    (CCList.flatten
-       [ [ Component.csrf_element csrf ~id:user_update_csrf () ]
-       ; CCList.map
-           (fun htmx_element ->
-             Htmx.create htmx_element language ~hx_post:action ())
-           Htmx.
-             [ Firstname (contact.firstname_version, contact |> firstname)
-             ; Lastname (contact.lastname_version, contact |> lastname)
-             ; Paused (contact.paused_version, contact.paused)
-             ; Language
-                 (contact.language_version, contact.language, tenant_languages)
-             ]
-       ])
+    ~a:form_attrs
+    [ div
+        ~a:[ a_class [ "stack" ] ]
+        (Component.csrf_element csrf ~id:user_update_csrf ()
+        :: CCList.map
+             (fun (version, field, value) ->
+               Htmx.create_entity version field value |> htmx_create)
+             Htmx.
+               [ ( contact.firstname_version
+                 , Field.Firstname
+                 , Text
+                     (contact
+                     |> Contact.firstname
+                     |> User.Firstname.value
+                     |> CCOption.pure) )
+               ; ( contact.lastname_version
+                 , Field.Lastname
+                 , Text
+                     (contact
+                     |> Contact.lastname
+                     |> User.Lastname.value
+                     |> CCOption.pure) )
+               ; ( contact.language_version
+                 , Field.Language
+                 , Select
+                     { show = Pool_common.Language.show
+                     ; options = tenant_languages
+                     ; option_formatter = None
+                     ; selected = contact.language
+                     } )
+               ; ( contact.paused_version
+                 , Field.Paused
+                 , Boolean (contact.paused |> User.Paused.value) )
+               ])
+    ; div
+        ~a:[ a_class [ "stack-lg" ] ]
+        (grouped_custom_fields_form language custom_fields custom_field_to_html)
+    ]
 ;;
 
 let detail contact Pool_context.{ language; query_language; _ } =
@@ -88,10 +133,12 @@ let detail contact Pool_context.{ language; query_language; _ } =
 let personal_details
   user_update_csrf
   (contact : Contact.t)
+  custom_fields
   tenant_languages
   Pool_context.{ language; query_language; csrf; _ }
   =
-  let action = HttpUtils.path_with_language query_language "/user/update" in
+  let action = Htmx.contact_profile_hx_post in
+  let is_admin = false in
   div
     [ div
         ~a:[ a_class [ "stack-lg" ] ]
@@ -99,9 +146,12 @@ let personal_details
             csrf
             user_update_csrf
             language
+            query_language
             action
             tenant_languages
             contact
+            custom_fields
+            is_admin
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/user") ]

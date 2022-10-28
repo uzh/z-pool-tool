@@ -17,9 +17,10 @@ module Partials = struct
 
   let canceled_at (a : Assignment.t) =
     a.canceled_at
-    |> Assignment.CanceledAt.value
     |> CCOption.map_or ~default:"" (fun c ->
-         Pool_common.Utils.Time.formatted_date_time c)
+         c
+         |> Assignment.CanceledAt.value
+         |> Pool_common.Utils.Time.formatted_date_time)
     |> txt
   ;;
 
@@ -60,7 +61,7 @@ module Partials = struct
                     ()
                 ]
             in
-            match assignment.canceled_at |> Assignment.CanceledAt.value with
+            match assignment.canceled_at with
             | None -> base @ [ cancel assignment ]
             | Some _ -> base @ [ txt "" ])
           assignments

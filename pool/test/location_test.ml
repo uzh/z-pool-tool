@@ -1,15 +1,6 @@
 module LocationCommand = Cqrs_command.Location_command
 module Field = Pool_common.Message.Field
 
-let check_result expected generated =
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      generated)
-;;
-
 module Data = struct
   module Location = struct
     let id = Pool_location.Id.create ()
@@ -65,5 +56,5 @@ let create () =
   let expected =
     Ok [ Pool_location.Created location |> Pool_event.pool_location ]
   in
-  check_result expected events
+  Test_utils.check_result expected events
 ;;

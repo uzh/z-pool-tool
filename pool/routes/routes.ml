@@ -100,6 +100,8 @@ module Contact = struct
     ; post "/user/update" UserProfile.update
     ; post "/user/update-email" UserProfile.update_email
     ; post "/user/update-password" UserProfile.update_password
+    ; get "/user/completion" UserProfile.completion
+    ; post "/user/completion" UserProfile.completion_post
     ; choose ~scope:"/experiments" experiments
     ]
   ;;
@@ -123,7 +125,7 @@ module Admin = struct
   let middlewares =
     [ CustomMiddleware.Context.context `Admin ()
     ; CustomMiddleware.Tenant.valid_tenant ()
-    ; CustomMiddleware.Admin.require_admin ~login_path_f:(fun () -> "/login")
+    ; CustomMiddleware.Admin.require_admin ()
     ]
   ;;
 
@@ -183,7 +185,7 @@ module Admin = struct
         in
         Session.
           [ get "" list
-          ; get "create" new_form
+          ; get "/create" new_form
           ; post "" create
           ; choose ~scope:"/:session" specific
           ]
@@ -256,6 +258,57 @@ module Admin = struct
         ; post "/toggle-predicate-type" toggle_predicate_type
         ]
     in
+    let custom_fields =
+      let open CustomField in
+      let specific =
+        let options =
+          let specific =
+            CustomFieldOption.
+              [ get "/edit" edit; post "" update; post "/delete" delete ]
+          in
+          CustomFieldOption.
+            [ get "/new" new_form
+            ; post "" create
+            ; choose ~scope:(CustomFieldOption |> url_key) specific
+            ]
+        in
+        CustomField.
+          [ get "/edit" edit
+          ; post "" update
+          ; post "/sort-options" sort_options
+          ; choose ~scope:"options" options
+          ]
+      in
+      let fields =
+        [ post "" create
+        ; get "/new" new_form
+        ; choose ~scope:(CustomField |> url_key) specific
+        ]
+      in
+      let groups =
+        let specific =
+          CustomFieldGroup.
+            [ get "/edit" edit
+            ; post "" update
+            ; post "/delete" delete
+            ; post "sort-fields" soft_fields
+            ]
+        in
+        CustomFieldGroup.
+          [ get "/new" new_form
+          ; post "" create
+          ; post "/sort" sort
+          ; choose ~scope:(CustomFieldGroup |> url_key) specific
+          ]
+      in
+      let models =
+        [ get "" index
+        ; choose ~scope:"field" fields
+        ; choose ~scope:"group" groups
+        ]
+      in
+      [ get "" redirect; choose ~scope:(Model |> url_key) models ]
+    in
     choose
       ~middlewares
       [ get "/dashboard" dashboard
@@ -268,6 +321,7 @@ module Admin = struct
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
+      ; choose ~scope:"/custom-fields" custom_fields
       ]
   ;;
 end
@@ -275,13 +329,13 @@ end
 module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context `Root ()
+    ; CustomMiddleware.Context.context `Admin ()
     ]
   ;;
 
   let public_routes =
     let open Handler.Root in
-    [ get "" (forward_to_entrypoint "/root/tenants")
+    [ get "" (forward_to_entrypoint "/root/login")
     ; get "/login" Login.login_get
     ; post "/login" Login.login_post
     ; get "/logout" Login.logout
@@ -292,10 +346,7 @@ module Root = struct
     ]
   ;;
 
-  let locked_middlewares =
-    [ CustomMiddleware.Root.require_root ~login_path_f:(fun () -> "/root/login")
-    ]
-  ;;
+  let locked_middlewares = [ CustomMiddleware.Root.require_root () ]
 
   let locked_routes =
     let open Pool_common.Message.Field in

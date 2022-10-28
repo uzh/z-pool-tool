@@ -51,7 +51,6 @@ let generate_events experiments =
 let create pool =
   let open Lwt.Infix in
   Experiment.find_all pool ()
-  |> Lwt.map CCResult.get_exn
   >|= CCList.map (fun m -> m.Experiment.id)
   >|= generate_events
   >>= Lwt_list.iter_s (Mailing.handle_event pool)

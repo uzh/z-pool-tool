@@ -22,8 +22,6 @@ let () =
             "update language of user"
             `Quick
             Contact_test.update_language
-        ; test_case "update if user is paused" `Quick Contact_test.update_paused
-        ; test_case "update user" `Quick Contact_test.update_full
         ; test_case "update password" `Quick Contact_test.update_password
         ; test_case
             "update password with wrong current password"
@@ -165,6 +163,28 @@ let () =
             "reschedule session to past"
             `Quick
             Session_test.reschedule_to_past
+        ] )
+    ; ( "custom_field"
+      , [ test_case "create custom field" `Quick Custom_field_test.create
+        ; test_case
+            "create custom field with missing name"
+            `Quick
+            Custom_field_test.create_with_missing_name
+        ; test_case "update custom field" `Quick Custom_field_test.update
+        ; test_case
+            "crate custom field option"
+            `Quick
+            Custom_field_test.create_option
+        ; test_case
+            "create with missing admin option"
+            `Quick
+            Custom_field_test.create_with_missing_admin_option
+        ] )
+    ; ( "matcher"
+      , [ test_case
+            "create invitations"
+            `Quick
+            Matcher_test.create_invitations_model
         ] )
     ]
 ;;

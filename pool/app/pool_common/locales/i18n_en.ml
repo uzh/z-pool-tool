@@ -22,6 +22,7 @@ let to_string = function
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
+  | ProfileCompletionTitle -> "Profile completion"
   | LocationFileNew -> "Add file to location"
   | LocationListTitle -> "Location"
   | LocationNewTitle -> "Create new location"
@@ -60,6 +61,7 @@ let to_string = function
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
   | UserProfileTitle -> "User Profile"
+  | Validation -> "Validation"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
 
@@ -67,11 +69,13 @@ let nav_link_to_string = function
   | Admins -> "Admins"
   | Assignments -> "Assignments"
   | Contacts -> "Contacts"
+  | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
   | I18n -> "Translations"
   | Invitations -> "Invitations"
   | LoginInformation -> "Login information"
+  | Login -> "Login"
   | Locations -> "Locations"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
@@ -90,6 +94,17 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | CustomFieldAdminInputOnly ->
+    Format.asprintf
+      "This option excludes \"%s\"."
+      (Locales_en.field_to_string Entity_message.Field.Required
+      |> CCString.capitalize_ascii)
+  | CustomFieldAdminViewOnly ->
+    Format.asprintf
+      "This option implies \"%s\"."
+      (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
+      |> CCString.capitalize_ascii)
+  | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
      directly enroll in the experiment."
@@ -132,6 +147,7 @@ let hint_to_string = function
 let confirmable_to_string confirmable =
   (match confirmable with
    | CancelSession -> "session", "cancel"
+   | DeleteCustomFieldOption -> "option", "delete"
    | DeleteEmailSuffix -> "email suffix", "delete"
    | DeleteExperiment -> "experiment", "delete"
    | DeleteFile -> "the file", "delete"

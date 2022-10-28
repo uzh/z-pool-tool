@@ -1,10 +1,9 @@
 module ExperimentCommand = Cqrs_command.Experiment_command
 module Common = Pool_common
+module Model = Test_utils.Model
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.(
-    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
-    |> CCList.map show)
+  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
 module Data = struct
@@ -62,17 +61,12 @@ end
 let database_label = Test_utils.Data.database_label
 
 let create () =
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let events = Ok [ Experiment.Created experiment |> Pool_event.experiment ] in
   let expected =
     Ok [ Experiment.Created experiment |> Pool_event.experiment ]
   in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+  Test_utils.check_result expected events
 ;;
 
 let create_without_title () =
@@ -90,16 +84,11 @@ let create_without_title () =
   let expected =
     Error Common.Message.(Conformist [ Field.Title, Invalid Field.Title ])
   in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+  Test_utils.check_result expected events
 ;;
 
 let update () =
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let open CCResult.Infix in
   let events =
     Pool_common.Message.Field.
@@ -117,28 +106,18 @@ let update () =
     |> ExperimentCommand.Update.decode
     >>= ExperimentCommand.Update.handle experiment
   in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+  Test_utils.check_result expected events
 ;;
 
 let delete_with_sessions () =
-  let experiment = Test_utils.create_experiment () in
+  let experiment = Model.create_experiment () in
   let events =
     let session_count = 1234 in
     ExperimentCommand.Delete.(
       handle { experiment_id = experiment.Experiment.id; session_count })
   in
   let expected = Error Pool_common.Message.ExperimentSessionCountNotZero in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+  Test_utils.check_result expected events
 ;;
 
 let urlencoded =
@@ -159,12 +138,7 @@ let create_with_missing_text_element additional error =
     >>= handle
   in
   let expected = Error error in
-  Alcotest.(
-    check
-      (result (list Test_utils.event) Test_utils.error)
-      "succeeds"
-      expected
-      events)
+  Test_utils.check_result expected events
 ;;
 
 let with_missing_invitation_text () =

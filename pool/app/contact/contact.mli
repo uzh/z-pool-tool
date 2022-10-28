@@ -28,15 +28,15 @@ module NumberOfAssignments : sig
 end
 
 type t =
-  { user : Sihl_user.t
+  { user : Service.User.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Pool_user.TermsAccepted.t
+  ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
   ; paused : Pool_user.Paused.t
   ; disabled : Pool_user.Disabled.t
-  ; verified : Pool_user.Verified.t
-  ; email_verified : Pool_user.EmailVerified.t
+  ; verified : Pool_user.Verified.t option
+  ; email_verified : Pool_user.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
   ; firstname_version : Pool_common.Version.t
@@ -48,12 +48,35 @@ type t =
   ; updated_at : Ptime.t
   }
 
+module PartialUpdate : sig
+  type t =
+    | Firstname of Pool_common.Version.t * Pool_user.Firstname.t
+    | Lastname of Pool_common.Version.t * Pool_user.Lastname.t
+    | Paused of Pool_common.Version.t * Pool_user.Paused.t
+    | Language of Pool_common.Version.t * Pool_common.Language.t option
+    | Custom of Custom_field.Public.t
+
+  val pp : Format.formatter -> t -> unit
+  val equal : t -> t -> bool
+  val increment_version : t -> t
+end
+
+val validate_partial_update
+  :  ?is_admin:bool
+  -> t
+  -> Pool_database.Label.t
+  -> Pool_common.Message.Field.t
+     * Pool_common.Version.t
+     * string list
+     * Custom_field.Id.t option
+  -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
+
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t
 val fullname : t -> string
 val email_address : t -> Pool_user.EmailAddress.t
-val version_selector : t -> string -> Pool_common.Version.t option
+val sexp_of_t : t -> Sexplib0.Sexp.t
 val show : t -> string
 
 val find
@@ -68,6 +91,8 @@ val find_multiple
 
 val find_filtered
   :  Pool_database.Label.t
+  -> ?order_by:string
+  -> ?limit:int
   -> Pool_common.Id.t
   -> Filter.t option
   -> t list Lwt.t
@@ -97,29 +122,19 @@ type create =
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   ; recruitment_channel : RecruitmentChannel.t
-  ; terms_accepted_at : Pool_user.TermsAccepted.t
-  ; language : Pool_common.Language.t option
-  }
-
-type update = Event.update =
-  { firstname : Pool_user.Firstname.t
-  ; lastname : Pool_user.Lastname.t
-  ; paused : Pool_user.Paused.t
+  ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }
 
 type event =
   | Created of create
-  | FirstnameUpdated of t * Pool_user.Firstname.t
-  | LastnameUpdated of t * Pool_user.Lastname.t
-  | PausedUpdated of t * Pool_user.Paused.t
+  | Updated of PartialUpdate.t * t
   | EmailUpdated of t * Pool_user.EmailAddress.t
   | PasswordUpdated of
       t
       * Pool_user.Password.t
       * Pool_user.Password.t
       * Pool_user.PasswordConfirmed.t
-  | LanguageUpdated of t * Pool_common.Language.t
   | Verified of t
   | EmailVerified of t
   | TermsAccepted of t
@@ -130,10 +145,6 @@ type event =
   | ProfileUpdateTriggeredAtUpdated of t list
 
 val created : create -> event
-val firstnameupdated : t -> Pool_user.Firstname.t -> event
-val lastnameupdated : t -> Pool_user.Lastname.t -> event
-val pausedupdated : t -> Pool_user.Paused.t -> event
-val languageupdated : t -> Pool_common.Language.t -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -145,7 +156,7 @@ module Preview : sig
     { user : Sihl_user.t
     ; language : Pool_common.Language.t option
     ; paused : Pool_user.Paused.t
-    ; verified : Pool_user.Verified.t
+    ; verified : Pool_user.Verified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
     }

@@ -1,17 +1,26 @@
 module PoolError = Pool_common.Message
 open Sexplib.Conv
 
+(* TODO: Service.User.t for Admin and Root are placeholders and should be
+   replaced, when guadrian is implemented *)
+type user =
+  | Admin of Service.User.t
+  | Contact of Contact.t
+  | Root of Service.User.t
+[@@deriving eq, sexp_of, variants]
+
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
   ; tenant_db : Pool_database.Label.t
   ; message : PoolError.Collection.t option
   ; csrf : string
+  ; user : user option
   }
 [@@deriving sexp_of]
 
-let create (query_language, language, tenant_db, message, csrf) =
-  { query_language; language; tenant_db; message; csrf }
+let create (query_language, language, tenant_db, message, csrf, user) =
+  { query_language; language; tenant_db; message; csrf; user }
 ;;
 
 let find_context key req =
@@ -40,6 +49,13 @@ let find_exn req =
 
 let set = set_context key
 
+let find_contact { user; _ } =
+  match user with
+  | Some (Contact c) -> Ok c
+  | None | Some (Admin _) | Some (Root _) ->
+    Error PoolError.(NotFound Field.User)
+;;
+
 module Tenant = struct
   type t =
     { tenant : Pool_tenant.t
@@ -55,4 +71,9 @@ module Tenant = struct
 
   let find = find_context key
   let set = set_context key
+
+  let get_tenant_languages req =
+    let open CCResult in
+    req |> find >|= fun c -> c.tenant_languages
+  ;;
 end

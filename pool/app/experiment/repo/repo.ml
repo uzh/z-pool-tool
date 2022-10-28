@@ -42,11 +42,8 @@ module Sql = struct
     insert_sql |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let insert pool entity =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      insert_request
-      (entity |> Repo_entity.to_repo_entity)
+  let insert pool =
+    Utils.Database.exec (Database.Label.value pool) insert_request
   ;;
 
   let select_from_experiments_sql where_fragment =
@@ -64,12 +61,15 @@ module Sql = struct
           pool_experiments.public_title,
           pool_experiments.description,
           LOWER(CONCAT(
-            SUBSTR(HEX(pool_experiments.filter_uuid), 1, 8), '-',
-            SUBSTR(HEX(pool_experiments.filter_uuid), 9, 4), '-',
-            SUBSTR(HEX(pool_experiments.filter_uuid), 13, 4), '-',
-            SUBSTR(HEX(pool_experiments.filter_uuid), 17, 4), '-',
-            SUBSTR(HEX(pool_experiments.filter_uuid), 21)
+            SUBSTR(HEX(pool_filter.uuid), 1, 8), '-',
+            SUBSTR(HEX(pool_filter.uuid), 9, 4), '-',
+            SUBSTR(HEX(pool_filter.uuid), 13, 4), '-',
+            SUBSTR(HEX(pool_filter.uuid), 17, 4), '-',
+            SUBSTR(HEX(pool_filter.uuid), 21)
           )),
+          pool_filter.filter,
+          pool_filter.created_at,
+          pool_filter.updated_at,
           pool_experiments.direct_registration_disabled,
           pool_experiments.registration_disabled,
           pool_experiments.allow_uninvited_signup,
@@ -82,6 +82,8 @@ module Sql = struct
           pool_experiments.created_at,
           pool_experiments.updated_at
         FROM pool_experiments
+        LEFT JOIN pool_filter
+          ON pool_filter.uuid = pool_experiments.filter_uuid
       |sql}
     in
     Format.asprintf "%s %s" select_from where_fragment
@@ -92,12 +94,8 @@ module Sql = struct
     "" |> select_from_experiments_sql |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all pool () =
-    let open Lwt.Infix in
-    ()
-    |> Utils.Database.collect (Pool_database.Label.value pool) find_all_request
-    >>= Lwt_list.map_s (fun m -> Repo_entity.of_repo_entity pool m)
-    |> Lwt.map CCList.all_ok
+  let find_all pool =
+    Utils.Database.collect (Pool_database.Label.value pool) find_all_request
   ;;
 
   let find_request =
@@ -116,7 +114,6 @@ module Sql = struct
       find_request
       (id |> Pool_common.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
-    >>= Repo_entity.of_repo_entity pool
   ;;
 
   let find_of_session =
@@ -137,7 +134,26 @@ module Sql = struct
       find_of_session
       (id |> Pool_common.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
-    >>= Repo_entity.of_repo_entity pool
+  ;;
+
+  let find_of_mailing =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_mailing
+        ON pool_experiments.id = pool_mailing.experiment_id
+      WHERE pool_mailing.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> select_from_experiments_sql
+    |> Caqti_type.string ->! Repo_entity.t
+  ;;
+
+  let find_of_mailing pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_of_mailing
+      (id |> Pool_common.Id.value)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
   let update_request =
@@ -164,11 +180,8 @@ module Sql = struct
     |> Repo_entity.Write.t ->. Caqti_type.unit
   ;;
 
-  let update pool entity =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      update_request
-      (entity |> Repo_entity.to_repo_entity)
+  let update pool =
+    Utils.Database.exec (Database.Label.value pool) update_request
   ;;
 
   let destroy_request =
@@ -191,6 +204,7 @@ end
 let find = Sql.find
 let find_all = Sql.find_all
 let find_of_session = Sql.find_of_session
+let find_of_mailing = Sql.find_of_mailing
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy

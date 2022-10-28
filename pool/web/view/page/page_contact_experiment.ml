@@ -2,6 +2,7 @@ open Tyxml.Html
 open Component
 module Session = Page_contact_sessions
 module Assignment = Page_contact_assignment
+module HttpUtils = Http_utils
 
 let index experiment_list Pool_context.{ language; _ } =
   let experiment_item (experiment : Experiment.Public.t) =
@@ -13,7 +14,7 @@ let index experiment_list Pool_context.{ language; _ } =
               [ txt (Experiment.PublicTitle.value experiment.public_title) ]
           ]
       ; div
-          ~a:[ a_class [ "flexrow"; "space-between"; "flex-gap" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
           [ div
               ~a:[ a_class [ "grow" ] ]
               [ txt (Experiment.Description.value experiment.description) ]

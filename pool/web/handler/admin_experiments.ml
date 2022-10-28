@@ -5,25 +5,22 @@ module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 let id req field encode =
   Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
 ;;
 
 let experiment_boolean_fields =
-  Pool_common.Message.Field.(
-    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
-    |> CCList.map show)
+  Experiment.boolean_fields |> CCList.map Pool_common.Message.Field.show
 ;;
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let error_path = "/admin/dashboard" in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* expermient_list = Experiment.find_all tenant_db () in
+    @@ let%lwt expermient_list = Experiment.find_all tenant_db () in
        Page.Admin.Experiments.index expermient_list context
        |> create_layout ~active_navigation:"/admin/experiments" req context
        >|= Sihl.Web.Response.of_html
@@ -33,12 +30,15 @@ let index req =
 
 let new_form req =
   let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
   let error_path = "/admin/experiments" in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result context =
     Lwt_result.map_error (fun err -> err, error_path)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let%lwt sys_languages = Settings.find_languages tenant_db in
+    let* sys_languages =
+      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+    in
     Page.Admin.Experiments.create context sys_languages flash_fetcher
     |> create_layout req context
     >|= Sihl.Web.Response.of_html
@@ -67,9 +67,7 @@ let create req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
         "/admin/experiments"
         [ Message.set
@@ -96,7 +94,9 @@ let detail edit req =
        |> Lwt.return_ok
      | true ->
        let flash_fetcher key = Sihl.Web.Flash.find key req in
-       let%lwt sys_languages = Settings.find_languages tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
        Page.Admin.Experiments.edit
          experiment
          context
@@ -170,8 +170,8 @@ let delete req =
          |> Lwt_result.lift
        in
        let handle events =
-         let%lwt (_ : unit list) =
-           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            experiments_path

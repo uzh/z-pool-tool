@@ -3,6 +3,7 @@ type t =
   | Admin of Admin.event
   | Assignment of Assignment.event
   | Contact of Contact.event
+  | CustomField of Custom_field.event
   | Database of Database.event
   | Email of Email.event
   | EmailVerification of Email.verification_event
@@ -23,6 +24,7 @@ type t =
 let admin events = Admin events
 let assignment events = Assignment events
 let contact events = Contact events
+let custom_field events = CustomField events
 let database events = Database events
 let email events = Email events
 let email_verification events = EmailVerification events
@@ -44,6 +46,7 @@ let handle_event pool event =
   | Admin event -> Admin.handle_event pool event
   | Assignment event -> Assignment.handle_event pool event
   | Contact event -> Contact.handle_event pool event
+  | CustomField event -> Custom_field.handle_event pool event
   | Database event -> Database.handle_event pool event
   | Email event -> Email.handle_event pool event
   | EmailVerification event -> Email.handle_verification_event pool event

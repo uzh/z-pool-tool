@@ -1,52 +1,36 @@
 module Id = struct
   include Pool_common.Id
+
+  let to_common m = m
 end
 
 module StartAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
   let field = Pool_common.Message.Field.Start
   let create m = Ok m
-  let value m = m
-  let to_human = Pool_common.Utils.Time.formatted_date_time
-
-  let schema ?(field = field) () =
-    let decode str =
-      let open CCResult in
-      Pool_common.(Utils.Time.parse_time str >>= create)
-    in
-    Pool_common.Utils.schema_decoder decode Ptime.to_rfc3339 field
-  ;;
+  let schema = schema field create
 end
 
 module EndAt = struct
-  include StartAt
+  include Pool_common.Model.Ptime
 
   let field = Pool_common.Message.Field.End
-  let schema = schema ~field
+  let create m = Ok m
+  let schema = schema field create
 end
 
 module Rate = struct
-  type t = int [@@deriving eq, show]
+  include Pool_common.Model.Integer
 
   let field = Pool_common.Message.Field.Rate
 
   let create m =
-    if m > 0 then Ok m else Error Pool_common.Message.(Invalid Field.Rate)
+    if m > 0 then Ok m else Error Pool_common.Message.(Invalid field)
   ;;
 
-  let value m = m
   let default = 1
-
-  let schema () =
-    let decode str =
-      let open CCResult in
-      CCInt.of_string str
-      |> CCOption.to_result Pool_common.Message.(NotANumber str)
-      >>= create
-    in
-    Pool_common.Utils.schema_decoder decode CCInt.to_string field
-  ;;
+  let schema = schema field create
 end
 
 module Distribution = struct
@@ -103,13 +87,18 @@ module Distribution = struct
   let value m = m
 
   let get_order_element m =
-    m
-    |> CCList.map (fun (field, order) ->
-         CCString.concat
-           " "
-           [ field |> Pool_common.Message.Field.show; order |> SortOrder.show ])
-    |> CCString.concat ", "
-    |> Format.asprintf "ORDER BY %s"
+    if CCList.is_empty m
+    then ""
+    else
+      m
+      |> CCList.map (fun (field, order) ->
+           CCString.concat
+             " "
+             [ field |> Pool_common.Message.Field.show
+             ; order |> SortOrder.show
+             ])
+      |> CCString.concat ", "
+      |> Format.asprintf "ORDER BY %s"
   ;;
 
   let schema () =

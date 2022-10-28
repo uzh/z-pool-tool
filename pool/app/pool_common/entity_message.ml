@@ -3,13 +3,22 @@ open Sexplib.Conv
 module Field = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
+  let custom _ fmt t =
+    let _, name = t in
+    Format.pp_print_string fmt name
+  ;;
+
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
+    | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
+    | AdminInputOnly [@name "admin_input_only"] [@printer go "admin_input_only"]
+    | AdminViewOnly [@name "admin_view_only"] [@printer go "admin_view_only"]
+    | Answer [@name "answer"] [@printer go "answer"]
     | AllowUninvitedSignup [@name "allow_uninvited_signup"]
         [@printer go "allow_uninvited_signup"]
     | AssetId [@name "asset_id"] [@printer go "asset_id"]
     | Assignment [@name "assignment"] [@printer go "assignment"]
-    | Assignments [@name "assignments"] [@printer go "assignments"] (*TODO*)
+    | Assignments [@name "assignments"] [@printer go "assignments"]
     | AssignmentCount [@name "assignment_count"]
         [@printer go "assignment_count"]
     | Birthday [@name "birthday"] [@printer go "birthday"]
@@ -23,6 +32,13 @@ module Field = struct
     | CreatedAt [@name "created_at"] [@printer go "created_at"]
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
+    | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomFieldGroup [@name "custom_field_group"]
+        [@printer go "custom_field_group"]
+    | CustomFieldOption [@name "custom_field_option"]
+        [@printer go "custom_field_option"]
+    | CustomHtmx of (string * string) [@name "custom"]
+        [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
     | DatabaseLabel [@name "database_label"] [@printer go "database_label"]
     | DatabaseUrl [@name "database_url"] [@printer go "database_url"]
@@ -49,6 +65,7 @@ module Field = struct
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
     | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
+    | FieldType [@name "field_type"] [@printer go "field_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
@@ -59,6 +76,7 @@ module Field = struct
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]
     | From [@name "from"] [@printer go "from"]
+    | Hint [@name "hint"] [@printer go "hint"]
     | Host [@name "host"] [@printer go "host"]
     | I18n [@name "i18n"] [@printer go "i18n"]
     | Icon [@name "icon"] [@printer go "icon"]
@@ -68,6 +86,7 @@ module Field = struct
     | InactiveUserWarning [@name "inactive_user_warning"]
         [@printer go "inactive_user_warning"]
     | Institution [@name "institution"] [@printer go "institution"]
+    | Interval [@name "interval"] [@printer go "interval"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
     | InvitationCount [@name "invitation_count"]
         [@printer go "invitation_count"]
@@ -91,12 +110,14 @@ module Field = struct
         [@printer go "max_participants"]
     | MinParticipants [@name "min_participants"]
         [@printer go "min_participants"]
+    | Model [@name "model"] [@printer go "model"]
     | Name [@name "name"] [@printer go "name"]
     | NewPassword [@name "new_password"] [@printer go "new_password"]
         [@printer go "num_invitations"]
     | Order [@name "order"] [@printer go "order"]
     | Operator [@name "operator"] [@printer go "operator"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
+    | Overwrite [@name "overwrite"] [@printer go "overwrite"]
     | Page [@name "page"] [@printer go "page"]
     | Participant [@name "participant"] [@printer go "participant"]
     | ParticipantCount [@name "participant_count"]
@@ -109,6 +130,7 @@ module Field = struct
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
     | Paused [@name "paused"] [@printer go "paused"]
+    | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
@@ -118,6 +140,7 @@ module Field = struct
     | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]
     | ReminderSubject [@name "reminder_subject"]
         [@printer go "reminder_subject"]
+    | Required [@name "required"] [@printer go "required"]
     | ResentAt [@name "resent_at"] [@printer go "resent_at"]
     | Role [@name "role"] [@printer go "role"]
     | Room [@name "room"] [@printer go "room"]
@@ -163,6 +186,7 @@ module Field = struct
     | User [@name "user"] [@printer go "user"]
     | Value [@name "value"] [@printer go "value"]
     | VerifiedAt [@name "verified_at"] [@printer go "verified_at"]
+    | Validation [@name "validation"] [@printer go "validation"]
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
     | WaitingList [@name "waiting_list"] [@printer go "waiting_list"]
@@ -182,6 +206,7 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AllLanguagesRequired of Field.t
   | AlreadySignedUpForExperiment
   | AlreadyInPast
   | AlreadyStarted
@@ -202,9 +227,12 @@ type error =
   | EmailMalformed
   | EndBeforeStart
   | ExperimentSessionCountNotZero
+  | FieldRequiresCheckbox of (Field.t * Field.t)
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidOptionSelected
+  | InvalidHtmxRequest
   | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
@@ -219,6 +247,8 @@ type error =
   | NotHandled of string
   | NotInTimeRange
   | NoValue
+  | NumberMax of int
+  | NumberMin of int
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicy
   | PasswordResetFailMessage
@@ -231,6 +261,7 @@ type error =
   | SessionFullyBooked
   | SessionInvalid
   | SessionTenantNotFound
+  | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
@@ -239,6 +270,8 @@ type error =
   | TerminatoryTenantErrorTitle
   | TermsAndConditionsMissing
   | TermsAndConditionsNotAccepted
+  | TextLengthMax of int
+  | TextLengthMin of int
   | TimeInPast
   | TimeSpanPositive
   | TokenAlreadyUsed
@@ -274,7 +307,10 @@ type success =
   | Updated of Field.t
 [@@deriving eq, show, yojson, variants, sexp_of]
 
-type info = Info of string [@@deriving eq, show, yojson, variants, sexp_of]
+type info =
+  | Info of string
+  | RequiredFieldsMissing
+[@@deriving eq, show, yojson, variants, sexp_of]
 
 type t =
   | Message of string
@@ -322,6 +358,7 @@ type control =
   | SignUp
   | Stop of Field.t option
   | Update of Field.t option
+  | UpdateOrder
 [@@deriving eq, show, yojson, variants, sexp_of]
 
 let to_conformist_error error_list =

@@ -215,7 +215,7 @@ let session_form
                                    language
                                    (I18n.SessionReminderDefaultSubject
                                       (text |> Reminder.Subject.value)))
-                               |> HttpUtils.add_line_breaks
+                               |> Http_utils.add_line_breaks
                                |> to_default_value)
                         ]
                     ; div
@@ -236,7 +236,7 @@ let session_form
                                    language
                                    (I18n.SessionReminderDefaultText
                                       (text |> Reminder.Text.value)))
-                               |> HttpUtils.add_line_breaks
+                               |> Http_utils.add_line_breaks
                                |> to_default_value)
                         ]
                     ]

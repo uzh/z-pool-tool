@@ -1,100 +1,65 @@
-open Sexplib.Conv
 module PoolError = Pool_common.Message
 
 module Server = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create server =
-    if CCString.is_empty server
-    then Error PoolError.(Invalid Field.SmtpAuthServer)
-    else Ok server
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthServer
-  ;;
+  let field = PoolError.Field.SmtpAuthServer
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Port = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
+  let field = PoolError.Field.SmtpPort
 
   let create port =
     if CCString.is_empty port && CCInt.of_string port |> CCOption.is_none
-    then Error PoolError.(Invalid Field.SmtpPort)
+    then Error PoolError.(Invalid field)
     else Ok port
   ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpPort
-  ;;
+  let schema = schema ~validation:create field
 end
 
 module Username = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create username =
-    if CCString.is_empty username
-    then Error PoolError.(Invalid Field.SmtpUsername)
-    else Ok username
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpUsername
-  ;;
+  let field = PoolError.Field.SmtpUsername
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Password = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
+  let field = PoolError.Field.SmtpPassword
+  let create = create field
+  let schema = schema ?validation:None field
   let show m = CCString.repeat "*" @@ CCString.length m
-
-  let create password =
-    if CCString.is_empty password
-    then Error PoolError.(Invalid Field.SmtpPassword)
-    else Ok password
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create show PoolError.Field.SmtpPassword
-  ;;
 end
 
 module AuthenticationMethod = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create authentication_method =
-    if CCString.is_empty authentication_method
-    then Error PoolError.(Invalid Field.SmtpAuthMethod)
-    else Ok authentication_method
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpAuthMethod
-  ;;
+  let field = PoolError.Field.SmtpAuthMethod
+  let create = create field
+  let schema = schema ?validation:None field
+  let show m = CCString.repeat "*" @@ CCString.length m
 end
 
 module Protocol = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
+  let field = PoolError.Field.SmtpProtocol
 
   let create protocol =
     if CCList.mem protocol [ "STARTTLS"; "SSL/TLS" ]
     then Ok protocol
-    else Error PoolError.(Invalid Field.SmtpProtocol)
+    else Error PoolError.(Invalid field)
   ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.SmtpProtocol
-  ;;
+  let schema = schema ~validation:create field
 end
 
 type t =

@@ -1,30 +1,23 @@
 module Id : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.IdSig
 
-  val create : unit -> t
-  val of_string : string -> t
-  val value : t -> string
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  val to_common : t -> Pool_common.Id.t
 end
 
 module StartAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
   val to_human : t -> string
 
   val schema
-    :  ?field:Pool_common.Message.Field.t
-    -> unit
+    :  unit
     -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module EndAt : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.BaseSig
 
   val create : Ptime.t -> (t, Pool_common.Message.error) result
   val value : t -> Ptime.t
@@ -36,15 +29,9 @@ module EndAt : sig
 end
 
 module Rate : sig
-  include Pool_common.Utils.BaseSig
+  include Pool_common.Model.IntegerSig
 
-  val create : int -> (t, Pool_common.Message.error) result
-  val value : t -> int
   val default : t
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
 end
 
 module Distribution : sig
@@ -147,3 +134,4 @@ val find_by_experiment
   -> t list Lwt.t
 
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
+val find_current : Pool_database.Label.t -> t list Lwt.t

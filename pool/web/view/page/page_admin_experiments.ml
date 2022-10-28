@@ -1,6 +1,7 @@
 open Tyxml.Html
 open Component
 module Message = Pool_common.Message
+module HttpUtils = Http_utils
 
 type title =
   | Control of Pool_common.Message.control
@@ -361,7 +362,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
         ; ( Field.Description
           , experiment.description
             |> Description.value
-            |> Http_utils.add_line_breaks )
+            |> HttpUtils.add_line_breaks )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled
@@ -503,7 +504,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
                 |> Utils.Time.formatted_date_time)
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
-            |> Http_utils.add_line_breaks
+            |> HttpUtils.add_line_breaks
           ; a
               ~a:
                 [ a_href

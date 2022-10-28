@@ -93,6 +93,7 @@ end = struct
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)
     else (
       match CCList.all_ok emails with
+      | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
           [ Invitation.Created (contacts, command.experiment)

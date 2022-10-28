@@ -14,36 +14,25 @@ module Week = struct
 end
 
 module ContactEmail = struct
-  type t = string [@@deriving eq, show, yojson]
+  include Pool_common.Model.String
 
-  let value m = m
-
+  let field = Message.Field.EmailAddress
   (* TODO: email address validation *)
-  let create email =
-    if CCString.length email <= 0
-    then Error Message.(Invalid Field.EmailAddress)
-    else Ok email
-  ;;
 
-  let schema () =
-    Pool_common.Utils.schema_decoder create value Message.Field.EmailAddress
-  ;;
+  let create = create field
+  let schema = schema ?validation:None field
+  let of_string m = m
 end
 
 module EmailSuffix = struct
-  type t = string [@@deriving eq, show, yojson]
+  include Pool_common.Model.String
 
-  let value m = m
+  let field = Message.Field.EmailSuffix
+  (* TODO: email address validation *)
 
-  let create suffix =
-    if CCString.length suffix <= 0
-    then Error Pool_common.Message.(Invalid Field.EmailSuffix)
-    else Ok suffix
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value Message.Field.EmailSuffix
-  ;;
+  let create = create field
+  let schema = schema ?validation:None field
+  let of_string m = m
 end
 
 module InactiveUser = struct
@@ -119,15 +108,14 @@ end
 
 module TermsAndConditions = struct
   module Terms = struct
-    type t = string [@@deriving eq, show, yojson]
+    include Pool_common.Model.String
 
-    let create terms =
-      if CCString.length terms > 0
-      then Ok terms
-      else Error Pool_common.Message.(Invalid Field.TermsAndConditions)
-    ;;
+    let field = Message.Field.TermsAndConditions
+    (* TODO: email address validation *)
 
-    let value m = m
+    let create = create field
+    let schema = schema ?validation:None field
+    let of_string m = m
   end
 
   type t = Pool_common.Language.t * Terms.t [@@deriving eq, show, yojson]

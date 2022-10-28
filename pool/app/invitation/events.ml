@@ -27,6 +27,7 @@ type event =
 
 let handle_event pool event =
   match event with
+  | Created (contacts, _) when CCList.is_empty contacts -> Lwt.return_unit
   | Created (contacts, experiment) ->
     Repo.bulk_insert pool contacts experiment.Experiment.id
   | Resent invitation ->

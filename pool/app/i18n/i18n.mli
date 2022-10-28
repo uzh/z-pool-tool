@@ -38,16 +38,7 @@ module Key : sig
 end
 
 module Content : sig
-  type t
-
-  val value : t -> string
-  val equal : t -> t -> bool
-  val create : string -> (t, Pool_common.Message.error) result
-  val pp : Format.formatter -> t -> unit
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+  include Pool_common.Model.StringSig
 end
 
 type t

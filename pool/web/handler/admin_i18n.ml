@@ -1,7 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let create_layout req = General.create_tenant_layout `Admin req
+let create_layout req = General.create_tenant_layout req
 
 module I18nMap = CCMap.Make (struct
   type t = I18n.Key.t
@@ -59,9 +59,7 @@ let update req =
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
-      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set ~success:[ Pool_common.Message.(Updated Field.I18n) ] ]

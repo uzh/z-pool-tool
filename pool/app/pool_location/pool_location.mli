@@ -1,39 +1,27 @@
 module Address : sig
   module Mail : sig
     module Institution : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     module Room : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     module Building : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     module Street : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     module Zip : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     module City : sig
-      include Pool_common.Utils.BaseSig
-
-      val value : t -> string
+      include Pool_common.Model.StringSig
     end
 
     type t =
@@ -94,11 +82,7 @@ end
 
 module Mapping : sig
   module Id : sig
-    include Pool_common.Utils.BaseSig
-
-    val create : unit -> t
-    val value : t -> string
-    val of_string : string -> t
+    include Pool_common.Model.IdSig
   end
 
   module Label : sig
@@ -179,29 +163,19 @@ module Mapping : sig
 end
 
 module Id : sig
-  include Pool_common.Utils.BaseSig
-
-  val create : unit -> t
-  val value : t -> string
-  val of_string : string -> t
+  include Pool_common.Model.IdSig
 end
 
 module Name : sig
-  include Pool_common.Utils.BaseSig
-
-  val value : t -> string
+  include Pool_common.Model.StringSig
 end
 
 module Description : sig
-  include Pool_common.Utils.BaseSig
-
-  val value : t -> string
+  include Pool_common.Model.StringSig
 end
 
 module Link : sig
-  include Pool_common.Utils.BaseSig
-
-  val value : t -> string
+  include Pool_common.Model.StringSig
 end
 
 module Status : sig

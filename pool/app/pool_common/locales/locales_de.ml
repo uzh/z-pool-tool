@@ -4,6 +4,10 @@ let field_to_string =
   let open Field in
   function
   | Admin -> "Administrator"
+  | AdminInputOnly -> "Eingabe nur durch Admins"
+  | AdminViewOnly -> "Nur für Admins ersichtlich"
+  | AdminHint -> "Hint für Administratoren"
+  | Answer -> "Antwort"
   | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
@@ -17,8 +21,12 @@ let field_to_string =
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
+  | CustomField -> "Feld"
+  | CustomFieldGroup -> "Gruppe"
+  | CustomFieldOption -> "Option"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
+  | CustomHtmx (label, _) -> label
   | Database -> "Datenbank"
   | DatabaseLabel -> "Datenbanklabel"
   | DatabaseUrl -> "Datenbankurl"
@@ -39,6 +47,7 @@ let field_to_string =
   | End -> "Ende"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
+  | FieldType -> "Feldtyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
   | FileMimeType -> "Mime Typ"
@@ -48,6 +57,7 @@ let field_to_string =
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
   | From -> "Von"
+  | Hint -> "Hint"
   | Host -> "Host"
   | I18n -> "Übersetzung"
   | Icon -> "Icon"
@@ -55,6 +65,7 @@ let field_to_string =
   | InactiveUserDisableAfter -> "Deaktiviere inaktiven Benutzer nach"
   | InactiveUserWarning -> "Warnung an inaktiven Benutzer"
   | Institution -> "Institution"
+  | Interval -> "Interval"
   | Invitation -> "Einladung"
   | InvitationSubject -> "Einladungsbetreff"
   | InvitationText -> "Einladungstext"
@@ -74,11 +85,13 @@ let field_to_string =
   | MainSession -> "Hauptsession"
   | MaxParticipants -> "Maximum an Teilnehmern"
   | MinParticipants -> "Minimum an Teilnehmern"
+  | Model -> "Modell"
   | Name -> "Name"
   | NewPassword -> "Neues Passwort"
   | Order -> "Reihenfolge"
   | Operator -> "Operator"
   | Overbook -> "Überbuchen"
+  | Overwrite -> "overwrite"
   | Page -> "Seite"
   | Participant | Participants -> "Teilnehmer"
   | ParticipantCount -> "Anzahl Teilnehmer"
@@ -88,12 +101,14 @@ let field_to_string =
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
   | Predicate -> "Prädikat"
+  | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
   | ReminderSubject -> "Erinnerungsbetreff"
+  | Required -> "Benötigt"
   | ResentAt -> "Erneut verschickt"
   | Role -> "Rolle"
   | Room -> "Raum"
@@ -135,6 +150,7 @@ let field_to_string =
   | User -> "Benutzer"
   | VerifiedAt -> "Verifiziert am"
   | Value -> "Wert"
+  | Validation -> "Validierung"
   | Version -> "Version"
   | Virtual -> "Virtuell"
   | WaitingList -> "Warteliste"
@@ -142,7 +158,9 @@ let field_to_string =
 ;;
 
 let info_to_string : info -> string = function
-  | Info string -> string
+  | Info s -> s
+  | RequiredFieldsMissing ->
+    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
 ;;
 
 let success_to_string : success -> string = function
@@ -183,6 +201,11 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AllLanguagesRequired field ->
+    field_message
+      "Bitte geben Sie '"
+      (field |> field_to_string |> CCString.trim)
+      "' in allen Sprachen an."
   | AlreadyInPast ->
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
@@ -229,11 +252,18 @@ let rec error_to_string = function
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
      werden."
+  | FieldRequiresCheckbox (field, required) ->
+    Format.asprintf
+      "Die Option \"%s\" benötigt \"%s\"."
+      (field_to_string field)
+      (field_to_string required)
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvalidOptionSelected -> "Ungültige Option ausgewählt."
+  | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvitationSubjectAndTextRequired ->
     "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
   | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
@@ -264,6 +294,8 @@ let rec error_to_string = function
     Format.asprintf "Feld '%s' wird nicht verarbeitet." field
   | NotInTimeRange -> "Nicht im angegebenen Zeitfenster."
   | NoValue -> "Kein Wert angegeben"
+  | NumberMax i -> Format.asprintf "Darf nicht grösser als %i sein." i
+  | NumberMin i -> Format.asprintf "Darf nicht kleiner als %i sein." i
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
@@ -272,6 +304,7 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
   | Retrieve field ->
@@ -301,6 +334,8 @@ let rec error_to_string = function
     "Die Teilnamhebedingungen müssen zuerst erfasst werden."
   | TermsAndConditionsNotAccepted ->
     "Die Teilnahmebedingungen sind noch nicht akzeptiert."
+  | TextLengthMax i -> Format.asprintf "Darf nicht länger als %i sein." i
+  | TextLengthMin i -> Format.asprintf "Darf nicht kürzer als %i sein." i
   | TimeInPast -> "Zeitpunkt liegt in der Vergangenheint!"
   | TimeSpanPositive -> "Zeitspanne muss grösser als 0 sein!"
   | TokenAlreadyUsed -> "Das Token wurde bereits verwendet."
@@ -348,6 +383,7 @@ let control_to_string = function
   | SignUp -> format_submit "registrieren" None
   | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
+  | UpdateOrder -> "Reihenfolge anpassen"
 ;;
 
 let to_string = function

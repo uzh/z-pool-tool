@@ -1,0 +1,5 @@
+(library
+ (name matcher)
+ (libraries cqrs_command experiment mailing pool_common utils)
+ (preprocess
+  (pps lwt_ppx)))

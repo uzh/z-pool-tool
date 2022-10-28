@@ -28,25 +28,23 @@ end
 let t =
   let encode m =
     let open Pool_user in
-    let open Pool_common in
     Ok
       ( m.user
       , ( m.recruitment_channel
-        , ( TermsAccepted.value m.terms_accepted_at
+        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
-                  , ( Verified.value m.verified
-                    , ( EmailVerified.value m.email_verified
+                  , ( CCOption.map Verified.value m.verified
+                    , ( CCOption.map EmailVerified.value m.email_verified
                       , ( NumberOfInvitations.value m.num_invitations
                         , ( NumberOfAssignments.value m.num_assignments
-                          , ( Version.value m.firstname_version
-                            , ( Version.value m.lastname_version
-                              , ( Version.value m.paused_version
-                                , ( Version.value m.language_version
-                                  , ( Version.value
-                                        m.experiment_type_preference_version
+                          , ( m.firstname_version
+                            , ( m.lastname_version
+                              , ( m.paused_version
+                                , ( m.language_version
+                                  , ( m.experiment_type_preference_version
                                     , (m.created_at, m.updated_at) ) ) ) ) ) )
                         ) ) ) ) ) ) ) ) ) )
   in
@@ -72,28 +70,26 @@ let t =
     =
     let open Pool_user in
     let open CCResult in
-    Pool_common.Version.(
-      Ok
-        { user
-        ; recruitment_channel
-        ; terms_accepted_at = TermsAccepted.create terms_accepted_at
-        ; language
-        ; experiment_type_preference
-        ; paused = Paused.create paused
-        ; disabled = Disabled.create disabled
-        ; verified = Verified.create verified
-        ; email_verified = EmailVerified.create email_verified
-        ; num_invitations = NumberOfInvitations.of_int num_invitations
-        ; num_assignments = NumberOfAssignments.of_int num_assignments
-        ; firstname_version = of_int firstname_version
-        ; lastname_version = of_int lastname_version
-        ; paused_version = of_int paused_version
-        ; language_version = of_int language_version
-        ; experiment_type_preference_version =
-            of_int experiment_type_preference_version
-        ; created_at
-        ; updated_at
-        })
+    Ok
+      { user
+      ; recruitment_channel
+      ; terms_accepted_at = CCOption.map TermsAccepted.create terms_accepted_at
+      ; language
+      ; experiment_type_preference
+      ; paused = Paused.create paused
+      ; disabled = Disabled.create disabled
+      ; verified = CCOption.map Verified.create verified
+      ; email_verified = CCOption.map EmailVerified.create email_verified
+      ; num_invitations = NumberOfInvitations.of_int num_invitations
+      ; num_assignments = NumberOfAssignments.of_int num_assignments
+      ; firstname_version
+      ; lastname_version
+      ; paused_version
+      ; language_version
+      ; experiment_type_preference_version
+      ; created_at
+      ; updated_at
+      }
   in
   let open Pool_user.Repo in
   let open Pool_common.Repo in
@@ -106,7 +102,7 @@ let t =
          (tup2
             RecruitmentChannel.t
             (tup2
-               TermsAccepted.t
+               (option TermsAccepted.t)
                (tup2
                   (option Language.t)
                   (tup2
@@ -116,9 +112,9 @@ let t =
                         (tup2
                            Disabled.t
                            (tup2
-                              Verified.t
+                              (option Verified.t)
                               (tup2
-                                 EmailVerified.t
+                                 (option EmailVerified.t)
                                  (tup2
                                     NumberOfInvitations.t
                                     (tup2
@@ -141,25 +137,23 @@ let t =
 let contact =
   let encode m =
     let open Pool_user in
-    let open Pool_common in
     Ok
       ( m.user.Sihl_user.id
       , ( m.recruitment_channel
-        , ( TermsAccepted.value m.terms_accepted_at
+        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
           , ( m.language
             , ( m.experiment_type_preference
               , ( Paused.value m.paused
                 , ( Disabled.value m.disabled
-                  , ( Verified.value m.verified
-                    , ( EmailVerified.value m.email_verified
+                  , ( CCOption.map Verified.value m.verified
+                    , ( CCOption.map EmailVerified.value m.email_verified
                       , ( NumberOfInvitations.value m.num_invitations
                         , ( NumberOfAssignments.value m.num_assignments
-                          , ( Version.value m.firstname_version
-                            , ( Version.value m.lastname_version
-                              , ( Version.value m.paused_version
-                                , ( Version.value m.language_version
-                                  , ( Version.value
-                                        m.experiment_type_preference_version
+                          , ( m.firstname_version
+                            , ( m.lastname_version
+                              , ( m.paused_version
+                                , ( m.language_version
+                                  , ( m.experiment_type_preference_version
                                     , (m.created_at, m.updated_at) ) ) ) ) ) )
                         ) ) ) ) ) ) ) ) ) )
   in
@@ -178,7 +172,7 @@ let contact =
          (tup2
             RecruitmentChannel.t
             (tup2
-               TermsAccepted.t
+               (option TermsAccepted.t)
                (tup2
                   (option Language.t)
                   (tup2
@@ -188,9 +182,9 @@ let contact =
                         (tup2
                            Disabled.t
                            (tup2
-                              Verified.t
+                              (option Verified.t)
                               (tup2
-                                 EmailVerified.t
+                                 (option EmailVerified.t)
                                  (tup2
                                     NumberOfInvitations.t
                                     (tup2
@@ -216,26 +210,24 @@ module Write = struct
   let t =
     let encode m =
       let open Pool_user in
-      let open Pool_common in
       Ok
         ( m.user_id
         , ( m.recruitment_channel
-          , ( TermsAccepted.value m.terms_accepted_at
+          , ( CCOption.map TermsAccepted.value m.terms_accepted_at
             , ( m.language
               , ( m.experiment_type_preference
                 , ( Paused.value m.paused
                   , ( Disabled.value m.disabled
-                    , ( Verified.value m.verified
-                      , ( EmailVerified.value m.email_verified
+                    , ( CCOption.map Verified.value m.verified
+                      , ( CCOption.map EmailVerified.value m.email_verified
                         , ( NumberOfInvitations.value m.num_invitations
                           , ( NumberOfAssignments.value m.num_assignments
-                            , ( Version.value m.firstname_version
-                              , ( Version.value m.lastname_version
-                                , ( Version.value m.lastname_version
-                                  , ( Version.value m.paused_version
-                                    , Version.value
-                                        m.experiment_type_preference_version )
-                                  ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                            , ( m.firstname_version
+                              , ( m.lastname_version
+                                , ( m.lastname_version
+                                  , ( m.paused_version
+                                    , m.experiment_type_preference_version ) )
+                                ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -253,7 +245,7 @@ module Write = struct
            (tup2
               RecruitmentChannel.t
               (tup2
-                 TermsAccepted.t
+                 (option TermsAccepted.t)
                  (tup2
                     (option Language.t)
                     (tup2
@@ -263,9 +255,9 @@ module Write = struct
                           (tup2
                              Disabled.t
                              (tup2
-                                Verified.t
+                                (option Verified.t)
                                 (tup2
-                                   EmailVerified.t
+                                   (option EmailVerified.t)
                                    (tup2
                                       NumberOfInvitations.t
                                       (tup2
@@ -292,7 +284,7 @@ module Preview = struct
         ( m.user
         , ( m.language
           , ( Paused.value m.paused
-            , ( Verified.value m.verified
+            , ( CCOption.map Verified.value m.verified
               , ( NumberOfInvitations.value m.num_invitations
                 , NumberOfAssignments.value m.num_assignments ) ) ) ) )
     in
@@ -307,7 +299,7 @@ module Preview = struct
           { user
           ; language
           ; paused = Paused.create paused
-          ; verified = Verified.create verified
+          ; verified = CCOption.map Verified.create verified
           ; num_invitations = NumberOfInvitations.of_int num_invitations
           ; num_assignments = NumberOfAssignments.of_int num_assignments
           }
@@ -324,7 +316,7 @@ module Preview = struct
               (tup2
                  Paused.t
                  (tup2
-                    Verified.t
+                    (option Verified.t)
                     (tup2 NumberOfInvitations.t NumberOfAssignments.t))))))
   ;;
 end

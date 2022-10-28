@@ -10,47 +10,27 @@ module LogoMapping = Entity_logo_mapping
 module PoolError = Common.Message
 
 module Title = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create title =
-    if CCString.is_empty title
-    then Error PoolError.(Invalid Field.Title)
-    else Ok title
-  ;;
-
-  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Title
+  let field = Common.Message.Field.Title
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Description = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create description =
-    if CCString.is_empty description
-    then Error PoolError.(Invalid Field.Description)
-    else Ok description
-  ;;
-
-  let schema () =
-    Common.Utils.schema_decoder create value PoolError.Field.Description
-  ;;
+  let field = Common.Message.Field.Description
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Url = struct
-  type t = string [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create url =
-    if CCString.is_empty url
-    then Error PoolError.(Invalid Field.Url)
-    else Ok url
-  ;;
-
-  let schema () = Common.Utils.schema_decoder create value PoolError.Field.Url
+  let field = Common.Message.Field.Url
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Styles = struct
@@ -61,19 +41,11 @@ module Styles = struct
   let mime_type m = m.File.mime_type
 
   module Write = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
-    let value m = m
-
-    let create styles =
-      if CCString.is_empty styles
-      then Error PoolError.(Invalid Field.Styles)
-      else Ok styles
-    ;;
-
-    let schema () =
-      Common.Utils.schema_decoder create value PoolError.Field.Styles
-    ;;
+    let field = Common.Message.Field.Styles
+    let create = create field
+    let schema = schema ?validation:None field
   end
 end
 
@@ -83,19 +55,11 @@ module Icon = struct
   let value m = m
 
   module Write = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
-    let value m = m
-
-    let create icon =
-      if CCString.is_empty icon
-      then Error PoolError.(Invalid Field.Icon)
-      else Ok icon
-    ;;
-
-    let schema () =
-      Common.Utils.schema_decoder create value PoolError.Field.Icon
-    ;;
+    let field = Common.Message.Field.Icon
+    let create = create field
+    let schema = schema ?validation:None field
   end
 end
 
@@ -128,50 +92,15 @@ module PartnerLogos = struct
 end
 
 module Maintenance = struct
-  type t = bool [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.Boolean
 
-  let create t = t
-
-  let stringify = function
-    | true -> "true"
-    | false -> "false"
-  ;;
-
-  let of_string = function
-    | "true" -> true
-    | _ -> false
-  ;;
-
-  let schema () =
-    Common.Utils.schema_decoder
-      (fun m -> Ok (of_string m))
-      stringify
-      PoolError.Field.TenantMaintenanceFlag
-  ;;
+  let schema = schema PoolError.Field.TenantMaintenanceFlag
 end
 
 module Disabled = struct
-  type t = bool [@@deriving eq, show, sexp_of]
+  include Pool_common.Model.Boolean
 
-  let create t = t
-  let value m = m
-
-  let stringify = function
-    | true -> "true"
-    | false -> "false"
-  ;;
-
-  let of_string = function
-    | "true" -> true
-    | _ -> false
-  ;;
-
-  let schema () =
-    Common.Utils.schema_decoder
-      (fun m -> Ok (of_string m))
-      stringify
-      PoolError.Field.TenantDisabledFlag
-  ;;
+  let schema = schema PoolError.Field.TenantDisabledFlag
 end
 
 type t =

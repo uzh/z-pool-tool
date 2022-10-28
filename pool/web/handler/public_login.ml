@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let to_ctx = Pool_tenant.to_ctx
-let create_layout req = General.create_tenant_layout `Contact req
+let create_layout req = General.create_tenant_layout req
 
 let redirect_to_dashboard tenant_db user =
   let open Lwt.Infix in
@@ -31,6 +31,7 @@ let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
     Lwt_result.map_error (fun err -> err, "/login")
     @@ let* params =
@@ -46,12 +47,38 @@ let login_post req =
          Service.User.login ~ctx:(to_ctx tenant_db) email ~password
          |> Lwt_result.map_error handle_sihl_login_error
        in
-       let%lwt dashboard = General.dashboard_path tenant_db user in
-       HttpUtils.(
-         redirect_to_with_actions
-           (path_with_language query_language dashboard)
-           [ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ])
-       |> Lwt_result.ok
+       let redirect path actions =
+         HttpUtils.(
+           redirect_to_with_actions
+             (path_with_language query_language path)
+             ([ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
+             @ actions))
+         |> Lwt_result.ok
+       in
+       let success () =
+         let%lwt path = General.dashboard_path tenant_db user in
+         redirect path []
+       in
+       let contact user =
+         Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
+       in
+       user
+       |> Admin.user_is_admin tenant_db
+       >|> function
+       | true -> success ()
+       | false ->
+         let* contact = user |> contact in
+         let%lwt required_answers_given =
+           Custom_field.all_required_answered tenant_db (Contact.id contact)
+         in
+         (match required_answers_given with
+          | true -> success ()
+          | false ->
+            redirect
+              "/user/completion"
+              [ Message.set
+                  ~info:[ Pool_common.Message.(RequiredFieldsMissing) ]
+              ])
   in
   result |> HttpUtils.extract_happy_path req
 ;;

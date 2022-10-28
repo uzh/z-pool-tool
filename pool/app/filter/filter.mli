@@ -111,3 +111,7 @@ module Utils : sig
     :  [< `Bool | `Date | `Nr | `Str ]
     -> [> `Single ] Operator.t list
 end
+
+module Repo : sig
+  val t : t Caqti_type.t
+end

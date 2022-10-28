@@ -1,38 +1,20 @@
 module PoolError = Pool_common.Message
 
 module Url = struct
-  type t = string [@@deriving eq]
+  include Pool_common.Model.String
 
-  let create url =
-    if CCString.is_empty url
-    then Error PoolError.(Invalid Field.DatabaseUrl)
-    else Ok url
-  ;;
-
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.DatabaseUrl
-  ;;
+  let field = PoolError.Field.DatabaseUrl
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Label = struct
-  open Sexplib.Conv
+  include Pool_common.Model.String
 
-  type t = string [@@deriving eq, show, sexp_of]
-
-  let value m = m
+  let field = PoolError.Field.DatabaseLabel
+  let create = create field
+  let schema = schema ?validation:None field
   let of_string m = m
-
-  let create label =
-    if CCString.is_empty label || String.contains label ' '
-    then Error PoolError.(Invalid Field.DatabaseLabel)
-    else Ok label
-  ;;
-
-  let schema () =
-    Pool_common.Utils.schema_decoder create value PoolError.Field.DatabaseLabel
-  ;;
 end
 
 type t =

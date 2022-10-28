@@ -2,144 +2,64 @@ module Id = Pool_common.Id
 module Common = Pool_common
 
 module Title = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create title =
-    if CCString.is_empty title
-    then Error Common.Message.(Invalid Field.Title)
-    else Ok title
-  ;;
-
-  let schema () = Common.(Utils.schema_decoder create value Message.Field.Title)
+  let field = Common.Message.Field.Title
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module PublicTitle = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create title =
-    if CCString.is_empty title
-    then Error Common.Message.(Invalid Field.PublicTitle)
-    else Ok title
-  ;;
-
-  let schema () =
-    Common.(Utils.schema_decoder create value Message.Field.PublicTitle)
-  ;;
+  let field = Common.Message.Field.PublicTitle
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module Description = struct
-  type t = string [@@deriving eq, show]
+  include Pool_common.Model.String
 
-  let value m = m
-
-  let create description =
-    if CCString.is_empty description
-    then Error Pool_common.Message.(Invalid Field.Description)
-    else Ok description
-  ;;
-
-  let schema () =
-    Common.(Utils.schema_decoder create value Message.Field.Description)
-  ;;
+  let field = Common.Message.Field.Description
+  let create = create field
+  let schema = schema ?validation:None field
 end
 
 module DirectRegistrationDisabled = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Common.Message.Field.DirectRegistrationDisabled
-  ;;
+  let schema = schema Common.Message.Field.DirectRegistrationDisabled
 end
 
 module RegistrationDisabled = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Common.Message.Field.RegistrationDisabled
-  ;;
+  let schema = schema Common.Message.Field.RegistrationDisabled
 end
 
 module AllowUninvitedSignup = struct
-  type t = bool [@@deriving eq, show]
+  include Pool_common.Model.Boolean
 
-  let create m = m
-  let value m = m
-
-  let schema () =
-    Pool_common.Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
-      string_of_bool
-      Common.Message.Field.AllowUninvitedSignup
-  ;;
+  let schema = schema Common.Message.Field.AllowUninvitedSignup
 end
 
 module InvitationTemplate = struct
   module Subject = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
-    let create subject =
-      if CCString.is_empty subject
-      then Error Pool_common.Message.(Invalid Field.InvitationSubject)
-      else Ok subject
-    ;;
-
+    let field = Common.Message.Field.InvitationSubject
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let value m = m
-
-    let schema () =
-      Pool_common.Utils.schema_decoder
-        (fun m -> m |> of_string |> CCResult.return)
-        value
-        Pool_common.Message.Field.InvitationSubject
-    ;;
   end
 
   module Text = struct
-    type t = string [@@deriving eq, show]
+    include Pool_common.Model.String
 
-    let create text =
-      if CCString.is_empty text
-      then Error Pool_common.Message.(Invalid Field.InvitationText)
-      else Ok text
-    ;;
-
+    let field = Common.Message.Field.InvitationText
+    let create = create field
+    let schema = schema ?validation:None field
     let of_string m = m
-    let value m = m
-
-    let schema () =
-      Pool_common.Utils.schema_decoder
-        (fun m -> m |> of_string |> CCResult.return)
-        value
-        Pool_common.Message.Field.InvitationText
-    ;;
   end
 
   type t =
@@ -263,4 +183,9 @@ let registration_disabled_value (m : t) =
 
 let allow_uninvited_signup_value (m : t) =
   AllowUninvitedSignup.value m.allow_uninvited_signup
+;;
+
+let boolean_fields =
+  Pool_common.Message.Field.
+    [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
 ;;

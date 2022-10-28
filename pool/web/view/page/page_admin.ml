@@ -1,14 +1,17 @@
 open Tyxml.Html
-module I18n = Page_admin_i18n
-module Settings = Page_admin_settings
-module Contact = Page_admin_contact
 module Admins = Page_admin_admins
-module Session = Page_admin_session
-module Experiments = Page_admin_experiments
-module Location = Page_admin_location
-module WaitingList = Page_admin_waiting_list
 module Assignment = Page_admin_assignments
+module Contact = Page_admin_contact
+module CustomFields = Page_admin_custom_fields
+module CustomFieldOptions = Page_admin_custom_field_options
+module CustomFieldGroups = Page_admin_custom_field_groups
+module Experiments = Page_admin_experiments
+module I18n = Page_admin_i18n
+module Location = Page_admin_location
 module Mailing = Page_admin_mailings
+module Session = Page_admin_session
+module Settings = Page_admin_settings
+module WaitingList = Page_admin_waiting_list
 
 let dashboard Pool_context.{ language; _ } =
   div

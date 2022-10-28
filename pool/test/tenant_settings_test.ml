@@ -135,13 +135,11 @@ let update_terms_and_conditions _ () =
 
 let login_after_terms_update _ () =
   let open Pool_common.Message in
-  let email = "one@test.com" in
+  let%lwt user = Test_utils.Repo.create_contact database_label () in
   let accepted =
     let open Utils.Lwt_result.Infix in
     let contact =
-      Contact.find_by_email
-        database_label
-        (email |> Pool_user.EmailAddress.of_string)
+      Contact.find_by_email database_label (Contact.email_address user)
     in
     let terms_agreed contact =
       let%lwt accepted = Contact.has_terms_accepted database_label contact in

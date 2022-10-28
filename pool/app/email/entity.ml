@@ -2,12 +2,6 @@ module PoolError = Pool_common.Message
 module Database = Pool_database
 module User = Pool_user
 
-module Sihl_user = struct
-  include Sihl_user
-
-  let equal m k = CCString.equal m.id k.id
-end
-
 module Sihl_email = struct
   include Sihl_email
 
@@ -81,11 +75,9 @@ module Token = struct
 end
 
 module VerifiedAt = struct
-  type t = Ptime.t [@@deriving eq, show]
+  include Pool_common.Model.Ptime
 
-  let value m = m
   let create m = m
-  let create_now = Ptime_clock.now
 end
 
 type email_unverified =

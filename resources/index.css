@@ -26,10 +26,6 @@
     border-radius: 4px;
 }
 
-[data-sortable-item] *:not(button) {
-    cursor: inherit;
-}
-
 [data-sortable-item]:not(:last-child) {
     border-bottom: 1px solid #b5b5b5;
 }

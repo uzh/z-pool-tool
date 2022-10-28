@@ -1,7 +1,5 @@
 let invitations pool =
-  let%lwt experiments =
-    Experiment.find_all pool () |> Lwt.map CCResult.get_exn
-  in
+  let%lwt experiments = Experiment.find_all pool () in
   let%lwt events =
     Lwt_list.fold_left_s
       (fun events experiment ->

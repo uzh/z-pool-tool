@@ -15,7 +15,10 @@ let login_get req =
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
       let open Sihl.Web in
-      Page.Root.Login.login context |> Response.of_html |> Lwt_result.return
+      Page.Root.Login.login context
+      |> General.create_root_layout ~active_navigation:"/root/login" context
+      |> Response.of_html
+      |> Lwt_result.return
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -56,6 +59,9 @@ let request_reset_password_get req =
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
       Page.Root.Login.request_reset_password context
+      |> General.create_root_layout
+           ~active_navigation:"/root/request-reset-password"
+           context
       |> Response.of_html
       |> Lwt.return_ok
   in
@@ -100,6 +106,9 @@ let reset_password_get req =
          |> Lwt_result.lift
        in
        Page.Root.Login.reset_password token context
+       |> General.create_root_layout
+            ~active_navigation:"/root/reset-password"
+            context
        |> Response.of_html
        |> Lwt_result.return
   in
