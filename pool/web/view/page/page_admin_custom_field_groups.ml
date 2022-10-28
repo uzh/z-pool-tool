@@ -68,7 +68,6 @@ let form
                              ; "align-center"
                              ]
                          ; a_user_data "sortable-item" ""
-                         ; a_draggable true
                          ]
                        [ div
                            [ txt

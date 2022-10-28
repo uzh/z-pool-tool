@@ -687,3 +687,20 @@ module Write = struct
     }
   [@@deriving eq, show]
 end
+
+let group_fields groups fields =
+  let partition fields group =
+    CCList.partition
+      (fun field ->
+        field
+        |> group_id
+        |> CCOption.map_or ~default:false (Id.equal group.Group.id))
+      fields
+  in
+  CCList.fold_left
+    (fun (grouped, ungrouped) group ->
+      let of_group, ungrouped = partition ungrouped group in
+      grouped @ [ group, of_group ], ungrouped)
+    ([], fields)
+    groups
+;;

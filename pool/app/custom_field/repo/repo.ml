@@ -120,6 +120,25 @@ module Sql = struct
     >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
+  let find_ungrouped_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE pool_custom_fields.model = $1
+        AND pool_custom_fields.custom_field_group_uuid IS NULL
+    |sql}
+    |> select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_ungrouped pool model =
+    let open Lwt.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_ungrouped_request
+      (Entity.Model.show model)
+    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     {sql| WHERE pool_custom_fields.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
@@ -233,6 +252,7 @@ end
 let find_all = Sql.find_all
 let find_by_model = Sql.find_by_model
 let find_by_group = Sql.find_by_group
+let find_ungrouped = Sql.find_ungrouped
 let find = Sql.find
 let insert = Sql.insert
 let update = Sql.update
