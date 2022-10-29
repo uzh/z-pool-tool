@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Input
 module Message = Pool_common.Message
 
 let session_title (s : Session.t) =
@@ -107,7 +108,7 @@ let session_form
       ; a_method `Post
       ; a_action (action |> Sihl.Web.externalize_path)
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; flatpicker_element
         language
         `Datetime_local
@@ -267,7 +268,7 @@ let reschedule_session
       ; a_method `Post
       ; a_action (action |> Sihl.Web.externalize_path)
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; flatpicker_element
         language
         `Datetime_local
@@ -334,7 +335,7 @@ let index
                       Pool_common.(
                         Utils.confirmable_to_string language I18n.CancelSession)
                   ]
-                [ Component.csrf_element csrf ()
+                [ csrf_element csrf ()
                 ; submit_element language Message.(Cancel None) ()
                 ]
           in
@@ -357,7 +358,7 @@ let index
                       Pool_common.(
                         Utils.confirmable_to_string language I18n.DeleteSession)
                   ]
-                [ Component.csrf_element csrf ()
+                [ csrf_element csrf ()
                 ; submit_element
                     language
                     Message.(Delete None)

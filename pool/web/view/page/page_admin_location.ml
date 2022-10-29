@@ -1,5 +1,7 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module Partials = Component.Partials
+module Table = Component.Table
 module Message = Pool_common.Message
 
 let first_n_characters ?(n = 47) m : string =
@@ -99,7 +101,7 @@ let file_form
           ; a_enctype "multipart/form-data"
           ; a_class [ "stack" ]
           ]
-        [ Component.csrf_element csrf ()
+        [ csrf_element csrf ()
         ; label_select
         ; language_select
         ; input_element_file
@@ -187,7 +189,7 @@ let form
           ; a_action (Sihl.Web.externalize_path action)
           ; a_class [ "stack" ]
           ]
-        ([ Component.csrf_element csrf ()
+        ([ csrf_element csrf ()
          ; input_element
              language
              `Text
@@ -345,7 +347,7 @@ module FileList = struct
               "confirmable"
               Pool_common.(Utils.confirmable_to_string language I18n.DeleteFile)
           ]
-        [ Component.csrf_element csrf ()
+        [ csrf_element csrf ()
         ; submit_element
             language
             Message.(Delete (Some Field.File))

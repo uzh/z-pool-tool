@@ -1,5 +1,5 @@
 open Tyxml.Html
-open Component
+open Component.Input
 module Session = Page_contact_sessions
 module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils

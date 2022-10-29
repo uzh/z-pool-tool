@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component.Input
 
 let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
   let open Pool_common in
@@ -18,14 +19,14 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
         ]
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
-        [ Component.csrf_element csrf ()
-        ; Component.checkbox_element
+        [ csrf_element csrf ()
+        ; checkbox_element
             language
             Pool_common.Message.Field.TermsAccepted
             ~required:true
         ; div
             ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-            [ Component.submit_element
+            [ submit_element
                 language
                 Message.(Accept (Some Field.termsandconditions))
                 ()

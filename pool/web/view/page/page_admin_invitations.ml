@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component
 
 let form_action ?path id =
   let base =
@@ -45,8 +46,8 @@ module Partials = struct
                             (invitation.Invitation.id |> Pool_common.Id.value))
                        experiment.Experiment.id)
                 ]
-              [ Component.csrf_element csrf ()
-              ; Component.submit_element
+              [ Input.csrf_element csrf ()
+              ; Input.submit_element
                   language
                   Pool_common.Message.(Resend (Some Field.Invitation))
                   ()
@@ -54,7 +55,7 @@ module Partials = struct
           ])
         invitation_list
     in
-    Component.Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped language ~thead rows
   ;;
 
   let send_invitation
@@ -83,7 +84,7 @@ module Partials = struct
             ])
           filtered_contacts
       in
-      Component.Table.horizontal_table `Striped language rows
+      Table.horizontal_table `Striped language rows
     in
     div
       [ h2
@@ -93,16 +94,16 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; Component.Filter.filter_form language experiment filter key_list
+      ; Filter.filter_form language experiment filter key_list
       ; form
           ~a:
             [ a_method `Post
             ; a_action (form_action experiment.Experiment.id)
             ; a_class [ "stack" ]
             ]
-          [ Component.csrf_element csrf ()
+          [ Input.csrf_element csrf ()
           ; form_table
-          ; Component.submit_element
+          ; Input.submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))
               ~submit_type:`Success

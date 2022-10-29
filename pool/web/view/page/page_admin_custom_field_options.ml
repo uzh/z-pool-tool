@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module Partials = Component.Partials
 module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 
@@ -78,7 +79,7 @@ let detail
                   language
                   I18n.DeleteCustomFieldOption)
           ]
-        [ Component.csrf_element csrf ()
+        [ csrf_element csrf ()
         ; submit_element ~submit_type:`Error language Message.(Delete None) ()
         ]
   in

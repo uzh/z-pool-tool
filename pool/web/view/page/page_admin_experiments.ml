@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Input
 module Message = Pool_common.Message
 module HttpUtils = Http_utils
 
@@ -38,7 +39,7 @@ let experiment_layout language title experiment ?active html =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
-    ; Component.Navigation.subnav language subnav_links base_url active
+    ; Navigation.subnav language subnav_links base_url active
     ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
@@ -116,7 +117,7 @@ let experiment_form
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
     let open Pool_common.ExperimentType in
-    Component.selector
+    selector
       language
       Pool_common.Message.Field.ExperimentType
       show
@@ -132,7 +133,7 @@ let experiment_form
       ; a_action (Sihl.Web.externalize_path action)
       ; a_class [ "stack" ]
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; input_element
         language
         `Text
@@ -525,7 +526,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
           ])
         waiting_list.waiting_list_entries
     in
-    Component.Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped language ~thead rows
   in
   experiment_layout
     language

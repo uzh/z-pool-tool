@@ -1,5 +1,5 @@
 open Tyxml.Html
-open Component
+open Component.Input
 module Message = Pool_common.Message
 
 let detail
@@ -88,7 +88,7 @@ let detail
             [ content
             ; div
                 ~a:[ a_class [ "gap" ] ]
-                [ Component.submit_element
+                [ submit_element
                     language
                     ~classnames:[ "disabled" ]
                     Pool_common.Message.(Assign (Some Field.Contact))
@@ -114,11 +114,11 @@ let detail
                      (id |> Pool_common.Id.value)
                   |> Sihl.Web.externalize_path)
               ]
-            [ Component.csrf_element csrf ()
+            [ csrf_element csrf ()
             ; content
             ; div
                 ~a:[ a_class [ "gap" ] ]
-                [ Component.submit_element
+                [ submit_element
                     language
                     Pool_common.Message.(Assign (Some Field.Contact))
                     ()

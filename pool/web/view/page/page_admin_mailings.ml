@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Input
 module Message = Pool_common.Message
 module Field = Message.Field
 module I18n = Pool_common.I18n
@@ -87,7 +88,7 @@ let distribution_form_field language (field, current_order) =
               ; a_button_type `Button
               ; a_user_data "field" Pool_common.Message.Field.(show field)
               ]
-            [ Component.Icon.icon `Trash ]
+            [ Icon.icon `Trash ]
         ]
     ]
 ;;
@@ -110,7 +111,7 @@ module List = struct
               "confirmable"
               (Pool_common.Utils.confirmable_to_string language confirm_text)
           ]
-        [ Component.csrf_element csrf ()
+        [ csrf_element csrf ()
         ; submit_element ~submit_type language (name None) ()
         ]
     in
@@ -143,7 +144,7 @@ module List = struct
     =
     let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
     let thead = if with_link then base_head @ [ None ] else base_head in
-    Component.Table.(horizontal_table `Striped language ~thead)
+    Table.(horizontal_table `Striped language ~thead)
       (CCList.map (row with_link context experiment_id) mailings)
   ;;
 end
@@ -379,7 +380,7 @@ let form
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
                     ]
-                  [ Component.Icon.icon `Add ]
+                  [ Icon.icon `Add ]
               ]
           ]
       ; div
@@ -413,7 +414,7 @@ let form
       ~a:[ a_class [ "stack" ] ]
       [ form
           ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
-          [ Component.csrf_element csrf ()
+          [ csrf_element csrf ()
           ; input
               ~a:
                 [ a_input_type `Hidden

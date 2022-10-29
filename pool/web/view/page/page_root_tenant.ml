@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module Table = Component.Table
 module File = Pool_common.File
 module Id = Pool_common.Id
 module Message = Pool_common.Message
@@ -120,7 +121,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             (CCList.map
-               (Component.input_element language `Text)
+               (input_element language `Text)
                Message.Field.[ Email; Password; Firstname; Lastname ]
             @ [ submit_element language Message.(Create (Some Field.root)) () ]
             )
@@ -166,7 +167,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   let detail_input_fields =
     (CCList.map to_input_element detail_fields @ [ language_select ])
     @ [ div
-          [ Component.input_element_file language Message.Field.Styles
+          [ input_element_file language Message.Field.Styles
           ; div
               ~a:[ a_class [ "gap-xs" ] ]
               [ a
@@ -178,7 +179,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ]
           ]
       ; div
-          [ Component.input_element_file language Message.Field.Icon
+          [ input_element_file language Message.Field.Icon
           ; div
               ~a:[ a_class [ "gap-xs" ] ]
               [ a
@@ -188,11 +189,11 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
                   [ txt "Download" ]
               ]
           ]
-      ; Component.input_element_file
+      ; input_element_file
           ~allow_multiple:true
           language
           Message.Field.TenantLogos
-      ; Component.input_element_file
+      ; input_element_file
           ~allow_multiple:true
           language
           Message.Field.PartnerLogos
@@ -298,7 +299,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ]
             ((csrf_element csrf ()
              :: CCList.map
-                  (Component.input_element language `Text)
+                  (input_element language `Text)
                   Message.Field.[ Email; Password; Firstname; Lastname ])
             @ [ submit_element
                   language

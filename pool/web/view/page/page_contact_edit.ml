@@ -1,5 +1,6 @@
 open Tyxml.Html
 open Component
+open Input
 module Message = Pool_common.Message
 module HttpUtils = Http_utils
 
@@ -15,7 +16,7 @@ let contact_profile_layout language title ?active html =
   let base_url = "/user" in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Component.Navigation.subnav language subnav_links base_url active
+    [ Navigation.subnav language subnav_links base_url active
     ; h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (Utils.nav_link_to_string language title) ]
@@ -62,7 +63,7 @@ let personal_details_form
     ~a:form_attrs
     [ div
         ~a:[ a_class [ "stack" ] ]
-        (Component.csrf_element csrf ~id:user_update_csrf ()
+        (csrf_element csrf ~id:user_update_csrf ()
         :: CCList.map
              (fun (version, field, value) ->
                Htmx.create_entity version field value |> htmx_create)
