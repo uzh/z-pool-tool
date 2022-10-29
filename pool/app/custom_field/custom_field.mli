@@ -329,6 +329,7 @@ val boolean_fields : Pool_common.Message.Field.t list
 val id : t -> Id.t
 val model : t -> Model.t
 val name : t -> Name.t
+val name_value : Pool_common.Language.t -> t -> string
 val hint : t -> Hint.t
 val required : t -> Required.t
 val disabled : t -> Disabled.t

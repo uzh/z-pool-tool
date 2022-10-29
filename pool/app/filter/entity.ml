@@ -109,41 +109,78 @@ let val_of_yojson (value : Yojson.Basic.t)
 ;;
 
 module Key = struct
-  type t =
-    | Age [@printer print "age"] [@name "age"]
-    | Birthday [@printer print "birthday"] [@name "birthday"]
+  type input_type =
+    | Bool
+    | Date
+    | Nr
+    | Str
+    | Select of Custom_field.SelectOption.t list
+
+  type hardcoded =
     | Email [@printer print "email"] [@name "email"]
     | Name [@printer print "name"] [@name "name"]
     | Paused [@printer print "paused"] [@name "paused"]
     | Verified [@printer print "verified"] [@name "verified"]
     | VerifiedAt [@printer print "verified_at"] [@name "verified_at"]
-  [@@deriving show { with_path = false }, eq, enum, yojson]
+  [@@deriving show { with_path = false }, eq, yojson, variants]
+
+  type human =
+    | CustomField of Custom_field.t
+    | Hardcoded of hardcoded
+  [@@deriving show { with_path = false }, eq, variants]
+
+  type t =
+    | CustomField of Custom_field.Id.t
+    | Hardcoded of hardcoded
+  [@@deriving show { with_path = false }, eq, yojson]
 
   let read m =
     try
-      Ok
+      Some
         (m
         |> Format.asprintf "[\"%s\"]"
         |> Yojson.Safe.from_string
-        |> t_of_yojson)
+        |> hardcoded_of_yojson)
     with
-    | _ -> Error Pool_common.Message.(Invalid Field.Key)
+    | _ -> None
   ;;
 
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
+  let human_to_label language human =
+    match (human : human) with
+    | Hardcoded h ->
+      show_hardcoded h
+      |> CCString.replace ~sub:"_" ~by:" "
+      |> CCString.capitalize_ascii
+    | CustomField f -> Custom_field.(f |> name_value language)
   ;;
 
-  let type_of_key = function
-    | Age -> `Nr
-    | Birthday -> `Date
-    | Email | Name -> `Str
-    | Paused -> `Bool
-    | Verified -> `Bool
-    | VerifiedAt -> `Date
+  let human_to_value human =
+    match (human : human) with
+    | Hardcoded h -> show_hardcoded h
+    | CustomField f -> Custom_field.(f |> id |> Id.value)
+  ;;
+
+  let type_of_key m : input_type =
+    let open Custom_field in
+    match (m : human) with
+    | CustomField c ->
+      (match c with
+       | Boolean _ -> Bool
+       | Number _ -> Nr
+       | MultiSelect (_, options) -> Select options
+       | Select (_, options) -> Select options
+       | Text _ -> Str)
+    | Hardcoded k ->
+      (match k with
+       | Email -> Str
+       | Name -> Str
+       | Paused -> Bool
+       | Verified -> Bool
+       | VerifiedAt -> Date)
+  ;;
+
+  let all_hardcoded : hardcoded list =
+    [ Email; Name; Paused; Verified; VerifiedAt ]
   ;;
 end
 
@@ -207,6 +244,7 @@ end
 
 module Predicate = struct
   type 'a t = Key.t * 'a Operator.t * 'a val'
+  type 'a human = Key.human option * 'a Operator.t option * 'a val' option
 
   let equal p1 p2 =
     let key1, operator1, val1 = p1 in
@@ -241,6 +279,8 @@ module Predicate = struct
     |> Format.asprintf "[%s]" (* Can that be done using `List *)
     |> Yojson.Safe.from_string
   ;;
+
+  let create_human ?key ?operator ?value () : 'a human = key, operator, value
 end
 
 let print_filter m fmt _ = Format.pp_print_string fmt m
@@ -310,16 +350,20 @@ let ( --. ) a = Not a
  * deactivated: hidden by default
  * tags: empty by default, depends on #23 *)
 
-let not_filter = Not (PredS (Key.Email, Operator.Equal, Str "test@econ.uzh.ch"))
-
-let or_filter : filter =
-  PredS (Key.Name, Operator.Equal, Str "foo") |.| not_filter
+let not_filter =
+  Not (PredS (Key.(Hardcoded Email), Operator.Equal, Str "test@econ.uzh.ch"))
 ;;
 
-let single_filter : filter = PredS (Key.Name, Operator.Equal, Str "Foo")
+let or_filter : filter =
+  PredS (Key.(Hardcoded Name), Operator.Equal, Str "foo") |.| not_filter
+;;
+
+let single_filter : filter =
+  PredS (Key.(Hardcoded Name), Operator.Equal, Str "Foo")
+;;
 
 let list_filter : filter =
-  PredM (Key.Age, Operator.ContainsNone, Lst [ Nr 20.0; Nr 21.0 ])
+  PredM (Key.(Hardcoded Email), Operator.ContainsNone, Lst [ Nr 20.0; Nr 21.0 ])
 ;;
 
 let and_filter : filter = And (or_filter, single_filter)

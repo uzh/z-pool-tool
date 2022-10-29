@@ -60,6 +60,8 @@ module Partials = struct
   let send_invitation
     Pool_context.{ csrf; language; _ }
     experiment
+    filter
+    key_list
     filtered_contacts
     =
     let form_table =
@@ -91,14 +93,7 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; (let open Component.Filter in
-        filter_form
-          language
-          experiment
-          (CCOption.map_or
-             ~default:(New Filter.Utils.default_filter_label)
-             (fun f -> Existing f.Filter.filter)
-             experiment.Experiment.filter))
+      ; Component.Filter.filter_form language experiment filter key_list
       ; form
           ~a:
             [ a_method `Post

@@ -280,7 +280,7 @@ module SelectOption = struct
     { id : Id.t
     ; name : Name.t
     }
-  [@@deriving eq, show]
+  [@@deriving eq, show, yojson]
 
   let show_id (m : t) = m.id |> Id.value
 
@@ -604,6 +604,14 @@ let name = function
   | MultiSelect ({ name; _ }, _)
   | Select ({ name; _ }, _)
   | Text { name; _ } -> name
+;;
+
+let name_value lang (t : t) =
+  t
+  |> name
+  |> Name.find_opt lang
+  |> CCOption.to_result Message.(NotFound Field.Name)
+  |> Pool_common.Utils.get_or_failwith
 ;;
 
 let hint = function

@@ -6,23 +6,38 @@ type _ val' =
   | Lst : [ `Single ] val' list -> [> `Multi ] val'
 
 module Key : sig
-  type t =
-    | Age
-    | Birthday
+  type input_type =
+    | Bool
+    | Date
+    | Nr
+    | Str
+    | Select of Custom_field.SelectOption.t list
+
+  type hardcoded =
     | Email
     | Name
     | Paused
     | Verified
     | VerifiedAt
 
+  type t =
+    | CustomField of Custom_field.Id.t
+    | Hardcoded of hardcoded
+
+  type human =
+    | CustomField of Custom_field.t
+    | Hardcoded of hardcoded
+
   val pp : Format.formatter -> t -> unit
-  val show : t -> string
   val equal : t -> t -> bool
+  val show : t -> string
+  val equal_human : human -> human -> bool
+  val show_human : human -> string
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
-  val read : string -> (t, Pool_common.Message.error) result
-  val all : t list
-  val type_of_key : t -> [> `Bool | `Date | `Nr | `Str ]
+  val type_of_key : human -> input_type
+  val human_to_label : Pool_common.Language.t -> human -> string
+  val human_to_value : human -> string
 end
 
 module Operator : sig
@@ -45,6 +60,7 @@ end
 
 module Predicate : sig
   type 'a t = Key.t * 'a Operator.t * 'a val'
+  type 'a human = Key.human option * 'a Operator.t option * 'a val' option
 end
 
 type filter =
@@ -63,6 +79,20 @@ type t =
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
+
+module Human : sig
+  type t =
+    | And of t * t
+    | Or of t * t
+    | Not of t
+    (* TODO[timhub]: Fix this type *)
+    | PredS of [ `Single | `Multi ] Predicate.human
+        [@printer print_filter "pred_s"]
+    | PredM of [ `Single | `Multi ] Predicate.human
+        [@printer print_filter "pred_m"]
+
+  val of_string : string -> (t, Pool_common.Message.error) result
+end
 
 val equal : t -> t -> bool
 val show : t -> string
@@ -106,12 +136,16 @@ module Utils : sig
 
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label
-
-  val input_type_to_operator
-    :  [< `Bool | `Date | `Nr | `Str ]
-    -> [> `Single ] Operator.t list
+  val input_type_to_operator : Key.input_type -> [> `Single ] Operator.t list
 end
 
 module Repo : sig
   val t : t Caqti_type.t
 end
+
+val all_keys : Pool_database.Label.t -> Key.human list Lwt.t
+
+val key_of_string
+  :  Pool_database.Label.t
+  -> string
+  -> (Key.human, Pool_common.Message.error) Lwt_result.t

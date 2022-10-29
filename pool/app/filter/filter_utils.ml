@@ -40,8 +40,10 @@ let all_filter_labels : filter_label list =
 
 let input_type_to_operator =
   let open Entity.Operator in
+  let open Entity.Key in
   function
-  | `Bool -> [ Equal; NotEqual ]
-  | `Str -> [ Equal; NotEqual; Like ]
-  | `Date | `Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
+  | Bool -> [ Equal; NotEqual ]
+  | Str -> [ Equal; NotEqual; Like ]
+  | Date | Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
+  | Select _ -> [ Equal; NotEqual ]
 ;;

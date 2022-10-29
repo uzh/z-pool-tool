@@ -39,115 +39,127 @@ let select_default_option language selected =
          |> CCString.capitalize_ascii))
 ;;
 
-let operators_select operators ?selected () =
+let operators_select ?operators ?selected () =
   let format label =
     CCString.replace ~sub:"_" ~by:" " label |> CCString.capitalize_ascii
   in
   div
     ~a:[ a_class [ "form-group" ] ]
     [ label [ txt "Operator" ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:[ a_name "operator" ]
-            (CCList.map
-               (fun operator_option ->
-                 let selected_attr =
-                   CCOption.map_or
-                     ~default:[]
-                     (fun selected ->
-                       if Operator.equal selected operator_option
-                       then [ a_selected () ]
-                       else [])
-                     selected
-                 in
-                 let str = Operator.to_string operator_option in
-                 option ~a:([ a_value str ] @ selected_attr) (txt (format str)))
-               operators)
-        ]
+    ; (match operators with
+       | None -> div []
+       | Some operators ->
+         div
+           ~a:[ a_class [ "select" ] ]
+           [ select
+               ~a:[ a_name "operator" ]
+               (CCList.map
+                  (fun operator_option ->
+                    let selected_attr =
+                      CCOption.map_or
+                        ~default:[]
+                        (fun selected ->
+                          if Operator.equal selected operator_option
+                          then [ a_selected () ]
+                          else [])
+                        selected
+                    in
+                    let str = Operator.to_string operator_option in
+                    option
+                      ~a:([ a_value str ] @ selected_attr)
+                      (txt (format str)))
+                  operators)
+           ])
     ]
 ;;
 
-let value_input language key ?(value : 'a val' option) () =
-  let input_type = key |> Filter.Key.type_of_key in
+let value_input language input_type ?(value : 'a val' option) () =
+  let open Filter in
   let field_name = Pool_common.Message.Field.Value in
   match input_type with
-  | `Str ->
-    let value =
-      CCOption.bind value (fun value ->
-        match[@warning "-4"] value with
-        | Str s -> Some s
-        | _ -> None)
-    in
-    Component_input.input_element language ?value `Text field_name
-  | `Nr ->
-    let value =
-      CCOption.bind value (fun value ->
-        match[@warning "-4"] value with
-        | Nr n -> Some n
-        | _ -> None)
-      |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
-    in
-    Component_input.input_element language `Number ?value field_name
-  | `Bool ->
-    let value =
-      CCOption.map_or
-        ~default:false
-        (fun value ->
-          match[@warning "-4"] value with
-          | Bool b -> b
-          | _ -> false)
-        value
-    in
-    Component_input.checkbox_element language ~value field_name
-  | `Date ->
-    let value =
-      CCOption.bind value (fun value ->
-        match[@warning "-4"] value with
-        | Date d -> Some (d |> Ptime.to_rfc3339)
-        | _ -> None)
-    in
-    Component_input.flatpicker_element
-      language
-      `Datetime_local
-      ?value
-      field_name
+  | None -> div []
+  | Some input_type ->
+    (match input_type with
+     | Key.Str ->
+       let value =
+         CCOption.bind value (fun value ->
+           match[@warning "-4"] value with
+           | Str s -> Some s
+           | _ -> None)
+       in
+       Component_input.input_element language ?value `Text field_name
+     | Key.Nr ->
+       let value =
+         CCOption.bind value (fun value ->
+           match[@warning "-4"] value with
+           | Nr n -> Some n
+           | _ -> None)
+         |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
+       in
+       Component_input.input_element language `Number ?value field_name
+     | Key.Bool ->
+       let value =
+         CCOption.map_or
+           ~default:false
+           (fun value ->
+             match[@warning "-4"] value with
+             | Bool b -> b
+             | _ -> false)
+           value
+       in
+       Component_input.checkbox_element language ~value field_name
+     | Key.Date ->
+       let value =
+         CCOption.bind value (fun value ->
+           match[@warning "-4"] value with
+           | Date d -> Some (d |> Ptime.to_rfc3339)
+           | _ -> None)
+       in
+       Component_input.flatpicker_element
+         language
+         `Datetime_local
+         ?value
+         field_name
+     | Key.Select options ->
+       (* TODO: val' selectoption *)
+       Component_input.selector
+         language
+         field_name
+         Custom_field.SelectOption.show_id
+         options
+         ~option_formatter:(Custom_field.SelectOption.name language)
+         None
+         ())
 ;;
 
-let predicate_toggled language key ?value ?operator () =
-  let input_type = key |> Filter.Key.type_of_key in
-  let operators = Filter.Utils.input_type_to_operator input_type in
-  let operator_select = operators_select operators ?selected:operator () in
-  let input_field = value_input language key ?value () in
+let key_select language ?key ?value ?operator () =
+  let open CCOption.Infix in
+  let input_type = key >|= Filter.Key.type_of_key in
+  let operators = input_type >|= Filter.Utils.input_type_to_operator in
+  let operator_select = operators_select ?operators ?selected:operator () in
+  let input_field = value_input language input_type ?value () in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
     [ operator_select; input_field ]
 ;;
 
-let single_predicate_form language identifier ?key ?operator ?value () =
+let single_predicate_form language identifier key_list ?key ?operator ?value () =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let fields =
-    let format k =
-      k
-      |> Key.show
-      |> CCString.replace ~sub:"_" ~by:" "
-      |> CCString.capitalize_ascii
-    in
-    Key.all
+    key_list
     |> CCList.map (fun opt ->
          let selected =
            CCOption.map_or
              ~default:[]
-             (fun key -> if Key.equal key opt then [ a_selected () ] else [])
+             (fun key ->
+               if Key.equal_human key opt then [ a_selected () ] else [])
              key
          in
-         option ~a:([ a_value (Key.show opt) ] @ selected) (opt |> format |> txt))
+         option
+           ~a:([ a_value (Key.human_to_value opt) ] @ selected)
+           (opt |> Key.human_to_label language |> txt))
   in
-  let toggled_content =
-    match key with
-    | None -> div []
-    | Some key -> predicate_toggled language key ?value ?operator ()
-  in
+  let toggled_content = key_select language ?key ?value ?operator () in
   div
     ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
     [ div
@@ -216,61 +228,38 @@ let predicate_type_select language target identifier ?selected () =
     ]
 ;;
 
-type filter_param =
-  | Existing of Filter.filter
-  | New of Filter.Utils.filter_label
-
-let rec predicate_form
-  language
-  (filter_param : filter_param)
-  ?(identifier = [ 0 ])
-  ()
-  =
+let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
   let selected =
-    match filter_param with
-    | Existing f ->
-      (match f with
-       | And _ -> Utils.And
-       | Or _ -> Utils.Or
-       | Not _ -> Utils.Not
-       | PredS _ -> Utils.PredS
-       | PredM _ -> Utils.PredM)
-    | New f -> f
+    let open Human in
+    filter
+    |> CCOption.map (function
+         | Human.And _ -> Utils.And
+         | Or _ -> Utils.Or
+         | Not _ -> Utils.Not
+         | PredS _ -> Utils.PredS
+         | PredM _ -> Utils.PredM)
   in
   let predicate_form =
-    match filter_param with
-    | New label ->
-      let open Filter.Utils in
-      (match label with
-       | And | Or ->
-         CCList.map
-           (fun i ->
-             predicate_form
-               language
-               (New PredS)
-               ~identifier:(identifier @ [ i ])
-               ())
-           [ 0; 1 ]
-       | Not ->
-         predicate_form language (New PredS) ~identifier:(identifier @ [ 0 ]) ()
-         |> CCList.pure
-       | PredS | PredM ->
-         single_predicate_form language identifier () |> CCList.pure)
-    | Existing filter ->
+    let open Human in
+    match filter with
+    | None -> []
+    | Some filter ->
       (match filter with
        | And (f1, f2) | Or (f1, f2) ->
          CCList.mapi
            (fun i filter ->
              predicate_form
                language
-               (Existing filter)
+               filter
+               key_list
                ~identifier:(identifier @ [ i ])
                ())
-           [ f1; f2 ]
+           [ Some f1; Some f2 ]
        | Not filter ->
          predicate_form
            language
-           (Existing filter)
+           (Some filter)
+           key_list
            ~identifier:(identifier @ [ 0 ])
            ()
          |> CCList.pure
@@ -279,9 +268,10 @@ let rec predicate_form
          single_predicate_form
            language
            identifier
-           ~key:k
-           ~operator:o
-           ~value:v
+           key_list
+           ?key:k
+           ?operator:o
+           ?value:v
            ()
          |> CCList.pure)
   in
@@ -295,20 +285,20 @@ let rec predicate_form
         language
         predicate_identifier
         identifier
-        ~selected
+        ?selected
         ()
     ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
     ]
 ;;
 
-let filter_form language experiment filter =
+let filter_form language experiment filter key_list =
   let action =
     Format.asprintf
       "/admin/experiments/%s/filter/create"
       (Pool_common.Id.value experiment.Experiment.id)
     |> Sihl.Web.externalize_path
   in
-  let predicates = predicate_form language filter () in
+  let predicates = predicate_form language filter key_list () in
   div
     ~a:[ a_user_data "action" action; a_id "filter-form" ]
     [ predicates

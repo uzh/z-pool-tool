@@ -1,6 +1,32 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+let rec t_to_human key_list (t : Filter.filter) =
+  let open Filter in
+  let find_in_keys key_id =
+    CCList.find_opt
+      (fun key ->
+        let open Key in
+        match (key : human) with
+        | Hardcoded _ -> false
+        | CustomField f -> Custom_field.(Id.equal (id f) key_id))
+      key_list
+  in
+  let key_to_frontend key =
+    let open Key in
+    match (key : t) with
+    | Hardcoded h -> Some (Hardcoded h : human)
+    | CustomField id -> id |> find_in_keys
+  in
+  let t_to_human = t_to_human key_list in
+  match t with
+  | And (p1, p2) -> Human.And (t_to_human p1, t_to_human p2)
+  | Or (pred1, pred2) -> Human.Or (t_to_human pred1, t_to_human pred2)
+  | Not p -> Human.Not (t_to_human p)
+  | PredS (k, o, v) -> Human.PredS (key_to_frontend k, Some o, Some v)
+  | PredM (k, o, v) -> Human.PredM (key_to_frontend k, Some o, Some v)
+;;
+
 let invitation_template_data tenant_db system_languages =
   let open Lwt_result.Syntax in
   let%lwt res =
@@ -31,6 +57,12 @@ let index req =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
+       let%lwt key_list = Filter.all_keys tenant_db in
+       let filter =
+         experiment.Experiment.filter
+         |> CCOption.map (fun filter ->
+              filter.Filter.filter |> t_to_human key_list)
+       in
        let%lwt filtered_contacts =
          Contact.find_filtered
            tenant_db
@@ -43,6 +75,8 @@ let index req =
        Page.Admin.Experiments.invitations
          invitations
          experiment
+         filter
+         key_list
          filtered_contacts
          context
        |> create_layout req context

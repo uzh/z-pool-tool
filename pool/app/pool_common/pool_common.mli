@@ -8,6 +8,8 @@ module Model : sig
     val equal : t -> t -> bool
     val pp : Format.formatter -> t -> unit
     val show : t -> string
+    val t_of_yojson : Yojson.Safe.t -> t
+    val yojson_of_t : t -> Yojson.Safe.t
     val create : unit -> t
     val of_string : string -> t
     val value : t -> string

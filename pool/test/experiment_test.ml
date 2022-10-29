@@ -14,14 +14,19 @@ module Data = struct
   module Filter = struct
     open Filter
 
-    let single_filter : filter = PredS (Key.Paused, Operator.Equal, Bool false)
+    let single_filter : filter =
+      PredS (Key.(Hardcoded Paused), Operator.Equal, Bool false)
+    ;;
 
     let or_filter : filter =
-      Or (PredS (Key.Name, Operator.Equal, Str "foo"), single_filter)
+      Or (PredS (Key.(Hardcoded Name), Operator.Equal, Str "foo"), single_filter)
     ;;
 
     let list_filter : filter =
-      PredM (Key.Age, Operator.ContainsNone, Lst [ Nr 20.0; Nr 21.0 ])
+      PredM
+        ( Key.(Hardcoded Name)
+        , Operator.ContainsNone
+        , Lst [ Str "foo"; Str "bar" ] )
     ;;
 
     let and_filter : filter = And (or_filter, list_filter)

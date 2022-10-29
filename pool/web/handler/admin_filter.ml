@@ -71,16 +71,18 @@ let create req =
 let toggle_predicate_type req =
   let open Lwt_result.Syntax in
   let%lwt result =
-    let* { Pool_context.language; _ } =
+    let* { Pool_context.language; tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* predicate_type =
+    let* filter =
+      (* TODO: SHould this be an option? *)
       let open CCResult in
       find_in_params urlencoded Pool_common.Message.Field.Predicate
-      >>= Filter.Utils.label_of_string
+      >>= Filter.Human.of_string
       |> Lwt_result.lift
     in
+    let%lwt key_list = Filter.all_keys tenant_db in
     let* identifier =
       let open CCResult in
       find_in_params urlencoded Pool_common.Message.Field.Id
@@ -93,7 +95,7 @@ let toggle_predicate_type req =
       |> Lwt_result.lift
     in
     Component.Filter.(
-      predicate_form language (New predicate_type) ~identifier ())
+      predicate_form language (Some filter) key_list ~identifier ())
     |> Lwt_result.return
   in
   (match result with
@@ -112,18 +114,17 @@ let toggle_predicate_type req =
 let toggle_key req =
   let open Lwt_result.Syntax in
   let%lwt result =
-    let* { Pool_context.language; _ } =
+    let* { Pool_context.language; tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
-      let open CCResult in
-      let open Filter in
+      let open Lwt_result.Infix in
       find_in_params urlencoded Pool_common.Message.Field.Key
-      >>= Key.read
       |> Lwt_result.lift
+      >>= Filter.key_of_string tenant_db
     in
-    Component.Filter.predicate_toggled language key () |> Lwt.return_ok
+    Component.Filter.key_select language ~key () |> Lwt.return_ok
   in
   (match result with
    | Ok html -> html

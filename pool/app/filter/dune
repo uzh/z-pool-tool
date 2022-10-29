@@ -1,6 +1,11 @@
 (library
  (name filter)
- (libraries pool_database pool_common utils ppx_deriving_yojson.runtime)
+ (libraries
+  custom_field
+  pool_database
+  pool_common
+  utils
+  ppx_deriving_yojson.runtime)
  (preprocess
   (pps
    lwt_ppx

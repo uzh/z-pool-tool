@@ -1,4 +1,5 @@
 module HttpUtils = Http_utils
+module Field = Pool_common.Message.Field
 open Tyxml.Html
 
 let language_select
@@ -367,16 +368,17 @@ let selector
   ?flash_fetcher
   ?(required = false)
   ?help
+  ?option_formatter
   ?(attributes = [])
   ?(add_empty = false)
   ()
   =
-  let name = Pool_common.Message.Field.(show field) in
+  let name = Field.(show field) in
   let input_label = Elements.input_label language field None required in
   let selected =
     let open CCOption in
     bind flash_fetcher (fun flash_fetcher ->
-      field |> Pool_common.Message.Field.show |> flash_fetcher)
+      field |> Field.show |> flash_fetcher)
     <+> map show selected
   in
   let options =
@@ -391,7 +393,10 @@ let selector
         in
         option
           ~a:((l |> show |> a_value) :: is_selected)
-          (l |> show |> CCString.capitalize_ascii |> txt))
+          (l
+          |> CCOption.value ~default:show option_formatter
+          |> CCString.capitalize_ascii
+          |> txt))
       options
   in
   let options =
