@@ -10,7 +10,7 @@ module Data = struct
       Sihl.Configuration.read_string "DATABASE_URL_TENANT_TEST"
       |> CCOption.get_exn_or "DATABASE_URL_TENANT_TEST undefined"
     in
-    url, database_label
+    database_label, url
   ;;
 end
 
@@ -23,8 +23,8 @@ let check_root_database _ () =
 ;;
 
 let check_find_tenant_database _ () =
-  let create url label =
-    Pool_database.create url label |> Test_utils.get_or_failwith_pool_error
+  let create label url =
+    Pool_database.create label url |> Test_utils.get_or_failwith_pool_error
   in
   let expected = CCList.map (CCFun.uncurry create) [ Data.database ] in
   let%lwt tenants = Pool_tenant.find_databases () in

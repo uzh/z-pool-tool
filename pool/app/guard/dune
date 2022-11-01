@@ -1,0 +1,13 @@
+(library
+ (name guard)
+ (libraries
+  contact
+  guardian
+  guardian.backend
+  pool_common
+  pool_database
+  pool_user
+  role
+  sihl)
+ (preprocess
+  (pps lwt_ppx)))

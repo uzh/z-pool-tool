@@ -34,7 +34,7 @@ module User = struct
 
   (** Many request handlers do not extract a [User.t] at any point. This
       function is useful in such cases. *)
-  let authorizable_of_req req =
+  let authorizable_of_req ?ctx req =
     let* user_id =
       Sihl.Web.Session.find "user_id" req
       |> CCResult.of_opt
@@ -42,6 +42,7 @@ module User = struct
       |> Lwt_result.lift
     in
     Persistence.decorate_to_authorizable
+      ?ctx
       (fun id ->
         Authorizable.make
           ~roles:(Role_set.singleton `User)
@@ -57,8 +58,9 @@ end
 module Contact = struct
   type t = Contact.t
 
-  let to_authorizable t =
+  let to_authorizable ?ctx t =
     Persistence.decorate_to_authorizable
+      ?ctx
       (fun t ->
         Authorizable.make
           ~roles:(Role_set.singleton `Contact)
@@ -74,8 +76,9 @@ end
 module Pool_tenant = struct
   type t = Pool_tenant.t
 
-  let to_authorizable t =
+  let to_authorizable ?ctx t =
     Persistence.decorate_to_authorizable
+      ?ctx
       (fun t ->
         Authorizable.make
           ~roles:(Role_set.singleton `Tenant)
@@ -88,8 +91,9 @@ module Pool_tenant = struct
   module Write = struct
     type t = Pool_tenant.Write.t
 
-    let to_authorizable t =
+    let to_authorizable ?ctx t =
       Persistence.decorate_to_authorizable
+        ?ctx
         (fun t ->
           Authorizable.make
             ~roles:(Role_set.singleton `Tenant)
@@ -107,9 +111,9 @@ module Admin = struct
   (** converts an [authorizable] of type [\[ _ \] Authorizable.t] into a value
       of type [\[ `Admin \] Authorizable.t] if it possesses the appropriate
       [ `Admin ] role. *)
-  let of_authorizable (auth : _ Authorizable.t) =
+  let of_authorizable ?ctx (auth : _ Authorizable.t) =
     let* roles =
-      Persistence.get_roles auth.Authorizable.uuid
+      Persistence.find_roles ?ctx auth.Authorizable.uuid
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
     if Role_set.mem `Admin roles
@@ -126,6 +130,8 @@ end
 (** The list of permissions that we need [Guardian] to be aware of in order to
     achieve a minimal level of functionality. Notably, the [`Admin] role should
     have [`Manage] authority on everything in the system. *)
+
+(* TODO: check type, was: Authorizer.auth_rule list *)
 let root_permissions : Authorizer.auth_rule list =
-  CCList.map (fun role -> `Role `Admin, `Manage, `Role role) Role.all
+  CCList.map (fun role -> `Entity `Admin, `Manage, `Entity role) Role.all
 ;;

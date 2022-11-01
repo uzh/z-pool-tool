@@ -100,7 +100,7 @@ module Data = struct
         smtp_auth_authentication_method
         smtp_auth_protocol
     in
-    let* database = Pool_database.create database_url database_label in
+    let* database = Pool_database.create database_label database_url in
     Ok
       Write.
         { id = Common.Id.create ()

@@ -14,7 +14,7 @@ module Create : sig
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t =
     { contact : Contact.t
@@ -63,14 +63,14 @@ end = struct
           ])
   ;;
 
-  let effects = [ `Create, `Role `Assignment ]
+  let effects = [ `Create, `Entity `Assignment ]
 end
 
 module Cancel : sig
   type t = Assignment.t
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Assignment.t
 
@@ -81,7 +81,7 @@ end = struct
   ;;
 
   let effects command =
-    [ `Update, `Uniq (Pool_common.Id.to_uuidm command.Assignment.id) ]
+    [ `Update, `One (Pool_common.Id.to_uuidm command.Assignment.id) ]
   ;;
 end
 
@@ -100,7 +100,7 @@ module SetAttendance : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Assignment.t -> Ocauth.Authorizer.effect list
+  val effects : Assignment.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { show_up : Assignment.ShowUp.t
@@ -133,7 +133,7 @@ end = struct
   ;;
 
   let effects assignment =
-    [ `Update, `Uniq (Pool_common.Id.to_uuidm assignment.Assignment.id) ]
+    [ `Update, `One (Pool_common.Id.to_uuidm assignment.Assignment.id) ]
   ;;
 end
 
@@ -149,7 +149,7 @@ module CreateFromWaitingList : sig
     -> Email.confirmation_email
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t =
     { session : Session.t
@@ -191,5 +191,5 @@ end = struct
           ]
   ;;
 
-  let effects = [ `Create, `Role `Assignment ]
+  let effects = [ `Create, `Entity `Assignment ]
 end

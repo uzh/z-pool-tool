@@ -10,7 +10,7 @@ module Create : sig
     -> Custom_field.Model.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   let handle ?id sys_languages name model =
     let open CCResult in
@@ -19,7 +19,7 @@ end = struct
     Ok Custom_field.[ GroupCreated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Update : sig
@@ -30,7 +30,7 @@ module Update : sig
     -> Custom_field.Model.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   let handle sys_languages group names model =
     let open CCResult in
@@ -39,7 +39,7 @@ end = struct
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Destroy : sig
@@ -47,23 +47,23 @@ module Destroy : sig
     :  Custom_field.Group.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   let handle option =
     Ok [ Custom_field.GroupDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Sort : sig
   type t = Custom_field.Group.t list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.Group.t list
 
   let handle t = Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end

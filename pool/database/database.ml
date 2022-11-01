@@ -57,7 +57,9 @@ module Root = struct
   end
 
   let setup () =
-    Sihl.Database.add_pool label (Sihl.Configuration.read schema).url
+    Pool_database.create label (Sihl.Configuration.read schema).url
+    |> Pool_common.Utils.get_or_failwith
+    |> Pool_database.add_pool
   ;;
 end
 

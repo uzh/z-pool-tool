@@ -1,6 +1,6 @@
 (library
  (name experiment)
- (libraries contact pool_common sihl tenant ocauth)
+ (libraries contact guard pool_common sihl tenant)
  (preprocess
   (pps lwt_ppx ppx_deriving.eq ppx_deriving.show)))
 

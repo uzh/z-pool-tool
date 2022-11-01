@@ -12,7 +12,7 @@ module Create : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = command
 
@@ -23,7 +23,7 @@ end = struct
     Ok Custom_field.[ OptionCreated (id field, m) |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Update : sig
@@ -35,7 +35,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = command
 
@@ -47,7 +47,7 @@ end = struct
     Ok [ OptionUpdated m |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Destroy : sig
@@ -55,23 +55,23 @@ module Destroy : sig
     :  Custom_field.SelectOption.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   let handle option =
     Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end
 
 module Sort : sig
   type t = Custom_field.SelectOption.t list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.SelectOption.t list
 
   let handle t = Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
-  let effects = [ `Create, `Role `Admin ]
+  let effects = [ `Create, `Entity `Admin ]
 end

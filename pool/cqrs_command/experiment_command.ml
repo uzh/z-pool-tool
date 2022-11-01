@@ -60,7 +60,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = create
 
@@ -89,7 +89,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `Role `Experiment ]
+  let effects = [ `Create, `Entity `Experiment ]
 end
 
 module Update : sig
@@ -104,7 +104,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Experiment.t -> Ocauth.Authorizer.effect list
+  val effects : Experiment.t -> Guard.Authorizer.effect list
 end = struct
   type t = create
 
@@ -135,7 +135,7 @@ end = struct
   ;;
 
   let effects experiment =
-    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm) ]
+    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 
@@ -146,7 +146,7 @@ module Delete : sig
     }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   (* Only when no sessions added *)
 
@@ -163,7 +163,7 @@ end = struct
   ;;
 
   let effects command =
-    [ `Delete, `Uniq (command.experiment_id |> Pool_common.Id.to_uuidm) ]
+    [ `Delete, `One (command.experiment_id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 
@@ -182,7 +182,7 @@ module AddExperimenter : sig
   val effects
     :  Experiment.t
     -> Admin.experimenter Admin.t
-    -> Ocauth.Authorizer.effect list
+    -> Guard.Authorizer.effect list
 end = struct
   type t = { user_id : Id.t }
 
@@ -194,8 +194,8 @@ end = struct
   ;;
 
   let effects experiment user =
-    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
     ]
   ;;
 end
@@ -211,7 +211,7 @@ module DivestExperimenter : sig
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -226,8 +226,8 @@ end = struct
   ;;
 
   let effects { user_id; experiment_id } =
-    [ `Update, `Uniq (experiment_id |> Pool_common.Id.to_uuidm)
-    ; `Update, `Uniq (user_id |> Pool_common.Id.to_uuidm)
+    [ `Update, `One (experiment_id |> Pool_common.Id.to_uuidm)
+    ; `Update, `One (user_id |> Pool_common.Id.to_uuidm)
     ]
   ;;
 end
@@ -240,7 +240,7 @@ module AddAssistant : sig
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
-  val effects : Experiment.t -> t -> Ocauth.Authorizer.effect list
+  val effects : Experiment.t -> t -> Guard.Authorizer.effect list
 end = struct
   type t = { user_id : Id.t }
 
@@ -251,8 +251,8 @@ end = struct
   ;;
 
   let effects experiment t =
-    [ `Update, `Uniq (experiment.Experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `Uniq (t.user_id |> Pool_common.Id.to_uuidm)
+    [ `Update, `One (experiment.Experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `One (t.user_id |> Pool_common.Id.to_uuidm)
     ]
   ;;
 end
@@ -271,7 +271,7 @@ module DivestAssistant : sig
   val effects
     :  Experiment.t
     -> Admin.experimenter Admin.t
-    -> Ocauth.Authorizer.effect list
+    -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -285,8 +285,8 @@ end = struct
   ;;
 
   let effects experiment user =
-    [ `Update, `Uniq (experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `Uniq (Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm)
+    ; `Update, `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
     ]
   ;;
 end

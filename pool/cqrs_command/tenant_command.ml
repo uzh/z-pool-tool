@@ -11,7 +11,7 @@ module AssignOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -23,8 +23,8 @@ end = struct
   ;;
 
   let effects t =
-    [ `Manage, `Uniq (t.user_id |> Id.to_uuidm)
-    ; `Manage, `Uniq (t.tenant_id |> Id.to_uuidm)
+    [ `Manage, `One (t.user_id |> Id.to_uuidm)
+    ; `Manage, `One (t.tenant_id |> Id.to_uuidm)
     ]
   ;;
 end
@@ -40,7 +40,7 @@ module DivestOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : string
@@ -52,8 +52,8 @@ end = struct
   ;;
 
   let effects t =
-    [ `Manage, `Uniq (t.user_id |> Ocauth.Uuid.of_string_exn)
-    ; `Manage, `Uniq (t.tenant_id |> Ocauth.Uuid.of_string_exn)
+    [ `Manage, `One (t.user_id |> Guard.Uuid.of_string_exn)
+    ; `Manage, `One (t.tenant_id |> Guard.Uuid.of_string_exn)
     ]
   ;;
 end
@@ -79,10 +79,10 @@ module AddRoot : sig
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = { user_id : string }
 
   let handle = Utils.todo
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end

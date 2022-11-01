@@ -23,16 +23,31 @@ type t =
   }
 [@@deriving eq]
 
-let create url label = Ok { url; label }
+let create label url = Ok { url; label }
+let root = Label.of_string "root"
+
+module MariaConfig = struct
+  include Guardian_backend.Pools.DefaultConfig
+
+  let database =
+    Guardian_backend.Pools.MultiPools
+      [ ( root |> Label.value
+        , Sihl.Configuration.read_string "DATABASE_URL"
+          |> CCOption.get_exn_or "DATABASE_URL undefined" )
+      ]
+  ;;
+end
+
+module GuardBackend = Guardian_backend.Pools.Make (MariaConfig)
 
 let add_pool model =
-  Sihl.Database.add_pool
-    ~pool_size:
-      (Sihl.Configuration.read_string "DATABASE_POOL_SIZE"
-      |> CCFun.flip CCOption.bind CCInt.of_string
-      |> CCOption.value ~default:10)
-    model.label
-    model.url
+  let pool_size =
+    Sihl.Configuration.read_string "DATABASE_POOL_SIZE"
+    |> CCFun.flip CCOption.bind CCInt.of_string
+    |> CCOption.value ~default:10
+  in
+  let () = GuardBackend.add_pool ~pool_size model.label model.url in
+  Sihl.Database.add_pool ~pool_size model.label model.url
 ;;
 
 let read_pool m = m.label

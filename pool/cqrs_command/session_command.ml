@@ -187,7 +187,7 @@ module Create = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
 
 module Update : sig
@@ -291,7 +291,7 @@ module Reschedule : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Session.reschedule
 
@@ -331,7 +331,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
 
 module Delete : sig
@@ -341,7 +341,7 @@ module Delete : sig
     :  Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = { session : Session.t }
 
@@ -354,7 +354,7 @@ end = struct
     else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
 
 module Cancel : sig
@@ -367,7 +367,7 @@ module Cancel : sig
     :  Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   (* TODO issue #90 step 2 *)
   (* notify_via: Email, SMS *)
@@ -377,14 +377,14 @@ end = struct
     }
 
   let handle session = Ok [ Session.Canceled session |> Pool_event.session ]
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
 
 module SendReminder : sig
   type t = (Session.t * Sihl_email.t list) list
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
@@ -400,5 +400,5 @@ end = struct
          command)
   ;;
 
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
