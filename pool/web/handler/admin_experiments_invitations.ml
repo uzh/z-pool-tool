@@ -23,8 +23,13 @@ let rec t_to_human key_list (t : Filter.filter) =
   | And (p1, p2) -> Human.And (t_to_human p1, t_to_human p2)
   | Or (pred1, pred2) -> Human.Or (t_to_human pred1, t_to_human pred2)
   | Not p -> Human.Not (t_to_human p)
-  | PredS (k, o, v) -> Human.PredS (key_to_frontend k, Some o, Some v)
-  | PredM (k, o, v) -> Human.PredM (key_to_frontend k, Some o, Some v)
+  | Pred { Predicate.key; operator; value } ->
+    Human.Pred
+      Predicate.
+        { key = key_to_frontend key
+        ; operator = Some operator
+        ; value = Some value
+        }
 ;;
 
 let invitation_template_data tenant_db system_languages =
@@ -64,10 +69,9 @@ let index req =
               filter.Filter.filter |> t_to_human key_list)
        in
        let%lwt filtered_contacts =
-         Contact.find_filtered
-           tenant_db
-           experiment.Experiment.id
-           experiment.Experiment.filter
+         Contact.find_filtered tenant_db experiment.Experiment.id None
+         (* TODO: Fix Filter to sql *)
+         (* experiment.Experiment.filter *)
        in
        let* invitations =
          Invitation.find_by_experiment tenant_db experiment.Experiment.id

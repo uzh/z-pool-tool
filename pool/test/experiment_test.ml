@@ -15,18 +15,29 @@ module Data = struct
     open Filter
 
     let single_filter : filter =
-      PredS (Key.(Hardcoded Paused), Operator.Equal, Bool false)
+      Pred
+        (Predicate.create
+           Key.(Hardcoded Email)
+           Operator.Equal
+           (Single (Str "Foo")))
     ;;
 
     let or_filter : filter =
-      Or (PredS (Key.(Hardcoded Name), Operator.Equal, Str "foo"), single_filter)
+      Or
+        ( Pred
+            (Predicate.create
+               Key.(Hardcoded Name)
+               Operator.Equal
+               (Single (Str "Bar")))
+        , single_filter )
     ;;
 
     let list_filter : filter =
-      PredM
-        ( Key.(Hardcoded Name)
-        , Operator.ContainsNone
-        , Lst [ Str "foo"; Str "bar" ] )
+      Pred
+        (Predicate.create
+           Key.(Hardcoded Name)
+           Operator.ContainsNone
+           (Lst [ Str "foo"; Str "bar" ]))
     ;;
 
     let and_filter : filter = And (or_filter, list_filter)

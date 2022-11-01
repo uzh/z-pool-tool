@@ -1,111 +1,84 @@
-module Ptime = struct
-  include Ptime
-
-  let t_of_yojson m =
-    m
-    |> Yojson.Basic.to_string
-    |> Ptime.of_rfc3339
-    |> CCResult.map (fun (m, _, _) -> m)
-    |> CCResult.map_err (fun _ -> "Invalid date time provided")
-  ;;
-
-  let yojson_of_t m = m |> Ptime.to_rfc3339 |> Yojson.Basic.from_string
+module Helper = struct
+  let key_string = "key"
+  let operator_string = "operator"
+  let value_string = "value"
 end
 
-let error = Pool_common.Message.(Invalid Field.Filter)
-let basic_to_safe m = m |> Yojson.Basic.to_string |> Yojson.Safe.from_string
-let wrap_string m = Format.asprintf "[\"%s\"]" m
-
-(* TODO[timhub]: find better way to do this *)
-let unwrap_string m =
-  m |> CCString.take (CCString.length m - 2) |> CCString.drop 2
+let read of_yojson yojson =
+  yojson
+  |> Yojson.Safe.to_string
+  |> Format.asprintf "[%s]"
+  |> Yojson.Safe.from_string
+  |> of_yojson
 ;;
 
 let print m fmt _ = Format.pp_print_string fmt m
 
-type _ val' =
-  | Str : string -> [> `Single ] val' [@printer print "str"]
-  | Nr : float -> [> `Single ] val' [@printer print "nr"]
-  | Bool : bool -> [> `Single ] val' [@printer print "bool"]
-  | Date : Ptime.t -> [> `Single ] val' [@printer print "date"]
-  | Lst : [ `Single ] val' list -> [> `Multi ] val' [@printer print "list"]
-    (* TODO: Remove this type, and just use list of vals? *)
-[@@deriving show { with_path = false }]
+type single_val =
+  | Bool of bool [@printer print "bool"] [@name "bool"]
+  | Date of Ptime.t [@printer print "date"] [@name "date"]
+  | Nr of float [@printer print "nr"] [@name "nr"]
+  | Option of Custom_field.SelectOption.Id.t [@printer print "option"]
+      [@name "option"]
+  | Str of string [@printer print "str"] [@name "str"]
+[@@deriving show { with_path = false }, eq]
 
-let[@warning "-4"] equal_val' val_one val_two =
-  let equal_single_val' v1 v2 =
-    match v1, v2 with
-    | Str s1, Str s2 -> CCString.equal s1 s2
-    | Nr n1, Nr n2 -> CCFloat.equal n1 n2
-    | Bool b1, Bool b2 -> CCBool.equal b1 b2
-    | Date d1, Date d2 ->
-      CCString.equal (Ptime.to_rfc3339 d1) (Ptime.to_rfc3339 d2)
-    | _ -> false
-  in
-  match val_one, val_two with
-  | Str _, Str _ | Nr _, Nr _ | Bool _, Bool _ | Date _, Date _ ->
-    equal_single_val' val_one val_two
-  | Lst l1, Lst l2 -> CCList.equal equal_single_val' l1 l2
-  | _ -> false
-;;
+type value =
+  | Single of single_val [@printer print "single"] [@name "single"]
+  | Lst of single_val list [@printer print "list"] [@name "list"]
+[@@deriving show { with_path = false }, eq, variants]
 
-let single_val_to_string (m : [ `Single ] val') =
-  match m with
-  | Str _ -> "str"
-  | Nr _ -> "nr"
-  | Bool _ -> "bool"
-  | Date _ -> "date"
-;;
-
-let single_val_to_yojson (value : [ `Single ] val') : Yojson.Basic.t =
-  (match value with
-   | Str str -> `String str
-   | Nr nr -> `Float nr
-   | Bool b -> `Bool b
-   | Date ptime -> `String (ptime |> Ptime.to_rfc3339))
-  |> fun json -> `Assoc [ single_val_to_string value, json ]
-;;
-
-let yojson_of_val (value : [ `Single | `Multi ] val') =
-  let go = single_val_to_yojson in
-  match value with
-  | Str str -> go (Str str)
-  | Nr nr -> go (Nr nr)
-  | Bool b -> go (Bool b)
-  | Date ptime -> go (Date ptime)
-  | Lst lst ->
-    CCList.map (fun v -> single_val_to_yojson v) lst |> fun t -> `List t
-;;
-
-let single_val_of_yojson value =
-  match value with
+let single_value_of_yojson (yojson : Yojson.Safe.t) =
+  let error = Pool_common.Message.(Invalid Field.Value) in
+  match yojson with
   | `Assoc [ (key, value) ] ->
     (match key, value with
-     | "str", `String s -> Ok (Str s)
-     | "nr", `Float f -> Ok (Nr f)
-     | "nr", `Int i -> Ok (Nr (i |> CCInt.to_float))
      | "bool", `Bool b -> Ok (Bool b)
-     | "date", `String s ->
-       s
+     | "date", `String str ->
+       str
        |> Ptime.of_rfc3339
-       |> CCResult.map (fun (d, _, _) -> Date d)
+       |> CCResult.map (fun (date, _, _) -> Date date)
        |> CCResult.map_err (fun _ -> error)
+     | "nr", `Float n -> Ok (Nr n)
+     | "option", `String id ->
+       Ok (Option (Custom_field.SelectOption.Id.of_string id))
+     | "str", `String str -> Ok (Str str)
      | _ -> Error error)
   | _ -> Error error
 ;;
 
-let val_of_yojson (value : Yojson.Basic.t)
-  : ([> `Single | `Multi ] val', Pool_common.Message.error) result
-  =
+let value_of_yojson (yojson : Yojson.Safe.t) =
+  let open CCResult in
+  let error = Pool_common.Message.(Invalid Field.Value) in
+  match yojson with
+  | `Assoc [ (key, value) ] ->
+    (match key, value with
+     | "list", `List values ->
+       values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst
+     | _ -> single_value_of_yojson yojson >|= single)
+  | _ -> Error error
+;;
+
+let to_assoc key value = `Assoc [ key, value ]
+
+let yojson_of_single_val value =
+  let to_assoc = to_assoc (value |> show_single_val) in
+  to_assoc
+  @@
   match value with
-  | `List lst ->
-    let vals =
-      CCList.map single_val_of_yojson lst
-      |> CCResult.flatten_l
-      |> CCResult.map (fun l -> Lst l)
-    in
-    vals
-  | _ -> single_val_of_yojson value
+  | Bool b -> `Bool b
+  | Date ptime -> `String (Ptime.to_rfc3339 ptime)
+  | Nr n -> `Float n
+  | Option id -> `String (Custom_field.SelectOption.Id.value id)
+  | Str str -> `String str
+;;
+
+let yojson_of_value m =
+  match m with
+  | Single single -> single |> yojson_of_single_val
+  | Lst values ->
+    let value_list = `List (CCList.map yojson_of_single_val values) in
+    to_assoc (m |> show_value) value_list
 ;;
 
 module Key = struct
@@ -132,16 +105,32 @@ module Key = struct
   type t =
     | CustomField of Custom_field.Id.t
     | Hardcoded of hardcoded
-  [@@deriving show { with_path = false }, eq, yojson]
+  [@@deriving show { with_path = false }, eq]
+
+  let read_hardcoded yojson =
+    try Some (yojson |> read hardcoded_of_yojson) with
+    | _ -> None
+  ;;
+
+  let of_yojson : Yojson.Safe.t -> (t, Pool_common.Message.error) result =
+   fun yojson ->
+    match read_hardcoded yojson with
+    | Some h -> Ok (Hardcoded h)
+    | None ->
+      (match yojson with
+       | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
+       | _ -> Error Pool_common.Message.(Invalid Field.Key))
+ ;;
+
+  let to_yojson (m : t) =
+    (match m with
+     | Hardcoded h -> h |> show_hardcoded
+     | CustomField id -> id |> Custom_field.Id.value)
+    |> fun str -> `String str
+  ;;
 
   let read m =
-    try
-      Some
-        (m
-        |> Format.asprintf "[\"%s\"]"
-        |> Yojson.Safe.from_string
-        |> hardcoded_of_yojson)
-    with
+    try Some (`String m |> hardcoded_of_yojson) with
     | _ -> None
   ;;
 
@@ -160,6 +149,15 @@ module Key = struct
     | CustomField f -> Custom_field.(f |> id |> Id.value)
   ;;
 
+  let type_of_hardcoded m : input_type =
+    match m with
+    | Email -> Str
+    | Name -> Str
+    | Paused -> Bool
+    | Verified -> Bool
+    | VerifiedAt -> Date
+  ;;
+
   let type_of_key m : input_type =
     let open Custom_field in
     match (m : human) with
@@ -170,13 +168,33 @@ module Key = struct
        | MultiSelect (_, options) -> Select options
        | Select (_, options) -> Select options
        | Text _ -> Str)
-    | Hardcoded k ->
-      (match k with
-       | Email -> Str
-       | Name -> Str
-       | Paused -> Bool
-       | Verified -> Bool
-       | VerifiedAt -> Date)
+    | Hardcoded h -> type_of_hardcoded h
+  ;;
+
+  let validate_value (m : t) value =
+    let open CCResult in
+    let validate_single_value input_type value =
+      match[@warning "-4"] value, input_type with
+      | (Bool _ : single_val), (Bool : input_type)
+      | Date _, Date
+      | Nr _, Nr
+      | Str _, Str
+      | Option _, Select _ -> Ok ()
+      | _ ->
+        Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+    in
+    let validate_value value input_type =
+      match value with
+      | Single v -> validate_single_value input_type v
+      | Lst lst ->
+        lst
+        |> CCList.map (validate_single_value input_type)
+        |> CCList.all_ok
+        >|= CCFun.const ()
+    in
+    match m with
+    | Hardcoded v -> v |> type_of_hardcoded |> validate_value value
+    | CustomField _ -> Ok ()
   ;;
 
   let all_hardcoded : hardcoded list =
@@ -185,45 +203,39 @@ module Key = struct
 end
 
 module Operator = struct
-  type _ t =
-    | Less : [> `Single ] t
-    | LessEqual : [> `Single ] t
-    | Greater : [> `Single ] t
-    | GreaterEqual : [> `Single ] t
-    | Equal : [> `Single ] t
-    | NotEqual : [> `Single ] t
-    | Like : [> `Single ] t
-    | ContainsSome : [> `Multi ] t
-    | ContainsNone : [> `Multi ] t
-    | ContainsAll : [> `Multi ] t
-  [@@deriving eq, enum]
+  type t =
+    | Less [@printer print "less"] [@name "less"]
+    | LessEqual [@printer print "less_equal"] [@name "less_equal"]
+    | Greater [@printer print "greater"] [@name "greater"]
+    | GreaterEqual [@printer print "greater_equal"] [@name "greater_equal"]
+    | Equal [@printer print "equal"] [@name "equal"]
+    | NotEqual [@printer print "not_equal"] [@name "not_equal"]
+    | Like [@printer print "like"] [@name "like"]
+    | ContainsSome [@printer print "contains_some"] [@name "contains_some"]
+    | ContainsNone [@printer print "contains_none"] [@name "contains_none"]
+    | ContainsAll [@printer print "contains_all"] [@name "contains_all"]
+  [@@deriving show { with_path = false }, eq, enum, yojson]
 
-  let of_string = function
-    | "less" -> Ok Less
-    | "less_equal" -> Ok LessEqual
-    | "greater" -> Ok Greater
-    | "greater_equal" -> Ok GreaterEqual
-    | "equal" -> Ok Equal
-    | "not_equal" -> Ok NotEqual
-    | "like" -> Ok Like
-    | "contains_some" -> Ok ContainsSome
-    | "contains_none" -> Ok ContainsNone
-    | "contains_all" -> Ok ContainsAll
+  let input_type_to_operator =
+    let open Key in
+    function
+    | Key.Bool -> [ Equal; NotEqual ]
+    | Str -> [ Equal; NotEqual; Like ]
+    | Date | Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
+    | Select _ -> [ Equal; NotEqual ]
+  ;;
+
+  let of_string m =
+    try Ok (`String m |> t_of_yojson) with
     | _ -> Error Pool_common.Message.(Invalid Field.Operator)
   ;;
 
-  let to_string = function
-    | Less -> "less"
-    | LessEqual -> "less_equal"
-    | Greater -> "greater"
-    | GreaterEqual -> "greater_equal"
-    | Equal -> "equal"
-    | NotEqual -> "not_equal"
-    | Like -> "like"
-    | ContainsSome -> "contains_some"
-    | ContainsNone -> "contains_none"
-    | ContainsAll -> "contains_all"
+  let of_yojson yojson =
+    try Ok (yojson |> read t_of_yojson) with
+    | _ -> Error Pool_common.Message.(Invalid Field.Operator)
   ;;
+
+  let to_yojson m = `String (m |> show)
 
   let to_sql = function
     | Less -> "<"
@@ -235,95 +247,110 @@ module Operator = struct
     | Like -> "LIKE"
     | ContainsSome -> "CONTAINS" (* TODO *)
     | ContainsNone -> "CONTAINS" (* TODO *)
-    | ContainsAll -> "CONTAINS" (* TODO *)
+    | ContainsAll -> "CONTAINS"
   ;;
 
-  let yojson_of_t t = t |> to_string |> wrap_string |> Yojson.Safe.from_string
-  let t_of_yojson m = m |> Yojson.Safe.to_string |> unwrap_string |> of_string
+  let validate (key : Key.t) operator =
+    match key with
+    | Key.Hardcoded k ->
+      let available_operators =
+        k |> Key.type_of_hardcoded |> input_type_to_operator
+      in
+      if CCList.mem ~eq:equal operator available_operators
+      then Ok ()
+      else Error Pool_common.Message.(FilterNotCompatible Field.(Operator, Key))
+    | Key.CustomField _ -> Ok ()
+  ;;
 end
 
 module Predicate = struct
-  type 'a t = Key.t * 'a Operator.t * 'a val'
-  type 'a human = Key.human option * 'a Operator.t option * 'a val' option
+  type t =
+    { key : Key.t
+    ; operator : Operator.t
+    ; value : value
+    }
+  [@@deriving eq]
 
-  let equal p1 p2 =
-    let key1, operator1, val1 = p1 in
-    let key2, operator2, val2 = p2 in
-    [ Key.equal key1 key2
-    ; Operator.equal operator1 operator2
-    ; equal_val' val1 val2
-    ]
-    |> CCList.find not
-  ;;
+  type human =
+    { key : Key.human option
+    ; operator : Operator.t option
+    ; value : value option
+    }
+  [@@deriving eq]
 
-  let t_of_yojson (json : Yojson.Safe.t) =
-    let json = Yojson.Safe.to_basic json |> Yojson.Basic.Util.to_list in
-    match json with
-    | [ key; operator; value ] ->
+  let create key operator value : t = { key; operator; value }
+
+  let validate : t -> (t, Pool_common.Message.error) result =
+   fun ({ key; operator; value } as m) ->
+    (* TODO: Can Custom fields be validated?
+
+     * As Lwt
+     * As Human
+
+     *)
+    let open CCResult in
+    let* () = Key.validate_value key value in
+    let* () = Operator.validate key operator in
+    Ok m
+ ;;
+
+  let t_of_yojson (yojson : Yojson.Safe.t) =
+    let open Pool_common in
+    let open Helper in
+    let to_result field = CCOption.to_result Message.(Invalid field) in
+    match yojson with
+    | `Assoc assoc ->
       let open CCResult in
-      let key = key |> basic_to_safe |> Key.t_of_yojson in
-      let* operator = operator |> basic_to_safe |> Operator.t_of_yojson in
-      let* value = value |> val_of_yojson in
-      Ok (key, operator, value)
-    | _ -> Error error
+      let go key field of_yojson =
+        assoc
+        |> CCList.assoc_opt ~eq:CCString.equal key
+        |> to_result field
+        >>= of_yojson
+      in
+      let* key = go key_string Message.Field.Key Key.of_yojson in
+      let* operator =
+        go operator_string Message.Field.Operator Operator.of_yojson
+      in
+      let* value = go value_string Message.Field.Value value_of_yojson in
+      create key operator value |> validate
+    | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;
 
-  let yojson_of_t (m : 'a t) =
-    let key, operator, value = m in
-    let value = value |> yojson_of_val |> basic_to_safe in
-    let operator = Operator.yojson_of_t operator in
-    let key = Key.yojson_of_t key in
-    [ key; operator; value ]
-    |> CCList.map Yojson.Safe.to_string
-    |> CCString.concat ","
-    |> Format.asprintf "[%s]" (* Can that be done using `List *)
-    |> Yojson.Safe.from_string
+  let yojson_of_t ({ key; operator; value } : t) =
+    let key = Key.to_yojson key in
+    let operator = Operator.to_yojson operator in
+    let value = yojson_of_value value in
+    `Assoc
+      Helper.[ key_string, key; operator_string, operator; value_string, value ]
   ;;
 
-  let create_human ?key ?operator ?value () : 'a human = key, operator, value
+  let create key operator value : t = { key; operator; value }
+  let create_human ?key ?operator ?value () : human = { key; operator; value }
 end
 
-let print_filter m fmt _ = Format.pp_print_string fmt m
-
-(* TODO turn into infix constructors *)
-(* Should AND and OR be lists of filter? I guess UI would be easier to
-   understand *)
 type filter =
-  | And of filter * filter [@printer print_filter "and"]
-  | Or of filter * filter [@printer print_filter "or"]
-  | Not of filter [@printer print_filter "not"]
-  (* TODO[timhub]: Fix this type *)
-  | PredS of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_s"]
-  | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
-[@@deriving show { with_path = false }, variants]
-
-let[@warning "-4"] rec equal_filter f_one f_two =
-  match f_one, f_two with
-  | And (f_one_a, f_one_b), And (f_two_a, f_two_b)
-  | Or (f_one_a, f_one_b), Or (f_two_a, f_two_b) ->
-    equal_filter f_one_a f_two_a && equal_filter f_one_b f_two_b
-  | Not f1, Not f2 -> equal_filter f1 f2
-  | PredS p1, PredS p2 | PredM p1, PredM p2 -> Predicate.equal p1 p2
-  | _ -> false
-;;
+  | And of filter * filter [@printer print "and"] [@name "and"]
+  | Or of filter * filter [@printer print "or"] [@name "or"]
+  | Not of filter [@printer print "not"] [@name "not"]
+  | Pred of Predicate.t [@printer print "pred"] [@name "pred"]
+[@@deriving show { with_path = false }, variants, eq]
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
    | And (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
    | Or (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
    | Not f -> f |> yojson_of_filter
-   | PredS p -> Predicate.yojson_of_t p
-   | PredM p -> Predicate.yojson_of_t p)
+   | Pred p -> Predicate.yojson_of_t p)
   |> fun pred ->
-  let k = f |> show_filter |> wrap_string |> Yojson.Safe.from_string in
-  `Tuple [ k; pred ]
+  let key = `String (f |> show_filter) in
+  `Tuple [ key; pred ]
 ;;
 
 let rec filter_of_yojson json =
+  let error = Pool_common.Message.(Invalid Field.Filter) in
   let open CCResult in
   match json with
-  | `Tuple [ k; filter ] ->
-    let key = k |> Yojson.Safe.to_string |> unwrap_string in
+  | `Tuple [ `String key; filter ] ->
     (match key, filter with
      | "and", `Tuple [ f1; f2 ] ->
        CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
@@ -332,8 +359,7 @@ let rec filter_of_yojson json =
        CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
        >|= fun (p1, p2) -> Or (p1, p2)
      | "not", f -> f |> filter_of_yojson >|= not
-     | "pred_s", p -> p |> Predicate.t_of_yojson >|= preds
-     | "pred_m", p -> p |> Predicate.t_of_yojson >|= predm
+     | "pred", p -> p |> Predicate.t_of_yojson >|= pred
      | _ -> Error error)
   | _ -> Error error
 ;;
@@ -350,30 +376,12 @@ let ( --. ) a = Not a
  * deactivated: hidden by default
  * tags: empty by default, depends on #23 *)
 
-let not_filter =
-  Not (PredS (Key.(Hardcoded Email), Operator.Equal, Str "test@econ.uzh.ch"))
-;;
-
-let or_filter : filter =
-  PredS (Key.(Hardcoded Name), Operator.Equal, Str "foo") |.| not_filter
-;;
-
-let single_filter : filter =
-  PredS (Key.(Hardcoded Name), Operator.Equal, Str "Foo")
-;;
-
-let list_filter : filter =
-  PredM (Key.(Hardcoded Email), Operator.ContainsNone, Lst [ Nr 20.0; Nr 21.0 ])
-;;
-
-let and_filter : filter = And (or_filter, single_filter)
-
-(* TODO: remove this function *)
+(* TODO: Remove? *)
 let json_to_filter json = json |> Yojson.Safe.from_string |> filter_of_yojson
 
 type t =
   { id : Pool_common.Id.t
-  ; filter : filter [@equal equal_filter]
+  ; filter : filter
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }

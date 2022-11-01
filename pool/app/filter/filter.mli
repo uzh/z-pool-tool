@@ -1,9 +1,13 @@
-type _ val' =
-  | Str : string -> [> `Single ] val'
-  | Nr : float -> [> `Single ] val'
-  | Bool : bool -> [> `Single ] val'
-  | Date : Ptime.t -> [> `Single ] val'
-  | Lst : [ `Single ] val' list -> [> `Multi ] val'
+type single_val =
+  | Bool of bool
+  | Date of Ptime.t
+  | Nr of float
+  | Option of Custom_field.SelectOption.Id.t
+  | Str of string
+
+type value =
+  | Single of single_val
+  | Lst of single_val list
 
 module Key : sig
   type input_type =
@@ -33,43 +37,51 @@ module Key : sig
   val show : t -> string
   val equal_human : human -> human -> bool
   val show_human : human -> string
-  val t_of_yojson : Yojson.Safe.t -> t
-  val yojson_of_t : t -> Yojson.Safe.t
   val type_of_key : human -> input_type
   val human_to_label : Pool_common.Language.t -> human -> string
   val human_to_value : human -> string
 end
 
 module Operator : sig
-  type _ t =
-    | Less : [> `Single ] t
-    | LessEqual : [> `Single ] t
-    | Greater : [> `Single ] t
-    | GreaterEqual : [> `Single ] t
-    | Equal : [> `Single ] t
-    | NotEqual : [> `Single ] t
-    | Like : [> `Single ] t
-    | ContainsSome : [> `Multi ] t
-    | ContainsNone : [> `Multi ] t
-    | ContainsAll : [> `Multi ] t
+  type t =
+    | Less
+    | LessEqual
+    | Greater
+    | GreaterEqual
+    | Equal
+    | NotEqual
+    | Like
+    | ContainsSome
+    | ContainsNone
+    | ContainsAll
 
-  val to_string : [> `Multi | `Single ] t -> string
-  val to_sql : [> `Multi | `Single ] t -> string
-  val equal : [> `Multi | `Single ] t -> [> `Multi | `Single ] t -> bool
+  val to_sql : t -> string
+  val equal : t -> t -> bool
+  val show : t -> string
+  val input_type_to_operator : Key.input_type -> t list
 end
 
 module Predicate : sig
-  type 'a t = Key.t * 'a Operator.t * 'a val'
-  type 'a human = Key.human option * 'a Operator.t option * 'a val' option
+  type t =
+    { key : Key.t
+    ; operator : Operator.t
+    ; value : value
+    }
+
+  type human =
+    { key : Key.human option
+    ; operator : Operator.t option
+    ; value : value option
+    }
+
+  val create : Key.t -> Operator.t -> value -> t
 end
 
 type filter =
   | And of filter * filter
   | Or of filter * filter
-  | Not of filter [@printer print_filter "not"]
-  (* TODO[timhub]: Fix this type *)
-  | PredS of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_s"]
-  | PredM of [ `Single | `Multi ] Predicate.t [@printer print_filter "pred_m"]
+  | Not of filter
+  | Pred of Predicate.t
 
 val show_filter : filter -> string
 
@@ -85,11 +97,7 @@ module Human : sig
     | And of t * t
     | Or of t * t
     | Not of t
-    (* TODO[timhub]: Fix this type *)
-    | PredS of [ `Single | `Multi ] Predicate.human
-        [@printer print_filter "pred_s"]
-    | PredM of [ `Single | `Multi ] Predicate.human
-        [@printer print_filter "pred_m"]
+    | Pred of Predicate.human
 
   val of_string : string -> (t, Pool_common.Message.error) result
 end
@@ -123,8 +131,7 @@ module Utils : sig
     | And
     | Or
     | Not
-    | PredS
-    | PredM
+    | Pred
 
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
@@ -136,7 +143,6 @@ module Utils : sig
 
   val all_filter_labels : filter_label list
   val default_filter_label : filter_label
-  val input_type_to_operator : Key.input_type -> [> `Single ] Operator.t list
 end
 
 module Repo : sig

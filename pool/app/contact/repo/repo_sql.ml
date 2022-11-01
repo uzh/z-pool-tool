@@ -108,21 +108,24 @@ let find_confirmed pool email =
 
 let filter_to_sql dyn (filter : Filter.filter) =
   let open Filter in
-  (* let add_dyn_param dyn (value : [ `Single ] val') *)
-  let add_dyn_param dyn (value : [> `Multi | `Single ] val') =
-    let add_single_value dyn (value : [ `Single ] val') =
+  let add_dyn_param dyn value =
+    let add_single_value dyn value =
       let add c v = Dynparam.add c v dyn in
       match value with
       | Str s -> add Caqti_type.string s
       | Nr n -> add Caqti_type.float n
       | Bool b -> add Caqti_type.bool b
       | Date d -> add Caqti_type.ptime d
+      | Option id -> add Custom_field.Repo.SelectOption.Id.t id
     in
     match value with
-    | Str s -> add_single_value dyn (Str s), "?"
-    | Nr n -> add_single_value dyn (Nr n), "?"
-    | Bool b -> add_single_value dyn (Bool b), "?"
-    | Date d -> add_single_value dyn (Date d), "?"
+    | Single single ->
+      (match single with
+       | Str s -> add_single_value dyn (Str s), "?"
+       | Nr n -> add_single_value dyn (Nr n), "?"
+       | Bool b -> add_single_value dyn (Bool b), "?"
+       | Date d -> add_single_value dyn (Date d), "?"
+       | Option id -> add_single_value dyn (Option id), "?")
     | Lst lst ->
       let dyn, params =
         CCList.fold_left
@@ -146,7 +149,7 @@ let filter_to_sql dyn (filter : Filter.filter) =
     | Not f ->
       let dyn, sql = filter_sql (dyn, sql) f in
       dyn, Format.asprintf "NOT %s" sql
-    | PredS (key, operator, value) ->
+    | Pred { Predicate.key; operator; value } ->
       (* TODO: add table name *)
       let dyn, param = add_dyn_param dyn value in
       let sql =
@@ -155,17 +158,6 @@ let filter_to_sql dyn (filter : Filter.filter) =
           (Key.show key)
           (Operator.to_sql operator)
           param
-      in
-      dyn, sql
-    | PredM (key, operator, value) ->
-      let dyn, params = add_dyn_param dyn value in
-      (* TODO: add table name *)
-      let sql =
-        Format.asprintf
-          "%s %s (%s)"
-          (Key.show key)
-          (Operator.to_sql operator)
-          params
       in
       dyn, sql
   in

@@ -257,6 +257,11 @@ let rec error_to_string = function
       "Die Option \"%s\" benötigt \"%s\"."
       (field_to_string field)
       (field_to_string required)
+  | FilterNotCompatible (f1, f2) ->
+    Format.asprintf
+      "%s ist nicht kompatibel mit %s."
+      (field_to_string f1)
+      (field_to_string f2)
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

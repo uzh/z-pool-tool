@@ -228,6 +228,7 @@ type error =
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FieldRequiresCheckbox of (Field.t * Field.t)
+  | FilterNotCompatible of (Field.t * Field.t)
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t

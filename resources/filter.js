@@ -52,7 +52,7 @@ export function initFilter() {
                 } else if (predicateType === "not") {
                     const notPredicate = findChildPredicates(outerPredicate)[0];
                     return `(${wrapString(predicateType)},${buildQuery(notPredicate)})`
-                } else if (predicateType === "pred_s") {
+                } else if (predicateType === "pred") {
                     var success = true;
                     var inputs = ["key", "operator", "value"].map((attr) => outerPredicate.querySelector(`[name="${attr}"]`))
                     let [key, operator, value] = inputs.map((input) => {
@@ -93,7 +93,7 @@ export function initFilter() {
                                     inputValue = `"${value}"`;
                             }
                         }
-                        return `(${wrapString(predicateType)},[${[wrapString(key), wrapString(operator), `{"${inputDataType}":${inputValue}}`].join(",")}])`
+                        return `(${wrapString(predicateType)},[${[wrapString(key), wrapString(operator), `["${inputDataType}",${inputValue}]`].join(",")}])`
                     } else {
                         notifyUser("error", "Please fill out all fields.")
                         throw "Missing values";

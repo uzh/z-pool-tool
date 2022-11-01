@@ -1,11 +1,5 @@
 open Entity
 
-type create =
-  { id : Pool_common.Id.t
-  ; filter : filter
-  }
-[@@deriving eq, show]
-
 type event =
   | Created of t
   | Updated of t

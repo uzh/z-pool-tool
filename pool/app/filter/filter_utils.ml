@@ -8,24 +8,21 @@ type filter_label =
   | And
   | Or
   | Not
-  | PredS
-  | PredM
+  | Pred
 [@@deriving eq, enum, show]
 
 let stringify_label = function
   | And -> "and", "And"
   | Or -> "or", "Or"
   | Not -> "not", "Not"
-  | PredS -> "pred_s", "Single predicate"
-  | PredM -> "pred_m", "Multi predicate"
+  | Pred -> "pred", "Predicate"
 ;;
 
 let label_of_string = function
   | "and" -> Ok And
   | "or" -> Ok Or
   | "not" -> Ok Not
-  | "pred_s" -> Ok PredS
-  | "pred_m" -> Ok PredM
+  | "pred" -> Ok Pred
   | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
 ;;
 
@@ -36,14 +33,4 @@ let all_filter_labels : filter_label list =
   |> CCList.map filter_label_of_enum
   |> CCList.all_some
   |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
-;;
-
-let input_type_to_operator =
-  let open Entity.Operator in
-  let open Entity.Key in
-  function
-  | Bool -> [ Equal; NotEqual ]
-  | Str -> [ Equal; NotEqual; Like ]
-  | Date | Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
-  | Select _ -> [ Equal; NotEqual ]
 ;;

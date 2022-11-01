@@ -64,7 +64,7 @@ let operators_select ?operators ?selected () =
                           else [])
                         selected
                     in
-                    let str = Operator.to_string operator_option in
+                    let str = Operator.show operator_option in
                     option
                       ~a:([ a_value str ] @ selected_attr)
                       (txt (format str)))
@@ -73,9 +73,16 @@ let operators_select ?operators ?selected () =
     ]
 ;;
 
-let value_input language input_type ?(value : 'a val' option) () =
+let value_input language input_type ?value () =
   let open Filter in
   let field_name = Pool_common.Message.Field.Value in
+  (* TODO: Fix this *)
+  let value =
+    CCOption.bind value (fun (value : Filter.value) ->
+      match value with
+      | Single s -> Some s
+      | Lst _ -> None)
+  in
   match input_type with
   | None -> div []
   | Some input_type ->
@@ -107,7 +114,11 @@ let value_input language input_type ?(value : 'a val' option) () =
              | _ -> false)
            value
        in
-       Component_input.checkbox_element language ~value field_name
+       Component_input.checkbox_element
+         language
+         ~as_switch:true
+         ~value
+         field_name
      | Key.Date ->
        let value =
          CCOption.bind value (fun value ->
@@ -135,7 +146,7 @@ let value_input language input_type ?(value : 'a val' option) () =
 let key_select language ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
-  let operators = input_type >|= Filter.Utils.input_type_to_operator in
+  let operators = input_type >|= Filter.Operator.input_type_to_operator in
   let operator_select = operators_select ?operators ?selected:operator () in
   let input_field = value_input language input_type ?value () in
   div
@@ -236,8 +247,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          | Human.And _ -> Utils.And
          | Or _ -> Utils.Or
          | Not _ -> Utils.Not
-         | PredS _ -> Utils.PredS
-         | PredM _ -> Utils.PredM)
+         | Pred _ -> Utils.Pred)
   in
   let predicate_form =
     let open Human in
@@ -263,15 +273,17 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
            ~identifier:(identifier @ [ 0 ])
            ()
          |> CCList.pure
-       | PredS predicate | PredM predicate ->
-         let k, o, v = predicate in
+       | Pred predicate ->
+         let ({ Predicate.key; operator; value } : Predicate.human) =
+           predicate
+         in
          single_predicate_form
            language
            identifier
            key_list
-           ?key:k
-           ?operator:o
-           ?value:v
+           ?key
+           ?operator
+           ?value
            ()
          |> CCList.pure)
   in
