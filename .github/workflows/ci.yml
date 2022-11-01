@@ -120,22 +120,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
-        node-version: [16.x]
+        os: [node:16]
     env:
-      ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
+      ECON_PACKAGE_REGISTRY_READ_TOKEN: ${ECON_PACKAGE_REGISTRY_READ_TOKEN}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: install yarn packages
-        uses: borales/actions-yarn@v3.0.0
-        with:
-          cmd: install
+        run: yarn install
+
       - name: build yarn package
-        uses: borales/actions-yarn@v3.0.0
-        with:
-          cmd: build
+        run: yarn build
 
       - name: move all assets to one folder
         run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
