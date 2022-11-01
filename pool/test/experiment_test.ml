@@ -24,12 +24,13 @@ module Data = struct
 
     let or_filter : filter =
       Or
-        ( Pred
+        [ Pred
             (Predicate.create
                Key.(Hardcoded Name)
                Operator.Equal
                (Single (Str "Bar")))
-        , single_filter )
+        ; single_filter
+        ]
     ;;
 
     let list_filter : filter =
@@ -40,7 +41,7 @@ module Data = struct
            (Lst [ Str "foo"; Str "bar" ]))
     ;;
 
-    let and_filter : filter = And (or_filter, list_filter)
+    let and_filter : filter = And [ or_filter; list_filter ]
     let t = create and_filter
   end
 

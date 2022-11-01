@@ -20,8 +20,8 @@ let rec t_to_human key_list (t : Filter.filter) =
   in
   let t_to_human = t_to_human key_list in
   match t with
-  | And (p1, p2) -> Human.And (t_to_human p1, t_to_human p2)
-  | Or (pred1, pred2) -> Human.Or (t_to_human pred1, t_to_human pred2)
+  | And predicates -> Human.And (predicates |> CCList.map t_to_human)
+  | Or predicates -> Human.Or (predicates |> CCList.map t_to_human)
   | Not p -> Human.Not (t_to_human p)
   | Pred { Predicate.key; operator; value } ->
     Human.Pred

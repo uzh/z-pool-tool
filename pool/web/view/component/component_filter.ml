@@ -255,16 +255,17 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
     | None -> []
     | Some filter ->
       (match filter with
-       | And (f1, f2) | Or (f1, f2) ->
+       | And filters | Or filters ->
          CCList.mapi
            (fun i filter ->
+             let filter = CCOption.pure filter in
              predicate_form
                language
                filter
                key_list
                ~identifier:(identifier @ [ i ])
                ())
-           [ Some f1; Some f2 ]
+           filters
        | Not filter ->
          predicate_form
            language

@@ -21,7 +21,7 @@ let test_filter =
          Operator.Equal
          (Lst [ Str "Bart"; Str "Homer" ]))
   in
-  And (p1, Or (p2, p3))
+  And [ p1; Or [ p2; p3 ] ]
 ;;
 
 let filter pool =

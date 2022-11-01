@@ -329,43 +329,45 @@ module Predicate = struct
 end
 
 type filter =
-  | And of filter * filter [@printer print "and"] [@name "and"]
-  | Or of filter * filter [@printer print "or"] [@name "or"]
+  | And of filter list [@printer print "and"] [@name "and"]
+  | Or of filter list [@printer print "or"] [@name "or"]
   | Not of filter [@printer print "not"] [@name "not"]
   | Pred of Predicate.t [@printer print "pred"] [@name "pred"]
 [@@deriving show { with_path = false }, variants, eq]
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
   (match f with
-   | And (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
-   | Or (f1, f2) -> `Tuple [ f1 |> yojson_of_filter; f2 |> yojson_of_filter ]
+   | And filters -> `List (CCList.map yojson_of_filter filters)
+   | Or filters -> `List (CCList.map yojson_of_filter filters)
    | Not f -> f |> yojson_of_filter
    | Pred p -> Predicate.yojson_of_t p)
-  |> fun pred ->
-  let key = `String (f |> show_filter) in
-  `Tuple [ key; pred ]
+  |> fun pred -> `Assoc [ f |> show_filter, pred ]
 ;;
 
 let rec filter_of_yojson json =
   let error = Pool_common.Message.(Invalid Field.Filter) in
   let open CCResult in
   match json with
-  | `Tuple [ `String key; filter ] ->
+  | `Assoc [ (key, filter) ] ->
     (match key, filter with
-     | "and", `Tuple [ f1; f2 ] ->
-       CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
-       >|= fun (p1, p2) -> And (p1, p2)
-     | "or", `Tuple [ f1; f2 ] ->
-       CCResult.both (f1 |> filter_of_yojson) (f2 |> filter_of_yojson)
-       >|= fun (p1, p2) -> Or (p1, p2)
+     | "and", `List filters ->
+       filters
+       |> CCList.map filter_of_yojson
+       |> CCList.all_ok
+       >|= fun lst -> And lst
+     | "or", `List filters ->
+       filters
+       |> CCList.map filter_of_yojson
+       |> CCList.all_ok
+       >|= fun lst -> Or lst
      | "not", f -> f |> filter_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
      | _ -> Error error)
   | _ -> Error error
 ;;
 
-let ( &.& ) a b = And (a, b)
-let ( |.| ) a b = Or (a, b)
+let ( &.& ) a b = And [ a; b ]
+let ( |.| ) a b = Or [ a; b ]
 
 (* TODO make this prefix *)
 let ( --. ) a = Not a

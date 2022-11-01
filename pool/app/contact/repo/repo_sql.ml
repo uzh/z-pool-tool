@@ -137,15 +137,25 @@ let filter_to_sql dyn (filter : Filter.filter) =
       dyn, CCString.concat "," params
   in
   let rec filter_sql (dyn, sql) filter =
+    let of_list (dyn, sql) filters operator =
+      CCList.fold_left
+        (fun (dyn, sql) filter ->
+          let dyn, new_sql = filter_sql (dyn, sql) filter in
+          dyn, Format.asprintf "%s %s %s" sql operator new_sql)
+        (dyn, sql)
+        filters
+    in
     match filter with
-    | And (f1, f2) ->
-      let dyn, sql1 = filter_sql (dyn, sql) f1 in
-      let dyn, sql2 = filter_sql (dyn, sql) f2 in
-      dyn, Format.asprintf "%s AND %s" sql1 sql2
-    | Or (f1, f2) ->
-      let dyn, sql1 = filter_sql (dyn, sql) f1 in
-      let dyn, sql2 = filter_sql (dyn, sql) f2 in
-      dyn, Format.asprintf "%s OR %s" sql1 sql2
+    | And filters ->
+      (* TODO: Test *)
+      if CCList.is_empty filters
+      then dyn, sql
+      else of_list (dyn, sql) filters "AND"
+    | Or filters ->
+      (* TODO: Test *)
+      if CCList.is_empty filters
+      then dyn, sql
+      else of_list (dyn, sql) filters "OR"
     | Not f ->
       let dyn, sql = filter_sql (dyn, sql) f in
       dyn, Format.asprintf "NOT %s" sql

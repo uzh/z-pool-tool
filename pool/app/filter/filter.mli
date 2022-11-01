@@ -78,8 +78,8 @@ module Predicate : sig
 end
 
 type filter =
-  | And of filter * filter
-  | Or of filter * filter
+  | And of filter list
+  | Or of filter list
   | Not of filter
   | Pred of Predicate.t
 
@@ -94,8 +94,8 @@ type t =
 
 module Human : sig
   type t =
-    | And of t * t
-    | Or of t * t
+    | And of t list
+    | Or of t list
     | Not of t
     | Pred of Predicate.human
 
