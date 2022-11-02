@@ -133,7 +133,9 @@ jobs:
           cmd: install
 
       - name: build yarn package
-        run: yarn build
+        uses: borales/actions-yarn@v3.0.0
+        with:
+          cmd: build
 
       - name: move all assets to one folder
         run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
