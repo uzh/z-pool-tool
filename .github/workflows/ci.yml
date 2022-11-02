@@ -122,7 +122,7 @@ jobs:
       matrix:
         os: [node:16]
     env:
-      ECON_PACKAGE_REGISTRY_READ_TOKEN: ${ECON_PACKAGE_REGISTRY_READ_TOKEN}
+      ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
