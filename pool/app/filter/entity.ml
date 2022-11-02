@@ -39,7 +39,9 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
        |> Ptime.of_rfc3339
        |> CCResult.map (fun (date, _, _) -> Date date)
        |> CCResult.map_err (fun _ -> error)
+     (* Handle floats and ints separately? Currently the UI only allows Ints *)
      | "nr", `Float n -> Ok (Nr n)
+     | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
      | "option", `String id ->
        Ok (Option (Custom_field.SelectOption.Id.of_string id))
      | "str", `String str -> Ok (Str str)

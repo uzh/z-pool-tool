@@ -32,11 +32,11 @@ let operators_select ?operators ?selected () =
   in
   div
     ~a:[ a_class [ "form-group" ] ]
-    [ label [ txt "Operator" ]
-    ; (match operators with
-       | None -> div []
-       | Some operators ->
-         div
+    (match operators with
+     | None -> []
+     | Some operators ->
+       [ label [ txt "Operator" ]
+       ; div
            ~a:[ a_class [ "select" ] ]
            [ select
                ~a:[ a_name "operator" ]
@@ -56,19 +56,20 @@ let operators_select ?operators ?selected () =
                       ~a:([ a_value str ] @ selected_attr)
                       (txt (format str)))
                   operators)
-           ])
-    ]
+           ]
+       ])
 ;;
 
 let value_input language input_type ?value () =
   let open Filter in
   let field_name = Pool_common.Message.Field.Value in
-  (* TODO: Fix this *)
   let value =
     CCOption.bind value (fun (value : Filter.value) ->
       match value with
       | Single s -> Some s
-      | Lst _ -> None)
+      | Lst _ ->
+        (* TODO: Allow multi select *)
+        None)
   in
   match input_type with
   | None -> div []
@@ -134,7 +135,15 @@ let value_input language input_type ?value () =
          `Datetime_local
          field_name
      | Key.Select options ->
-       (* TODO: val' selectoption *)
+       let[@warning "-4"] selected =
+         CCOption.bind value (function
+           | Option o ->
+             CCList.find_opt
+               Custom_field.(
+                 fun option -> SelectOption.Id.equal option.SelectOption.id o)
+               options
+           | _ -> None)
+       in
        Component_input.selector
          ~attributes:additional_attributes
          ~option_formatter:(Custom_field.SelectOption.name language)
@@ -142,7 +151,7 @@ let value_input language input_type ?value () =
          field_name
          Custom_field.SelectOption.show_id
          options
-         None
+         selected
          ())
 ;;
 
