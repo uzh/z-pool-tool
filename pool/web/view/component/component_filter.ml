@@ -2,19 +2,6 @@ open Tyxml.Html
 open Filter
 module Input = Component_input
 
-let form_action ?path id =
-  let base =
-    Format.asprintf
-      "/admin/experiments/%s/filter/create"
-      (id |> Pool_common.Id.value)
-  in
-  CCOption.map_or
-    ~default:base
-    (fun path -> Format.asprintf "%s/%s" base path)
-    path
-  |> Sihl.Web.externalize_path
-;;
-
 let format_identifiers ?prefix identifiers =
   let ids =
     (CCList.fold_left (fun str n ->
@@ -86,6 +73,9 @@ let value_input language input_type ?value () =
   match input_type with
   | None -> div []
   | Some input_type ->
+    let additional_attributes =
+      [ a_user_data "input-type" Filter.Key.(show_input_type input_type) ]
+    in
     (match input_type with
      | Key.Str ->
        let value =
@@ -94,7 +84,12 @@ let value_input language input_type ?value () =
            | Str s -> Some s
            | _ -> None)
        in
-       Component_input.input_element language ?value `Text field_name
+       Component_input.input_element
+         ~additional_attributes
+         ?value
+         language
+         `Text
+         field_name
      | Key.Nr ->
        let value =
          CCOption.bind value (fun value ->
@@ -103,7 +98,12 @@ let value_input language input_type ?value () =
            | _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
-       Component_input.input_element language `Number ?value field_name
+       Component_input.input_element
+         ~additional_attributes
+         language
+         `Number
+         ?value
+         field_name
      | Key.Bool ->
        let value =
          CCOption.map_or
@@ -115,9 +115,10 @@ let value_input language input_type ?value () =
            value
        in
        Component_input.checkbox_element
-         language
+         ~additional_attributes
          ~as_switch:true
          ~value
+         language
          field_name
      | Key.Date ->
        let value =
@@ -127,18 +128,20 @@ let value_input language input_type ?value () =
            | _ -> None)
        in
        Component_input.flatpicker_element
+         ~additional_attributes
+         ?value
          language
          `Datetime_local
-         ?value
          field_name
      | Key.Select options ->
        (* TODO: val' selectoption *)
        Component_input.selector
+         ~attributes:additional_attributes
+         ~option_formatter:(Custom_field.SelectOption.name language)
          language
          field_name
          Custom_field.SelectOption.show_id
          options
-         ~option_formatter:(Custom_field.SelectOption.name language)
          None
          ())
 ;;
@@ -249,6 +252,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          | Not _ -> Utils.Not
          | Pred _ -> Utils.Pred)
   in
+  let add_predicate_btn () = div [ Input.submit_icon `Add ] in
   let predicate_form =
     let open Human in
     match filter with
@@ -266,6 +270,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
                ~identifier:(identifier @ [ i ])
                ())
            filters
+         @ [ add_predicate_btn () ]
        | Not filter ->
          predicate_form
            language
@@ -313,7 +318,7 @@ let filter_form language experiment filter key_list =
   in
   let predicates = predicate_form language filter key_list () in
   div
-    ~a:[ a_user_data "action" action; a_id "filter-form" ]
+    ~a:[ a_user_data "action" action; a_id "filter-form"; a_class [ "stack" ] ]
     [ predicates
     ; Component_input.submit_element
         language

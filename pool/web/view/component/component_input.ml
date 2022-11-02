@@ -227,9 +227,10 @@ let checkbox_element
     |> CCOption.value ~default:value
   in
   let value_attrs =
+    (* TODO: Test *)
     match value with
-    | true -> [ a_checked () ]
-    | false -> []
+    | true -> [ a_value "true"; a_checked () ]
+    | false -> [ a_value "true" ]
   in
   let id = Elements.identifier ?identifier name in
   let attributes =
@@ -383,9 +384,11 @@ let submit_element
     content
 ;;
 
-let submit_icon ?(classnames = []) icon_type =
+let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
   button
-    ~a:[ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
+    ~a:
+      ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
+      @ attributes)
     [ Icon.icon icon_type ]
 ;;
 

@@ -17,6 +17,8 @@ module Key : sig
     | Str
     | Select of Custom_field.SelectOption.t list
 
+  val show_input_type : input_type -> string
+
   type hardcoded =
     | Email
     | Name

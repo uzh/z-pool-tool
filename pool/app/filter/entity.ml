@@ -83,11 +83,12 @@ let yojson_of_value m =
 
 module Key = struct
   type input_type =
-    | Bool
-    | Date
-    | Nr
-    | Str
-    | Select of Custom_field.SelectOption.t list
+    | Bool [@printer print "bool"]
+    | Date [@printer print "date"]
+    | Nr [@printer print "nr"]
+    | Str [@printer print "str"]
+    | Select of Custom_field.SelectOption.t list [@printer print "option"]
+  [@@deriving show]
 
   type hardcoded =
     | Email [@printer print "email"] [@name "email"]
@@ -130,7 +131,7 @@ module Key = struct
   ;;
 
   let read m =
-    try Some (`String m |> hardcoded_of_yojson) with
+    try Some (`String m |> read hardcoded_of_yojson) with
     | _ -> None
   ;;
 
