@@ -17,9 +17,9 @@ let test_filter =
   let p3 =
     Pred
       (Predicate.create
-         Key.(Hardcoded Name)
-         Operator.Equal
-         (Lst [ Str "Bart"; Str "Homer" ]))
+         Key.(Hardcoded Email)
+         Operator.Like
+         (Single (Str "test%")))
   in
   And [ p1; Or [ p2; p3 ] ]
 ;;

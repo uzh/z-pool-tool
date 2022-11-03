@@ -102,6 +102,7 @@ module Human : sig
     | Pred of Predicate.human
 
   val of_string : string -> (t, Pool_common.Message.error) result
+  val show : t -> string
 end
 
 val equal : t -> t -> bool

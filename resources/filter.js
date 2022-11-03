@@ -37,7 +37,9 @@ const buildFormBody = (data) => {
 }
 
 const predicateToJson = (outerPredicate) => {
-    const predicateType = outerPredicate.querySelector('select[name="predicate"]').value;
+    // const predicateType = outerPredicate.querySelector('select[name="predicate"]').value;$
+    const predicateType = outerPredicate.dataset.predicate;
+    console.log(predicateType)
     if (["or", "and"].includes(predicateType)) {
         const andOrPredicates = findChildPredicates(outerPredicate)
         return {

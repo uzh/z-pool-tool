@@ -303,11 +303,17 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          |> CCList.pure)
   in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
+  let data_attr =
+    match filter with
+    | None -> []
+    | Some filter -> [ a_user_data "predicate" Filter.Human.(show filter) ]
+  in
   div
     ~a:
-      [ a_class [ "stack"; "inset"; "border"; "predicate" ]
-      ; a_id predicate_identifier
-      ]
+      ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
+       ; a_id predicate_identifier
+       ]
+      @ data_attr)
     [ predicate_type_select
         language
         predicate_identifier
