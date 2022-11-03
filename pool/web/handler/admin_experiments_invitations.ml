@@ -1,37 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let rec t_to_human key_list (t : Filter.filter) =
-  let open Filter in
-  let find_in_keys key_id =
-    CCList.find_opt
-      (fun key ->
-        let open Key in
-        match (key : human) with
-        | Hardcoded _ -> false
-        | CustomField f -> Custom_field.(Id.equal (id f) key_id))
-      key_list
-  in
-  let key_to_frontend key =
-    let open Key in
-    match (key : t) with
-    | Hardcoded h -> Some (Hardcoded h : human)
-    | CustomField id -> id |> find_in_keys
-  in
-  let t_to_human = t_to_human key_list in
-  match t with
-  | And predicates -> Human.And (predicates |> CCList.map t_to_human)
-  | Or predicates -> Human.Or (predicates |> CCList.map t_to_human)
-  | Not p -> Human.Not (t_to_human p)
-  | Pred { Predicate.key; operator; value } ->
-    Human.Pred
-      Predicate.
-        { key = key_to_frontend key
-        ; operator = Some operator
-        ; value = Some value
-        }
-;;
-
 let invitation_template_data tenant_db system_languages =
   let open Lwt_result.Syntax in
   let%lwt res =
@@ -65,8 +34,8 @@ let index req =
        let%lwt key_list = Filter.all_keys tenant_db in
        let filter =
          experiment.Experiment.filter
-         |> CCOption.map (fun filter ->
-              filter.Filter.filter |> t_to_human key_list)
+         |> CCOption.map
+              Filter.(fun filter -> filter.filter |> t_to_human key_list)
        in
        let%lwt filtered_contacts =
          Contact.find_filtered tenant_db experiment.Experiment.id None

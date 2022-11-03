@@ -8,6 +8,7 @@ type t =
   | Pred of Predicate.human [@printer print "pred"]
 [@@deriving show { with_path = false }]
 
+(* TODO: Remove *)
 let of_string =
   let pred = Entity.Predicate.create_human ?key:None ?operator:None in
   let as_t () : t = Pred (pred ()) in

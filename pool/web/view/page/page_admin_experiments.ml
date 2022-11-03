@@ -471,13 +471,13 @@ let invitations
   let html =
     div
       ~a:[ a_class [ "stack-lg" ] ]
-      [ Page_admin_invitations.Partials.list context experiment invitations
-      ; Page_admin_invitations.Partials.send_invitation
+      [ Page_admin_invitations.Partials.send_invitation
           context
           experiment
           filter
           key_list
           filtered_contacts
+      ; Page_admin_invitations.Partials.list context experiment invitations
       ]
   in
   experiment_layout

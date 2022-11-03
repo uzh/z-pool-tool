@@ -1,12 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let print_urlencoded urlencoded =
-  CCList.map
-    (fun (k, v) -> Logs.info (fun m -> m "%s:%s" k (CCString.concat ", " v)))
-    urlencoded
-;;
-
 let find_in_params urlencoded field =
   CCList.assoc_opt
     ~eq:CCString.equal
@@ -39,7 +33,7 @@ let create req =
     let* filter =
       let open CCResult in
       find_in_params urlencoded Pool_common.Message.Field.Filter
-      >>= Filter.json_to_filter
+      >>= Filter.filter_of_string
       |> Lwt_result.lift
     in
     let events =
@@ -75,14 +69,20 @@ let toggle_predicate_type req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* filter =
-      (* TODO: SHould this be an option? *)
-      let open CCResult in
-      find_in_params urlencoded Pool_common.Message.Field.Predicate
-      >>= Filter.Human.of_string
-      |> Lwt_result.lift
-    in
     let%lwt key_list = Filter.all_keys tenant_db in
+    let* filter =
+      let open CCResult in
+      Lwt_result.lift
+      @@ let* current =
+           find_in_params urlencoded Pool_common.Message.Field.Filter
+           >>= Filter.filter_of_string
+           >|= Filter.t_to_human key_list
+         in
+         let* predicate_type =
+           find_in_params urlencoded Pool_common.Message.Field.Predicate
+         in
+         Filter.toggle_predicate_type current predicate_type
+    in
     let* identifier =
       let open CCResult in
       find_in_params urlencoded Pool_common.Message.Field.Id

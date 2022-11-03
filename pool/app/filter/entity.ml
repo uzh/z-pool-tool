@@ -369,6 +369,7 @@ let rec filter_of_yojson json =
   | _ -> Error error
 ;;
 
+let filter_of_string str = str |> Yojson.Safe.from_string |> filter_of_yojson
 let ( &.& ) a b = And [ a; b ]
 let ( |.| ) a b = Or [ a; b ]
 
@@ -380,9 +381,6 @@ let ( --. ) a = Not a
  * paused: hidden by default
  * deactivated: hidden by default
  * tags: empty by default, depends on #23 *)
-
-(* TODO: Remove? *)
-let json_to_filter json = json |> Yojson.Safe.from_string |> filter_of_yojson
 
 type t =
   { id : Pool_common.Id.t

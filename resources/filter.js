@@ -74,6 +74,9 @@ const predicateToJson = (outerPredicate) => {
                 case "bool":
                     inputValue = (value == "true");
                     break;
+                case "option":
+                    inputValue = value;
+                    break;
                 default:
                     inputDataType = "str";
                     inputValue = value;
@@ -96,10 +99,39 @@ const predicateToJson = (outerPredicate) => {
     }
 }
 
+function addBeforeRequestListener(predicate) {
+    elms = predicate.querySelectorAll('[data-hx-post]');
+    [...elms].forEach(elm => {
+        elm.addEventListener('htmx:configRequest', (e) => {
+            const predicate = elm.closest('.predicate');
+            try {
+                e.detail.parameters.filter = predicateToJson(predicate);
+            } catch (error) {
+                e.preventDefault();
+                notifyUser("error", error)
+            }
+        })
+    })
+}
+
+function addAfterSwapListener(predicate) {
+    elms = predicate.querySelectorAll('.predicate');
+    [...elms].forEach(elm => {
+        elm.addEventListener('htmx:afterSwap', (e) => {
+            addHtmxListeners(e.detail.elt)
+        })
+    })
+}
+
+function addHtmxListeners(predicate) {
+    addBeforeRequestListener(predicate);
+    addAfterSwapListener(predicate);
+}
+
 export function initFilter() {
-    const filterForm = document.getElementById("submit-filter-form");
-    if (filterForm) {
-        filterForm.addEventListener("click", (e) => {
+    const submitBtn = document.getElementById("submit-filter-form");
+    if (submitBtn) {
+        submitBtn.addEventListener("click", (e) => {
             const form = document.getElementById("filter-form");
             e.preventDefault();
             const predicate = form.querySelector(".predicate");
@@ -129,5 +161,10 @@ export function initFilter() {
                     });
             }
         })
+    }
+    const form = document.getElementById("filter-form");
+    if (form) {
+        addBeforeRequestListener(form);
+        addAfterSwapListener(form);
     }
 }

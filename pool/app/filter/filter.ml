@@ -34,3 +34,60 @@ let key_of_string tenant_db str =
     |> Custom_field.find tenant_db
     >|= fun field : human -> CustomField field
 ;;
+
+let rec t_to_human key_list (t : filter) =
+  let find_in_keys key_id =
+    CCList.find_opt
+      (fun key ->
+        let open Key in
+        match (key : human) with
+        | Hardcoded _ -> false
+        | CustomField f -> Custom_field.(Id.equal (id f) key_id))
+      key_list
+  in
+  let key_to_frontend key =
+    let open Key in
+    match (key : t) with
+    | Hardcoded h -> Some (Hardcoded h : human)
+    | CustomField id -> id |> find_in_keys
+  in
+  let t_to_human = t_to_human key_list in
+  match t with
+  | And predicates -> Human.And (predicates |> CCList.map t_to_human)
+  | Or predicates -> Human.Or (predicates |> CCList.map t_to_human)
+  | Not p -> Human.Not (t_to_human p)
+  | Pred { Predicate.key; operator; value } ->
+    Human.Pred
+      Predicate.
+        { key = key_to_frontend key
+        ; operator = Some operator
+        ; value = Some value
+        }
+;;
+
+let toggle_predicate_type (filter : Human.t) predicate_type =
+  let open Human in
+  let empty = Entity.Predicate.create_human ?key:None ?operator:None in
+  let filter_list () =
+    match filter with
+    | And lst | Or lst -> lst
+    | Not f -> [ f ]
+    | Pred s -> [ Pred s ]
+  in
+  let rec find_predicate (filter : Human.t) =
+    match filter with
+    | And lst | Or lst ->
+      lst
+      |> CCList.head_opt
+      |> CCOption.map find_predicate
+      |> CCOption.value ~default:(empty ())
+    | Not f -> find_predicate f
+    | Pred s -> s
+  in
+  match predicate_type with
+  | "and" -> Ok (Human.And (filter_list ()))
+  | "or" -> Ok (Or (filter_list ()))
+  | "not" -> Ok (Not (Pred (find_predicate filter)))
+  | "pred" -> Ok (Pred (find_predicate filter) : t)
+  | _ -> Error Pool_common.Message.(Invalid Field.Filter)
+;;

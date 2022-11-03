@@ -108,12 +108,13 @@ val equal : t -> t -> bool
 val show : t -> string
 val pp : Format.formatter -> t -> unit
 val create : ?id:Pool_common.Id.t -> filter -> t
-val json_to_filter : string -> (filter, Pool_common.Message.error) result
 val yojson_of_filter : filter -> Yojson.Safe.t
 
 val filter_of_yojson
   :  Yojson.Safe.t
   -> (filter, Pool_common.Message.error) result
+
+val filter_of_string : string -> (filter, Pool_common.Message.error) result
 
 val find
   :  Pool_database.Label.t
@@ -157,3 +158,10 @@ val key_of_string
   :  Pool_database.Label.t
   -> string
   -> (Key.human, Pool_common.Message.error) Lwt_result.t
+
+val t_to_human : Key.human list -> filter -> Human.t
+
+val toggle_predicate_type
+  :  Human.t
+  -> string
+  -> (Human.t, Pool_common.Message.error) result
