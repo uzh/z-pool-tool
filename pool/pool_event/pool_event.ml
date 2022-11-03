@@ -9,6 +9,7 @@ type t =
   | EmailVerification of Email.verification_event
   | Filter of Filter.event
   | Experiment of Experiment.event
+  | Guard of Guard.event
   | I18n of I18n.event
   | Invitation of Invitation.event
   | Mailing of Mailing.event
@@ -30,6 +31,7 @@ let email events = Email events
 let email_verification events = EmailVerification events
 let experiment events = Experiment events
 let filter events = Filter events
+let guard events = Guard events
 let i18n events = I18n events
 let invitation events = Invitation events
 let mailing events = Mailing events
@@ -52,6 +54,7 @@ let handle_event pool event =
   | EmailVerification event -> Email.handle_verification_event pool event
   | Experiment event -> Experiment.handle_event pool event
   | Filter event -> Filter.handle_event pool event
+  | Guard event -> Guard.handle_event pool event
   | I18n event -> I18n.handle_event pool event
   | Invitation event -> Invitation.handle_event pool event
   | Mailing event -> Mailing.handle_event pool event

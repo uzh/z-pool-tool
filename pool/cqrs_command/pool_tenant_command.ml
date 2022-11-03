@@ -162,6 +162,7 @@ end = struct
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Email.(DefaultRestored default_values_tenant |> Pool_event.email)
+      ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
       ]
   ;;
 

@@ -1,4 +1,5 @@
 include Core
+include Event
 module Persistence = Repo
 open Utils.Lwt_result.Syntax
 
