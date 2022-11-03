@@ -35,6 +35,7 @@ type t =
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
   | SignUpTitle
+  | SortUngroupedFields
   | SwitchChronological
   | SwitchGrouped
   | TermsAndConditionsTitle

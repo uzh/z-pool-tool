@@ -51,6 +51,7 @@ let to_string = function
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpTitle -> "Sign up"
+  | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"

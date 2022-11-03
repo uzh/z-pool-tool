@@ -120,6 +120,25 @@ module Sql = struct
     >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
+  let find_ungrouped_by_model_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE pool_custom_fields.model = $1
+        AND pool_custom_fields.custom_field_group_uuid IS NULL
+    |sql}
+    |> select_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_ungrouped_by_model pool model =
+    let open Lwt.Infix in
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_ungrouped_by_model_request
+      (Entity.Model.show model)
+    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+  ;;
+
   let find_request =
     let open Caqti_request.Infix in
     {sql| WHERE pool_custom_fields.uuid = UNHEX(REPLACE(?, '-', '')) |sql}
@@ -152,22 +171,27 @@ module Sql = struct
         admin_hint,
         admin_overwrite,
         admin_view_only,
-        admin_input_only
+        admin_input_only,
+        position
       ) VALUES (
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        ?,
-        UNHEX(REPLACE(?, '-', '')),
-        ?,
-        ?,
-        ?,
-        ?
-      )
+        UNHEX(REPLACE($1, '-', '')),
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        UNHEX(REPLACE($9, '-', '')),
+        $10,
+        $11,
+        $12,
+        $13,
+        (SELECT
+          COUNT(*)
+          FROM pool_custom_fields AS f
+          WHERE f.model = $2)
+        )
     |sql}
   ;;
 
@@ -228,6 +252,7 @@ end
 let find_all = Sql.find_all
 let find_by_model = Sql.find_by_model
 let find_by_group = Sql.find_by_group
+let find_ungrouped_by_model = Sql.find_ungrouped_by_model
 let find = Sql.find
 let insert = Sql.insert
 let update = Sql.update
