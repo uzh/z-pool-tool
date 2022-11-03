@@ -600,10 +600,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
   let field_name field =
     let open Custom_field in
-    field
-    |> name
-    |> Name.find_opt language
-    |> CCOption.map_or ~default:"-" Name.value_name
+    field |> name |> Name.find_opt_or language "-"
   in
   let rows =
     let open Custom_field in

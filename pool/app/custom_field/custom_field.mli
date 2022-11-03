@@ -56,6 +56,7 @@ module Name : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> name option
+  val find_opt_or : Pool_common.Language.t -> string -> t -> string
 
   val create
     :  Pool_common.Language.t list

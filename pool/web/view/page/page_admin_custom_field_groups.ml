@@ -70,11 +70,7 @@ let form
                          ; a_user_data "sortable-item" ""
                          ]
                        [ div
-                           [ txt
-                               (field
-                               |> name
-                               |> Name.find_opt language
-                               |> CCOption.map_or ~default:"-" Name.value_name)
+                           [ txt (field |> name |> Name.find_opt_or language "-")
                            ]
                        ; div
                            [ input
