@@ -3,9 +3,10 @@ import flatpickr from 'flatpickr'
 import { German } from "flatpickr/dist/l10n/de.js"
 import Default from "flatpickr/dist/l10n/default.js"
 import { initSortable } from "./sortable"
+import '../node_modules/@econ/frontend-framework/dist/main.js'
 
 import 'flatpickr/dist/themes/light.css'
-import './index.css'
+import './index.scss'
 
 function getLocale(elm) {
     const locale = elm.dataset.language;

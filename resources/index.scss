@@ -1,3 +1,6 @@
+$icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
+@import "../node_modules/@econ/frontend-framework/dist/main.scss";
+
 .toggled {
     display: flex;
 }
