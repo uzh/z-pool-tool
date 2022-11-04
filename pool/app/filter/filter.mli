@@ -37,6 +37,7 @@ module Key : sig
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val show : t -> string
+  val to_sql : t -> string
   val equal_human : human -> human -> bool
   val show_human : human -> string
   val type_of_key : human -> input_type

@@ -152,6 +152,21 @@ module Key = struct
     | CustomField f -> Custom_field.(f |> id |> Id.value)
   ;;
 
+  let hardcoded_to_sql = function
+    | Email -> "user_users.email"
+    | Name -> "user_users.name"
+    | Paused -> "pool_contacts.paused"
+    | Verified ->
+      "pool_contacts.verified" (* TODO: This column does not exists*)
+    | VerifiedAt -> "pool_contacts.verified"
+  ;;
+
+  let to_sql (m : t) =
+    match m with
+    | Hardcoded h -> hardcoded_to_sql h
+    | CustomField _ -> "" (* TODO *)
+  ;;
+
   let type_of_hardcoded m : input_type =
     match m with
     | Email -> Str

@@ -138,12 +138,18 @@ let filter_to_sql dyn (filter : Filter.filter) =
   in
   let rec filter_sql (dyn, sql) filter =
     let of_list (dyn, sql) filters operator =
-      CCList.fold_left
-        (fun (dyn, sql) filter ->
-          let dyn, new_sql = filter_sql (dyn, sql) filter in
-          dyn, Format.asprintf "%s %s %s" sql operator new_sql)
-        (dyn, sql)
-        filters
+      let dyn, lst_sql =
+        CCList.fold_left
+          (fun (dyn, lst_sql) filter ->
+            let dyn, new_sql = filter_sql (dyn, sql) filter in
+            dyn, lst_sql @ [ new_sql ])
+          (dyn, [])
+          filters
+      in
+      ( dyn
+      , lst_sql
+        |> CCString.concat (Format.asprintf " %s " operator)
+        |> Format.asprintf "%s (%s)" sql )
     in
     match filter with
     | And filters ->
@@ -165,7 +171,7 @@ let filter_to_sql dyn (filter : Filter.filter) =
       let sql =
         Format.asprintf
           "%s %s %s"
-          (Key.show key)
+          (Key.to_sql key)
           (Operator.to_sql operator)
           param
       in
@@ -213,7 +219,7 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
     | None -> id_param, base_condition
     | Some filter ->
       let dyn, sql = filter_to_sql id_param filter.Filter.filter in
-      dyn, Format.asprintf "%s\n AND (%s)" base_condition sql
+      dyn, Format.asprintf "%s\n AND %s" base_condition sql
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
