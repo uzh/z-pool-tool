@@ -39,6 +39,7 @@ let to_string = function
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
+  | SentInvitations -> "Versendete Einladungen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionReminderDefaultLeadTime leadtime ->

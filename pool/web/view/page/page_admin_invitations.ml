@@ -67,28 +67,36 @@ module Partials = struct
     =
     let form_table =
       let rows =
-        CCList.map
-          (fun (contact : Contact.t) ->
-            let id = Contact.id contact |> Pool_common.Id.value in
-            [ div
-                [ input
-                    ~a:
-                      [ a_input_type `Checkbox
-                      ; a_name Pool_common.Message.Field.(Contacts |> array_key)
-                      ; a_id id
-                      ; a_value id
-                      ]
-                    ()
-                ; label ~a:[ a_label_for id ] [ txt (Contact.fullname contact) ]
-                ]
-            ])
-          filtered_contacts
+        if CCList.is_empty filtered_contacts
+        then p [ txt "No results found" ]
+        else
+          CCList.map
+            (fun (contact : Contact.t) ->
+              let id = Contact.id contact |> Pool_common.Id.value in
+              [ div
+                  [ input
+                      ~a:
+                        [ a_input_type `Checkbox
+                        ; a_name
+                            Pool_common.Message.Field.(Contacts |> array_key)
+                        ; a_id id
+                        ; a_value id
+                        ]
+                      ()
+                  ; label
+                      ~a:[ a_label_for id ]
+                      [ txt (Contact.fullname contact) ]
+                  ]
+              ])
+            filtered_contacts
+          |> Table.horizontal_table `Striped language
       in
-      Table.horizontal_table `Striped language rows
+      div
+        [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Filtered contacts" ]; rows ]
     in
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
           [ txt
               Pool_common.(
                 Message.(Send (Some Field.Invitation))

@@ -461,7 +461,6 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
 ;;
 
 let invitations
-  invitations
   experiment
   filter
   key_list
@@ -470,19 +469,48 @@ let invitations
   =
   let html =
     div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ Page_admin_invitations.Partials.send_invitation
+      ~a:[ a_class [ "stack" ] ]
+      [ p
+          [ a
+              ~a:
+                [ a_href
+                    (experiment.Experiment.id
+                    |> Pool_common.Id.value
+                    |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.SentInvitations)
+              ]
+          ]
+      ; Page_admin_invitations.Partials.send_invitation
           context
           experiment
           filter
           key_list
           filtered_contacts
-      ; Page_admin_invitations.Partials.list context experiment invitations
       ]
   in
   experiment_layout
     language
     (NavLink Pool_common.I18n.Invitations)
+    experiment
+    ~active:Pool_common.I18n.Invitations
+    html
+;;
+
+let sent_invitations
+  (Pool_context.{ language; _ } as context)
+  experiment
+  invitations
+  =
+  let html =
+    Page_admin_invitations.Partials.list context experiment invitations
+  in
+  experiment_layout
+    language
+    (I18n Pool_common.I18n.SentInvitations)
     experiment
     ~active:Pool_common.I18n.Invitations
     html

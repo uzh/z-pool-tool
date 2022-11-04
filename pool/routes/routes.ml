@@ -166,6 +166,7 @@ module Admin = struct
         Experiments.Invitations.
           [ get "" index
           ; post "" create
+          ; get "sent" sent_invitations
           ; post (add_key ~suffix:"resend" Invitation) resend
           ]
       in
