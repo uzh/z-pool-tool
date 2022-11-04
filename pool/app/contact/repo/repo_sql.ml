@@ -119,13 +119,7 @@ let filter_to_sql dyn (filter : Filter.filter) =
       | Option id -> add Custom_field.Repo.SelectOption.Id.t id
     in
     match value with
-    | Single single ->
-      (match single with
-       | Str s -> add_single_value dyn (Str s), "?"
-       | Nr n -> add_single_value dyn (Nr n), "?"
-       | Bool b -> add_single_value dyn (Bool b), "?"
-       | Date d -> add_single_value dyn (Date d), "?"
-       | Option id -> add_single_value dyn (Option id), "?")
+    | Single single -> add_single_value dyn single, "?"
     | Lst lst ->
       let dyn, params =
         CCList.fold_left
@@ -153,12 +147,10 @@ let filter_to_sql dyn (filter : Filter.filter) =
     in
     match filter with
     | And filters ->
-      (* TODO: Test *)
       if CCList.is_empty filters
       then dyn, sql
       else of_list (dyn, sql) filters "AND"
     | Or filters ->
-      (* TODO: Test *)
       if CCList.is_empty filters
       then dyn, sql
       else of_list (dyn, sql) filters "OR"
@@ -166,7 +158,6 @@ let filter_to_sql dyn (filter : Filter.filter) =
       let dyn, sql = filter_sql (dyn, sql) f in
       dyn, Format.asprintf "NOT %s" sql
     | Pred { Predicate.key; operator; value } ->
-      (* TODO: add table name *)
       let dyn, param = add_dyn_param dyn value in
       let sql =
         Format.asprintf
