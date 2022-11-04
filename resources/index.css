@@ -32,8 +32,17 @@
 
 .predicate {
     background-color: rgba(0, 0, 0, 0.02);
+    position: relative;
 }
 
 .switcher-sm>* {
     flex-basis: calc((24rem - 100%)*999);
+}
+
+[data-delete-predicate] {
+    color: rgb(241, 70, 104);
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    margin: 0;
 }

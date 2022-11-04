@@ -10,6 +10,17 @@ let find_in_params urlencoded field =
   |> CCOption.to_result Pool_common.Message.(Invalid field)
 ;;
 
+let find_identifier urlencoded =
+  let open CCResult in
+  find_in_params urlencoded Pool_common.Message.Field.Id
+  >>= fun str ->
+  str
+  |> CCString.split ~by:"-"
+  |> fun str ->
+  try Ok (CCList.map CCInt.of_string_exn str) with
+  | _ -> Error Pool_common.Message.(Invalid Field.Id)
+;;
+
 let create req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
@@ -83,17 +94,7 @@ let toggle_predicate_type req =
          in
          Filter.toggle_predicate_type current predicate_type
     in
-    let* identifier =
-      let open CCResult in
-      find_in_params urlencoded Pool_common.Message.Field.Id
-      >>= (fun str ->
-            str
-            |> CCString.split ~by:"-"
-            |> fun str ->
-            try Ok (CCList.map CCInt.of_string_exn str) with
-            | _ -> Error Pool_common.Message.(Invalid Field.Id))
-      |> Lwt_result.lift
-    in
+    let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     Component.Filter.(
       predicate_form language (Some filter) key_list ~identifier ())
     |> Lwt_result.return
@@ -135,6 +136,43 @@ let toggle_key req =
      |> CCList.pure
      |> Tyxml.Html.div)
   |> CCList.pure
+  |> HttpUtils.multi_html_to_plain_text_response
+  |> Lwt.return
+;;
+
+let add_predicate req =
+  let open Lwt_result.Syntax in
+  let%lwt result =
+    let* { Pool_context.language; tenant_db; _ } =
+      Pool_context.find req |> Lwt_result.lift
+    in
+    let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let%lwt key_list = Filter.all_keys tenant_db in
+    let* identifier = find_identifier urlencoded |> Lwt_result.lift in
+    let rec increment_identifier identifier =
+      match identifier with
+      | [] -> []
+      | [ tl ] -> [ tl + 1 ]
+      | hd :: tl -> hd :: increment_identifier tl
+    in
+    let predicate = Filter.Human.init () |> CCOption.pure in
+    let filter_form =
+      Component.Filter.predicate_form language predicate key_list ~identifier ()
+    in
+    let add_button =
+      Component.Filter.add_predicate_btn (increment_identifier identifier)
+    in
+    Lwt_result.return [ filter_form; add_button ]
+  in
+  (match result with
+   | Ok html -> html
+   | Error err ->
+     err
+     |> Pool_common.(Utils.error_to_string Pool_common.Language.En)
+     |> Tyxml.Html.txt
+     |> CCList.pure
+     |> Tyxml.Html.div
+     |> CCList.pure)
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;

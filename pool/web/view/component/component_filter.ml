@@ -16,6 +16,19 @@ let format_identifiers ?prefix identifiers =
   | Some prefix -> Format.asprintf "%s-%s" prefix ids
 ;;
 
+let htmx_attribs ~action ~trigger ~target ~identifier =
+  [ a_user_data
+      "hx-post"
+      (action |> Format.asprintf "/admin/filter/%s" |> Sihl.Web.externalize_path)
+  ; a_user_data "hx-trigger" trigger
+  ; a_user_data "hx-target" (Format.asprintf "#%s" target)
+  ; a_user_data
+      "hx-vals"
+      (Format.asprintf "{\"id\": \"%s\"}" (format_identifiers identifier))
+  ; a_user_data "hx-swap" "outerHTML"
+  ]
+;;
+
 let select_default_option language selected =
   let attrs = if selected then [ a_selected () ] else [] in
   option
@@ -216,20 +229,12 @@ let predicate_type_select language target identifier ?selected () =
         ~a:[ a_class [ "select" ] ]
         [ select
             ~a:
-              [ a_name Pool_common.Message.Field.(show Predicate)
-              ; a_user_data
-                  "hx-post"
-                  (Sihl.Web.externalize_path
-                     "/admin/filter/toggle-predicate-type")
-              ; a_user_data "hx-trigger" "change"
-              ; a_user_data "hx-target" (Format.asprintf "#%s" target)
-              ; a_user_data
-                  "hx-vals"
-                  (Format.asprintf
-                     "{\"id\": \"%s\"}"
-                     (format_identifiers identifier))
-              ; a_user_data "hx-swap" "outerHTML"
-              ]
+              (a_name Pool_common.Message.Field.(show Predicate)
+              :: htmx_attribs
+                   ~action:"toggle-predicate-type"
+                   ~trigger:"change"
+                   ~target
+                   ~identifier)
             (select_default_option language (CCOption.is_none selected)
             :: CCList.map
                  (fun filter_label ->
@@ -251,6 +256,21 @@ let predicate_type_select language target identifier ?selected () =
     ]
 ;;
 
+let add_predicate_btn identifier =
+  let id = format_identifiers ~prefix:"new" identifier in
+  div
+    ~a:[ a_id id; a_user_data "new-predicate" "" ]
+    [ Input.submit_icon
+        ~attributes:
+          (htmx_attribs
+             ~action:"add-predicate"
+             ~trigger:"click"
+             ~target:id
+             ~identifier)
+        `Add
+    ]
+;;
+
 let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
   let selected =
     let open Human in
@@ -261,7 +281,11 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          | Not _ -> Utils.Not
          | Pred _ -> Utils.Pred)
   in
-  let add_predicate_btn () = div [ Input.submit_icon `Add ] in
+  let delete_button () =
+    div
+      ~a:[ a_user_data "delete-predicate" "" ]
+      [ Component_icon.icon `TrashOutline ]
+  in
   let predicate_form =
     let open Human in
     match filter with
@@ -279,7 +303,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
                ~identifier:(identifier @ [ i ])
                ())
            filters
-         @ [ add_predicate_btn () ]
+         @ [ add_predicate_btn (identifier @ [ CCList.length filters ]) ]
        | Not filter ->
          predicate_form
            language
@@ -314,14 +338,18 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
        ; a_id predicate_identifier
        ]
       @ data_attr)
-    [ predicate_type_select
-        language
-        predicate_identifier
-        identifier
-        ?selected
-        ()
-    ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
-    ]
+    ([ predicate_type_select
+         language
+         predicate_identifier
+         identifier
+         ?selected
+         ()
+     ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
+     ]
+    @
+    if CCOption.is_some filter && CCList.length identifier > 1
+    then [ delete_button () ]
+    else [])
 ;;
 
 let filter_form language experiment filter key_list =

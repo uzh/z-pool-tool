@@ -256,6 +256,7 @@ module Admin = struct
       Handler.Admin.Filter.
         [ post "/toggle-key" toggle_key
         ; post "/toggle-predicate-type" toggle_predicate_type
+        ; post "/add-predicate" add_predicate
         ]
     in
     let custom_fields =

@@ -103,6 +103,7 @@ module Human : sig
 
   val of_string : string -> (t, Pool_common.Message.error) result
   val show : t -> string
+  val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
 end
 
 val equal : t -> t -> bool

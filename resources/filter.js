@@ -37,9 +37,7 @@ const buildFormBody = (data) => {
 }
 
 const predicateToJson = (outerPredicate) => {
-    // const predicateType = outerPredicate.querySelector('select[name="predicate"]').value;$
     const predicateType = outerPredicate.dataset.predicate;
-    console.log(predicateType)
     if (["or", "and"].includes(predicateType)) {
         const andOrPredicates = findChildPredicates(outerPredicate)
         return {
@@ -102,7 +100,7 @@ const predicateToJson = (outerPredicate) => {
 }
 
 function addBeforeRequestListener(predicate) {
-    elms = predicate.querySelectorAll('[data-hx-post]');
+    elms = predicate.querySelectorAll('[name="key"], [name="predicate"]');
     [...elms].forEach(elm => {
         elm.addEventListener('htmx:configRequest', (e) => {
             const predicate = elm.closest('.predicate');
@@ -117,7 +115,7 @@ function addBeforeRequestListener(predicate) {
 }
 
 function addAfterSwapListener(predicate) {
-    elms = predicate.querySelectorAll('.predicate');
+    elms = predicate.querySelectorAll('.predicate, [data-new-predicate]');
     [...elms].forEach(elm => {
         elm.addEventListener('htmx:afterSwap', (e) => {
             addHtmxListeners(e.detail.elt)
@@ -166,7 +164,11 @@ export function initFilter() {
     }
     const form = document.getElementById("filter-form");
     if (form) {
-        addBeforeRequestListener(form);
-        addAfterSwapListener(form);
+        addHtmxListeners(form);
+        [...document.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
+            elm.addEventListener("click", (e) => {
+                e.currentTarget.closest(".predicate").remove();
+            })
+        })
     }
 }
