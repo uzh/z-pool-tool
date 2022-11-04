@@ -86,8 +86,8 @@ let toggle_predicate_type req =
       Lwt_result.lift
       @@ let* current =
            find_in_params urlencoded Pool_common.Message.Field.Filter
-           >>= Filter.filter_of_string
-           >|= Filter.t_to_human key_list
+           >|= Yojson.Safe.from_string
+           >>= Filter.Human.of_yojson key_list
          in
          let* predicate_type =
            find_in_params urlencoded Pool_common.Message.Field.Predicate

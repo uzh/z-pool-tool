@@ -61,6 +61,21 @@ let value_of_yojson (yojson : Yojson.Safe.t) =
   | _ -> Error error
 ;;
 
+let value_of_yojson_opt (yojson : Yojson.Safe.t) =
+  let open CCOption in
+  let open CCFun in
+  match yojson with
+  | `Assoc [ (key, value) ] ->
+    (match key, value with
+     | "list", `List values ->
+       values
+       |> CCList.filter_map (single_value_of_yojson %> of_result)
+       |> lst
+       |> CCOption.pure
+     | _ -> single_value_of_yojson yojson |> of_result >|= single)
+  | _ -> None
+;;
+
 let to_assoc key value = `Assoc [ key, value ]
 
 let yojson_of_single_val value =
@@ -113,6 +128,20 @@ module Key = struct
   let read_hardcoded yojson =
     try Some (yojson |> read hardcoded_of_yojson) with
     | _ -> None
+  ;;
+
+  let to_human key_list m =
+    let find_in_keys key_id =
+      CCList.find_opt
+        (fun key ->
+          match (key : human) with
+          | Hardcoded _ -> false
+          | CustomField f -> Custom_field.(Id.equal (id f) key_id))
+        key_list
+    in
+    match (m : t) with
+    | Hardcoded h -> Some (Hardcoded h : human)
+    | CustomField id -> id |> find_in_keys
   ;;
 
   let of_yojson : Yojson.Safe.t -> (t, Pool_common.Message.error) result =
@@ -297,6 +326,7 @@ module Predicate = struct
   [@@deriving eq]
 
   let create key operator value : t = { key; operator; value }
+  let create_human ?key ?operator ?value () : human = { key; operator; value }
 
   let validate : t -> (t, Pool_common.Message.error) result =
    fun ({ key; operator; value } as m) ->
@@ -342,8 +372,23 @@ module Predicate = struct
       Helper.[ key_string, key; operator_string, operator; value_string, value ]
   ;;
 
-  let create key operator value : t = { key; operator; value }
-  let create_human ?key ?operator ?value () : human = { key; operator; value }
+  let human_of_yojson key_list (yojson : Yojson.Safe.t) =
+    let open Helper in
+    match yojson with
+    | `Assoc assoc ->
+      let open CCFun in
+      let open CCOption in
+      let go key of_yojson =
+        assoc |> CCList.assoc_opt ~eq:CCString.equal key >>= of_yojson
+      in
+      let key =
+        go key_string (Key.of_yojson %> of_result) >>= Key.to_human key_list
+      in
+      let operator = go operator_string (Operator.of_yojson %> of_result) in
+      let value = go value_string value_of_yojson_opt in
+      create_human ?key ?operator ?value () |> CCResult.pure
+    | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
+  ;;
 end
 
 type filter =

@@ -36,21 +36,6 @@ let key_of_string tenant_db str =
 ;;
 
 let rec t_to_human key_list (t : filter) =
-  let find_in_keys key_id =
-    CCList.find_opt
-      (fun key ->
-        let open Key in
-        match (key : human) with
-        | Hardcoded _ -> false
-        | CustomField f -> Custom_field.(Id.equal (id f) key_id))
-      key_list
-  in
-  let key_to_frontend key =
-    let open Key in
-    match (key : t) with
-    | Hardcoded h -> Some (Hardcoded h : human)
-    | CustomField id -> id |> find_in_keys
-  in
   let t_to_human = t_to_human key_list in
   match t with
   | And predicates -> Human.And (predicates |> CCList.map t_to_human)
@@ -59,7 +44,7 @@ let rec t_to_human key_list (t : filter) =
   | Pred { Predicate.key; operator; value } ->
     Human.Pred
       Predicate.
-        { key = key_to_frontend key
+        { key = Key.to_human key_list key
         ; operator = Some operator
         ; value = Some value
         }

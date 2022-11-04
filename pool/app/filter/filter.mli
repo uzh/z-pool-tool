@@ -102,9 +102,13 @@ module Human : sig
     | Not of t
     | Pred of Predicate.human
 
-  val of_string : string -> (t, Pool_common.Message.error) result
   val show : t -> string
   val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
+
+  val of_yojson
+    :  Key.human list
+    -> Yojson.Safe.t
+    -> (t, Pool_common.Message.error) result
 end
 
 val equal : t -> t -> bool

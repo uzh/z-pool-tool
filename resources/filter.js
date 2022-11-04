@@ -36,23 +36,23 @@ const buildFormBody = (data) => {
     return formBody.join("&");
 }
 
-const predicateToJson = (outerPredicate) => {
+const predicateToJson = (outerPredicate, allowEmpty = false) => {
     const predicateType = outerPredicate.dataset.predicate;
     if (["or", "and"].includes(predicateType)) {
         const andOrPredicates = findChildPredicates(outerPredicate)
         return {
-            [predicateType]: [...andOrPredicates].map((p) => predicateToJson(p))
+            [predicateType]: [...andOrPredicates].map((p) => predicateToJson(p, allowEmpty))
         }
     } else if (predicateType === "not") {
         const notPredicate = findChildPredicates(outerPredicate)[0];
         return {
-            [predicateType]: predicateToJson(notPredicate)
+            [predicateType]: predicateToJson(notPredicate, allowEmpty)
         }
     } else if (predicateType === "pred") {
         var success = true;
         var inputs = ["key", "operator", "value"].map((attr) => outerPredicate.querySelector(`[name="${attr}"]`))
         let [key, operator, value] = inputs.map((input) => {
-            if (!input.value) {
+            if (!input.value && !allowEmpty) {
                 success = false;
                 addRequiredError(input);
             }
@@ -105,7 +105,7 @@ function addBeforeRequestListener(predicate) {
         elm.addEventListener('htmx:configRequest', (e) => {
             const predicate = elm.closest('.predicate');
             try {
-                e.detail.parameters.filter = predicateToJson(predicate);
+                e.detail.parameters.filter = predicateToJson(predicate, true);
             } catch (error) {
                 e.preventDefault();
                 notifyUser("error", error)
