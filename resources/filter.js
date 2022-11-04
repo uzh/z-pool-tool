@@ -100,7 +100,7 @@ const predicateToJson = (outerPredicate) => {
 }
 
 function addBeforeRequestListener(predicate) {
-    elms = predicate.querySelectorAll('[name="key"], [name="predicate"]');
+    elms = predicate.querySelectorAll('[name="predicate"]');
     [...elms].forEach(elm => {
         elm.addEventListener('htmx:configRequest', (e) => {
             const predicate = elm.closest('.predicate');
