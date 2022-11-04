@@ -101,6 +101,10 @@ let validate_multiselect (public, options) values =
 ;;
 
 module Repo = struct
+  module Id = struct
+    include Pool_common.Repo.Id
+  end
+
   module SelectOption = struct
     module Id = struct
       include Repo_entity.Option.Id

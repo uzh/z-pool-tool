@@ -24,9 +24,19 @@ let add_order_column_to_custom_field_options =
     |sql}
 ;;
 
+let rename_custom_field_foreign_key =
+  Sihl.Database.Migration.create_step
+    ~label:"add order column to custom field options table"
+    {sql|
+      ALTER TABLE pool_custom_field_options
+        RENAME COLUMN custom_field_option_uuid TO custom_field_uuid
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_options"
     |> add_step create_custom_field_options_table
-    |> add_step add_order_column_to_custom_field_options)
+    |> add_step add_order_column_to_custom_field_options
+    |> add_step rename_custom_field_foreign_key)
 ;;

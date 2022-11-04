@@ -433,6 +433,12 @@ val validate_multiselect
   -> Public.t
 
 module Repo : sig
+  module Id : sig
+    type t = Id.t
+
+    val t : t Caqti_type.t
+  end
+
   module SelectOption : sig
     module Id : sig
       type t = SelectOption.Id.t

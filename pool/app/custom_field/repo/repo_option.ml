@@ -6,11 +6,11 @@ let select_sql =
     {sql|
     SELECT
       LOWER(CONCAT(
-        SUBSTR(HEX(pool_custom_field_options.custom_field_option_uuid), 1, 8), '-',
-        SUBSTR(HEX(pool_custom_field_options.custom_field_option_uuid), 9, 4), '-',
-        SUBSTR(HEX(pool_custom_field_options.custom_field_option_uuid), 13, 4), '-',
-        SUBSTR(HEX(pool_custom_field_options.custom_field_option_uuid), 17, 4), '-',
-        SUBSTR(HEX(pool_custom_field_options.custom_field_option_uuid), 21)
+        SUBSTR(HEX(pool_custom_field_options.custom_field_uuid), 1, 8), '-',
+        SUBSTR(HEX(pool_custom_field_options.custom_field_uuid), 9, 4), '-',
+        SUBSTR(HEX(pool_custom_field_options.custom_field_uuid), 13, 4), '-',
+        SUBSTR(HEX(pool_custom_field_options.custom_field_uuid), 17, 4), '-',
+        SUBSTR(HEX(pool_custom_field_options.custom_field_uuid), 21)
       )),
       LOWER(CONCAT(
         SUBSTR(HEX(pool_custom_field_options.uuid), 1, 8), '-',
@@ -30,7 +30,7 @@ let find_by_multiple_fields_request ids =
   let where =
     Format.asprintf
       {sql|
-      WHERE pool_custom_field_options.custom_field_option_uuid in ( %s )
+      WHERE pool_custom_field_options.custom_field_uuid in ( %s )
     |sql}
       (CCList.mapi
          (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
@@ -62,7 +62,7 @@ let find_by_multiple_fields pool ids =
 let find_by_field_request =
   let open Caqti_request.Infix in
   {sql|
-      WHERE pool_custom_field_options.custom_field_option_uuid = UNHEX(REPLACE(?, '-', ''))
+      WHERE pool_custom_field_options.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
   |> select_sql
   |> Caqti_type.string ->* Repo_entity.Option.t
@@ -130,7 +130,7 @@ let insert_sql =
     INSERT INTO pool_custom_field_options (
       uuid,
       name,
-      custom_field_option_uuid
+      custom_field_uuid
     ) VALUES (
       UNHEX(REPLACE($2, '-', '')),
       $3,

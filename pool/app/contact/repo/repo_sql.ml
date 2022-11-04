@@ -2,50 +2,58 @@ module Id = Pool_common.Id
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
-let find_request_sql where_fragment =
-  Format.asprintf
-    "%s\n%s"
+let find_request_sql ?join where_fragment =
+  let select =
     {sql|
-      SELECT
-        LOWER(CONCAT(
-          SUBSTR(HEX(user_users.uuid), 1, 8), '-',
-          SUBSTR(HEX(user_users.uuid), 9, 4), '-',
-          SUBSTR(HEX(user_users.uuid), 13, 4), '-',
-          SUBSTR(HEX(user_users.uuid), 17, 4), '-',
-          SUBSTR(HEX(user_users.uuid), 21)
-        )),
-        user_users.email,
-        user_users.username,
-        user_users.name,
-        user_users.given_name,
-        user_users.password,
-        user_users.status,
-        user_users.admin,
-        user_users.confirmed,
-        user_users.created_at,
-        user_users.updated_at,
-        pool_contacts.recruitment_channel,
-        pool_contacts.terms_accepted_at,
-        pool_contacts.language,
-        pool_contacts.experiment_type_preference,
-        pool_contacts.paused,
-        pool_contacts.disabled,
-        pool_contacts.verified,
-        pool_contacts.email_verified,
-        pool_contacts.num_invitations,
-        pool_contacts.num_assignments,
-        pool_contacts.firstname_version,
-        pool_contacts.lastname_version,
-        pool_contacts.paused_version,
-        pool_contacts.language_version,
-        pool_contacts.experiment_type_preference_version,
-        pool_contacts.created_at,
-        pool_contacts.updated_at
-      FROM pool_contacts
-        LEFT JOIN user_users
-        ON pool_contacts.user_uuid = user_users.uuid
+    SELECT
+      LOWER(CONCAT(
+        SUBSTR(HEX(user_users.uuid), 1, 8), '-',
+        SUBSTR(HEX(user_users.uuid), 9, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 13, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 17, 4), '-',
+        SUBSTR(HEX(user_users.uuid), 21)
+      )),
+      user_users.email,
+      user_users.username,
+      user_users.name,
+      user_users.given_name,
+      user_users.password,
+      user_users.status,
+      user_users.admin,
+      user_users.confirmed,
+      user_users.created_at,
+      user_users.updated_at,
+      pool_contacts.recruitment_channel,
+      pool_contacts.terms_accepted_at,
+      pool_contacts.language,
+      pool_contacts.experiment_type_preference,
+      pool_contacts.paused,
+      pool_contacts.disabled,
+      pool_contacts.verified,
+      pool_contacts.email_verified,
+      pool_contacts.num_invitations,
+      pool_contacts.num_assignments,
+      pool_contacts.firstname_version,
+      pool_contacts.lastname_version,
+      pool_contacts.paused_version,
+      pool_contacts.language_version,
+      pool_contacts.experiment_type_preference_version,
+      pool_contacts.created_at,
+      pool_contacts.updated_at
+    FROM pool_contacts
+      LEFT JOIN user_users
+      ON pool_contacts.user_uuid = user_users.uuid
     |sql}
-    where_fragment
+  in
+  match join with
+  | None -> Format.asprintf "%s\n%s" select where_fragment
+  | Some join -> Format.asprintf "%s\n%s\n%s" select join where_fragment
+;;
+
+let join_custom_field_answers =
+  {sql|
+  LEFT JOIN pool_custom_field_answers ON pool_custom_field_answers.entity_uuid = user_users.uuid
+  |sql}
 ;;
 
 let find_request =
@@ -108,7 +116,7 @@ let find_confirmed pool email =
 
 let filter_to_sql dyn (filter : Filter.filter) =
   let open Filter in
-  let add_dyn_param dyn value =
+  let add_value_to_params value dyn =
     let add_single_value dyn value =
       let add c v = Dynparam.add c v dyn in
       match value with
@@ -158,15 +166,31 @@ let filter_to_sql dyn (filter : Filter.filter) =
       let dyn, sql = filter_sql (dyn, sql) f in
       dyn, Format.asprintf "NOT %s" sql
     | Pred { Predicate.key; operator; value } ->
-      let dyn, param = add_dyn_param dyn value in
-      let sql =
-        Format.asprintf
-          "%s %s %s"
-          (Key.to_sql key)
-          (Operator.to_sql operator)
-          param
-      in
-      dyn, sql
+      (match key with
+       | Key.Hardcoded h ->
+         let dyn, param = add_value_to_params value dyn in
+         let sql =
+           Format.asprintf
+             "%s %s %s"
+             (Key.hardcoded_to_sql h)
+             (Operator.to_sql operator)
+             param
+         in
+         dyn, sql
+       | Key.CustomField id ->
+         let dyn, param =
+           Dynparam.(
+             dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params value)
+         in
+         let sql =
+           Format.asprintf
+             {sql|
+            (custom_field_uuid = UNHEX(REPLACE(?, '-', '')) AND value %s %s)
+            |sql}
+             (Operator.to_sql operator)
+             param
+         in
+         dyn, sql)
   in
   let dyn, sql = filter_sql (dyn, "") filter in
   dyn, sql
@@ -200,21 +224,24 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   in
   let dyn, sql =
     let id_param =
-      Dynparam.(
-        (* TODO: Can i reuse same argument? *)
-        empty
-        |> add Caqti_type.string (experiment_id |> Pool_common.Id.value)
-        |> add Caqti_type.string (experiment_id |> Pool_common.Id.value))
+      let id = experiment_id |> Pool_common.Id.value in
+      Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
     in
     match filter with
     | None -> id_param, base_condition
     | Some filter ->
       let dyn, sql = filter_to_sql id_param filter.Filter.filter in
-      dyn, Format.asprintf "%s\n AND %s" base_condition sql
+      ( dyn
+      , Format.asprintf "%s\n AND %s GROUP BY user_users.id" base_condition sql
+      )
   in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
-  let request = sql |> find_request_sql |> pt ->* Repo_model.t in
+  let request =
+    sql
+    |> find_request_sql ~join:join_custom_field_answers
+    |> pt ->* Repo_model.t
+  in
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
