@@ -368,8 +368,17 @@ module Public = struct
         , answer )
   ;;
 
-  let group_fields =
-    CCList.group_by ~eq:(fun (f1 : repo) f2 -> Id.equal f1.id f2.id)
+  let group_fields lst =
+    let open CCList in
+    fold_left
+      (fun acc (field : repo) ->
+        match assoc_opt ~eq:Id.equal field.id acc with
+        | None -> acc @ [ field.id, [ field ] ]
+        | Some fields ->
+          Assoc.set ~eq:Id.equal field.id (fields @ [ field ]) acc)
+      []
+      lst
+    |> map snd
   ;;
 
   let single_to_entity options field_list =

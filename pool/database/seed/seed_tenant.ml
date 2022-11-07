@@ -100,7 +100,7 @@ let create () =
               (Title.create title |> get_or_failwith)
               (Description.create description |> get_or_failwith)
               (Url.create url |> get_or_failwith)
-              (Pool_tenant.Database.create database_url database_label
+              (Pool_tenant.Database.create database_label database_url
               |> get_or_failwith)
               SmtpAuth.(
                 Write.create

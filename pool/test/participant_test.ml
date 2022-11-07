@@ -24,7 +24,7 @@ let sign_up_not_allowed_suffix _switch () =
              ]
     in
     Participant_command.SignUp.handle
-      ~actor:Ocauth.console_authorizable
+      ~actor:Guard.console_authorizable
       None
       command
       ~allowed_email_suffixes
@@ -63,7 +63,7 @@ let sign_up () =
              ]
     in
     Participant_command.SignUp.handle
-      ~actor:Ocauth.console_authorizable
+      ~actor:Guard.console_authorizable
       (Some Pool_common.Language.En)
       command
       ~allowed_email_suffixes

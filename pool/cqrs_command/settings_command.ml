@@ -313,7 +313,7 @@ module RestoreDefault : sig
   type t = Pool_tenant.t
 
   val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
@@ -322,7 +322,7 @@ end = struct
   ;;
 
   let effects t =
-    [ `Delete, `Uniq (t.Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
+    [ `Delete, `One (t.Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
   ;;
 end
 

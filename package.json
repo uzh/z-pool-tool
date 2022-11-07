@@ -7,9 +7,11 @@
         "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js --dist-dir public"
     },
     "devDependencies": {
+        "@parcel/transformer-sass": "2.7.0",
         "parcel": "^2.0.0"
     },
     "dependencies": {
+        "@econ/frontend-framework": "^1.0.2",
         "flatpickr": "^4.6.13",
         "htmx.org": "^1.6.0"
     }

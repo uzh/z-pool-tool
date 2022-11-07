@@ -9,8 +9,8 @@
   email
   experiment
   filter
+  guard
   i18n
-  ocauth
   pool_common
   pool_event
   pool_location

@@ -130,11 +130,16 @@ let insert_sql =
     INSERT INTO pool_custom_field_options (
       uuid,
       name,
-      custom_field_uuid
+      custom_field_uuid,
+      position
     ) VALUES (
       UNHEX(REPLACE($2, '-', '')),
       $3,
-      UNHEX(REPLACE($1, '-', ''))
+      UNHEX(REPLACE($1, '-', '')),
+      (SELECT
+        COUNT(*)
+        FROM pool_custom_field_options AS f
+        WHERE f.custom_field_uuid = UNHEX(REPLACE($1, '-', '')))
     )
   |sql}
 ;;

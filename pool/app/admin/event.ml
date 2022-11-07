@@ -108,7 +108,7 @@ let handle_event pool : event -> unit Lwt.t = function
         |> Lwt_result.map_error Pool_common.Message.error_to_exn
         |> Lwt_result.get_exn
         |> Lwt.map (fun tenant ->
-             Ocauth.Uuid.of_string_exn (Common.Id.value tenant.Pool_tenant.id))
+             Guard.Uuid.of_string_exn (Common.Id.value tenant.Pool_tenant.id))
       in
       Lwt.return
       @@
@@ -119,9 +119,9 @@ let handle_event pool : event -> unit Lwt.t = function
       | LocationManager -> `Location_manager tenant_id
       | Operator -> `Operator tenant_id
     in
-    Ocauth.Persistence.grant_roles
+    Guard.Persistence.grant_roles
       (Guardian.Uuidm.of_string_exn user.Sihl_user.id)
-      (Ocauth.Role_set.singleton role)
+      (Guard.Role_set.singleton role)
     |> Lwt_result.map_error (fun s -> Failure s)
     |> Lwt_result.get_exn
   | AssistantEvents event -> handle_person_event pool event

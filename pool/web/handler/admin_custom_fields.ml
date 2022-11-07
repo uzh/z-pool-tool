@@ -236,3 +236,57 @@ let sort_options req =
   in
   get_model handler req
 ;;
+
+let sort_fields req ?group () =
+  let handler req current_model =
+    let open Utils.Lwt_result.Infix in
+    let redirect_path =
+      match group with
+      | None -> Url.index_path current_model
+      | Some group -> Url.Group.edit_path (current_model, group)
+    in
+    let result { Pool_context.tenant_db; _ } =
+      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      @@
+      let open Custom_field in
+      let%lwt ids =
+        Sihl.Web.Request.urlencoded_list
+          Message.Field.(CustomField |> array_key)
+          req
+      in
+      let%lwt fields =
+        match group with
+        | None -> find_ungrouped_by_model tenant_db current_model
+        | Some group -> find_by_group tenant_db group
+      in
+      let fields =
+        CCList.filter_map
+          (fun idx ->
+            CCList.find_opt
+              (fun (field : t) -> Id.equal (Id.of_string idx) (id field))
+              fields)
+          ids
+      in
+      let events =
+        fields
+        |> Cqrs_command.Custom_field_command.Sort.handle
+        |> Lwt_result.lift
+      in
+      let handle events =
+        let%lwt () =
+          Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+        in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ HttpUtils.Message.set
+              ~success:[ Message.(Updated Field.CustomFieldGroup) ]
+          ]
+      in
+      events |>> handle
+    in
+    result |> HttpUtils.extract_happy_path_with_actions req
+  in
+  get_model handler req
+;;
+
+let sort_ungrouped_fields req = sort_fields req ()

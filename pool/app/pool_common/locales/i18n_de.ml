@@ -59,6 +59,7 @@ let to_string = function
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpTitle -> "Registrieren"
+  | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"

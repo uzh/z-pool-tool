@@ -6,8 +6,8 @@
   caqti-driver-mariadb
   command
   database
+  guard
   routes
   service
   sihl
-  tenant
-  ocauth))
+  tenant))

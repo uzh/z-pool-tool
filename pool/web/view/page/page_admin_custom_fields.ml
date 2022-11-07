@@ -338,7 +338,6 @@ let field_form
                                 ; "align-center"
                                 ]
                             ; a_user_data "sortable-item" ""
-                            ; a_draggable true
                             ]
                           [ div [ txt (SelectOption.name language option) ]
                           ; div
@@ -599,36 +598,71 @@ let detail
 
 let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
+  let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
+  let field_name field =
+    let open Custom_field in
+    field |> name |> Name.find_opt_or language "-"
+  in
   let rows =
     let open Custom_field in
     let open CCOption in
-    CCList.map
-      (fun field ->
-        [ txt
-            (field
-            |> name
-            |> Name.find_opt language
-            |> map_or ~default:"-" Name.value_name)
-        ; txt
-            (field
-            |> group_id
-            >>= (fun id ->
-                  CCList.find_opt
-                    Group.(fun (g : t) -> Id.equal g.id id)
-                    group_list
-                  >|= Group.name language)
-            |> value ~default:"")
-        ; a
-            ~a:
-              [ a_href
-                  (Url.Field.edit_path (model field, id field)
-                  |> Sihl.Web.externalize_path)
-              ]
-            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
+    let field_row group field =
+      [ txt (field |> field_name)
+      ; txt (group >|= Group.name language |> value ~default:"")
+      ; a
+          ~a:
+            [ a_href
+                (Url.Field.edit_path (model field, id field)
+                |> Sihl.Web.externalize_path)
             ]
-        ])
-      field_list
+          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
+      ]
+    in
+    CCList.flat_map
+      (fun (group, fields) -> CCList.map (field_row (Some group)) fields)
+      grouped
+    @ CCList.map (field_row None) ungrouped
+  in
+  let sort_ungrouped =
+    div
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
+          [ txt
+              Pool_common.(
+                Utils.text_to_string language I18n.SortUngroupedFields)
+          ]
+      ; form
+          ~a:
+            [ a_class [ "stack" ]
+            ; a_method `Post
+            ; a_action
+                (Sihl.Web.externalize_path (Url.index_path current_model)
+                |> Format.asprintf "%s/sort-fields")
+            ]
+          [ csrf_element csrf ()
+          ; div
+              ~a:[ a_user_data "sortable" "" ]
+              (CCList.map
+                 (fun field ->
+                   div
+                     ~a:
+                       [ a_class [ "flexrow"; "align-center" ]
+                       ; a_user_data "sortable-item" ""
+                       ]
+                     [ txt (field |> field_name)
+                     ; input
+                         ~a:
+                           [ a_input_type `Hidden
+                           ; a_name Message.Field.(CustomField |> array_key)
+                           ; a_value Custom_field.(field |> id |> Id.value)
+                           ]
+                         ()
+                     ])
+                 ungrouped)
+          ; submit_element language Message.UpdateOrder ~submit_type:`Success ()
+          ]
+      ]
   in
   let groups_html =
     let list =
@@ -656,7 +690,6 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                            ; "align-center"
                            ]
                        ; a_user_data "sortable-item" ""
-                       ; a_draggable true
                        ]
                      [ div [ txt Group.(group |> name language) ]
                      ; div
@@ -721,6 +754,9 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ Table.horizontal_table `Striped language ~thead rows; groups_html ]
+    [ Table.horizontal_table `Striped language ~thead rows
+    ; groups_html
+    ; sort_ungrouped
+    ]
   |> custom_fields_layout language current_model
 ;;

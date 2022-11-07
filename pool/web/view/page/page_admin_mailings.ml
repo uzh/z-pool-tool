@@ -67,7 +67,6 @@ let distribution_form_field language (field, current_order) =
     ~a:
       [ a_class [ "flexrow"; "flex-gap"; "distribution" ]
       ; a_user_data "sortable-item" ""
-      ; a_draggable true
       ]
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]

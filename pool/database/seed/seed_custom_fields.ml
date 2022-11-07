@@ -13,7 +13,7 @@ let create pool =
   let admin =
     Admin.
       { hint = None
-      ; overwrite = false |> Overwrite.create
+      ; overwrite = true |> Overwrite.create
       ; view_only = false |> ViewOnly.create
       ; input_only = false |> InputOnly.create
       }

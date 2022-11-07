@@ -296,7 +296,7 @@ module Admin = struct
             [ get "/edit" edit
             ; post "" update
             ; post "/delete" delete
-            ; post "sort-fields" soft_fields
+            ; post "sort-fields" sort_fields
             ]
         in
         CustomFieldGroup.
@@ -308,6 +308,7 @@ module Admin = struct
       in
       let models =
         [ get "" index
+        ; post "sort-fields" sort_ungrouped_fields
         ; choose ~scope:"field" fields
         ; choose ~scope:"group" groups
         ]

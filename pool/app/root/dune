@@ -1,7 +1,7 @@
 (library
  (name root)
  (libraries
-  ocauth
+  guard
   pool_common
   pool_tenant
   pool_user

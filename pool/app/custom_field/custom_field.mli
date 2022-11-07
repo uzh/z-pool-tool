@@ -56,6 +56,7 @@ module Name : sig
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val find_opt : Pool_common.Language.t -> t -> name option
+  val find_opt_or : Pool_common.Language.t -> string -> t -> string
 
   val create
     :  Pool_common.Language.t list
@@ -360,6 +361,7 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
+val find_ungrouped_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 
 val find
   :  Pool_database.Label.t
@@ -447,3 +449,5 @@ module Repo : sig
     end
   end
 end
+
+val group_fields : Group.t list -> t list -> (Group.t * t list) list * t list

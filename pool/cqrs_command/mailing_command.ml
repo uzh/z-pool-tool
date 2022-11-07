@@ -17,7 +17,7 @@ module Create : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Experiment.t -> Ocauth.Authorizer.effect list
+  val effects : Experiment.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { start_at : StartAt.t
@@ -60,9 +60,9 @@ end = struct
       ]
   ;;
 
-  let effects (experiment : Experiment.t) : Ocauth.Authorizer.effect list =
-    [ `Manage, `Uniq (Pool_common.Id.to_uuidm experiment.Experiment.id)
-    ; `Create, `Role `Mailing
+  let effects (experiment : Experiment.t) : Guard.Authorizer.effect list =
+    [ `Manage, `One (Pool_common.Id.to_uuidm experiment.Experiment.id)
+    ; `Create, `Entity `Mailing
     ]
   ;;
 end
@@ -72,7 +72,7 @@ module Update : sig
 
   val handle : Mailing.t -> t -> (Pool_event.t list, Message.error) result
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Mailing.t -> Ocauth.Authorizer.effect list
+  val effects : Mailing.t -> Guard.Authorizer.effect list
 end = struct
   type t = Mailing.update
 
@@ -105,7 +105,7 @@ end = struct
 
   let effects mailing =
     [ ( `Update
-      , `Uniq
+      , `One
           (mailing.Mailing.id
           |> Mailing.Id.value
           |> Pool_common.Id.of_string
@@ -121,7 +121,7 @@ module Delete : sig
     :  Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -133,7 +133,7 @@ end = struct
 
   let effects mailing =
     [ ( `Delete
-      , `Uniq
+      , `One
           (mailing.Mailing.id
           |> Mailing.Id.value
           |> Pool_common.Id.of_string
@@ -149,7 +149,7 @@ module Stop : sig
     :  Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -162,7 +162,7 @@ end = struct
 
   let effects mailing =
     [ ( `Manage
-      , `Uniq
+      , `One
           (mailing.Mailing.id
           |> Mailing.Id.value
           |> Pool_common.Id.of_string

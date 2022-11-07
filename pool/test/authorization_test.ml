@@ -6,22 +6,23 @@ let update_language_as ~actor =
     |> Contact_test.create_contact true
   in
   let* tenant = Pool_tenant.find_by_label Test_utils.Data.database_label in
+  let ctx = Pool_tenant.to_ctx Test_utils.Data.database_label in
   let effects = Cqrs_command.Contact_command.Update.effects tenant subject in
-  let* (_ : [> `User ] Ocauth.Authorizable.t) =
-    Ocauth.Pool_tenant.to_authorizable tenant
+  let* (_ : [> `User ] Guard.Authorizable.t) =
+    Guard.Pool_tenant.to_authorizable ~ctx tenant
   in
-  let* (_ : [> `User ] Ocauth.Authorizable.t) =
-    Ocauth.Contact.to_authorizable subject
+  let* (_ : [> `User ] Guard.Authorizable.t) =
+    Guard.Contact.to_authorizable ~ctx subject
   in
   let* () =
-    (Ocauth.Persistence.checker_of_effects effects) ~actor
+    (Guard.Persistence.checker_of_effects ~ctx effects) ~actor
     |> Lwt_result.map_error Pool_common.Message.authorization
   in
   Lwt.return_ok ()
 ;;
 
 let admin_can_update_language _switch () =
-  let%lwt actual = update_language_as ~actor:Ocauth.console_authorizable in
+  let%lwt actual = update_language_as ~actor:Guard.console_authorizable in
   Alcotest.(check (result unit Test_utils.error))
     "Admin can update a contact."
     (Ok ())
@@ -30,7 +31,7 @@ let admin_can_update_language _switch () =
 ;;
 
 let guest_cannot_update_language _switch () =
-  let%lwt actual = update_language_as ~actor:Ocauth.guest_authorizable in
+  let%lwt actual = update_language_as ~actor:Guard.guest_authorizable in
   Alcotest.(check (result unit Test_utils.error))
     "Guest cannot update a contact."
     (Error (Pool_common.Message.authorization "Failure"))
@@ -40,7 +41,8 @@ let guest_cannot_update_language _switch () =
   |> Lwt.return
 ;;
 
-let operator_works _switch () =
+let operator_works _ () =
+  let ctx = Pool_tenant.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
     let open Lwt_result.Syntax in
     let target =
@@ -48,30 +50,32 @@ let operator_works _switch () =
       |> Contact_test.contact_info
       |> Contact_test.create_contact true
     in
-    let* target' = Ocauth.Contact.to_authorizable target in
+    let* target' = Guard.Contact.to_authorizable ~ctx target in
     let subject =
       "john@gmail.com"
       |> Contact_test.contact_info
       |> Contact_test.create_contact true
     in
-    let* actor = Ocauth.Contact.to_authorizable subject in
+    let* actor = Guard.Contact.to_authorizable ~ctx subject in
     let* () =
-      Ocauth.Persistence.grant_roles
-        actor.Ocauth.Authorizable.uuid
-        (Ocauth.Role_set.singleton (`Operator target'.Ocauth.Authorizable.uuid))
+      Guard.Persistence.grant_roles
+        ~ctx
+        actor.Guard.Authorizable.uuid
+        (Guard.Role_set.singleton (`Operator target'.Guard.Authorizable.uuid))
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
-    let* actor = Ocauth.Contact.to_authorizable subject in
+    let* actor = Guard.Contact.to_authorizable ~ctx subject in
     let* () =
-      Ocauth.Persistence.put_perm
-        ( `Role (`Operator target'.Ocauth.Authorizable.uuid)
+      Guard.Persistence.save_rule
+        ~ctx
+        ( `Entity (`Operator target'.Guard.Authorizable.uuid)
         , `Manage
-        , `Uniq target'.Ocauth.Authorizable.uuid )
+        , `One target'.Guard.Authorizable.uuid )
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
-    let effects = [ `Manage, `Uniq target'.Ocauth.Authorizable.uuid ] in
+    let effects = [ `Manage, `One target'.Guard.Authorizable.uuid ] in
     let* () =
-      (Ocauth.Persistence.checker_of_effects effects) ~actor
+      (Guard.Persistence.checker_of_effects ~ctx effects) ~actor
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
     Lwt_result.return ()

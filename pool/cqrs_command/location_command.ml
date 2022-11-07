@@ -72,7 +72,7 @@ module Create = struct
          }
   ;;
 
-  let effects = [ `Manage, `Role `Location ]
+  let effects = [ `Manage, `Entity `Location ]
 end
 
 module Update = struct
@@ -131,7 +131,7 @@ module Update = struct
          }
   ;;
 
-  let effects = [ `Manage, `Role `System ]
+  let effects = [ `Manage, `Entity `System ]
 end
 
 module AddFile = struct
@@ -176,7 +176,7 @@ module AddFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Role `Location ]
+  let effects = [ `Manage, `Entity `Location ]
 end
 
 module DeleteFile = struct
@@ -193,5 +193,5 @@ module DeleteFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Role `Location ]
+  let effects = [ `Manage, `Entity `Location ]
 end

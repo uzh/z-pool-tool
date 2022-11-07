@@ -39,7 +39,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -165,7 +165,7 @@ end = struct
       ]
   ;;
 
-  let effects = [ `Create, `Role `Tenant ]
+  let effects = [ `Create, `Entity `Tenant ]
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -199,7 +199,7 @@ module EditDetails : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.Write.t -> Ocauth.Authorizer.effect list
+  val effects : Pool_tenant.Write.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { title : Pool_tenant.Title.t
@@ -305,7 +305,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects { Pool_tenant.Write.id; _ } = [ `Update, `Uniq (Id.to_uuidm id) ]
+  let effects { Pool_tenant.Write.id; _ } = [ `Update, `One (Id.to_uuidm id) ]
 end
 
 module EditDatabase : sig
@@ -325,7 +325,7 @@ module EditDatabase : sig
 
   val effects
     :  Pool_database.Label.t
-    -> (Ocauth.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
+    -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
 end = struct
   type t =
     { database_url : Pool_database.Url.t
@@ -359,7 +359,7 @@ end = struct
   let effects dblabel =
     let open Lwt_result.Syntax in
     let* tenant = Pool_tenant.find_by_label dblabel in
-    Lwt.return_ok [ `Update, `Uniq (Id.to_uuidm tenant.Pool_tenant.id) ]
+    Lwt.return_ok [ `Update, `One (Id.to_uuidm tenant.Pool_tenant.id) ]
   ;;
 end
 
@@ -369,20 +369,20 @@ module DestroyLogo : sig
     -> Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Ocauth.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   let handle tenant asset_id =
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let effects = [ `Create, `Role `Tenant ]
+  let effects = [ `Create, `Entity `Tenant ]
 end
 
 module Destroy : sig
   type t = { tenant_id : string }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
-  val effects : t -> Ocauth.Authorizer.effect list
+  val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = { tenant_id : string }
 
@@ -394,6 +394,6 @@ end = struct
   ;;
 
   let effects { tenant_id } =
-    [ `Delete, `Uniq (Ocauth.Uuid.of_string_exn tenant_id) ]
+    [ `Delete, `One (Guard.Uuid.of_string_exn tenant_id) ]
   ;;
 end

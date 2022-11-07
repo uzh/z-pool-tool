@@ -47,6 +47,7 @@ module Name = struct
   type t = (Language.t * name) list [@@deriving eq, show, yojson]
 
   let find_opt lang t = CCList.assoc_opt ~eq:Language.equal lang t
+  let find_opt_or lang default t = find_opt lang t |> CCOption.value ~default
 
   let create sys_languages names =
     CCList.filter
@@ -695,3 +696,17 @@ module Write = struct
     }
   [@@deriving eq, show]
 end
+
+let group_fields groups fields =
+  let partition group =
+    CCList.partition
+      CCFun.(
+        group_id %> CCOption.map_or ~default:false (Id.equal group.Group.id))
+  in
+  CCList.fold_left
+    (fun (grouped, ungrouped) group ->
+      let of_group, ungrouped = partition group ungrouped in
+      grouped @ [ group, of_group ], ungrouped)
+    ([], fields)
+    groups
+;;

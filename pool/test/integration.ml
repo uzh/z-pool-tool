@@ -80,6 +80,26 @@ let services =
 let () =
   Lwt_main.run
     (let%lwt () = Test_utils.setup_test () in
+     let ctx = Pool_tenant.to_ctx Test_utils.Data.database_label in
      let%lwt _ = Sihl.Container.start_services services in
+     (* [save_rules] will fail on permissions that already exist, so we need to
+        clear the root database first in order to make sure new
+        [root_permissions] items end up in the database *)
+     let%lwt () =
+       (* TODO: Handle errors *)
+       Lwt_list.fold_left_s
+         (fun _acc perm ->
+           let%lwt _rv = Guard.Persistence.delete_rule ~ctx perm in
+           Lwt.return ())
+         ()
+         Guard.root_permissions
+     in
+     let%lwt (_
+               : ( Guard.Persistence.auth_rule list
+                 , Guard.Persistence.auth_rule list )
+                 result)
+       =
+       Guard.Persistence.save_rules ~ctx Guard.root_permissions
+     in
      Alcotest_lwt.run "integration" @@ suite)
 ;;

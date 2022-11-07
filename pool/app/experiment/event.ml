@@ -32,18 +32,18 @@ let handle_event pool : event -> unit Lwt.t = function
   (* TODO: was placeholder *)
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
-    let user_id = Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
-    Ocauth.Persistence.revoke_roles
+    let user_id = Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
+    Guard.Persistence.revoke_roles
       user_id
-      (Ocauth.Role_set.singleton (`Experimenter (Id.to_uuidm experiment.id)))
+      (Guard.Role_set.singleton (`Experimenter (Id.to_uuidm experiment.id)))
     |> Lwt_result.map_error (fun x -> Failure x)
     |> Lwt_result.get_exn
   | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
     ->
-    let user_id = Ocauth.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
-    Ocauth.Persistence.revoke_roles
+    let user_id = Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
+    Guard.Persistence.revoke_roles
       user_id
-      (Ocauth.Role_set.singleton (`Assistant (Id.to_uuidm experiment.id)))
+      (Guard.Role_set.singleton (`Assistant (Id.to_uuidm experiment.id)))
     |> Lwt_result.map_error (fun x -> Failure x)
     |> Lwt_result.get_exn
 ;;
