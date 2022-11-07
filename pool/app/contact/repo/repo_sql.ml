@@ -49,13 +49,11 @@ let find_request_sql where_fragment =
   Format.asprintf "%s\n%s" select_fields where_fragment
 ;;
 
-let find_filtered_request_sql ?join where_fragment =
-  match join with
-  | None -> Format.asprintf "%s\n%s" select_fields where_fragment
-  | Some join -> Format.asprintf "%s\n%s\n%s" select_fields join where_fragment
+let find_filtered_request_sql where_fragment =
+  Format.asprintf "%s\n%s" select_fields where_fragment
 ;;
 
-let count_filtered_request_sql ?join where_fragment =
+let count_filtered_request_sql where_fragment =
   let select =
     {sql|
     SELECT COUNT(*) OVER () AS TotalRecords
@@ -64,10 +62,7 @@ let count_filtered_request_sql ?join where_fragment =
       ON pool_contacts.user_uuid = user_users.uuid
   |sql}
   in
-  (match join with
-   | None -> Format.asprintf "%s\n%s" select where_fragment
-   | Some join -> Format.asprintf "%s\n%s\n%s" select join where_fragment)
-  |> Format.asprintf "%s LIMIT 1"
+  Format.asprintf "%s\n%s LIMIT 1" select where_fragment
 ;;
 
 let join_custom_field_answers =
@@ -205,7 +200,14 @@ let filter_to_sql dyn (filter : Filter.filter) =
          let sql =
            Format.asprintf
              {sql|
-            (custom_field_uuid = UNHEX(REPLACE(?, '-', '')) AND value %s %s)
+             EXISTS
+              (SELECT (1) FROM pool_custom_field_answers
+                WHERE
+                  pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
+                AND
+                  pool_custom_field_answers.entity_uuid = user_users.uuid
+                AND
+                  value %s %s)
             |sql}
              (Operator.to_sql operator)
              param
@@ -262,11 +264,7 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   let dyn, sql = filtered_params experiment_id filter in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
-  let request =
-    sql
-    |> find_filtered_request_sql ~join:join_custom_field_answers
-    |> pt ->* Repo_model.t
-  in
+  let request = sql |> find_filtered_request_sql |> pt ->* Repo_model.t in
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 
@@ -274,11 +272,7 @@ let count_filtered pool experiment_id filter =
   let dyn, sql = filtered_params experiment_id filter in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
-  let request =
-    sql
-    |> count_filtered_request_sql ~join:join_custom_field_answers
-    |> pt ->! Caqti_type.int
-  in
+  let request = sql |> count_filtered_request_sql |> pt ->! Caqti_type.int in
   Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
   |> Lwt.map (CCOption.value ~default:0)
 ;;
