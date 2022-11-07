@@ -36,6 +36,25 @@ const buildFormBody = (data) => {
     return formBody.join("&");
 }
 
+const updateContactCount = async () => {
+    const target = document.getElementById("contact-counter");
+    const id = target.dataset.experimentId;
+    try {
+        const response = await fetch(`/admin/experiments/${id}/contact-count`);
+        const data = await response.json();
+        if (!response.ok) {
+            throw (data.message || response.statusText || "An Error occurred")
+        }
+        if (response.status < 200 || response.status > 300) {
+            notifyUser("error", data.message)
+        } else {
+            target.innerHTML = data.count
+        }
+    } catch (error) {
+        notifyUser("error", error)
+    };
+}
+
 const predicateToJson = (outerPredicate, allowEmpty = false) => {
     const predicateType = outerPredicate.dataset.predicate;
     if (["or", "and"].includes(predicateType)) {
@@ -170,5 +189,6 @@ export function initFilter() {
                 e.currentTarget.closest(".predicate").remove();
             })
         })
+        updateContactCount()
     }
 }

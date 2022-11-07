@@ -94,8 +94,14 @@ val find_filtered
   -> ?order_by:string
   -> ?limit:int
   -> Pool_common.Id.t
-  -> Filter.t option
+  -> Filter.filter option
   -> t list Lwt.t
+
+val count_filtered
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Filter.filter option
+  -> int Lwt.t
 
 val find_by_email
   :  Pool_database.Label.t

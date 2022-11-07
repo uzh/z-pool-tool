@@ -361,12 +361,30 @@ let filter_form language experiment filter key_list =
   in
   let predicates = predicate_form language filter key_list () in
   div
-    ~a:[ a_user_data "action" action; a_id "filter-form"; a_class [ "stack" ] ]
-    [ predicates
-    ; Component_input.submit_element
-        language
-        ~attributes:[ a_id "submit-filter-form" ]
-        Pool_common.Message.(Save None)
-        ()
+    ~a:[ a_class [ "stack" ] ]
+    [ div
+        [ txt "Nr of contacts: "
+        ; span
+            ~a:
+              [ a_id "contact-counter"
+              ; a_user_data
+                  "experiment-id"
+                  (experiment.Experiment.id |> Pool_common.Id.value)
+              ]
+            []
+        ]
+    ; div
+        ~a:
+          [ a_user_data "action" action
+          ; a_id "filter-form"
+          ; a_class [ "stack" ]
+          ]
+        [ predicates
+        ; Component_input.submit_element
+            language
+            ~attributes:[ a_id "submit-filter-form" ]
+            Pool_common.Message.(Save None)
+            ()
+        ]
     ]
 ;;

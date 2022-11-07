@@ -17,7 +17,7 @@ let waiting_list pool =
           Contact.find_filtered
             pool
             experiment.Experiment.id
-            experiment.Experiment.filter
+            (experiment |> Experiment.filter_predicate)
         in
         let n = CCList.length filtered_contacts / 2 in
         let contact = CCList.nth filtered_contacts n in

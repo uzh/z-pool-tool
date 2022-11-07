@@ -2,9 +2,8 @@ module Id = Pool_common.Id
 module Database = Pool_database
 module Dynparam = Utils.Database.Dynparam
 
-let find_request_sql ?join where_fragment =
-  let select =
-    {sql|
+let select_fields =
+  {sql|
     SELECT
       LOWER(CONCAT(
         SUBSTR(HEX(user_users.uuid), 1, 8), '-',
@@ -44,10 +43,31 @@ let find_request_sql ?join where_fragment =
       LEFT JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
     |sql}
-  in
+;;
+
+let find_request_sql where_fragment =
+  Format.asprintf "%s\n%s" select_fields where_fragment
+;;
+
+let find_filtered_request_sql ?join where_fragment =
   match join with
-  | None -> Format.asprintf "%s\n%s" select where_fragment
-  | Some join -> Format.asprintf "%s\n%s\n%s" select join where_fragment
+  | None -> Format.asprintf "%s\n%s" select_fields where_fragment
+  | Some join -> Format.asprintf "%s\n%s\n%s" select_fields join where_fragment
+;;
+
+let count_filtered_request_sql ?join where_fragment =
+  let select =
+    {sql|
+    SELECT COUNT(*) OVER () AS TotalRecords
+    FROM pool_contacts
+      LEFT JOIN user_users
+      ON pool_contacts.user_uuid = user_users.uuid
+  |sql}
+  in
+  (match join with
+   | None -> Format.asprintf "%s\n%s" select where_fragment
+   | Some join -> Format.asprintf "%s\n%s\n%s" select join where_fragment)
+  |> Format.asprintf "%s LIMIT 1"
 ;;
 
 let join_custom_field_answers =
@@ -196,9 +216,8 @@ let filter_to_sql dyn (filter : Filter.filter) =
   dyn, sql
 ;;
 
-let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
-  let base_condition =
-    {sql|
+let filtered_base_condition =
+  {sql|
     WHERE
       user_users.admin = 0
       AND user_users.confirmed = 1
@@ -221,28 +240,47 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
               SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')))
             )
     |sql}
+;;
+
+let filtered_params experiment_id filter =
+  let id_param =
+    let id = experiment_id |> Pool_common.Id.value in
+    Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
   in
-  let dyn, sql =
-    let id_param =
-      let id = experiment_id |> Pool_common.Id.value in
-      Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
-    in
-    match filter with
-    | None -> id_param, base_condition
-    | Some filter ->
-      let dyn, sql = filter_to_sql id_param filter.Filter.filter in
-      ( dyn
-      , Format.asprintf "%s\n AND %s GROUP BY user_users.id" base_condition sql
-      )
-  in
+  match filter with
+  | None -> id_param, filtered_base_condition
+  | Some filter ->
+    let dyn, sql = filter_to_sql id_param filter in
+    ( dyn
+    , Format.asprintf
+        "%s\n AND %s GROUP BY pool_contacts.user_uuid"
+        filtered_base_condition
+        sql )
+;;
+
+let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
+  let dyn, sql = filtered_params experiment_id filter in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request =
     sql
-    |> find_request_sql ~join:join_custom_field_answers
+    |> find_filtered_request_sql ~join:join_custom_field_answers
     |> pt ->* Repo_model.t
   in
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+;;
+
+let count_filtered pool experiment_id filter =
+  let dyn, sql = filtered_params experiment_id filter in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let open Caqti_request.Infix in
+  let request =
+    sql
+    |> count_filtered_request_sql ~join:join_custom_field_answers
+    |> pt ->! Caqti_type.int
+  in
+  Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
+  |> Lwt.map (CCOption.value ~default:0)
 ;;
 
 let find_multiple_request ids =

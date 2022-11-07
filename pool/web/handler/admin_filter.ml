@@ -176,3 +176,44 @@ let add_predicate req =
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
+
+let count_contacts req =
+  let experiment_id =
+    let open Pool_common.Message.Field in
+    let open HttpUtils in
+    get_field_router_param req Experiment |> Pool_common.Id.of_string
+  in
+  let%lwt result =
+    let open Lwt_result.Syntax in
+    let* { Pool_context.language; tenant_db; _ } =
+      req
+      |> Pool_context.find
+      |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+      |> Lwt_result.lift
+    in
+    Lwt_result.map_error Pool_common.(Utils.error_to_string language)
+    @@ let* experiment = Experiment.find tenant_db experiment_id in
+       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+       let* filter =
+         let open CCResult in
+         find_in_params urlencoded Pool_common.Message.Field.Filter
+         |> CCOption.of_result
+         |> CCOption.map_or
+              ~default:
+                (Ok
+                   (experiment.Experiment.filter
+                   |> CCOption.map (fun filter -> filter.Filter.filter)))
+              (fun str -> str |> Filter.filter_of_string >|= CCOption.pure)
+         |> Lwt_result.lift
+       in
+       Contact.count_filtered tenant_db experiment.Experiment.id filter
+       |> Lwt_result.ok
+  in
+  let status, (json : Yojson.Safe.t) =
+    match result with
+    | Error str -> 401, `Assoc [ "message", `String str ]
+    | Ok int -> 200, `Assoc [ "count", `Int int ]
+  in
+  Sihl.Web.Response.of_json ~status:(status |> Opium.Status.of_code) json
+  |> Lwt.return
+;;

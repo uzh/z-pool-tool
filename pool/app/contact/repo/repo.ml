@@ -1,6 +1,7 @@
 let find = Repo_sql.find
 let find_multiple = Repo_sql.find_multiple
 let find_filtered = Repo_sql.find_filtered
+let count_filtered = Repo_sql.count_filtered
 let find_by_email = Repo_sql.find_by_email
 let find_all = Repo_sql.find_all
 let find_to_trigger_profile_update = Repo_sql.find_to_trigger_profile_update

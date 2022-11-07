@@ -232,6 +232,9 @@ module Admin = struct
         ; get (add_key ~suffix:"edit" Experiment) edit
         ; post (Experiment |> url_key) update
         ; post (add_key ~suffix:"delete" Experiment) delete
+        ; get
+            (add_key ~suffix:"contact-count" Experiment)
+            Handler.Admin.Filter.count_contacts
         ; choose ~scope:(build_scope "invitations") invitations
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions

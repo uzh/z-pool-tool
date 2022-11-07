@@ -189,3 +189,7 @@ let boolean_fields =
   Pool_common.Message.Field.
     [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
 ;;
+
+let filter_predicate m =
+  m.filter |> CCOption.map (fun filter -> filter.Filter.filter)
+;;

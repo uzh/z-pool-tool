@@ -230,9 +230,9 @@ let html_to_plain_text_response html =
   |> Sihl.Web.Response.of_plain_text ~headers
 ;;
 
-let yojson_to_json_response json =
+let yojson_to_json_response ?status json =
   let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
-  json |> Sihl.Web.Response.of_json ~headers
+  json |> Sihl.Web.Response.of_json ?status ~headers
 ;;
 
 let multi_html_to_plain_text_response html_els =

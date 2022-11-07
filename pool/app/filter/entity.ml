@@ -452,7 +452,7 @@ type t =
 
 let create ?(id = Pool_common.Id.create ()) filter =
   { id
-  ; filter
+  ; filter (* TODO: Rename to predicate or something else *)
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

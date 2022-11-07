@@ -104,7 +104,7 @@ let i18n_templates pool { Experiment.invitation_template; _ } languages =
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
-  let%lwt ({ Experiment.id; filter; _ } as experiment) =
+  let%lwt ({ Experiment.id; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
     ||> get_or_failwith
   in
@@ -113,7 +113,12 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
     |> CCOption.map_or ~default:"" Mailing.Distribution.get_order_element
   in
   let%lwt contacts =
-    Contact.find_filtered ~order_by ~limit:(max limit 0) pool id filter
+    Contact.find_filtered
+      ~order_by
+      ~limit:(max limit 0)
+      pool
+      id
+      (experiment |> Experiment.filter_predicate)
   in
   let%lwt i18n_templates =
     i18n_templates pool experiment Pool_common.Language.all

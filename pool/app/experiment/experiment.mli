@@ -113,6 +113,7 @@ type create =
 val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
+val filter_predicate : t -> Filter.filter option
 
 module Public : sig
   type t =

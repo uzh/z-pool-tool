@@ -7,7 +7,7 @@ let invitations pool =
           Contact.find_filtered
             pool
             experiment.Experiment.id
-            experiment.Experiment.filter
+            (experiment |> Experiment.filter_predicate)
         in
         let n = CCList.length filtered_contacts / 2 in
         let contacts = CCList.take n filtered_contacts in
