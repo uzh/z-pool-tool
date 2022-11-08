@@ -240,3 +240,4 @@ module PartialUpdate = struct
 end
 
 let validate_partial_update = PartialUpdate.validate
+let profile_completion_cookie = "profile_completion"

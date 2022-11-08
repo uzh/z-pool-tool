@@ -151,8 +151,6 @@ let field_to_string =
 
 let info_to_string : info -> string = function
   | Info s -> s
-  | RequiredFieldsMissing ->
-    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
 ;;
 
 let success_to_string : success -> string = function
@@ -309,6 +307,8 @@ let rec error_to_string = function
   | ReminderSubjectAndTextRequired ->
     "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
      Erinnerung an."
+  | RequiredFieldsMissing ->
+    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \

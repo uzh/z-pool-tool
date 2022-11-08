@@ -71,6 +71,7 @@ val validate_partial_update
      * Custom_field.Id.t option
   -> (PartialUpdate.t, Pool_common.Message.error) Lwt_result.t
 
+val profile_completion_cookie : string
 val id : t -> Pool_common.Id.t
 val firstname : t -> Pool_user.Firstname.t
 val lastname : t -> Pool_user.Lastname.t

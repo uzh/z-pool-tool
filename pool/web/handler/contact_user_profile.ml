@@ -150,7 +150,7 @@ let completion_post req =
     let%lwt custom_fields =
       urlencoded
       |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
-      |> find_multiple_by_contact tenant_db (Contact.id contact)
+      |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
     in
     let events =
       let open Utils.Lwt_result.Infix in
@@ -179,12 +179,27 @@ let completion_post req =
       ||> CCList.all_ok
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
-      Http_utils.(
-        redirect_to_with_actions
-          "/dashboard"
-          [ Message.set ~success:[ Pool_common.Message.(Updated Field.Profile) ]
-          ])
+      let%lwt (_ : unit list) =
+        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+      in
+      let%lwt required_answers_given =
+        Custom_field.all_required_answered tenant_db (Contact.id contact)
+      in
+      match required_answers_given with
+      | true ->
+        Http_utils.(
+          redirect_to_with_actions
+            "/dashboard"
+            [ Message.set
+                ~success:[ Pool_common.Message.(Updated Field.Profile) ]
+            ; Sihl.Web.Session.set [ Contact.profile_completion_cookie, "" ]
+            ])
+      | false ->
+        Http_utils.(
+          redirect_to_with_actions
+            "/user/completion"
+            [ Message.set ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+            ])
     in
     events |>> handle
   in

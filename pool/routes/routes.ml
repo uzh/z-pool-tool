@@ -71,38 +71,44 @@ module Contact = struct
   ;;
 
   let locked_routes =
-    let experiments =
-      let build_scope subdir =
-        Format.asprintf
-          "/%s/%s"
-          Pool_common.Message.Field.(Experiment |> url_key)
-          subdir
-      in
-      let waiting_list =
-        [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
-      in
-      let sessions =
-        let open Pool_common.Message.Field in
-        [ get (Session |> url_key) Session.show
-        ; post (Session |> url_key) Assignment.create
+    let locked =
+      let experiments =
+        let build_scope subdir =
+          Format.asprintf
+            "/%s/%s"
+            Pool_common.Message.Field.(Experiment |> url_key)
+            subdir
+        in
+        let waiting_list =
+          [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
+        in
+        let sessions =
+          let open Pool_common.Message.Field in
+          [ get (Session |> url_key) Session.show
+          ; post (Session |> url_key) Assignment.create
+          ]
+        in
+        [ get "" Experiment.index
+        ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
+        ; choose ~scope:(build_scope "waiting-list") waiting_list
+        ; choose ~scope:(build_scope "sessions") sessions
         ]
       in
-      [ get "" Experiment.index
-      ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
-      ; choose ~scope:(build_scope "waiting-list") waiting_list
-      ; choose ~scope:(build_scope "sessions") sessions
+      [ get "/dashboard" Handler.Contact.dashboard
+      ; get "/user" UserProfile.details
+      ; get "/user/personal-details" UserProfile.personal_details
+      ; get "/user/login-information" UserProfile.login_information
+      ; post "/user/update" UserProfile.update
+      ; post "/user/update-email" UserProfile.update_email
+      ; post "/user/update-password" UserProfile.update_password
+      ; choose ~scope:"/experiments" experiments
       ]
     in
-    [ get "/dashboard" Handler.Contact.dashboard
-    ; get "/user" UserProfile.details
-    ; get "/user/personal-details" UserProfile.personal_details
-    ; get "/user/login-information" UserProfile.login_information
-    ; post "/user/update" UserProfile.update
-    ; post "/user/update-email" UserProfile.update_email
-    ; post "/user/update-password" UserProfile.update_password
+    [ choose
+        ~middlewares:[ CustomMiddleware.Contact.completion_in_progress () ]
+        locked
     ; get "/user/completion" UserProfile.completion
     ; post "/user/completion" UserProfile.completion_post
-    ; choose ~scope:"/experiments" experiments
     ]
   ;;
 

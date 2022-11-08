@@ -47,12 +47,21 @@ let login_post req =
          Service.User.login ~ctx:(to_ctx tenant_db) email ~password
          |> Lwt_result.map_error handle_sihl_login_error
        in
-       let redirect path actions =
+       let redirect ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
              ([ Sihl.Web.Session.set [ "user_id", user.Sihl_user.id ] ]
              @ actions))
+         ||> (fun res ->
+               if set_completion_cookie
+               then
+                 Sihl.Web.Session.set_value
+                   ~key:Contact.profile_completion_cookie
+                   "true"
+                   req
+                   res
+               else res)
          |> Lwt_result.ok
        in
        let success () =
@@ -75,9 +84,10 @@ let login_post req =
           | true -> success ()
           | false ->
             redirect
+              ~set_completion_cookie:true
               "/user/completion"
               [ Message.set
-                  ~info:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                  ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
               ])
   in
   result |> HttpUtils.extract_happy_path req

@@ -56,3 +56,21 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
   in
   Rock.Middleware.create ~name:"contact.confirmed" ~filter
 ;;
+
+let completion_in_progress () =
+  let filter handler req =
+    let query_lang =
+      Pool_context.find req
+      |> CCResult.to_opt
+      |> CCFun.flip CCOption.bind (fun { Pool_context.query_language; _ } ->
+           query_language)
+    in
+    match Sihl.Web.Session.find Contact.profile_completion_cookie req with
+    | Some "true" ->
+      Http_utils.redirect_to_with_actions
+        (Http_utils.path_with_language query_lang "/user/completion")
+        [ Message.set ~error:[ Pool_common.Message.(RequiredFieldsMissing) ] ]
+    | _ -> handler req
+  in
+  Rock.Middleware.create ~name:"contact.completion" ~filter
+;;
