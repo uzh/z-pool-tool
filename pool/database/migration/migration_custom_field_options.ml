@@ -35,7 +35,7 @@ let change_position_datatype =
 
 let rename_custom_field_foreign_key =
   Sihl.Database.Migration.create_step
-    ~label:"add order column to custom field options table"
+    ~label:"rename custom field foreign_key"
     {sql|
       ALTER TABLE pool_custom_field_options
         RENAME COLUMN custom_field_option_uuid TO custom_field_uuid

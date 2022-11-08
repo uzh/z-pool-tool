@@ -121,7 +121,7 @@ let make_filter_uuid_foreign_key =
 
 let rename_filter_column =
   Sihl.Database.Migration.create_step
-    ~label:"make filter column a foreign key"
+    ~label:"rename filter column"
     {sql|
       ALTER TABLE pool_experiments
       RENAME COLUMN filter TO filter_uuid
