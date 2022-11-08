@@ -34,7 +34,6 @@ let show usage req =
            Custom_field.find_all_by_contact tenant_db (Contact.id contact)
          in
          Page.Contact.personal_details
-           Htmx.user_update_csrf
            contact
            custom_fields
            tenant_languages

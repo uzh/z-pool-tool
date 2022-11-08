@@ -11,7 +11,6 @@ let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
-let user_update_csrf = "_user_update_csrf"
 let contact_profile_hx_post = "/user/update"
 
 let admin_profile_hx_post id =
@@ -197,11 +196,6 @@ let create
       language
       `Text
       field
-;;
-
-(* Use this CSRF element as HTMX response in POSTs*)
-let csrf_element_swap csrf ?id =
-  input ~a:(a_user_data "hx-swap-oob" "true" :: Input.csrf_attibs ?id csrf)
 ;;
 
 let custom_field_to_htmx_value language =

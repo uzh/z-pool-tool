@@ -65,7 +65,7 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.csrf; tenant_db; language; query_language; _ } as context)
+    ({ Pool_context.tenant_db; language; query_language; _ } as context)
     =
     let open Utils.Lwt_result.Syntax in
     let path_with_lang = HttpUtils.path_with_language query_language in
@@ -102,12 +102,7 @@ let update ?contact req =
     let%lwt response =
       let open CCResult in
       let html_response html =
-        let csrf_element =
-          Htmx.csrf_element_swap csrf ~id:Htmx.user_update_csrf ()
-        in
-        [ html; csrf_element ]
-        |> HttpUtils.multi_html_to_plain_text_response
-        |> Lwt.return
+        [ html ] |> HttpUtils.multi_html_to_plain_text_response |> Lwt.return
       in
       let%lwt partial_update =
         Contact.validate_partial_update

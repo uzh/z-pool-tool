@@ -101,7 +101,7 @@ let flash_fetched_value fetcher value name =
   old_value <+> value |> CCOption.get_or ~default:""
 ;;
 
-let csrf_element csrf ?id = input ~a:(csrf_attibs ?id csrf)
+let csrf_element csrf = input ~a:(csrf_attibs csrf)
 
 let input_element
   ?(orientation = `Vertical)

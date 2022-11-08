@@ -41,7 +41,6 @@ let grouped_custom_fields_form language custom_fields to_html =
 
 let personal_details_form
   csrf
-  user_update_csrf
   language
   query_language
   action
@@ -63,7 +62,7 @@ let personal_details_form
     ~a:form_attrs
     [ div
         ~a:[ a_class [ "stack" ] ]
-        (csrf_element csrf ~id:user_update_csrf ()
+        (csrf_element csrf ()
         :: CCList.map
              (fun (version, field, value) ->
                Htmx.create_entity version field value |> htmx_create)
@@ -132,7 +131,6 @@ let detail contact Pool_context.{ language; query_language; _ } =
 ;;
 
 let personal_details
-  user_update_csrf
   (contact : Contact.t)
   custom_fields
   tenant_languages
@@ -145,7 +143,6 @@ let personal_details
         ~a:[ a_class [ "stack-lg" ] ]
         [ personal_details_form
             csrf
-            user_update_csrf
             language
             query_language
             action
