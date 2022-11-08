@@ -57,15 +57,16 @@ let find_filtered_request_sql ?limit where_fragment =
 ;;
 
 let count_filtered_request_sql where_fragment =
+  (* REMOVE GROUP BY and LIMIT s*)
   let select =
     {sql|
-    SELECT COUNT(*) OVER () AS TotalRecords
+    SELECT COUNT(*)
     FROM pool_contacts
       LEFT JOIN user_users
       ON pool_contacts.user_uuid = user_users.uuid
   |sql}
   in
-  Format.asprintf "%s\n%s LIMIT 1" select where_fragment
+  Format.asprintf "%s\n%s" select where_fragment
 ;;
 
 let join_custom_field_answers =
@@ -200,6 +201,7 @@ let filter_to_sql dyn (filter : Filter.filter) =
            Dynparam.(
              dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params value)
          in
+         (* Check existence and value of rows (custom field answers) *)
          let sql =
            Format.asprintf
              {sql|
@@ -249,24 +251,28 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filtered_params experiment_id filter =
+let filtered_params ?group_by experiment_id filter =
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
     Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
   in
-  match filter with
-  | None -> id_param, filtered_base_condition
-  | Some filter ->
-    let dyn, sql = filter_to_sql id_param filter in
-    ( dyn
-    , Format.asprintf
-        "%s\n AND %s GROUP BY pool_contacts.user_uuid"
-        filtered_base_condition
-        sql )
+  let dyn, sql =
+    match filter with
+    | None -> id_param, filtered_base_condition
+    | Some filter ->
+      let dyn, sql = filter_to_sql id_param filter in
+      dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
+  in
+  ( dyn
+  , match group_by with
+    | None -> sql
+    | Some group_by -> Format.asprintf "%s GROUP BY %s" sql group_by )
 ;;
 
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
-  let dyn, sql = filtered_params experiment_id filter in
+  let dyn, sql =
+    filtered_params ~group_by:"pool_contacts.user_uuid" experiment_id filter
+  in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request =
