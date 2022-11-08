@@ -10,18 +10,11 @@ let test_filter =
   let p2 =
     Pred
       (Predicate.create
-         Key.(Hardcoded Name)
-         Operator.Equal
-         (Single (Str "Bar")))
-  in
-  let p3 =
-    Pred
-      (Predicate.create
          Key.(Hardcoded Email)
          Operator.Like
-         (Single (Str "test%")))
+         (Single (Str "%email.com")))
   in
-  And [ p1; Or [ p2; p3 ] ]
+  Or [ p1; p2 ]
 ;;
 
 let filter pool =

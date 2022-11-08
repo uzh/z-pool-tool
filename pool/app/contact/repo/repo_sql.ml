@@ -49,8 +49,11 @@ let find_request_sql where_fragment =
   Format.asprintf "%s\n%s" select_fields where_fragment
 ;;
 
-let find_filtered_request_sql where_fragment =
-  Format.asprintf "%s\n%s" select_fields where_fragment
+let find_filtered_request_sql ?limit where_fragment =
+  let base = Format.asprintf "%s\n%s" select_fields where_fragment in
+  match limit with
+  | None -> base
+  | Some limit -> Format.asprintf "%s LIMIT %i" base limit
 ;;
 
 let count_filtered_request_sql where_fragment =
@@ -264,7 +267,9 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   let dyn, sql = filtered_params experiment_id filter in
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
-  let request = sql |> find_filtered_request_sql |> pt ->* Repo_model.t in
+  let request =
+    sql |> find_filtered_request_sql ?limit |> pt ->* Repo_model.t
+  in
   Utils.Database.collect (pool |> Pool_database.Label.value) request pv
 ;;
 

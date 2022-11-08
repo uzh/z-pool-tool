@@ -59,6 +59,11 @@ let suite =
               `Quick
               update_non_overwrite_field_as_admin
           ] )
+    ; ( "filter"
+      , Filter_test.
+          [ test_case "filter contacts" `Quick filter_contacts
+          ; test_case "filter by email and custom field" `Quick filter_by_email
+          ] )
     ; ( "matcher"
       , Matcher_test.
           [ test_case "send invitations" `Quick create_invitations_repo ] )
