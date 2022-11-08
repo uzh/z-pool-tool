@@ -18,7 +18,6 @@ let error =
 ;;
 
 let contact = Alcotest.testable Contact.pp Contact.equal
-let boolean = Alcotest.testable CCBool.pp CCBool.equal
 
 let check_result ?(msg = "succeeds") =
   let open Alcotest in

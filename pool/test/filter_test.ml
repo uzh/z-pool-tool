@@ -113,13 +113,16 @@ module CustomFieldData = struct
   ;;
 
   let data =
-    Pool_common.Id.
-      [ "1-test@mail.com", create ()
-      ; "2-test@mail.com", create ()
-      ; "3-test@mail.com", create ()
-      ; "4-test@mail.com", create ()
-      ; "5-test@mail.com", create ()
-      ]
+    let rec go i acc =
+      if i <= 0
+      then acc
+      else
+        go
+          (i - 1)
+          ((Format.asprintf "%i-test@mail.com" i, Pool_common.Id.create ())
+          :: acc)
+    in
+    go 5 []
   ;;
 
   let create_contacts () = TestContacts.prepare data
@@ -184,7 +187,7 @@ let filter_contacts _ () =
             Pool_common.Id.equal (Contact.id contact) (Contact.id filtered)))
            contacts
     in
-    Alcotest.(check Test_utils.boolean "succeeds" expected res) |> Lwt.return
+    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
   in
   Lwt.return_unit
 ;;
@@ -227,7 +230,7 @@ let filter_by_email _ () =
         (Experiment.filter_predicate experiment)
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
-    Alcotest.(check Test_utils.boolean "succeeds" expected res) |> Lwt.return
+    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
   in
   Lwt.return_unit
 ;;
