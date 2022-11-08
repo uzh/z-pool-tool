@@ -8,6 +8,8 @@ module Field = struct
     Format.pp_print_string fmt name
   ;;
 
+  (* TODO: Remove unused (Birthday) *)
+
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -21,7 +23,6 @@ module Field = struct
     | Assignments [@name "assignments"] [@printer go "assignments"]
     | AssignmentCount [@name "assignment_count"]
         [@printer go "assignment_count"]
-    | Birthday [@name "birthday"] [@printer go "birthday"]
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
@@ -75,7 +76,6 @@ module Field = struct
     | Firstname [@name "firstname"] [@printer go "firstname"]
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]
-    | From [@name "from"] [@printer go "from"]
     | Hint [@name "hint"] [@printer go "hint"]
     | Host [@name "host"] [@printer go "host"]
     | I18n [@name "i18n"] [@printer go "i18n"]
@@ -162,7 +162,6 @@ module Field = struct
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]
-    | Tag [@name "tag"] [@printer go "tag"]
     | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer go "tenant_disabled_flag"]
@@ -177,7 +176,6 @@ module Field = struct
     | Time [@name "time"] [@printer go "time"]
     | TimeSpan [@name "timespan"] [@printer go "timespan"]
     | Title [@name "title"] [@printer go "title"]
-    | To [@name "to"] [@printer go "to"]
     | Token [@name "token"] [@printer go "token"]
     | Translation [@name "translation"] [@printer go "translation"]
     | TriggerProfileUpdateAfter [@name "trigger_profile_update_after"]
@@ -185,7 +183,6 @@ module Field = struct
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
     | Value [@name "value"] [@printer go "value"]
-    | VerifiedAt [@name "verified_at"] [@printer go "verified_at"]
     | Validation [@name "validation"] [@printer go "validation"]
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
