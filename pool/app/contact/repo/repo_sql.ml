@@ -226,6 +226,8 @@ let filtered_base_condition =
     WHERE
       user_users.admin = 0
       AND user_users.confirmed = 1
+      AND pool_contacts.paused = 0
+      AND pool_contacts.disabled = 0
       AND NOT EXISTS
         (SELECT 1
         FROM pool_invitations
