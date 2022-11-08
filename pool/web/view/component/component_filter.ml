@@ -352,7 +352,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
     else [])
 ;;
 
-let filter_form language experiment filter key_list =
+let filter_form csrf language experiment filter key_list =
   let action =
     Format.asprintf
       "/admin/experiments/%s/filter/create"
@@ -379,7 +379,8 @@ let filter_form language experiment filter key_list =
           ; a_id "filter-form"
           ; a_class [ "stack" ]
           ]
-        [ predicates
+        [ Component_input.csrf_element csrf ()
+        ; predicates
         ; Component_input.submit_element
             language
             ~attributes:[ a_id "submit-filter-form" ]

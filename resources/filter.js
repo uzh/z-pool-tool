@@ -1,3 +1,9 @@
+// TODO: import as separate file only on filter page?
+
+const csrfToken = () => {
+    return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
+}
+
 // TODO: let user close notification, maybe display somewhere else
 const notifyUser = (classname, msg) => {
     const icon = document.createElement("i");
@@ -19,11 +25,13 @@ const findChildPredicates = (wrapper) => {
 }
 
 const addRequiredError = (elm) => {
-    const wrapper = elm.closest(".form-group");
-    let error = document.createElement("span");
-    error.innerHTML = "This field is required."
-    error.classList.add("error-message", "help");
-    wrapper.appendChild(error);
+    if (elm) {
+        const wrapper = elm.closest(".form-group");
+        let error = document.createElement("span");
+        error.innerHTML = "This field is required."
+        error.classList.add("error-message", "help");
+        wrapper.appendChild(error);
+    }
 }
 
 const buildFormBody = (data) => {
@@ -68,17 +76,20 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
         }
     } else if (predicateType === "pred") {
-        var success = true;
-        var inputs = ["key", "operator", "value"].map((attr) => outerPredicate.querySelector(`[name="${attr}"]`))
-        let [key, operator, value] = inputs.map((input) => {
-            if (!input.value && !allowEmpty) {
-                success = false;
+        var error = false;
+        const findElm = (attr) => outerPredicate.querySelector(`[name="${attr}"]`);
+        var inputs = ["key", "operator"].map(findElm);
+        let [key, operator] = inputs.map((input) => {
+            if (!allowEmpty && !(input && input.value)) {
+                error = true;
                 addRequiredError(input);
             }
-            return input.value
+            return input ? input.value : input
         })
-        if (success) {
-            var inputDataType = inputs[2].dataset.inputType;
+        let value;
+        const valueInput = findElm("value");
+        if (valueInput && valueInput.value) {
+            var inputDataType = valueInput.dataset.inputType;
             var inputValue;
             switch (inputDataType) {
                 case "str":
@@ -100,13 +111,19 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                     inputDataType = "str";
                     inputValue = value;
             }
+            value = {
+                [inputDataType]: inputValue
+            }
+        }
+        if (!allowEmpty && !value) {
+            error = true;
+        }
+        if (!error) {
             return {
                 [predicateType]: {
                     "key": key,
                     "operator": operator,
-                    value: {
-                        [inputDataType]: inputValue
-                    }
+                    value
                 }
             }
         } else {
@@ -119,16 +136,24 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
 }
 
 function addBeforeRequestListener(predicate) {
-    elms = predicate.querySelectorAll('[name="predicate"]');
-    [...elms].forEach(elm => {
+    predicateSelects = predicate.querySelectorAll('[name="predicate"]');
+    [...predicateSelects].forEach(elm => {
         elm.addEventListener('htmx:configRequest', (e) => {
             const predicate = elm.closest('.predicate');
             try {
                 e.detail.parameters.filter = predicateToJson(predicate, true);
+                e.detail.parameters._csrf = csrfToken();
             } catch (error) {
+                console.error(error)
                 e.preventDefault();
                 notifyUser("error", error)
             }
+        })
+    })
+    triggers = predicate.querySelectorAll('[name="key"], [data-new-predicate] button');
+    [...triggers].forEach(elm => {
+        elm.addEventListener('htmx:configRequest', (e) => {
+            e.detail.parameters._csrf = csrfToken();
         })
     })
 }
@@ -141,10 +166,18 @@ function addAfterSwapListener(predicate) {
         })
     })
 }
+function addRemovePredicateListener(predicate) {
+    [...predicate.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
+        elm.addEventListener("click", (e) => {
+            e.currentTarget.closest(".predicate").remove();
+        })
+    })
+}
 
 function addHtmxListeners(predicate) {
     addBeforeRequestListener(predicate);
     addAfterSwapListener(predicate);
+    addRemovePredicateListener(predicate);
 }
 
 export function initFilter() {
@@ -184,11 +217,6 @@ export function initFilter() {
     const form = document.getElementById("filter-form");
     if (form) {
         addHtmxListeners(form);
-        [...document.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
-            elm.addEventListener("click", (e) => {
-                e.currentTarget.closest(".predicate").remove();
-            })
-        })
         updateContactCount()
     }
 }
