@@ -123,6 +123,11 @@ val filter_of_yojson
 
 val filter_of_string : string -> (filter, Pool_common.Message.error) result
 
+val validate_filter
+  :  Key.human list
+  -> filter
+  -> (filter, Pool_common.Message.error) result
+
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t

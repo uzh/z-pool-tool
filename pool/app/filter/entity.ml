@@ -37,9 +37,7 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
      | "date", `String str ->
        str
        |> Ptime.of_rfc3339
-       |> CCResult.map (fun (date, _, _) -> Date date)
-       |> CCResult.map_err (fun _ -> error)
-     (* Handle floats and ints separately? Currently the UI only allows Ints *)
+       |> CCResult.map2 (fun (date, _, _) -> Date date) (fun _ -> error)
      | "nr", `Float n -> Ok (Nr n)
      | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
      | "option", `String id ->
@@ -59,21 +57,6 @@ let value_of_yojson (yojson : Yojson.Safe.t) =
        values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst
      | _ -> single_value_of_yojson yojson >|= single)
   | _ -> Error error
-;;
-
-let value_of_yojson_opt (yojson : Yojson.Safe.t) =
-  let open CCOption in
-  let open CCFun in
-  match yojson with
-  | `Assoc [ (key, value) ] ->
-    (match key, value with
-     | "list", `List values ->
-       values
-       |> CCList.filter_map (single_value_of_yojson %> of_result)
-       |> lst
-       |> CCOption.pure
-     | _ -> single_value_of_yojson yojson |> of_result >|= single)
-  | _ -> None
 ;;
 
 let to_assoc key value = `Assoc [ key, value ]
@@ -149,6 +132,8 @@ module Key = struct
     match read_hardcoded yojson with
     | Some h -> Ok (Hardcoded h)
     | None ->
+      (* The "validate_filter" function will check, if the id belongs to an
+         existing custom field *)
       (match yojson with
        | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
        | _ -> Error Pool_common.Message.(Invalid Field.Key))
@@ -167,11 +152,10 @@ module Key = struct
   ;;
 
   let human_to_label language human =
+    let open CCString in
     match (human : human) with
     | Hardcoded h ->
-      show_hardcoded h
-      |> CCString.replace ~sub:"_" ~by:" "
-      |> CCString.capitalize_ascii
+      show_hardcoded h |> replace ~sub:"_" ~by:" " |> capitalize_ascii
     | CustomField f -> Custom_field.(f |> name_value language)
   ;;
 
@@ -190,12 +174,6 @@ module Key = struct
     | VerifiedAt -> "pool_contacts.verified"
   ;;
 
-  let to_sql (m : t) =
-    match m with
-    | Hardcoded h -> hardcoded_to_sql h
-    | CustomField _ -> "" (* TODO *)
-  ;;
-
   let type_of_hardcoded m : input_type =
     match m with
     | Email -> Str
@@ -205,30 +183,41 @@ module Key = struct
     | VerifiedAt -> Date
   ;;
 
-  let type_of_key m : input_type =
+  let type_of_custom_field m : input_type =
     let open Custom_field in
+    match m with
+    | Boolean _ -> Bool
+    | Number _ -> Nr
+    | MultiSelect (_, options) -> Select options
+    | Select (_, options) -> Select options
+    | Text _ -> Str
+  ;;
+
+  let type_of_key m : input_type =
     match (m : human) with
-    | CustomField c ->
-      (match c with
-       | Boolean _ -> Bool
-       | Number _ -> Nr
-       | MultiSelect (_, options) -> Select options
-       | Select (_, options) -> Select options
-       | Text _ -> Str)
+    | CustomField c -> type_of_custom_field c
     | Hardcoded h -> type_of_hardcoded h
   ;;
 
-  let validate_value (m : t) value =
+  let validate_value (key_list : human list) (m : t) value =
+    let error =
+      Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+    in
     let open CCResult in
     let validate_single_value input_type value =
       match[@warning "-4"] value, input_type with
       | (Bool _ : single_val), (Bool : input_type)
       | Date _, Date
       | Nr _, Nr
-      | Str _, Str
-      | Option _, Select _ -> Ok ()
-      | _ ->
-        Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+      | Str _, Str -> Ok ()
+      | Option selected, Select options ->
+        CCList.find_opt
+          (fun option ->
+            Custom_field.SelectOption.(Id.equal option.id selected))
+          options
+        |> CCOption.to_result error
+        >|= CCFun.const ()
+      | _ -> Error error
     in
     let validate_value value input_type =
       match value with
@@ -241,7 +230,21 @@ module Key = struct
     in
     match m with
     | Hardcoded v -> v |> type_of_hardcoded |> validate_value value
-    | CustomField _ -> Ok ()
+    | CustomField field_id ->
+      let* custom_field =
+        CCList.find_map
+          (fun (key : human) ->
+            match key with
+            | Hardcoded _ -> None
+            | CustomField field ->
+              if Custom_field.(Id.equal (id field) field_id)
+              then Some field
+              else None)
+          key_list
+        |> CCOption.to_result Pool_common.Message.(Invalid Field.Key)
+      in
+      let input_type = type_of_custom_field custom_field in
+      validate_value value input_type
   ;;
 
   let all_hardcoded : hardcoded list =
@@ -328,16 +331,10 @@ module Predicate = struct
   let create key operator value : t = { key; operator; value }
   let create_human ?key ?operator ?value () : human = { key; operator; value }
 
-  let validate : t -> (t, Pool_common.Message.error) result =
-   fun ({ key; operator; value } as m) ->
-    (* TODO: Can Custom fields be validated?
-
-     * As Lwt
-     * As Human
-
-     *)
+  let validate : t -> Key.human list -> (t, Pool_common.Message.error) result =
+   fun ({ key; operator; value } as m) key_list ->
     let open CCResult in
-    let* () = Key.validate_value key value in
+    let* () = Key.validate_value key_list key value in
     let* () = Operator.validate key operator in
     Ok m
  ;;
@@ -360,7 +357,7 @@ module Predicate = struct
         go operator_string Message.Field.Operator Operator.of_yojson
       in
       let* value = go value_string Message.Field.Value value_of_yojson in
-      create key operator value |> validate
+      Ok (create key operator value)
     | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;
 
@@ -370,24 +367,6 @@ module Predicate = struct
     let value = yojson_of_value value in
     `Assoc
       Helper.[ key_string, key; operator_string, operator; value_string, value ]
-  ;;
-
-  let human_of_yojson key_list (yojson : Yojson.Safe.t) =
-    let open Helper in
-    match yojson with
-    | `Assoc assoc ->
-      let open CCFun in
-      let open CCOption in
-      let go key of_yojson =
-        assoc |> CCList.assoc_opt ~eq:CCString.equal key >>= of_yojson
-      in
-      let key =
-        go key_string (Key.of_yojson %> of_result) >>= Key.to_human key_list
-      in
-      let operator = go operator_string (Operator.of_yojson %> of_result) in
-      let value = go value_string value_of_yojson_opt in
-      create_human ?key ?operator ?value () |> CCResult.pure
-    | _ -> Error Pool_common.Message.(Invalid Field.Predicate)
   ;;
 end
 
@@ -430,21 +409,22 @@ let rec filter_of_yojson json =
 ;;
 
 let filter_of_string str = str |> Yojson.Safe.from_string |> filter_of_yojson
-let ( &.& ) a b = And [ a; b ]
-let ( |.| ) a b = Or [ a; b ]
 
-(* TODO make this prefix *)
-let ( --. ) a = Not a
-
-(* role: only participant is shown by default
- * unverified email: only users with confirmed email are shown by default
- * paused: hidden by default
- * deactivated: hidden by default
- * tags: empty by default, depends on #23 *)
+let rec validate_filter key_list m =
+  let open CCResult in
+  let validate_list fnc filters =
+    filters |> CCList.map (validate_filter key_list) |> CCList.all_ok >|= fnc
+  in
+  match m with
+  | And filters -> validate_list (fun lst -> And lst) filters
+  | Or filters -> validate_list (fun lst -> Or lst) filters
+  | Not f -> validate_filter key_list f >|= not
+  | Pred p -> Predicate.validate p key_list >|= pred
+;;
 
 type t =
   { id : Pool_common.Id.t
-  ; filter : filter
+  ; filter : filter (* TODO: Rename to predicate or something else *)
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -452,7 +432,7 @@ type t =
 
 let create ?(id = Pool_common.Id.create ()) filter =
   { id
-  ; filter (* TODO: Rename to predicate or something else *)
+  ; filter
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }

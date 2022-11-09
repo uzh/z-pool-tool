@@ -198,6 +198,11 @@ export function initFilter() {
     const form = document.getElementById("filter-form");
     if (form) {
         const submitButton = document.getElementById("submit-filter-form");
+        submitButton.addEventListener('htmx:beforeSwap', (e) => {
+            if (e.detail.xhr.status === 400) {
+                e.detail.shouldSwap = true;
+            }
+        })
         const formWrapper = document.querySelector("#filter-form .predicate")
         appendFormListener(submitButton, formWrapper, false)
 

@@ -172,6 +172,7 @@ module UpdateFilter : sig
 
   val handle
     :  Experiment.t
+    -> Filter.Key.human list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -179,7 +180,9 @@ module UpdateFilter : sig
 end = struct
   type t = Filter.filter
 
-  let handle experiment filter =
+  let handle experiment key_list filter =
+    let open CCResult in
+    let* filter = Filter.validate_filter key_list filter in
     match experiment.filter with
     | None ->
       let id = Pool_common.Id.create () in

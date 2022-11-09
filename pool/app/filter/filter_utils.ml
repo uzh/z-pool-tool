@@ -1,9 +1,3 @@
-(** TODO[timhub]:
-
-    * enum is not supported for constructors without arguments, any other way?
-
-    * Do we need translations? *)
-
 type filter_label =
   | And
   | Or

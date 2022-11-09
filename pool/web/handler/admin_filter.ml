@@ -50,9 +50,10 @@ let create req =
       >>= Filter.filter_of_string
       |> Lwt_result.lift
     in
+    let%lwt key_list = Filter.all_keys tenant_db in
     let events =
       let open Cqrs_command.Experiment_command.UpdateFilter in
-      handle experiment filter |> Lwt_result.lift
+      handle experiment key_list filter |> Lwt_result.lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -62,7 +63,7 @@ let create req =
   let open Pool_common.Message in
   (match result with
    | Ok () -> 200, Collection.(set_success [ Created Field.Filter ] empty)
-   | Error err -> 401, Collection.(set_error [ err ] empty))
+   | Error err -> 400, Collection.(set_error [ err ] empty))
   |> fun (status, message) ->
   Page.Message.create
     ~attributes:
@@ -216,7 +217,7 @@ let count_contacts req =
   in
   let status, (json : Yojson.Safe.t) =
     match result with
-    | Error str -> 401, `Assoc [ "message", `String str ]
+    | Error str -> 400, `Assoc [ "message", `String str ]
     | Ok int -> 200, `Assoc [ "count", `Int int ]
   in
   HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
