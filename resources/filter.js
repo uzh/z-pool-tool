@@ -1,11 +1,11 @@
 // TODO: import as separate file only on filter page?
-
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
 
 // TODO: let user close notification, maybe display somewhere else
 const notifyUser = (classname, msg) => {
+    const notificationId = "filter-notification";
     const icon = document.createElement("i");
     icon.classList.add("notification-close", "icon-close-outline");
 
@@ -16,8 +16,11 @@ const notifyUser = (classname, msg) => {
 
     const wrapper = document.createElement("div");
     wrapper.classList.add("notification-fixed");
+    wrapper.id = notificationId
     wrapper.appendChild(inner);
-    document.querySelector("body").appendChild(wrapper);
+
+    const notification = document.getElementById(notificationId)
+    notification.parentElement.replaceChild(wrapper, notification)
 }
 
 const findChildPredicates = (wrapper) => {
@@ -32,16 +35,6 @@ const addRequiredError = (elm) => {
         error.classList.add("error-message", "help");
         wrapper.appendChild(error);
     }
-}
-
-const buildFormBody = (data) => {
-    var formBody = [];
-    for (var property in data) {
-        var encodedKey = encodeURIComponent(property);
-        var encodedValue = encodeURIComponent(data[property]);
-        formBody.push(encodedKey + "=" + encodedValue);
-    }
-    return formBody.join("&");
 }
 
 const updateContactCount = async () => {
@@ -76,6 +69,44 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
         }
     } else if (predicateType === "pred") {
+        const toValue = (valueInput) => {
+            let value = {}
+            if (valueInput && valueInput.value) {
+                var inputDataType = valueInput.dataset.inputType;
+                switch (inputDataType) {
+                    case "str":
+                        value = {
+                            [inputDataType]: valueInput.value
+                        }
+                        break;
+                    case "nr":
+                        value = {
+                            [inputDataType]: parseFloat(valueInput.value)
+                        }
+                        break;
+                    case "date":
+                        value = {
+                            [inputDataType]: valueInput.value
+                        }
+                        break;
+                    case "bool":
+                        value = {
+                            [inputDataType]: (value == "true")
+                        }
+                        break;
+                    case "option":
+                        value = {
+                            [inputDataType]: valueInput.value
+                        }
+                        break;
+                    default:
+                        value = {
+                            ["str"]: valueInput.value
+                        }
+                }
+            }
+            return value
+        }
         var error = false;
         const findElm = (attr) => outerPredicate.querySelector(`[name="${attr}"]`);
         var inputs = ["key", "operator"].map(findElm);
@@ -83,40 +114,17 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
             if (!allowEmpty && !(input && input.value)) {
                 error = true;
                 addRequiredError(input);
+            } else {
+                return input ? input.value : null
             }
-            return input ? input.value : input
         })
-        let value;
         const valueInput = findElm("value");
-        if (valueInput && valueInput.value) {
-            var inputDataType = valueInput.dataset.inputType;
-            var inputValue;
-            switch (inputDataType) {
-                case "str":
-                    inputValue = value;
-                    break;
-                case "nr":
-                    inputValue = parseFloat(value);
-                    break;
-                case "date":
-                    inputValue = value;
-                    break;
-                case "bool":
-                    inputValue = (value == "true");
-                    break;
-                case "option":
-                    inputValue = value;
-                    break;
-                default:
-                    inputDataType = "str";
-                    inputValue = value;
-            }
-            value = {
-                [inputDataType]: inputValue
-            }
-        }
-        if (!allowEmpty && !value) {
+        let value = {}
+        if (!allowEmpty && !(valueInput && valueInput.value)) {
             error = true;
+            addRequiredError(valueInput);
+        } else {
+            value = toValue(valueInput)
         }
         if (!error) {
             return {
@@ -135,23 +143,28 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
     }
 }
 
+function appendFormListener(elm, container, allowEmpty) {
+    elm.addEventListener('htmx:configRequest', (e) => {
+        try {
+            e.detail.parameters.filter = predicateToJson(container, allowEmpty);
+            e.detail.parameters._csrf = csrfToken();
+        } catch (error) {
+            console.error(error)
+            e.preventDefault();
+            notifyUser("error", error)
+        }
+    })
+}
+
 function addBeforeRequestListener(predicate) {
     predicateSelects = predicate.querySelectorAll('[name="predicate"]');
     [...predicateSelects].forEach(elm => {
-        elm.addEventListener('htmx:configRequest', (e) => {
-            const predicate = elm.closest('.predicate');
-            try {
-                e.detail.parameters.filter = predicateToJson(predicate, true);
-                e.detail.parameters._csrf = csrfToken();
-            } catch (error) {
-                console.error(error)
-                e.preventDefault();
-                notifyUser("error", error)
-            }
-        })
+        const predicate = elm.closest('.predicate');
+        appendFormListener(elm, predicate, true)
     })
-    triggers = predicate.querySelectorAll('[name="key"], [data-new-predicate] button');
-    [...triggers].forEach(elm => {
+
+    toggles = predicate.querySelectorAll('[name="key"], [data-new-predicate] button');
+    [...toggles].forEach(elm => {
         elm.addEventListener('htmx:configRequest', (e) => {
             e.detail.parameters._csrf = csrfToken();
         })
@@ -166,6 +179,7 @@ function addAfterSwapListener(predicate) {
         })
     })
 }
+
 function addRemovePredicateListener(predicate) {
     [...predicate.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
@@ -181,41 +195,12 @@ function addHtmxListeners(predicate) {
 }
 
 export function initFilter() {
-    const submitBtn = document.getElementById("submit-filter-form");
-    if (submitBtn) {
-        submitBtn.addEventListener("click", (e) => {
-            const form = document.getElementById("filter-form");
-            e.preventDefault();
-            const predicate = form.querySelector(".predicate");
-            let json;
-            try {
-                json = predicateToJson(predicate);
-            } catch (e) {
-                console.error(e)
-            }
-            if (json) {
-                const url = form.dataset.action;
-                const body = buildFormBody({ filter: JSON.stringify(json) })
-                fetch(url, {
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-                    },
-                    body
-                })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        if (data.success) {
-                            notifyUser("success", data.message)
-                        } else {
-                            notifyUser("error", data.message)
-                        }
-                    });
-            }
-        })
-    }
     const form = document.getElementById("filter-form");
     if (form) {
+        const submitButton = document.getElementById("submit-filter-form");
+        const formWrapper = document.querySelector("#filter-form .predicate")
+        appendFormListener(submitButton, formWrapper, false)
+
         addHtmxListeners(form);
         updateContactCount()
     }

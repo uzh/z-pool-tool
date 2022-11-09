@@ -2,6 +2,8 @@ open Tyxml.Html
 open Filter
 module Input = Component_input
 
+let notification_id = "filter-notification"
+
 let format_identifiers ?prefix identifiers =
   let ids =
     (CCList.fold_left (fun str n ->
@@ -16,17 +18,26 @@ let format_identifiers ?prefix identifiers =
   | Some prefix -> Format.asprintf "%s-%s" prefix ids
 ;;
 
-let htmx_attribs ~action ~trigger ~target ~identifier =
-  [ a_user_data
-      "hx-post"
-      (action |> Format.asprintf "/admin/filter/%s" |> Sihl.Web.externalize_path)
+let form_action = Format.asprintf "/admin/filter/%s"
+
+let htmx_attribs ~action ~trigger ?target ?(swap = "outerHTML") ?identifier () =
+  let target =
+    target
+    |> CCOption.map (fun target ->
+         a_user_data "hx-target" (Format.asprintf "#%s" target))
+  in
+  let identifier =
+    identifier
+    |> CCOption.map (fun identifier ->
+         a_user_data
+           "hx-vals"
+           (Format.asprintf "{\"id\": \"%s\"}" (format_identifiers identifier)))
+  in
+  [ a_user_data "hx-post" (action |> Sihl.Web.externalize_path)
   ; a_user_data "hx-trigger" trigger
-  ; a_user_data "hx-target" (Format.asprintf "#%s" target)
-  ; a_user_data
-      "hx-vals"
-      (Format.asprintf "{\"id\": \"%s\"}" (format_identifiers identifier))
-  ; a_user_data "hx-swap" "outerHTML"
+  ; a_user_data "hx-swap" swap
   ]
+  @ CCList.filter_map CCFun.id [ target; identifier ]
 ;;
 
 let select_default_option language selected =
@@ -231,10 +242,11 @@ let predicate_type_select language target identifier ?selected () =
             ~a:
               (a_name Pool_common.Message.Field.(show Predicate)
               :: htmx_attribs
-                   ~action:"toggle-predicate-type"
+                   ~action:(form_action "toggle-predicate-type")
                    ~trigger:"change"
                    ~target
-                   ~identifier)
+                   ~identifier
+                   ())
             (select_default_option language (CCOption.is_none selected)
             :: CCList.map
                  (fun filter_label ->
@@ -263,10 +275,11 @@ let add_predicate_btn identifier =
     [ Input.submit_icon
         ~attributes:
           (htmx_attribs
-             ~action:"add-predicate"
+             ~action:(form_action "add-predicate")
              ~trigger:"click"
              ~target:id
-             ~identifier)
+             ~identifier
+             ())
         `Add
     ]
 ;;
@@ -357,7 +370,6 @@ let filter_form csrf language experiment filter key_list =
     Format.asprintf
       "/admin/experiments/%s/filter/create"
       (Pool_common.Id.value experiment.Experiment.id)
-    |> Sihl.Web.externalize_path
   in
   let predicates = predicate_form language filter key_list () in
   div
@@ -379,11 +391,14 @@ let filter_form csrf language experiment filter key_list =
           ; a_id "filter-form"
           ; a_class [ "stack" ]
           ]
-        [ Component_input.csrf_element csrf ()
+        [ div ~a:[ a_id notification_id ] []
+        ; Component_input.csrf_element csrf ()
         ; predicates
         ; Component_input.submit_element
             language
-            ~attributes:[ a_id "submit-filter-form" ]
+            ~attributes:
+              (a_id "submit-filter-form"
+              :: htmx_attribs ~action ~swap:"none" ~trigger:"click" ())
             Pool_common.Message.(Save None)
             ()
         ]

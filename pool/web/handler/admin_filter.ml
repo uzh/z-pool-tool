@@ -17,8 +17,11 @@ let find_identifier urlencoded =
   str
   |> CCString.split ~by:"-"
   |> fun str ->
-  try Ok (CCList.map CCInt.of_string_exn str) with
-  | _ -> Error Pool_common.Message.(Invalid Field.Id)
+  let open CCList in
+  str
+  |> map CCInt.of_string
+  |> map (CCOption.to_result Pool_common.Message.(Invalid Field.Id))
+  |> all_ok
 ;;
 
 let create req =
@@ -56,20 +59,22 @@ let create req =
     in
     events |>> handle
   in
-  let open HttpUtils in
+  let open Pool_common.Message in
   (match result with
-   | Ok () ->
-     { message =
-         Pool_common.(
-           Utils.success_to_string language Message.(Created Field.Filter))
-     ; success = true
-     }
-   | Error err ->
-     { message = Pool_common.(Utils.error_to_string language err)
-     ; success = false
-     })
-  |> yojson_of_json_response
-  |> yojson_to_json_response
+   | Ok () -> 200, Collection.(set_success [ Created Field.Filter ] empty)
+   | Error err -> 401, Collection.(set_error [ err ] empty))
+  |> fun (status, message) ->
+  Page.Message.create
+    ~attributes:
+      Tyxml.Html.
+        [ a_user_data "hx-swap-oob" "true"
+        ; a_id Component.Filter.notification_id
+        ]
+    (CCOption.pure message)
+    language
+    ()
+  |> CCList.pure
+  |> HttpUtils.multi_html_to_plain_text_response ~status
   |> Lwt.return
 ;;
 
@@ -214,6 +219,6 @@ let count_contacts req =
     | Error str -> 401, `Assoc [ "message", `String str ]
     | Ok int -> 200, `Assoc [ "count", `Int int ]
   in
-  Sihl.Web.Response.of_json ~status:(status |> Opium.Status.of_code) json
+  HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
   |> Lwt.return
 ;;
