@@ -9,7 +9,7 @@ type confirmation_email =
   }
 [@@deriving eq, show]
 
-let send_conformation
+let send_confirmation
   pool
   ({ Sihl_user.email; _ } as user)
   { subject; text; language; session_text }
@@ -179,7 +179,7 @@ let handle_event pool : event -> unit Lwt.t =
       (user |> User.user_lastname)
     >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
   | AssignmentConfirmationSent (user, confirmation_email) ->
-    send_conformation pool user confirmation_email
+    send_confirmation pool user confirmation_email
   | InvitationSent (user, data, template) ->
     Helper.prepare_boilerplate_email
       template
