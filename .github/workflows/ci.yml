@@ -94,6 +94,7 @@ jobs:
         env:
           DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ env.MYSQL_DATABASE }}
           DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3307/${{ env.MYSQL_DATABASE }}
+          SMTP_SENDER: test@econ.uzh.ch
         run: opam config exec -- make test
 
       - uses: actions/upload-artifact@v3
