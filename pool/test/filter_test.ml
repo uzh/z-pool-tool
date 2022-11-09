@@ -234,3 +234,55 @@ let filter_by_email _ () =
   in
   Lwt.return_unit
 ;;
+
+let validate_filter_with_unknown_field _ () =
+  let open Test_utils in
+  let%lwt () =
+    let experiment = Model.create_experiment () in
+    let%lwt key_list = Filter.all_keys Data.database_label in
+    let filter =
+      let open Filter in
+      Pred
+        (Predicate.create
+           Key.(CustomField ("Unknown field id" |> Custom_field.Id.of_string))
+           Operator.Equal
+           (Single (Nr 1.2)))
+    in
+    let events =
+      Cqrs_command.Experiment_command.UpdateFilter.handle
+        experiment
+        key_list
+        filter
+    in
+    let expected = Error Pool_common.Message.(Invalid Field.Key) in
+    Test_utils.check_result expected events |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let validate_filter_with_invalid_value _ () =
+  let open Test_utils in
+  let%lwt () =
+    let experiment = Model.create_experiment () in
+    let%lwt key_list = Filter.all_keys Data.database_label in
+    let filter =
+      let open Filter in
+      Pred
+        (Predicate.create
+           Key.(CustomField (CustomFieldData.nr_of_siblings |> Custom_field.id))
+           Operator.Equal
+           (Single (Str "Not a number")))
+    in
+    let events =
+      Cqrs_command.Experiment_command.UpdateFilter.handle
+        experiment
+        key_list
+        filter
+    in
+    let expected =
+      Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+    in
+    Test_utils.check_result expected events |> Lwt.return
+  in
+  Lwt.return_unit
+;;
