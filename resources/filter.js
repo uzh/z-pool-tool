@@ -37,6 +37,7 @@ const addRequiredError = (elm) => {
     }
 }
 
+// Should this update every time, the filter gets adjusted but not safed?
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
     const id = target.dataset.experimentId;
@@ -143,55 +144,28 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
     }
 }
 
-function appendFormListener(elm, container, allowEmpty) {
-    elm.addEventListener('htmx:configRequest', (e) => {
-        try {
-            e.detail.parameters.filter = predicateToJson(container, allowEmpty);
-            e.detail.parameters._csrf = csrfToken();
-        } catch (error) {
-            console.error(error)
-            e.preventDefault();
-            notifyUser("error", error)
-        }
-    })
-}
-
-function addBeforeRequestListener(predicate) {
-    predicateSelects = predicate.querySelectorAll('[name="predicate"]');
-    [...predicateSelects].forEach(elm => {
-        const predicate = elm.closest('.predicate');
-        appendFormListener(elm, predicate, true)
-    })
-
-    toggles = predicate.querySelectorAll('[name="key"], [data-new-predicate] button');
-    [...toggles].forEach(elm => {
-        elm.addEventListener('htmx:configRequest', (e) => {
-            e.detail.parameters._csrf = csrfToken();
-        })
-    })
-}
-
-function addAfterSwapListener(predicate) {
-    elms = predicate.querySelectorAll('.predicate, [data-new-predicate]');
-    [...elms].forEach(elm => {
-        elm.addEventListener('htmx:afterSwap', (e) => {
-            addHtmxListeners(e.detail.elt)
-        })
-    })
-}
-
-function addRemovePredicateListener(predicate) {
-    [...predicate.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
+function addRemovePredicateListener(element) {
+    [...element.querySelectorAll("[data-delete-predicate]")].forEach(elm => {
         elm.addEventListener("click", (e) => {
             e.currentTarget.closest(".predicate").remove();
         })
     })
 }
 
-function addHtmxListeners(predicate) {
-    addBeforeRequestListener(predicate);
-    addAfterSwapListener(predicate);
-    addRemovePredicateListener(predicate);
+function configRequest(e, form) {
+    const isPredicateType = e.target.name === "predicate";
+    const isSubmit = e.target.type === "submit"
+    e.detail.parameters._csrf = csrfToken();
+    if (isPredicateType || isSubmit) {
+        const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
+        try {
+            e.detail.parameters.filter = predicateToJson(elm, isPredicateType);
+        } catch (error) {
+            console.error(error)
+            e.preventDefault();
+            notifyUser("error", error)
+        }
+    }
 }
 
 export function initFilter() {
@@ -203,10 +177,11 @@ export function initFilter() {
                 e.detail.shouldSwap = true;
             }
         })
-        const formWrapper = document.querySelector("#filter-form .predicate")
-        appendFormListener(submitButton, formWrapper, false)
-
-        addHtmxListeners(form);
+        addRemovePredicateListener(form);
+        form.addEventListener('htmx:afterSwap', (e) => {
+            addRemovePredicateListener(e.detail.elt)
+        })
         updateContactCount()
+        form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
     }
 }
