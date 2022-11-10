@@ -403,6 +403,7 @@ let selector
   ?help
   ?option_formatter
   ?(attributes = [])
+  ?(classnames = [])
   ?(add_empty = false)
   ()
   =
@@ -457,7 +458,7 @@ let selector
   in
   let help = Elements.help language help in
   div
-    ~a:[ a_class (Elements.group_class [] `Vertical) ]
+    ~a:[ a_class (Elements.group_class classnames `Vertical) ]
     [ label [ input_label |> txt ]
     ; div
         ~a:[ a_class [ "select" ] ]

@@ -131,7 +131,7 @@ let toggle_key req =
       |> Lwt_result.lift
       >>= Filter.key_of_string tenant_db
     in
-    Component.Filter.key_select language ~key () |> Lwt.return_ok
+    Component.Filter.predicate_value_form language ~key () |> Lwt.return_ok
   in
   (match result with
    | Ok html -> html

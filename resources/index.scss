@@ -50,3 +50,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     margin: 0;
     cursor: pointer;
 }
+
+// Filter
+.key-select {
+    flex-basis: calc( calc(100% - (2 * $space-base)) / 3 );
+}

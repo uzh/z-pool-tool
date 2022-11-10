@@ -50,38 +50,21 @@ let select_default_option language selected =
          |> CCString.capitalize_ascii))
 ;;
 
-let operators_select ?operators ?selected () =
+let operators_select language ?operators ?selected () =
   let format label =
     CCString.replace ~sub:"_" ~by:" " label |> CCString.capitalize_ascii
   in
-  div
-    ~a:[ a_class [ "form-group" ] ]
-    (match operators with
-     | None -> []
-     | Some operators ->
-       [ label [ txt "Operator" ]
-       ; div
-           ~a:[ a_class [ "select" ] ]
-           [ select
-               ~a:[ a_name "operator" ]
-               (CCList.map
-                  (fun operator_option ->
-                    let selected_attr =
-                      CCOption.map_or
-                        ~default:[]
-                        (fun selected ->
-                          if Operator.equal selected operator_option
-                          then [ a_selected () ]
-                          else [])
-                        selected
-                    in
-                    let str = Operator.show operator_option in
-                    option
-                      ~a:([ a_value str ] @ selected_attr)
-                      (txt (format str)))
-                  operators)
-           ]
-       ])
+  match operators with
+  | None -> txt ""
+  | Some operators ->
+    Component_input.selector
+      ~option_formatter:CCFun.(Operator.show %> format)
+      language
+      Pool_common.Message.Field.Operator
+      Operator.show
+      operators
+      selected
+      ()
 ;;
 
 let value_input language input_type ?value () =
@@ -179,11 +162,13 @@ let value_input language input_type ?value () =
          ())
 ;;
 
-let key_select language ?key ?value ?operator () =
+let predicate_value_form language ?key ?value ?operator () =
   let open CCOption.Infix in
   let input_type = key >|= Filter.Key.type_of_key in
   let operators = input_type >|= Filter.Operator.input_type_to_operator in
-  let operator_select = operators_select ?operators ?selected:operator () in
+  let operator_select =
+    operators_select language ?operators ?selected:operator ()
+  in
   let input_field = value_input language input_type ?value () in
   div
     ~a:[ a_class [ "switcher-sm"; "flex-gap" ] ]
@@ -192,80 +177,56 @@ let key_select language ?key ?value ?operator () =
 
 let single_predicate_form language identifier key_list ?key ?operator ?value () =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
-  let fields =
-    key_list
-    |> CCList.map (fun opt ->
-         let selected =
-           CCOption.map_or
-             ~default:[]
-             (fun key ->
-               if Key.equal_human key opt then [ a_selected () ] else [])
-             key
-         in
-         option
-           ~a:([ a_value (Key.human_to_value opt) ] @ selected)
-           (opt |> Key.human_to_label language |> txt))
+  let toggled_content =
+    predicate_value_form language ?key ?value ?operator ()
   in
-  let toggled_content = key_select language ?key ?value ?operator () in
+  let key_selector =
+    let attributes =
+      [ a_user_data
+          "hx-post"
+          (Sihl.Web.externalize_path "/admin/filter/toggle-key")
+      ; a_user_data "hx-trigger" "change"
+      ; a_user_data "hx-target" (Format.asprintf "#%s" toggle_id)
+      ]
+    in
+    Component_input.selector
+      ~attributes
+      ~add_empty:true
+      ~option_formatter:(Key.human_to_label language)
+      ~required:true
+      ~classnames:[ "key-select" ]
+      language
+      Pool_common.Message.Field.Key
+      Key.human_to_value
+      key_list
+      key
+      ()
+  in
   div
     ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-    [ div
-        ~a:[ a_class [ "form-group"; "grow" ] ]
-        [ label [ txt "Key" ]
-        ; div
-            ~a:[ a_class [ "select" ] ]
-            [ select
-                ~a:
-                  [ a_name
-                      Pool_common.(
-                        Utils.field_to_string language Message.Field.Key)
-                  ; a_user_data
-                      "hx-post"
-                      (Sihl.Web.externalize_path "/admin/filter/toggle-key")
-                  ; a_user_data "hx-trigger" "change"
-                  ; a_user_data "hx-target" (Format.asprintf "#%s" toggle_id)
-                  ]
-                fields
-            ]
-        ]
+    [ key_selector
     ; div ~a:[ a_id toggle_id; a_class [ "grow-2" ] ] [ toggled_content ]
     ]
 ;;
 
 let predicate_type_select language target identifier ?selected () =
-  div
-    ~a:[ a_class [ "form-group" ] ]
-    [ label [ txt "Type of predicate" ]
-    ; div
-        ~a:[ a_class [ "select" ] ]
-        [ select
-            ~a:
-              (a_name Pool_common.Message.Field.(show Predicate)
-              :: htmx_attribs
-                   ~action:(form_action "toggle-predicate-type")
-                   ~trigger:"change"
-                   ~target
-                   ~identifier
-                   ())
-            (select_default_option language (CCOption.is_none selected)
-            :: CCList.map
-                 (fun filter_label ->
-                   let key, label = Utils.stringify_label filter_label in
-                   let selected =
-                     CCOption.map_or
-                       ~default:[]
-                       (fun selected ->
-                         if Filter.Utils.equal_filter_label
-                              selected
-                              filter_label
-                         then [ a_selected () ]
-                         else [])
-                       selected
-                   in
-                   option ~a:([ a_value key ] @ selected) (txt label))
-                 Utils.all_filter_labels)
-        ]
-    ]
+  let attributes =
+    htmx_attribs
+      ~action:(form_action "toggle-predicate-type")
+      ~trigger:"change"
+      ~target
+      ~identifier
+      ()
+  in
+  Component_input.selector
+    ~option_formatter:Utils.to_label
+    ~attributes
+    language
+    Pool_common.Message.Field.Predicate
+    Utils.show_filter_label
+    Utils.all_filter_labels
+    selected
+    ()
 ;;
 
 let add_predicate_btn identifier =
@@ -285,14 +246,15 @@ let add_predicate_btn identifier =
 ;;
 
 let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
+  let filter = CCOption.value ~default:(Filter.Human.init ()) filter in
+  let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
-    filter
-    |> CCOption.map (function
-         | Human.And _ -> Utils.And
-         | Or _ -> Utils.Or
-         | Not _ -> Utils.Not
-         | Pred _ -> Utils.Pred)
+    match filter with
+    | And _ -> Utils.And
+    | Or _ -> Utils.Or
+    | Not _ -> Utils.Not
+    | Pred _ -> Utils.Pred
   in
   let delete_button () =
     div
@@ -302,8 +264,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
   let predicate_form =
     let open Human in
     match filter with
-    | None -> []
-    | Some filter ->
+    | filter ->
       (match filter with
        | And filters | Or filters ->
          CCList.mapi
@@ -339,12 +300,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
            ()
          |> CCList.pure)
   in
-  let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
-  let data_attr =
-    match filter with
-    | None -> []
-    | Some filter -> [ a_user_data "predicate" Filter.Human.(show filter) ]
-  in
+  let data_attr = [ a_user_data "predicate" Filter.Human.(show filter) ] in
   div
     ~a:
       ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
@@ -355,14 +311,11 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          language
          predicate_identifier
          identifier
-         ?selected
+         ~selected
          ()
      ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
      ]
-    @
-    if CCOption.is_some filter && CCList.length identifier > 1
-    then [ delete_button () ]
-    else [])
+    @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
 
 let filter_form csrf language experiment filter key_list =

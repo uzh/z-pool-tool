@@ -150,7 +150,7 @@ module Utils : sig
 
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
-  val stringify_label : filter_label -> string * string
+  val to_label : filter_label -> string
 
   val label_of_string
     :  string

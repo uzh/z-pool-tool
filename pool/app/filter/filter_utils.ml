@@ -1,15 +1,17 @@
+let print m fmt _ = Format.pp_print_string fmt m
+
 type filter_label =
-  | And
-  | Or
-  | Not
-  | Pred
+  | And [@printer print "and"]
+  | Or [@printer print "or"]
+  | Not [@printer print "not"]
+  | Pred [@printer print "pred"]
 [@@deriving eq, enum, show]
 
-let stringify_label = function
-  | And -> "and", "And"
-  | Or -> "or", "Or"
-  | Not -> "not", "Not"
-  | Pred -> "pred", "Predicate"
+let to_label = function
+  | And -> "And"
+  | Or -> "Or"
+  | Not -> "Not"
+  | Pred -> "Predicate"
 ;;
 
 let label_of_string = function
