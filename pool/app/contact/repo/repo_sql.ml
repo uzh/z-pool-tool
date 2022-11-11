@@ -136,26 +136,14 @@ let find_confirmed pool email =
 let filter_to_sql dyn (filter : Filter.filter) =
   let open Filter in
   let add_value_to_params value dyn =
-    let add_single_value dyn value =
-      let add c v = Dynparam.add c v dyn in
-      match value with
-      | Str s -> add Caqti_type.string s
-      | Nr n -> add Caqti_type.float n
-      | Bool b -> add Caqti_type.bool b
-      | Date d -> add Caqti_type.ptime d
-      | Option id -> add Custom_field.Repo.SelectOption.Id.t id
-    in
-    match value with
-    | Single single -> add_single_value dyn single, "?"
-    | Lst lst ->
-      let dyn, params =
-        CCList.fold_left
-          (fun (dyn, params) value ->
-            add_single_value dyn value, CCList.cons "?" params)
-          (dyn, [])
-          lst
-      in
-      dyn, CCString.concat "," params
+    let add c v = Dynparam.add c v dyn in
+    ( (match value with
+       | Str s -> add Caqti_type.string s
+       | Nr n -> add Caqti_type.float n
+       | Bool b -> add Caqti_type.bool b
+       | Date d -> add Caqti_type.ptime d
+       | Option id -> add Custom_field.Repo.SelectOption.Id.t id)
+    , "?" )
   in
   let rec filter_sql (dyn, sql) filter =
     let of_list (dyn, sql) filters operator =
@@ -185,39 +173,81 @@ let filter_to_sql dyn (filter : Filter.filter) =
       let dyn, sql = filter_sql (dyn, sql) f in
       dyn, Format.asprintf "NOT %s" sql
     | Pred { Predicate.key; operator; value } ->
-      (match key with
-       | Key.Hardcoded h ->
-         let dyn, param = add_value_to_params value dyn in
-         let sql =
-           Format.asprintf
-             "%s %s %s"
-             (Key.hardcoded_to_sql h)
-             (Operator.to_sql operator)
-             param
-         in
-         dyn, sql
-       | Key.CustomField id ->
-         let dyn, param =
-           Dynparam.(
-             dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params value)
-         in
-         (* Check existence and value of rows (custom field answers) *)
-         let sql =
-           Format.asprintf
-             {sql|
-             EXISTS
-              (SELECT (1) FROM pool_custom_field_answers
+      let add_single_value dyn value =
+        match key with
+        | Key.Hardcoded h ->
+          let dyn, param = add_value_to_params value dyn in
+          let sql =
+            Format.asprintf
+              "%s %s %s"
+              (Key.hardcoded_to_sql h)
+              (Operator.to_sql operator)
+              param
+          in
+          dyn, sql
+        | Key.CustomField id ->
+          let dyn, param =
+            Dynparam.(
+              dyn |> add Custom_field.Repo.Id.t id |> add_value_to_params value)
+          in
+          (* Check existence and value of rows (custom field answers) *)
+          let sql =
+            Format.asprintf
+              {sql|
+              SELECT (1) FROM pool_custom_field_answers
                 WHERE
                   pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
                 AND
                   pool_custom_field_answers.entity_uuid = user_users.uuid
                 AND
-                  value %s %s)
+                  value %s %s
             |sql}
-             (Operator.to_sql operator)
-             param
-         in
-         dyn, sql)
+              (Operator.to_sql operator)
+              param
+          in
+          dyn, sql
+      in
+      (match value with
+       | Single value ->
+         (match key with
+          | Key.Hardcoded _ -> add_single_value dyn value
+          | Key.CustomField _ ->
+            add_single_value dyn value
+            |> fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
+       | Lst values ->
+         (match key with
+          | Key.Hardcoded _ ->
+            failwith
+              "Invalid key" (* TODO: should it fail or just be ignored? *)
+          | Key.CustomField _ ->
+            let dyn, subqueries =
+              CCList.fold_left
+                (fun (dyn, lst_sql) value ->
+                  let dyn, new_sql = add_single_value dyn value in
+                  dyn, lst_sql @ [ new_sql ])
+                (dyn, [])
+                values
+            in
+            let open Operator in
+            let build_query existence operator =
+              ( dyn
+              , subqueries
+                |> CCList.map (Format.asprintf "%s (%s)" existence)
+                |> CCString.concat (Format.asprintf " %s " operator) )
+            in
+            (match operator with
+             | ContainsAll -> build_query "EXISTS" "AND"
+             | ContainsNone -> build_query "NOT EXISTS" "AND"
+             | ContainsSome -> build_query "EXISTS" "OR"
+             | Less
+             | LessEqual
+             | Greater
+             | GreaterEqual
+             | Equal
+             | NotEqual
+             | Like ->
+               failwith "Invalid operator"
+               (* TODO: should it fail or just be ignored? *))))
   in
   let dyn, sql = filter_sql (dyn, "") filter in
   dyn, sql

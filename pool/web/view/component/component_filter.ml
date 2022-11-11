@@ -69,14 +69,19 @@ let operators_select language ?operators ?selected () =
 
 let value_input language input_type ?value () =
   let open Filter in
+  let open CCOption.Infix in
   let field_name = Pool_common.Message.Field.Value in
-  let value =
-    CCOption.bind value (fun (value : Filter.value) ->
-      match value with
-      | Single s -> Some s
-      | Lst _ ->
-        (* TODO: Allow multi select *)
-        None)
+  let single_value =
+    value
+    >>= function
+    | Single s -> Some s
+    | Lst _ -> None
+  in
+  let find_in_options options option_id =
+    CCList.find_opt
+      Custom_field.(
+        fun option -> SelectOption.Id.equal option.SelectOption.id option_id)
+      options
   in
   match input_type with
   | None -> div []
@@ -87,10 +92,10 @@ let value_input language input_type ?value () =
     (match input_type with
      | Key.Str ->
        let value =
-         CCOption.bind value (fun value ->
-           match[@warning "-4"] value with
-           | Str s -> Some s
-           | _ -> None)
+         single_value
+         >>= function[@warning "-4"]
+         | Str s -> Some s
+         | _ -> None
        in
        Component_input.input_element
          ~additional_attributes
@@ -100,10 +105,10 @@ let value_input language input_type ?value () =
          field_name
      | Key.Nr ->
        let value =
-         CCOption.bind value (fun value ->
-           match[@warning "-4"] value with
-           | Nr n -> Some n
-           | _ -> None)
+         single_value
+         >>= (function[@warning "-4"]
+               | Nr n -> Some n
+               | _ -> None)
          |> CCOption.map (fun f -> f |> CCFloat.to_int |> CCInt.to_string)
        in
        Component_input.input_element
@@ -120,7 +125,7 @@ let value_input language input_type ?value () =
              match[@warning "-4"] value with
              | Bool b -> b
              | _ -> false)
-           value
+           single_value
        in
        Component_input.checkbox_element
          ~additional_attributes
@@ -130,10 +135,10 @@ let value_input language input_type ?value () =
          field_name
      | Key.Date ->
        let value =
-         CCOption.bind value (fun value ->
-           match[@warning "-4"] value with
-           | Date d -> Some (d |> Ptime.to_rfc3339)
-           | _ -> None)
+         single_value
+         >>= function[@warning "-4"]
+         | Date d -> Some (d |> Ptime.to_rfc3339)
+         | _ -> None
        in
        Component_input.flatpicker_element
          ~additional_attributes
@@ -142,14 +147,11 @@ let value_input language input_type ?value () =
          `Datetime_local
          field_name
      | Key.Select options ->
-       let[@warning "-4"] selected =
-         CCOption.bind value (function
-           | Option o ->
-             CCList.find_opt
-               Custom_field.(
-                 fun option -> SelectOption.Id.equal option.SelectOption.id o)
-               options
-           | _ -> None)
+       let selected =
+         single_value
+         >>= function[@warning "-4"]
+         | Option o -> find_in_options options o
+         | _ -> None
        in
        Component_input.selector
          ~attributes:additional_attributes
@@ -159,6 +161,37 @@ let value_input language input_type ?value () =
          Custom_field.SelectOption.show_id
          options
          selected
+         ()
+     | Key.MultiSelect options ->
+       let[@warning "-4"] selected =
+         CCOption.map_or
+           ~default:[]
+           (fun value ->
+             match value with
+             | Single _ -> []
+             | Lst lst ->
+               CCList.filter_map
+                 (fun value ->
+                   match value with
+                   | Option id -> find_in_options options id
+                   | _ -> None)
+                 lst)
+           value
+       in
+       let multi_select =
+         Component_input.
+           { options
+           ; selected
+           ; to_label = Custom_field.SelectOption.name language
+           ; to_value = Custom_field.SelectOption.show_id
+           }
+       in
+       Component_input.multi_select
+         ~additional_attributes
+         ~orientation:`Vertical
+         language
+         multi_select
+         field_name
          ())
 ;;
 

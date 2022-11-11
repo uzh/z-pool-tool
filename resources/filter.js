@@ -23,6 +23,10 @@ const notifyUser = (classname, msg) => {
     notification.parentElement.replaceChild(wrapper, notification)
 }
 
+const isListOperator = (operator) => {
+    return ["contains_all", "contains_some", "contains_none"].includes(operator)
+}
+
 const findChildPredicates = (wrapper) => {
     return [...wrapper.querySelector(".predicate-wrapper").children].filter((elm) => elm.classList.contains("predicate"))
 }
@@ -100,6 +104,11 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                             [inputDataType]: valueInput.value
                         }
                         break;
+                    case "list":
+                        value = {
+                            ["option"]: valueInput.value
+                        }
+                        break;
                     default:
                         value = {
                             ["str"]: valueInput.value
@@ -119,13 +128,19 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                 return input ? input.value : null
             }
         })
-        const valueInput = findElm("value");
-        let value = {}
-        if (!allowEmpty && !(valueInput && valueInput.value)) {
-            error = true;
-            addRequiredError(valueInput);
+        let value;
+        let isList = isListOperator(operator)
+        if (isList) {
+            const values = [...outerPredicate.querySelectorAll(`[name="value[]"]:checked`)];
+            value = values.map(toValue)
         } else {
-            value = toValue(valueInput)
+            const valueInput = findElm("value");
+            if (!allowEmpty && !(valueInput && valueInput.value)) {
+                error = true;
+                addRequiredError(valueInput);
+            } else {
+                value = toValue(valueInput)
+            }
         }
         if (!error) {
             return {

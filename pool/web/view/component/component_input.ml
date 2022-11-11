@@ -483,6 +483,7 @@ let multi_select
   language
   { options; selected; to_label; to_value }
   group_field
+  ?(orientation = `Horizontal)
   ?additional_attributes
   ?(classnames = [])
   ?error
@@ -524,8 +525,8 @@ let multi_select
     :: options_html
   in
   div
-    ~a:[ a_class ([ "form-group"; "horizontal" ] @ classnames) ]
-    [ label [ txt Pool_common.(Utils.field_to_string language group_field) ]
+    ~a:[ a_class (Elements.group_class classnames orientation) ]
+    [ label [ txt (Elements.input_label language group_field None false) ]
     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
     ]
 ;;
