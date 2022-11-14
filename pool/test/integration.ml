@@ -71,6 +71,9 @@ let suite =
               "validate filter with invalid value"
               `Quick
               validate_filter_with_invalid_value
+          ; test_case "filter contains all" `Quick filter_by_list_contains_all
+          ; test_case "filter contains none" `Quick filter_by_list_contains_none
+          ; test_case "filter contains some" `Quick filter_by_list_contains_some
           ] )
     ; ( "matcher"
       , Matcher_test.

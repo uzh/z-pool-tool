@@ -62,6 +62,28 @@ module TestContacts = struct
     in
     contacts |> Lwt.return
   ;;
+
+  let data =
+    CCList.range 0 5
+    |> CCList.map (fun i ->
+         Format.asprintf "%i-test@mail.com" i, Pool_common.Id.create ())
+  ;;
+
+  let create_contacts () = prepare data
+
+  let find_contacts () =
+    data
+    |> CCList.map snd
+    |> Contact.find_multiple Test_utils.Data.database_label
+  ;;
+
+  let get_contact index =
+    index
+    |> CCList.nth data
+    |> snd
+    |> Contact.find Test_utils.Data.database_label
+    |> Lwt.map CCResult.get_exn
+  ;;
 end
 
 module CustomFieldData = struct
@@ -84,9 +106,9 @@ module CustomFieldData = struct
         })
   ;;
 
-  let nr_of_siblings_public () =
+  let nr_of_siblings_public answer_value =
     let open Custom_field in
-    let answer = Answer.create nr_of_siblings_answer |> CCOption.pure in
+    let answer = Answer.create answer_value |> CCOption.pure in
     let version = 0 |> Pool_common.Version.of_int in
     Public.Number
       ( { Public.id = id nr_of_siblings
@@ -101,36 +123,88 @@ module CustomFieldData = struct
       , answer )
   ;;
 
-  let create () = Custom_field.Created nr_of_siblings |> Pool_event.custom_field
+  let multi_select_options =
+    let open Custom_field in
+    let open SelectOption in
+    let open CCList in
+    CCList.range 0 5
+    |> map (fun i -> [ lang, CCInt.to_string i ])
+    |> map (Name.create [ lang ])
+    |> CCList.all_ok
+    |> CCResult.get_exn
+    |> map create
+  ;;
 
-  let answer contacts =
+  let multi_select_options_by_index =
+    CCList.map (CCList.nth multi_select_options)
+  ;;
+
+  let multi_select_custom_field =
+    let open Custom_field in
+    MultiSelect
+      ( { id = Id.create ()
+        ; model = Model.Contact
+        ; name =
+            Name.create [ lang ] [ lang, "Multi select" ] |> CCResult.get_exn
+        ; hint = [] |> Hint.create |> CCResult.get_exn
+        ; validation = Validation.pure
+        ; required = false |> Required.create
+        ; disabled = false |> Disabled.create
+        ; custom_field_group_id = None
+        ; admin = admin_data
+        }
+      , multi_select_options )
+  ;;
+
+  let multi_select_custom_field_public answer_index =
+    let open Custom_field in
+    let answer =
+      multi_select_options_by_index answer_index |> CCList.map Answer.create
+    in
+    let version = 0 |> Pool_common.Version.of_int in
+    Public.MultiSelect
+      ( { Public.id = id multi_select_custom_field
+        ; name = name multi_select_custom_field
+        ; hint = hint multi_select_custom_field
+        ; validation = Validation.pure
+        ; required = required multi_select_custom_field
+        ; admin_overwrite = admin_data.Admin.overwrite
+        ; admin_input_only = admin_data.Admin.input_only
+        ; version
+        }
+      , multi_select_options
+      , answer )
+  ;;
+
+  let create_nr_of_siblings () =
+    Custom_field.Created nr_of_siblings |> Pool_event.custom_field
+  ;;
+
+  let answer_nr_of_siblings ?(answer_value = nr_of_siblings_answer) contacts =
     CCList.map
       (fun contact ->
         Custom_field.AnswerUpserted
-          (nr_of_siblings_public (), Contact.id contact)
+          (nr_of_siblings_public answer_value, Contact.id contact)
         |> Pool_event.custom_field)
       contacts
   ;;
 
-  let data =
-    let rec go i acc =
-      if i <= 0
-      then acc
-      else
-        go
-          (i - 1)
-          ((Format.asprintf "%i-test@mail.com" i, Pool_common.Id.create ())
-          :: acc)
-    in
-    go 5 []
+  let create_multi_select () =
+    let open Custom_field in
+    CCList.cons
+      (Created multi_select_custom_field)
+      (multi_select_options
+      |> CCList.map (fun o -> OptionCreated (id multi_select_custom_field, o)))
+    |> CCList.map Pool_event.custom_field
   ;;
 
-  let create_contacts () = TestContacts.prepare data
-
-  let find_contacts () =
-    data
-    |> CCList.map snd
-    |> Contact.find_multiple Test_utils.Data.database_label
+  let answer_multi_select contacts answer_index =
+    CCList.map
+      (fun contact ->
+        Custom_field.AnswerUpserted
+          (multi_select_custom_field_public answer_index, Contact.id contact)
+        |> Pool_event.custom_field)
+      contacts
   ;;
 end
 
@@ -154,13 +228,14 @@ let email email_address =
 
 let filter_contacts _ () =
   let%lwt () =
-    let%lwt contacts = CustomFieldData.create_contacts () in
+    let%lwt contacts = TestContacts.create_contacts () in
     let%lwt experiment =
       Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
     in
     let%lwt () =
       (* Save field and answer with 3 *)
-      CustomFieldData.(create () :: answer contacts)
+      CustomFieldData.(
+        create_nr_of_siblings () :: answer_nr_of_siblings contacts)
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
@@ -194,13 +269,7 @@ let filter_contacts _ () =
 
 let filter_by_email _ () =
   let%lwt () =
-    let%lwt contact =
-      CustomFieldData.data
-      |> CCList.hd
-      |> snd
-      |> Contact.find Test_utils.Data.database_label
-      |> Lwt.map CCResult.get_exn
-    in
+    let%lwt contact = TestContacts.get_contact 0 in
     let%lwt experiment =
       Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
     in
@@ -283,6 +352,106 @@ let validate_filter_with_invalid_value _ () =
       Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
     in
     Test_utils.check_result expected events |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let test_list_filter answer_index operator contact experiment expected =
+  let%lwt () =
+    let filter =
+      let open Filter in
+      let value =
+        Lst
+          (answer_index
+          |> CustomFieldData.multi_select_options_by_index
+          |> CCList.map (fun option ->
+               Option option.Custom_field.SelectOption.id))
+      in
+      create
+        Predicate.(
+          Pred
+            { key =
+                Key.CustomField
+                  (Custom_field.id CustomFieldData.multi_select_custom_field)
+            ; operator
+            ; value
+            })
+    in
+    let experiment = Experiment.{ experiment with filter = Some filter } in
+    let%lwt () =
+      (* Save filter *)
+      [ Filter.Created filter |> Pool_event.filter
+      ; Experiment.Updated experiment |> Pool_event.experiment
+      ]
+      |> Lwt_list.iter_s
+           (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let%lwt filtered_contacts =
+      Contact.find_filtered
+        Test_utils.Data.database_label
+        experiment.Experiment.id
+        (Experiment.filter_predicate experiment)
+    in
+    let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
+    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
+let filter_by_list_contains_all _ () =
+  let%lwt () =
+    let%lwt contact = TestContacts.get_contact 0 in
+    let answer_index = [ 0; 1 ] in
+    let%lwt () =
+      (* Save field and answer *)
+      CustomFieldData.(
+        create_multi_select () @ answer_multi_select [ contact ] answer_index)
+      |> Lwt_list.iter_s
+           (Pool_event.handle_event Test_utils.Data.database_label)
+    in
+    let%lwt experiment =
+      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+    in
+    test_list_filter
+      answer_index
+      Filter.Operator.ContainsAll
+      contact
+      experiment
+      true
+  in
+  Lwt.return_unit
+;;
+
+let filter_by_list_contains_none _ () =
+  let%lwt () =
+    let%lwt contact = TestContacts.get_contact 0 in
+    let answer_index = [ 1; 2 ] in
+    let%lwt experiment =
+      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+    in
+    test_list_filter
+      answer_index
+      Filter.Operator.ContainsNone
+      contact
+      experiment
+      false
+  in
+  Lwt.return_unit
+;;
+
+let filter_by_list_contains_some _ () =
+  let%lwt () =
+    let%lwt contact = TestContacts.get_contact 0 in
+    let answer_index = [ 1; 2 ] in
+    let%lwt experiment =
+      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+    in
+    test_list_filter
+      answer_index
+      Filter.Operator.ContainsSome
+      contact
+      experiment
+      true
   in
   Lwt.return_unit
 ;;
