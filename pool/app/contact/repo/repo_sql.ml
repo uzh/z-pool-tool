@@ -57,7 +57,6 @@ let find_filtered_request_sql ?limit where_fragment =
 ;;
 
 let count_filtered_request_sql where_fragment =
-  (* REMOVE GROUP BY and LIMIT s*)
   let select =
     {sql|
     SELECT COUNT(*)
