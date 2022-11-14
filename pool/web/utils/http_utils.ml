@@ -2,6 +2,12 @@ module Message = Http_utils_message
 module File = Http_utils_file
 module StringMap = CCMap.Make (CCString)
 
+type json_response =
+  { message : string
+  ; success : bool
+  }
+[@@deriving yojson]
+
 let user_from_session db_pool req : Sihl_user.t option Lwt.t =
   let ctx = Pool_tenant.to_ctx db_pool in
   Service.User.Web.user_from_session ~ctx req
@@ -224,7 +230,12 @@ let html_to_plain_text_response html =
   |> Sihl.Web.Response.of_plain_text ~headers
 ;;
 
-let multi_html_to_plain_text_response html_els =
+let yojson_response ?status json =
+  let headers = Opium.Headers.of_list [ "Content-Type", "application/json" ] in
+  json |> Sihl.Web.Response.of_json ?status ~headers
+;;
+
+let multi_html_to_plain_text_response ?(status = 200) html_els =
   let headers =
     Opium.Headers.of_list [ "Content-Type", "text/html; charset=utf-8" ]
   in
@@ -232,7 +243,9 @@ let multi_html_to_plain_text_response html_els =
   |> CCList.fold_left
        (fun acc cur -> Format.asprintf "%s\n%a" acc (Tyxml.Html.pp_elt ()) cur)
        ""
-  |> Sihl.Web.Response.of_plain_text ~headers
+  |> Sihl.Web.Response.of_plain_text
+       ~status:(status |> Opium.Status.of_code)
+       ~headers
 ;;
 
 let browser_language_from_req req =

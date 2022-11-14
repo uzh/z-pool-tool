@@ -26,6 +26,7 @@ type t =
   | Reminder
   | ResetPasswordLink
   | ResetPasswordTitle
+  | SentInvitations
   | SessionDetailTitle of Ptime.t
   | SessionIndent
   | SessionReminder

@@ -33,10 +33,20 @@ let change_position_datatype =
     |sql}
 ;;
 
+let rename_custom_field_foreign_key =
+  Sihl.Database.Migration.create_step
+    ~label:"rename custom field foreign_key"
+    {sql|
+      ALTER TABLE pool_custom_field_options
+        RENAME COLUMN custom_field_option_uuid TO custom_field_uuid
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_options"
     |> add_step create_custom_field_options_table
     |> add_step add_order_column_to_custom_field_options
-    |> add_step change_position_datatype)
+    |> add_step change_position_datatype
+    |> add_step rename_custom_field_foreign_key)
 ;;

@@ -110,6 +110,24 @@ let add_public_visibility_and_uninvited_signup_flags =
     |sql}
 ;;
 
+let make_filter_uuid_foreign_key =
+  Sihl.Database.Migration.create_step
+    ~label:"make filter column a foreign key"
+    {sql|
+      ALTER TABLE pool_experiments
+      MODIFY filter binary(16)
+    |sql}
+;;
+
+let rename_filter_column =
+  Sihl.Database.Migration.create_step
+    ~label:"rename filter column"
+    {sql|
+      ALTER TABLE pool_experiments
+      RENAME COLUMN filter TO filter_uuid
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "pool_experiments"
@@ -123,5 +141,7 @@ let migration () =
     |> add_step add_session_reminder_columns
     |> add_step add_invitation_columns
     |> add_step add_experiment_type_column
-    |> add_step add_public_visibility_and_uninvited_signup_flags)
+    |> add_step add_public_visibility_and_uninvited_signup_flags
+    |> add_step make_filter_uuid_foreign_key
+    |> add_step rename_filter_column)
 ;;

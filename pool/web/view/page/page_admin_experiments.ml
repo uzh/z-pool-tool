@@ -1,6 +1,8 @@
 open Tyxml.Html
 open Component
+open Input
 module Message = Pool_common.Message
+module HttpUtils = Http_utils
 
 type title =
   | Control of Pool_common.Message.control
@@ -37,7 +39,7 @@ let experiment_layout language title experiment ?active html =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
-    ; Component.Navigation.subnav language subnav_links base_url active
+    ; Navigation.subnav language subnav_links base_url active
     ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
     ; html
     ]
@@ -115,7 +117,7 @@ let experiment_form
   let value = CCFun.flip (CCOption.map_or ~default:"") experiment in
   let experiment_type_select =
     let open Pool_common.ExperimentType in
-    Component.selector
+    selector
       language
       Pool_common.Message.Field.ExperimentType
       show
@@ -131,7 +133,7 @@ let experiment_form
       ; a_action (Sihl.Web.externalize_path action)
       ; a_class [ "stack" ]
       ]
-    [ Component.csrf_element csrf ()
+    [ csrf_element csrf ()
     ; input_element
         language
         `Text
@@ -361,7 +363,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
         ; ( Field.Description
           , experiment.description
             |> Description.value
-            |> Http_utils.add_line_breaks )
+            |> HttpUtils.add_line_breaks )
         ; ( Field.DirectRegistrationDisabled
           , direct_registration_disabled_value |> boolean_value )
         ; ( Field.RegistrationDisabled
@@ -459,24 +461,56 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
 ;;
 
 let invitations
-  invitations
   experiment
+  filter
+  key_list
   filtered_contacts
   (Pool_context.{ language; _ } as context)
   =
   let html =
     div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ Page_admin_invitations.Partials.list context experiment invitations
+      ~a:[ a_class [ "stack" ] ]
+      [ p
+          [ a
+              ~a:
+                [ a_href
+                    (experiment.Experiment.id
+                    |> Pool_common.Id.value
+                    |> Format.asprintf "admin/experiments/%s/invitations/sent"
+                    |> Sihl.Web.externalize_path)
+                ]
+              [ txt
+                  Pool_common.(
+                    Utils.text_to_string language I18n.SentInvitations)
+              ]
+          ]
       ; Page_admin_invitations.Partials.send_invitation
           context
           experiment
+          filter
+          key_list
           filtered_contacts
       ]
   in
   experiment_layout
     language
     (NavLink Pool_common.I18n.Invitations)
+    experiment
+    ~active:Pool_common.I18n.Invitations
+    html
+;;
+
+let sent_invitations
+  (Pool_context.{ language; _ } as context)
+  experiment
+  invitations
+  =
+  let html =
+    Page_admin_invitations.Partials.list context experiment invitations
+  in
+  experiment_layout
+    language
+    (I18n Pool_common.I18n.SentInvitations)
     experiment
     ~active:Pool_common.I18n.Invitations
     html
@@ -503,7 +537,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
                 |> Utils.Time.formatted_date_time)
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
-            |> Http_utils.add_line_breaks
+            |> HttpUtils.add_line_breaks
           ; a
               ~a:
                 [ a_href
@@ -520,7 +554,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
           ])
         waiting_list.waiting_list_entries
     in
-    Component.Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped language ~thead rows
   in
   experiment_layout
     language

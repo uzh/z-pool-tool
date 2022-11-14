@@ -64,7 +64,6 @@ let detail Pool_context.{ language; _ } contact =
 
 let edit
   Pool_context.{ language; csrf; query_language; _ }
-  user_update_csrf
   tenant_languages
   contact
   custom_fields
@@ -75,7 +74,6 @@ let edit
     [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
     ; Page_contact_edit.personal_details_form
         csrf
-        user_update_csrf
         language
         query_language
         (Htmx.admin_profile_hx_post (Contact.id contact))

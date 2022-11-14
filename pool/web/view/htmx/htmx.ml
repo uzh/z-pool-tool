@@ -1,6 +1,7 @@
 open Tyxml.Html
 module Version = Pool_common.Version
 module User = Pool_user
+module Input = Component.Input
 
 let hx_trigger = a_user_data "hx-trigger"
 let hx_post = a_user_data "hx-post"
@@ -10,7 +11,6 @@ let hx_swap = a_user_data "hx-swap"
 let hx_params = a_user_data "hx-params"
 let hx_vals = a_user_data "hx-vals"
 let hx_base_params = [ "_csrf"; "version"; "field" ]
-let user_update_csrf = "_user_update_csrf"
 let contact_profile_hx_post = "/user/update"
 
 let admin_profile_hx_post id =
@@ -80,7 +80,7 @@ type 'a selector =
 
 type 'a value =
   | Boolean of bool
-  | MultiSelect of 'a Component.multi_select
+  | MultiSelect of 'a Input.multi_select
   | Number of int option
   | Select of 'a selector
   | Text of string option
@@ -132,7 +132,7 @@ let create
   in
   match value with
   | Boolean boolean ->
-    Component.checkbox_element
+    Input.checkbox_element
       ~as_switch:true
       ~orientation:`Horizontal
       ~additional_attributes:(additional_attributes ())
@@ -152,7 +152,7 @@ let create
           ?additional_attributes:htmx_attributes
           ()
     in
-    Component.multi_select
+    Input.multi_select
       language
       t
       field
@@ -162,7 +162,7 @@ let create
       ?disabled
       ()
   | Number n ->
-    Component.input_element
+    Input.input_element
       ~classnames
       ~value:
         (fetched_value
@@ -175,7 +175,7 @@ let create
       `Number
       field
   | Select { show; options; option_formatter; selected } ->
-    Component.selector
+    Input.selector
       ~attributes:(additional_attributes ())
       ?help
       ?option_formatter
@@ -187,7 +187,7 @@ let create
       selected
       ()
   | Text str ->
-    Component.input_element
+    Input.input_element
       ~classnames
       ~value:(fetched_value |> CCOption.value ~default:(str |> default))
       ~additional_attributes:(additional_attributes ())
@@ -196,11 +196,6 @@ let create
       language
       `Text
       field
-;;
-
-(* Use this CSRF element as HTMX response in POSTs*)
-let csrf_element_swap csrf ?id =
-  input ~a:(a_user_data "hx-swap-oob" "true" :: Component.csrf_attibs ?id csrf)
 ;;
 
 let custom_field_to_htmx_value language =
@@ -213,7 +208,7 @@ let custom_field_to_htmx_value language =
     answers
     |> CCList.map (fun { Answer.value; _ } -> value)
     |> fun selected ->
-    Component.
+    Input.
       { options
       ; selected
       ; to_label = SelectOption.name language

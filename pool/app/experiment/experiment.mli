@@ -62,7 +62,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
-  ; filter : string
+  ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -113,6 +113,7 @@ type create =
 val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
+val filter_predicate : t -> Filter.filter option
 
 module Public : sig
   type t =

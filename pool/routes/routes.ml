@@ -172,6 +172,7 @@ module Admin = struct
         Experiments.Invitations.
           [ get "" index
           ; post "" create
+          ; get "sent" sent_invitations
           ; post (add_key ~suffix:"resend" Invitation) resend
           ]
       in
@@ -228,6 +229,7 @@ module Admin = struct
           ; choose ~scope:(Mailing |> url_key) specific
           ]
       in
+      let filter = Handler.Admin.Filter.[ post "/create" create ] in
       Experiments.
         [ get "" index
         ; get "/create" new_form
@@ -236,11 +238,15 @@ module Admin = struct
         ; get (add_key ~suffix:"edit" Experiment) edit
         ; post (Experiment |> url_key) update
         ; post (add_key ~suffix:"delete" Experiment) delete
+        ; get
+            (add_key ~suffix:"contact-count" Experiment)
+            Handler.Admin.Filter.count_contacts
         ; choose ~scope:(build_scope "invitations") invitations
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ; choose ~scope:(build_scope "assignments") assignments
         ; choose ~scope:(build_scope "mailings") mailings
+        ; choose ~scope:(build_scope "filter") filter
         ]
     in
     let admins =
@@ -255,6 +261,13 @@ module Admin = struct
       in
       Handler.Admin.Contacts.
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
+    in
+    let filter =
+      Handler.Admin.Filter.
+        [ post "/toggle-key" toggle_key
+        ; post "/toggle-predicate-type" toggle_predicate_type
+        ; post "/add-predicate" add_predicate
+        ]
     in
     let custom_fields =
       let open CustomField in
@@ -316,6 +329,7 @@ module Admin = struct
       ; get "/i18n" I18n.index
       ; post (Format.asprintf "/i18n/%s" (I18n |> url_key)) I18n.update
       ; choose ~scope:"/experiments" experiments
+      ; choose ~scope:"/filter" filter
       ; choose ~scope:"/locations" location
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins

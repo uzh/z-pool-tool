@@ -1,5 +1,5 @@
 open Tyxml.Html
-open Component
+open Component.Input
 module Message = Pool_common.Message
 
 let list translation_list Pool_context.{ language; csrf; _ } =
@@ -47,10 +47,7 @@ let list translation_list Pool_context.{ language; csrf; _ } =
                   ; a_method `Post
                   ; a_class [ "flexrow"; "flex-gap" ]
                   ]
-                [ Component.csrf_element csrf ()
-                ; text_input
-                ; submit_icon `SaveOutline
-                ])
+                [ csrf_element csrf (); text_input; submit_icon `SaveOutline ])
             translations
         in
         div

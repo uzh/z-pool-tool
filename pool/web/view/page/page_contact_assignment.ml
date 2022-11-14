@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component.Input
 
 let detail session experiment Pool_context.{ language; csrf; _ } =
   let form_action =
@@ -20,8 +21,8 @@ let detail session experiment Pool_context.{ language; csrf; _ } =
         [ Page_contact_sessions.public_detail session language
         ; form
             ~a:[ a_action form_action; a_method `Post ]
-            [ Component.csrf_element csrf ()
-            ; Component.submit_element
+            [ csrf_element csrf ()
+            ; submit_element
                 language
                 Pool_common.Message.(Enroll)
                 ~submit_type:`Success

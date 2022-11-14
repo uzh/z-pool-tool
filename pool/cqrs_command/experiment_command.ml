@@ -167,8 +167,39 @@ end = struct
   ;;
 end
 
-module UpdateFilter : sig end = struct
-  (* Update 'match_filter' flag in currently existing assignments *)
+module UpdateFilter : sig
+  type t = Filter.filter
+
+  val handle
+    :  Experiment.t
+    -> Filter.Key.human list
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Experiment.t -> Guard.Authorizer.effect list
+end = struct
+  type t = Filter.filter
+
+  let handle experiment key_list filter =
+    let open CCResult in
+    let* filter = Filter.validate_filter key_list filter in
+    match experiment.filter with
+    | None ->
+      let id = Pool_common.Id.create () in
+      let filter = Filter.create ~id filter in
+      let experiment = Experiment.{ experiment with filter = Some filter } in
+      Ok
+        [ Filter.Created filter |> Pool_event.filter
+        ; Experiment.Updated experiment |> Pool_event.experiment
+        ]
+    | Some current_filter ->
+      let filter = Filter.{ current_filter with filter } in
+      Ok [ Filter.Updated filter |> Pool_event.filter ]
+  ;;
+
+  let effects experiment =
+    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm) ]
+  ;;
 end
 
 module AddExperimenter : sig

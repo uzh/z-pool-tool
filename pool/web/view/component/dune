@@ -3,6 +3,7 @@
  (libraries
   custom_field
   experiment
+  filter
   http_utils
   pool_location
   service

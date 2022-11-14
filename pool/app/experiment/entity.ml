@@ -84,7 +84,7 @@ type t =
   ; title : Title.t
   ; public_title : PublicTitle.t
   ; description : Description.t
-  ; filter : string
+  ; filter : Filter.t option
   ; direct_registration_disabled : DirectRegistrationDisabled.t
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
@@ -131,7 +131,7 @@ let create
     ; title
     ; public_title
     ; description
-    ; filter = "1=1"
+    ; filter = None
     ; direct_registration_disabled
     ; registration_disabled
     ; allow_uninvited_signup
@@ -188,4 +188,8 @@ let allow_uninvited_signup_value (m : t) =
 let boolean_fields =
   Pool_common.Message.Field.
     [ DirectRegistrationDisabled; RegistrationDisabled; AllowUninvitedSignup ]
+;;
+
+let filter_predicate m =
+  m.filter |> CCOption.map (fun filter -> filter.Filter.filter)
 ;;

@@ -17,13 +17,15 @@ let invitation_template_data tenant_db system_languages =
 
 let create_layout req = General.create_tenant_layout req
 
+let id_from_req req =
+  Pool_common.Message.Field.(Experiment |> show)
+  |> Sihl.Web.Router.param req
+  |> Pool_common.Id.of_string
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
-  let id =
-    Pool_common.Message.Field.(Experiment |> show)
-    |> Sihl.Web.Router.param req
-    |> Pool_common.Id.of_string
-  in
+  let id = id_from_req req in
   let error_path =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
   in
@@ -31,18 +33,22 @@ let index req =
     let open Lwt_result.Syntax in
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
+       let%lwt key_list = Filter.all_keys tenant_db in
+       let filter =
+         experiment.Experiment.filter
+         |> CCOption.map
+              Filter.(fun filter -> filter.filter |> t_to_human key_list)
+       in
        let%lwt filtered_contacts =
          Contact.find_filtered
            tenant_db
            experiment.Experiment.id
-           experiment.Experiment.filter
-       in
-       let* invitations =
-         Invitation.find_by_experiment tenant_db experiment.Experiment.id
+           (experiment |> Experiment.filter_predicate)
        in
        Page.Admin.Experiments.invitations
-         invitations
          experiment
+         filter
+         key_list
          filtered_contacts
          context
        |> create_layout req context
@@ -51,13 +57,31 @@ let index req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let sent_invitations req =
+  let open Utils.Lwt_result.Infix in
+  let id = id_from_req req in
+  let error_path =
+    Format.asprintf
+      "/admin/experiments/%s/invitations"
+      (Pool_common.Id.value id)
+  in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_error (fun err -> err, error_path)
+    @@ let* experiment = Experiment.find tenant_db id in
+       let* invitations =
+         Invitation.find_by_experiment tenant_db experiment.Experiment.id
+       in
+       Page.Admin.Experiments.sent_invitations context experiment invitations
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
 let create req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id =
-    Pool_common.Message.Field.(Experiment |> show)
-    |> Sihl.Web.Router.param req
-    |> Pool_common.Id.of_string
-  in
+  let experiment_id = id_from_req req in
   let redirect_path =
     Format.asprintf
       "/admin/experiments/%s/invitations"

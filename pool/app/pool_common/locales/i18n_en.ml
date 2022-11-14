@@ -36,6 +36,7 @@ let to_string = function
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
+  | SentInvitations -> "Sent invitations"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
   | SessionReminderDefaultLeadTime leadtime ->

@@ -4,7 +4,7 @@ module Model = Entity_base_model
 
 (* TODO [aerben] to get more type-safety, every entity should have its own ID *)
 module Id = struct
-  type t = string [@@deriving eq, show, sexp]
+  type t = string [@@deriving eq, show, sexp, yojson]
 
   let create () = Uuidm.v `V4 |> Uuidm.to_string
   let of_string m = m

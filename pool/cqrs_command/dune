@@ -8,6 +8,7 @@
   database
   email
   experiment
+  filter
   guard
   i18n
   pool_common

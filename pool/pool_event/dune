@@ -9,6 +9,7 @@
   database
   email
   experiment
+  filter
   i18n
   mailing
   pool_location

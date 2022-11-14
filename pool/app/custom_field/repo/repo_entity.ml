@@ -123,16 +123,23 @@ end
 module Option = struct
   open Entity.SelectOption
 
+  module Id = struct
+    include Id
+
+    let t =
+      let encode = Utils.fcn_ok value in
+      let decode = Utils.fcn_ok of_string in
+      Caqti_type.(custom ~encode ~decode string)
+    ;;
+  end
+
   type repo = Pool_common.Id.t * t
 
   let t =
     let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
     let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
     Caqti_type.(
-      custom
-        ~encode
-        ~decode
-        (tup2 Pool_common.Repo.Id.t (tup2 Pool_common.Repo.Id.t Name.t)))
+      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
   ;;
 
   let to_entity = snd

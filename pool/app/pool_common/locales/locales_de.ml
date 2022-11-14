@@ -52,6 +52,7 @@ let field_to_string =
   | FileMimeType -> "Mime Typ"
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
+  | Filter -> "Filter"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
   | Hint -> "Hint"
@@ -97,6 +98,7 @@ let field_to_string =
   | Password -> "Passwort"
   | PasswordConfirmation -> "Passwort wiederholen"
   | Paused -> "Pausiert"
+  | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
   | Rate -> "Höchstrate"
@@ -142,6 +144,7 @@ let field_to_string =
   | TriggerProfileUpdateAfter -> "Aufforderung zur Kontrolle des Profils"
   | Url -> "Url"
   | User -> "Benutzer"
+  | Value -> "Wert"
   | Validation -> "Validierung"
   | Version -> "Version"
   | Virtual -> "Virtuell"
@@ -247,6 +250,11 @@ let rec error_to_string = function
       "Die Option \"%s\" benötigt \"%s\"."
       (field_to_string field)
       (field_to_string required)
+  | FilterNotCompatible (f1, f2) ->
+    Format.asprintf
+      "%s ist nicht kompatibel mit %s."
+      (field_to_string f1)
+      (field_to_string f2)
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

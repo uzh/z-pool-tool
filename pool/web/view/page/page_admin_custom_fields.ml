@@ -1,5 +1,7 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module Table = Component.Table
+module Partials = Component.Partials
 module Message = Pool_common.Message
 
 module Url = struct

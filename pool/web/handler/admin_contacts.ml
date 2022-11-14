@@ -33,7 +33,6 @@ let detail_view action req =
       |> create_layout req context
       >|= Sihl.Web.Response.of_html
     | `Edit ->
-      let user_update_csrf = Htmx.user_update_csrf in
       let* tenant_languages =
         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
@@ -43,12 +42,7 @@ let detail_view action req =
           tenant_db
           (Contact.id contact)
       in
-      Page.Admin.Contact.edit
-        context
-        user_update_csrf
-        tenant_languages
-        contact
-        custom_fields
+      Page.Admin.Contact.edit context tenant_languages contact custom_fields
       |> create_layout req context
       >|= Sihl.Web.Response.of_html
   in

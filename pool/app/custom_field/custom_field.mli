@@ -330,6 +330,7 @@ val boolean_fields : Pool_common.Message.Field.t list
 val id : t -> Id.t
 val model : t -> Model.t
 val name : t -> Name.t
+val name_value : Pool_common.Language.t -> t -> string
 val hint : t -> Hint.t
 val required : t -> Required.t
 val disabled : t -> Disabled.t
@@ -432,5 +433,21 @@ val validate_multiselect
   :  SelectOption.t list Public.public * SelectOption.t list
   -> string list
   -> Public.t
+
+module Repo : sig
+  module Id : sig
+    type t = Id.t
+
+    val t : t Caqti_type.t
+  end
+
+  module SelectOption : sig
+    module Id : sig
+      type t = SelectOption.Id.t
+
+      val t : t Caqti_type.t
+    end
+  end
+end
 
 val group_fields : Group.t list -> t list -> (Group.t * t list) list * t list

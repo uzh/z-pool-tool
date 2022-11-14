@@ -1,5 +1,5 @@
 open Tyxml.Html
-open Component
+open Component.Input
 module Message = Pool_common.Message
 
 let login Pool_context.{ language; csrf; _ } =

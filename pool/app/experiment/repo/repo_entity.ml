@@ -149,7 +149,7 @@ let t =
                (tup2
                   Description.t
                   (tup2
-                     string
+                     (option Filter.Repo.t)
                      (tup2
                         DirectRegistrationDisabled.t
                         (tup2
@@ -177,12 +177,13 @@ let t =
 module Write = struct
   let t =
     let encode (m : t) =
+      let filter = m.filter |> CCOption.map (fun filter -> filter.Filter.id) in
       Ok
         ( m.id
         , ( Title.value m.title
           , ( PublicTitle.value m.public_title
             , ( Description.value m.description
-              , ( m.filter
+              , ( filter
                 , ( m.direct_registration_disabled
                   , ( m.registration_disabled
                     , ( m.allow_uninvited_signup
@@ -206,7 +207,7 @@ module Write = struct
                  (tup2
                     Description.t
                     (tup2
-                       string
+                       (option RepoId.t)
                        (tup2
                           DirectRegistrationDisabled.t
                           (tup2

@@ -1,4 +1,5 @@
 module Field = Pool_common.Message.Field
+open Component.Input
 
 let signup
   terms
@@ -21,7 +22,7 @@ let signup
            try Some (read field) with
            | _ -> None)
     in
-    Component.selector language field show all selected ~flash_fetcher ()
+    selector language field show all selected ~flash_fetcher ()
   in
   let open Component in
   div
@@ -29,7 +30,7 @@ let signup
     [ h1 (txt_to_string Pool_common.I18n.SignUpTitle)
     ; form
         ~a:[ a_action submit_url; a_method `Post; a_class [ "stack" ] ]
-        [ Component.csrf_element csrf ()
+        [ csrf_element csrf ()
         ; input_element language `Email Field.Email ~flash_fetcher
         ; input_element language `Text Field.Firstname ~flash_fetcher
         ; input_element language `Text Field.Lastname ~flash_fetcher
@@ -37,12 +38,12 @@ let signup
         ; channel_select
         ; div
             [ p [ txt (Settings.TermsAndConditions.Terms.value terms) ]
-            ; Component.checkbox_element
+            ; checkbox_element
                 language
                 Pool_common.Message.Field.TermsAccepted
                 ~required:true
             ]
-        ; Component.submit_element language Pool_common.Message.SignUp ()
+        ; submit_element language Pool_common.Message.SignUp ()
         ]
     ]
 ;;

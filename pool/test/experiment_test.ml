@@ -10,7 +10,69 @@ module Data = struct
   let title = "New experiment"
   let public_title = "public_experiment_title"
   let description = "Description"
-  let filter = "1=1"
+
+  module Filter = struct
+    open Filter
+
+    let single_filter : filter =
+      Pred
+        (Predicate.create
+           Key.(Hardcoded Email)
+           Operator.Equal
+           (Single (Str "Foo")))
+    ;;
+
+    let or_filter : filter =
+      Or
+        [ Pred
+            (Predicate.create
+               Key.(Hardcoded Name)
+               Operator.Equal
+               (Single (Str "Bar")))
+        ; single_filter
+        ]
+    ;;
+
+    let list_filter : filter =
+      Pred
+        (Predicate.create
+           Key.(Hardcoded Name)
+           Operator.ContainsNone
+           (Lst [ Str "foo"; Str "bar" ]))
+    ;;
+
+    let and_filter : filter = And [ or_filter; list_filter ]
+    let t = create and_filter
+  end
+
+  let filter = Some Filter.t
+
+  let experiment =
+    let open CCResult in
+    let id = Pool_common.Id.create () in
+    let* title = title |> Experiment.Title.create in
+    let* public_title = public_title |> Experiment.PublicTitle.create in
+    let* description = description |> Experiment.Description.create in
+    Ok
+      Experiment.
+        { id
+        ; title
+        ; public_title
+        ; description
+        ; filter
+        ; direct_registration_disabled =
+            false |> DirectRegistrationDisabled.create
+        ; registration_disabled = false |> RegistrationDisabled.create
+        ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
+        ; experiment_type = Some Pool_common.ExperimentType.Lab
+        ; invitation_template = None
+        ; session_reminder_subject = None
+        ; session_reminder_text = None
+        ; session_reminder_lead_time = None
+        ; created_at = Common.CreatedAt.create ()
+        ; updated_at = Common.UpdatedAt.create ()
+        }
+  ;;
 end
 
 let database_label = Test_utils.Data.database_label

@@ -3,6 +3,7 @@
  (libraries
   assignment
   contact
+  component
   cqrs_command
   email
   http_utils

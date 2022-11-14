@@ -3,6 +3,7 @@
  (libraries
   custom_field
   email
+  filter
   pool_common
   pool_user
   ptime

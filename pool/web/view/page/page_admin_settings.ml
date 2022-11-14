@@ -1,5 +1,5 @@
 open Tyxml.Html
-open Component
+open Component.Input
 module Message = Pool_common.Message
 
 let show
@@ -75,7 +75,7 @@ let show
           ]
       ; form
           ~a:(form_attrs `UpdateTenantLanguages)
-          ([ Component.csrf_element csrf (); field_elements ]
+          ([ csrf_element csrf (); field_elements ]
           @ [ submit_element language Message.(Update None) () ])
       ]
   in
@@ -86,10 +86,10 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateTenantEmailSuffixes)
-              ([ Component.csrf_element csrf () ]
+              ([ csrf_element csrf () ]
               @ CCList.map
                   (fun suffix ->
-                    Component.input_element
+                    input_element
                       language
                       `Text
                       Message.Field.EmailSuffix
@@ -99,8 +99,8 @@ let show
               @ [ submit_element language Message.(Update None) () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
-              [ Component.csrf_element csrf ()
-              ; Component.input_element
+              [ csrf_element csrf ()
+              ; input_element
                   language
                   `Text
                   Message.Field.EmailSuffix
@@ -124,7 +124,7 @@ let show
                                        language
                                        I18n.DeleteEmailSuffix)
                                ]
-                             [ Component.csrf_element csrf ()
+                             [ csrf_element csrf ()
                              ; input
                                  ~a:
                                    [ a_input_type `Hidden
@@ -152,8 +152,8 @@ let show
       [ h2 [ txt "Contact Email" ]
       ; form
           ~a:(form_attrs `UpdateTenantContactEmail)
-          [ Component.csrf_element csrf ()
-          ; Component.input_element
+          [ csrf_element csrf ()
+          ; input_element
               language
               `Text
               Message.Field.ContactEmail
@@ -171,8 +171,8 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateInactiveUserDisableAfter)
-              [ Component.csrf_element csrf ()
-              ; Component.input_element
+              [ csrf_element csrf ()
+              ; input_element
                   ~help:Pool_common.I18n.NumberIsWeeksHint
                   ~required:true
                   language
@@ -186,8 +186,8 @@ let show
               ]
           ; form
               ~a:(form_attrs `UpdateInactiveUserWarning)
-              [ Component.csrf_element csrf ()
-              ; Component.input_element
+              [ csrf_element csrf ()
+              ; input_element
                   ~required:true
                   ~help:Pool_common.I18n.NumberIsDaysHint
                   language
@@ -216,8 +216,8 @@ let show
           ~a:[ a_class [ "stack" ] ]
           [ form
               ~a:(form_attrs `UpdateTriggerProfileUpdateAfter)
-              [ Component.csrf_element csrf ()
-              ; Component.input_element
+              [ csrf_element csrf ()
+              ; input_element
                   ~help:Pool_common.I18n.NumberIsDaysHint
                   ~required:true
                   language
@@ -243,7 +243,7 @@ let show
             | Language.En -> Message.Field.LanguageEn
             | Language.De -> Message.Field.LanguageDe
           in
-          Component.textarea_element
+          textarea_element
             language
             field
             ~value:
@@ -261,7 +261,7 @@ let show
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Terms and conditions" ]
       ; form
           ~a:(form_attrs `UpdateTermsAndConditions)
-          ([ Component.csrf_element csrf () ]
+          ([ csrf_element csrf () ]
           @ terms_and_conditions_textareas
           @ [ submit_element language Message.(Update None) () ])
       ]
@@ -271,8 +271,8 @@ let show
       [ h2 [ txt "Default reminder lead time" ]
       ; form
           ~a:(form_attrs `UpdateDefaultLeadTime)
-          [ Component.csrf_element csrf ()
-          ; Component.flatpicker_element
+          [ csrf_element csrf ()
+          ; flatpicker_element
               language
               `Time
               Message.Field.LeadTime

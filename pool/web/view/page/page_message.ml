@@ -12,7 +12,7 @@ let match_message message classname =
   | txts -> concat_messages txts classname
 ;;
 
-let create message lang () =
+let create ?(attributes = []) message lang () =
   let open Http_utils.Message in
   let notification_class = "notification" in
   match message with
@@ -31,6 +31,6 @@ let create message lang () =
       match_message (get_error message lang) [ notification_class; "error" ]
     in
     div
-      ~a:[ a_class [ "notification-fixed" ] ]
+      ~a:([ a_class [ "notification-fixed" ] ] @ attributes)
       [ success; info; warning; error ]
 ;;

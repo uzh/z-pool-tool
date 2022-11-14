@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module Partials = Component.Partials
 module Message = Pool_common.Message
 module Url = Page_admin_custom_fields.Url
 

@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component
+open Component.Input
+module HttpUtils = Http_utils
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 

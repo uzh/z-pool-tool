@@ -8,6 +8,8 @@ module Field = struct
     Format.pp_print_string fmt name
   ;;
 
+  (* TODO: Remove unused (Birthday) *)
+
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -70,6 +72,7 @@ module Field = struct
     | FileMimeType [@name "file_mime_type"] [@printer go "file_mime_type"]
     | Filename [@name "filename"] [@printer go "filename"]
     | Filesize [@name "filesize"] [@printer go "filesize"]
+    | Filter [@name "filter"] [@printer go "filter"]
     | Firstname [@name "firstname"] [@printer go "firstname"]
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]
@@ -122,6 +125,7 @@ module Field = struct
     | Participants [@name "participants"] [@printer go "participants"]
     | Participated [@name "participated"] [@printer go "participated"]
     | PartnerLogos [@name "partner_logos"] [@printer go "partner_logos"]
+    | Predicate [@name "predicate"] [@printer go "predicate"]
     | Password [@name "password"] [@printer go "password"]
     | PasswordConfirmation [@name "password_confirmation"]
         [@printer go "password_confirmation"]
@@ -178,6 +182,7 @@ module Field = struct
         [@printer go "trigger_profile_update_after"]
     | Url [@name "url"] [@printer go "url"]
     | User [@name "user"] [@printer go "user"]
+    | Value [@name "value"] [@printer go "value"]
     | Validation [@name "validation"] [@printer go "validation"]
     | Version [@name "version"] [@printer go "version"]
     | Virtual [@name "virtual"] [@printer go "virtual"]
@@ -220,6 +225,7 @@ type error =
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FieldRequiresCheckbox of (Field.t * Field.t)
+  | FilterNotCompatible of (Field.t * Field.t)
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t

@@ -46,8 +46,8 @@ module Partials = struct
                             (invitation.Invitation.id |> Pool_common.Id.value))
                        experiment.Experiment.id)
                 ]
-              [ csrf_element csrf ()
-              ; submit_element
+              [ Input.csrf_element csrf ()
+              ; Input.submit_element
                   language
                   Pool_common.Message.(Resend (Some Field.Invitation))
                   ()
@@ -61,46 +61,57 @@ module Partials = struct
   let send_invitation
     Pool_context.{ csrf; language; _ }
     experiment
+    filter
+    key_list
     filtered_contacts
     =
     let form_table =
       let rows =
-        CCList.map
-          (fun (contact : Contact.t) ->
-            let id = Contact.id contact |> Pool_common.Id.value in
-            [ div
-                [ input
-                    ~a:
-                      [ a_input_type `Checkbox
-                      ; a_name Pool_common.Message.Field.(Contacts |> array_key)
-                      ; a_id id
-                      ; a_value id
-                      ]
-                    ()
-                ; label ~a:[ a_label_for id ] [ txt (Contact.fullname contact) ]
-                ]
-            ])
-          filtered_contacts
+        if CCList.is_empty filtered_contacts
+        then p [ txt "No results found" ]
+        else
+          CCList.map
+            (fun (contact : Contact.t) ->
+              let id = Contact.id contact |> Pool_common.Id.value in
+              [ div
+                  [ input
+                      ~a:
+                        [ a_input_type `Checkbox
+                        ; a_name
+                            Pool_common.Message.Field.(Contacts |> array_key)
+                        ; a_id id
+                        ; a_value id
+                        ]
+                      ()
+                  ; label
+                      ~a:[ a_label_for id ]
+                      [ txt (Contact.fullname contact) ]
+                  ]
+              ])
+            filtered_contacts
+          |> Table.horizontal_table `Striped language
       in
-      Table.horizontal_table `Striped language rows
+      div
+        [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Filtered contacts" ]; rows ]
     in
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
+      [ h3
+          ~a:[ a_class [ "heading-3" ] ]
           [ txt
               Pool_common.(
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
+      ; Filter.filter_form csrf language experiment filter key_list
       ; form
           ~a:
             [ a_method `Post
             ; a_action (form_action experiment.Experiment.id)
             ; a_class [ "stack" ]
             ]
-          [ csrf_element csrf ()
+          [ Input.csrf_element csrf ()
           ; form_table
-          ; submit_element
+          ; Input.submit_element
               language
               Pool_common.Message.(Send (Some Field.Invitation))
               ~submit_type:`Success

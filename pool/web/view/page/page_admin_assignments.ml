@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component.Input
 
 module Partials = struct
   open Assignment
@@ -53,8 +54,8 @@ module Partials = struct
             let cancel assignment =
               form
                 ~a:[ a_action (action assignment); a_method `Post ]
-                [ Component.csrf_element csrf ()
-                ; Component.submit_element
+                [ csrf_element csrf ()
+                ; submit_element
                     language
                     (Pool_common.Message.Cancel None)
                     ~submit_type:`Error

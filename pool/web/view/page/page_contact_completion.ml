@@ -1,4 +1,5 @@
 open Tyxml.Html
+module Input = Component.Input
 module Message = Pool_common.Message
 
 let custom_field_to_input ?flash_fetcher language custom_field =
@@ -8,7 +9,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   let help = Public.to_common_hint language custom_field in
   let required = Public.required custom_field |> Required.value in
   let create input_type value =
-    Component.input_element
+    Input.input_element
       ?flash_fetcher
       ?value
       ?help
@@ -22,7 +23,7 @@ let custom_field_to_input ?flash_fetcher language custom_field =
     answer
     >|= (fun a -> a.Answer.value)
     |> fun value ->
-    Component.checkbox_element
+    Input.checkbox_element
       ~as_switch:true
       ~orientation:`Horizontal
       ?value
@@ -31,21 +32,21 @@ let custom_field_to_input ?flash_fetcher language custom_field =
   | Public.MultiSelect (_, options, answers) ->
     let selected = CCList.map (fun { Answer.value; _ } -> value) answers in
     let t =
-      Component.
+      Input.
         { options
         ; selected
         ; to_label = SelectOption.name language
         ; to_value = SelectOption.show_id
         }
     in
-    Component.multi_select language t field ()
+    Input.multi_select language t field ()
   | Public.Number (_, answer) ->
     answer >|= (fun a -> a.Answer.value |> CCInt.to_string) |> create `Number
   | Public.Text (_, answer) ->
     answer >|= (fun a -> a.Answer.value) |> create `Text
   | Public.Select (_, options, answer) ->
     let value = answer >|= fun a -> a.Answer.value in
-    Component.selector
+    Input.selector
       ?flash_fetcher
       ?help
       ~required
@@ -86,8 +87,8 @@ let form
                  "/user/completion")
           ]
         Component.(
-          (csrf_element csrf () :: custom_fields_form)
-          @ [ submit_element
+          (Input.csrf_element csrf () :: custom_fields_form)
+          @ [ Input.submit_element
                 language
                 Message.(Save None)
                 ~submit_type:`Primary
