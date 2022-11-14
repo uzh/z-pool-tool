@@ -145,16 +145,21 @@ let filter_to_sql dyn (filter : Filter.filter) =
        | Option id -> add Custom_field.Repo.SelectOption.Id.t id)
     , "?" )
   in
-  let rec filter_sql (dyn, sql) filter =
+  let open CCResult in
+  let rec filter_sql (dyn, sql) filter : (Dynparam.t * 'a, 'b) result =
     let of_list (dyn, sql) filters operator =
-      let dyn, lst_sql =
+      let query =
         CCList.fold_left
-          (fun (dyn, lst_sql) filter ->
-            let dyn, new_sql = filter_sql (dyn, sql) filter in
-            dyn, lst_sql @ [ new_sql ])
-          (dyn, [])
+          (fun res filter ->
+            res
+            >>= fun (dyn, lst_sql) ->
+            filter_sql (dyn, sql) filter
+            >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
+          (Ok (dyn, []))
           filters
       in
+      query
+      >|= fun (dyn, lst_sql) ->
       ( dyn
       , lst_sql
         |> CCString.concat (Format.asprintf " %s " operator)
@@ -163,15 +168,15 @@ let filter_to_sql dyn (filter : Filter.filter) =
     match filter with
     | And filters ->
       if CCList.is_empty filters
-      then dyn, sql
+      then Ok (dyn, sql)
       else of_list (dyn, sql) filters "AND"
     | Or filters ->
       if CCList.is_empty filters
-      then dyn, sql
+      then Ok (dyn, sql)
       else of_list (dyn, sql) filters "OR"
     | Not f ->
-      let dyn, sql = filter_sql (dyn, sql) f in
-      dyn, Format.asprintf "NOT %s" sql
+      filter_sql (dyn, sql) f
+      >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
     | Pred { Predicate.key; operator; value } ->
       let add_single_value dyn value =
         match key with
@@ -210,15 +215,16 @@ let filter_to_sql dyn (filter : Filter.filter) =
       (match value with
        | Single value ->
          (match key with
-          | Key.Hardcoded _ -> add_single_value dyn value
+          | Key.Hardcoded _ -> add_single_value dyn value |> CCResult.pure
           | Key.CustomField _ ->
             add_single_value dyn value
-            |> fun (dyn, sql) -> dyn, Format.asprintf "EXISTS (%s)" sql)
+            |> fun (dyn, sql) ->
+            (dyn, Format.asprintf "EXISTS (%s)" sql) |> CCResult.pure)
        | Lst values ->
          (match key with
           | Key.Hardcoded _ ->
-            failwith
-              "Invalid key" (* TODO: should it fail or just be ignored? *)
+            Error
+              Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
           | Key.CustomField _ ->
             let dyn, subqueries =
               CCList.fold_left
@@ -234,6 +240,7 @@ let filter_to_sql dyn (filter : Filter.filter) =
               , subqueries
                 |> CCList.map (Format.asprintf "%s (%s)" existence)
                 |> CCString.concat (Format.asprintf " %s " operator) )
+              |> CCResult.pure
             in
             (match operator with
              | ContainsAll -> build_query "EXISTS" "AND"
@@ -245,12 +252,9 @@ let filter_to_sql dyn (filter : Filter.filter) =
              | GreaterEqual
              | Equal
              | NotEqual
-             | Like ->
-               failwith "Invalid operator"
-               (* TODO: should it fail or just be ignored? *))))
+             | Like -> Error Pool_common.Message.(Invalid Field.Operator))))
   in
-  let dyn, sql = filter_sql (dyn, "") filter in
-  dyn, sql
+  filter_sql (dyn, "") filter
 ;;
 
 let filtered_base_condition =
@@ -282,17 +286,21 @@ let filtered_base_condition =
 ;;
 
 let filtered_params ?group_by experiment_id filter =
+  let open CCResult in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
     Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
   in
-  let dyn, sql =
+  let query =
     match filter with
-    | None -> id_param, filtered_base_condition
+    | None -> Ok (id_param, filtered_base_condition)
     | Some filter ->
-      let dyn, sql = filter_to_sql id_param filter in
+      filter_to_sql id_param filter
+      >|= fun (dyn, sql) ->
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
   in
+  query
+  >|= fun (dyn, sql) ->
   ( dyn
   , match group_by with
     | None -> sql
@@ -300,24 +308,33 @@ let filtered_params ?group_by experiment_id filter =
 ;;
 
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
-  let dyn, sql =
-    filtered_params ~group_by:"pool_contacts.user_uuid" experiment_id filter
-  in
+  let open Lwt_result.Infix in
+  filtered_params ~group_by:"pool_contacts.user_uuid" experiment_id filter
+  |> Lwt_result.lift
+  >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request =
     sql |> find_filtered_request_sql ?limit |> pt ->* Repo_model.t
   in
-  Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  let%lwt contacts =
+    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
+  in
+  Lwt_result.return contacts
 ;;
 
 let count_filtered pool experiment_id filter =
-  let dyn, sql = filtered_params experiment_id filter in
+  let open Lwt_result.Infix in
+  filtered_params experiment_id filter
+  |> Lwt_result.lift
+  >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request = sql |> count_filtered_request_sql |> pt ->! Caqti_type.int in
-  Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
-  |> Lwt.map (CCOption.value ~default:0)
+  let%lwt count =
+    Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
+  in
+  Lwt_result.return (count |> CCOption.value ~default:0)
 ;;
 
 let find_multiple_request ids =

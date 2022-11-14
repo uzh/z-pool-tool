@@ -54,6 +54,7 @@ let create_invitations_repo _ () =
               pool
               mailing
               (Mailing.Rate.value rate)
+            ||> CCResult.get_exn
           in
           let events =
             { mailing; experiment; contacts; i18n_templates }

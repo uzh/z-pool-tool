@@ -39,7 +39,7 @@ let index req =
          |> CCOption.map
               Filter.(fun filter -> filter.filter |> t_to_human key_list)
        in
-       let%lwt filtered_contacts =
+       let* filtered_contacts =
          Contact.find_filtered
            tenant_db
            experiment.Experiment.id

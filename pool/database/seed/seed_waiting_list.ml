@@ -18,6 +18,7 @@ let waiting_list pool =
             pool
             experiment.Experiment.id
             (experiment |> Experiment.filter_predicate)
+          |> Lwt.map CCResult.get_exn
         in
         let n = CCList.length filtered_contacts / 2 in
         let contact = CCList.nth filtered_contacts n in

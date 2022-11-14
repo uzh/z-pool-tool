@@ -104,6 +104,7 @@ let i18n_templates pool { Experiment.invitation_template; _ } languages =
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
   let%lwt ({ Experiment.id; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
     ||> get_or_failwith
@@ -112,7 +113,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
     distribution
     |> CCOption.map_or ~default:"" Mailing.Distribution.get_order_element
   in
-  let%lwt contacts =
+  let* contacts =
     Contact.find_filtered
       ~order_by
       ~limit:(max limit 0)
@@ -123,7 +124,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let%lwt i18n_templates =
     i18n_templates pool experiment Pool_common.Language.all
   in
-  (experiment, contacts, i18n_templates) |> Lwt.return
+  (experiment, contacts, i18n_templates) |> Lwt_result.return
 ;;
 
 let calculate_mailing_limits ?interval pool_based_mailings =
@@ -197,15 +198,20 @@ let match_invitations ?interval pools =
         None
     in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
-      limited_mailings
-      |> Lwt_list.map_s (fun (mailing, limit) ->
-           let%lwt experiment, contacts, i18n_templates =
+      let%lwt events =
+        limited_mailings
+        |> Lwt_list.map_s (fun (mailing, limit) ->
              find_contacts_by_mailing pool mailing limit
-           in
-           { mailing; experiment; contacts; i18n_templates } |> Lwt.return)
-      ||> handle
+             >|= fun (experiment, contacts, i18n_templates) ->
+             { mailing; experiment; contacts; i18n_templates })
+        |> Lwt.map CCList.all_ok
+      in
+      let open CCResult in
+      events
+      >>= handle
       >|= (fun events -> pool, events)
-      ||> ok_or_log_error)
+      |> ok_or_log_error
+      |> Lwt.return)
   in
   let handle_events =
     Lwt_list.iter_s (fun (pool, events) ->

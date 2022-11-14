@@ -213,7 +213,6 @@ let count_contacts req =
          |> Lwt_result.lift
        in
        Contact.count_filtered tenant_db experiment.Experiment.id filter
-       |> Lwt_result.ok
   in
   let status, (json : Yojson.Safe.t) =
     match result with
