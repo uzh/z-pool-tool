@@ -134,6 +134,13 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
+val find_all_components : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_component
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
 type event =
   | Created of t
   | Updated of t

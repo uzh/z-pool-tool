@@ -34,11 +34,6 @@ let index req =
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt key_list = Filter.all_keys tenant_db in
-       let filter =
-         experiment.Experiment.filter
-         |> CCOption.map
-              Filter.(fun filter -> filter.filter |> t_to_human key_list)
-       in
        let* filtered_contacts =
          Contact.find_filtered
            tenant_db
@@ -47,7 +42,6 @@ let index req =
        in
        Page.Admin.Experiments.invitations
          experiment
-         filter
          key_list
          filtered_contacts
          context

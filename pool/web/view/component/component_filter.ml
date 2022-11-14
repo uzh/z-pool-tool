@@ -351,16 +351,35 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
     @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
 
-let filter_form csrf language experiment filter key_list =
-  let action =
-    Format.asprintf
-      "/admin/experiments/%s/filter/create"
-      (Pool_common.Id.value experiment.Experiment.id)
+type form_param =
+  | ExperimentParam of Experiment.t
+  | FilterParam of Filter.t option
+
+let filter_form csrf language param key_list =
+  let filter, action =
+    let open Experiment in
+    match param with
+    | ExperimentParam experiment ->
+      ( experiment.filter
+      , Format.asprintf
+          "/admin/experiments/%s/filter/create"
+          (Pool_common.Id.value experiment.Experiment.id) )
+    | FilterParam filter ->
+      ( filter
+      , (match filter with
+         | Some filter ->
+           Format.asprintf "/admin/filter/%s" (filter.id |> Pool_common.Id.value)
+         | None -> "/admin/filter") )
   in
-  let predicates = predicate_form language filter key_list () in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ div
+  let filter =
+    filter
+    |> CCOption.map Filter.(fun filter -> filter.filter |> t_to_human key_list)
+  in
+  let result_counter =
+    match param with
+    | FilterParam _ -> txt ""
+    | ExperimentParam experiment ->
+      div
         [ txt "Nr of contacts: "
         ; span
             ~a:
@@ -371,6 +390,11 @@ let filter_form csrf language experiment filter key_list =
               ]
             []
         ]
+  in
+  let predicates = predicate_form language filter key_list () in
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ result_counter
     ; div
         ~a:
           [ a_user_data "action" action

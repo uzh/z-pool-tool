@@ -1,5 +1,8 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Field = Pool_common.Message.Field
+
+let create_layout req = General.create_tenant_layout req
 
 let find_in_params urlencoded field =
   CCList.assoc_opt
@@ -12,7 +15,7 @@ let find_in_params urlencoded field =
 
 let find_identifier urlencoded =
   let open CCResult in
-  find_in_params urlencoded Pool_common.Message.Field.Id
+  find_in_params urlencoded Field.Id
   >>= fun str ->
   str
   |> CCString.split ~by:"-"
@@ -24,14 +27,50 @@ let find_identifier urlencoded =
   |> all_ok
 ;;
 
-let create req =
+let get_id req field encode =
+  Sihl.Web.Router.param req @@ Field.show field |> encode
+;;
+
+let index req =
+  let open Utils.Lwt_result.Infix in
+  let error_path = Format.asprintf "/admin/filter" in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    Lwt_result.map_error (fun err -> err, error_path)
+    @@ let%lwt filter_list = Filter.find_all_components tenant_db () in
+       Page.Admin.Filter.index context filter_list
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let form is_edit req =
+  let open Utils.Lwt_result.Infix in
+  let result ({ Pool_context.tenant_db; _ } as context) =
+    let open Lwt_result.Syntax in
+    Lwt_result.map_error (fun err -> err, Format.asprintf "/admin/filter")
+    @@ let* filter =
+         if is_edit
+         then
+           get_id req Field.Filter Pool_common.Id.of_string
+           |> Filter.find_component tenant_db
+           >|= CCOption.pure
+         else Lwt.return_none |> Lwt_result.ok
+       in
+       let%lwt key_list = Filter.all_keys tenant_db in
+       Page.Admin.Filter.edit context filter key_list
+       |> create_layout req context
+       >|= Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let edit = form true
+let new_form = form false
+
+let create ?id req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
-  let experiment_id =
-    let open Pool_common.Message.Field in
-    let open HttpUtils in
-    get_field_router_param req Experiment |> Pool_common.Id.of_string
-  in
   let language =
     let open CCResult in
     Pool_context.find req
@@ -43,8 +82,7 @@ let create req =
       Pool_context.find req |> CCResult.get_exn
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* experiment = Experiment.find tenant_db experiment_id in
-    let* filter =
+    let* filter_query =
       let open CCResult in
       find_in_params urlencoded Pool_common.Message.Field.Filter
       >>= Filter.filter_of_string
@@ -52,8 +90,27 @@ let create req =
     in
     let%lwt key_list = Filter.all_keys tenant_db in
     let events =
-      let open Cqrs_command.Experiment_command.UpdateFilter in
-      handle experiment key_list filter |> Lwt_result.lift
+      let open Pool_common.Message in
+      let open HttpUtils in
+      match id with
+      | Some `Experiment ->
+        let experiment_id =
+          get_field_router_param req Field.Experiment
+          |> Pool_common.Id.of_string
+        in
+        let* experiment = Experiment.find tenant_db experiment_id in
+        let open Cqrs_command.Experiment_command.UpdateFilter in
+        handle experiment key_list filter_query |> Lwt_result.lift
+      | Some `Filter ->
+        let filter_id =
+          get_field_router_param req Field.Filter |> Pool_common.Id.of_string
+        in
+        let* filter = Filter.find_component tenant_db filter_id in
+        let open Cqrs_command.Filter_command.Update in
+        handle key_list filter filter_query |> Lwt_result.lift
+      | None ->
+        let open Cqrs_command.Filter_command.Create in
+        handle key_list filter_query |> Lwt_result.lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -78,6 +135,10 @@ let create req =
   |> HttpUtils.multi_html_to_plain_text_response ~status
   |> Lwt.return
 ;;
+
+let create_for_experiment req = create ~id:`Experiment req
+let create_template req = create req
+let update_template req = create ~id:`Filter req
 
 let toggle_predicate_type req =
   let open Lwt_result.Syntax in

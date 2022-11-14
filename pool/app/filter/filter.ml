@@ -2,6 +2,8 @@ include Entity
 include Event
 
 let find = Repo.find
+let find_all_components = Repo.find_all_components
+let find_component = Repo.find_component
 
 module Human = struct
   include Entity_human

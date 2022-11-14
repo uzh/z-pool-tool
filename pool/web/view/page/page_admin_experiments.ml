@@ -462,7 +462,6 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
 
 let invitations
   experiment
-  filter
   key_list
   filtered_contacts
   (Pool_context.{ language; _ } as context)
@@ -487,7 +486,6 @@ let invitations
       ; Page_admin_invitations.Partials.send_invitation
           context
           experiment
-          filter
           key_list
           filtered_contacts
       ]

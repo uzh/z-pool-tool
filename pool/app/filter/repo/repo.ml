@@ -39,6 +39,45 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
+  let component_base_query =
+    {sql|
+    LEFT JOIN pool_experiments
+    ON pool_filter.uuid = pool_experiments.filter_uuid
+    WHERE pool_experiments.filter_uuid IS NULL
+   |sql}
+  ;;
+
+  let find_component_request =
+    let open Caqti_request.Infix in
+    Format.asprintf
+      "%s AND pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))"
+      component_base_query
+    |> select_filter_sql
+    |> Caqti_type.string ->! Repo_entity.t
+  ;;
+
+  let find_component pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      find_component_request
+      (id |> Pool_common.Id.value)
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+  ;;
+
+  let find_all_components_request =
+    let open Caqti_request.Infix in
+    component_base_query
+    |> select_filter_sql
+    |> Caqti_type.unit ->* Repo_entity.t
+  ;;
+
+  let find_all_components pool =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_all_components_request
+  ;;
+
   let insert_sql =
     {sql|
       INSERT INTO pool_filter (
@@ -79,5 +118,7 @@ module Sql = struct
 end
 
 let find = Sql.find
+let find_all_components = Sql.find_all_components
+let find_component = Sql.find_component
 let insert = Sql.insert
 let update = Sql.update

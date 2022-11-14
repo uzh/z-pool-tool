@@ -44,21 +44,23 @@ const addRequiredError = (elm) => {
 // Should this update every time, the filter gets adjusted but not safed?
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
-    const id = target.dataset.experimentId;
-    try {
-        const response = await fetch(`/admin/experiments/${id}/contact-count`);
-        const data = await response.json();
-        if (!response.ok) {
-            throw (data.message || response.statusText || "An Error occurred")
-        }
-        if (response.status < 200 || response.status > 300) {
-            notifyUser("error", data.message)
-        } else {
-            target.innerHTML = data.count
-        }
-    } catch (error) {
-        notifyUser("error", error)
-    };
+    if (target) {
+        const id = target.dataset.experimentId;
+        try {
+            const response = await fetch(`/admin/experiments/${id}/contact-count`);
+            const data = await response.json();
+            if (!response.ok) {
+                throw (data.message || response.statusText || "An Error occurred")
+            }
+            if (response.status < 200 || response.status > 300) {
+                notifyUser("error", data.message)
+            } else {
+                target.innerHTML = data.count
+            }
+        } catch (error) {
+            notifyUser("error", error)
+        };
+    }
 }
 
 const predicateToJson = (outerPredicate, allowEmpty = false) => {
