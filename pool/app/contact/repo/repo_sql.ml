@@ -132,7 +132,7 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let filter_to_sql dyn (filter : Filter.filter) =
+let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
   let open Filter in
   let add_value_to_params value dyn =
     let add c v = Dynparam.add c v dyn in
@@ -176,6 +176,11 @@ let filter_to_sql dyn (filter : Filter.filter) =
     | Not f ->
       filter_sql (dyn, sql) f
       >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
+    | SubFilter id ->
+      subfilter_list
+      |> CCList.find_opt (fun subfilter -> Pool_common.Id.equal subfilter.id id)
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Subfilter)
+      >>= fun filter -> filter_sql (dyn, sql) filter.filter
     | Pred { Predicate.key; operator; value } ->
       let add_single_value dyn value =
         match key with
@@ -284,7 +289,7 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filtered_params ?group_by experiment_id filter =
+let filtered_params ?group_by subfilter_list experiment_id filter =
   let open CCResult in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
@@ -294,7 +299,7 @@ let filtered_params ?group_by experiment_id filter =
     match filter with
     | None -> Ok (id_param, filtered_base_condition)
     | Some filter ->
-      filter_to_sql id_param filter
+      filter_to_sql subfilter_list id_param filter
       >|= fun (dyn, sql) ->
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
   in
@@ -308,7 +313,16 @@ let filtered_params ?group_by experiment_id filter =
 
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   let open Lwt_result.Infix in
-  filtered_params ~group_by:"pool_contacts.user_uuid" experiment_id filter
+  let%lwt subfilter_list =
+    match filter with
+    | None -> Lwt.return []
+    | Some filter -> Filter.find_subfilters_of_filter pool filter
+  in
+  filtered_params
+    subfilter_list
+    ~group_by:"pool_contacts.user_uuid"
+    experiment_id
+    filter
   |> Lwt_result.lift
   >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in
@@ -324,7 +338,12 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
 
 let count_filtered pool experiment_id filter =
   let open Lwt_result.Infix in
-  filtered_params experiment_id filter
+  let%lwt subfilter_list =
+    match filter with
+    | None -> Lwt.return []
+    | Some filter -> Filter.find_subfilters_of_filter pool filter
+  in
+  filtered_params subfilter_list experiment_id filter
   |> Lwt_result.lift
   >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in

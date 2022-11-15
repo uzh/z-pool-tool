@@ -90,6 +90,7 @@ val find_multiple
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
+(* TODO: pass Filter.t option *)
 val find_filtered
   :  Pool_database.Label.t
   -> ?order_by:string

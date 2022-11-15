@@ -68,6 +68,7 @@ module Sql = struct
             SUBSTR(HEX(pool_filter.uuid), 21)
           )),
           pool_filter.filter,
+          pool_filter.title,
           pool_filter.created_at,
           pool_filter.updated_at,
           pool_experiments.direct_registration_disabled,

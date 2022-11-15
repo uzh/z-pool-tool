@@ -62,6 +62,7 @@ module Partials = struct
     Pool_context.{ csrf; language; _ }
     experiment
     key_list
+    subfilter_list
     filtered_contacts
     =
     let form_table =
@@ -101,7 +102,13 @@ module Partials = struct
                 Message.(Send (Some Field.Invitation))
                 |> Utils.control_to_string language)
           ]
-      ; Filter.(filter_form csrf language (ExperimentParam experiment) key_list)
+      ; Filter.(
+          filter_form
+            csrf
+            language
+            (ExperimentParam experiment)
+            key_list
+            subfilter_list)
       ; form
           ~a:
             [ a_method `Post

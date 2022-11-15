@@ -42,7 +42,7 @@ module Data = struct
     ;;
 
     let and_filter : filter = And [ or_filter; list_filter ]
-    let t = create and_filter
+    let t = create None and_filter
   end
 
   let filter = Some Filter.t

@@ -278,7 +278,14 @@ let add_predicate_btn identifier =
     ]
 ;;
 
-let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
+let rec predicate_form
+  language
+  filter
+  key_list
+  subfilter_list
+  ?(identifier = [ 0 ])
+  ()
+  =
   let filter = CCOption.value ~default:(Filter.Human.init ()) filter in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
@@ -288,6 +295,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
     | Or _ -> Utils.Or
     | Not _ -> Utils.Not
     | Pred _ -> Utils.Pred
+    | SubFilter _ -> Utils.SubFilter
   in
   let delete_button () =
     div
@@ -307,6 +315,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
                language
                filter
                key_list
+               subfilter_list
                ~identifier:(identifier @ [ i ])
                ())
            filters
@@ -316,6 +325,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
            language
            (Some filter)
            key_list
+           subfilter_list
            ~identifier:(identifier @ [ 0 ])
            ()
          |> CCList.pure
@@ -330,6 +340,27 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
            ?key
            ?operator
            ?value
+           ()
+         |> CCList.pure
+       | SubFilter id ->
+         let selected =
+           CCOption.bind id (fun id ->
+             subfilter_list
+             |> CCList.find_opt (fun filter ->
+                  Pool_common.Id.equal filter.id id))
+         in
+         Component_input.selector
+           ~add_empty:true
+           ~option_formatter:(fun f ->
+             f.title
+             |> CCOption.map_or
+                  ~default:(f.id |> Pool_common.Id.value)
+                  Title.value)
+           language
+           Pool_common.Message.Field.Subfilter
+           (fun f -> f.id |> Pool_common.Id.value)
+           subfilter_list
+           selected
            ()
          |> CCList.pure)
   in
@@ -355,7 +386,7 @@ type form_param =
   | ExperimentParam of Experiment.t
   | FilterParam of Filter.t option
 
-let filter_form csrf language param key_list =
+let filter_form csrf language param key_list subfilter_list =
   let filter, action =
     let open Experiment in
     match param with
@@ -371,9 +402,11 @@ let filter_form csrf language param key_list =
            Format.asprintf "/admin/filter/%s" (filter.id |> Pool_common.Id.value)
          | None -> "/admin/filter") )
   in
-  let filter =
+  let filter_query =
     filter
-    |> CCOption.map Filter.(fun filter -> filter.filter |> t_to_human key_list)
+    |> CCOption.map
+         Filter.(
+           fun filter -> filter.filter |> t_to_human key_list subfilter_list)
   in
   let result_counter =
     match param with
@@ -391,18 +424,44 @@ let filter_form csrf language param key_list =
             []
         ]
   in
-  let predicates = predicate_form language filter key_list () in
+  let predicates =
+    predicate_form language filter_query key_list subfilter_list ()
+  in
+  let title_input, _ =
+    match param with
+    | FilterParam _ ->
+      let open CCOption.Infix in
+      let open Pool_common.Message in
+      ( Component_input.input_element
+          ?value:(filter >>= fun filter -> filter.title >|= Title.value)
+          ~required:true
+          language
+          `Text
+          Field.Title
+      , [ a_user_data "hx-params" Field.(show Title) ] )
+    | ExperimentParam _ -> txt "", []
+  in
+  let filter_id =
+    (match param with
+     | ExperimentParam experiment ->
+       experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
+     | FilterParam f -> f |> CCOption.map (fun f -> f.Filter.id))
+    |> CCOption.map_or ~default:[] (fun id ->
+         [ a_user_data "filter-id" (Pool_common.Id.value id) ])
+  in
   div
     ~a:[ a_class [ "stack" ] ]
     [ result_counter
     ; div
         ~a:
-          [ a_user_data "action" action
-          ; a_id "filter-form"
-          ; a_class [ "stack" ]
-          ]
+          ([ a_user_data "action" action
+           ; a_id "filter-form"
+           ; a_class [ "stack" ]
+           ]
+          @ filter_id)
         [ div ~a:[ a_id notification_id ] []
         ; Component_input.csrf_element csrf ()
+        ; title_input
         ; predicates
         ; Component_input.submit_element
             language

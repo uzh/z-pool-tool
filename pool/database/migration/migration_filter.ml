@@ -14,6 +14,18 @@ let create_filter_table =
     |sql}
 ;;
 
+let add_title_to_filter =
+  Sihl.Database.Migration.create_step
+    ~label:"add title to filter"
+    {sql|
+      ALTER TABLE pool_filter
+        ADD COLUMN title varchar(255) AFTER filter
+    |sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "filter" |> add_step create_filter_table)
+  Sihl.Database.Migration.(
+    empty "filter"
+    |> add_step create_filter_table
+    |> add_step add_title_to_filter)
 ;;

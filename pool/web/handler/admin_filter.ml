@@ -36,7 +36,7 @@ let index req =
   let error_path = Format.asprintf "/admin/filter" in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt filter_list = Filter.find_all_components tenant_db () in
+    @@ let%lwt filter_list = Filter.find_all_subfilters tenant_db () in
        Page.Admin.Filter.index context filter_list
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
@@ -53,12 +53,18 @@ let form is_edit req =
          if is_edit
          then
            get_id req Field.Filter Pool_common.Id.of_string
-           |> Filter.find_component tenant_db
+           |> Filter.find_subfilter tenant_db
            >|= CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
        let%lwt key_list = Filter.all_keys tenant_db in
-       Page.Admin.Filter.edit context filter key_list
+       let%lwt subfilter_list =
+         Filter.find_all_subfilters
+           ?exclude:(filter |> CCOption.map (fun f -> f.Filter.id))
+           tenant_db
+           ()
+       in
+       Page.Admin.Filter.edit context filter key_list subfilter_list
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -68,7 +74,7 @@ let form is_edit req =
 let edit = form true
 let new_form = form false
 
-let create ?id req =
+let create ?model req =
   let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let language =
@@ -89,10 +95,15 @@ let create ?id req =
       |> Lwt_result.lift
     in
     let%lwt key_list = Filter.all_keys tenant_db in
+    let%lwt subfilter_list =
+      Filter.find_subfilters_of_filter tenant_db filter_query
+    in
     let events =
       let open Pool_common.Message in
       let open HttpUtils in
-      match id with
+      let lift = Lwt_result.lift in
+      let open CCFun.Infix in
+      match model with
       | Some `Experiment ->
         let experiment_id =
           get_field_router_param req Field.Experiment
@@ -100,17 +111,24 @@ let create ?id req =
         in
         let* experiment = Experiment.find tenant_db experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle experiment key_list filter_query |> Lwt_result.lift
+        handle experiment key_list subfilter_list filter_query
+        |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
         in
-        let* filter = Filter.find_component tenant_db filter_id in
+        let* filter = Filter.find_subfilter tenant_db filter_id in
         let open Cqrs_command.Filter_command.Update in
-        handle key_list filter filter_query |> Lwt_result.lift
+        urlencoded
+        |> decode
+        |> lift
+        >>= handle key_list subfilter_list filter filter_query %> lift
       | None ->
         let open Cqrs_command.Filter_command.Create in
-        handle key_list filter_query |> Lwt_result.lift
+        urlencoded
+        |> decode
+        |> lift
+        >>= handle key_list subfilter_list filter_query %> lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -118,27 +136,38 @@ let create ?id req =
     events |>> handle
   in
   let open Pool_common.Message in
-  (match result with
-   | Ok () -> 200, Collection.(set_success [ Created Field.Filter ] empty)
-   | Error err -> 400, Collection.(set_error [ err ] empty))
-  |> fun (status, message) ->
-  Page.Message.create
-    ~attributes:
-      Tyxml.Html.
-        [ a_user_data "hx-swap-oob" "true"
-        ; a_id Component.Filter.notification_id
-        ]
-    (CCOption.pure message)
-    language
-    ()
-  |> CCList.pure
-  |> HttpUtils.multi_html_to_plain_text_response ~status
-  |> Lwt.return
+  let htmx_notification (status, message) =
+    Page.Message.create
+      ~attributes:
+        Tyxml.Html.
+          [ a_user_data "hx-swap-oob" "true"
+          ; a_id Component.Filter.notification_id
+          ]
+      (CCOption.pure message)
+      language
+      ()
+    |> CCList.pure
+    |> HttpUtils.multi_html_to_plain_text_response ~status
+    |> Lwt.return
+  in
+  match result with
+  | Ok () ->
+    (match model with
+     | None ->
+       HttpUtils.htmx_redirect
+         "/admin/filter"
+         ~actions:[ Message.set ~success:[ Created Field.Filter ] ]
+         ()
+     | Some _ ->
+       (200, Collection.(set_success [ Updated Field.Filter ] empty))
+       |> htmx_notification)
+  | Error err ->
+    (400, Collection.(set_error [ err ] empty)) |> htmx_notification
 ;;
 
-let create_for_experiment req = create ~id:`Experiment req
+let create_for_experiment req = create ~model:`Experiment req
 let create_template req = create req
-let update_template req = create ~id:`Filter req
+let update_template req = create ~model:`Filter req
 
 let toggle_predicate_type req =
   let open Lwt_result.Syntax in
@@ -148,6 +177,18 @@ let toggle_predicate_type req =
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let%lwt key_list = Filter.all_keys tenant_db in
+    let%lwt subfilter_list =
+      let exclude =
+        let open CCOption in
+        CCList.assoc_opt
+          ~eq:CCString.equal
+          Pool_common.Message.Field.(show FilterId)
+          urlencoded
+        >>= CCList.head_opt
+        >|= Pool_common.Id.of_string
+      in
+      Filter.find_all_subfilters ?exclude tenant_db ()
+    in
     let* filter =
       let open CCResult in
       Lwt_result.lift
@@ -163,7 +204,13 @@ let toggle_predicate_type req =
     in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     Component.Filter.(
-      predicate_form language (Some filter) key_list ~identifier ())
+      predicate_form
+        language
+        (Some filter)
+        key_list
+        subfilter_list
+        ~identifier
+        ())
     |> Lwt_result.return
   in
   (match result with
@@ -215,6 +262,7 @@ let add_predicate req =
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let%lwt key_list = Filter.all_keys tenant_db in
+    let%lwt subfilter_list = Filter.find_all_subfilters tenant_db () in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
       match identifier with
@@ -224,7 +272,13 @@ let add_predicate req =
     in
     let predicate = Filter.Human.init () |> CCOption.pure in
     let filter_form =
-      Component.Filter.predicate_form language predicate key_list ~identifier ()
+      Component.Filter.predicate_form
+        language
+        predicate
+        key_list
+        subfilter_list
+        ~identifier
+        ()
     in
     let add_button =
       Component.Filter.add_predicate_btn (increment_identifier identifier)

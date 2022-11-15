@@ -4,6 +4,14 @@ module Helper = struct
   let value_string = "value"
 end
 
+module Title = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Title
+  let create = create field
+  let schema = schema ?validation:None field
+end
+
 let read of_yojson yojson =
   yojson
   |> Yojson.Safe.to_string
@@ -375,6 +383,8 @@ type filter =
   | Or of filter list [@printer print "or"] [@name "or"]
   | Not of filter [@printer print "not"] [@name "not"]
   | Pred of Predicate.t [@printer print "pred"] [@name "pred"]
+  | SubFilter of Pool_common.Id.t [@printer print "sub_filter"]
+      [@name "sub_filter"]
 [@@deriving show { with_path = false }, variants, eq]
 
 let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
@@ -382,7 +392,8 @@ let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
    | And filters -> `List (CCList.map yojson_of_filter filters)
    | Or filters -> `List (CCList.map yojson_of_filter filters)
    | Not f -> f |> yojson_of_filter
-   | Pred p -> Predicate.yojson_of_t p)
+   | Pred p -> Predicate.yojson_of_t p
+   | SubFilter id -> `String (Pool_common.Id.value id))
   |> fun pred -> `Assoc [ f |> show_filter, pred ]
 ;;
 
@@ -404,36 +415,49 @@ let rec filter_of_yojson json =
        >|= fun lst -> Or lst
      | "not", f -> f |> filter_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
+     | "sub_filter", `String id ->
+       id |> Pool_common.Id.of_string |> subfilter |> CCResult.pure
      | _ -> Error error)
   | _ -> Error error
 ;;
 
 let filter_of_string str = str |> Yojson.Safe.from_string |> filter_of_yojson
 
-let rec validate_filter key_list m =
-  let open CCResult in
-  let validate_list fnc filters =
-    filters |> CCList.map (validate_filter key_list) |> CCList.all_ok >|= fnc
-  in
-  match m with
-  | And filters -> validate_list (fun lst -> And lst) filters
-  | Or filters -> validate_list (fun lst -> Or lst) filters
-  | Not f -> validate_filter key_list f >|= not
-  | Pred p -> Predicate.validate p key_list >|= pred
-;;
-
 type t =
   { id : Pool_common.Id.t
   ; filter : filter (* TODO: Rename to predicate or something else *)
+  ; title : Title.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) filter =
+let create ?(id = Pool_common.Id.create ()) title filter =
   { id
   ; filter
+  ; title
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
+;;
+
+let rec validate_filter key_list (subfilter_list : t list) m =
+  let open CCResult in
+  let validate_list fnc filters =
+    filters
+    |> CCList.map (validate_filter key_list subfilter_list)
+    |> CCList.all_ok
+    >|= fnc
+  in
+  match m with
+  | And filters -> validate_list (fun lst -> And lst) filters
+  | Or filters -> validate_list (fun lst -> Or lst) filters
+  | Not f -> validate_filter key_list subfilter_list f >|= not
+  | Pred p -> Predicate.validate p key_list >|= pred
+  | SubFilter filter_id ->
+    CCList.find_opt
+      (fun f -> Pool_common.Id.equal f.id filter_id)
+      subfilter_list
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    >|= CCFun.const (subfilter filter_id)
 ;;

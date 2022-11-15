@@ -239,7 +239,7 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let filter = Filter.create nr_of_siblings in
+    let filter = Filter.create None nr_of_siblings in
     let experiment = Experiment.{ experiment with filter = Some filter } in
     let%lwt () =
       (* Save filter *)
@@ -277,6 +277,7 @@ let filter_by_email _ () =
     let filter =
       Filter.(
         create
+          None
           (And
              [ nr_of_siblings
              ; email
@@ -323,6 +324,7 @@ let validate_filter_with_unknown_field _ () =
       Cqrs_command.Experiment_command.UpdateFilter.handle
         experiment
         key_list
+        []
         filter
     in
     let expected = Error Pool_common.Message.(Invalid Field.Key) in
@@ -348,6 +350,7 @@ let validate_filter_with_invalid_value _ () =
       Cqrs_command.Experiment_command.UpdateFilter.handle
         experiment
         key_list
+        []
         filter
     in
     let expected =
@@ -370,6 +373,7 @@ let test_list_filter answer_index operator contact experiment expected =
                Option option.Custom_field.SelectOption.id))
       in
       create
+        None
         Predicate.(
           Pred
             { key =

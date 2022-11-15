@@ -34,6 +34,8 @@ let index req =
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt key_list = Filter.all_keys tenant_db in
+       let%lwt subfilter_list = Filter.find_all_subfilters tenant_db () in
+       (* TODO: Remove contact list from ui *)
        let* filtered_contacts =
          Contact.find_filtered
            tenant_db
@@ -43,6 +45,7 @@ let index req =
        Page.Admin.Experiments.invitations
          experiment
          key_list
+         subfilter_list
          filtered_contacts
          context
        |> create_layout req context

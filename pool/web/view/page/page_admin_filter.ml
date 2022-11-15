@@ -21,19 +21,33 @@ let index { Pool_context.language; _ } filter_list =
             ]
         ]
     ; CCList.map
-        (fun filter -> [ txt ""; txt (Pool_common.Id.value filter.Filter.id) ])
+        (fun filter ->
+          [ txt Filter.(filter.title |> CCOption.map_or ~default:"" Title.value)
+          ; a
+              ~a:
+                [ a_href
+                    (Format.asprintf
+                       "/admin/filter/%s/edit"
+                       (Pool_common.Id.value filter.Filter.id))
+                ]
+              [ txt
+                  Pool_common.(
+                    Utils.control_to_string language (Message.edit None))
+              ]
+          ])
         filter_list
       |> Component.Table.horizontal_table `Striped language ~thead
     ]
 ;;
 
-let edit { Pool_context.language; csrf; _ } filter key_list =
+let edit { Pool_context.language; csrf; _ } filter key_list subfilter_list =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Component.Partials.form_title
         language
         Pool_common.Message.Field.Filter
         filter
-    ; Component.Filter.(filter_form csrf language (FilterParam filter) key_list)
+    ; Component.Filter.(
+        filter_form csrf language (FilterParam filter) key_list subfilter_list)
     ]
 ;;

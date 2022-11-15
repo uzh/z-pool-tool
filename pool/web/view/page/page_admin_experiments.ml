@@ -463,6 +463,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
 let invitations
   experiment
   key_list
+  subfilter_list
   filtered_contacts
   (Pool_context.{ language; _ } as context)
   =
@@ -487,6 +488,7 @@ let invitations
           context
           experiment
           key_list
+          subfilter_list
           filtered_contacts
       ]
   in

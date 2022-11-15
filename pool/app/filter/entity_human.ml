@@ -5,6 +5,7 @@ type t =
   | Or of t list [@printer print "or"]
   | Not of t [@printer print "not"]
   | Pred of Entity.Predicate.human [@printer print "pred"]
+  | SubFilter of Pool_common.Id.t option [@printer print "sub_filter"]
 [@@deriving show { with_path = false }]
 
 let init ?key ?operator ?value () : t =
@@ -61,6 +62,13 @@ let rec of_yojson (key_list : Entity.Key.human list) json
      | "or", `List filters -> of_list (fun lst -> Or lst) filters
      | "not", f -> f |> of_yojson >|= fun p -> Not p
      | "pred", p -> p |> predicate_of_yojson key_list >|= fun p -> Pred p
+     | "sub_filter", id ->
+       let id =
+         match id with
+         | `String id -> id |> Pool_common.Id.of_string |> CCOption.pure
+         | _ -> None
+       in
+       Ok (SubFilter id)
      | _ -> Error error)
   | _ -> Error error
 ;;

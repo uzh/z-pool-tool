@@ -1,4 +1,7 @@
 // TODO: import as separate file only on filter page?
+
+
+const errorClass = "error-message";
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
@@ -34,9 +37,10 @@ const findChildPredicates = (wrapper) => {
 const addRequiredError = (elm) => {
     if (elm) {
         const wrapper = elm.closest(".form-group");
+        [...wrapper.getElementsByClassName(errorClass)].forEach((elm) => elm.remove());
         let error = document.createElement("span");
         error.innerHTML = "This field is required."
-        error.classList.add("error-message", "help");
+        error.classList.add(errorClass, "help");
         wrapper.appendChild(error);
     }
 }
@@ -74,6 +78,16 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         const notPredicate = findChildPredicates(outerPredicate)[0];
         return {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
+        }
+    } else if (predicateType === "sub_filter") {
+        let input = outerPredicate.querySelector('[name="sub_filter"]');
+        if (!input.value && !allowEmpty) {
+            addRequiredError(input)
+        } else {
+            const value = input.value || "";
+            return {
+                [predicateType]: value
+            }
         }
     } else if (predicateType === "pred") {
         const toValue = (valueInput) => {
@@ -173,10 +187,18 @@ function configRequest(e, form) {
     const isPredicateType = e.target.name === "predicate";
     const isSubmit = e.target.type === "submit"
     e.detail.parameters._csrf = csrfToken();
+    const filterId = form.dataset.filterId;
+    if (filterId) {
+        e.detail.parameters.filter_id = filterId;
+    }
     if (isPredicateType || isSubmit) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
             e.detail.parameters.filter = predicateToJson(elm, isPredicateType);
+            const title = document.querySelector('#filter-form [name="title"]');
+            if (title) {
+                e.detail.parameters.title = title.value;
+            }
         } catch (error) {
             console.error(error)
             e.preventDefault();

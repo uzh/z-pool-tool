@@ -1,4 +1,5 @@
 module Database = Pool_database
+module Dynparam = Utils.Database.Dynparam
 
 module Sql = struct
   let select_filter_sql where_fragment =
@@ -13,6 +14,7 @@ module Sql = struct
             SUBSTR(HEX(pool_filter.uuid), 21)
           )),
           pool_filter.filter,
+          pool_filter.title,
           pool_filter.created_at,
           pool_filter.updated_at
         FROM pool_filter
@@ -47,7 +49,7 @@ module Sql = struct
    |sql}
   ;;
 
-  let find_component_request =
+  let find_subfilter_request =
     let open Caqti_request.Infix in
     Format.asprintf
       "%s AND pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))"
@@ -56,35 +58,99 @@ module Sql = struct
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
-  let find_component pool id =
+  let find_subfilter pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
-      find_component_request
+      find_subfilter_request
       (id |> Pool_common.Id.value)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
-  let find_all_components_request =
+  let find_all_subfilters_request =
     let open Caqti_request.Infix in
     component_base_query
     |> select_filter_sql
     |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all_components pool =
-    Utils.Database.collect
-      (Pool_database.Label.value pool)
-      find_all_components_request
+  let find_all_subfilters_request_with_exclusions =
+    let open Caqti_request.Infix in
+    component_base_query
+    |> Format.asprintf "%s AND pool_filter.uuid <> UNHEX(REPLACE(?, '-', ''))"
+    |> select_filter_sql
+    |> Caqti_type.string ->* Repo_entity.t
+  ;;
+
+  let find_all_subfilters pool ?exclude () =
+    let pool = Pool_database.Label.value pool in
+    let request =
+      match exclude with
+      | None -> Utils.Database.collect pool find_all_subfilters_request ()
+      | Some id ->
+        Utils.Database.collect
+          pool
+          find_all_subfilters_request_with_exclusions
+          (id |> Pool_common.Id.value)
+    in
+    request
+  ;;
+
+  let find_multiple_request exclude ids =
+    let base =
+      Format.asprintf
+        {sql|
+        pool_filter.uuid IN ( %s )
+      |sql}
+        (CCList.mapi
+           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+           ids
+        |> CCString.concat ",")
+    in
+    (match exclude with
+     | false -> Format.asprintf "WHERE %s" base
+     | true ->
+       Format.asprintf
+         {sql| WHERE %s AND pool_filter.uuid <> UNHEX(REPLACE($%n, '-', '')) |sql}
+         base
+         (CCList.length ids + 1))
+    |> select_filter_sql
+  ;;
+
+  let find_multiple_subfilters pool ?exclude ids =
+    if CCList.is_empty ids
+    then Lwt.return []
+    else
+      let open Caqti_request.Infix in
+      let dyn =
+        CCList.fold_left
+          (fun dyn id ->
+            dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+          Dynparam.empty
+          ids
+      in
+      let dyn =
+        exclude
+        |> CCOption.map_or ~default:dyn (fun id ->
+             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
+      in
+      let (Dynparam.Pack (pt, pv)) = dyn in
+      let request =
+        find_multiple_request (CCOption.is_some exclude) ids
+        |> pt ->* Repo_entity.t
+      in
+      Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 
   let insert_sql =
     {sql|
       INSERT INTO pool_filter (
         uuid,
-        filter
+        filter,
+        title
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
+        ?,
         ?
       )
     |sql}
@@ -105,7 +171,8 @@ module Sql = struct
         UPDATE
           pool_filter
         SET
-          filter = $2
+          filter = $2,
+          title = $3
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
       |sql}
@@ -118,7 +185,8 @@ module Sql = struct
 end
 
 let find = Sql.find
-let find_all_components = Sql.find_all_components
-let find_component = Sql.find_component
+let find_all_subfilters = Sql.find_all_subfilters
+let find_subfilter = Sql.find_subfilter
+let find_multiple_subfilters = Sql.find_multiple_subfilters
 let insert = Sql.insert
 let update = Sql.update
