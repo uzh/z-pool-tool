@@ -51,11 +51,9 @@ let value_of_yojson (yojson : Yojson.Safe.t) =
   let open CCResult in
   let error = Pool_common.Message.(Invalid Field.Value) in
   match yojson with
-  | `Assoc [ (key, value) ] ->
-    (match key, value with
-     | "list", `List values ->
-       values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst
-     | _ -> single_value_of_yojson yojson >|= single)
+  | `Assoc _ -> single_value_of_yojson yojson >|= single
+  | `List values ->
+    values |> CCList.map single_value_of_yojson |> CCList.all_ok >|= lst
   | _ -> Error error
 ;;
 
@@ -76,9 +74,7 @@ let yojson_of_single_val value =
 let yojson_of_value m =
   match m with
   | Single single -> single |> yojson_of_single_val
-  | Lst values ->
-    let value_list = `List (CCList.map yojson_of_single_val values) in
-    to_assoc (m |> show_value) value_list
+  | Lst values -> `List (CCList.map yojson_of_single_val values)
 ;;
 
 module Key = struct
@@ -88,6 +84,7 @@ module Key = struct
     | Nr [@printer print "nr"]
     | Str [@printer print "str"]
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
+    | MultiSelect of Custom_field.SelectOption.t list [@printer print "list"]
   [@@deriving show]
 
   type hardcoded =
@@ -188,7 +185,7 @@ module Key = struct
     match m with
     | Boolean _ -> Bool
     | Number _ -> Nr
-    | MultiSelect (_, options) -> Select options
+    | MultiSelect (_, options) -> MultiSelect options
     | Select (_, options) -> Select options
     | Text _ -> Str
   ;;
@@ -210,7 +207,8 @@ module Key = struct
       | Date _, Date
       | Nr _, Nr
       | Str _, Str -> Ok ()
-      | Option selected, Select options ->
+      | Option selected, Select options | Option selected, MultiSelect options
+        ->
         CCList.find_opt
           (fun option ->
             Custom_field.SelectOption.(Id.equal option.id selected))
@@ -273,6 +271,7 @@ module Operator = struct
     | Str -> [ Equal; NotEqual; Like ]
     | Date | Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
     | Select _ -> [ Equal; NotEqual ]
+    | MultiSelect _ -> [ ContainsAll; ContainsSome; ContainsNone ]
   ;;
 
   let of_string m =
@@ -294,10 +293,11 @@ module Operator = struct
     | GreaterEqual -> ">="
     | Equal -> "="
     | NotEqual -> "<>"
-    | Like -> "LIKE"
-    | ContainsSome -> "CONTAINS" (* TODO *)
-    | ContainsNone -> "CONTAINS" (* TODO *)
-    | ContainsAll -> "CONTAINS"
+    | Like ->
+      "LIKE"
+      (* List operators are used to filter custom fields by their value,
+         therefore '=' *)
+    | ContainsSome | ContainsNone | ContainsAll -> "="
   ;;
 
   let validate (key : Key.t) operator =

@@ -16,6 +16,7 @@ module Key : sig
     | Nr
     | Str
     | Select of Custom_field.SelectOption.t list
+    | MultiSelect of Custom_field.SelectOption.t list
 
   val show_input_type : input_type -> string
 
