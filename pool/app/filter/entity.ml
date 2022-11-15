@@ -297,9 +297,7 @@ module Operator = struct
       "LIKE"
       (* List operators are used to filter custom fields by their value,
          therefore '=' *)
-    | ContainsSome -> "="
-    | ContainsNone -> "="
-    | ContainsAll -> "="
+    | ContainsSome | ContainsNone | ContainsAll -> "="
   ;;
 
   let validate (key : Key.t) operator =
