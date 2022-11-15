@@ -38,7 +38,7 @@ let index req =
     Lwt_result.map_error (fun err -> err, error_path)
     @@ let%lwt filter_list = Filter.find_all_subfilters tenant_db () in
        Page.Admin.Filter.index context filter_list
-       |> create_layout req context
+       |> create_layout ~active_navigation:"/admin/filter" req context
        >|= Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req

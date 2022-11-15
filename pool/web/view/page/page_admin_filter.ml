@@ -3,7 +3,7 @@ open Tyxml.Html
 let index { Pool_context.language; _ } filter_list =
   let thead = Pool_common.Message.Field.[ Some Title; None ] in
   div
-    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt

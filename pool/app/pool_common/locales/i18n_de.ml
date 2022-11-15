@@ -81,6 +81,7 @@ let nav_link_to_string = function
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
+  | Filter -> "Filter"
   | I18n -> "Übersetzungen"
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"
