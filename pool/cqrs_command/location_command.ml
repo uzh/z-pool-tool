@@ -72,7 +72,7 @@ module Create = struct
          }
   ;;
 
-  let effects = [ `Manage, `Entity `Location ]
+  let can = [ `Create, `Entity `Location ]
 end
 
 module Update = struct
@@ -131,7 +131,11 @@ module Update = struct
          }
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let can t =
+    [ `Update, `Entity `Location
+    ; `Update, `Target (t.id |> Guard.Uuid.target_of Id.value)
+    ]
+  ;;
 end
 
 module AddFile = struct

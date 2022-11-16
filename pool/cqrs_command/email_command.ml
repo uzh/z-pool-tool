@@ -15,6 +15,10 @@ end = struct
   ;;
 
   let effects tenant =
-    [ `Delete, `One (tenant |> Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Delete
+      , `Target
+          (tenant |> Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end

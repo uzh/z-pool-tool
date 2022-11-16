@@ -68,7 +68,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module ToggleStatus : sig
@@ -87,5 +87,5 @@ end = struct
     | Inactive -> Ok [ Root.Enabled root |> Pool_event.root ]
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end

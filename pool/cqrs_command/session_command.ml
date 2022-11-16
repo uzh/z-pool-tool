@@ -331,7 +331,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module Delete : sig
@@ -354,7 +354,7 @@ end = struct
     else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module Cancel : sig
@@ -377,7 +377,7 @@ end = struct
     }
 
   let handle session = Ok [ Session.Canceled session |> Pool_event.session ]
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module SendReminder : sig
@@ -400,5 +400,5 @@ end = struct
          command)
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Manage, `TargetEntity `System ]
 end

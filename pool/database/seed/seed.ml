@@ -25,6 +25,7 @@ module Tenant = struct
         let%lwt () = Seed_mailings.create pool in
         let%lwt () = Seed_custom_fields.create pool in
         let%lwt () = Seed_filter.filter pool in
+        let%lwt () = Seed_guard.create pool in
         Lwt.return_unit)
       db_pools
   ;;

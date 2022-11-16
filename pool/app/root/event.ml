@@ -29,9 +29,9 @@ let handle_event pool : event -> unit Lwt.t =
         (User.EmailAddress.value root.email)
     in
     let%lwt rv =
-      Guard.Persistence.grant_roles
-        (Guard.Uuid.of_string_exn user.Sihl.Contract.User.id)
-        (Guard.Role_set.singleton `Admin)
+      Guard.Persistence.Actor.grant_roles
+        (Guard.Uuid.Actor.of_string_exn user.Sihl.Contract.User.id)
+        (Guard.ActorRoleSet.singleton `Admin)
     in
     Lwt.return (CCResult.get_exn rv)
   | Disabled root ->

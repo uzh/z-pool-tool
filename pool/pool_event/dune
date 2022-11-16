@@ -10,6 +10,7 @@
   email
   experiment
   filter
+  guard
   i18n
   mailing
   pool_location

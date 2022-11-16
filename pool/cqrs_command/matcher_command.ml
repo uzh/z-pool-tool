@@ -36,6 +36,10 @@ end = struct
     let open Lwt_result.Syntax in
     let* tenant = Pool_tenant.find_by_label db_label in
     Lwt.return_ok
-      [ `Update, `One (Pool_common.Id.to_uuidm tenant.Pool_tenant.id) ]
+      [ ( `Update
+        , `Target
+            (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value)
+        )
+      ]
   ;;
 end

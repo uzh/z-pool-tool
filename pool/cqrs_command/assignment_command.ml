@@ -63,7 +63,7 @@ end = struct
           ])
   ;;
 
-  let effects = [ `Create, `Entity `Assignment ]
+  let effects = [ `Create, `TargetEntity `Assignment ]
 end
 
 module Cancel : sig
@@ -81,7 +81,10 @@ end = struct
   ;;
 
   let effects command =
-    [ `Update, `One (Pool_common.Id.to_uuidm command.Assignment.id) ]
+    [ ( `Update
+      , `Target
+          (command.Assignment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
@@ -133,7 +136,11 @@ end = struct
   ;;
 
   let effects assignment =
-    [ `Update, `One (Pool_common.Id.to_uuidm assignment.Assignment.id) ]
+    [ ( `Update
+      , `Target
+          (assignment.Assignment.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end
 
@@ -191,5 +198,5 @@ end = struct
           ]
   ;;
 
-  let effects = [ `Create, `Entity `Assignment ]
+  let effects = [ `Create, `TargetEntity `Assignment ]
 end

@@ -117,12 +117,18 @@ let with_disabled_fk_check db_pool f =
           Connection.exec set_fk_check_request true |> Lwt.map raise_caqti_error))
 ;;
 
+(** [table_names_request] request to return all table names
+
+    Skipped database tables:
+
+    - core_migration_state: migration state of the application
+    - email_templates: clean up is handled by RestoreDefault mail event *)
 let table_names_request =
   let open Caqti_request.Infix in
   {sql|
     SELECT TABLE_NAME
     FROM INFORMATION_SCHEMA.`TABLES`
-    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state','email_templates')
+    WHERE TABLE_SCHEMA IN (DATABASE()) AND TABLE_NAME NOT IN ('core_migration_state', 'email_templates')
   |sql}
   |> Caqti_type.(unit ->* string) ~oneshot:true
 ;;

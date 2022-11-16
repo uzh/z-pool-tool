@@ -89,7 +89,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `Entity `Experiment ]
+  let effects = [ `Create, `TargetEntity `Experiment ]
 end
 
 module Update : sig
@@ -135,7 +135,9 @@ end = struct
   ;;
 
   let effects experiment =
-    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Update
+      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
@@ -163,7 +165,10 @@ end = struct
   ;;
 
   let effects command =
-    [ `Delete, `One (command.experiment_id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Delete
+      , `Target
+          (command.experiment_id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
@@ -198,7 +203,9 @@ end = struct
   ;;
 
   let effects experiment =
-    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Update
+      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
@@ -225,8 +232,11 @@ end = struct
   ;;
 
   let effects experiment user =
-    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    [ ( `Update
+      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ; ( `Update
+      , `Target (Guard.Uuid.Target.of_string_exn (Admin.user user).Sihl_user.id)
+      )
     ]
   ;;
 end
@@ -257,8 +267,9 @@ end = struct
   ;;
 
   let effects { user_id; experiment_id } =
-    [ `Update, `One (experiment_id |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (user_id |> Pool_common.Id.to_uuidm)
+    [ ( `Update
+      , `Target (experiment_id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ; `Update, `Target (user_id |> Guard.Uuid.target_of Pool_common.Id.value)
     ]
   ;;
 end
@@ -282,8 +293,11 @@ end = struct
   ;;
 
   let effects experiment t =
-    [ `Update, `One (experiment.Experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (t.user_id |> Pool_common.Id.to_uuidm)
+    [ ( `Update
+      , `Target
+          (experiment.Experiment.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; `Update, `Target (t.user_id |> Guard.Uuid.target_of Pool_common.Id.value)
     ]
   ;;
 end
@@ -316,8 +330,11 @@ end = struct
   ;;
 
   let effects experiment user =
-    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+    [ ( `Update
+      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ; ( `Update
+      , `Target (Guard.Uuid.Target.of_string_exn (Admin.user user).Sihl_user.id)
+      )
     ]
   ;;
 end

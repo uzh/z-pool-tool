@@ -162,10 +162,11 @@ end = struct
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
       ; Email.(DefaultRestored default_values_tenant |> Pool_event.email)
+      ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
       ]
   ;;
 
-  let effects = [ `Create, `Entity `Tenant ]
+  let effects = [ `Create, `TargetEntity `Tenant ]
 
   let decode data =
     Conformist.decode_and_validate schema data
@@ -305,7 +306,9 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects { Pool_tenant.Write.id; _ } = [ `Update, `One (Id.to_uuidm id) ]
+  let effects { Pool_tenant.Write.id; _ } =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Id.value) ]
+  ;;
 end
 
 module EditDatabase : sig
@@ -359,7 +362,9 @@ end = struct
   let effects dblabel =
     let open Lwt_result.Syntax in
     let* tenant = Pool_tenant.find_by_label dblabel in
-    Lwt.return_ok [ `Update, `One (Id.to_uuidm tenant.Pool_tenant.id) ]
+    Lwt.return_ok
+      [ `Update, `Target (tenant.Pool_tenant.id |> Guard.Uuid.target_of Id.value)
+      ]
   ;;
 end
 
@@ -375,10 +380,11 @@ end = struct
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
-  let effects = [ `Create, `Entity `Tenant ]
+  let effects = [ `Create, `TargetEntity `Tenant ]
 end
 
 module Destroy : sig
+  (* TODO: Type safety *)
   type t = { tenant_id : string }
 
   val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
@@ -394,6 +400,6 @@ end = struct
   ;;
 
   let effects { tenant_id } =
-    [ `Delete, `One (Guard.Uuid.of_string_exn tenant_id) ]
+    [ `Delete, `Target (Guard.Uuid.Target.of_string_exn tenant_id) ]
   ;;
 end

@@ -11,7 +11,7 @@ module AssignOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.Authorizer.effect list
+  val can : t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : Id.t
@@ -22,14 +22,15 @@ end = struct
     Ok [ Tenant.OperatorAssigned (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let effects t =
-    [ `Manage, `One (t.user_id |> Id.to_uuidm)
-    ; `Manage, `One (t.tenant_id |> Id.to_uuidm)
+  let can t =
+    [ `Manage, `Target (t.user_id |> Guard.Uuid.target_of Id.value)
+    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.target_of Id.value)
     ]
   ;;
 end
 
 module DivestOperator : sig
+  (* TODO: Type safety *)
   type t =
     { user_id : string
     ; tenant_id : string
@@ -40,7 +41,7 @@ module DivestOperator : sig
     -> Admin.operator Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.Authorizer.effect list
+  val can : t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { user_id : string
@@ -51,27 +52,37 @@ end = struct
     Ok [ Tenant.OperatorDivested (tenant_id, user) |> Pool_event.tenant ]
   ;;
 
-  let effects t =
-    [ `Manage, `One (t.user_id |> Guard.Uuid.of_string_exn)
-    ; `Manage, `One (t.tenant_id |> Guard.Uuid.of_string_exn)
+  let can t =
+    [ `Manage, `Target (t.user_id |> Guard.Uuid.Target.of_string_exn)
+    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.Target.of_string_exn)
     ]
   ;;
 end
 
 module GenerateStatusReport : sig
+  (* TODO: Type safety *)
   type t = { tenant_id : string }
 
   val handle
     :  t
     -> Pool_tenant.t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val can : t -> Guard.Authorizer.effect list
 end = struct
   type t = { tenant_id : string }
 
   let handle = Utils.todo
+
+  let can t =
+    [ `Manage, `TargetEntity `System
+    ; `Manage, `Target (t.tenant_id |> Guard.Uuid.Target.of_string_exn)
+    ]
+  ;;
 end
 
 module AddRoot : sig
+  (* TODO: Type safety *)
   type t = { user_id : string }
 
   val handle
@@ -79,10 +90,10 @@ module AddRoot : sig
     -> Sihl_user.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val can : Guard.Authorizer.effect list
 end = struct
   type t = { user_id : string }
 
   let handle = Utils.todo
-  let effects = [ `Manage, `Entity `System ]
+  let can = [ `Manage, `TargetEntity `System ]
 end

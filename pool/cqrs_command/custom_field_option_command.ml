@@ -23,7 +23,7 @@ end = struct
     Ok Custom_field.[ OptionCreated (id field, m) |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Update : sig
@@ -47,7 +47,7 @@ end = struct
     Ok [ OptionUpdated m |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Destroy : sig
@@ -61,7 +61,7 @@ end = struct
     Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Sort : sig
@@ -73,5 +73,5 @@ end = struct
   type t = Custom_field.SelectOption.t list
 
   let handle t = Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end

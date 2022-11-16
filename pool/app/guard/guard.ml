@@ -1,4 +1,5 @@
 include Core
+include Event
 module Persistence = Repo
 open Utils.Lwt_result.Syntax
 
@@ -6,28 +7,34 @@ open Utils.Lwt_result.Syntax
     administrative tasks, such as working with the command line or running
     tests. *)
 let console_authorizable =
-  Authorizable.make ~roles:(Role_set.singleton `Admin) ~typ:`Admin (Uuid.v `V4)
+  Authorizable.make
+    (ActorRoleSet.singleton `Admin)
+    `Admin
+    (Uuid.Actor.create ())
 ;;
 
 (** [guest_authorizable] is a [\[ `Guest \] Authorizable.t] to be assigned to
     entities at the absolute lowest level of trust, such as users browsing the
     public facing website without logging in. *)
 let guest_authorizable =
-  Authorizable.make ~roles:(Role_set.singleton `Guest) ~typ:`Guest (Uuid.v `V4)
+  Authorizable.make
+    (ActorRoleSet.singleton `Guest)
+    `Guest
+    (Uuid.Actor.create ())
 ;;
 
 (** Convenience module for turning Sihl or Pool [user]s into entities that
     [Guardian] can work with. *)
 module User = struct
-  type t = Sihl_user.t
+  type t = Sihl_user.t [@@deriving show]
 
   let to_authorizable t =
-    Persistence.decorate_to_authorizable
+    Persistence.Actor.decorate
       (fun t ->
         Authorizable.make
-          ~roles:(Role_set.singleton `User)
-          ~typ:`User
-          (Uuid.of_string_exn t.Sihl_user.id))
+          (ActorRoleSet.singleton `User)
+          `User
+          (Uuid.Actor.of_string_exn t.Sihl_user.id))
       t
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
@@ -41,13 +48,13 @@ module User = struct
       |> CCResult.map_err (fun x -> Pool_common.Message.Authorization x)
       |> Lwt_result.lift
     in
-    Persistence.decorate_to_authorizable
+    Persistence.Actor.decorate
       ?ctx
       (fun id ->
         Authorizable.make
-          ~roles:(Role_set.singleton `User)
-          ~typ:`User
-          (Uuid.of_string_exn id))
+          (ActorRoleSet.singleton `Contact)
+          `Contact
+          (Uuid.Actor.of_string_exn id))
       user_id
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
@@ -55,17 +62,17 @@ end
 
 (** Convenience module for turning Pool [participant]s into entities that
     [Guardian] can work with. *)
-module Contact = struct
-  type t = Contact.t
+module ContactTarget = struct
+  type t = Contact.t [@@deriving show]
 
   let to_authorizable ?ctx t =
-    Persistence.decorate_to_authorizable
+    Persistence.Target.decorate
       ?ctx
       (fun t ->
-        Authorizable.make
-          ~roles:(Role_set.singleton `Contact)
-          ~typ:`User
-          (Uuid.of_string_exn (Pool_common.Id.value (Contact.id t))))
+        AuthorizableTarget.make
+          (TargetRoleSet.singleton `Contact)
+          `Contact
+          (Uuid.Target.of_string_exn (Pool_common.Id.value (Contact.id t))))
       t
     |> Lwt_result.map_error (fun s ->
          Format.asprintf "Failed to convert Contact to authorizable: %s" s)
@@ -73,17 +80,51 @@ module Contact = struct
   ;;
 end
 
-module Pool_tenant = struct
-  type t = Pool_tenant.t
+module Contact = struct
+  type t = Contact.t [@@deriving show]
 
   let to_authorizable ?ctx t =
-    Persistence.decorate_to_authorizable
+    Persistence.Actor.decorate
       ?ctx
       (fun t ->
         Authorizable.make
-          ~roles:(Role_set.singleton `Tenant)
-          ~typ:`User
-          (Uuid.of_string_exn (Pool_common.Id.value t.Pool_tenant.id)))
+          (ActorRoleSet.singleton `Contact)
+          `Contact
+          (Uuid.Actor.of_string_exn (Pool_common.Id.value (Contact.id t))))
+      t
+    |> Lwt_result.map_error (fun s ->
+         Format.asprintf "Failed to convert Contact to authorizable: %s" s)
+    |> Lwt_result.map_error Pool_common.Message.authorization
+  ;;
+end
+
+module PoolTenantTarget = struct
+  type t = Pool_tenant.t [@@deriving show]
+
+  let to_authorizable ?ctx t =
+    Persistence.Target.decorate
+      ?ctx
+      (fun t ->
+        AuthorizableTarget.make
+          (TargetRoleSet.singleton `Tenant)
+          `Tenant
+          (Uuid.Target.of_string_exn (Pool_common.Id.value t.Pool_tenant.id)))
+      t
+    |> Lwt_result.map_error Pool_common.Message.authorization
+  ;;
+end
+
+module PoolTenant = struct
+  type t = Pool_tenant.t [@@deriving show]
+
+  let to_authorizable ?ctx t =
+    Persistence.Actor.decorate
+      ?ctx
+      (fun t ->
+        Authorizable.make
+          (ActorRoleSet.singleton `Tenant)
+          `Tenant
+          (Uuid.Actor.of_string_exn (Pool_common.Id.value t.Pool_tenant.id)))
       t
     |> Lwt_result.map_error Pool_common.Message.authorization
   ;;
@@ -92,13 +133,14 @@ module Pool_tenant = struct
     type t = Pool_tenant.Write.t
 
     let to_authorizable ?ctx t =
-      Persistence.decorate_to_authorizable
+      Persistence.Actor.decorate
         ?ctx
         (fun t ->
           Authorizable.make
-            ~roles:(Role_set.singleton `Tenant)
-            ~typ:`User
-            (Uuid.of_string_exn (Pool_common.Id.value t.Pool_tenant.Write.id)))
+            (ActorRoleSet.singleton `Tenant)
+            `User
+            (Uuid.Actor.of_string_exn
+               (Pool_common.Id.value t.Pool_tenant.Write.id)))
         t
       |> Lwt_result.map_error Pool_common.Message.authorization
     ;;
@@ -113,17 +155,17 @@ module Admin = struct
       [ `Admin ] role. *)
   let of_authorizable ?ctx (auth : _ Authorizable.t) =
     let* roles =
-      Persistence.find_roles ?ctx auth.Authorizable.uuid
+      Persistence.Actor.find_roles ?ctx auth.Authorizable.uuid
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
-    if Role_set.mem `Admin roles
+    if ActorRoleSet.mem `Admin roles
     then Lwt.return_ok { auth with Authorizable.typ = `Admin }
     else
       Lwt.return_error
         (Pool_common.Message.authorization
         @@ Format.asprintf
              "Entity %s cannot be treated as an `Admin"
-             (Uuidm.to_string auth.Authorizable.uuid))
+             (Uuid.Actor.to_string auth.Authorizable.uuid))
   ;;
 end
 
@@ -133,5 +175,7 @@ end
 
 (* TODO: check type, was: Authorizer.auth_rule list *)
 let root_permissions : Authorizer.auth_rule list =
-  CCList.map (fun role -> `Entity `Admin, `Manage, `Entity role) Role.all
+  CCList.map
+    (fun role -> `ActorEntity `Admin, `Manage, `TargetEntity role)
+    Role.Target.all
 ;;

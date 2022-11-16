@@ -19,7 +19,7 @@ end = struct
     Ok Custom_field.[ GroupCreated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Update : sig
@@ -39,7 +39,7 @@ end = struct
     Ok Custom_field.[ GroupUpdated group |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Destroy : sig
@@ -53,7 +53,7 @@ end = struct
     Ok [ Custom_field.GroupDestroyed option |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Sort : sig
@@ -65,5 +65,5 @@ end = struct
   type t = Custom_field.Group.t list
 
   let handle t = Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end

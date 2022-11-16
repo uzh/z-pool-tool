@@ -13,9 +13,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects
-    :  Pool_database.Label.t
-    -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { key : I18n.Key.t
@@ -52,11 +50,11 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects db_label =
-    let open Lwt_result.Syntax in
-    let* tenant = Pool_tenant.find_by_label db_label in
-    Lwt.return_ok
-      [ `Update, `One (Pool_common.Id.to_uuidm tenant.Pool_tenant.id) ]
+  let effects tenant =
+    [ ( `Update
+      , `Target
+          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
@@ -72,9 +70,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects
-    :  Pool_database.Label.t
-    -> (Guard.Authorizer.effect list, Pool_common.Message.error) Lwt_result.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = { content : I18n.Content.t }
 
@@ -91,10 +87,10 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects db_label =
-    let open Lwt_result.Syntax in
-    let* tenant = Pool_tenant.find_by_label db_label in
-    Lwt.return_ok
-      [ `Update, `One (Pool_common.Id.to_uuidm tenant.Pool_tenant.id) ]
+  let effects tenant =
+    [ ( `Update
+      , `Target
+          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end

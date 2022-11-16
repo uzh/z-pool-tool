@@ -93,7 +93,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `Entity `Contact ]
+  let effects = [ `Create, `TargetEntity `Contact ]
 end
 
 module DeleteUnverified : sig
@@ -110,7 +110,10 @@ end = struct
   ;;
 
   let effects contact =
-    [ `Delete, `One (Contact.id contact |> Pool_common.Id.to_uuidm) ]
+    [ ( `Delete
+      , `Target (Contact.id contact |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end
 
@@ -131,8 +134,12 @@ end = struct
   ;;
 
   let effects pool subject =
-    [ `Update, `One (Contact.id subject |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Pool_tenant.id pool |> Pool_common.Id.to_uuidm)
+    [ ( `Update
+      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; ( `Update
+      , `Target
+          (Pool_tenant.id pool |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 end
@@ -208,8 +215,12 @@ end = struct
   ;;
 
   let effects tenant subject =
-    [ `Update, `One (Contact.id subject |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
+    [ ( `Update
+      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; ( `Update
+      , `Target
+          (Pool_tenant.id tenant |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 
@@ -246,8 +257,12 @@ end = struct
   ;;
 
   let effects tenant subject =
-    [ `Update, `One (Contact.id subject |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Pool_tenant.id tenant |> Pool_common.Id.to_uuidm)
+    [ ( `Update
+      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; ( `Update
+      , `Target
+          (Pool_tenant.id tenant |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 end
@@ -278,8 +293,12 @@ end = struct
   ;;
 
   let effects contact tenant =
-    [ `Update, `One (Contact.id contact |> Pool_common.Id.to_uuidm)
-    ; `Update, `One (Pool_common.Id.to_uuidm tenant.Pool_tenant.id)
+    [ ( `Update
+      , `Target (Contact.id contact |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; ( `Update
+      , `Target
+          (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 end
@@ -296,7 +315,9 @@ end = struct
   ;;
 
   let effects contact =
-    [ `Update, `One (Guard.Uuid.of_string_exn contact.Contact.user.Sihl_user.id)
+    [ ( `Update
+      , `Target
+          (Guard.Uuid.Target.of_string_exn contact.Contact.user.Sihl_user.id) )
     ]
   ;;
 end
@@ -345,7 +366,9 @@ end = struct
   ;;
 
   let effects contact =
-    [ `Update, `One (Guard.Uuid.of_string_exn contact.Contact.user.Sihl_user.id)
+    [ ( `Update
+      , `Target
+          (Guard.Uuid.Target.of_string_exn contact.Contact.user.Sihl_user.id) )
     ]
   ;;
 end
