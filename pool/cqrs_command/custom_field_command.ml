@@ -114,7 +114,7 @@ end = struct
     Ok [ Custom_field.Created t |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Update : sig
@@ -176,7 +176,7 @@ end = struct
     Ok [ Custom_field.Updated t |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end
 
 module Sort : sig
@@ -188,5 +188,5 @@ end = struct
   type t = Custom_field.t list
 
   let handle t = Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end

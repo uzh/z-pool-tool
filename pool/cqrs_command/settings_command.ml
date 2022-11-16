@@ -322,7 +322,10 @@ end = struct
   ;;
 
   let effects t =
-    [ `Delete, `One (t.Pool_tenant.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Delete
+      , `Target (t.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end
 

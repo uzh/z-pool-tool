@@ -61,8 +61,11 @@ end = struct
   ;;
 
   let effects (experiment : Experiment.t) : Guard.Authorizer.effect list =
-    [ `Manage, `One (Pool_common.Id.to_uuidm experiment.Experiment.id)
-    ; `Create, `Entity `Mailing
+    [ ( `Manage
+      , `Target
+          (experiment.Experiment.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ; `Create, `TargetEntity `Mailing
     ]
   ;;
 end
@@ -105,11 +108,7 @@ end = struct
 
   let effects mailing =
     [ ( `Update
-      , `One
-          (mailing.Mailing.id
-          |> Mailing.Id.value
-          |> Pool_common.Id.of_string
-          |> Pool_common.Id.to_uuidm) )
+      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
     ]
   ;;
 end
@@ -133,11 +132,7 @@ end = struct
 
   let effects mailing =
     [ ( `Delete
-      , `One
-          (mailing.Mailing.id
-          |> Mailing.Id.value
-          |> Pool_common.Id.of_string
-          |> Pool_common.Id.to_uuidm) )
+      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
     ]
   ;;
 end
@@ -162,11 +157,7 @@ end = struct
 
   let effects mailing =
     [ ( `Manage
-      , `One
-          (mailing.Mailing.id
-          |> Mailing.Id.value
-          |> Pool_common.Id.of_string
-          |> Pool_common.Id.to_uuidm) )
+      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
     ]
   ;;
 end

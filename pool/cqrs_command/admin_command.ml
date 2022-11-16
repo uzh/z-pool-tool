@@ -65,7 +65,7 @@ end = struct
     Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 
   let decode data =
     Conformist.decode_and_validate schema data

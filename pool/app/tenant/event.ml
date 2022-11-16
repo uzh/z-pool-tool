@@ -12,14 +12,14 @@ type event =
 let handle_event _ : event -> unit Lwt.t = function
   | OperatorAssigned (tenant_id, user) ->
     Guard.Persistence.save_rule_exn
-      ( `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+      ( `Actor (Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
       , `Manage
-      , `One (Id.to_uuidm tenant_id) )
+      , `Target (tenant_id |> Guard.Uuid.target_of Id.value) )
   | OperatorDivested (tenant_id, user) ->
     Guard.Persistence.delete_rule_exn
-      ( `One (Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id)
+      ( `Actor (Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id)
       , `Manage
-      , `One (Id.to_uuidm tenant_id) )
+      , `Target (tenant_id |> Guard.Uuid.target_of Id.value) )
   | StatusReportGenerated _ -> Utils.todo ()
 ;;
 

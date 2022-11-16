@@ -14,5 +14,5 @@ end = struct
     Ok (Custom_field.AnswerUpserted (f, contact_id) |> Pool_event.custom_field)
   ;;
 
-  let effects = [ `Create, `Entity `Admin ]
+  let effects = [ `Create, `TargetEntity `Admin ]
 end

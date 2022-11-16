@@ -32,18 +32,24 @@ let handle_event pool : event -> unit Lwt.t = function
   (* TODO: was placeholder *)
   | ExperimenterAssigned (experiment, user)
   | ExperimenterDivested (experiment, user) ->
-    let user_id = Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
-    Guard.Persistence.revoke_roles
+    let user_id =
+      Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
+    in
+    Guard.Persistence.Actor.revoke_roles
       user_id
-      (Guard.Role_set.singleton (`Experimenter (Id.to_uuidm experiment.id)))
+      (Guard.ActorRoleSet.singleton
+         (`Experimenter (experiment.id |> Guard.Uuid.target_of Id.value)))
     |> Lwt_result.map_error (fun x -> Failure x)
     |> Lwt_result.get_exn
   | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
     ->
-    let user_id = Guard.Uuid.of_string_exn (Admin.user user).Sihl_user.id in
-    Guard.Persistence.revoke_roles
+    let user_id =
+      Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
+    in
+    Guard.Persistence.Actor.revoke_roles
       user_id
-      (Guard.Role_set.singleton (`Assistant (Id.to_uuidm experiment.id)))
+      (Guard.ActorRoleSet.singleton
+         (`Assistant (experiment.id |> Guard.Uuid.target_of Id.value)))
     |> Lwt_result.map_error (fun x -> Failure x)
     |> Lwt_result.get_exn
 ;;
