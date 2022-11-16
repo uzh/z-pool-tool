@@ -1,12 +1,12 @@
 // TODO: import as separate file only on filter page?
 
-
 const errorClass = "error-message";
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
 
 // TODO: let user close notification, maybe display somewhere else
+// Frontend framework issue #29
 const notifyUser = (classname, msg) => {
     const notificationId = "filter-notification";
     const icon = document.createElement("i");
@@ -184,7 +184,8 @@ function addRemovePredicateListener(element) {
 }
 
 function configRequest(e, form) {
-    const isPredicateType = e.target.name === "predicate";
+    const isPredicateType = e.detail.parameters.predicate;
+    const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
     e.detail.parameters._csrf = csrfToken();
     const filterId = form.dataset.filter;
@@ -194,7 +195,7 @@ function configRequest(e, form) {
     if (isPredicateType || isSubmit) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
-            e.detail.parameters.query = predicateToJson(elm, isPredicateType);
+            e.detail.parameters.query = predicateToJson(elm, allowEmpty);
             const title = document.querySelector('#filter-form [name="title"]');
             if (title) {
                 e.detail.parameters.title = title.value;

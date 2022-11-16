@@ -20,24 +20,46 @@ let format_identifiers ?prefix identifiers =
 
 let form_action = Format.asprintf "/admin/filter/%s"
 
-let htmx_attribs ~action ~trigger ?target ?(swap = "outerHTML") ?identifier () =
+let htmx_attribs
+  ~action
+  ~trigger
+  ?target
+  ?(swap = "outerHTML")
+  ?(allow_empty_values = false)
+  ?identifier
+  ()
+  =
   let target =
     target
     |> CCOption.map (fun target ->
          a_user_data "hx-target" (Format.asprintf "#%s" target))
   in
-  let identifier =
-    identifier
-    |> CCOption.map (fun identifier ->
-         a_user_data
-           "hx-vals"
-           (Format.asprintf "{\"id\": \"%s\"}" (format_identifiers identifier)))
+  let hx_vals =
+    let identifier =
+      identifier
+      |> CCOption.map (fun identifier -> "id", format_identifiers identifier)
+    in
+    let allow_empty_values =
+      if allow_empty_values then Some ("allow_empty_values", "true") else None
+    in
+    [ identifier; allow_empty_values ]
+    |> CCList.filter_map CCFun.id
+    |> fun values ->
+    if CCList.is_empty values
+    then []
+    else
+      values
+      |> CCList.map (fun (key, value) ->
+           Format.asprintf "\"%s\": \"%s\"" key value)
+      |> CCString.concat ","
+      |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
   in
   [ a_user_data "hx-post" (action |> Sihl.Web.externalize_path)
   ; a_user_data "hx-trigger" trigger
   ; a_user_data "hx-swap" swap
   ]
-  @ CCList.filter_map CCFun.id [ target; identifier ]
+  @ hx_vals
+  @ CCList.filter_map CCFun.id [ target ]
 ;;
 
 let select_default_option language selected =
@@ -215,12 +237,13 @@ let single_predicate_form language identifier key_list ?key ?operator ?value () 
   in
   let key_selector =
     let attributes =
-      [ a_user_data
-          "hx-post"
-          (Sihl.Web.externalize_path "/admin/filter/toggle-key")
-      ; a_user_data "hx-trigger" "change"
-      ; a_user_data "hx-target" (Format.asprintf "#%s" toggle_id)
-      ]
+      htmx_attribs
+        ~action:"/admin/filter/toggle-key"
+        ~trigger:"change"
+        ~swap:"innerHTML"
+        ~target:toggle_id
+        ~allow_empty_values:true
+        ()
     in
     Component_input.selector
       ~attributes
@@ -249,6 +272,7 @@ let predicate_type_select language target identifier ?selected () =
       ~trigger:"change"
       ~target
       ~identifier
+      ~allow_empty_values:true
       ()
   in
   Component_input.selector
@@ -273,6 +297,7 @@ let add_predicate_btn identifier =
              ~trigger:"click"
              ~target:id
              ~identifier
+             ~allow_empty_values:true
              ())
         `Add
     ]
