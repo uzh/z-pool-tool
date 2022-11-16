@@ -533,5 +533,8 @@ let filter_form csrf language param key_list template_list =
             Pool_common.Message.(Save None)
             ()
         ]
+    ; script
+        ~a:[ a_src (Sihl.Web.externalize_path "/assets/filter.js"); a_defer () ]
+        (txt "")
     ]
 ;;

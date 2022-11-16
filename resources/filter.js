@@ -1,5 +1,3 @@
-// TODO: import as separate file only on filter page?
-
 const errorClass = "error-message";
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
@@ -208,20 +206,19 @@ function configRequest(e, form) {
     }
 }
 
-export function initFilter() {
-    const form = document.getElementById("filter-form");
-    if (form) {
-        const submitButton = document.getElementById("submit-filter-form");
-        submitButton.addEventListener('htmx:beforeSwap', (e) => {
-            if (e.detail.xhr.status === 400) {
-                e.detail.shouldSwap = true;
-            }
-        })
-        addRemovePredicateListener(form);
-        form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(e.detail.elt)
-        })
-        updateContactCount()
-        form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
-    }
+const form = document.getElementById("filter-form");
+if (form) {
+    const submitButton = document.getElementById("submit-filter-form");
+    submitButton.addEventListener('htmx:beforeSwap', (e) => {
+        if (e.detail.xhr.status > 200 && e.detail.xhr.status < 300) {
+            e.detail.shouldSwap = true;
+        }
+    })
+    addRemovePredicateListener(form);
+    form.addEventListener('htmx:afterSwap', (e) => {
+        addRemovePredicateListener(e.detail.elt)
+    })
+    updateContactCount()
+    form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
 }
+
