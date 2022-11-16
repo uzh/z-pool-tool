@@ -75,9 +75,9 @@ let suite =
           ; test_case "filter contains none" `Quick filter_by_list_contains_none
           ; test_case "filter contains some" `Quick filter_by_list_contains_some
           ; test_case
-              "create filter template with subfilter"
+              "create filter template with template"
               `Quick
-              create_filter_template_with_subfilter
+              create_filter_template_with_template
           ] )
     ; ( "matcher"
       , Matcher_test.

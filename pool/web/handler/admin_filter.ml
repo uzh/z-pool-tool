@@ -2,19 +2,19 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
-let subfilter_disabled_key = "subfilters_disabled"
+let templates_disabled_key = Component.Filter.templates_disabled_key
 
-let subfilters_disabled urlencoded =
+let templates_disabled urlencoded =
   let open CCOption in
-  CCList.assoc_opt ~eq:CCString.equal subfilter_disabled_key urlencoded
+  CCList.assoc_opt ~eq:CCString.equal templates_disabled_key urlencoded
   >>= CCList.head_opt
   |> CCOption.map_or ~default:false (CCString.equal "true")
 ;;
 
-let find_all_subfilters tenant_db subfilters_disabled =
-  if subfilters_disabled
+let find_all_templates tenant_db templates_disabled =
+  if templates_disabled
   then Lwt.return []
-  else Filter.find_all_subfilters tenant_db ()
+  else Filter.find_all_templates tenant_db ()
 ;;
 
 let create_layout req = General.create_tenant_layout req
@@ -51,7 +51,7 @@ let index req =
   let error_path = Format.asprintf "/admin/filter" in
   let result ({ Pool_context.tenant_db; _ } as context) =
     Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt filter_list = Filter.find_all_subfilters tenant_db () in
+    @@ let%lwt filter_list = Filter.find_all_templates tenant_db () in
        Page.Admin.Filter.index context filter_list
        |> create_layout ~active_navigation:"/admin/filter" req context
        >|= Sihl.Web.Response.of_html
@@ -68,7 +68,7 @@ let form is_edit req =
          if is_edit
          then
            get_id req Field.Filter Pool_common.Id.of_string
-           |> Filter.find_subfilter tenant_db
+           |> Filter.find_template tenant_db
            >|= CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
@@ -104,7 +104,7 @@ let create ?model req =
       |> Lwt_result.lift
     in
     let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt subfilter_list = Filter.find_subfilters_of_query tenant_db query in
+    let%lwt template_list = Filter.find_templates_of_query tenant_db query in
     let events =
       let open Pool_common.Message in
       let open HttpUtils in
@@ -118,23 +118,23 @@ let create ?model req =
         in
         let* experiment = Experiment.find tenant_db experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle experiment key_list subfilter_list query |> Lwt_result.lift
+        handle experiment key_list template_list query |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
         in
-        let* filter = Filter.find_subfilter tenant_db filter_id in
+        let* filter = Filter.find_template tenant_db filter_id in
         let open Cqrs_command.Filter_command.Update in
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list subfilter_list filter query %> lift
+        >>= handle key_list template_list filter query %> lift
       | None ->
         let open Cqrs_command.Filter_command.Create in
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list subfilter_list query %> lift
+        >>= handle key_list template_list query %> lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -182,11 +182,9 @@ let toggle_predicate_type req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let subfilters_disabled = subfilters_disabled urlencoded in
+    let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt subfilter_list =
-      find_all_subfilters tenant_db subfilters_disabled
-    in
+    let%lwt template_list = find_all_templates tenant_db templates_disabled in
     let* query =
       let open CCResult in
       Lwt_result.lift
@@ -205,8 +203,8 @@ let toggle_predicate_type req =
       predicate_form
         language
         key_list
-        subfilter_list
-        subfilters_disabled
+        template_list
+        templates_disabled
         (Some query)
         ~identifier
         ())
@@ -260,11 +258,9 @@ let add_predicate req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let subfilters_disabled = subfilters_disabled urlencoded in
+    let templates_disabled = templates_disabled urlencoded in
     let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt subfilter_list =
-      find_all_subfilters tenant_db subfilters_disabled
-    in
+    let%lwt template_list = find_all_templates tenant_db templates_disabled in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
       match identifier with
@@ -277,8 +273,8 @@ let add_predicate req =
       Component.Filter.predicate_form
         language
         key_list
-        subfilter_list
-        subfilters_disabled
+        template_list
+        templates_disabled
         query
         ~identifier
         ()
@@ -286,7 +282,7 @@ let add_predicate req =
     let add_button =
       Component.Filter.add_predicate_btn
         (increment_identifier identifier)
-        subfilters_disabled
+        templates_disabled
     in
     Lwt_result.return [ filter_form; add_button ]
   in

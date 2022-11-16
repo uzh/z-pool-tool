@@ -186,9 +186,9 @@ module UpdateFilter : sig
 end = struct
   type t = Filter.query
 
-  let handle experiment key_list subfilter_list query =
+  let handle experiment key_list template_list query =
     let open CCResult in
-    let* query = Filter.validate_query key_list subfilter_list query in
+    let* query = Filter.validate_query key_list template_list query in
     match experiment.filter with
     | None ->
       let id = Pool_common.Id.create () in

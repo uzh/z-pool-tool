@@ -129,7 +129,7 @@ let field_to_string =
   | Status -> "Status"
   | Street -> "Strasse"
   | Styles -> "Styles"
-  | Subquery -> "Subquery"
+  | Template -> "Template"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
@@ -252,7 +252,7 @@ let rec error_to_string = function
       "Die Option \"%s\" benötigt \"%s\"."
       (field_to_string field)
       (field_to_string required)
-  | FilterMustNotContainSubfilter -> "Filter darf keine Subfilter enthalten."
+  | FilterMustNotContainTemplate -> "Filter darf keine Template enthalten."
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

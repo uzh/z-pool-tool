@@ -90,7 +90,7 @@ type query =
   | Or of query list
   | Not of query
   | Pred of Predicate.t
-  | SubQuery of Pool_common.Id.t
+  | Template of Pool_common.Id.t
 
 val show_query : query -> string
 
@@ -108,7 +108,7 @@ module Human : sig
     | Or of t list
     | Not of t
     | Pred of Predicate.human
-    | SubQuery of Pool_common.Id.t option
+    | Template of Pool_common.Id.t option
 
   val show : t -> string
   val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
@@ -133,21 +133,21 @@ val validate_query
   -> query
   -> (query, Pool_common.Message.error) result
 
-val contains_subfilter : query -> bool
+val contains_template : query -> bool
 
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all_subfilters : Pool_database.Label.t -> unit -> t list Lwt.t
+val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
 
-val find_subfilter
+val find_template
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_multiple_subfilters
+val find_multiple_templates
   :  Pool_database.Label.t
   -> Pool_common.Id.t list
   -> t list Lwt.t
@@ -166,7 +166,7 @@ module Utils : sig
     | Or
     | Not
     | Pred
-    | SubQuery
+    | Template
 
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
@@ -192,7 +192,7 @@ val key_of_string
   -> (Key.human, Pool_common.Message.error) Lwt_result.t
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
-val find_subfilters_of_query : Pool_database.Label.t -> query -> t list Lwt.t
+val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
 
 val toggle_predicate_type
   :  Human.t

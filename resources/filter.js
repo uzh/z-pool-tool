@@ -79,8 +79,8 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         return {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
         }
-    } else if (predicateType === "sub_query") {
-        let input = outerPredicate.querySelector('[name="sub_query"]');
+    } else if (predicateType === "template") {
+        let input = outerPredicate.querySelector('[name="template"]');
         if (!input.value && !allowEmpty) {
             addRequiredError(input)
         } else {

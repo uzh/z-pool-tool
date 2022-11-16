@@ -132,7 +132,7 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let filter_to_sql subfilter_list dyn query =
+let filter_to_sql template_list dyn query =
   let open Filter in
   let add_value_to_params value dyn =
     let add c v = Dynparam.add c v dyn in
@@ -176,10 +176,10 @@ let filter_to_sql subfilter_list dyn query =
     | Not f ->
       query_sql (dyn, sql) f
       >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
-    | SubQuery id ->
-      subfilter_list
-      |> CCList.find_opt (fun subfilter -> Pool_common.Id.equal subfilter.id id)
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Subquery)
+    | Template id ->
+      template_list
+      |> CCList.find_opt (fun template -> Pool_common.Id.equal template.id id)
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Template)
       >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred { Predicate.key; operator; value } ->
       let add_single_value dyn value =
@@ -289,7 +289,7 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filtered_params ?group_by subfilter_list experiment_id filter =
+let filtered_params ?group_by template_list experiment_id filter =
   let open CCResult in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
@@ -299,7 +299,7 @@ let filtered_params ?group_by subfilter_list experiment_id filter =
     match filter with
     | None -> Ok (id_param, filtered_base_condition)
     | Some filter ->
-      filter_to_sql subfilter_list id_param filter
+      filter_to_sql template_list id_param filter
       >|= fun (dyn, sql) ->
       dyn, Format.asprintf "%s\n AND %s" filtered_base_condition sql
   in
@@ -314,13 +314,13 @@ let filtered_params ?group_by subfilter_list experiment_id filter =
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   let filter = filter |> CCOption.map (fun f -> f.Filter.query) in
   let open Lwt_result.Infix in
-  let%lwt subfilter_list =
+  let%lwt template_list =
     match filter with
     | None -> Lwt.return []
-    | Some filter -> Filter.find_subfilters_of_query pool filter
+    | Some filter -> Filter.find_templates_of_query pool filter
   in
   filtered_params
-    subfilter_list
+    template_list
     ~group_by:"pool_contacts.user_uuid"
     experiment_id
     filter
@@ -339,12 +339,12 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
 
 let count_filtered pool experiment_id query =
   let open Lwt_result.Infix in
-  let%lwt subfilter_list =
+  let%lwt template_list =
     match query with
     | None -> Lwt.return []
-    | Some query -> Filter.find_subfilters_of_query pool query
+    | Some query -> Filter.find_templates_of_query pool query
   in
-  filtered_params subfilter_list experiment_id query
+  filtered_params template_list experiment_id query
   |> Lwt_result.lift
   >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in

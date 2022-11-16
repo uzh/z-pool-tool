@@ -13,7 +13,7 @@ module Sql = struct
             SUBSTR(HEX(pool_filter.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_filter.uuid), 21)
           )),
-          pool_filter.filter,
+          pool_filter.query,
           pool_filter.title,
           pool_filter.created_at,
           pool_filter.updated_at
@@ -49,7 +49,7 @@ module Sql = struct
    |sql}
   ;;
 
-  let find_subfilter_request =
+  let find_template_request =
     let open Caqti_request.Infix in
     Format.asprintf
       "%s AND pool_filter.uuid = UNHEX(REPLACE(?, '-', ''))"
@@ -58,26 +58,26 @@ module Sql = struct
     |> Caqti_type.string ->! Repo_entity.t
   ;;
 
-  let find_subfilter pool id =
+  let find_template pool id =
     let open Lwt.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
-      find_subfilter_request
+      find_template_request
       (id |> Pool_common.Id.value)
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
-  let find_all_subfilters_request =
+  let find_all_templates_request =
     let open Caqti_request.Infix in
     component_base_query
     |> select_filter_sql
     |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all_subfilters pool =
+  let find_all_templates pool =
     Utils.Database.collect
       (Pool_database.Label.value pool)
-      find_all_subfilters_request
+      find_all_templates_request
   ;;
 
   let find_multiple_request ids =
@@ -92,7 +92,7 @@ module Sql = struct
     |> select_filter_sql
   ;;
 
-  let find_multiple_subfilters pool ids =
+  let find_multiple_templates pool ids =
     if CCList.is_empty ids
     then Lwt.return []
     else
@@ -113,7 +113,7 @@ module Sql = struct
     {sql|
       INSERT INTO pool_filter (
         uuid,
-        filter,
+        query,
         title
       ) VALUES (
         UNHEX(REPLACE(?, '-', '')),
@@ -138,7 +138,7 @@ module Sql = struct
         UPDATE
           pool_filter
         SET
-          filter = $2,
+          query = $2,
           title = $3
         WHERE
           uuid = UNHEX(REPLACE($1, '-', ''))
@@ -152,8 +152,8 @@ module Sql = struct
 end
 
 let find = Sql.find
-let find_all_subfilters = Sql.find_all_subfilters
-let find_subfilter = Sql.find_subfilter
-let find_multiple_subfilters = Sql.find_multiple_subfilters
+let find_all_templates = Sql.find_all_templates
+let find_template = Sql.find_template
+let find_multiple_templates = Sql.find_multiple_templates
 let insert = Sql.insert
 let update = Sql.update

@@ -383,8 +383,7 @@ type query =
   | Or of query list [@printer print "or"] [@name "or"]
   | Not of query [@printer print "not"] [@name "not"]
   | Pred of Predicate.t [@printer print "pred"] [@name "pred"]
-  | SubQuery of Pool_common.Id.t [@printer print "sub_query"]
-      [@name "sub_query"]
+  | Template of Pool_common.Id.t [@printer print "template"] [@name "template"]
 [@@deriving show { with_path = false }, variants, eq]
 
 let rec yojson_of_query f : Yojson.Safe.t =
@@ -393,7 +392,7 @@ let rec yojson_of_query f : Yojson.Safe.t =
    | Or queries -> `List (CCList.map yojson_of_query queries)
    | Not f -> f |> yojson_of_query
    | Pred p -> Predicate.yojson_of_t p
-   | SubQuery id -> `String (Pool_common.Id.value id))
+   | Template id -> `String (Pool_common.Id.value id))
   |> fun pred -> `Assoc [ f |> show_query, pred ]
 ;;
 
@@ -415,8 +414,8 @@ let rec query_of_yojson json =
        >|= fun lst -> Or lst
      | "not", f -> f |> query_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
-     | "sub_query", `String id ->
-       id |> Pool_common.Id.of_string |> subquery |> CCResult.pure
+     | "template", `String id ->
+       id |> Pool_common.Id.of_string |> template |> CCResult.pure
      | _ -> Error error)
   | _ -> Error error
 ;;
@@ -441,33 +440,31 @@ let create ?(id = Pool_common.Id.create ()) title query =
   }
 ;;
 
-let rec validate_query key_list (subfilter_list : t list) m =
+let rec validate_query key_list (template_list : t list) m =
   let open CCResult in
   let validate_list fnc queries =
     queries
-    |> CCList.map (validate_query key_list subfilter_list)
+    |> CCList.map (validate_query key_list template_list)
     |> CCList.all_ok
     >|= fnc
   in
   match m with
   | And queries -> validate_list (fun lst -> And lst) queries
   | Or queries -> validate_list (fun lst -> Or lst) queries
-  | Not f -> validate_query key_list subfilter_list f >|= not
+  | Not f -> validate_query key_list template_list f >|= not
   | Pred p -> Predicate.validate p key_list >|= pred
-  | SubQuery filter_id ->
-    CCList.find_opt
-      (fun f -> Pool_common.Id.equal f.id filter_id)
-      subfilter_list
+  | Template filter_id ->
+    CCList.find_opt (fun f -> Pool_common.Id.equal f.id filter_id) template_list
     |> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
-    >|= CCFun.const (subquery filter_id)
+    >|= CCFun.const (template filter_id)
 ;;
 
-let rec contains_subfilter = function
+let rec contains_template = function
   | And queries | Or queries ->
-    CCList.map contains_subfilter queries
+    CCList.map contains_template queries
     |> CCList.filter CCFun.id
     |> fun lst -> CCList.length lst > 0
-  | Not p -> contains_subfilter p
+  | Not p -> contains_template p
   | Pred _ -> false
-  | SubQuery _ -> true
+  | Template _ -> true
 ;;

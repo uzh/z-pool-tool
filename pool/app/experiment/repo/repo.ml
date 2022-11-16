@@ -67,7 +67,7 @@ module Sql = struct
             SUBSTR(HEX(pool_filter.uuid), 17, 4), '-',
             SUBSTR(HEX(pool_filter.uuid), 21)
           )),
-          pool_filter.filter,
+          pool_filter.query,
           pool_filter.title,
           pool_filter.created_at,
           pool_filter.updated_at,

@@ -463,29 +463,29 @@ let filter_by_list_contains_some _ () =
   Lwt.return_unit
 ;;
 
-let create_filter_template_with_subfilter _ () =
+let create_filter_template_with_template _ () =
   let open Pool_common in
   let%lwt () =
     let open CCResult in
     let open Filter in
-    let subfilter_id = Pool_common.Id.create () in
-    let subfilter =
+    let template_id = Pool_common.Id.create () in
+    let template =
       Pred
         Predicate.
           { key = Key.(Hardcoded Name)
           ; operator = Operator.Equal
           ; value = Single (Str "Foo")
           }
-      |> create ~id:subfilter_id None
+      |> create ~id:template_id None
     in
-    let filter = SubQuery subfilter_id in
+    let filter = Template template_id in
     let events =
       let open Cqrs_command.Filter_command.Create in
       Message.Field.[ show Title, [ "Some title" ] ]
       |> decode
-      >>= handle [] [ subfilter ] filter
+      >>= handle [] [ template ] filter
     in
-    let expected = Error Message.FilterMustNotContainSubfilter in
+    let expected = Error Message.FilterMustNotContainTemplate in
     Alcotest.(
       check
         (result (list Test_utils.event) Test_utils.error)

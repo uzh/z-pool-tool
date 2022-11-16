@@ -163,7 +163,7 @@ module Field = struct
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]
-    | Subquery [@name "sub_query"] [@printer go "sub_query"]
+    | Template [@name "template"] [@printer go "template"]
     | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer go "tenant_disabled_flag"]
@@ -227,7 +227,7 @@ type error =
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FieldRequiresCheckbox of (Field.t * Field.t)
-  | FilterMustNotContainSubfilter
+  | FilterMustNotContainTemplate
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t

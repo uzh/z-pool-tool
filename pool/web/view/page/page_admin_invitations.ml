@@ -62,7 +62,7 @@ module Partials = struct
     Pool_context.{ csrf; language; _ }
     experiment
     key_list
-    subfilter_list
+    template_list
     filtered_contacts
     =
     let form_table =
@@ -108,7 +108,7 @@ module Partials = struct
             language
             (ExperimentParam experiment)
             key_list
-            subfilter_list)
+            template_list)
       ; form
           ~a:
             [ a_method `Post
