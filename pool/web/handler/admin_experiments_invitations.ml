@@ -40,7 +40,7 @@ let index req =
          Contact.find_filtered
            tenant_db
            experiment.Experiment.id
-           (experiment |> Experiment.filter_predicate)
+           experiment.Experiment.filter
        in
        Page.Admin.Experiments.invitations
          experiment

@@ -312,6 +312,7 @@ let filtered_params ?group_by subfilter_list experiment_id filter =
 ;;
 
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
+  let filter = filter |> CCOption.map (fun f -> f.Filter.filter) in
   let open Lwt_result.Infix in
   let%lwt subfilter_list =
     match filter with

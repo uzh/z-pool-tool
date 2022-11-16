@@ -254,7 +254,7 @@ let filter_contacts _ () =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res =
@@ -298,7 +298,7 @@ let filter_by_email _ () =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
@@ -396,7 +396,7 @@ let test_list_filter answer_index operator contact experiment expected =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in

@@ -102,7 +102,6 @@ let rec search_subfilters ids filter =
   | SubFilter id -> id :: ids
 ;;
 
-(* TODO: Probably not necessary to pass filter query, just pass entire filter *)
 let find_subfilters_of_filter tenant_db ?exclude filter =
   let open Lwt.Infix in
   let rec go filters ids subfilters =

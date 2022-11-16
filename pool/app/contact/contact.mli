@@ -90,15 +90,16 @@ val find_multiple
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
-(* TODO: pass Filter.t option *)
 val find_filtered
   :  Pool_database.Label.t
   -> ?order_by:string
   -> ?limit:int
   -> Pool_common.Id.t
-  -> Filter.filter option
+  -> Filter.t option
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
+(* Pass filter.t option? That would not allow to get count before saving
+   filter *)
 val count_filtered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
