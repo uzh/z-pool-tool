@@ -133,6 +133,8 @@ val validate_query
   -> query
   -> (query, Pool_common.Message.error) result
 
+val contains_subfilter : query -> bool
+
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t

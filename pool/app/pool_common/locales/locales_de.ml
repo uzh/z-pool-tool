@@ -252,6 +252,7 @@ let rec error_to_string = function
       "Die Option \"%s\" benötigt \"%s\"."
       (field_to_string field)
       (field_to_string required)
+  | FilterMustNotContainSubfilter -> "Filter darf keine Subfilter enthalten."
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->

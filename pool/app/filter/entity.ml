@@ -461,3 +461,13 @@ let rec validate_query key_list (subfilter_list : t list) m =
     |> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
     >|= CCFun.const (subquery filter_id)
 ;;
+
+let rec contains_subfilter = function
+  | And queries | Or queries ->
+    CCList.map contains_subfilter queries
+    |> CCList.filter CCFun.id
+    |> fun lst -> CCList.length lst > 0
+  | Not p -> contains_subfilter p
+  | Pred _ -> false
+  | SubQuery _ -> true
+;;

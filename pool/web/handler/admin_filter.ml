@@ -2,6 +2,21 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Field = Pool_common.Message.Field
 
+let subfilter_disabled_key = "subfilters_disabled"
+
+let subfilters_disabled urlencoded =
+  let open CCOption in
+  CCList.assoc_opt ~eq:CCString.equal subfilter_disabled_key urlencoded
+  >>= CCList.head_opt
+  |> CCOption.map_or ~default:false (CCString.equal "true")
+;;
+
+let find_all_subfilters tenant_db subfilters_disabled =
+  if subfilters_disabled
+  then Lwt.return []
+  else Filter.find_all_subfilters tenant_db ()
+;;
+
 let create_layout req = General.create_tenant_layout req
 
 let find_in_params urlencoded field =
@@ -58,13 +73,7 @@ let form is_edit req =
          else Lwt.return_none |> Lwt_result.ok
        in
        let%lwt key_list = Filter.all_keys tenant_db in
-       let%lwt subfilter_list =
-         Filter.find_all_subfilters
-           ?exclude:(filter |> CCOption.map (fun f -> f.Filter.id))
-           tenant_db
-           ()
-       in
-       Page.Admin.Filter.edit context filter key_list subfilter_list
+       Page.Admin.Filter.edit context filter key_list
        |> create_layout req context
        >|= Sihl.Web.Response.of_html
   in
@@ -173,18 +182,10 @@ let toggle_predicate_type req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let subfilters_disabled = subfilters_disabled urlencoded in
     let%lwt key_list = Filter.all_keys tenant_db in
     let%lwt subfilter_list =
-      let exclude =
-        let open CCOption in
-        CCList.assoc_opt
-          ~eq:CCString.equal
-          Pool_common.Message.Field.(show Filter)
-          urlencoded
-        >>= CCList.head_opt
-        >|= Pool_common.Id.of_string
-      in
-      Filter.find_all_subfilters ?exclude tenant_db ()
+      find_all_subfilters tenant_db subfilters_disabled
     in
     let* query =
       let open CCResult in
@@ -203,9 +204,10 @@ let toggle_predicate_type req =
     Component.Filter.(
       predicate_form
         language
-        (Some query)
         key_list
         subfilter_list
+        subfilters_disabled
+        (Some query)
         ~identifier
         ())
     |> Lwt_result.return
@@ -258,8 +260,11 @@ let add_predicate req =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+    let subfilters_disabled = subfilters_disabled urlencoded in
     let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt subfilter_list = Filter.find_all_subfilters tenant_db () in
+    let%lwt subfilter_list =
+      find_all_subfilters tenant_db subfilters_disabled
+    in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
       match identifier with
@@ -267,18 +272,21 @@ let add_predicate req =
       | [ tl ] -> [ tl + 1 ]
       | hd :: tl -> hd :: increment_identifier tl
     in
-    let predicate = Filter.Human.init () |> CCOption.pure in
+    let query = Filter.Human.init () |> CCOption.pure in
     let filter_form =
       Component.Filter.predicate_form
         language
-        predicate
         key_list
         subfilter_list
+        subfilters_disabled
+        query
         ~identifier
         ()
     in
     let add_button =
-      Component.Filter.add_predicate_btn (increment_identifier identifier)
+      Component.Filter.add_predicate_btn
+        (increment_identifier identifier)
+        subfilters_disabled
     in
     Lwt_result.return [ filter_form; add_button ]
   in

@@ -40,7 +40,7 @@ let index { Pool_context.language; _ } filter_list =
     ]
 ;;
 
-let edit { Pool_context.language; csrf; _ } filter key_list subfilter_list =
+let edit { Pool_context.language; csrf; _ } filter key_list =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Component.Partials.form_title
@@ -48,6 +48,6 @@ let edit { Pool_context.language; csrf; _ } filter key_list subfilter_list =
         Pool_common.Message.Field.Filter
         filter
     ; Component.Filter.(
-        filter_form csrf language (FilterParam filter) key_list subfilter_list)
+        filter_form csrf language (FilterParam filter) key_list [])
     ]
 ;;

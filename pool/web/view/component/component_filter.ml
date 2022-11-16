@@ -26,6 +26,7 @@ let htmx_attribs
   ?target
   ?(swap = "outerHTML")
   ?(allow_empty_values = false)
+  ?subfilters_disabled
   ?identifier
   ()
   =
@@ -42,7 +43,12 @@ let htmx_attribs
     let allow_empty_values =
       if allow_empty_values then Some ("allow_empty_values", "true") else None
     in
-    [ identifier; allow_empty_values ]
+    let subfilters_disabled =
+      subfilters_disabled
+      |> CCOption.map (fun disabled ->
+           "subfilters_disabled", Bool.to_string disabled)
+    in
+    [ identifier; allow_empty_values; subfilters_disabled ]
     |> CCList.filter_map CCFun.id
     |> fun values ->
     if CCList.is_empty values
@@ -230,7 +236,16 @@ let predicate_value_form language ?key ?value ?operator () =
     [ operator_select; input_field ]
 ;;
 
-let single_predicate_form language identifier key_list ?key ?operator ?value () =
+let single_predicate_form
+  language
+  identifier
+  key_list
+  subfilters_disabled
+  ?key
+  ?operator
+  ?value
+  ()
+  =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
     predicate_value_form language ?key ?value ?operator ()
@@ -243,6 +258,7 @@ let single_predicate_form language identifier key_list ?key ?operator ?value () 
         ~swap:"innerHTML"
         ~target:toggle_id
         ~allow_empty_values:true
+        ~subfilters_disabled
         ()
     in
     Component_input.selector
@@ -265,7 +281,14 @@ let single_predicate_form language identifier key_list ?key ?operator ?value () 
     ]
 ;;
 
-let predicate_type_select language target identifier ?selected () =
+let predicate_type_select
+  language
+  target
+  identifier
+  subfilters_disabled
+  ?selected
+  ()
+  =
   let attributes =
     htmx_attribs
       ~action:(form_action "toggle-predicate-type")
@@ -273,7 +296,14 @@ let predicate_type_select language target identifier ?selected () =
       ~target
       ~identifier
       ~allow_empty_values:true
+      ~subfilters_disabled
       ()
+  in
+  let all_labels =
+    let open Utils in
+    if subfilters_disabled
+    then CCList.remove ~eq:equal_filter_label ~key:SubQuery all_filter_labels
+    else all_filter_labels
   in
   Component_input.selector
     ~option_formatter:Utils.to_label
@@ -281,12 +311,12 @@ let predicate_type_select language target identifier ?selected () =
     language
     Pool_common.Message.Field.Predicate
     Utils.show_filter_label
-    Utils.all_filter_labels
+    all_labels
     selected
     ()
 ;;
 
-let add_predicate_btn identifier =
+let add_predicate_btn identifier subfilters_disabled =
   let id = format_identifiers ~prefix:"new" identifier in
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
@@ -298,6 +328,7 @@ let add_predicate_btn identifier =
              ~target:id
              ~identifier
              ~allow_empty_values:true
+             ~subfilters_disabled
              ())
         `Add
     ]
@@ -305,17 +336,18 @@ let add_predicate_btn identifier =
 
 let rec predicate_form
   language
-  filter
   key_list
   subfilter_list
+  subfilters_disabled
+  query
   ?(identifier = [ 0 ])
   ()
   =
-  let filter = CCOption.value ~default:(Filter.Human.init ()) filter in
+  let query = CCOption.value ~default:(Filter.Human.init ()) query in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
-    match filter with
+    match query with
     | And _ -> Utils.And
     | Or _ -> Utils.Or
     | Not _ -> Utils.Not
@@ -328,36 +360,30 @@ let rec predicate_form
       [ Component_icon.icon `TrashOutline ]
   in
   let predicate_form =
+    let to_form =
+      predicate_form language key_list subfilter_list subfilters_disabled
+    in
     let open Human in
-    match filter with
+    match query with
     | And queries | Or queries ->
       CCList.mapi
         (fun i query ->
           let query = CCOption.pure query in
-          predicate_form
-            language
-            query
-            key_list
-            subfilter_list
-            ~identifier:(identifier @ [ i ])
-            ())
+          to_form query ~identifier:(identifier @ [ i ]) ())
         queries
-      @ [ add_predicate_btn (identifier @ [ CCList.length queries ]) ]
+      @ [ add_predicate_btn
+            (identifier @ [ CCList.length queries ])
+            subfilters_disabled
+        ]
     | Not query ->
-      predicate_form
-        language
-        (Some query)
-        key_list
-        subfilter_list
-        ~identifier:(identifier @ [ 0 ])
-        ()
-      |> CCList.pure
+      to_form (Some query) ~identifier:(identifier @ [ 0 ]) () |> CCList.pure
     | Pred predicate ->
       let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
       single_predicate_form
         language
         identifier
         key_list
+        subfilters_disabled
         ?key
         ?operator
         ?value
@@ -382,7 +408,7 @@ let rec predicate_form
         ()
       |> CCList.pure
   in
-  let data_attr = [ a_user_data "predicate" Filter.Human.(show filter) ] in
+  let data_attr = [ a_user_data "predicate" Filter.Human.(show query) ] in
   div
     ~a:
       ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
@@ -393,6 +419,7 @@ let rec predicate_form
          language
          predicate_identifier
          identifier
+         subfilters_disabled
          ~selected
          ()
      ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
@@ -442,8 +469,19 @@ let filter_form csrf language param key_list subfilter_list =
             []
         ]
   in
+  let subfilters_disabled =
+    match param with
+    | ExperimentParam _ -> false
+    | FilterParam _ -> true
+  in
   let predicates =
-    predicate_form language filter_query key_list subfilter_list ()
+    predicate_form
+      language
+      key_list
+      subfilter_list
+      subfilters_disabled
+      filter_query
+      ()
   in
   let title_input, _ =
     match param with
@@ -485,7 +523,12 @@ let filter_form csrf language param key_list subfilter_list =
             language
             ~attributes:
               (a_id "submit-filter-form"
-              :: htmx_attribs ~action ~swap:"none" ~trigger:"click" ())
+              :: htmx_attribs
+                   ~action
+                   ~swap:"none"
+                   ~trigger:"click"
+                   ~subfilters_disabled
+                   ())
             Pool_common.Message.(Save None)
             ()
         ]

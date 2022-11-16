@@ -8,6 +8,17 @@ let default_schema command =
 
 let default_command = CCFun.id
 
+let validate_query key_list subfilter_list query =
+  let open CCResult in
+  let* query = Filter.validate_query key_list subfilter_list query in
+  let* query =
+    if Filter.contains_subfilter query
+    then Error Pool_common.Message.FilterMustNotContainSubfilter
+    else Ok query
+  in
+  Ok query
+;;
+
 module Create : sig
   type t = Filter.Title.t
 
@@ -28,7 +39,7 @@ end = struct
 
   let handle key_list subfilter_list query title =
     let open CCResult in
-    let* query = Filter.validate_query key_list subfilter_list query in
+    let* query = validate_query key_list subfilter_list query in
     Ok
       [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
   ;;
@@ -64,7 +75,7 @@ end = struct
 
   let handle key_list subfilter_list filter query title =
     let open CCResult in
-    let* query = Filter.validate_query key_list subfilter_list query in
+    let* query = validate_query key_list subfilter_list query in
     Ok
       Filter.
         [ Updated { filter with query; title = Some title } |> Pool_event.filter
