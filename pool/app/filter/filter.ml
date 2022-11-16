@@ -38,8 +38,8 @@ let key_of_string tenant_db str =
     >|= fun field : human -> CustomField field
 ;;
 
-let rec t_to_human key_list subfilter_list (t : filter) =
-  let t_to_human = t_to_human key_list subfilter_list in
+let rec t_to_human key_list subquery_list (t : query) =
+  let t_to_human = t_to_human key_list subquery_list in
   match t with
   | And predicates -> Human.And (predicates |> CCList.map t_to_human)
   | Or predicates -> Human.Or (predicates |> CCList.map t_to_human)
@@ -51,11 +51,11 @@ let rec t_to_human key_list subfilter_list (t : filter) =
         ; operator = Some operator
         ; value = Some value
         }
-  | SubFilter filter_id ->
-    subfilter_list
+  | SubQuery filter_id ->
+    subquery_list
     |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id filter_id)
     |> CCOption.map (fun s -> s.id)
-    |> fun id -> Human.SubFilter id
+    |> fun id -> Human.SubQuery id
 ;;
 
 let toggle_predicate_type (filter : Human.t) predicate_type =
@@ -66,10 +66,10 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
     | And lst | Or lst -> lst
     | Not f -> [ f ]
     | Pred s -> [ Pred s ]
-    | SubFilter id -> [ SubFilter id ]
+    | SubQuery id -> [ SubQuery id ]
   in
-  let rec find_predicate (filter : Human.t) =
-    match filter with
+  let rec find_predicate (query : Human.t) =
+    match query with
     | And lst | Or lst ->
       lst
       |> CCList.head_opt
@@ -77,47 +77,44 @@ let toggle_predicate_type (filter : Human.t) predicate_type =
       |> CCOption.value ~default:(empty ())
     | Not f -> find_predicate f
     | Pred s -> s
-    | SubFilter _ -> empty ()
+    | SubQuery _ -> empty ()
   in
   match predicate_type with
   | "and" -> Ok (Human.And (filter_list ()))
   | "or" -> Ok (Or (filter_list ()))
   | "not" -> Ok (Not (Pred (find_predicate filter)))
   | "pred" -> Ok (Pred (find_predicate filter) : t)
-  | "sub_filter" -> Ok (SubFilter None)
+  | "sub_query" -> Ok (SubQuery None)
   | _ -> Error Pool_common.Message.(Invalid Field.Filter)
 ;;
 
-let rec search_subfilters ids filter =
-  let search_list filters ids =
-    CCList.fold_left
-      (fun ids filter -> search_subfilters ids filter)
-      ids
-      filters
+let rec search_subfilters ids query =
+  let search_list ids =
+    CCList.fold_left (fun ids filter -> search_subfilters ids filter) ids
   in
-  match filter with
-  | And lst | Or lst -> search_list lst ids
+  match query with
+  | And lst | Or lst -> search_list ids lst
   | Not f -> search_subfilters ids f
   | Pred _ -> ids
-  | SubFilter id -> id :: ids
+  | SubQuery id -> id :: ids
 ;;
 
-let find_subfilters_of_filter tenant_db ?exclude filter =
+let find_subfilters_of_query tenant_db ?exclude query =
   let open Lwt.Infix in
-  let rec go filters ids subfilters =
-    match filters with
+  let rec go queries ids subfilters =
+    match queries with
     | [] -> subfilters |> Lwt.return
     | _ ->
-      let new_ids = CCList.flat_map (search_subfilters []) filters in
+      let new_ids = CCList.flat_map (search_subfilters []) queries in
       CCList.filter
         (fun id -> Stdlib.not (CCList.mem ~eq:Pool_common.Id.equal id ids))
         new_ids
       |> find_multiple_subfilters ?exclude tenant_db
       >>= fun filter_list ->
       go
-        (filter_list |> CCList.map (fun f -> f.filter))
+        (filter_list |> CCList.map (fun f -> f.query))
         (ids @ new_ids)
         (subfilters @ filter_list)
   in
-  go [ filter ] [] []
+  go [ query ] [] []
 ;;

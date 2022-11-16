@@ -5,7 +5,7 @@ type t =
   | Or of t list [@printer print "or"]
   | Not of t [@printer print "not"]
   | Pred of Entity.Predicate.human [@printer print "pred"]
-  | SubFilter of Pool_common.Id.t option [@printer print "sub_filter"]
+  | SubQuery of Pool_common.Id.t option [@printer print "sub_query"]
 [@@deriving show { with_path = false }]
 
 let init ?key ?operator ?value () : t =
@@ -50,25 +50,25 @@ let rec of_yojson (key_list : Entity.Key.human list) json
   : (t, Pool_common.Message.error) result
   =
   let open CCResult in
-  let error = Pool_common.Message.(Invalid Field.Filter) in
+  let error = Pool_common.Message.(Invalid Field.Query) in
   let of_yojson = of_yojson key_list in
-  let of_list to_predicate filters =
-    filters |> CCList.map of_yojson |> CCList.all_ok >|= to_predicate
+  let of_list to_predicate queries =
+    queries |> CCList.map of_yojson |> CCList.all_ok >|= to_predicate
   in
   match json with
-  | `Assoc [ (key, filter) ] ->
-    (match key, filter with
-     | "and", `List filters -> of_list (fun lst -> And lst) filters
-     | "or", `List filters -> of_list (fun lst -> Or lst) filters
+  | `Assoc [ (key, query) ] ->
+    (match key, query with
+     | "and", `List queries -> of_list (fun lst -> And lst) queries
+     | "or", `List queries -> of_list (fun lst -> Or lst) queries
      | "not", f -> f |> of_yojson >|= fun p -> Not p
      | "pred", p -> p |> predicate_of_yojson key_list >|= fun p -> Pred p
-     | "sub_filter", id ->
+     | "sub_query", id ->
        let id =
          match id with
          | `String id -> id |> Pool_common.Id.of_string |> CCOption.pure
          | _ -> None
        in
-       Ok (SubFilter id)
+       Ok (SubQuery id)
      | _ -> Error error)
   | _ -> Error error
 ;;

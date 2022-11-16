@@ -88,16 +88,14 @@ let create ?model req =
       Pool_context.find req |> CCResult.get_exn
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-    let* filter_query =
+    let* query =
       let open CCResult in
-      find_in_params urlencoded Pool_common.Message.Field.Filter
-      >>= Filter.filter_of_string
+      find_in_params urlencoded Pool_common.Message.Field.Query
+      >>= Filter.query_of_string
       |> Lwt_result.lift
     in
     let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt subfilter_list =
-      Filter.find_subfilters_of_filter tenant_db filter_query
-    in
+    let%lwt subfilter_list = Filter.find_subfilters_of_query tenant_db query in
     let events =
       let open Pool_common.Message in
       let open HttpUtils in
@@ -111,8 +109,7 @@ let create ?model req =
         in
         let* experiment = Experiment.find tenant_db experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle experiment key_list subfilter_list filter_query
-        |> Lwt_result.lift
+        handle experiment key_list subfilter_list query |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
@@ -122,13 +119,13 @@ let create ?model req =
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list subfilter_list filter filter_query %> lift
+        >>= handle key_list subfilter_list filter query %> lift
       | None ->
         let open Cqrs_command.Filter_command.Create in
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list subfilter_list filter_query %> lift
+        >>= handle key_list subfilter_list query %> lift
     in
     let handle events =
       Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
@@ -182,18 +179,18 @@ let toggle_predicate_type req =
         let open CCOption in
         CCList.assoc_opt
           ~eq:CCString.equal
-          Pool_common.Message.Field.(show FilterId)
+          Pool_common.Message.Field.(show Filter)
           urlencoded
         >>= CCList.head_opt
         >|= Pool_common.Id.of_string
       in
       Filter.find_all_subfilters ?exclude tenant_db ()
     in
-    let* filter =
+    let* query =
       let open CCResult in
       Lwt_result.lift
       @@ let* current =
-           find_in_params urlencoded Pool_common.Message.Field.Filter
+           find_in_params urlencoded Pool_common.Message.Field.Query
            >|= Yojson.Safe.from_string
            >>= Filter.Human.of_yojson key_list
          in
@@ -206,7 +203,7 @@ let toggle_predicate_type req =
     Component.Filter.(
       predicate_form
         language
-        (Some filter)
+        (Some query)
         key_list
         subfilter_list
         ~identifier
@@ -315,19 +312,19 @@ let count_contacts req =
     Lwt_result.map_error Pool_common.(Utils.error_to_string language)
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-       let* filter =
+       let* query =
          let open CCResult in
-         find_in_params urlencoded Pool_common.Message.Field.Filter
+         find_in_params urlencoded Pool_common.Message.Field.Query
          |> CCOption.of_result
          |> CCOption.map_or
               ~default:
                 (Ok
                    (experiment.Experiment.filter
-                   |> CCOption.map (fun filter -> filter.Filter.filter)))
-              (fun str -> str |> Filter.filter_of_string >|= CCOption.pure)
+                   |> CCOption.map (fun filter -> filter.Filter.query)))
+              (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
          |> Lwt_result.lift
        in
-       Contact.count_filtered tenant_db experiment.Experiment.id filter
+       Contact.count_filtered tenant_db experiment.Experiment.id query
   in
   let status, (json : Yojson.Safe.t) =
     match result with

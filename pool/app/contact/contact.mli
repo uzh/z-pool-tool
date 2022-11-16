@@ -103,7 +103,7 @@ val find_filtered
 val count_filtered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Filter.filter option
+  -> Filter.query option
   -> (int, Pool_common.Message.error) Lwt_result.t
 
 val find_by_email

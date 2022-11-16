@@ -295,7 +295,7 @@ let rec predicate_form
     | Or _ -> Utils.Or
     | Not _ -> Utils.Not
     | Pred _ -> Utils.Pred
-    | SubFilter _ -> Utils.SubFilter
+    | SubQuery _ -> Utils.SubQuery
   in
   let delete_button () =
     div
@@ -305,64 +305,57 @@ let rec predicate_form
   let predicate_form =
     let open Human in
     match filter with
-    | filter ->
-      (match filter with
-       | And filters | Or filters ->
-         CCList.mapi
-           (fun i filter ->
-             let filter = CCOption.pure filter in
-             predicate_form
-               language
-               filter
-               key_list
-               subfilter_list
-               ~identifier:(identifier @ [ i ])
-               ())
-           filters
-         @ [ add_predicate_btn (identifier @ [ CCList.length filters ]) ]
-       | Not filter ->
-         predicate_form
-           language
-           (Some filter)
-           key_list
-           subfilter_list
-           ~identifier:(identifier @ [ 0 ])
-           ()
-         |> CCList.pure
-       | Pred predicate ->
-         let ({ Predicate.key; operator; value } : Predicate.human) =
-           predicate
-         in
-         single_predicate_form
-           language
-           identifier
-           key_list
-           ?key
-           ?operator
-           ?value
-           ()
-         |> CCList.pure
-       | SubFilter id ->
-         let selected =
-           CCOption.bind id (fun id ->
-             subfilter_list
-             |> CCList.find_opt (fun filter ->
-                  Pool_common.Id.equal filter.id id))
-         in
-         Component_input.selector
-           ~add_empty:true
-           ~option_formatter:(fun f ->
-             f.title
-             |> CCOption.map_or
-                  ~default:(f.id |> Pool_common.Id.value)
-                  Title.value)
-           language
-           Pool_common.Message.Field.Subfilter
-           (fun f -> f.id |> Pool_common.Id.value)
-           subfilter_list
-           selected
-           ()
-         |> CCList.pure)
+    | And queries | Or queries ->
+      CCList.mapi
+        (fun i query ->
+          let query = CCOption.pure query in
+          predicate_form
+            language
+            query
+            key_list
+            subfilter_list
+            ~identifier:(identifier @ [ i ])
+            ())
+        queries
+      @ [ add_predicate_btn (identifier @ [ CCList.length queries ]) ]
+    | Not query ->
+      predicate_form
+        language
+        (Some query)
+        key_list
+        subfilter_list
+        ~identifier:(identifier @ [ 0 ])
+        ()
+      |> CCList.pure
+    | Pred predicate ->
+      let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
+      single_predicate_form
+        language
+        identifier
+        key_list
+        ?key
+        ?operator
+        ?value
+        ()
+      |> CCList.pure
+    | SubQuery id ->
+      let selected =
+        CCOption.bind id (fun id ->
+          subfilter_list
+          |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id id))
+      in
+      Component_input.selector
+        ~add_empty:true
+        ~option_formatter:(fun f ->
+          f.title
+          |> CCOption.map_or ~default:(f.id |> Pool_common.Id.value) Title.value)
+        language
+        Pool_common.Message.Field.Subquery
+        (fun f -> f.id |> Pool_common.Id.value)
+        subfilter_list
+        selected
+        ()
+      |> CCList.pure
   in
   let data_attr = [ a_user_data "predicate" Filter.Human.(show filter) ] in
   div
@@ -406,7 +399,7 @@ let filter_form csrf language param key_list subfilter_list =
     filter
     |> CCOption.map
          Filter.(
-           fun filter -> filter.filter |> t_to_human key_list subfilter_list)
+           fun filter -> filter.query |> t_to_human key_list subfilter_list)
   in
   let result_counter =
     match param with
@@ -447,7 +440,7 @@ let filter_form csrf language param key_list subfilter_list =
        experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
      | FilterParam f -> f |> CCOption.map (fun f -> f.Filter.id))
     |> CCOption.map_or ~default:[] (fun id ->
-         [ a_user_data "filter-id" (Pool_common.Id.value id) ])
+         Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
   in
   div
     ~a:[ a_class [ "stack" ] ]

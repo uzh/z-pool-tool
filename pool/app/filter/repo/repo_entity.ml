@@ -20,12 +20,11 @@ module Filter = struct
     let open CCResult in
     Caqti_type.(
       custom
-        ~encode:(fun m ->
-          m |> yojson_of_filter |> Yojson.Safe.to_string |> pure)
+        ~encode:(fun m -> m |> yojson_of_query |> Yojson.Safe.to_string |> pure)
         ~decode:(fun m ->
           m
           |> Yojson.Safe.from_string
-          |> filter_of_yojson
+          |> query_of_yojson
           |> CCResult.map_err Common.(Utils.error_to_string Language.En))
         string)
   ;;
@@ -33,11 +32,11 @@ end
 
 let t =
   let encode (m : t) =
-    Ok (m.id, (m.filter, (m.title, (m.created_at, m.updated_at))))
+    Ok (m.id, (m.query, (m.title, (m.created_at, m.updated_at))))
   in
-  let decode (id, (filter, (title, (created_at, updated_at)))) =
+  let decode (id, (query, (title, (created_at, updated_at)))) =
     let open CCResult in
-    Ok { id; filter; title; created_at; updated_at }
+    Ok { id; query; title; created_at; updated_at }
   in
   Caqti_type.(
     custom
@@ -54,7 +53,7 @@ let t =
 
 module Write = struct
   let t =
-    let encode (m : t) = Ok (m.id, (m.filter, m.title)) in
+    let encode (m : t) = Ok (m.id, (m.query, m.title)) in
     let decode _ = failwith "Write only model" in
     Caqti_type.(
       custom ~encode ~decode (tup2 RepoId.t (tup2 Filter.t (option Title.t))))

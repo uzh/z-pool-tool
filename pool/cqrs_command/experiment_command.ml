@@ -173,7 +173,7 @@ end = struct
 end
 
 module UpdateFilter : sig
-  type t = Filter.filter
+  type t = Filter.query
 
   val handle
     :  Experiment.t
@@ -184,22 +184,22 @@ module UpdateFilter : sig
 
   val effects : Experiment.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Filter.filter
+  type t = Filter.query
 
-  let handle experiment key_list subfilter_list filter =
+  let handle experiment key_list subfilter_list query =
     let open CCResult in
-    let* filter = Filter.validate_filter key_list subfilter_list filter in
+    let* query = Filter.validate_query key_list subfilter_list query in
     match experiment.filter with
     | None ->
       let id = Pool_common.Id.create () in
-      let filter = Filter.create ~id None filter in
+      let filter = Filter.create ~id None query in
       let experiment = Experiment.{ experiment with filter = Some filter } in
       Ok
         [ Filter.Created filter |> Pool_event.filter
         ; Experiment.Updated experiment |> Pool_event.experiment
         ]
     | Some current_filter ->
-      let filter = Filter.{ current_filter with filter } in
+      let filter = Filter.{ current_filter with query } in
       Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 

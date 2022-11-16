@@ -73,7 +73,6 @@ module Field = struct
     | Filename [@name "filename"] [@printer go "filename"]
     | Filesize [@name "filesize"] [@printer go "filesize"]
     | Filter [@name "filter"] [@printer go "filter"]
-    | FilterId [@name "filter_id"] [@printer go "filter_id"]
     | Firstname [@name "firstname"] [@printer go "firstname"]
     | FollowUpSession [@name "follow_up_session"]
         [@printer go "follow_up_session"]
@@ -133,6 +132,7 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | Query [@name "query"] [@printer go "query"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
@@ -163,7 +163,7 @@ module Field = struct
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]
-    | Subfilter [@name "sub_filter"] [@printer go "sub_filter"]
+    | Subquery [@name "sub_query"] [@printer go "sub_query"]
     | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer go "tenant_disabled_flag"]
@@ -227,7 +227,6 @@ type error =
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FieldRequiresCheckbox of (Field.t * Field.t)
-  | FilterNotCompatible of (Field.t * Field.t)
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
@@ -254,11 +253,12 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
+  | QueryNotCompatible of (Field.t * Field.t)
   | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
-  | SessionHasAssignments
   | SessionFullyBooked
+  | SessionHasAssignments
   | SessionInvalid
   | SessionTenantNotFound
   | ReadOnlyModel

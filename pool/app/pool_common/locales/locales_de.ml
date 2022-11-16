@@ -53,7 +53,6 @@ let field_to_string =
   | Filename -> "Dateiname"
   | Filesize -> "Dateigrösse"
   | Filter -> "Filter"
-  | FilterId -> "Filter ID"
   | Firstname -> "Vorname"
   | FollowUpSession -> "Folgesession"
   | Hint -> "Hint"
@@ -102,6 +101,7 @@ let field_to_string =
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
+  | Query -> "Query"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
@@ -129,7 +129,7 @@ let field_to_string =
   | Status -> "Status"
   | Street -> "Strasse"
   | Styles -> "Styles"
-  | Subfilter -> "Subfilter"
+  | Subquery -> "Subquery"
   | Tenant -> "Tenant"
   | TenantDisabledFlag -> "Deaktiviert"
   | TenantId -> "Tenant Identifier"
@@ -252,11 +252,6 @@ let rec error_to_string = function
       "Die Option \"%s\" benötigt \"%s\"."
       (field_to_string field)
       (field_to_string required)
-  | FilterNotCompatible (f1, f2) ->
-    Format.asprintf
-      "%s ist nicht kompatibel mit %s."
-      (field_to_string f1)
-      (field_to_string f2)
   | FollowUpIsEarlierThanMain ->
     "Folgesession kann nicht vor Hauptsession starten."
   | HtmxVersionNotFound field ->
@@ -304,6 +299,11 @@ let rec error_to_string = function
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
+  | QueryNotCompatible (f1, f2) ->
+    Format.asprintf
+      "%s ist nicht kompatibel mit %s."
+      (field_to_string f1)
+      (field_to_string f2)
   | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."

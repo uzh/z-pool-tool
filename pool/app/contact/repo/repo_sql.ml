@@ -132,7 +132,7 @@ let find_confirmed pool email =
   >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
-let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
+let filter_to_sql subfilter_list dyn query =
   let open Filter in
   let add_value_to_params value dyn =
     let add c v = Dynparam.add c v dyn in
@@ -145,17 +145,17 @@ let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
     , "?" )
   in
   let open CCResult in
-  let rec filter_sql (dyn, sql) filter : (Dynparam.t * 'a, 'b) result =
-    let of_list (dyn, sql) filters operator =
+  let rec query_sql (dyn, sql) query : (Dynparam.t * 'a, 'b) result =
+    let of_list (dyn, sql) queries operator =
       let query =
         CCList.fold_left
-          (fun res filter ->
+          (fun res query ->
             res
             >>= fun (dyn, lst_sql) ->
-            filter_sql (dyn, sql) filter
+            query_sql (dyn, sql) query
             >|= fun (dyn, new_sql) -> dyn, lst_sql @ [ new_sql ])
           (Ok (dyn, []))
-          filters
+          queries
       in
       query
       >|= fun (dyn, lst_sql) ->
@@ -164,23 +164,23 @@ let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
         |> CCString.concat (Format.asprintf " %s " operator)
         |> Format.asprintf "%s (%s)" sql )
     in
-    match filter with
-    | And filters ->
-      if CCList.is_empty filters
+    match query with
+    | And queries ->
+      if CCList.is_empty queries
       then Ok (dyn, sql)
-      else of_list (dyn, sql) filters "AND"
-    | Or filters ->
-      if CCList.is_empty filters
+      else of_list (dyn, sql) queries "AND"
+    | Or queries ->
+      if CCList.is_empty queries
       then Ok (dyn, sql)
-      else of_list (dyn, sql) filters "OR"
+      else of_list (dyn, sql) queries "OR"
     | Not f ->
-      filter_sql (dyn, sql) f
+      query_sql (dyn, sql) f
       >|= fun (dyn, sql) -> dyn, Format.asprintf "NOT %s" sql
-    | SubFilter id ->
+    | SubQuery id ->
       subfilter_list
       |> CCList.find_opt (fun subfilter -> Pool_common.Id.equal subfilter.id id)
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Subfilter)
-      >>= fun filter -> filter_sql (dyn, sql) filter.filter
+      |> CCOption.to_result Pool_common.Message.(NotFound Field.Subquery)
+      >>= fun filter -> query_sql (dyn, sql) filter.query
     | Pred { Predicate.key; operator; value } ->
       let add_single_value dyn value =
         match key with
@@ -228,7 +228,7 @@ let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
          (match key with
           | Key.Hardcoded _ ->
             Error
-              Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+              Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
           | Key.CustomField _ ->
             let dyn, subqueries =
               CCList.fold_left
@@ -258,7 +258,7 @@ let filter_to_sql subfilter_list dyn (filter : Filter.filter) =
              | NotEqual
              | Like -> Error Pool_common.Message.(Invalid Field.Operator))))
   in
-  filter_sql (dyn, "") filter
+  query_sql (dyn, "") query
 ;;
 
 let filtered_base_condition =
@@ -312,12 +312,12 @@ let filtered_params ?group_by subfilter_list experiment_id filter =
 ;;
 
 let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
-  let filter = filter |> CCOption.map (fun f -> f.Filter.filter) in
+  let filter = filter |> CCOption.map (fun f -> f.Filter.query) in
   let open Lwt_result.Infix in
   let%lwt subfilter_list =
     match filter with
     | None -> Lwt.return []
-    | Some filter -> Filter.find_subfilters_of_filter pool filter
+    | Some filter -> Filter.find_subfilters_of_query pool filter
   in
   filtered_params
     subfilter_list
@@ -337,14 +337,14 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   Lwt_result.return contacts
 ;;
 
-let count_filtered pool experiment_id filter =
+let count_filtered pool experiment_id query =
   let open Lwt_result.Infix in
   let%lwt subfilter_list =
-    match filter with
+    match query with
     | None -> Lwt.return []
-    | Some filter -> Filter.find_subfilters_of_filter pool filter
+    | Some query -> Filter.find_subfilters_of_query pool query
   in
-  filtered_params subfilter_list experiment_id filter
+  filtered_params subfilter_list experiment_id query
   |> Lwt_result.lift
   >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in

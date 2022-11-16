@@ -5,7 +5,7 @@ type filter_label =
   | Or [@printer print "or"]
   | Not [@printer print "not"]
   | Pred [@printer print "pred"]
-  | SubFilter [@printer print "sub_filter"]
+  | SubQuery [@printer print "sub_query"]
 [@@deriving eq, enum, show]
 
 let to_label = function
@@ -13,7 +13,7 @@ let to_label = function
   | Or -> "Or"
   | Not -> "Not"
   | Pred -> "Predicate"
-  | SubFilter -> "Subfilter"
+  | SubQuery -> "Subquery"
 ;;
 
 let label_of_string = function

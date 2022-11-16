@@ -79,8 +79,8 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         return {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
         }
-    } else if (predicateType === "sub_filter") {
-        let input = outerPredicate.querySelector('[name="sub_filter"]');
+    } else if (predicateType === "sub_query") {
+        let input = outerPredicate.querySelector('[name="sub_query"]');
         if (!input.value && !allowEmpty) {
             addRequiredError(input)
         } else {
@@ -187,14 +187,14 @@ function configRequest(e, form) {
     const isPredicateType = e.target.name === "predicate";
     const isSubmit = e.target.type === "submit"
     e.detail.parameters._csrf = csrfToken();
-    const filterId = form.dataset.filterId;
+    const filterId = form.dataset.filter;
     if (filterId) {
-        e.detail.parameters.filter_id = filterId;
+        e.detail.parameters.filter = filterId;
     }
     if (isPredicateType || isSubmit) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
-            e.detail.parameters.filter = predicateToJson(elm, isPredicateType);
+            e.detail.parameters.query = predicateToJson(elm, isPredicateType);
             const title = document.querySelector('#filter-form [name="title"]');
             if (title) {
                 e.detail.parameters.title = title.value;

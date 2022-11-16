@@ -14,7 +14,7 @@ module Data = struct
   module Filter = struct
     open Filter
 
-    let single_filter : filter =
+    let single_query : query =
       Pred
         (Predicate.create
            Key.(Hardcoded Email)
@@ -22,18 +22,18 @@ module Data = struct
            (Single (Str "Foo")))
     ;;
 
-    let or_filter : filter =
+    let or_query : query =
       Or
         [ Pred
             (Predicate.create
                Key.(Hardcoded Name)
                Operator.Equal
                (Single (Str "Bar")))
-        ; single_filter
+        ; single_query
         ]
     ;;
 
-    let list_filter : filter =
+    let list_query : query =
       Pred
         (Predicate.create
            Key.(Hardcoded Name)
@@ -41,8 +41,8 @@ module Data = struct
            (Lst [ Str "foo"; Str "bar" ]))
     ;;
 
-    let and_filter : filter = And [ or_filter; list_filter ]
-    let t = create None and_filter
+    let and_query : query = And [ or_query; list_query ]
+    let t = create None and_query
   end
 
   let filter = Some Filter.t

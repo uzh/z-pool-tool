@@ -14,7 +14,7 @@ module Create : sig
   val handle
     :  Filter.Key.human list
     -> Filter.t list
-    -> Filter.filter
+    -> Filter.query
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -26,13 +26,11 @@ module Create : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle key_list subfilter_list predicate title =
+  let handle key_list subfilter_list query title =
     let open CCResult in
-    let* predicate = Filter.validate_filter key_list subfilter_list predicate in
+    let* query = Filter.validate_query key_list subfilter_list query in
     Ok
-      [ Filter.Created (Filter.create (Some title) predicate)
-        |> Pool_event.filter
-      ]
+      [ Filter.Created (Filter.create (Some title) query) |> Pool_event.filter ]
   ;;
 
   let decode data =
@@ -52,7 +50,7 @@ module Update : sig
     :  Filter.Key.human list
     -> Filter.t list
     -> Filter.t
-    -> Filter.filter
+    -> Filter.query
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -64,13 +62,12 @@ module Update : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle key_list subfilter_list filter predicate title =
+  let handle key_list subfilter_list filter query title =
     let open CCResult in
-    let* predicate = Filter.validate_filter key_list subfilter_list predicate in
+    let* query = Filter.validate_query key_list subfilter_list query in
     Ok
       Filter.
-        [ Updated { filter with filter = predicate; title = Some title }
-          |> Pool_event.filter
+        [ Updated { filter with query; title = Some title } |> Pool_event.filter
         ]
   ;;
 

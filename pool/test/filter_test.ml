@@ -354,7 +354,7 @@ let validate_filter_with_invalid_value _ () =
         filter
     in
     let expected =
-      Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+      Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
     in
     Test_utils.check_result expected events |> Lwt.return
   in
