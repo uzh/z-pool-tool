@@ -99,7 +99,7 @@ let rec search_subfilters ids query =
   | SubQuery id -> id :: ids
 ;;
 
-let find_subfilters_of_query tenant_db ?exclude query =
+let find_subfilters_of_query tenant_db query =
   let open Lwt.Infix in
   let rec go queries ids subfilters =
     match queries with
@@ -109,7 +109,7 @@ let find_subfilters_of_query tenant_db ?exclude query =
       CCList.filter
         (fun id -> Stdlib.not (CCList.mem ~eq:Pool_common.Id.equal id ids))
         new_ids
-      |> find_multiple_subfilters ?exclude tenant_db
+      |> find_multiple_subfilters tenant_db
       >>= fun filter_list ->
       go
         (filter_list |> CCList.map (fun f -> f.query))

@@ -74,50 +74,25 @@ module Sql = struct
     |> Caqti_type.unit ->* Repo_entity.t
   ;;
 
-  let find_all_subfilters_request_with_exclusions =
-    let open Caqti_request.Infix in
-    component_base_query
-    |> Format.asprintf "%s AND pool_filter.uuid <> UNHEX(REPLACE(?, '-', ''))"
-    |> select_filter_sql
-    |> Caqti_type.string ->* Repo_entity.t
+  let find_all_subfilters pool =
+    Utils.Database.collect
+      (Pool_database.Label.value pool)
+      find_all_subfilters_request
   ;;
 
-  let find_all_subfilters pool ?exclude () =
-    let pool = Pool_database.Label.value pool in
-    let request =
-      match exclude with
-      | None -> Utils.Database.collect pool find_all_subfilters_request ()
-      | Some id ->
-        Utils.Database.collect
-          pool
-          find_all_subfilters_request_with_exclusions
-          (id |> Pool_common.Id.value)
-    in
-    request
-  ;;
-
-  let find_multiple_request exclude ids =
-    let base =
-      Format.asprintf
-        {sql|
-        pool_filter.uuid IN ( %s )
+  let find_multiple_request ids =
+    Format.asprintf
+      {sql|
+        WHERE pool_filter.uuid IN ( %s )
       |sql}
-        (CCList.mapi
-           (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-           ids
-        |> CCString.concat ",")
-    in
-    (match exclude with
-     | false -> Format.asprintf "WHERE %s" base
-     | true ->
-       Format.asprintf
-         {sql| WHERE %s AND pool_filter.uuid <> UNHEX(REPLACE($%n, '-', '')) |sql}
-         base
-         (CCList.length ids + 1))
+      (CCList.mapi
+         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
+         ids
+      |> CCString.concat ",")
     |> select_filter_sql
   ;;
 
-  let find_multiple_subfilters pool ?exclude ids =
+  let find_multiple_subfilters pool ids =
     if CCList.is_empty ids
     then Lwt.return []
     else
@@ -129,16 +104,8 @@ module Sql = struct
           Dynparam.empty
           ids
       in
-      let dyn =
-        exclude
-        |> CCOption.map_or ~default:dyn (fun id ->
-             dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
-      in
       let (Dynparam.Pack (pt, pv)) = dyn in
-      let request =
-        find_multiple_request (CCOption.is_some exclude) ids
-        |> pt ->* Repo_entity.t
-      in
+      let request = find_multiple_request ids |> pt ->* Repo_entity.t in
       Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   ;;
 

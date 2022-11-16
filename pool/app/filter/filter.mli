@@ -140,11 +140,7 @@ val find
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
-val find_all_subfilters
-  :  Pool_database.Label.t
-  -> ?exclude:Pool_common.Id.t
-  -> unit
-  -> t list Lwt.t
+val find_all_subfilters : Pool_database.Label.t -> unit -> t list Lwt.t
 
 val find_subfilter
   :  Pool_database.Label.t
@@ -153,7 +149,6 @@ val find_subfilter
 
 val find_multiple_subfilters
   :  Pool_database.Label.t
-  -> ?exclude:Pool_common.Id.t
   -> Pool_common.Id.t list
   -> t list Lwt.t
 
@@ -197,12 +192,7 @@ val key_of_string
   -> (Key.human, Pool_common.Message.error) Lwt_result.t
 
 val t_to_human : Key.human list -> t list -> query -> Human.t
-
-val find_subfilters_of_query
-  :  Pool_database.Label.t
-  -> ?exclude:Pool_common.Id.t
-  -> query
-  -> t list Lwt.t
+val find_subfilters_of_query : Pool_database.Label.t -> query -> t list Lwt.t
 
 val toggle_predicate_type
   :  Human.t
