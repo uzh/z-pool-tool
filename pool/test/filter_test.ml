@@ -462,3 +462,37 @@ let filter_by_list_contains_some _ () =
   in
   Lwt.return_unit
 ;;
+
+let create_filter_template_with_subfilter _ () =
+  let open Pool_common in
+  let%lwt () =
+    let open CCResult in
+    let open Filter in
+    let subfilter_id = Pool_common.Id.create () in
+    let subfilter =
+      Pred
+        Predicate.
+          { key = Key.(Hardcoded Name)
+          ; operator = Operator.Equal
+          ; value = Single (Str "Foo")
+          }
+      |> create ~id:subfilter_id None
+    in
+    let filter = SubQuery subfilter_id in
+    let events =
+      let open Cqrs_command.Filter_command.Create in
+      Message.Field.[ show Title, [ "Some title" ] ]
+      |> decode
+      >>= handle [] [ subfilter ] filter
+    in
+    let expected = Error Message.FilterMustNotContainSubfilter in
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
+    |> Lwt.return
+  in
+  Lwt.return_unit
+;;
