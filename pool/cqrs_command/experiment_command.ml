@@ -203,7 +203,9 @@ end = struct
   ;;
 
   let effects experiment =
-    [ `Update, `One (experiment.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Update
+      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ]
   ;;
 end
 
