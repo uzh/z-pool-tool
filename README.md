@@ -70,7 +70,7 @@ Alternatively, these options simulate a similar production environment (without 
 QUEUE_FORCE_ASYNC=true EMAIL_BYPASS_INTERCEPT=true SMTP_SENDER=noreply@uast.uzh.ch SMTP_HOST=uzhxchange.uzh.ch SMTP_USERNAME=noreply@uast.uzh.ch SMTP_PORT=5587 SMTP_START_TLS=true SMTP_PASSWORD=<password> make dev
 ```
 
-Use this until https://gitlab.uzh.ch/econ/administration/phd/admission/-/issues/201#note_136262 is resolved:
+Use this until new SMTP method is supported is resolved:
 
 ```
 SMTP_HOST=smtp.uzh.ch SMTP_PORT=25 SMTP_SENDER=info@uast.uzh.ch SMTP_START_TLS=true EMAIL_BYPASS_INTERCEPT=true make dev
