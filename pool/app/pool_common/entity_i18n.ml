@@ -55,6 +55,7 @@ type nav_link =
   | CustomFields
   | Dashboard
   | Experiments
+  | Filter
   | I18n
   | Invitations
   | Locations

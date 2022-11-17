@@ -96,11 +96,11 @@ let extract_happy_path_with_actions req result =
   | Error _ -> redirect_to "/error"
 ;;
 
-(* TODO: Do I need to externalize? *)
 let htmx_redirect path ?query_language ?(actions = []) () =
   Sihl.Web.Response.of_plain_text ""
   |> Sihl.Web.Response.add_header
-       ("HX-Redirect", path_with_language query_language path)
+       ( "HX-Redirect"
+       , path_with_language query_language path |> Sihl.Web.externalize_path )
   |> CCList.fold_left CCFun.( % ) CCFun.id actions
   |> Lwt.return
 ;;

@@ -2,6 +2,7 @@ open Tyxml.Html
 open Filter
 module Input = Component_input
 
+let templates_disabled_key = "templates_disabled"
 let notification_id = "filter-notification"
 
 let format_identifiers ?prefix identifiers =
@@ -20,24 +21,52 @@ let format_identifiers ?prefix identifiers =
 
 let form_action = Format.asprintf "/admin/filter/%s"
 
-let htmx_attribs ~action ~trigger ?target ?(swap = "outerHTML") ?identifier () =
+let htmx_attribs
+  ~action
+  ~trigger
+  ?target
+  ?(swap = "outerHTML")
+  ?(allow_empty_values = false)
+  ?templates_disabled
+  ?identifier
+  ()
+  =
   let target =
     target
     |> CCOption.map (fun target ->
          a_user_data "hx-target" (Format.asprintf "#%s" target))
   in
-  let identifier =
-    identifier
-    |> CCOption.map (fun identifier ->
-         a_user_data
-           "hx-vals"
-           (Format.asprintf "{\"id\": \"%s\"}" (format_identifiers identifier)))
+  let hx_vals =
+    let identifier =
+      identifier
+      |> CCOption.map (fun identifier -> "id", format_identifiers identifier)
+    in
+    let allow_empty_values =
+      if allow_empty_values then Some ("allow_empty_values", "true") else None
+    in
+    let templates_disabled =
+      templates_disabled
+      |> CCOption.map (fun disabled ->
+           templates_disabled_key, Bool.to_string disabled)
+    in
+    [ identifier; allow_empty_values; templates_disabled ]
+    |> CCList.filter_map CCFun.id
+    |> fun values ->
+    if CCList.is_empty values
+    then []
+    else
+      values
+      |> CCList.map (fun (key, value) ->
+           Format.asprintf "\"%s\": \"%s\"" key value)
+      |> CCString.concat ","
+      |> fun values -> [ a_user_data "hx-vals" (Format.asprintf "{%s}" values) ]
   in
   [ a_user_data "hx-post" (action |> Sihl.Web.externalize_path)
   ; a_user_data "hx-trigger" trigger
   ; a_user_data "hx-swap" swap
   ]
-  @ CCList.filter_map CCFun.id [ target; identifier ]
+  @ hx_vals
+  @ CCList.filter_map CCFun.id [ target ]
 ;;
 
 let select_default_option language selected =
@@ -208,19 +237,30 @@ let predicate_value_form language ?key ?value ?operator () =
     [ operator_select; input_field ]
 ;;
 
-let single_predicate_form language identifier key_list ?key ?operator ?value () =
+let single_predicate_form
+  language
+  identifier
+  key_list
+  templates_disabled
+  ?key
+  ?operator
+  ?value
+  ()
+  =
   let toggle_id = format_identifiers ~prefix:"pred-s" identifier in
   let toggled_content =
     predicate_value_form language ?key ?value ?operator ()
   in
   let key_selector =
     let attributes =
-      [ a_user_data
-          "hx-post"
-          (Sihl.Web.externalize_path "/admin/filter/toggle-key")
-      ; a_user_data "hx-trigger" "change"
-      ; a_user_data "hx-target" (Format.asprintf "#%s" toggle_id)
-      ]
+      htmx_attribs
+        ~action:"/admin/filter/toggle-key"
+        ~trigger:"change"
+        ~swap:"innerHTML"
+        ~target:toggle_id
+        ~allow_empty_values:true
+        ~templates_disabled
+        ()
     in
     Component_input.selector
       ~attributes
@@ -242,14 +282,29 @@ let single_predicate_form language identifier key_list ?key ?operator ?value () 
     ]
 ;;
 
-let predicate_type_select language target identifier ?selected () =
+let predicate_type_select
+  language
+  target
+  identifier
+  templates_disabled
+  ?selected
+  ()
+  =
   let attributes =
     htmx_attribs
       ~action:(form_action "toggle-predicate-type")
       ~trigger:"change"
       ~target
       ~identifier
+      ~allow_empty_values:true
+      ~templates_disabled
       ()
+  in
+  let all_labels =
+    let open Utils in
+    if templates_disabled
+    then CCList.remove ~eq:equal_filter_label ~key:Template all_filter_labels
+    else all_filter_labels
   in
   Component_input.selector
     ~option_formatter:Utils.to_label
@@ -257,12 +312,12 @@ let predicate_type_select language target identifier ?selected () =
     language
     Pool_common.Message.Field.Predicate
     Utils.show_filter_label
-    Utils.all_filter_labels
+    all_labels
     selected
     ()
 ;;
 
-let add_predicate_btn identifier =
+let add_predicate_btn identifier templates_disabled =
   let id = format_identifiers ~prefix:"new" identifier in
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
@@ -273,21 +328,32 @@ let add_predicate_btn identifier =
              ~trigger:"click"
              ~target:id
              ~identifier
+             ~allow_empty_values:true
+             ~templates_disabled
              ())
         `Add
     ]
 ;;
 
-let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
-  let filter = CCOption.value ~default:(Filter.Human.init ()) filter in
+let rec predicate_form
+  language
+  key_list
+  template_list
+  templates_disabled
+  query
+  ?(identifier = [ 0 ])
+  ()
+  =
+  let query = CCOption.value ~default:(Filter.Human.init ()) query in
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
-    match filter with
+    match query with
     | And _ -> Utils.And
     | Or _ -> Utils.Or
     | Not _ -> Utils.Not
     | Pred _ -> Utils.Pred
+    | Template _ -> Utils.Template
   in
   let delete_button () =
     div
@@ -295,45 +361,55 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
       [ Component_icon.icon `TrashOutline ]
   in
   let predicate_form =
+    let to_form =
+      predicate_form language key_list template_list templates_disabled
+    in
     let open Human in
-    match filter with
-    | filter ->
-      (match filter with
-       | And filters | Or filters ->
-         CCList.mapi
-           (fun i filter ->
-             let filter = CCOption.pure filter in
-             predicate_form
-               language
-               filter
-               key_list
-               ~identifier:(identifier @ [ i ])
-               ())
-           filters
-         @ [ add_predicate_btn (identifier @ [ CCList.length filters ]) ]
-       | Not filter ->
-         predicate_form
-           language
-           (Some filter)
-           key_list
-           ~identifier:(identifier @ [ 0 ])
-           ()
-         |> CCList.pure
-       | Pred predicate ->
-         let ({ Predicate.key; operator; value } : Predicate.human) =
-           predicate
-         in
-         single_predicate_form
-           language
-           identifier
-           key_list
-           ?key
-           ?operator
-           ?value
-           ()
-         |> CCList.pure)
+    match query with
+    | And queries | Or queries ->
+      CCList.mapi
+        (fun i query ->
+          let query = CCOption.pure query in
+          to_form query ~identifier:(identifier @ [ i ]) ())
+        queries
+      @ [ add_predicate_btn
+            (identifier @ [ CCList.length queries ])
+            templates_disabled
+        ]
+    | Not query ->
+      to_form (Some query) ~identifier:(identifier @ [ 0 ]) () |> CCList.pure
+    | Pred predicate ->
+      let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
+      single_predicate_form
+        language
+        identifier
+        key_list
+        templates_disabled
+        ?key
+        ?operator
+        ?value
+        ()
+      |> CCList.pure
+    | Template id ->
+      let selected =
+        CCOption.bind id (fun id ->
+          template_list
+          |> CCList.find_opt (fun filter -> Pool_common.Id.equal filter.id id))
+      in
+      Component_input.selector
+        ~add_empty:true
+        ~option_formatter:(fun f ->
+          f.title
+          |> CCOption.map_or ~default:(f.id |> Pool_common.Id.value) Title.value)
+        language
+        Pool_common.Message.Field.Template
+        (fun f -> f.id |> Pool_common.Id.value)
+        template_list
+        selected
+        ()
+      |> CCList.pure
   in
-  let data_attr = [ a_user_data "predicate" Filter.Human.(show filter) ] in
+  let data_attr = [ a_user_data "predicate" Filter.Human.(show query) ] in
   div
     ~a:
       ([ a_class [ "stack"; "inset"; "border"; "predicate" ]
@@ -344,6 +420,7 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
          language
          predicate_identifier
          identifier
+         templates_disabled
          ~selected
          ()
      ; div ~a:[ a_class [ "predicate-wrapper"; "stack" ] ] predicate_form
@@ -351,16 +428,37 @@ let rec predicate_form language filter key_list ?(identifier = [ 0 ]) () =
     @ if CCList.length identifier > 1 then [ delete_button () ] else [])
 ;;
 
-let filter_form csrf language experiment filter key_list =
-  let action =
-    Format.asprintf
-      "/admin/experiments/%s/filter/create"
-      (Pool_common.Id.value experiment.Experiment.id)
+type form_param =
+  | ExperimentParam of Experiment.t
+  | FilterParam of Filter.t option
+
+let filter_form csrf language param key_list template_list =
+  let filter, action =
+    let open Experiment in
+    match param with
+    | ExperimentParam experiment ->
+      ( experiment.filter
+      , Format.asprintf
+          "/admin/experiments/%s/filter/create"
+          (Pool_common.Id.value experiment.Experiment.id) )
+    | FilterParam filter ->
+      ( filter
+      , (match filter with
+         | Some filter ->
+           Format.asprintf "/admin/filter/%s" (filter.id |> Pool_common.Id.value)
+         | None -> "/admin/filter") )
   in
-  let predicates = predicate_form language filter key_list () in
-  div
-    ~a:[ a_class [ "stack" ] ]
-    [ div
+  let filter_query =
+    filter
+    |> CCOption.map
+         Filter.(
+           fun filter -> filter.query |> t_to_human key_list template_list)
+  in
+  let result_counter =
+    match param with
+    | FilterParam _ -> txt ""
+    | ExperimentParam experiment ->
+      div
         [ txt "Nr of contacts: "
         ; span
             ~a:
@@ -371,22 +469,72 @@ let filter_form csrf language experiment filter key_list =
               ]
             []
         ]
+  in
+  let templates_disabled =
+    match param with
+    | ExperimentParam _ -> false
+    | FilterParam _ -> true
+  in
+  let predicates =
+    predicate_form
+      language
+      key_list
+      template_list
+      templates_disabled
+      filter_query
+      ()
+  in
+  let title_input, _ =
+    match param with
+    | FilterParam _ ->
+      let open CCOption.Infix in
+      let open Pool_common.Message in
+      ( Component_input.input_element
+          ?value:(filter >>= fun filter -> filter.title >|= Title.value)
+          ~required:true
+          language
+          `Text
+          Field.Title
+      , [ a_user_data "hx-params" Field.(show Title) ] )
+    | ExperimentParam _ -> txt "", []
+  in
+  let filter_id =
+    (match param with
+     | ExperimentParam experiment ->
+       experiment.Experiment.filter |> CCOption.map (fun f -> f.id)
+     | FilterParam f -> f |> CCOption.map (fun f -> f.Filter.id))
+    |> CCOption.map_or ~default:[] (fun id ->
+         Pool_common.[ a_user_data Message.Field.(show filter) (Id.value id) ])
+  in
+  div
+    ~a:[ a_class [ "stack" ] ]
+    [ result_counter
     ; div
         ~a:
-          [ a_user_data "action" action
-          ; a_id "filter-form"
-          ; a_class [ "stack" ]
-          ]
+          ([ a_user_data "action" action
+           ; a_id "filter-form"
+           ; a_class [ "stack" ]
+           ]
+          @ filter_id)
         [ div ~a:[ a_id notification_id ] []
         ; Component_input.csrf_element csrf ()
+        ; title_input
         ; predicates
         ; Component_input.submit_element
             language
             ~attributes:
               (a_id "submit-filter-form"
-              :: htmx_attribs ~action ~swap:"none" ~trigger:"click" ())
+              :: htmx_attribs
+                   ~action
+                   ~swap:"none"
+                   ~trigger:"click"
+                   ~templates_disabled
+                   ())
             Pool_common.Message.(Save None)
             ()
         ]
+    ; script
+        ~a:[ a_src (Sihl.Web.externalize_path "/assets/filter.js"); a_defer () ]
+        (txt "")
     ]
 ;;

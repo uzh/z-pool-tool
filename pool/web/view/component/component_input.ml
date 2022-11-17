@@ -227,7 +227,6 @@ let checkbox_element
     |> CCOption.value ~default:value
   in
   let value_attrs =
-    (* TODO: Test *)
     match value with
     | true -> [ a_value "true"; a_checked () ]
     | false -> [ a_value "true" ]

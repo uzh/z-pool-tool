@@ -22,7 +22,7 @@ let filter pool =
   let filter_events, experiment_events =
     CCList.fold_left
       (fun (filter_events, experiment_events) experiment ->
-        let filter = Filter.create test_filter in
+        let filter = Filter.create None test_filter in
         ( Filter.Created filter :: filter_events
         , Experiment.(Updated { experiment with filter = Some filter })
           :: experiment_events ))

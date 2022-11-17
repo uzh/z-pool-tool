@@ -229,7 +229,9 @@ module Admin = struct
           ; choose ~scope:(Mailing |> url_key) specific
           ]
       in
-      let filter = Handler.Admin.Filter.[ post "/create" create ] in
+      let filter =
+        Handler.Admin.Filter.[ post "/create" create_for_experiment ]
+      in
       Experiments.
         [ get "" index
         ; get "/create" new_form
@@ -263,11 +265,16 @@ module Admin = struct
         [ get "" index; choose ~scope:(Contact |> url_key) specific ]
     in
     let filter =
-      Handler.Admin.Filter.
-        [ post "/toggle-key" toggle_key
-        ; post "/toggle-predicate-type" toggle_predicate_type
-        ; post "/add-predicate" add_predicate
-        ]
+      let open Handler.Admin.Filter in
+      let specific = [ get "edit" edit; post "" update_template ] in
+      [ get "" index
+      ; post "" create_template
+      ; get "/new" new_form
+      ; post "/toggle-key" toggle_key
+      ; post "/toggle-predicate-type" toggle_predicate_type
+      ; post "/add-predicate" add_predicate
+      ; choose ~scope:(Filter |> url_key) specific
+      ]
     in
     let custom_fields =
       let open CustomField in

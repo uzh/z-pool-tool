@@ -4,6 +4,14 @@ module Helper = struct
   let value_string = "value"
 end
 
+module Title = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Title
+  let create = create field
+  let schema = schema ?validation:None field
+end
+
 let read of_yojson yojson =
   yojson
   |> Yojson.Safe.to_string
@@ -129,7 +137,7 @@ module Key = struct
     match read_hardcoded yojson with
     | Some h -> Ok (Hardcoded h)
     | None ->
-      (* The "validate_filter" function will check, if the id belongs to an
+      (* The "validate_query" function will check, if the id belongs to an
          existing custom field *)
       (match yojson with
        | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
@@ -198,7 +206,7 @@ module Key = struct
 
   let validate_value (key_list : human list) (m : t) value =
     let error =
-      Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+      Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
     in
     let open CCResult in
     let validate_single_value input_type value =
@@ -295,7 +303,7 @@ module Operator = struct
     | NotEqual -> "<>"
     | Like ->
       "LIKE"
-      (* List operators are used to filter custom fields by their value,
+      (* List operators are used to query custom fields by their value,
          therefore '=' *)
     | ContainsSome | ContainsNone | ContainsAll -> "="
   ;;
@@ -308,7 +316,7 @@ module Operator = struct
       in
       if CCList.mem ~eq:equal operator available_operators
       then Ok ()
-      else Error Pool_common.Message.(FilterNotCompatible Field.(Operator, Key))
+      else Error Pool_common.Message.(QueryNotCompatible Field.(Operator, Key))
     | Key.CustomField _ -> Ok ()
   ;;
 end
@@ -370,70 +378,93 @@ module Predicate = struct
   ;;
 end
 
-type filter =
-  | And of filter list [@printer print "and"] [@name "and"]
-  | Or of filter list [@printer print "or"] [@name "or"]
-  | Not of filter [@printer print "not"] [@name "not"]
+type query =
+  | And of query list [@printer print "and"] [@name "and"]
+  | Or of query list [@printer print "or"] [@name "or"]
+  | Not of query [@printer print "not"] [@name "not"]
   | Pred of Predicate.t [@printer print "pred"] [@name "pred"]
+  | Template of Pool_common.Id.t [@printer print "template"] [@name "template"]
 [@@deriving show { with_path = false }, variants, eq]
 
-let rec yojson_of_filter (f : filter) : Yojson.Safe.t =
+let rec yojson_of_query f : Yojson.Safe.t =
   (match f with
-   | And filters -> `List (CCList.map yojson_of_filter filters)
-   | Or filters -> `List (CCList.map yojson_of_filter filters)
-   | Not f -> f |> yojson_of_filter
-   | Pred p -> Predicate.yojson_of_t p)
-  |> fun pred -> `Assoc [ f |> show_filter, pred ]
+   | And queries -> `List (CCList.map yojson_of_query queries)
+   | Or queries -> `List (CCList.map yojson_of_query queries)
+   | Not f -> f |> yojson_of_query
+   | Pred p -> Predicate.yojson_of_t p
+   | Template id -> `String (Pool_common.Id.value id))
+  |> fun pred -> `Assoc [ f |> show_query, pred ]
 ;;
 
-let rec filter_of_yojson json =
-  let error = Pool_common.Message.(Invalid Field.Filter) in
+let rec query_of_yojson json =
+  let error = Pool_common.Message.(Invalid Field.Query) in
   let open CCResult in
   match json with
   | `Assoc [ (key, filter) ] ->
     (match key, filter with
-     | "and", `List filters ->
-       filters
-       |> CCList.map filter_of_yojson
+     | "and", `List queries ->
+       queries
+       |> CCList.map query_of_yojson
        |> CCList.all_ok
        >|= fun lst -> And lst
-     | "or", `List filters ->
-       filters
-       |> CCList.map filter_of_yojson
+     | "or", `List queries ->
+       queries
+       |> CCList.map query_of_yojson
        |> CCList.all_ok
        >|= fun lst -> Or lst
-     | "not", f -> f |> filter_of_yojson >|= not
+     | "not", f -> f |> query_of_yojson >|= not
      | "pred", p -> p |> Predicate.t_of_yojson >|= pred
+     | "template", `String id ->
+       id |> Pool_common.Id.of_string |> template |> CCResult.pure
      | _ -> Error error)
   | _ -> Error error
 ;;
 
-let filter_of_string str = str |> Yojson.Safe.from_string |> filter_of_yojson
-
-let rec validate_filter key_list m =
-  let open CCResult in
-  let validate_list fnc filters =
-    filters |> CCList.map (validate_filter key_list) |> CCList.all_ok >|= fnc
-  in
-  match m with
-  | And filters -> validate_list (fun lst -> And lst) filters
-  | Or filters -> validate_list (fun lst -> Or lst) filters
-  | Not f -> validate_filter key_list f >|= not
-  | Pred p -> Predicate.validate p key_list >|= pred
-;;
+let query_of_string str = str |> Yojson.Safe.from_string |> query_of_yojson
 
 type t =
   { id : Pool_common.Id.t
-  ; filter : filter (* TODO: Rename to predicate or something else *)
+  ; query : query
+  ; title : Title.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
 [@@deriving eq, show]
 
-let create ?(id = Pool_common.Id.create ()) filter =
+let create ?(id = Pool_common.Id.create ()) title query =
   { id
-  ; filter
+  ; query
+  ; title
   ; created_at = Pool_common.CreatedAt.create ()
   ; updated_at = Pool_common.UpdatedAt.create ()
   }
+;;
+
+let rec validate_query key_list (template_list : t list) =
+  let open CCResult in
+  let validate_list fnc queries =
+    queries
+    |> CCList.map (validate_query key_list template_list)
+    |> CCList.all_ok
+    >|= fnc
+  in
+  function
+  | And queries -> validate_list (fun lst -> And lst) queries
+  | Or queries -> validate_list (fun lst -> Or lst) queries
+  | Not f -> validate_query key_list template_list f >|= not
+  | Pred p -> Predicate.validate p key_list >|= pred
+  | Template filter_id ->
+    CCList.find_opt (fun f -> Pool_common.Id.equal f.id filter_id) template_list
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    >|= CCFun.const (template filter_id)
+;;
+
+let rec contains_template = function
+  | And queries | Or queries ->
+    CCList.map contains_template queries
+    |> CCList.filter CCFun.id
+    |> fun lst -> CCList.length lst > 0
+  | Not p -> contains_template p
+  | Pred _ -> false
+  | Template _ -> true
 ;;

@@ -74,6 +74,7 @@ let nav_link_to_string = function
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
+  | Filter -> "Filter"
   | I18n -> "Translations"
   | Invitations -> "Invitations"
   | LoginInformation -> "Login information"
