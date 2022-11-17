@@ -43,7 +43,7 @@ Run `make build` to build the pool-tool project. This builds `.ml` files using `
 
 ### Release to production
 
-In order to deploy to production:
+In order to deploy to production it is best to use `yarn version` which does all the steps for you. You also can do it manually:
 
 1. edit `dune-project` and update version `(version 0.0.0)`
 1. build the project `dune build` or edit `pool.opam` and update version `version: "0.0.0"`
