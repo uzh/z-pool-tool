@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches: [main]
-    tags: ["*"]
+    tags: ["v*"]
 
 jobs:
   build:
@@ -165,7 +165,7 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        uses: metcalfc/changelog-generator@v3.0.0
+        uses: metcalfc/changelog-generator@v4.0.1
         with:
           myToken: ${{ secrets.DEPLOY_TOKEN }}
 
