@@ -115,6 +115,10 @@ module Disabled : sig
   include Pool_common.Model.BooleanSig
 end
 
+module PublishedAt : sig
+  include Pool_common.Model.PtimeSig
+end
+
 module Admin : sig
   module Hint : sig
     include Pool_common.Model.StringSig
@@ -299,6 +303,7 @@ type 'a custom_field =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
+  ; published_at : PublishedAt.t option
   }
 
 type t =
@@ -315,6 +320,7 @@ val show : t -> string
 val create
   :  ?id:Id.t
   -> ?select_options:SelectOption.t list
+  -> ?published_at:PublishedAt.t
   -> FieldType.t
   -> Model.t
   -> Name.t
@@ -334,6 +340,7 @@ val name_value : Pool_common.Language.t -> t -> string
 val hint : t -> Hint.t
 val required : t -> Required.t
 val disabled : t -> Disabled.t
+val published_at : t -> PublishedAt.t option
 val group_id : t -> Group.Id.t option
 val admin : t -> Admin.t
 val field_type : t -> FieldType.t
@@ -343,6 +350,7 @@ val validation_to_yojson : t -> Yojson.Safe.t
 type event =
   | AnswerUpserted of Public.t * Pool_common.Id.t
   | Created of t
+  | Deleted of t
   | FieldsSorted of t list
   | GroupCreated of Group.t
   | GroupDestroyed of Group.t
@@ -352,6 +360,7 @@ type event =
   | OptionDestroyed of SelectOption.t
   | OptionsSorted of SelectOption.t list
   | OptionUpdated of SelectOption.t
+  | Published of t
   | Updated of t
 
 val equal_event : event -> event -> bool

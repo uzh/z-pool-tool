@@ -89,6 +89,7 @@ end
 module CustomFieldData = struct
   let admin_data = Custom_field_test.Data.admin
   let nr_of_siblings_answer = 3
+  let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
   let nr_of_siblings =
     Custom_field.(
@@ -103,6 +104,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         })
   ;;
 
@@ -152,6 +154,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         }
       , multi_select_options )
   ;;

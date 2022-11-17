@@ -293,6 +293,8 @@ module Admin = struct
         CustomField.
           [ get "/edit" edit
           ; post "" update
+          ; post "/publish" publish
+          ; post "/delete" delete
           ; post "/sort-options" sort_options
           ; choose ~scope:"options" options
           ]

@@ -7,6 +7,7 @@ let icon icon_type =
    | `Calendar -> "calendar"
    | `CreateOutline -> "create-outline"
    | `Create -> "create"
+   | `Close -> "close"
    | `EarthOutline -> "earth-outline"
    | `Earth -> "earth"
    | `HelpOutline -> "help-outline"

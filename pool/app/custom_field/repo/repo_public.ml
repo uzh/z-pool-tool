@@ -29,9 +29,12 @@ let to_grouped_public pool model fields =
 ;;
 
 let base_filter_conditions is_admin =
-  let base = {sql|
+  let base =
+    {sql|
     AND pool_custom_fields.disabled = 0
-  |sql} in
+    AND pool_custom_fields.published_at IS NOT NULL
+  |sql}
+  in
   if is_admin
   then base
   else Format.asprintf "%s AND pool_custom_fields.admin_view_only = 0 " base

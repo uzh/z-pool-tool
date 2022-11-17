@@ -405,8 +405,7 @@ let field_form
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
-  [ model_subtitle language current_model
-  ; form
+  [ form
       ~a:
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
@@ -573,17 +572,65 @@ let field_form
   ]
 ;;
 
+let field_buttons language csrf current_model field =
+  let open Custom_field in
+  let open Pool_common in
+  let action field appendix =
+    Url.Field.detail_path (current_model, field |> id)
+    |> (fun base -> Format.asprintf "%s/%s" base appendix)
+    |> Sihl.Web.externalize_path
+  in
+  let make_form action msg submit_type =
+    form
+      ~a:[ a_action action; a_method `Post ]
+      [ csrf_element csrf (); submit_element language msg ~submit_type () ]
+  in
+  match field with
+  | None -> txt ""
+  | Some field ->
+    (match published_at field with
+     | Some published_at ->
+       div
+         [ txt
+             (Utils.field_to_string language Message.Field.PublishedAt
+             |> CCString.capitalize_ascii)
+         ; txt ": "
+         ; txt
+             (published_at
+             |> PublishedAt.value
+             |> Utils.Time.formatted_date_time)
+         ]
+     | None ->
+       div
+         ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+         [ make_form
+             (action field "delete")
+             Pool_common.Message.(Delete (Some Field.CustomField))
+             `Error
+         ; make_form
+             (action field "publish")
+             Pool_common.Message.(Publish (Some Field.CustomField))
+             `Success
+         ])
+;;
+
 let detail
   ?custom_field
   current_model
-  (Pool_context.{ language; _ } as context)
+  (Pool_context.{ language; csrf; _ } as context)
   groups
   sys_languages
   flash_fetcher
   =
+  let button_form = field_buttons language csrf current_model custom_field in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ Partials.form_title language Message.Field.CustomField custom_field
+    ; div
+        ~a:
+          [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
+          ]
+        [ model_subtitle language current_model; button_form ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         (field_form
@@ -599,7 +646,9 @@ let detail
 let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
-  let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
+  let thead =
+    Message.Field.[ Some Title; Some CustomFieldGroup; Some PublishedAt; None ]
+  in
   let field_name field =
     let open Custom_field in
     field |> name |> Name.find_opt_or language "-"
@@ -610,6 +659,15 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     let field_row group field =
       [ txt (field |> field_name)
       ; txt (group >|= Group.name language |> value ~default:"")
+      ; txt
+          (field
+          |> published_at
+          |> CCOption.map_or
+               ~default:""
+               CCFun.(
+                 PublishedAt.value
+                 %> Ptime.to_date
+                 %> Pool_common.Utils.Time.formatted_date))
       ; a
           ~a:
             [ a_href

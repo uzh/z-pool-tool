@@ -38,11 +38,12 @@ module Data = struct
       }
   ;;
 
-  let custom_field ?validation ?(admin = admin) field_type =
+  let custom_field ?published_at ?validation ?(admin = admin) field_type =
     let name = Name.create sys_languages name |> get in
     let hint = Hint.create hint |> get in
     Custom_field.create
       ~id:(Id.create ())
+      ?published_at
       field_type
       model
       name
@@ -55,8 +56,8 @@ module Data = struct
     |> CCResult.get_exn
   ;;
 
-  let custom_text_field ?validation ?admin () =
-    custom_field ?validation ?admin FieldType.Text
+  let custom_text_field ?published_at ?validation ?admin () =
+    custom_field ?published_at ?validation ?admin FieldType.Text
   ;;
 
   let custom_select_field () = custom_field ~validation:[] FieldType.Select
@@ -288,4 +289,22 @@ let create_with_missing_admin_option () =
       "succeeds"
       admin
       expected)
+;;
+
+let delete_published_field () =
+  let custom_field =
+    Data.custom_text_field
+      ~published_at:(Custom_field.PublishedAt.create_now ())
+      ()
+  in
+  let events = Cqrs_command.Custom_field_command.Delete.handle custom_field in
+  let expected =
+    Error Pool_common.Message.(AlreadyPublished Field.CustomField)
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
 ;;

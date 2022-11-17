@@ -78,6 +78,12 @@ module Disabled = struct
   let t = Caqti_type.bool
 end
 
+module PublishedAt = struct
+  include PublishedAt
+
+  let t = Caqti_type.ptime
+end
+
 module Admin = struct
   include Admin
 
@@ -492,6 +498,7 @@ type repo =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
+  ; published_at : PublishedAt.t option
   }
 
 let t =
@@ -506,8 +513,9 @@ let t =
         , ( hint
           , ( field_type
             , ( validation
-              , (required, (disabled, (custom_field_group_id, admin))) ) ) ) )
-      ) )
+              , ( required
+                , (disabled, (custom_field_group_id, (admin, published_at))) )
+              ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -521,6 +529,7 @@ let t =
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   in
   Caqti_type.(
@@ -543,7 +552,9 @@ let t =
                            Required.t
                            (tup2
                               Disabled.t
-                              (tup2 (option Common.Repo.Id.t) Admin.t))))))))))
+                              (tup2
+                                 (option Common.Repo.Id.t)
+                                 (tup2 Admin.t (option PublishedAt.t))))))))))))
 ;;
 
 let to_entity
@@ -558,6 +569,7 @@ let to_entity
   ; disabled
   ; custom_field_group_id
   ; admin
+  ; published_at
   }
   =
   let validation_schema schema =
@@ -575,6 +587,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
@@ -588,6 +601,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   | FieldType.Select ->
     let options =
@@ -606,6 +620,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin
+        ; published_at
         }
       , options )
   | FieldType.MultiSelect ->
@@ -625,6 +640,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin
+        ; published_at
         }
       , options )
   | FieldType.Text ->
@@ -639,5 +655,6 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
 ;;

@@ -65,6 +65,14 @@ let form
   flash_fetcher
   custom_fields
   =
+  let custom_fields =
+    custom_fields
+    |> fun (grouped, ungrouped) ->
+    ( grouped
+      |> CCList.filter
+           Custom_field.(fun g -> not (CCList.is_empty g.Group.Public.fields))
+    , ungrouped )
+  in
   let custom_fields_form =
     let to_html field = custom_field_to_input ~flash_fetcher language field in
     Page_contact_edit.grouped_custom_fields_form language custom_fields to_html

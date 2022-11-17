@@ -119,6 +119,13 @@ module Disabled = struct
   let schema = schema Message.Field.Disabled
 end
 
+module PublishedAt = struct
+  include Pool_common.Model.Ptime
+
+  let create m = Ok m
+  let schema = schema Pool_common.Message.Field.PublishedAt create
+end
+
 module Admin = struct
   module Hint = struct
     include Pool_common.Model.String
@@ -482,6 +489,7 @@ type 'a custom_field =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
+  ; published_at : PublishedAt.t option
   }
 [@@deriving eq, show]
 
@@ -496,6 +504,7 @@ type t =
 let create
   ?(id = Pool_common.Id.create ())
   ?(select_options = [])
+  ?published_at
   field_type
   model
   name
@@ -521,6 +530,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
@@ -535,6 +545,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
@@ -549,6 +560,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.MultiSelect ->
     Ok
@@ -565,6 +577,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin
+           ; published_at
            }
          , select_options ))
   | FieldType.Select ->
@@ -579,6 +592,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin
+           ; published_at
            }
          , select_options ))
 ;;
@@ -637,6 +651,14 @@ let disabled = function
   | MultiSelect ({ disabled; _ }, _)
   | Select ({ disabled; _ }, _)
   | Text { disabled; _ } -> disabled
+;;
+
+let published_at = function
+  | Boolean { published_at; _ }
+  | Number { published_at; _ }
+  | MultiSelect ({ published_at; _ }, _)
+  | Select ({ published_at; _ }, _)
+  | Text { published_at; _ } -> published_at
 ;;
 
 let group_id = function

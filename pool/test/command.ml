@@ -179,6 +179,10 @@ let () =
             "create with missing admin option"
             `Quick
             Custom_field_test.create_with_missing_admin_option
+        ; test_case
+            "delete published field"
+            `Quick
+            Custom_field_test.delete_published_field
         ] )
     ; ( "matcher"
       , [ test_case

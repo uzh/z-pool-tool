@@ -133,6 +133,7 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | PublishedAt [@name "published_at"] [@printer go "published_at"]
     | Query [@name "query"] [@printer go "query"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
@@ -207,10 +208,11 @@ end
    Field.t *)
 type error =
   | AllLanguagesRequired of Field.t
-  | AlreadySignedUpForExperiment
   | AlreadyInPast
-  | AlreadyStarted
   | AlreadyInvitedToExperiment of string list
+  | AlreadyPublished of Field.t
+  | AlreadySignedUpForExperiment
+  | AlreadyStarted
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
@@ -301,6 +303,7 @@ type success =
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
   | SentList of Field.t
@@ -349,6 +352,7 @@ type control =
   | Manage of Field.t
   | More
   | PleaseSelect
+  | Publish of Field.t option
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option

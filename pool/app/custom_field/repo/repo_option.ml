@@ -186,6 +186,22 @@ let destroy pool m =
     Entity.SelectOption.(m.id |> Id.value)
 ;;
 
+let destroy_by_custom_field_request =
+  let open Caqti_request.Infix in
+  {sql|
+    DELETE FROM pool_custom_field_options
+    WHERE custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Caqti_type.(string ->. unit)
+;;
+
+let destroy_by_custom_field pool field_id =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    destroy_by_custom_field_request
+    Entity.(field_id |> Id.value)
+;;
+
 let update_position_request =
   let open Caqti_request.Infix in
   {sql|

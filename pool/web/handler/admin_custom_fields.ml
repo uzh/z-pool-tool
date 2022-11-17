@@ -185,6 +185,47 @@ let update req =
   get_model (write ~id) req
 ;;
 
+let toggle_action action req =
+  let open Utils.Lwt_result.Infix in
+  let open Lwt_result.Syntax in
+  let id =
+    HttpUtils.get_field_router_param req Message.Field.CustomField
+    |> Custom_field.Id.of_string
+  in
+  let result { Pool_context.tenant_db; _ } =
+    Lwt_result.map_error (fun err -> err, Url.fallback_path, [])
+    @@ let* custom_field = Custom_field.find tenant_db id in
+       let* model = model_from_router req |> Lwt_result.lift in
+       let events =
+         match action with
+         | `Publish ->
+           Cqrs_command.Custom_field_command.Publish.handle custom_field
+           |> Lwt_result.lift
+         | `Delete ->
+           Cqrs_command.Custom_field_command.Delete.handle custom_field
+           |> Lwt_result.lift
+       in
+       let success =
+         match action with
+         | `Publish -> Pool_common.Message.(Published Field.CustomField)
+         | `Delete -> Pool_common.Message.(Deleted Field.CustomField)
+       in
+       let handle events =
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           (Url.index_path model)
+           [ HttpUtils.Message.set ~success:[ success ] ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+let publish = toggle_action `Publish
+let delete = toggle_action `Delete
+
 let sort_options req =
   let handler req model =
     let open Utils.Lwt_result.Infix in

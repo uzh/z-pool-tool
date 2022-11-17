@@ -42,11 +42,21 @@ let rename_custom_field_foreign_key =
     |sql}
 ;;
 
+let add_published_at_to_custom_field_options =
+  Sihl.Database.Migration.create_step
+    ~label:"add published to custom field options"
+    {sql|
+      ALTER TABLE pool_custom_field_options
+        ADD COLUMN published_at timestamp NULL AFTER position
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_field_options"
     |> add_step create_custom_field_options_table
     |> add_step add_order_column_to_custom_field_options
     |> add_step change_position_datatype
-    |> add_step rename_custom_field_foreign_key)
+    |> add_step rename_custom_field_foreign_key
+    |> add_step add_published_at_to_custom_field_options)
 ;;

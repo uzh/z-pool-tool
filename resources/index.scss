@@ -53,10 +53,10 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
 // Filter
 .key-select {
-    flex-basis: calc( calc(100% - (2 * $space-base)) / 3 );
+    flex-basis: calc(calc(100% - (2 * $space-base)) / 3);
 }
 
 // Images
-.aspect-ratio.contain > *:first-child {
+.aspect-ratio.contain>*:first-child {
     object-fit: contain;
 }
