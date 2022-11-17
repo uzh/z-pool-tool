@@ -1,3 +1,7 @@
+module Title : sig
+  include Pool_common.Model.StringSig
+end
+
 type single_val =
   | Bool of bool
   | Date of Ptime.t
@@ -81,17 +85,19 @@ module Predicate : sig
   val create : Key.t -> Operator.t -> value -> t
 end
 
-type filter =
-  | And of filter list
-  | Or of filter list
-  | Not of filter
+type query =
+  | And of query list
+  | Or of query list
+  | Not of query
   | Pred of Predicate.t
+  | Template of Pool_common.Id.t
 
-val show_filter : filter -> string
+val show_query : query -> string
 
 type t =
   { id : Pool_common.Id.t
-  ; filter : filter
+  ; query : query
+  ; title : Title.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -102,6 +108,7 @@ module Human : sig
     | Or of t list
     | Not of t
     | Pred of Predicate.human
+    | Template of Pool_common.Id.t option
 
   val show : t -> string
   val init : ?key:Key.human -> ?operator:Operator.t -> ?value:value -> unit -> t
@@ -115,24 +122,35 @@ end
 val equal : t -> t -> bool
 val show : t -> string
 val pp : Format.formatter -> t -> unit
-val create : ?id:Pool_common.Id.t -> filter -> t
-val yojson_of_filter : filter -> Yojson.Safe.t
+val create : ?id:Pool_common.Id.t -> Title.t option -> query -> t
+val yojson_of_query : query -> Yojson.Safe.t
+val query_of_yojson : Yojson.Safe.t -> (query, Pool_common.Message.error) result
+val query_of_string : string -> (query, Pool_common.Message.error) result
 
-val filter_of_yojson
-  :  Yojson.Safe.t
-  -> (filter, Pool_common.Message.error) result
-
-val filter_of_string : string -> (filter, Pool_common.Message.error) result
-
-val validate_filter
+val validate_query
   :  Key.human list
-  -> filter
-  -> (filter, Pool_common.Message.error) result
+  -> t list
+  -> query
+  -> (query, Pool_common.Message.error) result
+
+val contains_template : query -> bool
 
 val find
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_all_templates : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_template
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val find_multiple_templates
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t list
+  -> t list Lwt.t
 
 type event =
   | Created of t
@@ -148,6 +166,7 @@ module Utils : sig
     | Or
     | Not
     | Pred
+    | Template
 
   val equal_filter_label : filter_label -> filter_label -> bool
   val show_filter_label : filter_label -> string
@@ -172,7 +191,8 @@ val key_of_string
   -> string
   -> (Key.human, Pool_common.Message.error) Lwt_result.t
 
-val t_to_human : Key.human list -> filter -> Human.t
+val t_to_human : Key.human list -> t list -> query -> Human.t
+val find_templates_of_query : Pool_database.Label.t -> query -> t list Lwt.t
 
 val toggle_predicate_type
   :  Human.t

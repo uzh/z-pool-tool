@@ -132,6 +132,7 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | Query [@name "query"] [@printer go "query"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
         [@printer go "recruitment_channel"]
@@ -162,6 +163,7 @@ module Field = struct
     | Status [@name "status"] [@printer go "status"]
     | Street [@name "street"] [@printer go "street"]
     | Styles [@name "styles"] [@printer go "styles"]
+    | Template [@name "template"] [@printer go "template"]
     | Tenant [@name "tenant"] [@printer go "tenant"]
     | TenantDisabledFlag [@name "tenant_disabled_flag"]
         [@printer go "tenant_disabled_flag"]
@@ -225,7 +227,7 @@ type error =
   | EndBeforeStart
   | ExperimentSessionCountNotZero
   | FieldRequiresCheckbox of (Field.t * Field.t)
-  | FilterNotCompatible of (Field.t * Field.t)
+  | FilterMustNotContainTemplate
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
@@ -252,11 +254,12 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
+  | QueryNotCompatible of (Field.t * Field.t)
   | RegistrationDisabled
   | RequestRequiredFields
   | Retrieve of Field.t
-  | SessionHasAssignments
   | SessionFullyBooked
+  | SessionHasAssignments
   | SessionInvalid
   | SessionTenantNotFound
   | ReadOnlyModel

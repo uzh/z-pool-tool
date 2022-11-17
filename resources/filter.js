@@ -1,9 +1,10 @@
-// TODO: import as separate file only on filter page?
+const errorClass = "error-message";
 const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
 
 // TODO: let user close notification, maybe display somewhere else
+// Frontend framework issue #29
 const notifyUser = (classname, msg) => {
     const notificationId = "filter-notification";
     const icon = document.createElement("i");
@@ -34,9 +35,10 @@ const findChildPredicates = (wrapper) => {
 const addRequiredError = (elm) => {
     if (elm) {
         const wrapper = elm.closest(".form-group");
+        [...wrapper.getElementsByClassName(errorClass)].forEach((elm) => elm.remove());
         let error = document.createElement("span");
         error.innerHTML = "This field is required."
-        error.classList.add("error-message", "help");
+        error.classList.add(errorClass, "help");
         wrapper.appendChild(error);
     }
 }
@@ -44,21 +46,23 @@ const addRequiredError = (elm) => {
 // Should this update every time, the filter gets adjusted but not safed?
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
-    const id = target.dataset.experimentId;
-    try {
-        const response = await fetch(`/admin/experiments/${id}/contact-count`);
-        const data = await response.json();
-        if (!response.ok) {
-            throw (data.message || response.statusText || "An Error occurred")
-        }
-        if (response.status < 200 || response.status > 300) {
-            notifyUser("error", data.message)
-        } else {
-            target.innerHTML = data.count
-        }
-    } catch (error) {
-        notifyUser("error", error)
-    };
+    if (target) {
+        const id = target.dataset.experimentId;
+        try {
+            const response = await fetch(`/admin/experiments/${id}/contact-count`);
+            const data = await response.json();
+            if (!response.ok) {
+                throw (data.message || response.statusText || "An Error occurred")
+            }
+            if (response.status < 200 || response.status > 300) {
+                notifyUser("error", data.message)
+            } else {
+                target.innerHTML = data.count
+            }
+        } catch (error) {
+            notifyUser("error", error)
+        };
+    }
 }
 
 const predicateToJson = (outerPredicate, allowEmpty = false) => {
@@ -72,6 +76,16 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
         const notPredicate = findChildPredicates(outerPredicate)[0];
         return {
             [predicateType]: predicateToJson(notPredicate, allowEmpty)
+        }
+    } else if (predicateType === "template") {
+        let input = outerPredicate.querySelector('[name="template"]');
+        if (!input.value && !allowEmpty) {
+            addRequiredError(input)
+        } else {
+            const value = input.value || "";
+            return {
+                [predicateType]: value
+            }
         }
     } else if (predicateType === "pred") {
         const toValue = (valueInput) => {
@@ -95,8 +109,9 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                         }
                         break;
                     case "bool":
+                        console.log(valueInput)
                         value = {
-                            [inputDataType]: (value == "true")
+                            [inputDataType]: (valueInput.value == "true")
                         }
                         break;
                     case "option":
@@ -168,13 +183,22 @@ function addRemovePredicateListener(element) {
 }
 
 function configRequest(e, form) {
-    const isPredicateType = e.target.name === "predicate";
+    const isPredicateType = e.detail.parameters.predicate;
+    const allowEmpty = e.detail.parameters.allow_empty_values;
     const isSubmit = e.target.type === "submit"
     e.detail.parameters._csrf = csrfToken();
+    const filterId = form.dataset.filter;
+    if (filterId) {
+        e.detail.parameters.filter = filterId;
+    }
     if (isPredicateType || isSubmit) {
         const elm = isSubmit ? form.querySelector(".predicate") : e.target.closest('.predicate');
         try {
-            e.detail.parameters.filter = predicateToJson(elm, isPredicateType);
+            e.detail.parameters.query = predicateToJson(elm, allowEmpty);
+            const title = document.querySelector('#filter-form [name="title"]');
+            if (title) {
+                e.detail.parameters.title = title.value;
+            }
         } catch (error) {
             console.error(error)
             e.preventDefault();
@@ -183,20 +207,19 @@ function configRequest(e, form) {
     }
 }
 
-export function initFilter() {
-    const form = document.getElementById("filter-form");
-    if (form) {
-        const submitButton = document.getElementById("submit-filter-form");
-        submitButton.addEventListener('htmx:beforeSwap', (e) => {
-            if (e.detail.xhr.status === 400) {
-                e.detail.shouldSwap = true;
-            }
-        })
-        addRemovePredicateListener(form);
-        form.addEventListener('htmx:afterSwap', (e) => {
-            addRemovePredicateListener(e.detail.elt)
-        })
-        updateContactCount()
-        form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
-    }
+const form = document.getElementById("filter-form");
+if (form) {
+    const submitButton = document.getElementById("submit-filter-form");
+    submitButton.addEventListener('htmx:beforeSwap', (e) => {
+        if (e.detail.xhr.status > 200 && e.detail.xhr.status < 300) {
+            e.detail.shouldSwap = true;
+        }
+    })
+    addRemovePredicateListener(form);
+    form.addEventListener('htmx:afterSwap', (e) => {
+        addRemovePredicateListener(e.detail.elt)
+    })
+    updateContactCount()
+    form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
 }
+

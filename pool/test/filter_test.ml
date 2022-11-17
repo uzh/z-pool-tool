@@ -239,7 +239,7 @@ let filter_contacts _ () =
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
-    let filter = Filter.create nr_of_siblings in
+    let filter = Filter.create None nr_of_siblings in
     let experiment = Experiment.{ experiment with filter = Some filter } in
     let%lwt () =
       (* Save filter *)
@@ -254,7 +254,7 @@ let filter_contacts _ () =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res =
@@ -277,6 +277,7 @@ let filter_by_email _ () =
     let filter =
       Filter.(
         create
+          None
           (And
              [ nr_of_siblings
              ; email
@@ -297,7 +298,7 @@ let filter_by_email _ () =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
@@ -323,6 +324,7 @@ let validate_filter_with_unknown_field _ () =
       Cqrs_command.Experiment_command.UpdateFilter.handle
         experiment
         key_list
+        []
         filter
     in
     let expected = Error Pool_common.Message.(Invalid Field.Key) in
@@ -348,10 +350,11 @@ let validate_filter_with_invalid_value _ () =
       Cqrs_command.Experiment_command.UpdateFilter.handle
         experiment
         key_list
+        []
         filter
     in
     let expected =
-      Error Pool_common.Message.(FilterNotCompatible (Field.Value, Field.Key))
+      Error Pool_common.Message.(QueryNotCompatible (Field.Value, Field.Key))
     in
     Test_utils.check_result expected events |> Lwt.return
   in
@@ -370,6 +373,7 @@ let test_list_filter answer_index operator contact experiment expected =
                Option option.Custom_field.SelectOption.id))
       in
       create
+        None
         Predicate.(
           Pred
             { key =
@@ -392,7 +396,7 @@ let test_list_filter answer_index operator contact experiment expected =
       Contact.find_filtered
         Test_utils.Data.database_label
         experiment.Experiment.id
-        (Experiment.filter_predicate experiment)
+        experiment.Experiment.filter
       |> Lwt.map CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
@@ -455,6 +459,40 @@ let filter_by_list_contains_some _ () =
       contact
       experiment
       true
+  in
+  Lwt.return_unit
+;;
+
+let create_filter_template_with_template _ () =
+  let open Pool_common in
+  let%lwt () =
+    let open CCResult in
+    let open Filter in
+    let template_id = Pool_common.Id.create () in
+    let template =
+      Pred
+        Predicate.
+          { key = Key.(Hardcoded Name)
+          ; operator = Operator.Equal
+          ; value = Single (Str "Foo")
+          }
+      |> create ~id:template_id None
+    in
+    let filter = Template template_id in
+    let events =
+      let open Cqrs_command.Filter_command.Create in
+      Message.Field.[ show Title, [ "Some title" ] ]
+      |> decode
+      >>= handle [] [ template ] filter
+    in
+    let expected = Error Message.FilterMustNotContainTemplate in
+    Alcotest.(
+      check
+        (result (list Test_utils.event) Test_utils.error)
+        "succeeds"
+        expected
+        events)
+    |> Lwt.return
   in
   Lwt.return_unit
 ;;

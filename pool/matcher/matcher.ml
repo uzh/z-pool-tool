@@ -119,7 +119,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       ~limit:(max limit 0)
       pool
       id
-      (experiment |> Experiment.filter_predicate)
+      experiment.Experiment.filter
   in
   let%lwt i18n_templates =
     i18n_templates pool experiment Pool_common.Language.all

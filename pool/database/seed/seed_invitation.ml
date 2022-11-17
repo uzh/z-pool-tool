@@ -7,7 +7,7 @@ let invitations pool =
           Contact.find_filtered
             pool
             experiment.Experiment.id
-            (experiment |> Experiment.filter_predicate)
+            experiment.Experiment.filter
           |> Lwt.map CCResult.get_exn
         in
         let n = CCList.length filtered_contacts / 2 in

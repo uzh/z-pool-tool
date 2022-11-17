@@ -5,6 +5,7 @@ type filter_label =
   | Or [@printer print "or"]
   | Not [@printer print "not"]
   | Pred [@printer print "pred"]
+  | Template [@printer print "template"]
 [@@deriving eq, enum, show]
 
 let to_label = function
@@ -12,6 +13,7 @@ let to_label = function
   | Or -> "Or"
   | Not -> "Not"
   | Pred -> "Predicate"
+  | Template -> "Template"
 ;;
 
 let label_of_string = function

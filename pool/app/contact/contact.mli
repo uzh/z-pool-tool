@@ -95,13 +95,13 @@ val find_filtered
   -> ?order_by:string
   -> ?limit:int
   -> Pool_common.Id.t
-  -> Filter.filter option
+  -> Filter.t option
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val count_filtered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> Filter.filter option
+  -> Filter.query option
   -> (int, Pool_common.Message.error) Lwt_result.t
 
 val find_by_email

@@ -102,6 +102,7 @@ let field_to_string =
   | Predicate -> "predicate"
   | Profile -> "profile"
   | PublicTitle -> "public title"
+  | Query -> "query"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
@@ -129,6 +130,7 @@ let field_to_string =
   | Status -> "status"
   | Street -> "street"
   | Styles -> "styles"
+  | Template -> "template"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"
@@ -241,11 +243,7 @@ let rec error_to_string = function
       "The option \"%s\" requires \"%s\"."
       (field_to_string field)
       (field_to_string required)
-  | FilterNotCompatible (f1, f2) ->
-    Format.asprintf
-      "%s is not compatible with %s."
-      (field_to_string f1)
-      (field_to_string f2)
+  | FilterMustNotContainTemplate -> "Filter must not contain templates."
   | FollowUpIsEarlierThanMain ->
     "Follow-up session can't start before main session."
   | HtmxVersionNotFound field ->
@@ -284,6 +282,11 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | QueryNotCompatible (f1, f2) ->
+    Format.asprintf
+      "%s is not compatible with %s."
+      (field_to_string f1)
+      (field_to_string f2)
   | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
   | RequestRequiredFields -> "Please provide necessary fields"

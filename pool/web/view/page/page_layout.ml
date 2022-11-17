@@ -144,6 +144,7 @@ module Tenant = struct
            [ "/admin/dashboard", Dashboard
            ; "/admin/experiments", Experiments
            ; "/admin/custom-fields", CustomFields
+           ; "/admin/filter", Filter
            ; "/admin/locations", Locations
            ; "/admin/settings", Settings
            ; "/admin/i18n", I18n
