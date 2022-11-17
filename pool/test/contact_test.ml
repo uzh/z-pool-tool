@@ -59,7 +59,8 @@ let create_contact verified contact_info =
         ; created_at = Pool_common.CreatedAt.create ()
         ; updated_at = Pool_common.UpdatedAt.create ()
         }
-  ; recruitment_channel = Contact.RecruitmentChannel.read recruitment_channel
+  ; recruitment_channel =
+      Contact.RecruitmentChannel.read recruitment_channel |> CCOption.pure
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
@@ -147,7 +148,9 @@ let sign_up () =
       ; firstname
       ; lastname
       ; recruitment_channel =
-          recruitment_channel |> Contact.RecruitmentChannel.read
+          recruitment_channel
+          |> Contact.RecruitmentChannel.read
+          |> CCOption.pure
       ; terms_accepted_at
       ; language
       }

@@ -172,7 +172,7 @@ let contacts db_pool =
               ; password
               ; firstname
               ; lastname
-              ; recruitment_channel
+              ; recruitment_channel = Some recruitment_channel
               ; terms_accepted_at
               ; language
               }
