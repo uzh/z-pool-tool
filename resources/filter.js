@@ -109,8 +109,9 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                         }
                         break;
                     case "bool":
+                        console.log(valueInput)
                         value = {
-                            [inputDataType]: (value == "true")
+                            [inputDataType]: (valueInput.value == "true")
                         }
                         break;
                     case "option":

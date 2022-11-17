@@ -4,7 +4,7 @@
     "license": "GPL-2.0-or-later",
     "scripts": {
         "build": "export NODE_OPTIONS=--trace-warnings; parcel build resources/index.js resources/filter.js resources/images/** --dist-dir public --public-url $PREFIX_PATH/assets/",
-        "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js esources/filter.js --dist-dir public"
+        "watch": "export NODE_OPTIONS=--trace-warnings; parcel watch resources/index.js resources/filter.js --dist-dir public"
     },
     "devDependencies": {
         "@parcel/transformer-sass": "2.7.0",
