@@ -50,7 +50,10 @@ end = struct
   ;;
 
   let effects filter =
-    [ `Update, `One (filter.Filter.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Update
+      , `Target (filter.Filter.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end
 
@@ -88,6 +91,9 @@ end = struct
   ;;
 
   let effects filter =
-    [ `Update, `One (filter.Filter.id |> Pool_common.Id.to_uuidm) ]
+    [ ( `Update
+      , `Target (filter.Filter.id |> Guard.Uuid.target_of Pool_common.Id.value)
+      )
+    ]
   ;;
 end
