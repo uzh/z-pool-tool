@@ -251,6 +251,11 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "No version found for field '%s'" field
   | Invalid field -> field_message "Invalid" (field_to_string field) "provided!"
+  | InvalidEmailSuffix suffixes ->
+    Format.asprintf
+      "%s The following email suffixes are allowed: %s"
+      (error_to_string (Invalid Field.EmailSuffix))
+      (CCString.concat ", " suffixes)
   | InvalidOptionSelected -> "Invalid option selected."
   | InvalidHtmxRequest -> "Invalid request."
   | InvitationSubjectAndTextRequired ->

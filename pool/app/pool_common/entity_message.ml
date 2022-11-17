@@ -229,6 +229,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidEmailSuffix of string list
   | InvalidOptionSelected
   | InvalidHtmxRequest
   | InvitationSubjectAndTextRequired
