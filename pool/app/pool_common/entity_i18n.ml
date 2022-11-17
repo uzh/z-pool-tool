@@ -21,6 +21,7 @@ type t =
   | MailingDetailTitle of Ptime.t
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
+  | OurPartners
   | ProfileCompletionTitle
   | RateTotalSent of int
   | Reminder

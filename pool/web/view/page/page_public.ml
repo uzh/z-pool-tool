@@ -4,25 +4,46 @@ module HttpUtils = Http_utils
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index tenant Pool_context.{ language; _ } welcome_text =
+let index (tenant : Pool_tenant.t) Pool_context.{ language; _ } welcome_text =
   let text_to_string = Pool_common.Utils.text_to_string language in
+  let aspect_ratio img =
+    img
+    |> Component.Image.aspect_ratio ~contain:true `R16x9
+    |> CCList.pure
+    |> div ~a:[ a_style "width: 200px" ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1
+    [ div
+        ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+        (CCList.map
+           (fun logo ->
+             img
+               ~src:(Pool_common.File.path logo)
+               ~alt:
+                 (Format.asprintf
+                    "Logo %s"
+                    Pool_tenant.(tenant.title |> Title.value))
+               ()
+             |> aspect_ratio)
+           (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
+    ; h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
+    ; div [ txt (I18n.content_to_string welcome_text) ]
     ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt (text_to_string Pool_common.I18n.OurPartners) ]
+        ; div
+            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
             (CCList.map
                (fun logo ->
-                 img
-                   ~src:(Pool_common.File.path logo)
-                   ~alt:""
-                   ~a:[ a_style "width: 200px" ]
-                   ())
-               (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value))
-        ; div [ txt (I18n.content_to_string welcome_text) ]
+                 img ~src:(Pool_common.File.path logo) ~alt:"" ()
+                 |> aspect_ratio)
+               (tenant.Pool_tenant.partner_logo
+               |> Pool_tenant.PartnerLogos.value))
         ]
     ]
 ;;
