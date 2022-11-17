@@ -8,7 +8,7 @@ let templates_disabled urlencoded =
   let open CCOption in
   CCList.assoc_opt ~eq:CCString.equal templates_disabled_key urlencoded
   >>= CCList.head_opt
-  |> CCOption.map_or ~default:false (CCString.equal "true")
+  |> map_or ~default:false (CCString.equal "true")
 ;;
 
 let find_all_templates tenant_db templates_disabled =

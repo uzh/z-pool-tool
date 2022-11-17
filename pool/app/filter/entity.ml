@@ -440,7 +440,7 @@ let create ?(id = Pool_common.Id.create ()) title query =
   }
 ;;
 
-let rec validate_query key_list (template_list : t list) m =
+let rec validate_query key_list (template_list : t list) =
   let open CCResult in
   let validate_list fnc queries =
     queries
@@ -448,7 +448,7 @@ let rec validate_query key_list (template_list : t list) m =
     |> CCList.all_ok
     >|= fnc
   in
-  match m with
+  function
   | And queries -> validate_list (fun lst -> And lst) queries
   | Or queries -> validate_list (fun lst -> Or lst) queries
   | Not f -> validate_query key_list template_list f >|= not

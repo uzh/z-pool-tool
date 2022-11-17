@@ -98,8 +98,6 @@ val find_filtered
   -> Filter.t option
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
-(* Pass filter.t option? That would not allow to get count before saving
-   filter *)
 val count_filtered
   :  Pool_database.Label.t
   -> Pool_common.Id.t
