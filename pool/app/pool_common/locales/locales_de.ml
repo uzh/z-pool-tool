@@ -88,6 +88,7 @@ let field_to_string =
   | NewPassword -> "Neues Passwort"
   | Order -> "Reihenfolge"
   | Operator -> "Operator"
+  | Operators -> "Operatoren"
   | Overbook -> "Überbuchen"
   | Overwrite -> "overwrite"
   | Page -> "Seite"
@@ -375,6 +376,7 @@ let control_to_string = function
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
   | Login -> format_submit "anmelden" None
+  | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
   | PleaseSelect -> "bitte wählen"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"

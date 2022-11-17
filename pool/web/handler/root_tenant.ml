@@ -64,6 +64,25 @@ let create req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let manage_operators req =
+  let open Lwt_result.Syntax in
+  let open Sihl.Web in
+  let result context =
+    Lwt_result.map_error (fun err -> err, "/root/tenants")
+    @@
+    let id =
+      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      |> Pool_common.Id.of_string
+    in
+    let* tenant = Pool_tenant.find id in
+    Page.Root.Tenant.manage_operators tenant context
+    |> General.create_root_layout context
+    |> Response.of_html
+    |> Lwt.return_ok
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
 let create_operator req =
   let result { Pool_context.tenant_db; _ } =
     let open Utils.Lwt_result.Infix in
@@ -71,6 +90,9 @@ let create_operator req =
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
       |> Pool_common.Id.of_string
+    in
+    let redirect_path =
+      Format.asprintf "/root/tenants/%s" (Pool_common.Id.value id)
     in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
@@ -90,7 +112,7 @@ let create_operator req =
     in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
-        "/root/tenants"
+        redirect_path
         [ Message.set ~success:[ Created Field.Operator ] ]
     in
     ()
@@ -99,7 +121,7 @@ let create_operator req =
     >> events
     >>= handle
     |> Lwt_result.map_error (fun err ->
-         err, Format.asprintf "/root/tenants/%s" (Common.Id.value id))
+         err, Format.asprintf "%s/operator" redirect_path)
     |>> return_to_overview
   in
   result |> HttpUtils.extract_happy_path req

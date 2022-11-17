@@ -129,9 +129,61 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     ]
 ;;
 
+let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
+  div
+    ~a:[ a_class [ "trim"; "narrow" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt
+            Pool_common.(
+              Utils.field_to_string language Message.Field.Operators
+              |> CCString.capitalize_ascii)
+        ]
+    ; div
+        [ form
+            ~a:
+              [ a_action
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/root/tenants/%s/create-operator"
+                        (Id.value id)))
+              ; a_method `Post
+              ; a_class [ "stack" ]
+              ]
+            ((csrf_element csrf ()
+             :: CCList.map
+                  (fun (field, input) ->
+                    input_element ~required:true language input field)
+                  Message.Field.
+                    [ Email, `Email
+                    ; Password, `Password
+                    ; Firstname, `Text
+                    ; Lastname, `Text
+                    ])
+            @ [ submit_element
+                  language
+                  Message.(Create (Some Field.operator))
+                  ()
+              ])
+        ; p
+            [ a
+                ~a:
+                  [ a_href
+                      (Sihl.Web.externalize_path
+                         (Format.asprintf "/root/tenants/%s" (Id.value id)))
+                  ]
+                [ txt
+                    Pool_common.(Utils.control_to_string language Message.back)
+                ]
+            ]
+        ]
+    ]
+;;
+
 let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   let open Pool_tenant in
   let open Pool_tenant.SmtpAuth in
+  let control_to_string = Pool_common.Utils.control_to_string language in
   let detail_fields =
     Message.
       [ Field.Title, Title.value tenant.title
@@ -257,7 +309,22 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
   in
   div
     ~a:[ a_class [ "trim"; "narrow" ] ]
-    [ h1 [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
+    ; p
+        [ a
+            ~a:
+              [ a_href
+                  (Sihl.Web.externalize_path
+                     (Format.asprintf
+                        "/root/tenants/%s/operator"
+                        (tenant.id |> Pool_common.Id.value)))
+              ]
+            [ txt
+                (control_to_string Pool_common.Message.(Manage Field.Operators))
+            ]
+        ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         [ form
@@ -287,29 +354,10 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ]
             ((csrf_element csrf () :: database_input_fields)
             @ [ submit_element language Message.(Update None) () ])
-        ; form
-            ~a:
-              [ a_action
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/root/tenants/%s/create-operator"
-                        (Id.value tenant.id)))
-              ; a_method `Post
-              ; a_class [ "stack" ]
-              ]
-            ((csrf_element csrf ()
-             :: CCList.map
-                  (input_element language `Text)
-                  Message.Field.[ Email; Password; Firstname; Lastname ])
-            @ [ submit_element
-                  language
-                  Message.(Create (Some Field.operator))
-                  ()
-              ])
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
-                [ txt "back" ]
+                [ txt (control_to_string Pool_common.Message.back) ]
             ]
         ]
     ]

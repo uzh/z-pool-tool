@@ -367,12 +367,18 @@ module Root = struct
       Format.asprintf "%s/%s" (Tenant |> url_key) appendix
     in
     let tenants =
+      let specific =
+        Tenant.
+          [ get "" tenant_detail
+          ; get "operator" manage_operators
+          ; post "create-operator" create_operator
+          ; post "update-detail" Update.update_detail
+          ; post "update-database" Update.update_database
+          ]
+      in
       [ get "" Tenant.tenants
       ; post "/create" Tenant.create
-      ; get (Tenant |> url_key) Tenant.tenant_detail
-      ; post (build_route "create-operator") Tenant.create_operator
-      ; post (build_route "update-detail") Tenant.Update.update_detail
-      ; post (build_route "update-database") Tenant.Update.update_database
+      ; choose ~scope:(Tenant |> url_key) specific
       ; post
           (build_route
              (Format.asprintf "assets/%s/delete" (AssetId |> url_key)))
