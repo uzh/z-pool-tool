@@ -53,7 +53,9 @@ let personal_details_form
   let externalize = HttpUtils.externalize_path_with_lang query_language in
   let action = externalize action in
   let form_attrs = [ a_method `Post; a_action action; a_class [ "stack" ] ] in
-  let htmx_create field = Htmx.create field language ~hx_post:action () in
+  let htmx_create field =
+    Htmx.create ~required:true field language ~hx_post:action ()
+  in
   let custom_field_to_html field =
     Htmx.custom_field_to_htmx language is_admin ~hx_post:action field ()
   in

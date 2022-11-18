@@ -107,6 +107,7 @@ let create
   ?success
   ?flash_fetcher
   ?disabled
+  ?required
   ()
   =
   let input_class =
@@ -140,6 +141,7 @@ let create
       ~value:boolean
       ?help
       ?error
+      ?required
       language
       field
   | MultiSelect t ->
@@ -158,6 +160,7 @@ let create
       field
       ~additional_attributes
       ~classnames
+      ?required
       ?error
       ?disabled
       ()
@@ -170,6 +173,7 @@ let create
         )
       ~additional_attributes:(additional_attributes ())
       ?error
+      ?required
       ?help
       language
       `Number
@@ -179,6 +183,7 @@ let create
       ~attributes:(additional_attributes ())
       ?help
       ?option_formatter
+      ?required
       ~add_empty:true
       language
       field
@@ -192,6 +197,7 @@ let create
       ~value:(fetched_value |> CCOption.value ~default:(str |> default))
       ~additional_attributes:(additional_attributes ())
       ?error
+      ?required
       ?help
       language
       `Text
@@ -232,7 +238,10 @@ let custom_field_to_htmx_value language =
 
 let custom_field_to_htmx ?version ?value language is_admin custom_field ?hx_post
   =
-  let to_html disabled m = create ~disabled m language in
+  let required =
+    Custom_field.(Public.required custom_field |> Required.value)
+  in
+  let to_html disabled m = create ~required ~disabled m language in
   let open Custom_field in
   let field_id = Public.id custom_field in
   let htmx_attributes = custom_field_htmx_attributes field_id in
@@ -256,8 +265,15 @@ let partial_update_to_htmx
   partial_update
   ?hx_post
   =
-  let to_html (m : 'a t) = create ?hx_post ~disabled:false m language in
   let open Contact.PartialUpdate in
+  let to_html m =
+    create
+      ~required:(is_required partial_update)
+      ?hx_post
+      ~disabled:false
+      m
+      language
+  in
   let open Pool_common.Message in
   match partial_update with
   | Firstname (v, firstname) ->

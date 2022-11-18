@@ -235,7 +235,9 @@ let checkbox_element
   let attributes =
     Elements.attributes `Checkbox name id value_attrs
     |> fun attrs ->
-    if required then CCList.cons (a_required ()) attrs else attrs
+    if required && not as_switch
+    then CCList.cons (a_required ()) attrs
+    else attrs
   in
   let attributes = attributes @ additional_attributes in
   let group_class = Elements.group_class classnames orientation in
@@ -487,6 +489,7 @@ let multi_select
   ?(classnames = [])
   ?error
   ?(disabled = false)
+  ?(required = false)
   ()
   =
   let error = Elements.error language error in
@@ -525,7 +528,7 @@ let multi_select
   in
   div
     ~a:[ a_class (Elements.group_class classnames orientation) ]
-    [ label [ txt (Elements.input_label language group_field None false) ]
+    [ label [ txt (Elements.input_label language group_field None required) ]
     ; div ~a:[ a_class [ "input-group" ] ] (inputs @ error)
     ]
 ;;

@@ -50,7 +50,7 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 [data-delete-predicate] {
-    color: rgb(241, 70, 104);
+    color: $red;
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;

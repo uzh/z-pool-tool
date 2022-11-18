@@ -155,6 +155,11 @@ module PartialUpdate = struct
     | Custom of Custom_field.Public.t
   [@@deriving eq, show, variants]
 
+  let is_required = function
+    | Firstname _ | Lastname _ | Paused _ | Language _ -> true
+    | Custom field -> Custom_field.(Public.required field |> Required.value)
+  ;;
+
   let increment_version =
     let increment = Pool_common.Version.increment in
     function
