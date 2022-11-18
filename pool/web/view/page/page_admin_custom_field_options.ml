@@ -63,9 +63,15 @@ let field_buttons language csrf custom_field option =
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
     |> Sihl.Web.externalize_path
   in
-  let make_form action msg submit_type =
+  let make_form action msg submit_type confirmable =
     form
-      ~a:[ a_action action; a_method `Post ]
+      ~a:
+        [ a_action action
+        ; a_method `Post
+        ; a_user_data
+            "confirmable"
+            (Pool_common.Utils.confirmable_to_string language confirmable)
+        ]
       [ csrf_element csrf (); submit_element language msg ~submit_type () ]
   in
   match option with
@@ -88,12 +94,14 @@ let field_buttons language csrf custom_field option =
          ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
          [ make_form
              (action option "delete")
-             Pool_common.Message.(Delete (Some Field.CustomFieldOption))
+             Message.(Delete (Some Field.CustomFieldOption))
              `Error
+             I18n.DeleteCustomFieldOption
          ; make_form
              (action option "publish")
              Pool_common.Message.(Publish (Some Field.CustomFieldOption))
              `Success
+             I18n.PublisCustomFieldOption
          ])
 ;;
 

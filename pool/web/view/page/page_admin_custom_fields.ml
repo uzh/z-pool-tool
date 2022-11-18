@@ -579,9 +579,15 @@ let field_buttons language csrf current_model field =
     |> (fun base -> Format.asprintf "%s/%s" base appendix)
     |> Sihl.Web.externalize_path
   in
-  let make_form action msg submit_type =
+  let make_form action msg submit_type confirmable =
     form
-      ~a:[ a_action action; a_method `Post ]
+      ~a:
+        [ a_action action
+        ; a_method `Post
+        ; a_user_data
+            "confirmable"
+            (Pool_common.Utils.confirmable_to_string language confirmable)
+        ]
       [ csrf_element csrf (); submit_element language msg ~submit_type () ]
   in
   match field with
@@ -604,12 +610,14 @@ let field_buttons language csrf current_model field =
          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
          [ make_form
              (action field "delete")
-             Pool_common.Message.(Delete (Some Field.CustomField))
+             Message.(Delete (Some Field.CustomField))
              `Error
+             I18n.DeleteCustomField
          ; make_form
              (action field "publish")
-             Pool_common.Message.(Publish (Some Field.CustomField))
+             Message.(Publish (Some Field.CustomField))
              `Success
+             I18n.PublisCustomField
          ])
 ;;
 

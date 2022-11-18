@@ -99,10 +99,13 @@ type hint =
 
 type confirmable =
   | CancelSession
+  | DeleteCustomField
   | DeleteCustomFieldOption
   | DeleteEmailSuffix
   | DeleteExperiment
   | DeleteFile
   | DeleteMailing
   | DeleteSession
+  | PublisCustomField
+  | PublisCustomFieldOption
   | StopMailing
