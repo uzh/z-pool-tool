@@ -55,3 +55,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 .key-select {
     flex-basis: calc( calc(100% - (2 * $space-base)) / 3 );
 }
+
+// Images
+.aspect-ratio.contain > *:first-child {
+    object-fit: contain;
+}

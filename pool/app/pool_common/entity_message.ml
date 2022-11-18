@@ -116,6 +116,7 @@ module Field = struct
         [@printer go "num_invitations"]
     | Order [@name "order"] [@printer go "order"]
     | Operator [@name "operator"] [@printer go "operator"]
+    | Operators [@name "operators"] [@printer go "operators"]
     | Overbook [@name "overbook"] [@printer go "overbook"]
     | Overwrite [@name "overwrite"] [@printer go "overwrite"]
     | Page [@name "page"] [@printer go "page"]
@@ -231,6 +232,7 @@ type error =
   | FollowUpIsEarlierThanMain
   | HtmxVersionNotFound of string
   | Invalid of Field.t
+  | InvalidEmailSuffix of string list
   | InvalidOptionSelected
   | InvalidHtmxRequest
   | InvitationSubjectAndTextRequired
@@ -344,6 +346,7 @@ type control =
   | Enable
   | Enroll
   | Login
+  | Manage of Field.t
   | More
   | PleaseSelect
   | RemoveFromWaitingList

@@ -11,7 +11,7 @@ let string_to_html =
 let create_public_url pool_url path =
   path
   |> Sihl.Web.externalize_path
-  |> Format.asprintf "%s%s" (Pool_tenant.Url.value pool_url)
+  |> Format.asprintf "http://%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
 let prepend_root_directory pool url =
@@ -95,9 +95,9 @@ module PasswordReset = struct
           ]
         |> Pool_common.Message.add_field_query_params "/reset-password/"
         |> prepend_root_directory pool
-        |> Sihl.Web.externalize_path
         |> create_public_url url
       in
+      Logs.info (fun m -> m "%s" reset_url);
       prepare_email
         pool
         language
@@ -144,7 +144,6 @@ module ConfirmationEmail = struct
     let validation_url =
       Pool_common.[ Message.Field.Token, token email ]
       |> Pool_common.Message.add_field_query_params "/email-verified"
-      |> Sihl.Web.externalize_path
       |> create_public_url url
     in
     prepare_email

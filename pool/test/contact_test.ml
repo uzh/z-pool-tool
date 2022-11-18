@@ -59,7 +59,8 @@ let create_contact verified contact_info =
         ; created_at = Pool_common.CreatedAt.create ()
         ; updated_at = Pool_common.UpdatedAt.create ()
         }
-  ; recruitment_channel = Contact.RecruitmentChannel.read recruitment_channel
+  ; recruitment_channel =
+      Contact.RecruitmentChannel.read recruitment_channel |> CCOption.pure
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
@@ -83,14 +84,14 @@ let create_contact verified contact_info =
 ;;
 
 let sign_up_not_allowed_suffix () =
+  let allowed_email_suffixes =
+    [ "gmail.com" ]
+    |> CCList.map Settings.EmailSuffix.create
+    |> CCResult.flatten_l
+    |> CCResult.get_exn
+  in
   let events =
-    let open CCResult in
     let open Contact_command.SignUp in
-    let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
-    in
     "john@bluewin.com"
     |> contact_info
     |> sign_up_contact
@@ -98,7 +99,12 @@ let sign_up_not_allowed_suffix () =
     |> Pool_common.Utils.get_or_failwith
     |> handle ~allowed_email_suffixes None
   in
-  let expected = Error Message.(Invalid Field.EmailSuffix) in
+  let expected =
+    Error
+      Message.(
+        InvalidEmailSuffix
+          (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
+  in
   check_result expected events
 ;;
 
@@ -147,7 +153,9 @@ let sign_up () =
       ; firstname
       ; lastname
       ; recruitment_channel =
-          recruitment_channel |> Contact.RecruitmentChannel.read
+          recruitment_channel
+          |> Contact.RecruitmentChannel.read
+          |> CCOption.pure
       ; terms_accepted_at
       ; language
       }
@@ -325,20 +333,25 @@ let request_email_validation () =
 let request_email_validation_wrong_suffix () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let new_email = "john.doe@gmx.com" in
+  let allowed_email_suffixes =
+    [ "gmail.com" ]
+    |> CCList.map Settings.EmailSuffix.create
+    |> CCResult.flatten_l
+    |> CCResult.get_exn
+  in
   let events =
-    let open CCResult in
-    let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
-    in
     Contact_command.RequestEmailValidation.(
       new_email
       |> Pool_user.EmailAddress.create
       |> Pool_common.Utils.get_or_failwith
       |> handle ~allowed_email_suffixes contact)
   in
-  let expected = Error Message.(Invalid Field.EmailSuffix) in
+  let expected =
+    Error
+      Message.(
+        InvalidEmailSuffix
+          (allowed_email_suffixes |> CCList.map Settings.EmailSuffix.value))
+  in
   check_result expected events
 ;;
 

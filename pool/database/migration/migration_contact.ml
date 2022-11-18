@@ -97,6 +97,15 @@ let add_profile_update_triggered_timestamp =
     |sql}
 ;;
 
+let make_recruitment_channel_optional =
+  Sihl.Database.Migration.create_step
+    ~label:"make recruitment channel optional"
+    {sql|
+     ALTER TABLE pool_contacts
+     MODIFY COLUMN recruitment_channel varchar(128) NULL
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -108,5 +117,6 @@ let migration () =
     |> add_step rename_participants_to_subjects_table
     |> add_step rename_subjects_to_contacts_table
     |> add_step add_experiment_type_preference
-    |> add_step add_profile_update_triggered_timestamp)
+    |> add_step add_profile_update_triggered_timestamp
+    |> add_step make_recruitment_channel_optional)
 ;;

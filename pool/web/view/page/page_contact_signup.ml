@@ -22,7 +22,7 @@ let signup
            try Some (read field) with
            | _ -> None)
     in
-    selector language field show all selected ~flash_fetcher ()
+    selector language field show all selected ~add_empty:true ~flash_fetcher ()
   in
   let open Component in
   div

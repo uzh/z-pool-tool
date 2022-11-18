@@ -124,7 +124,7 @@ module Model = struct
             ; created_at = Pool_common.CreatedAt.create ()
             ; updated_at = Pool_common.UpdatedAt.create ()
             }
-      ; recruitment_channel = RecruitmentChannel.Friend
+      ; recruitment_channel = Some RecruitmentChannel.Friend
       ; terms_accepted_at =
           (if with_terms_accepted
           then Pool_user.TermsAccepted.create_now () |> CCOption.pure

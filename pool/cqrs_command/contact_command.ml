@@ -8,7 +8,7 @@ module SignUp : sig
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Contact.RecruitmentChannel.t
+    ; recruitment_channel : Contact.RecruitmentChannel.t option
     }
 
   val handle
@@ -32,7 +32,7 @@ end = struct
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Contact.RecruitmentChannel.t
+    ; recruitment_channel : Contact.RecruitmentChannel.t option
     }
 
   let command email password firstname lastname recruitment_channel =
@@ -47,7 +47,7 @@ end = struct
           ; User.Password.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
-          ; Contact.RecruitmentChannel.schema ()
+          ; Conformist.optional @@ Contact.RecruitmentChannel.schema ()
           ]
         command)
   ;;

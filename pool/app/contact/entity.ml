@@ -53,7 +53,7 @@ end
 
 type t =
   { user : Sihl_user.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -76,7 +76,7 @@ type t =
 module Write = struct
   type t =
     { user_id : Pool_common.Id.t
-    ; recruitment_channel : RecruitmentChannel.t
+    ; recruitment_channel : RecruitmentChannel.t option
     ; terms_accepted_at : User.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
