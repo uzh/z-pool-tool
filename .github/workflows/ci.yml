@@ -167,7 +167,9 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Set enviroment for github-release
-        run: echo "CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')" >> $GITHUB_ENV)
+        run: |
+          CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')
+          echo "CHANGELOG=$(echo $CHANGELOG)" >> $GITHUB_ENV
 
       - name: Create release
         uses: meeDamian/github-release@2.0
