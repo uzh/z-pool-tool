@@ -136,7 +136,8 @@ let update req =
   get_custom_field (write ~id) req
 ;;
 
-let delete req =
+let toggle_action action req =
+  let open Utils.Lwt_result.Infix in
   let handler req custom_field =
     let id = req |> get_option_id in
     let result { Pool_context.tenant_db; _ } =
@@ -146,24 +147,34 @@ let delete req =
       Lwt_result.map_error (fun err -> err, redirect_path)
       @@
       let open Utils.Lwt_result.Syntax in
-      let open Utils.Lwt_result.Infix in
-      let* events =
-        id
-        |> Custom_field.find_option tenant_db
-        >>= fun o ->
-        o
-        |> Cqrs_command.Custom_field_option_command.Destroy.handle
-        |> Lwt_result.lift
+      let* option = id |> Custom_field.find_option tenant_db in
+      let events =
+        Lwt_result.lift
+        @@
+        match action with
+        | `Delete ->
+          option |> Cqrs_command.Custom_field_option_command.Destroy.handle
+        | `Publish ->
+          option |> Cqrs_command.Custom_field_option_command.Publish.handle
       in
-      let%lwt () = Pool_event.handle_events tenant_db events in
-      Http_utils.redirect_to_with_actions
-        redirect_path
-        [ Message.set
-            ~success:[ Pool_common.Message.(Deleted Field.CustomFieldOption) ]
-        ]
-      |> Lwt_result.ok
+      let success =
+        let open Pool_common.Message in
+        match action with
+        | `Delete -> Deleted Field.CustomFieldOption
+        | `Publish -> Published Field.CustomFieldOption
+      in
+      let handle events =
+        let%lwt () = Pool_event.handle_events tenant_db events in
+        Http_utils.redirect_to_with_actions
+          redirect_path
+          [ Message.set ~success:[ success ] ]
+      in
+      events |>> handle
     in
     result |> HttpUtils.extract_happy_path req
   in
   get_custom_field handler req
 ;;
+
+let delete = toggle_action `Delete
+let publish = toggle_action `Publish

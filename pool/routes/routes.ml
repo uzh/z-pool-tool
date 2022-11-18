@@ -282,7 +282,11 @@ module Admin = struct
         let options =
           let specific =
             CustomFieldOption.
-              [ get "/edit" edit; post "" update; post "/delete" delete ]
+              [ get "/edit" edit
+              ; post "" update
+              ; post "/delete" delete
+              ; post "/publish" publish
+              ]
           in
           CustomFieldOption.
             [ get "/new" new_form

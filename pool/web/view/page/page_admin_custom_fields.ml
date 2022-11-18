@@ -36,7 +36,6 @@ module Url = struct
     ;;
 
     let edit_path field id = [ detail_path field id; "edit" ] |> concat
-    let delete_path field id = [ detail_path field id; "delete" ] |> concat
   end
 
   module Group = struct

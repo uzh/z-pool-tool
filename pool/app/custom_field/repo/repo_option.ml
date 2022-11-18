@@ -145,6 +145,7 @@ let destroy_request =
   {sql|
     DELETE FROM pool_custom_field_options
     WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+    AND published_at IS NULL
   |sql}
   |> Caqti_type.(string ->. unit)
 ;;
@@ -170,6 +171,23 @@ let destroy_by_custom_field pool field_id =
     (Pool_database.Label.value pool)
     destroy_by_custom_field_request
     Entity.(field_id |> Id.value)
+;;
+
+let publish_request =
+  let open Caqti_request.Infix in
+  {sql|
+    UPDATE pool_custom_field_options
+    SET published_at = NOW()
+    WHERE uuid = UNHEX(REPLACE($1, '-', ''))
+  |sql}
+  |> Caqti_type.(string ->. unit)
+;;
+
+let publish pool m =
+  Utils.Database.exec
+    (Pool_database.Label.value pool)
+    publish_request
+    Entity.SelectOption.(m.id |> Id.value)
 ;;
 
 let publish_by_custom_field_request =

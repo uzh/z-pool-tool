@@ -183,6 +183,10 @@ let () =
             "delete published field"
             `Quick
             Custom_field_test.delete_published_field
+        ; test_case
+            "delete published field option"
+            `Quick
+            Custom_field_test.delete_published_option
         ] )
     ; ( "matcher"
       , [ test_case

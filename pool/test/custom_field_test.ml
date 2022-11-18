@@ -308,3 +308,23 @@ let delete_published_field () =
       expected
       events)
 ;;
+
+let delete_published_option () =
+  let open Custom_field in
+  let custom_field_option =
+    let name = Data.(Name.create sys_languages name |> get) in
+    SelectOption.create ~published_at:(PublishedAt.create_now ()) name
+  in
+  let events =
+    Cqrs_command.Custom_field_option_command.Destroy.handle custom_field_option
+  in
+  let expected =
+    Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
+  in
+  Alcotest.(
+    check
+      (result (list Test_utils.event) Test_utils.error)
+      "succeeds"
+      expected
+      events)
+;;
