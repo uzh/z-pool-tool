@@ -162,16 +162,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
+
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v3
 
+      - name: Set enviroment for github-release
+        run: echo "CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')" >> $GITHUB_ENV)
+
       - name: Create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')
-          gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "${CHANGELOG}" run.exe assets
+        uses: meeDamian/github-release@2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: ${{ env.CHANGELOG }}
+          files: >
+            assets/
+            run.exe
 
       - name: Notify about failure
         if: failure()
