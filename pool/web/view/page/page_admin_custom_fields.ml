@@ -324,53 +324,56 @@ let field_form
                ; a_class [ "stack" ]
                ]
              (CCList.cons
-                (div
-                   ~a:[ a_user_data "sortable" "" ]
-                   (CCList.map
-                      (fun option ->
-                        div
-                          ~a:
-                            [ a_class
-                                [ "flexrow"
-                                ; "flex-gap"
-                                ; "justify-between"
-                                ; "align-center"
-                                ]
-                            ; a_user_data "sortable-item" ""
-                            ]
-                          [ div [ txt (SelectOption.name language option) ]
-                          ; div
-                              [ input
-                                  ~a:
-                                    [ a_input_type `Hidden
-                                    ; a_name
-                                        Message.Field.(
-                                          CustomFieldOption |> array_key)
-                                    ; a_value SelectOption.(Id.value option.id)
-                                    ]
-                                  ()
-                              ]
-                          ; div
-                              ~a:
-                                [ a_class
-                                    [ "flexrow"; "flex-gap"; "align-center" ]
-                                ]
-                              [ a
-                                  ~a:
-                                    [ a_href
-                                        (Url.Option.edit_path
-                                           (model m, id m)
-                                           option.SelectOption.id
-                                        |> Sihl.Web.externalize_path)
-                                    ]
+                (tablex
+                   ~a:[ a_class [ "table"; "simple"; "sortable" ] ]
+                   [ tbody
+                       ~a:[ a_user_data "sortable" "" ]
+                       (CCList.map
+                          (fun option ->
+                            tr
+                              ~a:[ a_user_data "sortable-item" "" ]
+                              [ td [ txt (SelectOption.name language option) ]
+                              ; td
                                   [ txt
-                                      Pool_common.(
-                                        Message.(Edit None)
-                                        |> Utils.control_to_string language)
+                                      (if CCOption.is_some
+                                            option.SelectOption.published_at
+                                      then
+                                        Pool_common.(
+                                          Utils.field_to_string
+                                            language
+                                            Message.Field.PublishedAt)
+                                      else "")
                                   ]
-                              ]
-                          ])
-                      options))
+                              ; td
+                                  [ input
+                                      ~a:
+                                        [ a_input_type `Hidden
+                                        ; a_name
+                                            Message.Field.(
+                                              CustomFieldOption |> array_key)
+                                        ; a_value
+                                            SelectOption.(Id.value option.id)
+                                        ]
+                                      ()
+                                  ]
+                              ; td
+                                  [ a
+                                      ~a:
+                                        [ a_href
+                                            (Url.Option.edit_path
+                                               (model m, id m)
+                                               option.SelectOption.id
+                                            |> Sihl.Web.externalize_path)
+                                        ]
+                                      [ txt
+                                          Pool_common.(
+                                            Message.(Edit None)
+                                            |> Utils.control_to_string language)
+                                      ]
+                                  ]
+                              ])
+                          options)
+                   ])
                 [ csrf_element csrf ()
                 ; submit_element
                     language
@@ -712,7 +715,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                  (fun field ->
                    div
                      ~a:
-                       [ a_class [ "flexrow"; "align-center" ]
+                       [ a_class [ "flexrow"; "align-center"; "inset-sm" ]
                        ; a_user_data "sortable-item" ""
                        ]
                      [ txt (field |> field_name)
@@ -753,6 +756,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                            ; "flex-gap"
                            ; "justify-between"
                            ; "align-center"
+                           ; "inset-sm"
                            ]
                        ; a_user_data "sortable-item" ""
                        ]

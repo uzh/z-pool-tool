@@ -67,6 +67,7 @@ let form
                              ; "flex-gap"
                              ; "justify-between"
                              ; "align-center"
+                             ; "inset-sm"
                              ]
                          ; a_user_data "sortable-item" ""
                          ]
