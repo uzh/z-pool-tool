@@ -129,7 +129,7 @@ let create pool =
            , options
            , group ) ->
         let field_id = Custom_field.Id.create () in
-        let field_event =
+        let field =
           let name = make_names name in
           let hint =
             system_languages
@@ -140,22 +140,20 @@ let create pool =
           in
           let required = required |> Required.create in
           let disabled = disabled |> Disabled.create in
-          let field =
-            create
-              ~id:field_id
-              field_type
-              model
-              name
-              hint
-              validation
-              required
-              disabled
-              (group |> CCOption.map (fun g -> g.Group.id))
-              admin
-            |> get_or_failwith
-          in
-          Custom_field.Created field
+          create
+            ~id:field_id
+            field_type
+            model
+            name
+            hint
+            validation
+            required
+            disabled
+            (group |> CCOption.map (fun g -> g.Group.id))
+            admin
+          |> get_or_failwith
         in
+        let create_field_event = Custom_field.Created field in
         let option_events =
           CCList.map
             (fun option ->
@@ -164,7 +162,8 @@ let create pool =
               OptionCreated (field_id, option))
             options
         in
-        field_event :: option_events)
+        let publis_field_event = Custom_field.Published field in
+        [ create_field_event ] @ option_events @ [ publis_field_event ])
       data
   in
   let%lwt () =
