@@ -76,19 +76,6 @@ module Sql = struct
       order_by
   ;;
 
-  let find_all_request =
-    let open Caqti_request.Infix in
-    ""
-    |> select_sql ~order_by:order_by_group
-    |> Caqti_type.unit ->* Repo_entity.t
-  ;;
-
-  let find_all pool () =
-    let open Lwt.Infix in
-    Utils.Database.collect (Database.Label.value pool) find_all_request ()
-    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
-  ;;
-
   let find_by_model_request =
     let open Caqti_request.Infix in
     {sql| WHERE pool_custom_fields.model = $1 |sql}
@@ -290,7 +277,6 @@ module Sql = struct
   ;;
 end
 
-let find_all = Sql.find_all
 let find_by_model = Sql.find_by_model
 let find_by_group = Sql.find_by_group
 let find_ungrouped_by_model = Sql.find_ungrouped_by_model

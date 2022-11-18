@@ -75,37 +75,6 @@ let find_by_field pool id =
     (Pool_common.Id.value id)
 ;;
 
-let find_multiple_request ids =
-  let where =
-    Format.asprintf
-      {sql|
-      WHERE pool_custom_field_options.uuid in ( %s )
-    |sql}
-      (CCList.mapi
-         (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
-         ids
-      |> CCString.concat ",")
-  in
-  select_sql where
-;;
-
-let find_multiple pool ids =
-  if CCList.is_empty ids
-  then Lwt.return []
-  else
-    let open Caqti_request.Infix in
-    let dyn =
-      CCList.fold_left
-        (fun dyn id ->
-          dyn |> Dynparam.add Caqti_type.string (id |> Pool_common.Id.value))
-        Dynparam.empty
-        ids
-    in
-    let (Dynparam.Pack (pt, pv)) = dyn in
-    let request = find_multiple_request ids |> pt ->* Repo_entity.Option.t in
-    Utils.Database.collect (pool |> Pool_database.Label.value) request pv
-;;
-
 let find_request =
   let open Caqti_request.Infix in
   {sql|
