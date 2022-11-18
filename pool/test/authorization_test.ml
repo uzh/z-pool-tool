@@ -22,7 +22,7 @@ let update_language_as actor =
     Contact.to_authorizable ~ctx subject
   in
   let* () =
-    (Persistence.checker_of_effects ~ctx effects) ~actor
+    (Persistence.checker_of_effects ~ctx effects) actor
     |> Lwt_result.map_error Pool_common.Message.authorization
   in
   Lwt.return_ok ()
@@ -84,7 +84,7 @@ let operator_works _ () =
     in
     let effects = [ `Manage, `Target target'.Guard.AuthorizableTarget.uuid ] in
     let* () =
-      Guard.Persistence.checker_of_effects ~ctx ~actor effects
+      Guard.Persistence.checker_of_effects ~ctx effects actor
       |> Lwt_result.map_error Pool_common.Message.authorization
     in
     Lwt_result.return ()
