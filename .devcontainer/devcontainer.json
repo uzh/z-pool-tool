@@ -33,10 +33,11 @@
   },
   // Add the IDs of extensions you want installed when the container is created in the array below.
   "extensions": [
-    "donjayamanne.githistory",
-    "eamodio.gitlens",
-    "exiasr.hadolint",
-    "irongeek.vscode-env",
-    "ocamllabs.ocaml-platform"
-  ]
+	"donjayamanne.githistory",
+	"eamodio.gitlens",
+	"exiasr.hadolint",
+	"irongeek.vscode-env",
+	"ocamllabs.ocaml-platform",
+	"DavidAnson.vscode-markdownlint"
+]
 }
