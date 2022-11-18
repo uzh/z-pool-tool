@@ -166,7 +166,9 @@ jobs:
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn changelog && gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "${CHANGELOG}" run.exe assets
+        run: |
+          CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')
+          gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "${CHANGELOG}" run.exe assets
 
       - name: Notify about failure
         if: failure()
