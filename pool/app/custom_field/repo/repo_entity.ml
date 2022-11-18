@@ -176,7 +176,6 @@ module Option = struct
   let to_entity = snd
   let of_entity field_id m = field_id, m
 
-  (* TODO: Merge those modules? *)
   module Insert = struct
     let t =
       let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
