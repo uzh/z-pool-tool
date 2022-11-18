@@ -44,13 +44,65 @@ let option_form
     ; submit_element
         language
         Message.(
-          let field = Some Field.CustomField in
+          let field = Some Field.CustomFieldOption in
           match custom_field_option with
           | None -> Create field
           | Some _ -> Update field)
         ~submit_type:`Success
         ()
     ]
+;;
+
+let field_buttons language csrf custom_field option =
+  let open Custom_field in
+  let open Pool_common in
+  let action option appendix =
+    Url.Option.detail_path
+      (model custom_field, custom_field |> id)
+      option.SelectOption.id
+    |> (fun base -> Format.asprintf "%s/%s" base appendix)
+    |> Sihl.Web.externalize_path
+  in
+  let make_form action msg submit_type confirmable =
+    form
+      ~a:
+        [ a_action action
+        ; a_method `Post
+        ; a_user_data
+            "confirmable"
+            (Pool_common.Utils.confirmable_to_string language confirmable)
+        ]
+      [ csrf_element csrf (); submit_element language msg ~submit_type () ]
+  in
+  match option with
+  | None -> txt ""
+  | Some option ->
+    (match option.SelectOption.published_at with
+     | Some published_at ->
+       div
+         [ txt
+             (Utils.field_to_string language Message.Field.PublishedAt
+             |> CCString.capitalize_ascii)
+         ; txt ": "
+         ; txt
+             (published_at
+             |> PublishedAt.value
+             |> Utils.Time.formatted_date_time)
+         ]
+     | None ->
+       div
+         ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+         [ make_form
+             (action option "delete")
+             Message.(Delete (Some Field.CustomFieldOption))
+             `Error
+             I18n.DeleteCustomFieldOption
+         ; make_form
+             (action option "publish")
+             Pool_common.Message.(Publish (Some Field.CustomFieldOption))
+             `Success
+             I18n.PublisCustomFieldOption
+         ])
 ;;
 
 let detail
@@ -60,28 +112,8 @@ let detail
   sys_languages
   flash_fetcher
   =
-  let delete_form =
-    match custom_field_option with
-    | None -> txt ""
-    | Some option ->
-      form
-        ~a:
-          [ a_method `Post
-          ; a_action
-              Custom_field.(
-                Url.Option.delete_path
-                  (model custom_field, id custom_field)
-                  option.SelectOption.id)
-          ; a_user_data
-              "confirmable"
-              Pool_common.(
-                Utils.confirmable_to_string
-                  language
-                  I18n.DeleteCustomFieldOption)
-          ]
-        [ csrf_element csrf ()
-        ; submit_element ~submit_type:`Error language Message.(Delete None) ()
-        ]
+  let buttons_form =
+    field_buttons language csrf custom_field custom_field_option
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -89,6 +121,7 @@ let detail
         language
         Message.Field.CustomFieldOption
         custom_field_option
+    ; buttons_form
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ option_form
@@ -97,7 +130,6 @@ let detail
             context
             sys_languages
             flash_fetcher
-        ; delete_form
         ; p
             [ a
                 ~a:

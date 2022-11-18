@@ -58,7 +58,26 @@ module Destroy : sig
   val effects : Guard.Authorizer.effect list
 end = struct
   let handle option =
-    Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
+    match option.Custom_field.SelectOption.published_at with
+    | None ->
+      Ok [ Custom_field.OptionDestroyed option |> Pool_event.custom_field ]
+    | Some _ ->
+      Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
+  ;;
+
+  let effects = [ `Create, `TargetEntity `Admin ]
+end
+
+module Publish : sig
+  type t = Custom_field.SelectOption.t
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Custom_field.SelectOption.t
+
+  let handle m =
+    Ok [ Custom_field.OptionPublished m |> Pool_event.custom_field ]
   ;;
 
   let effects = [ `Create, `TargetEntity `Admin ]

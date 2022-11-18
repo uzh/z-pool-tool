@@ -89,6 +89,7 @@ end
 module CustomFieldData = struct
   let admin_data = Custom_field_test.Data.admin
   let nr_of_siblings_answer = 3
+  let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
   let nr_of_siblings =
     Custom_field.(
@@ -103,6 +104,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         })
   ;;
 
@@ -123,20 +125,34 @@ module CustomFieldData = struct
       , answer )
   ;;
 
-  let multi_select_options =
+  let multi_select_option_data =
     let open Custom_field in
-    let open SelectOption in
     let open CCList in
-    CCList.range 0 5
+    range 0 5
     |> map (fun i -> [ lang, CCInt.to_string i ])
     |> map (Name.create [ lang ])
     |> CCList.all_ok
     |> CCResult.get_exn
-    |> map create
+    |> map (fun name -> Custom_field.SelectOption.Id.create (), name)
+  ;;
+
+  let multi_select_options =
+    multi_select_option_data
+    |> CCList.map (fun (id, name) -> Custom_field.SelectOption.create ~id name)
+  ;;
+
+  let multi_select_options_public =
+    multi_select_option_data
+    |> CCList.map (fun (id, name) ->
+         Custom_field.SelectOption.Public.create ~id name)
   ;;
 
   let multi_select_options_by_index =
     CCList.map (CCList.nth multi_select_options)
+  ;;
+
+  let multi_select_options_public_by_index =
+    CCList.map (CCList.nth multi_select_options_public)
   ;;
 
   let multi_select_custom_field =
@@ -152,6 +168,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         }
       , multi_select_options )
   ;;
@@ -159,7 +176,8 @@ module CustomFieldData = struct
   let multi_select_custom_field_public answer_index =
     let open Custom_field in
     let answer =
-      multi_select_options_by_index answer_index |> CCList.map Answer.create
+      multi_select_options_public_by_index answer_index
+      |> CCList.map Answer.create
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect
@@ -172,7 +190,7 @@ module CustomFieldData = struct
         ; admin_input_only = admin_data.Admin.input_only
         ; version
         }
-      , multi_select_options
+      , multi_select_options_public
       , answer )
   ;;
 
@@ -205,6 +223,12 @@ module CustomFieldData = struct
           (multi_select_custom_field_public answer_index, Contact.id contact)
         |> Pool_event.custom_field)
       contacts
+  ;;
+
+  let publish_fields () =
+    [ multi_select_custom_field; nr_of_siblings ]
+    |> CCList.map (fun field ->
+         Custom_field.Published field |> Pool_event.custom_field)
   ;;
 end
 
@@ -412,7 +436,9 @@ let filter_by_list_contains_all _ () =
     let%lwt () =
       (* Save field and answer *)
       CustomFieldData.(
-        create_multi_select () @ answer_multi_select [ contact ] answer_index)
+        create_multi_select ()
+        @ answer_multi_select [ contact ] answer_index
+        @ publish_fields ())
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in

@@ -103,6 +103,7 @@ let field_to_string =
   | Predicate -> "predicate"
   | Profile -> "profile"
   | PublicTitle -> "public title"
+  | PublishedAt -> "published"
   | Query -> "query"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
@@ -179,6 +180,8 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
+  | Published field ->
+    field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
@@ -211,6 +214,11 @@ let rec error_to_string = function
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
       (CCString.concat ", " names)
+  | AlreadyPublished field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "has alredy been published."
   | Authorization message -> field_message "Unable to authorize: " message ""
   | Conformist errs ->
     CCList.map
@@ -356,6 +364,7 @@ let control_to_string = function
   | Manage field -> format_submit "manage" (Some field)
   | More -> format_submit "more" None
   | PleaseSelect -> "please select"
+  | Publish field -> format_submit "publish" field
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field

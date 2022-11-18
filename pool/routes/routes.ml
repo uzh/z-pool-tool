@@ -282,7 +282,11 @@ module Admin = struct
         let options =
           let specific =
             CustomFieldOption.
-              [ get "/edit" edit; post "" update; post "/delete" delete ]
+              [ get "/edit" edit
+              ; post "" update
+              ; post "/delete" delete
+              ; post "/publish" publish
+              ]
           in
           CustomFieldOption.
             [ get "/new" new_form
@@ -293,6 +297,8 @@ module Admin = struct
         CustomField.
           [ get "/edit" edit
           ; post "" update
+          ; post "/publish" publish
+          ; post "/delete" delete
           ; post "/sort-options" sort_options
           ; choose ~scope:"options" options
           ]

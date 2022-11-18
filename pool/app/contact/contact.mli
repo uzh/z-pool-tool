@@ -56,6 +56,7 @@ module PartialUpdate : sig
     | Language of Pool_common.Version.t * Pool_common.Language.t option
     | Custom of Custom_field.Public.t
 
+  val is_required : t -> bool
   val pp : Format.formatter -> t -> unit
   val equal : t -> t -> bool
   val increment_version : t -> t

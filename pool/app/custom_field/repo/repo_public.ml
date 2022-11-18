@@ -10,28 +10,31 @@ let has_options m =
 ;;
 
 let get_options pool m =
-  if has_options m then Repo_option.find_by_field pool (id m) else Lwt.return []
+  if has_options m
+  then Repo_option.Public.find_by_field pool (id m)
+  else Lwt.return []
 ;;
 
 let get_options_of_multiple pool fields =
   fields
   |> CCList.filter_map (fun m ->
        if has_options m then Some m.Repo_entity.Public.id else None)
-  |> Repo_option.find_by_multiple_fields pool
+  |> Repo_option.Public.find_by_multiple_fields pool
 ;;
 
 let to_grouped_public pool model fields =
   let%lwt groups = Repo_group.find_by_model pool model in
-  let%lwt options =
-    Repo.get_options_of_multiple pool get_field_type id fields
-  in
+  let%lwt options = get_options_of_multiple pool fields in
   Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
 ;;
 
 let base_filter_conditions is_admin =
-  let base = {sql|
+  let base =
+    {sql|
     AND pool_custom_fields.disabled = 0
-  |sql} in
+    AND pool_custom_fields.published_at IS NOT NULL
+  |sql}
+  in
   if is_admin
   then base
   else Format.asprintf "%s AND pool_custom_fields.admin_view_only = 0 " base
@@ -293,6 +296,7 @@ module Sql = struct
     let upsert =
       Utils.Database.exec (Database.Label.value pool) upsert_answer_request
     in
+    let option_id = Entity.SelectOption.Public.show_id in
     let open Entity.Public in
     let field_id = id t in
     let update_answer id value =
@@ -316,7 +320,7 @@ module Sql = struct
         in
         answers
         |> Lwt_list.iter_s (fun { Entity_answer.id; value } ->
-             update_answer id (value |> Entity.SelectOption.show_id))
+             update_answer id (value |> option_id))
       | Number (_, answer) ->
         answer
         |> map_or (fun { id; value; _ } ->
@@ -324,9 +328,7 @@ module Sql = struct
       | Select (_, _, answer) ->
         answer
         |> map_or (fun { id; value; _ } ->
-             update_answer
-               id
-               Entity.SelectOption.(value.Entity.SelectOption.id |> Id.value))
+             update_answer id (value |> option_id))
       | Text (_, answer) ->
         answer |> map_or (fun { id; value; _ } -> update_answer id value)
     in

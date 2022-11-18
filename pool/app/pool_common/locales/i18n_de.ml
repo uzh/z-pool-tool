@@ -159,14 +159,27 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-   | CancelSession -> "die Session", "absagen"
-   | DeleteCustomFieldOption -> "das Option", "löschen"
-   | DeleteEmailSuffix -> "das Suffix", "löschen"
-   | DeleteExperiment -> "das Experiment", "löschen"
-   | DeleteFile -> "die Datei", "löschen"
-   | DeleteMailing -> "den Versand", "löschen"
-   | DeleteSession -> "die Session", "löschen"
-   | StopMailing -> "den Versand", "stoppen")
-  |> fun (obj, action) ->
+   | CancelSession -> "die Session", "absagen", None
+   | DeleteCustomField -> "das Feld", "löschen", None
+   | DeleteCustomFieldOption -> "das Option", "löschen", None
+   | DeleteEmailSuffix -> "das Suffix", "löschen", None
+   | DeleteExperiment -> "das Experiment", "löschen", None
+   | DeleteFile -> "die Datei", "löschen", None
+   | DeleteMailing -> "den Versand", "löschen", None
+   | DeleteSession -> "die Session", "löschen", None
+   | PublisCustomField ->
+     ( "das Feld und alle dazugehörigen Optionen"
+     , "publizieren"
+     , Some "Sie werden das Feld nicht mehr löschen können." )
+   | PublisCustomFieldOption ->
+     ( "die Option"
+     , "publizieren"
+     , Some "Sie werden die Option nicht mehr löschen können." )
+   | StopMailing -> "den Versand", "stoppen", None)
+  |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
+  |> fun msg ->
+  additive
+  |> CCOption.map_or ~default:msg (fun additive ->
+       Format.asprintf "%s %s" msg additive)
 ;;

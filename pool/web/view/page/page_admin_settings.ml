@@ -62,7 +62,7 @@ let show
              in
              let checkbox = input ~a:(attrs @ selected @ disabled) () in
              div
-               ~a:[ a_user_data "sortable-item" "" ]
+               ~a:[ a_user_data "sortable-item" ""; a_class [ "inset-sm" ] ]
                [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
            all_languages)
     in

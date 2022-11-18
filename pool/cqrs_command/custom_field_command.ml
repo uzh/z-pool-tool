@@ -190,3 +190,32 @@ end = struct
   let handle t = Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
   let effects = [ `Create, `TargetEntity `Admin ]
 end
+
+module Publish : sig
+  type t = Custom_field.t
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Custom_field.t
+
+  let handle m = Ok [ Custom_field.Published m |> Pool_event.custom_field ]
+  let effects = [ `Create, `TargetEntity `Admin ]
+end
+
+module Delete : sig
+  type t = Custom_field.t
+
+  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Custom_field.t
+
+  let handle m =
+    match Custom_field.published_at m with
+    | None -> Ok [ Custom_field.Deleted m |> Pool_event.custom_field ]
+    | Some _ -> Error Pool_common.Message.(AlreadyPublished Field.CustomField)
+  ;;
+
+  let effects = [ `Create, `TargetEntity `Admin ]
+end

@@ -65,7 +65,7 @@ let distribution_sort_select language ?field current_order =
 let distribution_form_field language (field, current_order) =
   div
     ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "distribution" ]
+      [ a_class [ "flexrow"; "flex-gap"; "distribution"; "inset-sm" ]
       ; a_user_data "sortable-item" ""
       ]
     [ div

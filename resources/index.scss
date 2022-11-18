@@ -9,14 +9,14 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     display: none;
 }
 
+// Sortable
 [data-sortable-item] {
-    padding: 0.7rem;
     cursor: move;
     cursor: grab;
 }
 
 [data-sortable-item].origin {
-    background-color: #fafafa;
+    background-color: $grey-light;
     cursor: grabbing;
 }
 
@@ -24,13 +24,20 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     background-color: #48c78e50;
 }
 
-[data-sortable]:not(:empty) {
-    border: 1px solid #b5b5b5;
-    border-radius: 4px;
+[data-sortable]:not(:empty):not(tbody),
+.table.sortable {
+    border: 1px solid $grey-border;
+    border-radius: $border-radius;
+    border-collapse: initial;
 }
 
 [data-sortable-item]:not(:last-child) {
-    border-bottom: 1px solid #b5b5b5;
+    border-bottom: 1px solid $grey-border;
+}
+
+// Filter
+.key-select {
+    flex-basis: calc(calc(100% - (2 * $space-base)) / 3);
 }
 
 .predicate {
@@ -43,7 +50,7 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 [data-delete-predicate] {
-    color: rgb(241, 70, 104);
+    color: $red;
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
@@ -51,12 +58,7 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     cursor: pointer;
 }
 
-// Filter
-.key-select {
-    flex-basis: calc( calc(100% - (2 * $space-base)) / 3 );
-}
-
 // Images
-.aspect-ratio.contain > *:first-child {
+.aspect-ratio.contain>*:first-child {
     object-fit: contain;
 }

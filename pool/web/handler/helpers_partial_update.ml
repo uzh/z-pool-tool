@@ -143,6 +143,7 @@ let update ?contact req =
               language
               ~hx_post
               ~error
+              ~required:true
               ()
             |> html_response
           in

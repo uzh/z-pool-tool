@@ -66,26 +66,14 @@ module Sql = struct
         pool_custom_fields.admin_hint,
         pool_custom_fields.admin_overwrite,
         pool_custom_fields.admin_view_only,
-        pool_custom_fields.admin_input_only
+        pool_custom_fields.admin_input_only,
+        pool_custom_fields.published_at
       FROM pool_custom_fields
       %s
       %s
     |sql}
       where
       order_by
-  ;;
-
-  let find_all_request =
-    let open Caqti_request.Infix in
-    ""
-    |> select_sql ~order_by:order_by_group
-    |> Caqti_type.unit ->* Repo_entity.t
-  ;;
-
-  let find_all pool () =
-    let open Lwt.Infix in
-    Utils.Database.collect (Database.Label.value pool) find_all_request ()
-    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let find_by_model_request =
@@ -237,6 +225,28 @@ module Sql = struct
       (t |> Repo_entity.Write.of_entity)
   ;;
 
+  let publish_request =
+    let open Caqti_request.Infix in
+    {sql|
+      UPDATE pool_custom_fields
+      SET
+        published_at = NOW()
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', ''))
+    |sql}
+    |> Caqti_type.string ->. Caqti_type.unit
+  ;;
+
+  let publish pool t =
+    let%lwt () =
+      Utils.Database.exec
+        (Database.Label.value pool)
+        publish_request
+        (t |> Entity.id |> Entity.Id.value)
+    in
+    Repo_option.publish_by_custom_field pool (Entity.id t)
+  ;;
+
   let update_position_request =
     let open Caqti_request.Infix in
     {sql|
@@ -247,15 +257,37 @@ module Sql = struct
     |sql}
     |> Caqti_type.(tup2 int string ->. Caqti_type.unit)
   ;;
+
+  let delete_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_custom_fields
+      WHERE
+        uuid = UNHEX(REPLACE($1, '-', ''))
+        AND published_at IS NULL
+    |sql}
+    |> Caqti_type.string ->. Caqti_type.unit
+  ;;
+
+  let delete pool t =
+    let%lwt () =
+      Utils.Database.exec
+        (Database.Label.value pool)
+        delete_request
+        (t |> Entity.id |> Entity.Id.value)
+    in
+    Repo_option.destroy_by_custom_field pool (Entity.id t)
+  ;;
 end
 
-let find_all = Sql.find_all
 let find_by_model = Sql.find_by_model
 let find_by_group = Sql.find_by_group
 let find_ungrouped_by_model = Sql.find_ungrouped_by_model
 let find = Sql.find
 let insert = Sql.insert
 let update = Sql.update
+let publish = Sql.publish
+let delete = Sql.delete
 
 let sort_fields pool ids =
   let open Lwt.Infix in

@@ -36,7 +36,6 @@ module Url = struct
     ;;
 
     let edit_path field id = [ detail_path field id; "edit" ] |> concat
-    let delete_path field id = [ detail_path field id; "delete" ] |> concat
   end
 
   module Group = struct
@@ -325,53 +324,56 @@ let field_form
                ; a_class [ "stack" ]
                ]
              (CCList.cons
-                (div
-                   ~a:[ a_user_data "sortable" "" ]
-                   (CCList.map
-                      (fun option ->
-                        div
-                          ~a:
-                            [ a_class
-                                [ "flexrow"
-                                ; "flex-gap"
-                                ; "justify-between"
-                                ; "align-center"
-                                ]
-                            ; a_user_data "sortable-item" ""
-                            ]
-                          [ div [ txt (SelectOption.name language option) ]
-                          ; div
-                              [ input
-                                  ~a:
-                                    [ a_input_type `Hidden
-                                    ; a_name
-                                        Message.Field.(
-                                          CustomFieldOption |> array_key)
-                                    ; a_value SelectOption.(Id.value option.id)
-                                    ]
-                                  ()
-                              ]
-                          ; div
-                              ~a:
-                                [ a_class
-                                    [ "flexrow"; "flex-gap"; "align-center" ]
-                                ]
-                              [ a
-                                  ~a:
-                                    [ a_href
-                                        (Url.Option.edit_path
-                                           (model m, id m)
-                                           option.SelectOption.id
-                                        |> Sihl.Web.externalize_path)
-                                    ]
+                (tablex
+                   ~a:[ a_class [ "table"; "simple"; "sortable" ] ]
+                   [ tbody
+                       ~a:[ a_user_data "sortable" "" ]
+                       (CCList.map
+                          (fun option ->
+                            tr
+                              ~a:[ a_user_data "sortable-item" "" ]
+                              [ td [ txt (SelectOption.name language option) ]
+                              ; td
                                   [ txt
-                                      Pool_common.(
-                                        Message.(Edit None)
-                                        |> Utils.control_to_string language)
+                                      (if CCOption.is_some
+                                            option.SelectOption.published_at
+                                      then
+                                        Pool_common.(
+                                          Utils.field_to_string
+                                            language
+                                            Message.Field.PublishedAt)
+                                      else "")
                                   ]
-                              ]
-                          ])
-                      options))
+                              ; td
+                                  [ input
+                                      ~a:
+                                        [ a_input_type `Hidden
+                                        ; a_name
+                                            Message.Field.(
+                                              CustomFieldOption |> array_key)
+                                        ; a_value
+                                            SelectOption.(Id.value option.id)
+                                        ]
+                                      ()
+                                  ]
+                              ; td
+                                  [ a
+                                      ~a:
+                                        [ a_href
+                                            (Url.Option.edit_path
+                                               (model m, id m)
+                                               option.SelectOption.id
+                                            |> Sihl.Web.externalize_path)
+                                        ]
+                                      [ txt
+                                          Pool_common.(
+                                            Message.(Edit None)
+                                            |> Utils.control_to_string language)
+                                      ]
+                                  ]
+                              ])
+                          options)
+                   ])
                 [ csrf_element csrf ()
                 ; submit_element
                     language
@@ -405,8 +407,7 @@ let field_form
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
-  [ model_subtitle language current_model
-  ; form
+  [ form
       ~a:
         [ a_method `Post
         ; a_action (Sihl.Web.externalize_path action)
@@ -573,17 +574,73 @@ let field_form
   ]
 ;;
 
+let field_buttons language csrf current_model field =
+  let open Custom_field in
+  let open Pool_common in
+  let action field appendix =
+    Url.Field.detail_path (current_model, field |> id)
+    |> (fun base -> Format.asprintf "%s/%s" base appendix)
+    |> Sihl.Web.externalize_path
+  in
+  let make_form action msg submit_type confirmable =
+    form
+      ~a:
+        [ a_action action
+        ; a_method `Post
+        ; a_user_data
+            "confirmable"
+            (Pool_common.Utils.confirmable_to_string language confirmable)
+        ]
+      [ csrf_element csrf (); submit_element language msg ~submit_type () ]
+  in
+  match field with
+  | None -> txt ""
+  | Some field ->
+    (match published_at field with
+     | Some published_at ->
+       div
+         [ txt
+             (Utils.field_to_string language Message.Field.PublishedAt
+             |> CCString.capitalize_ascii)
+         ; txt ": "
+         ; txt
+             (published_at
+             |> PublishedAt.value
+             |> Utils.Time.formatted_date_time)
+         ]
+     | None ->
+       div
+         ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+         [ make_form
+             (action field "delete")
+             Message.(Delete (Some Field.CustomField))
+             `Error
+             I18n.DeleteCustomField
+         ; make_form
+             (action field "publish")
+             Message.(Publish (Some Field.CustomField))
+             `Success
+             I18n.PublisCustomField
+         ])
+;;
+
 let detail
   ?custom_field
   current_model
-  (Pool_context.{ language; _ } as context)
+  (Pool_context.{ language; csrf; _ } as context)
   groups
   sys_languages
   flash_fetcher
   =
+  let button_form = field_buttons language csrf current_model custom_field in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ Partials.form_title language Message.Field.CustomField custom_field
+    ; div
+        ~a:
+          [ a_class [ "flexrow"; "flex-gap"; "justify-between"; "align-center" ]
+          ]
+        [ model_subtitle language current_model; button_form ]
     ; div
         ~a:[ a_class [ "stack-lg" ] ]
         (field_form
@@ -599,7 +656,9 @@ let detail
 let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
-  let thead = Message.Field.[ Some Title; Some CustomFieldGroup; None ] in
+  let thead =
+    Message.Field.[ Some Title; Some CustomFieldGroup; Some PublishedAt; None ]
+  in
   let field_name field =
     let open Custom_field in
     field |> name |> Name.find_opt_or language "-"
@@ -610,6 +669,15 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     let field_row group field =
       [ txt (field |> field_name)
       ; txt (group >|= Group.name language |> value ~default:"")
+      ; txt
+          (field
+          |> published_at
+          |> CCOption.map_or
+               ~default:""
+               CCFun.(
+                 PublishedAt.value
+                 %> Ptime.to_date
+                 %> Pool_common.Utils.Time.formatted_date))
       ; a
           ~a:
             [ a_href
@@ -647,7 +715,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                  (fun field ->
                    div
                      ~a:
-                       [ a_class [ "flexrow"; "align-center" ]
+                       [ a_class [ "flexrow"; "align-center"; "inset-sm" ]
                        ; a_user_data "sortable-item" ""
                        ]
                      [ txt (field |> field_name)
@@ -688,6 +756,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                            ; "flex-gap"
                            ; "justify-between"
                            ; "align-center"
+                           ; "inset-sm"
                            ]
                        ; a_user_data "sortable-item" ""
                        ]

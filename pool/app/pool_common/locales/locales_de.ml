@@ -102,6 +102,7 @@ let field_to_string =
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
+  | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
@@ -177,6 +178,8 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+  | Published field ->
+    field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
@@ -206,6 +209,11 @@ let rec error_to_string = function
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
+  | AlreadyPublished field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "wurde bereits veröffentlich."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->
@@ -382,6 +390,7 @@ let control_to_string = function
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
   | PleaseSelect -> "bitte wählen"
+  | Publish field -> format_submit "veröffentlichen" field
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
