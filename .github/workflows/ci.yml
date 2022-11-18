@@ -55,7 +55,7 @@ jobs:
           opam-depext: false
 
       - name: Install system dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libmariadbclient-dev
+        run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
 
       - name: Pin Sihl and other custom libraries
         run: |
