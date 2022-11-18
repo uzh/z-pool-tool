@@ -162,6 +162,7 @@ let destroy_by_custom_field_request =
   {sql|
     DELETE FROM pool_custom_field_options
     WHERE custom_field_uuid = UNHEX(REPLACE($1, '-', ''))
+    AND published_at IS NULL
   |sql}
   |> Caqti_type.(string ->. unit)
 ;;
