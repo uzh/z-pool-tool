@@ -238,10 +238,13 @@ module Sql = struct
   ;;
 
   let publish pool t =
-    Utils.Database.exec
-      (Database.Label.value pool)
-      publish_request
-      (t |> Entity.id |> Entity.Id.value)
+    let%lwt () =
+      Utils.Database.exec
+        (Database.Label.value pool)
+        publish_request
+        (t |> Entity.id |> Entity.Id.value)
+    in
+    Repo_option.publish_by_custom_field pool (Entity.id t)
   ;;
 
   let update_position_request =

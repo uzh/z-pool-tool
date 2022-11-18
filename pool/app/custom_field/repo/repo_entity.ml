@@ -142,20 +142,70 @@ module Option = struct
   type repo = Pool_common.Id.t * t
 
   let t =
-    let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
-    let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
+    let encode ((field_id, m) : repo) =
+      Ok (field_id, (m.id, (m.name, m.published_at)))
+    in
+    let decode (field_id, (id, (name, published_at))) =
+      Ok (field_id, { id; name; published_at })
+    in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Pool_common.Repo.Id.t
+           (tup2 Id.t (tup2 Name.t (option PublishedAt.t)))))
   ;;
+
+  module Public = struct
+    open Public
+
+    type repo = Pool_common.Id.t * t
+
+    let t =
+      let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
+      let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
+      Caqti_type.(
+        custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
+    ;;
+
+    let to_entity = snd
+    let of_entity field_id m = field_id, m
+  end
 
   let to_entity = snd
   let of_entity field_id m = field_id, m
 
-  module Write = struct
+  (* TODO: Merge those modules? *)
+  module Insert = struct
     let t =
-      let encode m = Ok (m.SelectOption.id, m.name) in
-      let decode (id, name) = Ok { id; name } in
-      Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
+      let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
+      let decode _ =
+        failwith
+          Pool_common.(
+            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_common.Repo.Id.t (tup2 Pool_common.Repo.Id.t Name.t)))
+    ;;
+  end
+
+  module Update = struct
+    let t =
+      let encode m = Ok (m.SelectOption.id, (m.name, m.published_at)) in
+      let decode _ =
+        failwith
+          Pool_common.(
+            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_common.Repo.Id.t (tup2 Name.t (option PublishedAt.t))))
     ;;
   end
 end
@@ -302,7 +352,7 @@ module Public = struct
         |> Id.of_string
         |> fun selected ->
         CCList.find
-          (fun (_, { SelectOption.id; _ }) -> Id.equal id selected)
+          (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
           select_options
         |> snd
         |> Entity_answer.create ~id
@@ -340,7 +390,7 @@ module Public = struct
              |> Id.of_string
              |> fun selected ->
              CCList.find_opt
-               (fun { SelectOption.id; _ } -> Id.equal id selected)
+               (fun { SelectOption.Public.id; _ } -> Id.equal id selected)
                options
              >|= Entity_answer.create ~id)
       in
@@ -426,7 +476,9 @@ module Public = struct
         ([], group_fields fields)
         groups
     in
-    grouped, ungrouped |> CCList.map to_entity
+    ( grouped
+      |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
+    , ungrouped |> CCList.map to_entity )
   ;;
 
   let t =

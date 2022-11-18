@@ -183,6 +183,7 @@ module SelectOption : sig
   type t =
     { id : Id.t
     ; name : Name.t
+    ; published_at : PublishedAt.t option
     }
 
   val equal : t -> t -> bool
@@ -190,12 +191,31 @@ module SelectOption : sig
   val show : t -> string
   val show_id : t -> string
   val name : Pool_common.Language.t -> t -> string
-  val create : ?id:Id.t -> Name.t -> t
+  val create : ?id:Id.t -> ?published_at:PublishedAt.t -> Name.t -> t
 
   val to_common_field
     :  Pool_common.Language.t
     -> t
     -> Pool_common.Message.Field.t
+
+  module Public : sig
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      }
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+    val show_id : t -> string
+    val name : Pool_common.Language.t -> t -> string
+    val create : ?id:Id.t -> Name.t -> t
+
+    val to_common_field
+      :  Pool_common.Language.t
+      -> t
+      -> Pool_common.Message.Field.t
+  end
 end
 
 module Public : sig
@@ -223,14 +243,14 @@ module Public : sig
   type t =
     | Boolean of bool public * bool Answer.t option
     | MultiSelect of
-        SelectOption.t list public
-        * SelectOption.t list
-        * SelectOption.t Answer.t list
+        SelectOption.Public.t list public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t list
     | Number of int public * int Answer.t option
     | Select of
-        SelectOption.t public
-        * SelectOption.t list
-        * SelectOption.t Answer.t option
+        SelectOption.Public.t public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t option
     | Text of string public * string Answer.t option
 
   val equal : t -> t -> bool
@@ -367,7 +387,6 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
 val find_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
 val find_by_group : Pool_database.Label.t -> Group.Id.t -> t list Lwt.t
 val find_ungrouped_by_model : Pool_database.Label.t -> Model.t -> t list Lwt.t
@@ -439,7 +458,7 @@ val validate_htmx
   -> (Public.t, Pool_common.Message.error) result
 
 val validate_multiselect
-  :  SelectOption.t list Public.public * SelectOption.t list
+  :  SelectOption.Public.t list Public.public * SelectOption.Public.t list
   -> string list
   -> Public.t
 

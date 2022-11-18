@@ -211,8 +211,8 @@ let custom_field_to_htmx_value language =
     Input.
       { options
       ; selected
-      ; to_label = SelectOption.name language
-      ; to_value = SelectOption.show_id
+      ; to_label = SelectOption.Public.name language
+      ; to_value = SelectOption.Public.show_id
       }
     |> multiselect
   | Public.Number (_, answer) -> answer >|= (fun a -> a.Answer.value) |> number
@@ -220,9 +220,9 @@ let custom_field_to_htmx_value language =
     answer
     >|= (fun a -> a.Answer.value)
     |> fun value ->
-    ({ show = SelectOption.show_id
+    ({ show = SelectOption.Public.show_id
      ; options
-     ; option_formatter = Some SelectOption.(name language)
+     ; option_formatter = Some SelectOption.Public.(name language)
      ; selected = value
      }
       : 'a selector)

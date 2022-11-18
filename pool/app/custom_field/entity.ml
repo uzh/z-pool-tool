@@ -287,6 +287,7 @@ module SelectOption = struct
   type t =
     { id : Id.t
     ; name : Name.t
+    ; published_at : PublishedAt.t option
     }
   [@@deriving eq, show, yojson]
 
@@ -298,12 +299,37 @@ module SelectOption = struct
     |> Pool_common.Utils.get_or_failwith
   ;;
 
-  let create ?(id = Id.create ()) name = { id; name }
+  let create ?(id = Id.create ()) ?published_at name =
+    { id; name; published_at }
+  ;;
 
   let to_common_field language m =
     let name = name language m in
     Message.(Field.CustomHtmx (name, m.id |> Id.value))
   ;;
+
+  module Public = struct
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      }
+    [@@deriving eq, show, yojson]
+
+    let show_id (m : t) = m.id |> Id.value
+
+    let name lang (t : t) =
+      Name.find_opt lang t.name
+      |> CCOption.to_result Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
+    ;;
+
+    let create ?(id = Id.create ()) name = { id; name }
+
+    let to_common_field language m =
+      let name = name language m in
+      Message.(Field.CustomHtmx (name, m.id |> Id.value))
+    ;;
+  end
 end
 
 module Public = struct
@@ -322,14 +348,14 @@ module Public = struct
   type t =
     | Boolean of bool public * bool Answer.t option
     | MultiSelect of
-        SelectOption.t list public
-        * SelectOption.t list
-        * SelectOption.t Answer.t list
+        SelectOption.Public.t list public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t list
     | Number of int public * int Answer.t option
     | Select of
-        SelectOption.t public
-        * SelectOption.t list
-        * SelectOption.t Answer.t option
+        SelectOption.Public.t public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t option
     | Text of string public * string Answer.t option
   [@@deriving eq, show, variants]
 
