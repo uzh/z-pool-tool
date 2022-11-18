@@ -37,18 +37,16 @@ For completeness, these environment files are handled with priority from SIHL.
 - `.env`: Stores the environment for your local development
 - `.env.test`: Stores the environment used when running tests (e.g. with `make test`)
 
+## 🚀 Release new version
+
+1. Update `CHANGELOG.md` and document changes made. Ensure the version to be releases has a header matching the version, follow previous releases.
+1. Commit your changes.
+1. Release version using `yarn version`.
+1. Push changes and Git tag.
+
 ### Build project
 
 Run `make build` to build the pool-tool project. This builds `.ml` files using `dune`.
-
-### Release to production
-
-In order to deploy to production it is best to use `yarn version` which does all the steps for you. You also can do it manually:
-
-1. edit `dune-project` and update version `(version 0.0.0)`
-1. build the project `dune build` or edit `pool.opam` and update version `version: "0.0.0"`
-1. commit
-1. tag commit and push
 
 ### Local test with production environment
 

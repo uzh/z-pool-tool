@@ -163,17 +163,10 @@ jobs:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v3
 
-      - name: Generate changelog
-        id: changelog
-        uses: metcalfc/changelog-generator@v4.0.1
-        with:
-          myToken: ${{ secrets.DEPLOY_TOKEN }}
-
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          body: ${{ steps.changelog.outputs.changelog }}
-          token: ${{ secrets.DEPLOY_TOKEN }}
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn changelog && gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes "${CHANGELOG}" run.exe assets
 
       - name: Notify about failure
         if: failure()
