@@ -100,7 +100,7 @@ let t =
       (tup2
          Pool_user.Repo.user_caqti
          (tup2
-            RecruitmentChannel.t
+            (option RecruitmentChannel.t)
             (tup2
                (option TermsAccepted.t)
                (tup2
@@ -170,7 +170,7 @@ let contact =
       (tup2
          string
          (tup2
-            RecruitmentChannel.t
+            (option RecruitmentChannel.t)
             (tup2
                (option TermsAccepted.t)
                (tup2
@@ -243,7 +243,7 @@ module Write = struct
         (tup2
            Id.t
            (tup2
-              RecruitmentChannel.t
+              (option RecruitmentChannel.t)
               (tup2
                  (option TermsAccepted.t)
                  (tup2

@@ -29,7 +29,7 @@ end
 
 type t =
   { user : Service.User.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -128,7 +128,7 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
-  ; recruitment_channel : RecruitmentChannel.t
+  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }

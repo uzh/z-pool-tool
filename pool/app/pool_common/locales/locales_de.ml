@@ -88,6 +88,7 @@ let field_to_string =
   | NewPassword -> "Neues Passwort"
   | Order -> "Reihenfolge"
   | Operator -> "Operator"
+  | Operators -> "Operatoren"
   | Overbook -> "Überbuchen"
   | Overwrite -> "overwrite"
   | Page -> "Seite"
@@ -258,6 +259,11 @@ let rec error_to_string = function
   | HtmxVersionNotFound field ->
     Format.asprintf "Version von '%s' konnte nicht gefunden werden." field
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
+  | InvalidEmailSuffix suffixes ->
+    Format.asprintf
+      "%s Die folgenden Emailendungen sind erlaubt: %s"
+      (error_to_string (Invalid Field.EmailSuffix))
+      (CCString.concat ", " suffixes)
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvitationSubjectAndTextRequired ->
@@ -373,6 +379,7 @@ let control_to_string = function
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
   | Login -> format_submit "anmelden" None
+  | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
   | PleaseSelect -> "bitte wählen"
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"

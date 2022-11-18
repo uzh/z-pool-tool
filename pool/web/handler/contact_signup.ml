@@ -24,6 +24,7 @@ let sign_up_create req =
   let terms_key = Field.(TermsAccepted |> show) in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
   let result { Pool_context.tenant_db; query_language; _ } =

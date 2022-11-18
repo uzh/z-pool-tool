@@ -14,12 +14,7 @@ let viewport =
     ()
 ;;
 
-let favicon =
-  link
-    ~rel:[ `Icon ]
-    ~href:(Sihl.Web.externalize_path "/assets/images/favicon.png")
-    ()
-;;
+let favicon path = link ~rel:[ `Icon ] ~href:(Sihl.Web.externalize_path path) ()
 
 let global_stylesheets =
   [ "/assets/index.css", true ]
@@ -201,6 +196,10 @@ module Tenant = struct
       nav |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] |> CCList.pure
     in
     let content = main_tag [ message; children ] in
+    let favicon =
+      Pool_tenant.(
+        tenant.icon |> Icon.value |> Pool_common.File.path |> favicon)
+    in
     html
       (head
          page_title
@@ -238,7 +237,10 @@ let create_root_layout children language message user ?active_navigation () =
   in
   let content = main_tag [ message; children ] in
   html
-    (head page_title ([ charset; viewport; favicon ] @ global_stylesheets))
+    (head
+       page_title
+       ([ charset; viewport; favicon "/assets/images/favicon.png" ]
+       @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ header ~children:[ navigation ] title_text
@@ -258,7 +260,7 @@ let create_error_layout children =
   in
   let content = main_tag [ children ] in
   html
-    (head page_title ([ charset; viewport; favicon ] @ global_stylesheets))
+    (head page_title ([ charset; viewport ] @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
        [ header title_text; content; footer title_text; scripts ])

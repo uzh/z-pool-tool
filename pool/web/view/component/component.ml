@@ -6,3 +6,4 @@ module Icon = Component_icon
 module Field = Pool_common.Message.Field
 module Filter = Component_filter
 module Input = Component_input
+module Image = Component_image
