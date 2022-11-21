@@ -39,10 +39,9 @@ module Data = struct
     let distribution =
       Mailing.Distribution.(
         create
-          Pool_common.Message.
-            [ Field.Name, SortOrder.Ascending
-            ; Field.Email, SortOrder.Descending
-            ])
+          [ Lastname, SortOrder.Ascending
+          ; InvitationCount, SortOrder.Descending
+          ])
     ;;
 
     let create =
@@ -104,15 +103,14 @@ let create () =
 
 let create_with_distribution () =
   let open Mailing in
-  let open Pool_common.Message in
   let open CCResult in
   let open MailingCommand.Create in
+  let open Mailing.Distribution in
   let mailing = create_mailing () in
   let distribution =
-    Field.
-      [ InvitationCount, Distribution.SortOrder.Ascending
-      ; AssignmentCount, Distribution.SortOrder.Descending
-      ]
+    [ InvitationCount, Distribution.SortOrder.Ascending
+    ; AssignmentCount, Distribution.SortOrder.Descending
+    ]
   in
   let mailing = { mailing with distribution = Some distribution } in
   let experiment = Model.create_experiment () in
@@ -121,7 +119,7 @@ let create_with_distribution () =
     |> CCList.map (fun (field, sort) ->
          Format.asprintf
            "%s,%s"
-           (Field.show field)
+           (show_sortable_field field)
            (Distribution.SortOrder.show sort))
     |> Distribution.of_urlencoded_list
     >|= fun distribution ->

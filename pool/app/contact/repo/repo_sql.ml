@@ -290,7 +290,7 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filtered_params ?group_by template_list experiment_id filter =
+let filtered_params ?group_by ?order_by template_list experiment_id filter =
   let open CCResult in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
@@ -306,13 +306,20 @@ let filtered_params ?group_by template_list experiment_id filter =
   in
   query
   >|= fun (dyn, sql) ->
-  ( dyn
-  , match group_by with
+  let sql =
+    match group_by with
     | None -> sql
-    | Some group_by -> Format.asprintf "%s GROUP BY %s" sql group_by )
+    | Some group_by -> Format.asprintf "%s GROUP BY %s" sql group_by
+  in
+  let sql =
+    match order_by with
+    | None -> sql
+    | Some order_by -> Format.asprintf "%s %s" sql order_by
+  in
+  dyn, sql
 ;;
 
-let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
+let find_filtered pool ?order_by ?limit experiment_id filter =
   let filter = filter |> CCOption.map (fun f -> f.Filter.query) in
   let open Lwt_result.Infix in
   let%lwt template_list =
@@ -323,6 +330,7 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   filtered_params
     template_list
     ~group_by:"pool_contacts.user_uuid"
+    ?order_by
     experiment_id
     filter
   |> Lwt_result.lift
