@@ -15,6 +15,38 @@ type person =
 
 type persons = person list [@@deriving show, yojson]
 
+let known_users =
+  let create_contact i =
+    let open Pool_common in
+    let open Pool_user in
+    let get = CCResult.get_exn in
+    let id = Id.create () in
+    let first_name =
+      "firstname" ^ CCInt.to_string i |> Firstname.create |> get
+    in
+    let last_name = "lastname" ^ CCInt.to_string i |> Lastname.create |> get in
+    let email =
+      "contact-" ^ CCInt.to_string i ^ "@econ.uzh.ch"
+      |> EmailAddress.create
+      |> get
+    in
+    let lang = Pool_common.Language.En |> CCOption.pure in
+    let recruitment_channel = Contact.RecruitmentChannel.Friend in
+    let terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure in
+    ( id
+    , first_name
+    , last_name
+    , email
+    , lang
+    , recruitment_channel
+    , terms_accepted_at
+    , false
+    , false
+    , true )
+  in
+  CCList.range 0 10 |> CCList.map create_contact
+;;
+
 let create_rand_persons n_persons =
   let open Cohttp in
   let open Cohttp_lwt_unix in
@@ -186,7 +218,7 @@ let contacts db_pool =
               id);
           contacts)
       []
-      users
+      (users @ known_users)
     >>= Lwt_list.iter_s (Contact.handle_event db_pool)
   in
   let open Lwt.Infix in
