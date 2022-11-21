@@ -218,6 +218,9 @@ if (form) {
     addRemovePredicateListener(form);
     form.addEventListener('htmx:afterSwap', (e) => {
         addRemovePredicateListener(e.detail.elt)
+        if (e.detail.target.type === "submit") {
+            updateContactCount();
+        }
     })
     updateContactCount()
     form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))
