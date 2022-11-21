@@ -1,6 +1,6 @@
 (library
  (name mailing)
- (libraries pool_common pool_context sihl tenant)
+ (libraries pool_common sihl tenant)
  (preprocess
   (pps
    lwt_ppx
