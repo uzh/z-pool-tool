@@ -137,11 +137,12 @@ let filter_to_sql template_list dyn query =
   let add_value_to_params value dyn =
     let add c v = Dynparam.add c v dyn in
     ( (match value with
-       | Str s -> add Caqti_type.string s
-       | Nr n -> add Caqti_type.float n
        | Bool b -> add Caqti_type.bool b
        | Date d -> add Caqti_type.ptime d
-       | Option id -> add Custom_field.Repo.SelectOption.Id.t id)
+       | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
+       | Nr n -> add Caqti_type.float n
+       | Option id -> add Custom_field.Repo.SelectOption.Id.t id
+       | Str s -> add Caqti_type.string s)
     , "?" )
   in
   let open CCResult in

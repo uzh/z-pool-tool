@@ -191,6 +191,24 @@ let value_input language input_type ?value () =
          options
          selected
          ()
+     | Key.Languages languages ->
+       let selected =
+         single_value
+         >>= function[@warning "-4"]
+         | Language lang ->
+           CCList.find_opt
+             (fun language -> Pool_common.Language.equal language lang)
+             languages
+         | _ -> None
+       in
+       Component_input.selector
+         ~attributes:additional_attributes
+         language
+         field_name
+         Pool_common.Language.show
+         languages
+         selected
+         ()
      | Key.MultiSelect options ->
        let[@warning "-4"] selected =
          CCOption.map_or

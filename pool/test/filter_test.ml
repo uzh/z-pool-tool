@@ -241,13 +241,13 @@ let nr_of_siblings =
        (Single (Nr (CustomFieldData.nr_of_siblings_answer |> CCFloat.of_int))))
 ;;
 
-let email email_address =
+let firstname firstname =
   let open Filter in
   Pred
     (Predicate.create
-       Key.(Hardcoded Email)
+       Key.(Hardcoded Firstname)
        Operator.Equal
-       (Single (Str email_address)))
+       (Single (Str firstname)))
 ;;
 
 let filter_contacts _ () =
@@ -304,8 +304,7 @@ let filter_by_email _ () =
           None
           (And
              [ nr_of_siblings
-             ; email
-                 (Contact.email_address contact |> Pool_user.EmailAddress.value)
+             ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
              ]))
     in
     let experiment = Experiment.{ experiment with filter = Some filter } in

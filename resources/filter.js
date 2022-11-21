@@ -119,6 +119,11 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                             [inputDataType]: valueInput.value
                         }
                         break;
+                    case "language":
+                        value = {
+                            [inputDataType]: valueInput.value
+                        }
+                        break;
                     case "list":
                         value = {
                             ["option"]: valueInput.value
