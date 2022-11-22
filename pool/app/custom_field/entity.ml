@@ -261,6 +261,16 @@ module Validation = struct
     let all = [ number_min, `Number; number_max, `Number ]
   end
 
+  let key_to_human key =
+    let equal = CCString.equal key in
+    match key with
+    | _ when equal Text.text_min_length -> "Text min. length"
+    | _ when equal Text.text_max_length -> "Text max. length"
+    | _ when equal Number.number_min -> "Number min."
+    | _ when equal Number.number_max -> "Number max."
+    | _ -> key
+  ;;
+
   let pure = CCResult.pure, []
   let encode_to_yojson t = t |> snd |> yojson_of_raw
 

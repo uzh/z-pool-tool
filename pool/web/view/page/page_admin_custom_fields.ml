@@ -234,7 +234,7 @@ let field_form
       let prefixed_name =
         Format.asprintf "%s[%s]" Message.Field.(show Validation) name
       in
-      let wrapper_class = [ "form-group"; "horizontal" ] in
+      let wrapper_class = [ "form-group"; "horizontal"; "flex-gap" ] in
       let input_attributes =
         [ a_input_type input_type
         ; a_name prefixed_name
@@ -252,7 +252,9 @@ let field_form
           [ a_class classes
           ; a_user_data "field-type" (FieldType.show field_type)
           ]
-        [ label ~a:[ a_label_for name ] [ txt name ]
+        [ label
+            ~a:[ a_label_for name ]
+            [ txt (name |> Validation.key_to_human) ]
         ; div ~a:[ a_class [ "input-group" ] ] [ input ~a:attrs () ]
         ]
     in
