@@ -74,7 +74,7 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_by_experiment_request
-      (Pool_common.Id.value id)
+      (Experiment.Id.value id)
   ;;
 
   let find_by_contact_request =
@@ -121,7 +121,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       find_experiment_id_of_invitation_request
       (invitation.Entity.id |> Pool_common.Id.value)
-    ||> CCOption.map Pool_common.Id.of_string
+    ||> CCOption.map Experiment.Id.of_string
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
@@ -160,7 +160,7 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       contact_was_invited_to_experiment_request
-      ( experiment.Experiment.id |> Pool_common.Id.value
+      ( experiment.Experiment.id |> Experiment.Id.value
       , Contact.id contact |> Pool_common.Id.value )
     ||> CCOption.is_some
   ;;
@@ -201,7 +201,7 @@ module Sql = struct
         (Dynparam.empty
         |> Dynparam.add
              Caqti_type.string
-             (experiment.Experiment.id |> Pool_common.Id.value))
+             (experiment.Experiment.id |> Experiment.Id.value))
         ids
     in
     let (Dynparam.Pack (pt, pv)) = dyn in
@@ -269,7 +269,7 @@ let bulk_insert pool contacts experiment_id =
   in
   let values, value_insert =
     CCList.fold_left
-      (fun (dyn, sql) contact ->
+      (fun (dyn, sql) (id, contact) ->
         let sql_line =
           {sql| (
             UNHEX(REPLACE(?, '-', '')),
@@ -280,7 +280,7 @@ let bulk_insert pool contacts experiment_id =
             ?
           ) |sql}
         in
-        let entity = contact |> Entity.create |> of_entity experiment_id in
+        let entity = contact |> Entity.create ~id |> of_entity experiment_id in
         dyn |> Dynparam.add RepoEntity.t entity, sql @ [ sql_line ])
       (Dynparam.empty, [])
       contacts

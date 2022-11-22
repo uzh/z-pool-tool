@@ -3,6 +3,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "assignment.cqrs"
 
 module Create : sig
+  include Common.CommandSig
+
   type t =
     { contact : Contact.t
     ; session : Session.Public.t
@@ -17,8 +19,6 @@ module Create : sig
     -> Email.confirmation_email
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
 end = struct
   type t =
     { contact : Contact.t
@@ -81,14 +81,9 @@ end = struct
 end
 
 module Cancel : sig
-  type t = Assignment.t
+  include Common.CommandSig with type t = Assignment.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : t -> Guard.Authorizer.effect list
+  val effects : Assignment.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Assignment.t
 
@@ -103,11 +98,8 @@ end = struct
       ]
   ;;
 
-  let effects command =
-    [ ( `Update
-      , `Target
-          (command.Assignment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
-    ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Assignment.Id.value) ]
   ;;
 end
 

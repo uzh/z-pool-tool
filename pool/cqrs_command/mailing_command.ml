@@ -1,10 +1,13 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module Message = Pool_common.Message
+module BaseGuard = Guard
 open Mailing
 
 let src = Logs.Src.create "mailing.cqrs"
 
 module Create : sig
+  include Common.CommandSig
+
   type t =
     { start_at : StartAt.t
     ; end_at : EndAt.t
@@ -20,7 +23,7 @@ module Create : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Experiment.t -> Guard.Authorizer.effect list
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t =
     { start_at : StartAt.t
@@ -65,18 +68,16 @@ end = struct
       ]
   ;;
 
-  let effects (experiment : Experiment.t) : Guard.Authorizer.effect list =
-    [ ( `Manage
-      , `Target
-          (experiment.Experiment.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ; `Create, `TargetEntity `Mailing
-    ]
+  let effects id =
+    let _ = id in
+    (* TODO [mabiede] All of with: [`Update, `Target (id |> Guard.Uuid.target_of
+       Experiment.Id.value) ; `Update, `TargetEntity `Experiment] *)
+    [ `Create, `TargetEntity `Mailing ]
   ;;
 end
 
 module Update : sig
-  type t = Mailing.update
+  include Common.CommandSig with type t = Mailing.update
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -85,7 +86,7 @@ module Update : sig
     -> (Pool_event.t list, Message.error) result
 
   val decode : Conformist.input -> (t, Message.error) result
-  val effects : Mailing.t -> Guard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = Mailing.update
 
@@ -121,22 +122,17 @@ end = struct
     | false -> Error Pool_common.Message.AlreadyStarted
   ;;
 
-  let effects mailing =
-    [ ( `Update
-      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
+    ; `Update, `TargetEntity `Mailing
     ]
   ;;
 end
 
 module Delete : sig
-  type t = Mailing.t
+  include Common.CommandSig with type t = Mailing.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Mailing.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : t -> Guard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -147,22 +143,17 @@ end = struct
     else Ok [ Deleted mailing |> Pool_event.mailing ]
   ;;
 
-  let effects mailing =
-    [ ( `Delete
-      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
+  let effects id =
+    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
+    ; `Delete, `TargetEntity `Mailing
     ]
   ;;
 end
 
 module Stop : sig
-  type t = Mailing.t
+  include Common.CommandSig with type t = Mailing.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Mailing.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : t -> Guard.Authorizer.effect list
+  val effects : Mailing.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
@@ -174,14 +165,16 @@ end = struct
     else Error Message.NotInTimeRange
   ;;
 
-  let effects mailing =
-    [ ( `Manage
-      , `Target (mailing.Mailing.id |> Guard.Uuid.target_of Mailing.Id.value) )
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Mailing.Id.value)
+    ; `Update, `TargetEntity `Mailing
     ]
   ;;
 end
 
 module Overlaps : sig
+  include Common.CommandSig
+
   type t =
     { id : Id.t option
     ; start_at : StartAt.t
@@ -192,7 +185,7 @@ module Overlaps : sig
 
   type with_default_rate = bool
 
-  val create : t -> (with_default_rate * Mailing.t, Message.error) result
+  val handle : t -> (with_default_rate * Mailing.t, Message.error) result
   val decode : Conformist.input -> (t, Message.error) result
 end = struct
   type t =
@@ -227,7 +220,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let create ({ id; start_at; end_at; rate; distribution } : t) =
+  let handle ({ id; start_at; end_at; rate; distribution } : t) =
     let open CCResult in
     Mailing.create
       ?id
@@ -237,4 +230,6 @@ end = struct
       distribution
     >|= fun m -> CCOption.is_none rate, m
   ;;
+
+  let effects = [ `Read, `TargetEntity `Mailing ]
 end

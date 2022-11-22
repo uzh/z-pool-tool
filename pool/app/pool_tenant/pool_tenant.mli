@@ -303,22 +303,22 @@ val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val to_ctx : Database.Label.t -> (string * string) list
-val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t
+val find : Pool_common.Id.t -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_full
   :  Pool_common.Id.t
-  -> (Write.t, Pool_common.Message.error) result Lwt.t
+  -> (Write.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_label
   :  Database.Label.t
-  -> (t, Pool_common.Message.error) result Lwt.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_all : unit -> t list Lwt.t
 val find_databases : unit -> Database.t list Lwt.t
 
 val find_styles
   :  Database.Label.t
-  -> (Styles.t, Pool_common.Message.error) result Lwt.t
+  -> (Styles.t, Pool_common.Message.error) Lwt_result.t
 
 type handle_list_recruiters = unit -> Sihl_user.t list Lwt.t
 type handle_list_tenants = unit -> t list Lwt.t
@@ -333,4 +333,31 @@ module Selection : sig
   val find_all : unit -> t list Lwt.t
   val url : t -> string
   val label : t -> Database.Label.t
+end
+
+module Guard : sig
+  module Actor : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Tenant ] Guard.Authorizable.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Tenant ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+  end
 end

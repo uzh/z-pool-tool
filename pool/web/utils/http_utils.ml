@@ -291,3 +291,7 @@ let invalid_session_redirect ?(login_path = "/login") req query_lang =
     ; Sihl.Web.Flash.set [ "_redirect_to", req.Rock.Request.target ]
     ]
 ;;
+
+let find_id encode field req =
+  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+;;

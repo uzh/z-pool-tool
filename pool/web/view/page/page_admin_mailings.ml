@@ -12,7 +12,7 @@ let mailing_title (s : Mailing.t) =
 let mailings_path ?suffix experiment_id =
   [ Format.asprintf
       "/admin/experiments/%s/mailings"
-      (Pool_common.Id.value experiment_id)
+      (Experiment.Id.value experiment_id)
   ]
   @ CCOption.map_or ~default:[] CCList.pure suffix
   |> CCString.concat "/"

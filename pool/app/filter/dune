@@ -4,8 +4,10 @@
   custom_field
   pool_database
   pool_common
+  pool_tenant
   utils
-  ppx_deriving_yojson.runtime)
+  ppx_deriving_yojson.runtime
+  guard)
  (preprocess
   (pps
    lwt_ppx

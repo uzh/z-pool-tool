@@ -6,7 +6,7 @@ end
 
 type t =
   { id : Pool_common.Id.t
-  ; experiment_id : Pool_common.Id.t
+  ; experiment_id : Experiment.Id.t
   ; contact_id : Pool_common.Id.t
   ; resent_at : Entity.ResentAt.t option
   ; created_at : Pool_common.CreatedAt.t
@@ -23,7 +23,7 @@ let to_entity (m : t) (contact : Contact.t) : Entity.t =
     }
 ;;
 
-let of_entity (experiment_id : Pool_common.Id.t) (m : Entity.t) : t =
+let of_entity (experiment_id : Experiment.Id.t) (m : Entity.t) : t =
   { id = m.Entity.id
   ; experiment_id
   ; contact_id = Contact.id m.Entity.contact
@@ -53,7 +53,7 @@ let t =
       (tup2
          Pool_common.Repo.Id.t
          (tup2
-            Pool_common.Repo.Id.t
+            Experiment.Repo.Id.t
             (tup2
                Pool_common.Repo.Id.t
                (tup2

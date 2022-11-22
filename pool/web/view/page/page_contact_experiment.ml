@@ -27,7 +27,7 @@ let index experiment_list Pool_context.{ language; _ } =
                         (Sihl.Web.externalize_path
                            (Format.asprintf
                               "/experiments/%s"
-                              (experiment.id |> Pool_common.Id.value)))
+                              (experiment.id |> Experiment.Id.value)))
                     ]
                   [ txt
                       Pool_common.(
@@ -68,7 +68,7 @@ let show
   let form_action =
     Format.asprintf
       "/experiments/%s/waiting-list/"
-      (experiment.id |> Pool_common.Id.value)
+      (experiment.id |> Experiment.Id.value)
     |> (fun url ->
          if user_is_enlisted then Format.asprintf "%s/remove" url else url)
     |> Sihl.Web.externalize_path

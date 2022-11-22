@@ -53,7 +53,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
     let rows =
       CCList.map
         (fun root ->
-          let user = root |> Root.user in
+          let user = root |> Admin.user in
           let status = status_toggle user.status user.id in
           [ txt user.email; status ])
         root_list

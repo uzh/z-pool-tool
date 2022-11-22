@@ -1,10 +1,30 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module Message = Pool_common.Message
+module BaseGuard = Guard
 open Pool_location
 
 let src = Logs.Src.create "location.cqrs"
 
-module Create = struct
+module Create : sig
+  include Common.CommandSig
+
+  type address = Address.t
+
+  type t =
+    { name : Name.t
+    ; description : Description.t option
+    ; link : Link.t option
+    ; address : address
+    }
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?id:Id.t
+    -> t
+    -> (Pool_event.t list, 'a) result
+
+  val decode : Conformist.input -> (t, Message.error) result
+end = struct
   type base =
     { name : Name.t
     ; description : Description.t option
@@ -79,11 +99,31 @@ module Create = struct
          }
   ;;
 
-  let can = [ `Create, `Entity `Location ]
+  let effects = [ `Create, `TargetEntity `Location ]
 end
 
-module Update = struct
-  type base =
+module Update : sig
+  include Common.CommandSig
+
+  type t =
+    { name : Name.t
+    ; description : Description.t option
+    ; link : Link.t option
+    ; status : Status.t
+    }
+
+  type address = Address.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_location.t
+    -> update
+    -> (Pool_event.t list, 'a) result
+
+  val decode : Conformist.input -> (update, Message.error) result
+  val effects : Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t =
     { name : Name.t
     ; description : Description.t option
     ; link : Link.t option
@@ -139,14 +179,25 @@ module Update = struct
          }
   ;;
 
-  let can t =
-    [ `Update, `Entity `Location
-    ; `Update, `Target (t.id |> Guard.Uuid.target_of Id.value)
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity `Location
     ]
   ;;
 end
 
-module AddFile = struct
+module AddFile : sig
+  include Common.CommandSig with type t = Mapping.file_base
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, 'a) result
+
+  val decode : Conformist.input -> (t, Message.error) result
+  val effects : Pool_location.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
   open Mapping
 
   type t = file_base
@@ -193,10 +244,19 @@ module AddFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `Location ]
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Pool_location.Id.value)
+    ; `Update, `TargetEntity `Location
+    ]
+  ;;
 end
 
-module DeleteFile = struct
+module DeleteFile : sig
+  include Common.CommandSig with type t = Mapping.Id.t
+
+  val decode : Conformist.input -> (t, Message.error) result
+  val effects : Pool_location.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
   open Mapping
 
   type t = Id.t
@@ -214,5 +274,9 @@ module DeleteFile = struct
     |> CCResult.map_err Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `Location ]
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Pool_location.Id.value)
+    ; `Update, `TargetEntity `Location
+    ]
+  ;;
 end

@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 module Url = Page.Admin.CustomFields.Url
+module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
 
@@ -21,8 +22,8 @@ let get_custom_field fnc req =
     let open Utils.Lwt_result.Infix in
     Pool_context.find req
     |> Lwt_result.lift
-    >>= fun { Pool_context.tenant_db; _ } ->
-    Custom_field.find tenant_db (req |> get_field_id)
+    >>= fun { Pool_context.database_label; _ } ->
+    Custom_field.find database_label (req |> get_field_id)
   in
   match custom_field with
   | Ok field -> field |> fnc req
@@ -34,16 +35,18 @@ let get_custom_field fnc req =
 
 let form ?id req custom_field =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , Url.Field.edit_path Custom_field.(model custom_field, id custom_field) ))
     @@ let* custom_field_option =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Custom_field.find_option tenant_db id >|+ CCOption.pure)
+              Custom_field.find_option database_label id >|+ CCOption.pure)
        in
-       let* custom_field = req |> get_field_id |> Custom_field.find tenant_db in
+       let* custom_field =
+         req |> get_field_id |> Custom_field.find database_label
+       in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
@@ -88,7 +91,7 @@ let write ?id req custom_field =
     go Message.Field.Name encode_lang
   in
   let tags = Logger.req req in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
@@ -105,7 +108,7 @@ let write ?id req custom_field =
           field_names
         |> Lwt_result.lift
       | Some id ->
-        let* custom_field_option = Custom_field.find_option tenant_db id in
+        let* custom_field_option = Custom_field.find_option database_label id in
         Cqrs_command.Custom_field_option_command.Update.handle
           ~tags
           sys_languages
@@ -115,7 +118,7 @@ let write ?id req custom_field =
     in
     let handle events =
       let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
       let success =
         let open Pool_common.Message in
@@ -143,12 +146,12 @@ let toggle_action action req =
   let open Utils.Lwt_result.Infix in
   let handler req custom_field =
     let id = req |> get_option_id in
-    let result { Pool_context.tenant_db; _ } =
+    let result { Pool_context.database_label; _ } =
       let redirect_path =
         Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
       in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-      @@ let* option = id |> Custom_field.find_option tenant_db in
+      @@ let* option = id |> Custom_field.find_option database_label in
          let tags = Logger.req req in
          let events =
            Lwt_result.lift
@@ -168,7 +171,7 @@ let toggle_action action req =
            | `Publish -> Published Field.CustomFieldOption
          in
          let handle events =
-           let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+           let%lwt () = Pool_event.handle_events ~tags database_label events in
            Http_utils.redirect_to_with_actions
              redirect_path
              [ Message.set ~success:[ success ] ]
@@ -182,3 +185,57 @@ let toggle_action action req =
 
 let delete = toggle_action `Delete
 let publish = toggle_action `Publish
+
+module Access : sig
+  include Helpers.AccessSig
+
+  val publish : Rock.Middleware.t
+end = struct
+  module CustomFieldCommand = Cqrs_command.Custom_field_option_command
+  module Field = Pool_common.Message.Field
+
+  let custom_field_option_effects =
+    Middleware.Guardian.id_effects
+      Custom_field.SelectOption.Id.of_string
+      Field.CustomFieldOption
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity `CustomField ]
+  ;;
+
+  let create =
+    CustomFieldCommand.Create.effects
+    |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let read =
+    [ (fun id ->
+        let open Custom_field.SelectOption.Id in
+        [ `Read, `Target (id |> Guard.Uuid.target_of value)
+        ; `Read, `TargetEntity `CustomField
+        ])
+    ]
+    |> custom_field_option_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    [ CustomFieldCommand.Update.effects ]
+    |> custom_field_option_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let publish =
+    [ CustomFieldCommand.Publish.effects ]
+    |> custom_field_option_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let delete =
+    [ CustomFieldCommand.Destroy.effects ]
+    |> custom_field_option_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

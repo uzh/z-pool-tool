@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module Title : sig
   include Pool_common.Model.StringSig
 end

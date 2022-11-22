@@ -61,15 +61,15 @@ end = struct
     let* () =
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
-    let admin : Root.create =
-      Root.
+    let admin : Admin.create =
+      Admin.
         { email = command.email
         ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
         }
     in
-    Ok [ Root.Created admin |> Pool_event.root ]
+    Ok [ Admin.Created admin |> Pool_event.admin ]
   ;;
 
   let decode data =
@@ -81,24 +81,24 @@ end = struct
 end
 
 module ToggleStatus : sig
-  type t = Root.t
+  type t = Admin.t
 
   val handle
     :  ?tags:Logs.Tag.set
-    -> Root.t
+    -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
-  type t = Root.t
+  type t = Admin.t
 
-  let handle ?(tags = Logs.Tag.empty) (root : Root.t) =
+  let handle ?(tags = Logs.Tag.empty) (admin : Admin.t) =
     Logs.info ~src (fun m -> m "Handle command ToggleStatus" ~tags);
     let open Sihl.Contract.User in
-    let status = (root |> Root.user).status in
+    let status = (admin |> Admin.user).status in
     match status with
-    | Active -> Ok [ Root.Disabled root |> Pool_event.root ]
-    | Inactive -> Ok [ Root.Enabled root |> Pool_event.root ]
+    | Active -> Ok [ Admin.Disabled admin |> Pool_event.admin ]
+    | Inactive -> Ok [ Admin.Enabled admin |> Pool_event.admin ]
   ;;
 
   let effects = [ `Manage, `TargetEntity `System ]

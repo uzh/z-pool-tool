@@ -264,3 +264,35 @@ val find
 
 val find_all : Pool_database.Label.t -> t list Lwt.t
 val default_values : t list
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Location ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module FileTarget : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> Mapping.file
+      -> ( [> `LocationFile ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

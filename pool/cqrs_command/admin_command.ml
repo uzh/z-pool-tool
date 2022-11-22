@@ -5,6 +5,8 @@ module Id = Pool_common.Id
 let src = Logs.Src.create "admin.cqrs"
 
 module CreateOperator : sig
+  include Common.CommandSig
+
   type t =
     { email : User.EmailAddress.t
     ; password : User.Password.t
@@ -23,8 +25,6 @@ module CreateOperator : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
 end = struct
   type t =
     { email : User.EmailAddress.t
@@ -63,7 +63,7 @@ end = struct
     in
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)
-    let operator : Admin.create =
+    let admin : Admin.create =
       Admin.
         { email = command.email
         ; password = command.password
@@ -71,13 +71,13 @@ end = struct
         ; lastname = command.lastname
         }
     in
-    Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
+    Ok [ Admin.Created admin |> Pool_event.admin ]
   ;;
-
-  let effects = [ `Create, `TargetEntity `Admin ]
 
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = [ `Create, `TargetEntity (`Admin `Operator) ]
 end

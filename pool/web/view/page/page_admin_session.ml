@@ -57,11 +57,10 @@ let session_form
     match session, has_assignments with
     | Some session, true ->
       let action =
-        let open Pool_common.Id in
         Format.asprintf
           "/admin/experiments/%s/sessions/%s/reschedule"
-          (value experiment.Experiment.id)
-          (value session.Session.id)
+          (Experiment.Id.value experiment.Experiment.id)
+          (Pool_common.Id.value session.Session.id)
         |> Sihl.Web.externalize_path
       in
       p
@@ -88,7 +87,7 @@ let session_form
     let base =
       Format.asprintf
         "/admin/experiments/%s/sessions"
-        (Pool_common.Id.value experiment.Experiment.id)
+        (Experiment.Id.value experiment.Experiment.id)
     in
     match session, follow_up_to with
     | None, None -> base, Message.(Create (Some Field.Session))
@@ -255,11 +254,10 @@ let reschedule_session
   =
   let open Session in
   let action =
-    let open Pool_common.Id in
     Format.asprintf
       "/admin/experiments/%s/sessions/%s/reschedule"
-      (value experiment.Experiment.id)
-      (value session.Session.id)
+      (Experiment.Id.value experiment.Experiment.id)
+      (Pool_common.Id.value session.Session.id)
   in
   form
     ~a:
@@ -318,7 +316,7 @@ let index
       ~control:(language, Message.(Add (Some Field.Session)))
       (Format.asprintf
          "/admin/experiments/%s/sessions/create"
-         (experiment_id |> Pool_common.Id.value))
+         (experiment_id |> Experiment.Id.value))
   in
   let rows =
     CCList.flat_map
@@ -340,7 +338,7 @@ let index
                   ; a_action
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s/cancel"
-                         (Pool_common.Id.value experiment_id)
+                         (Experiment.Id.value experiment_id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ; a_user_data
@@ -363,7 +361,7 @@ let index
                   ; a_action
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s/delete"
-                         (Pool_common.Id.value experiment_id)
+                         (Experiment.Id.value experiment_id)
                          (Pool_common.Id.value session.id)
                       |> Sihl.Web.externalize_path)
                   ; a_user_data
@@ -403,7 +401,7 @@ let index
               ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
               [ Format.asprintf
                   "/admin/experiments/%s/sessions/%s"
-                  (Pool_common.Id.value experiment_id)
+                  (Experiment.Id.value experiment_id)
                   (Pool_common.Id.value session.id)
                 |> edit_link
               ; cancel_form
@@ -433,7 +431,7 @@ let index
             [ a_href
                 (Format.asprintf
                    "/admin/experiments/%s/sessions%s"
-                   (Pool_common.Id.value experiment_id)
+                   (Experiment.Id.value experiment_id)
                    (if chronological then "" else "?chronological=true")
                 |> Sihl.Web.externalize_path)
             ]
@@ -495,7 +493,7 @@ let detail
         ~classnames:[ "small" ]
         (Format.asprintf
            "/admin/experiments/%s/sessions/%s/%s"
-           (Pool_common.Id.value experiment.Experiment.id)
+           (Experiment.Id.value experiment.Experiment.id)
            (Pool_common.Id.value session.id)
            url)
       |> CCOption.pure
@@ -512,7 +510,7 @@ let detail
                   [ a_href
                       (Format.asprintf
                          "/admin/experiments/%s/sessions/%s"
-                         (Pool_common.Id.value experiment.Experiment.id)
+                         (Experiment.Id.value experiment.Experiment.id)
                          (Pool_common.Id.value follow_up_to)
                       |> Sihl.Web.externalize_path)
                   ]
@@ -606,7 +604,7 @@ let detail
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf
          "/admin/experiments/%s/sessions/%s/edit"
-         (Pool_common.Id.value experiment.Experiment.id)
+         (Experiment.Id.value experiment.Experiment.id)
          (Pool_common.Id.value session.id))
   in
   let html =
@@ -731,7 +729,7 @@ let close
           ; a_action
               (Format.asprintf
                  "/admin/experiments/%s/sessions/%s/close"
-                 (Id.value experiment.Experiment.id)
+                 (Experiment.Id.value experiment.Experiment.id)
                  (Id.value session.Session.id)
               |> Sihl.Web.externalize_path)
           ]

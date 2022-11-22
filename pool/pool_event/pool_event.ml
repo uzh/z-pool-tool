@@ -16,7 +16,6 @@ type t =
   | Mailing of Mailing.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
-  | Root of Root.event
   | Session of Session.event
   | Settings of Settings.event
   | Tenant of Tenant.event
@@ -38,7 +37,6 @@ let invitation events = Invitation events
 let mailing events = Mailing events
 let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
-let root events = Root events
 let session events = Session events
 let settings events = Settings events
 let tenant events = Tenant events
@@ -49,7 +47,7 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
   | Admin event ->
     let src = Logs.Src.create "admin.events" in
     Logs.info ~src (fun m -> m "Handle event %s" (Admin.show_event event) ~tags);
-    Admin.handle_event pool event
+    Admin.handle_event ~tags pool event
   | Assignment event ->
     let src = Logs.Src.create "assignment.events" in
     Logs.info ~src (fun m ->
@@ -118,10 +116,6 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
     Logs.info ~src (fun m ->
       m "Handle event %s" (Pool_tenant.show_event event) ~tags);
     Pool_tenant.handle_event pool event
-  | Root event ->
-    let src = Logs.Src.create "root.events" in
-    Logs.info ~src (fun m -> m "Handle event %s" (Root.show_event event) ~tags);
-    Root.handle_event pool event
   | Session event ->
     let src = Logs.Src.create "session.events" in
     Logs.info ~src (fun m ->

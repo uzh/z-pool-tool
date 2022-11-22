@@ -72,7 +72,7 @@ let request_reset_password_get req =
 let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
-  let result { Pool_context.tenant_db; language; _ } =
+  let result { Pool_context.database_label; language; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     let redirect_path = "/root/request-reset-password" in
@@ -85,7 +85,7 @@ let request_reset_password_post req =
           |> Service.User.find_by_email_opt ~ctx
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
     >== handle email_layout language
-    |>> Pool_event.handle_events ~tags tenant_db
+    |>> Pool_event.handle_events ~tags database_label
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions

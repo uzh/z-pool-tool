@@ -34,9 +34,20 @@ type event =
   | DeactivateMaintenance of Write.t
 [@@deriving eq, show]
 
-let handle_event _ : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t = function
   | Created tenant ->
+    let open Utils.Lwt_result.Infix in
     let%lwt () = Repo.insert Database.root tenant in
+    let%lwt tenant =
+      Repo.find pool tenant.Write.id ||> Pool_common.(Utils.get_or_failwith)
+    in
+    (* This is Pool_tenant.to_ctx, to avoid circular dependencies *)
+    let ctx = [ "pool", Database.Label.value pool ] in
+    let%lwt () =
+      Entity_guard.Target.to_authorizable ~ctx tenant
+      ||> Pool_common.(Utils.get_or_failwith)
+      ||> fun (_ : [> `Tenant ] Guard.AuthorizableTarget.t) -> ()
+    in
     Lwt.return_unit
   | LogosUploaded logo_mappings ->
     let%lwt _ = Repo.LogoMappingRepo.insert_multiple logo_mappings in

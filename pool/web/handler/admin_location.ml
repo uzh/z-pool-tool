@@ -10,9 +10,9 @@ let id req field encode =
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt location_list = Pool_location.find_all tenant_db in
+    @@ let%lwt location_list = Pool_location.find_all database_label in
        Page.Admin.Location.index location_list context
        |> create_layout ~active_navigation:"/admin/locations" req context
        >|+ Sihl.Web.Response.of_html
@@ -36,7 +36,7 @@ let new_form req =
 let create req =
   let open Utils.Lwt_result.Infix in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/admin/locations/create"
@@ -55,7 +55,7 @@ let create req =
     in
     let handle events =
       let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
@@ -71,10 +71,10 @@ let new_file req =
   let open Utils.Lwt_result.Infix in
   let open Pool_location in
   let id = id req Field.Location Id.of_string in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err ->
       err, id |> Id.value |> Format.asprintf "/admin/locations/%s/files/create")
-    @@ let* location = find tenant_db id in
+    @@ let* location = find database_label id in
        let labels = Mapping.Label.all in
        let languages = Pool_common.Language.all in
        Page.Admin.Location.file_form labels languages location context
@@ -93,16 +93,16 @@ let add_file req =
   let path =
     id |> Pool_location.Id.value |> Format.asprintf "/admin/locations/%s"
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, Format.asprintf "%s/files/create" path)
-    @@ let* location = Pool_location.find tenant_db id in
+    @@ let* location = Pool_location.find database_label id in
        let%lwt multipart_encoded =
          Sihl.Web.Request.to_multipart_form_data_exn req
        in
        let* files =
          HttpUtils.File.upload_files
-           tenant_db
+           database_label
            [ Field.(FileMapping |> show) ]
            req
        in
@@ -114,7 +114,8 @@ let add_file req =
              Lwt_list.iter_s
                (fun (_, asset_id) ->
                  asset_id
-                 |> Service.Storage.delete ~ctx:(Pool_tenant.to_ctx tenant_db))
+                 |> Service.Storage.delete
+                      ~ctx:(Pool_tenant.to_ctx database_label))
                files
            in
            Logs.err (fun m -> m "One of the events failed while adding a file");
@@ -131,7 +132,7 @@ let add_file req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            path
@@ -147,8 +148,8 @@ let add_file req =
 let asset req =
   let open Sihl.Contract.Storage in
   let id = id req Pool_common.Message.Field.File Pool_common.Id.of_string in
-  let result { Pool_context.tenant_db; _ } =
-    let ctx = Pool_tenant.to_ctx tenant_db in
+  let result { Pool_context.database_label; _ } =
+    let ctx = Pool_tenant.to_ctx database_label in
     let%lwt file = Service.Storage.find ~ctx (Pool_common.Id.value id) in
     let%lwt content = Service.Storage.download_data_base64 ~ctx file in
     let mime = file.file.mime in
@@ -163,25 +164,27 @@ let asset req =
 let detail edit req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/locations" in
-  let result ({ Pool_context.tenant_db; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let id = id req Field.Location Pool_location.Id.of_string in
-    let* location = Pool_location.find tenant_db id in
-    let* sessions = Session.find_all_public_by_location tenant_db id in
+    let* location = Pool_location.find database_label id in
+    let* sessions = Session.find_all_public_by_location database_label id in
     let add_experiment_title session =
+      let open Pool_common in
       let%lwt title =
-        Session.find_experiment_id_and_title tenant_db session.Session.Public.id
+        Session.find_experiment_id_and_title
+          database_label
+          session.Session.Public.id
       in
       ( session
       , title
         |> CCResult.get_or
              ~default:
-               ( Pool_common.Id.create ()
-               , Pool_common.(
-                   Utils.error_to_string
-                     language
-                     Message.(NotFound Field.Experiment)) ) )
+               ( Experiment.Id.create ()
+               , Utils.error_to_string
+                   language
+                   Message.(NotFound Field.Experiment) ) )
       |> Lwt.return
     in
     let%lwt session_list = Lwt_list.map_s add_experiment_title sessions in
@@ -204,7 +207,7 @@ let edit = detail true
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let id = id req Field.Location Pool_location.Id.of_string in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let detail_path =
@@ -214,7 +217,7 @@ let update req =
       ( err
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* location = Pool_location.find tenant_db id in
+    @@ let* location = Pool_location.find database_label id in
        let tags = Logger.req req in
        let events =
          let open CCResult.Infix in
@@ -228,7 +231,7 @@ let update req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            detail_path
@@ -242,7 +245,7 @@ let update req =
 ;;
 
 let delete req =
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let location_id = id req Field.Location Pool_location.Id.of_string in
     let mapping_id =
       id req Field.FileMapping Pool_location.Mapping.Id.of_string
@@ -261,7 +264,7 @@ let delete req =
       |> Cqrs_command.Location_command.DeleteFile.handle ~tags
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.File) ] ]
@@ -269,3 +272,71 @@ let delete req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+module Access : sig
+  include Helpers.AccessSig
+
+  val create_file : Rock.Middleware.t
+  val read_file : Rock.Middleware.t
+  val delete_file : Rock.Middleware.t
+end = struct
+  module Field = Pool_common.Message.Field
+  module LocationCommand = Cqrs_command.Location_command
+
+  let file_effects =
+    Middleware.Guardian.id_effects Pool_location.Mapping.Id.of_string Field.File
+  ;;
+
+  let location_effects =
+    Middleware.Guardian.id_effects Pool_location.Id.of_string Field.Location
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Location ]
+  ;;
+
+  let create =
+    LocationCommand.Create.effects |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let create_file =
+    [ LocationCommand.AddFile.effects ]
+    |> location_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_location.Id.value)
+        ; `Read, `TargetEntity `Location
+        ])
+    ]
+    |> location_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let read_file =
+    [ (fun id ->
+        let open Pool_location.Mapping.Id in
+        [ `Read, `Target (id |> Guard.Uuid.target_of value)
+        ; `Read, `TargetEntity `LocationFile
+        ])
+    ]
+    |> file_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    [ LocationCommand.Update.effects ]
+    |> location_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let delete = Middleware.Guardian.denied
+
+  let delete_file =
+    [ LocationCommand.DeleteFile.effects ]
+    |> location_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

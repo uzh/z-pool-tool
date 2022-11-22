@@ -1,5 +1,6 @@
 include Entity
 include Event
+module Guard = Entity_guard
 
 let find_all_for_experiment = Repo.find_all_for_experiment
 let find_all_public_for_experiment = Repo.find_all_public_for_experiment

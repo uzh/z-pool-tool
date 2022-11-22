@@ -300,6 +300,7 @@ module Sql = struct
         url,
         database_label
       FROM pool_tenant
+      WHERE NOT disabled
     |sql}
     |> Caqti_type.unit ->* RepoEntity.Selection.t
   ;;

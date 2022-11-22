@@ -3,13 +3,13 @@ module Message = HttpUtils.Message
 module Database = Pool_database
 
 let create req =
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
     let user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingRoot
-      >>= HttpUtils.validate_email_existance tenant_db
+      >>= HttpUtils.validate_email_existance database_label
     in
     let tags = Logger.req req in
     let events () =
@@ -40,24 +40,26 @@ let create req =
 
 let toggle_status req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Root
-      |> Pool_common.Id.of_string
+      let open Pool_common.Message.Field in
+      HttpUtils.find_id Admin.Id.of_string Admin req
     in
     let tags = Logger.req req in
     let events user =
       Cqrs_command.Root_command.ToggleStatus.handle ~tags user
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
         [ Message.set ~success:[ Pool_common.Message.(Updated Field.Root) ] ]
     in
     id
-    |> Root.find
+    |> Admin.find Pool_database.root
     >>= events
     >|- (fun err -> err, "/root/tenants/")
     |>> handle

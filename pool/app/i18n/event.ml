@@ -16,13 +16,16 @@ type event =
   | DefaultRestored of default
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
   | Created create ->
-    let%lwt () =
-      Entity.create create.key create.language create.content
-      |> Repo.insert pool
-    in
-    Lwt.return_unit
+    let i18n = Entity.create create.key create.language create.content in
+    let%lwt () = Repo.insert pool i18n in
+    i18n
+    |> Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool)
+    ||> Pool_common.(Utils.get_or_failwith)
+    ||> fun (_ : [> `I18n ] Guard.AuthorizableTarget.t) -> ()
   | Updated (property, update) ->
     let%lwt () =
       { property with content = update.content } |> Repo.update pool

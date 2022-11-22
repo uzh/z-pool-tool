@@ -1,5 +1,6 @@
 include Entity
 include Events
+module Guard = Entity_guard
 
 let find = Repo.find
 let user_is_enlisted = Repo.user_is_enlisted

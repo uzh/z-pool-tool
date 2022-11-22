@@ -63,6 +63,7 @@ type event =
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   function
   | Created contact ->
@@ -75,29 +76,33 @@ let handle_event pool : event -> unit Lwt.t =
         ~password:(contact.password |> User.Password.to_sihl)
       @@ User.EmailAddress.value contact.email
     in
-    { user
-    ; recruitment_channel = contact.recruitment_channel
-    ; terms_accepted_at = contact.terms_accepted_at
-    ; language = contact.language
-    ; experiment_type_preference = None
-    ; paused = User.Paused.create false
-    ; disabled = User.Disabled.create false
-    ; verified = None
-    ; email_verified = None
-    ; num_invitations = NumberOfInvitations.init
-    ; num_assignments = NumberOfAssignments.init
-    ; num_show_ups = NumberOfShowUps.init
-    ; num_participations = NumberOfParticipations.init
-    ; firstname_version = Pool_common.Version.create ()
-    ; lastname_version = Pool_common.Version.create ()
-    ; paused_version = Pool_common.Version.create ()
-    ; language_version = Pool_common.Version.create ()
-    ; experiment_type_preference_version = Pool_common.Version.create ()
-    ; created_at = Ptime_clock.now ()
-    ; updated_at = Ptime_clock.now ()
-    }
-    |> Repo.insert pool
-    |> CCFun.const Lwt.return_unit
+    let contact =
+      { user
+      ; recruitment_channel = contact.recruitment_channel
+      ; terms_accepted_at = contact.terms_accepted_at
+      ; language = contact.language
+      ; experiment_type_preference = None
+      ; paused = User.Paused.create false
+      ; disabled = User.Disabled.create false
+      ; verified = None
+      ; email_verified = None
+      ; num_invitations = NumberOfInvitations.init
+      ; num_assignments = NumberOfAssignments.init
+      ; num_show_ups = NumberOfShowUps.init
+      ; num_participations = NumberOfParticipations.init
+      ; firstname_version = Pool_common.Version.create ()
+      ; lastname_version = Pool_common.Version.create ()
+      ; paused_version = Pool_common.Version.create ()
+      ; language_version = Pool_common.Version.create ()
+      ; experiment_type_preference_version = Pool_common.Version.create ()
+      ; created_at = Ptime_clock.now ()
+      ; updated_at = Ptime_clock.now ()
+      }
+    in
+    let%lwt () = Repo.insert pool contact in
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) contact
+    ||> Pool_common.(Utils.get_or_failwith)
+    ||> fun (_ : [> `Contact ] Guard.AuthorizableTarget.t) -> ()
   | Updated (update, contact) -> Repo.partial_update pool update contact
   | EmailUpdated (contact, email) ->
     let%lwt _ =

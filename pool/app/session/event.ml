@@ -35,7 +35,7 @@ type reschedule =
 (* TODO [aerben] experiment ID *)
 type event =
   | Created of
-      (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
+      (base * Pool_common.Id.t option * Experiment.Id.t * Pool_location.t)
   | Canceled of t
   | Closed of t
   | Deleted of t
@@ -44,7 +44,9 @@ type event =
   | Rescheduled of (t * reschedule)
 [@@deriving eq, show]
 
-let handle_event pool = function
+let handle_event pool =
+  let open Utils.Lwt_result.Infix in
+  function
   | Created (session, parent_session_id, experiment_id, location) ->
     let sess =
       create
@@ -60,7 +62,10 @@ let handle_event pool = function
         session.reminder_text
         session.reminder_lead_time
     in
-    Repo.insert pool (Pool_common.Id.value experiment_id, sess)
+    let%lwt () = Repo.insert pool (Experiment.Id.value experiment_id, sess) in
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) sess
+    ||> Pool_common.(Utils.get_or_failwith)
+    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | Canceled session ->
     (* TODO: Check timestamps? Issue #126 *)
     { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool

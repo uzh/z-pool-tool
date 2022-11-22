@@ -7,7 +7,7 @@ let invitations pool =
         let%lwt filtered_contacts =
           Contact.find_filtered
             pool
-            experiment.Experiment.id
+            (experiment.Experiment.id |> Experiment.Id.to_common)
             experiment.Experiment.filter
           ||> CCResult.get_exn
         in

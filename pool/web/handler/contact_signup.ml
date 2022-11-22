@@ -1,15 +1,16 @@
 module Command = Cqrs_command.Contact_command
+module UserCommand = Cqrs_command.User_command
 module HttpUtils = Http_utils
 
 let create_layout = Contact_general.create_layout
 
 let sign_up req =
-  let result ({ Pool_context.tenant_db; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
-    let* terms = Settings.terms_and_conditions tenant_db language in
+    let* terms = Settings.terms_and_conditions database_label language in
     Page.Contact.sign_up terms context flash_fetcher
     |> create_layout req ~active_navigation:"/signup" context
     >|+ Sihl.Web.Response.of_html
@@ -26,7 +27,7 @@ let sign_up_create req =
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -41,7 +42,7 @@ let sign_up_create req =
        let* remove_contact_event =
          let find_contact email =
            email
-           |> Contact.find_by_email tenant_db
+           |> Contact.find_by_email database_label
            ||> function
            | Ok partitipant ->
              if partitipant.Contact.user.Sihl_user.confirmed
@@ -58,7 +59,7 @@ let sign_up_create req =
        in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
-         Settings.find_email_suffixes tenant_db
+         Settings.find_email_suffixes database_label
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
@@ -74,9 +75,9 @@ let sign_up_create req =
          >>= (fun e -> Ok (remove_contact_event @ e))
          |> Lwt_result.lift
        in
-       Utils.Database.with_transaction tenant_db (fun () ->
+       Utils.Database.with_transaction database_label (fun () ->
          let tags = Logger.req req in
-         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+         let%lwt () = Pool_event.handle_events ~tags database_label events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/email-confirmation")
@@ -90,7 +91,8 @@ let sign_up_create req =
 
 let email_verification req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
+  let tags = Logger.req req in
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
     let open Pool_common.Message in
     let%lwt redirect_path =
       let user =
@@ -99,7 +101,7 @@ let email_verification req =
         |> CCOption.of_result
       in
       CCOption.bind user (fun user ->
-        Some (General.dashboard_path tenant_db user))
+        Some (General.dashboard_path database_label user))
       |> CCOption.value ~default:("/login" |> Lwt.return)
     in
     (let* token =
@@ -108,7 +110,7 @@ let email_verification req =
        |> CCOption.to_result Field.(NotFound Token)
        |> Lwt_result.lift
      in
-     let ctx = Pool_tenant.to_ctx tenant_db in
+     let ctx = Pool_tenant.to_ctx database_label in
      let* email =
        Service.Token.read
          ~ctx
@@ -116,19 +118,37 @@ let email_verification req =
          ~k:Field.(Email |> show)
        ||> CCOption.to_result TokenInvalidFormat
        >== Pool_user.EmailAddress.create
-       >>= Email.find_unverified_by_address tenant_db
-       >|- fun _ -> Field.(Invalid Token)
+       >>= Email.find_unverified_by_address database_label
+       |> Lwt_result.map_error (fun _ -> Field.(Invalid Token))
      in
-     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-     let tags = Logger.req req in
      let* events =
-       match contact.Contact.user.Sihl.Contract.User.confirmed with
-       | false ->
-         Command.VerifyEmail.(handle ~tags contact { email }) |> Lwt_result.lift
-       | true ->
-         Command.UpdateEmail.(handle ~tags contact email) |> Lwt_result.lift
+       let open UserCommand in
+       let%lwt admin =
+         Admin.find
+           database_label
+           (email |> Email.user_id |> Pool_common.Id.value |> Admin.Id.of_string)
+       in
+       let%lwt contact = Contact.find database_label (Email.user_id email) in
+       let verify_email user =
+         VerifyEmail.(handle ~tags user email) |> Lwt_result.lift
+       in
+       let update_email user =
+         UpdateEmail.(handle ~tags user email) |> Lwt_result.lift
+       in
+       match email |> Email.user_is_confirmed, contact, admin with
+       | false, Ok contact, _ -> verify_email (Contact contact)
+       | true, Ok contact, _ -> update_email (Contact contact)
+       | false, Error _, Ok admin -> verify_email (Admin admin)
+       | true, _, Ok admin -> update_email (Admin admin)
+       | true, Error _, Error _ | false, Error _, Error _ ->
+         Logs.err (fun m ->
+           m
+             "Impossible email update tried: %s with context: %s"
+             ([%show: Email.t] email)
+             ([%show: Pool_context.t] context));
+         Lwt.return_ok []
      in
-     let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+     let%lwt () = Pool_event.handle_events ~tags database_label events in
      HttpUtils.(
        redirect_to_with_actions
          (path_with_language query_language redirect_path)
@@ -141,10 +161,10 @@ let email_verification req =
 
 let terms req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-       let* terms = Settings.terms_and_conditions tenant_db language in
+       let* terms = Settings.terms_and_conditions database_label language in
        Page.Contact.terms
          Contact.(contact |> id |> Pool_common.Id.value)
          terms
@@ -156,7 +176,7 @@ let terms req =
 ;;
 
 let terms_accept req =
-  let result { Pool_context.tenant_db; query_language; _ } =
+  let result { Pool_context.database_label; query_language; _ } =
     Utils.Lwt_result.map_error (fun msg -> msg, "/login")
     @@
     let open Utils.Lwt_result.Infix in
@@ -164,13 +184,13 @@ let terms_accept req =
       Pool_common.(
         Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
     in
-    let* contact = Contact.find tenant_db id in
+    let* contact = Contact.find database_label id in
     let tags = Logger.req req in
     let* events =
       Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
     let tags = Logger.req req in
-    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+    let%lwt () = Pool_event.handle_events ~tags database_label events in
     HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))
     |> Lwt_result.ok
   in

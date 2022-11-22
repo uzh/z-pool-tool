@@ -173,7 +173,7 @@ module Model = struct
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     Experiment.(
       Public.
-        { id = Pool_common.Id.create ()
+        { id = Experiment.Id.create ()
         ; public_title =
             PublicTitle.create "public_title"
             |> CCResult.map_err show_error
@@ -191,7 +191,7 @@ module Model = struct
   let create_experiment () =
     let show_error err = Pool_common.(Utils.error_to_string Language.En err) in
     Experiment.
-      { id = Pool_common.Id.create ()
+      { id = Experiment.Id.create ()
       ; title =
           Title.create "An Experiment"
           |> CCResult.map_err show_error

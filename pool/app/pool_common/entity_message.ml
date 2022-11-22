@@ -211,6 +211,8 @@ end
    pattern is "FIELD_ADJECTIVE", turn FIELD to Field.t and make it ADJECTIVE of
    Field.t *)
 type error =
+  | AccessDenied
+  | AccessDeniedMessage
   | AllLanguagesRequired of Field.t
   | AlreadyInPast
   | AlreadyInvitedToExperiment of string list

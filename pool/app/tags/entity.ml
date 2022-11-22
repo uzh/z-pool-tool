@@ -22,7 +22,7 @@ type 'a tag =
   ; title : Title.t
   ; description : Description.t
   ; relation : Relation.t
-  ; owner : 'a Admin.t
+  ; owner : Admin.t
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }

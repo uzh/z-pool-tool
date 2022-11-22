@@ -9,7 +9,7 @@ let admin_overview language admins =
     (fun admin ->
       let open Sihl_user in
       let default_empty o = CCOption.value ~default:"" o in
-      let user = Admin.Any.user admin in
+      let user = Admin.user admin in
       [ txt user.email
       ; txt
           (Format.asprintf
@@ -34,7 +34,7 @@ let index Pool_context.{ language; _ } admins =
 
 let detail Pool_context.{ language; _ } admin =
   let open Sihl.Contract.User in
-  let user = Admin.Any.user admin in
+  let user = Admin.user admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
@@ -62,7 +62,7 @@ let detail Pool_context.{ language; _ } admin =
 
 let edit _ editabe_admin =
   let open Sihl.Contract.User in
-  let user = Admin.Any.user editabe_admin in
+  let user = Admin.user editabe_admin in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1

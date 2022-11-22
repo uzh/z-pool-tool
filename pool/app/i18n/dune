@@ -1,6 +1,6 @@
 (library
  (name i18n)
- (libraries pool_common settings sihl)
+ (libraries guard pool_common pool_tenant settings sihl)
  (preprocess
   (pps lwt_ppx ppx_deriving.enum ppx_deriving.eq ppx_deriving.show)))
 

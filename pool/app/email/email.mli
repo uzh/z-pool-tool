@@ -102,6 +102,7 @@ val token : unverified t -> string
 val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_common.Id.t
+val user_is_confirmed : 'email t -> bool
 
 val find_unverified_by_user
   :  Pool_database.Label.t

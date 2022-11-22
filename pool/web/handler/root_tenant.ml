@@ -8,7 +8,7 @@ module Database = Pool_database
 let tenants req =
   let context = Pool_context.find_exn req in
   let%lwt tenant_list = Pool_tenant.find_all () in
-  let%lwt root_list = Root.find_all () in
+  let%lwt root_list = Admin.find_all Pool_database.root () in
   Page.Root.Tenant.list tenant_list root_list context
   |> General.create_root_layout ~active_navigation:"/root/tenants" context
   |> Sihl.Web.Response.of_html
@@ -18,7 +18,7 @@ let tenants req =
 let create req =
   let tags = Logger.req req in
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let events () =
       Utils.Lwt_result.map_error (fun err -> err, "/root/tenants")
       @@
@@ -35,7 +35,7 @@ let create req =
       let finalize = function
         | Ok resp -> Lwt.return_ok resp
         | Error err ->
-          let ctx = tenant_db |> Pool_tenant.to_ctx in
+          let ctx = database_label |> Pool_tenant.to_ctx in
           let%lwt () =
             Lwt_list.iter_s
               (fun (_, id) -> Service.Storage.delete ~ctx id)
@@ -87,7 +87,7 @@ let manage_operators req =
 ;;
 
 let create_operator req =
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; user; _ } =
     let open Utils.Lwt_result.Infix in
     let open Common.Message in
     let id =
@@ -97,21 +97,36 @@ let create_operator req =
     let redirect_path =
       Format.asprintf "/root/tenants/%s" (Pool_common.Id.value id)
     in
-    let user () =
+    let validate_user () =
       Sihl.Web.Request.urlencoded Field.(Email |> show) req
       ||> CCOption.to_result EmailAddressMissingOperator
-      >>= HttpUtils.validate_email_existance tenant_db
+      >>= HttpUtils.validate_email_existance database_label
     in
     let find_tenant () = Pool_tenant.find_full id in
     let tags = Logger.req req in
     let events =
-      let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateOperator in
+      let* actor =
+        let open Pool_context in
+        match user with
+        | Guest ->
+          Lwt.return_error
+          @@ Pool_common.Message.authorization "Permission denied"
+        | Admin user -> Admin.Guard.Actor.to_authorizable user
+        | Contact user -> Contact.Guard.Actor.to_authorizable user
+      in
+      let* () =
+        Guard.Persistence.checker_of_effects
+          ~ctx:(Pool_tenant.to_ctx database_label)
+          effects
+          actor
+        |> Lwt_result.map_error Pool_common.Message.authorization
+      in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle ~tags |> Lwt_result.lift
+      CCResult.(urlencoded |> decode >>= handle ~tags) |> Lwt_result.lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       |> Lwt_result.ok
     in
     let return_to_overview () =
@@ -120,7 +135,7 @@ let create_operator req =
         [ Message.set ~success:[ Created Field.Operator ] ]
     in
     ()
-    |> user
+    |> validate_user
     >>= find_tenant
     >> events
     >>= handle
@@ -148,3 +163,54 @@ let tenant_detail req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+module Access : sig
+  include Helpers.AccessSig
+
+  val create_operator : Rock.Middleware.t
+  val read_operator : Rock.Middleware.t
+end = struct
+  module Field = Pool_common.Message.Field
+  module TenantCommand = Cqrs_command.Pool_tenant_command
+
+  (* let tenant_effects = Middleware.Guardian.id_effects
+     Pool_location.Mapping.Id.of_string Field.Tenant ;; *)
+
+  let tenant_effects =
+    Middleware.Guardian.id_effects Pool_location.Id.of_string Field.Tenant
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Location ]
+  ;;
+
+  let create =
+    Middleware.Guardian.validate_admin_entity TenantCommand.Create.effects
+  ;;
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_location.Id.value)
+        ; `Read, `TargetEntity `Tenant
+        ])
+    ]
+    |> tenant_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    Middleware.Guardian.validate_admin_entity [ `Update, `TargetEntity `Tenant ]
+  ;;
+
+  let read_operator =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity (`Admin `Operator) ]
+  ;;
+
+  let create_operator =
+    Middleware.Guardian.validate_admin_entity
+      [ `Create, `TargetEntity (`Admin `Operator) ]
+  ;;
+
+  let delete = Middleware.Guardian.denied
+end

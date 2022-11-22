@@ -1,6 +1,5 @@
 module Mapping = Entity_file_mapping
 module Conformist = Pool_common.Utils.PoolConformist
-module Utils = Pool_common.Utils
 module Message = Pool_common.Message
 module Field = Message.Field
 module Address = Entity_address
@@ -61,7 +60,7 @@ module Status = struct
     |> CCOption.get_exn_or "Location Status: Could not create list of all keys!"
   ;;
 
-  let schema () = Utils.schema_decoder create show field
+  let schema () = Pool_common.Utils.schema_decoder create show field
 end
 
 type t =

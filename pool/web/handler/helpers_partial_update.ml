@@ -1,7 +1,7 @@
 module PoolField = Pool_common.Message.Field
 module HttpUtils = Http_utils
 
-let parse_urlencoded req tenant_db language urlencoded contact_id =
+let parse_urlencoded req database_label language urlencoded contact_id =
   let open Pool_common.Message in
   let open Utils.Lwt_result.Infix in
   let find_param_list name =
@@ -31,7 +31,7 @@ let parse_urlencoded req tenant_db language urlencoded contact_id =
       field_id
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
-      >>= Custom_field.find_by_contact tenant_db contact_id
+      >>= Custom_field.find_by_contact database_label contact_id
       >|+ fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
@@ -64,7 +64,7 @@ let update ?contact req =
     ||> HttpUtils.format_htmx_request_boolean_values Field.[ Paused |> show ]
   in
   let result
-    ({ Pool_context.tenant_db; language; query_language; _ } as context)
+    ({ Pool_context.database_label; language; query_language; _ } as context)
     =
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
@@ -94,7 +94,12 @@ let update ?contact req =
       Pool_context.Tenant.find req |> with_redirect back_path |> Lwt_result.lift
     in
     let* field, version, value, field_id =
-      parse_urlencoded req tenant_db language urlencoded Contact.(contact |> id)
+      parse_urlencoded
+        req
+        database_label
+        language
+        urlencoded
+        Contact.(contact |> id)
       ||> with_redirect back_path
     in
     let%lwt response =
@@ -106,7 +111,7 @@ let update ?contact req =
         Contact.validate_partial_update
           ~is_admin
           contact
-          tenant_db
+          database_label
           (field, version, value, field_id)
       in
       let tags = Logger.req req in
@@ -171,7 +176,7 @@ let update ?contact req =
                field_id
                |> CCOption.to_result InvalidHtmxRequest
                |> Lwt_result.lift
-               >>= find_by_contact tenant_db (Contact.id contact)
+               >>= find_by_contact database_label (Contact.id contact)
              in
              (match field with
               | Error error ->
@@ -198,7 +203,8 @@ let update ?contact req =
         (* This case cannot occur, cqrs handler always returns an Ok result *)
         | Error _ -> Lwt.return_unit
         | Ok events ->
-          events |> Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db)
+          events
+          |> Lwt_list.iter_s (Pool_event.handle_event ~tags database_label)
       in
       () |> htmx_element
     in

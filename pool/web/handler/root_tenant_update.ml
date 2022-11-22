@@ -90,11 +90,11 @@ let delete_asset req =
   let redirect_path =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
-    let ctx = tenant_db |> Pool_tenant.to_ctx in
+    let ctx = database_label |> Pool_tenant.to_ctx in
     let event tenant =
       Cqrs_command.Pool_tenant_command.DestroyLogo.handle tenant asset_id
       |> Lwt_result.lift

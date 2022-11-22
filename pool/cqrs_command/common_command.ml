@@ -4,7 +4,20 @@ let log_src = Logs.Src.create "common.cqrs"
 
 module Logs = (val Logs.src_log log_src : Logs.LOG)
 
-module ResetPassword = struct
+module ResetPassword : sig
+  include Common.CommandSig
+
+  type t = Pool_user.EmailAddress.t
+
+  val handle
+    :  Email.email_layout
+    -> Pool_common.Language.t
+    -> Sihl_user.t
+    -> (Pool_event.t list, 'a) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+  val effects : Sihl_user.t -> Guard.Authorizer.effect list
+end = struct
   type t = Pool_user.EmailAddress.t
 
   let command m = m
@@ -24,5 +37,7 @@ module ResetPassword = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects () = Utils.todo [%here]
+  let effects user =
+    [ `Update, `Target (user.Sihl_user.id |> Guard.Uuid.Target.of_string_exn) ]
+  ;;
 end

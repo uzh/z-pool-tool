@@ -1,12 +1,12 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-let invitation_template_data tenant_db system_languages =
+let invitation_template_data database_label system_languages =
   let open Utils.Lwt_result.Infix in
   let%lwt res =
     Lwt_list.map_s
       (fun lang ->
-        let find = CCFun.flip (I18n.find_by_key tenant_db) lang in
+        let find = CCFun.flip (I18n.find_by_key database_label) lang in
         let* subject = find I18n.Key.InvitationSubject in
         let* text = find I18n.Key.InvitationText in
         Lwt_result.return (lang, (subject, text)))
@@ -17,28 +17,26 @@ let invitation_template_data tenant_db system_languages =
 
 let create_layout req = General.create_tenant_layout req
 
-let id_from_req req =
-  Pool_common.Message.Field.(Experiment |> show)
-  |> Sihl.Web.Router.param req
-  |> Pool_common.Id.of_string
+let experiment_id =
+  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
 ;;
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let id = id_from_req req in
+  let id = experiment_id req in
   let error_path =
-    Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find tenant_db id in
-       let%lwt key_list = Filter.all_keys tenant_db in
-       let%lwt template_list = Filter.find_all_templates tenant_db () in
+    @@ let* experiment = Experiment.find database_label id in
+       let%lwt key_list = Filter.all_keys database_label in
+       let%lwt template_list = Filter.find_all_templates database_label () in
        (* TODO: Remove contact list from ui *)
        let* filtered_contacts =
          Contact.find_filtered
-           tenant_db
-           experiment.Experiment.id
+           database_label
+           (experiment.Experiment.id |> Experiment.Id.to_common)
            experiment.Experiment.filter
        in
        Page.Admin.Experiments.invitations
@@ -55,17 +53,15 @@ let index req =
 
 let sent_invitations req =
   let open Utils.Lwt_result.Infix in
-  let id = id_from_req req in
+  let id = experiment_id req in
   let error_path =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (Pool_common.Id.value id)
+    Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find tenant_db id in
+    @@ let* experiment = Experiment.find database_label id in
        let* invitations =
-         Invitation.find_by_experiment tenant_db experiment.Experiment.id
+         Invitation.find_by_experiment database_label experiment.Experiment.id
        in
        Page.Admin.Experiments.sent_invitations context experiment invitations
        |> create_layout req context
@@ -76,13 +72,11 @@ let sent_invitations req =
 
 let create req =
   let open Utils.Lwt_result.Infix in
-  let experiment_id = id_from_req req in
+  let id = experiment_id req in
   let redirect_path =
-    Format.asprintf
-      "/admin/experiments/%s/invitations"
-      (Pool_common.Id.value experiment_id)
+    Format.asprintf "/admin/experiments/%s/invitations" (Experiment.Id.value id)
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact_ids =
          let open Utils.Lwt_result.Infix in
@@ -98,7 +92,7 @@ let create req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
-       let* experiment = Experiment.find tenant_db experiment_id in
+       let* experiment = Experiment.find database_label id in
        let* contacts =
          let find_missing contacts =
            let retrieved_ids = CCList.map Contact.id contacts in
@@ -110,7 +104,7 @@ let create req =
              []
              contact_ids
          in
-         let%lwt contacts = Contact.find_multiple tenant_db contact_ids in
+         let%lwt contacts = Contact.find_multiple database_label contact_ids in
          Lwt_result.lift
          @@
          match CCList.length contact_ids == CCList.length contacts with
@@ -124,10 +118,12 @@ let create req =
        let* system_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
-       let* i18n_texts = invitation_template_data tenant_db system_languages in
+       let* i18n_texts =
+         invitation_template_data database_label system_languages
+       in
        let%lwt invited_contacts =
          Invitation.find_multiple_by_experiment_and_contacts
-           tenant_db
+           database_label
            (CCList.map Contact.id contacts)
            experiment
        in
@@ -144,7 +140,7 @@ let create req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -159,29 +155,29 @@ let create req =
 
 let resend req =
   let open Utils.Lwt_result.Infix in
+  let tags = Logger.req req in
   let experiment_id, id =
     let open Pool_common.Message.Field in
-    let open HttpUtils in
-    ( get_field_router_param req Experiment |> Pool_common.Id.of_string
-    , get_field_router_param req Invitation |> Pool_common.Id.of_string )
+    experiment_id req, HttpUtils.find_id Pool_common.Id.of_string Invitation req
   in
   let redirect_path =
     Format.asprintf
       "/admin/experiments/%s/invitations"
-      (Pool_common.Id.value experiment_id)
+      (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
-       let* invitation = Invitation.find tenant_db id in
-       let* experiment = Experiment.find tenant_db experiment_id in
+       let* invitation = Invitation.find database_label id in
+       let* experiment = Experiment.find database_label experiment_id in
        let* system_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
-       let* i18n_texts = invitation_template_data tenant_db system_languages in
-       let tags = Logger.req req in
+       let* i18n_texts =
+         invitation_template_data database_label system_languages
+       in
        let events =
          let open Cqrs_command.Invitation_command.Resend in
          handle
@@ -194,7 +190,7 @@ let resend req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -206,3 +202,45 @@ let resend req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+module Access : sig
+  include Helpers.AccessSig
+
+  val resend : Rock.Middleware.t
+end = struct
+  module InvitationCommand = Cqrs_command.Invitation_command
+  module Field = Pool_common.Message.Field
+
+  let invitation_effects =
+    Middleware.Guardian.id_effects Pool_common.Id.of_string Field.Invitation
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity `Invitation ]
+  ;;
+
+  let create =
+    InvitationCommand.Create.effects
+    |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+        ; `Read, `TargetEntity `Invitation
+        ])
+    ]
+    |> invitation_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update = Middleware.Guardian.denied
+  let delete = Middleware.Guardian.denied
+
+  let resend =
+    [ InvitationCommand.Resend.effects ]
+    |> invitation_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

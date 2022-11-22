@@ -5,13 +5,14 @@ module Actor = struct
     | `Contact
     | `Experimenter of Guardian.Uuid.Target.t
     | `Guest
+    | `LocationManagerAll
     | `LocationManager of Guardian.Uuid.Target.t
+    | `OperatorAll
     | `Operator of Guardian.Uuid.Target.t
+    | `RecruiterAll
     | `Recruiter of Guardian.Uuid.Target.t
-    | `Student
+    | `Root (* '`Root' not exposed in 'all' *)
     | `System
-    | `Tenant
-    | `User
     ]
   [@@deriving show, eq, ord, yojson]
 
@@ -40,46 +41,61 @@ module Actor = struct
     | "experimenter", [ id ] ->
       `Experimenter (Guardian.Uuid.Target.of_string_exn id)
     | "guest", [] -> `Guest
+    | "locationmanagerall", [] -> `LocationManagerAll
     | "locationmanager", [ id ] ->
       `LocationManager (Guardian.Uuid.Target.of_string_exn id)
+    | "operatorall", [] -> `OperatorAll
     | "operator", [ id ] -> `Operator (Guardian.Uuid.Target.of_string_exn id)
+    | "recruiterall", [] -> `RecruiterAll
     | "recruiter", [ id ] -> `Recruiter (Guardian.Uuid.Target.of_string_exn id)
-    | "student", [] -> `Student
+    | "root", [] -> `Root
     | "system", [] -> `System
-    | "tenant", [] -> `Tenant
-    | "user", [] -> `User
     | _ -> failwith ("Invalid role: " ^ s)
   ;;
 
   let all =
-    [ `Admin
-    ; `Assistant Guardian.Uuid.Target.nil
+    [ `Assistant Guardian.Uuid.Target.nil
     ; `Contact
     ; `Experimenter Guardian.Uuid.Target.nil
     ; `Guest
+    ; `LocationManagerAll
     ; `LocationManager Guardian.Uuid.Target.nil
+    ; `OperatorAll
     ; `Operator Guardian.Uuid.Target.nil
+    ; `RecruiterAll
     ; `Recruiter Guardian.Uuid.Target.nil
-    ; `Student
     ; `System
-    ; `Tenant
-    ; `User
     ]
   ;;
 end
 
 module Target = struct
+  type admins =
+    [ `Operator
+    | `LocationManager
+    | `Recruiter
+    | `Experimenter
+    | `Assistant
+    ]
+  [@@deriving show, eq, ord, yojson]
+
   type t =
-    [ `Admin
+    [ `Admin of admins
     | `Assignment
+    | `AssignmentId of Guardian.Uuid.Target.t
     | `Contact
+    | `CustomField
     | `Experiment
-    | `Guest
+    | `Filter
+    | `I18n
+    | `Invitation
+    | `Location
+    | `LocationFile
     | `Mailing
-    | `Student
+    | `Session
+    | `Setting
     | `System
     | `Tenant
-    | `User
     | `WaitingList
     ]
   [@@deriving show, eq, ord, yojson]
@@ -95,32 +111,77 @@ module Target = struct
 
   let of_string s =
     match Guardian.Util.decompose_variant_string s with
-    | "admin", [] -> `Admin
+    | "admin", [ admin ] ->
+      `Admin
+        (match admin with
+         | "operator" -> `Operator
+         | "locationmanager" -> `LocationManager
+         | "recruiter" -> `Recruiter
+         | "experimenter" -> `Experimenter
+         | "assistant" -> `Assistant
+         | _ -> failwith ("Invalid role: " ^ s))
     | "assignment", [] -> `Assignment
+    | "assignmentid", [ id ] ->
+      `AssignmentId (Guardian.Uuid.Target.of_string_exn id)
     | "contact", [] -> `Contact
+    | "customfield", [] -> `CustomField
     | "experiment", [] -> `Experiment
-    | "guest", [] -> `Guest
+    | "filter", [] -> `Filter
+    | "i18n", [] -> `I18n
+    | "invitation", [] -> `Invitation
+    | "location", [] -> `Location
+    | "locationfile", [] -> `LocationFile
     | "mailing", [] -> `Mailing
-    | "student", [] -> `Student
+    | "session", [] -> `Session
+    | "setting", [] -> `Setting
     | "system", [] -> `System
     | "tenant", [] -> `Tenant
-    | "user", [] -> `User
     | "waitinglist", [] -> `WaitingList
     | _ -> failwith ("Invalid role: " ^ s)
   ;;
 
+  let all_entities =
+    CCList.map
+      (fun m -> `Admin m)
+      [ `Operator; `LocationManager; `Recruiter; `Experimenter; `Assistant ]
+    @ [ `Assignment
+      ; `Contact
+      ; `CustomField
+      ; `Experiment
+      ; `Filter
+      ; `I18n
+      ; `Invitation
+      ; `Location
+      ; `LocationFile
+      ; `Mailing
+      ; `Session
+      ; `Setting
+      ; `System
+      ; `Tenant
+      ; `WaitingList
+      ]
+  ;;
+
   let all =
-    [ `Admin
-    ; `Assignment
-    ; `Contact
-    ; `Experiment
-    ; `Guest
-    ; `Mailing
-    ; `Student
-    ; `System
-    ; `Tenant
-    ; `User
-    ; `WaitingList
-    ]
+    CCList.map
+      (fun m -> `Admin m)
+      [ `Operator; `LocationManager; `Recruiter; `Experimenter; `Assistant ]
+    @ [ `Assignment
+      ; `AssignmentId Guardian.Uuid.Target.nil
+      ; `Contact
+      ; `CustomField
+      ; `Experiment
+      ; `Filter
+      ; `I18n
+      ; `Invitation
+      ; `Location
+      ; `LocationFile
+      ; `Mailing
+      ; `Session
+      ; `Setting
+      ; `System
+      ; `Tenant
+      ; `WaitingList
+      ]
   ;;
 end

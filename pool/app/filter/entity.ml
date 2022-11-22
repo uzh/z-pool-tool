@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module Helper = struct
   let key_string = "key"
   let operator_string = "operator"

@@ -2,8 +2,16 @@ module Conformist = Pool_common.Utils.PoolConformist
 
 let src = Logs.Src.create "settings.cqrs"
 
+let effects action tenant =
+  [ ( action
+    , `Target
+        (tenant.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+  ; action, `TargetEntity `Setting
+  ]
+;;
+
 module UpdateLanguages : sig
-  type t = Pool_common.Language.t list
+  include Common.CommandSig with type t = Pool_common.Language.t list
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -11,7 +19,7 @@ module UpdateLanguages : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_common.Language.t list
 
@@ -33,11 +41,11 @@ end = struct
             (Ok [ Settings.LanguagesUpdated command |> Pool_event.settings ])
   ;;
 
-  let can = Utils.todo
+  let effects = effects `Update
 end
 
 module CreateEmailSuffix : sig
-  type t = Settings.EmailSuffix.t
+  include Common.CommandSig with type t = Settings.EmailSuffix.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -49,7 +57,7 @@ module CreateEmailSuffix : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -65,23 +73,18 @@ end = struct
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
-  let can = Utils.todo
-
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = effects `Update
 end
 
 module UpdateEmailSuffixes : sig
-  type t = (string * string list) list
+  include Common.CommandSig with type t = (string * string list) list
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = (string * string list) list
 
@@ -100,11 +103,11 @@ end = struct
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
-  let can = Utils.todo
+  let effects = effects `Update
 end
 
 module DeleteEmailSuffix : sig
-  type t = Settings.EmailSuffix.t
+  include Common.CommandSig with type t = Settings.EmailSuffix.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -116,7 +119,7 @@ module DeleteEmailSuffix : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Settings.EmailSuffix.t
 
@@ -136,27 +139,22 @@ end = struct
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
 
-  let can = Utils.todo
-
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = effects `Delete
 end
 
 module UpdateContactEmail : sig
-  type t = Settings.ContactEmail.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+  include Common.CommandSig with type t = Settings.ContactEmail.t
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Settings.ContactEmail.t
 
@@ -171,26 +169,23 @@ end = struct
     Ok [ Settings.ContactEmailUpdated contact_email |> Pool_event.settings ]
   ;;
 
-  let can = Utils.todo
-
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = effects `Update
 end
 
 module InactiveUser = struct
   module DisableAfter : sig
-    type t = Settings.InactiveUser.DisableAfter.t
-
-    val handle
-      :  ?tags:Logs.Tag.set
-      -> t
-      -> (Pool_event.t list, Pool_common.Message.error) result
+    include Common.CommandSig with type t = Settings.InactiveUser.DisableAfter.t
 
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
+
+    val effects : Pool_tenant.t -> Guard.Authorizer.effect list
   end = struct
     type t = Settings.InactiveUser.DisableAfter.t
 
@@ -213,19 +208,18 @@ module InactiveUser = struct
       Conformist.decode_and_validate schema data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
+
+    let effects = effects `Update
   end
 
   module Warning : sig
-    type t = Settings.InactiveUser.Warning.t
-
-    val handle
-      :  ?tags:Logs.Tag.set
-      -> t
-      -> (Pool_event.t list, Pool_common.Message.error) result
+    include Common.CommandSig with type t = Settings.InactiveUser.Warning.t
 
     val decode
       :  (string * string list) list
       -> (t, Pool_common.Message.error) result
+
+    val effects : Pool_tenant.t -> Guard.Authorizer.effect list
   end = struct
     type t = Settings.InactiveUser.Warning.t
 
@@ -248,20 +242,19 @@ module InactiveUser = struct
       Conformist.decode_and_validate schema data
       |> CCResult.map_err Pool_common.Message.to_conformist_error
     ;;
+
+    let effects = effects `Update
   end
 end
 
 module UpdateTriggerProfileUpdateAfter : sig
-  type t = Settings.TriggerProfileUpdateAfter.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+  include Common.CommandSig with type t = Settings.TriggerProfileUpdateAfter.t
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Settings.TriggerProfileUpdateAfter.t
 
@@ -285,16 +278,20 @@ end = struct
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = effects `Update
 end
 
 module UpdateTermsAndConditions : sig
-  type t = (string * string list) list
+  include Common.CommandSig with type t = (string * string list) list
 
   val handle
     :  ?tags:Logs.Tag.set
     -> Pool_common.Language.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = (string * string list) list
 
@@ -339,17 +336,19 @@ end = struct
         |> Pool_event.settings
       ]
   ;;
+
+  let effects = effects `Update
 end
 
 module RestoreDefault : sig
-  type t = Pool_tenant.t
+  include Common.CommandSig with type t = Pool_tenant.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> unit
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.Authorizer.effect list
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
@@ -358,27 +357,17 @@ end = struct
     Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
   ;;
 
-  let effects t =
-    [ ( `Delete
-      , `Target (t.Pool_tenant.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
-  ;;
+  let effects = effects `Manage
 end
 
 module UpdateDefaultLeadTime : sig
-  type t = Pool_common.Reminder.LeadTime.t
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+  include Common.CommandSig with type t = Pool_common.Reminder.LeadTime.t
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_tenant.t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_common.Reminder.LeadTime.t
 
@@ -396,10 +385,10 @@ end = struct
       ]
   ;;
 
-  let can = Utils.todo
-
   let decode data =
     Conformist.decode_and_validate schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
+
+  let effects = effects `Update
 end

@@ -6,17 +6,17 @@ let create_layout = Contact_general.create_layout
 let handle req action =
   let open Utils.Lwt_result.Infix in
   let experiment_id =
-    Sihl.Web.Router.param req Pool_common.Message.Field.(Experiment |> show)
-    |> Pool_common.Id.of_string
+    let open Pool_common.Message.Field in
+    HttpUtils.find_id Experiment.Id.of_string Experiment req
   in
   let redirect_path =
-    Format.asprintf "/experiments/%s" (Pool_common.Id.value experiment_id)
+    Format.asprintf "/experiments/%s" (Experiment.Id.value experiment_id)
   in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
-         Experiment.find_public tenant_db experiment_id contact
+         Experiment.find_public database_label experiment_id contact
        in
        let tags = Logger.req req in
        let events =
@@ -28,7 +28,7 @@ let handle req action =
          | `Destroy ->
            let* waiting_list =
              Waiting_list.find_by_contact_and_experiment
-               tenant_db
+               database_label
                contact
                experiment
            in
@@ -41,7 +41,7 @@ let handle req action =
        in
        let handle events =
          let%lwt (_ : unit list) =
-           Lwt_list.map_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
          in
          let success_message =
            let open Pool_common.Message in

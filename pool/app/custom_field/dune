@@ -2,6 +2,7 @@
  (name custom_field)
  (libraries
   guardian
+  guard
   pool_common
   ptime
   role
