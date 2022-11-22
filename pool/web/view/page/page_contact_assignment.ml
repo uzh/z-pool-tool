@@ -22,11 +22,15 @@ let detail session experiment Pool_context.{ language; csrf; _ } =
         ; form
             ~a:[ a_action form_action; a_method `Post ]
             [ csrf_element csrf ()
-            ; submit_element
-                language
-                Pool_common.Message.(Enroll)
-                ~submit_type:`Success
-                ()
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Pool_common.Message.(Enroll)
+                    ~submit_type:`Primary
+                    ()
+                ]
             ]
         ]
     ]

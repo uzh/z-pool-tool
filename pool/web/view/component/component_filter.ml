@@ -537,18 +537,22 @@ let filter_form csrf language param key_list template_list =
         ; Component_input.csrf_element csrf ()
         ; title_input
         ; predicates
-        ; Component_input.submit_element
-            language
-            ~attributes:
-              (a_id "submit-filter-form"
-              :: htmx_attribs
-                   ~action
-                   ~swap:"none"
-                   ~trigger:"click"
-                   ~templates_disabled
-                   ())
-            Pool_common.Message.(Save None)
-            ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ Component_input.submit_element
+                language
+                ~classnames:[ "push" ]
+                ~attributes:
+                  (a_id "submit-filter-form"
+                  :: htmx_attribs
+                       ~action
+                       ~swap:"none"
+                       ~trigger:"click"
+                       ~templates_disabled
+                       ())
+                Pool_common.Message.(Save None)
+                ()
+            ]
         ]
     ; script
         ~a:[ a_src (Sihl.Web.externalize_path "/assets/filter.js"); a_defer () ]

@@ -68,16 +68,23 @@ let login Pool_context.{ language; query_language; csrf; _ } =
             [ csrf_element csrf ()
             ; input_element language `Text Message.Field.Email
             ; input_element language `Password Message.Field.Password
-            ; submit_element language Message.Login ()
-            ]
-        ; p
-            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-            [ a
-                ~a:[ a_href (externalize "/request-reset-password") ]
-                (txt_to_string Pool_common.I18n.ResetPasswordLink)
-            ; a
-                ~a:[ a_href (externalize "/signup") ]
-                (txt_to_string Pool_common.I18n.SignUpTitle)
+            ; div
+                ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
+                [ div
+                    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+                    [ a
+                        ~a:[ a_href (externalize "/request-reset-password") ]
+                        (txt_to_string Pool_common.I18n.ResetPasswordLink)
+                    ; a
+                        ~a:[ a_href (externalize "/signup") ]
+                        (txt_to_string Pool_common.I18n.SignUpTitle)
+                    ]
+                ; submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.Login
+                    ()
+                ]
             ]
         ]
     ]
@@ -102,7 +109,14 @@ let request_reset_password Pool_context.{ language; query_language; csrf; _ } =
           ]
         [ csrf_element csrf ()
         ; input_element language `Text Pool_common.Message.Field.Email
-        ; submit_element language Pool_common.Message.SendResetLink ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Pool_common.Message.SendResetLink
+                ()
+            ]
         ]
     ]
 ;;
@@ -125,7 +139,14 @@ let reset_password token Pool_context.{ language; query_language; csrf; _ } =
         ; input_element language `Hidden Message.Field.Token ~value:token
         ; input_element language `Password Message.Field.Password
         ; input_element language `Password Message.Field.PasswordConfirmation
-        ; submit_element language Message.(Save (Some Field.password)) ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(Save (Some Field.password))
+                ()
+            ]
         ]
     ]
 ;;

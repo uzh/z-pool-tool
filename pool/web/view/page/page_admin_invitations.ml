@@ -45,6 +45,7 @@ module Partials = struct
                             "%s/resend"
                             (invitation.Invitation.id |> Pool_common.Id.value))
                        experiment.Experiment.id)
+                ; a_class [ "flexrow"; "justify-end" ]
                 ]
               [ Input.csrf_element csrf ()
               ; Input.submit_element

@@ -102,11 +102,15 @@ let form
                            ]
                        ])
                    fields)
-            ; submit_element
-                language
-                Message.UpdateOrder
-                ~submit_type:`Success
-                ()
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.UpdateOrder
+                    ~submit_type:`Primary
+                    ()
+                ]
             ]
         ]
   in
@@ -131,15 +135,19 @@ let form
                 ]
             ; div ~a:[ a_class [ "stack" ] ] name_inputs
             ]
-        ; submit_element
-            language
-            Message.(
-              let field = Some Field.CustomField in
-              match custom_field_group with
-              | None -> Create field
-              | Some _ -> Update field)
-            ~submit_type:`Success
-            ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(
+                  let field = Some Field.CustomField in
+                  match custom_field_group with
+                  | None -> Create field
+                  | Some _ -> Update field)
+                ~submit_type:`Primary
+                ()
+            ]
         ]
     ; sort_fields_form
     ]

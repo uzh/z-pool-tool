@@ -244,7 +244,9 @@ let session_form
                 ]
             ]
         ]
-    ; submit_element language submit ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element ~classnames:[ "push" ] language submit () ]
     ]
 ;;
 
@@ -288,10 +290,14 @@ let reschedule_session
           |> Duration.value
           |> Pool_common.Utils.Time.timespan_spanpicker)
         ~flash_fetcher
-    ; submit_element
-        language
-        Pool_common.Message.(Reschedule (Some Field.Session))
-        ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element
+            ~classnames:[ "push" ]
+            language
+            Pool_common.Message.(Reschedule (Some Field.Session))
+            ()
+        ]
     ]
   |> Page_admin_experiments.experiment_layout
        language

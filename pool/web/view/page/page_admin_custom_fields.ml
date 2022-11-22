@@ -375,11 +375,15 @@ let field_form
                           options)
                    ])
                 [ csrf_element csrf ()
-                ; submit_element
-                    language
-                    Message.UpdateOrder
-                    ~submit_type:`Success
-                    ()
+                ; div
+                    ~a:[ a_class [ "flexrow" ] ]
+                    [ submit_element
+                        ~classnames:[ "push" ]
+                        language
+                        Message.UpdateOrder
+                        ~submit_type:`Primary
+                        ()
+                    ]
                 ])
          in
          div
@@ -524,15 +528,19 @@ let field_form
               (fun f -> f |> required |> Required.value)
           ; checkbox_element Message.Field.Disabled (fun f ->
               f |> disabled |> Disabled.value)
-          ; submit_element
-              language
-              Message.(
-                let field = Some Field.CustomField in
-                match custom_field with
-                | None -> Create field
-                | Some _ -> Update field)
-              ~submit_type:`Success
-              ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Message.(
+                    let field = Some Field.CustomField in
+                    match custom_field with
+                    | None -> Create field
+                    | Some _ -> Update field)
+                  ~submit_type:`Primary
+                  ()
+              ]
           ]
       ; (Format.asprintf
            {js|
@@ -728,7 +736,15 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                          ()
                      ])
                  ungrouped)
-          ; submit_element language Message.UpdateOrder ~submit_type:`Success ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Message.UpdateOrder
+                  ~submit_type:`Primary
+                  ()
+              ]
           ]
       ]
   in
@@ -790,11 +806,15 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                      ])
                  group_list))
            [ csrf_element csrf ()
-           ; submit_element
-               language
-               Message.UpdateOrder
-               ~submit_type:`Success
-               ()
+           ; div
+               ~a:[ a_class [ "flexrow" ] ]
+               [ submit_element
+                   ~classnames:[ "push" ]
+                   language
+                   Message.UpdateOrder
+                   ~submit_type:`Primary
+                   ()
+               ]
            ])
     in
     div

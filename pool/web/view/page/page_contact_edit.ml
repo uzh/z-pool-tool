@@ -186,7 +186,14 @@ let login_information
           `Email
           Message.Field.Email
           ~value:contact.user.Sihl_user.email
-      ; submit_element language Message.(Update (Some Field.Email)) ()
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Message.(Update (Some Field.Email))
+              ()
+          ]
       ]
   in
   let password_form =
@@ -215,7 +222,14 @@ let login_information
           ~value:""
           Field.PasswordConfirmation
           ~required:true
-      ; submit_element language Message.(Update (Some Field.password)) ()
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Message.(Update (Some Field.password))
+              ()
+          ]
       ]
   in
   div

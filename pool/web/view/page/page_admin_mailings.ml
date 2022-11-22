@@ -145,7 +145,7 @@ module List = struct
     =
     let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
     let thead = if with_link then base_head @ [ None ] else base_head in
-    Table.(horizontal_table `Striped language ~thead)
+    Table.(horizontal_table `Striped language ~align_last_end:true ~thead)
       (CCList.map (row with_link context experiment_id) mailings)
   ;;
 end
@@ -490,7 +490,9 @@ let form
               (CCOption.bind mailing (fun (m : Mailing.t) ->
                  m.Mailing.distribution))
             (* TODO: Add detailed description how distribution element works *)
-          ; submit_element language submit ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element ~classnames:[ "push" ] language submit () ]
           ]
       ; div ~a:[ a_id "overlaps" ] []
       ; script (Unsafe.data functions)

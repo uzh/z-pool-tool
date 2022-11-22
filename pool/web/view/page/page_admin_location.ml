@@ -43,7 +43,13 @@ module List = struct
 
   let create language locations =
     let rows = rows language locations in
-    Table.horizontal_table `Striped language ~thead ~align_top:true rows
+    Table.horizontal_table
+      `Striped
+      language
+      ~thead
+      ~align_top:true
+      ~align_last_end:true
+      rows
   ;;
 end
 
@@ -109,11 +115,15 @@ let file_form
             ~allow_multiple:false
             ~required:true
             Message.Field.FileMapping
-        ; submit_element
-            language
-            Message.(Create (Some Field.FileMapping))
-            ~submit_type:`Success
-            ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(Create (Some Field.FileMapping))
+                ~submit_type:`Primary
+                ()
+            ]
         ]
     ]
 ;;
@@ -293,15 +303,19 @@ let form
                       ]
                   ]
               ]
-          ; submit_element
-              language
-              Message.(
-                let field = Some Field.location in
-                match location with
-                | None -> Create field
-                | Some _ -> Update field)
-              ~submit_type:`Success
-              ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Message.(
+                    let field = Some Field.location in
+                    match location with
+                    | None -> Create field
+                    | Some _ -> Update field)
+                  ~submit_type:`Primary
+                  ()
+              ]
           ])
     ]
 ;;

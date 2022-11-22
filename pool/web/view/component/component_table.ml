@@ -30,13 +30,32 @@ let table_classes layout align_top =
   | false -> base
 ;;
 
-let horizontal_table layout language ?thead ?(align_top = false) rows =
+let horizontal_table
+  layout
+  language
+  ?thead
+  ?(align_top = false)
+  ?(align_last_end = false)
+  rows
+  =
   let classes = table_classes layout align_top in
   let thead = CCOption.map (fun thead -> thead |> table_head language) thead in
   table
     ?thead
     ~a:[ a_class classes ]
-    (CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows)
+    (CCList.map
+       (fun row ->
+         tr
+           (CCList.mapi
+              (fun index cell ->
+                let td =
+                  match align_last_end && CCList.length row = index + 1 with
+                  | true -> td ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+                  | false -> td ~a:[]
+                in
+                td [ cell ])
+              row))
+       rows)
 ;;
 
 let vertical_table layout language ?(align_top = false) ?(classnames = []) rows =

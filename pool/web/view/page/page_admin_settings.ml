@@ -18,6 +18,11 @@ let show
     Sihl.Web.externalize_path
       (Format.asprintf "/admin/settings/%s" (Settings.stringify_action action))
   in
+  let submit ?(control = Message.(Update None)) () =
+    div
+      ~a:[ a_class [ "flexrow" ] ]
+      [ submit_element ~classnames:[ "push" ] language control () ]
+  in
   let form_attrs action =
     [ a_method `Post; a_action (action_path action); a_class [ "stack" ] ]
   in
@@ -75,8 +80,7 @@ let show
           ]
       ; form
           ~a:(form_attrs `UpdateTenantLanguages)
-          ([ csrf_element csrf (); field_elements ]
-          @ [ submit_element language Message.(Update None) () ])
+          ([ csrf_element csrf (); field_elements ] @ [ submit () ])
       ]
   in
   let email_suffixes_html =
@@ -96,7 +100,7 @@ let show
                       ~required:true
                       ~value:(suffix |> Settings.EmailSuffix.value))
                   email_suffixes
-              @ [ submit_element language Message.(Update None) () ])
+              @ [ submit () ])
           ; form
               ~a:(form_attrs `CreateTenantEmailSuffix)
               [ csrf_element csrf ()
@@ -105,44 +109,44 @@ let show
                   `Text
                   Message.Field.EmailSuffix
                   ~required:true
-              ; submit_element language Message.(Add None) ()
+              ; submit ~control:Message.(Add None) ()
               ]
           ; div
               (CCList.map
                  (fun suffix ->
-                   tr
-                     [ td [ span [ txt (Settings.EmailSuffix.value suffix) ] ]
-                     ; td
-                         [ form
-                             ~a:
-                               [ a_method `Post
-                               ; a_action (action_path `DeleteTenantEmailSuffix)
-                               ; a_user_data
-                                   "confirmable"
-                                   Pool_common.(
-                                     Utils.confirmable_to_string
-                                       language
-                                       I18n.DeleteEmailSuffix)
-                               ]
-                             [ csrf_element csrf ()
-                             ; input
-                                 ~a:
-                                   [ a_input_type `Hidden
-                                   ; a_name "email_suffix"
-                                   ; a_value (Settings.EmailSuffix.value suffix)
-                                   ; a_readonly ()
-                                   ]
-                                 ()
-                             ; submit_element
+                   [ txt (Settings.EmailSuffix.value suffix)
+                   ; form
+                       ~a:
+                         [ a_method `Post
+                         ; a_action (action_path `DeleteTenantEmailSuffix)
+                         ; a_user_data
+                             "confirmable"
+                             Pool_common.(
+                               Utils.confirmable_to_string
                                  language
-                                 Message.(Delete None)
-                                 ~submit_type:`Error
-                                 ()
-                             ]
+                                 I18n.DeleteEmailSuffix)
                          ]
-                     ])
+                       [ csrf_element csrf ()
+                       ; input
+                           ~a:
+                             [ a_input_type `Hidden
+                             ; a_name "email_suffix"
+                             ; a_value (Settings.EmailSuffix.value suffix)
+                             ; a_readonly ()
+                             ]
+                           ()
+                       ; submit_element
+                           language
+                           Message.(Delete None)
+                           ~submit_type:`Error
+                           ()
+                       ]
+                   ])
                  email_suffixes
-              |> table ~a:[ a_class [ "table" ] ]
+              |> Component.Table.horizontal_table
+                   ~align_last_end:true
+                   `Striped
+                   language
               |> CCList.pure)
           ]
       ]
@@ -159,7 +163,7 @@ let show
               Message.Field.ContactEmail
               ~value:(contact_email |> Settings.ContactEmail.value)
               ~required:true
-          ; submit_element language Message.(Add None) ()
+          ; submit ~control:Message.(Add None) ()
           ]
       ]
   in
@@ -182,7 +186,7 @@ let show
                     (inactive_user_disable_after
                     |> DisableAfter.value
                     |> CCInt.to_string)
-              ; submit_element language Message.(Update None) ()
+              ; submit ()
               ]
           ; form
               ~a:(form_attrs `UpdateInactiveUserWarning)
@@ -195,7 +199,7 @@ let show
                   Message.Field.InactiveUserWarning
                   ~value:
                     (inactive_user_warning |> Warning.value |> CCInt.to_string)
-              ; submit_element language Message.(Update None) ()
+              ; submit ()
               ]
           ]
       ]
@@ -225,7 +229,7 @@ let show
                   Message.Field.TriggerProfileUpdateAfter
                   ~value:
                     (trigger_profile_update_after |> value |> CCInt.to_string)
-              ; submit_element language Message.(Update None) ()
+              ; submit ()
               ]
           ]
       ]
@@ -263,7 +267,7 @@ let show
           ~a:(form_attrs `UpdateTermsAndConditions)
           ([ csrf_element csrf () ]
           @ terms_and_conditions_textareas
-          @ [ submit_element language Message.(Update None) () ])
+          @ [ submit () ])
       ]
   in
   let default_lead_time =
@@ -283,7 +287,7 @@ let show
                   |> Utils.Time.timespan_spanpicker)
               ~required:true
               ~flash_fetcher
-          ; submit_element language Message.(Update None) ()
+          ; submit ()
           ]
       ]
   in

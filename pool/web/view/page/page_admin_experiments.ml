@@ -259,15 +259,19 @@ let experiment_form
                 ]
             ]
         ]
-    ; submit_element
-        language
-        Message.(
-          let field = Some Field.Experiment in
-          match experiment with
-          | None -> Create field
-          | Some _ -> Update field)
-        ~submit_type:`Success
-        ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element
+            ~classnames:[ "push" ]
+            language
+            Message.(
+              let field = Some Field.Experiment in
+              match experiment with
+              | None -> Create field
+              | Some _ -> Update field)
+            ~submit_type:`Primary
+            ()
+        ]
     ]
 ;;
 

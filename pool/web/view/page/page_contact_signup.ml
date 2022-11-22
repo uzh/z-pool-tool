@@ -43,7 +43,14 @@ let signup
                 Pool_common.Message.Field.TermsAccepted
                 ~required:true
             ]
-        ; submit_element language Pool_common.Message.SignUp ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Pool_common.Message.SignUp
+                ()
+            ]
         ]
     ]
 ;;

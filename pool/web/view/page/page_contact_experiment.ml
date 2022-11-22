@@ -67,7 +67,7 @@ let show
   let form_control, submit_class =
     match user_is_enlisted with
     | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
-    | false -> Pool_common.Message.(AddToWaitingList), "success"
+    | false -> Pool_common.Message.(AddToWaitingList), "primary"
   in
   let session_list sessions =
     div
@@ -98,7 +98,14 @@ let show
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()
-          ; submit_element language form_control ~classnames:[ submit_class ] ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  language
+                  form_control
+                  ~classnames:[ submit_class; "push" ]
+                  ()
+              ]
           ]
       ]
   in

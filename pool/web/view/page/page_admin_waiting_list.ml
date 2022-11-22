@@ -32,10 +32,14 @@ let detail
               ~value:
                 (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
               ~flash_fetcher
-          ; submit_element
-              language
-              Pool_common.Message.(Save (Some Field.Comment))
-              ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Pool_common.Message.(Save (Some Field.Comment))
+                  ()
+              ]
           ]
       ]
   in
@@ -88,11 +92,14 @@ let detail
             [ content
             ; div
                 ~a:[ a_class [ "gap" ] ]
-                [ submit_element
-                    language
-                    ~classnames:[ "disabled" ]
-                    Pool_common.Message.(Assign (Some Field.Contact))
-                    ()
+                [ div
+                    ~a:[ a_class [ "flexrow" ] ]
+                    [ submit_element
+                        language
+                        ~classnames:[ "disabled"; "push" ]
+                        Pool_common.Message.(Assign (Some Field.Contact))
+                        ()
+                    ]
                 ; p
                     ~a:[ a_class [ "help" ] ]
                     [ txt
@@ -117,8 +124,9 @@ let detail
             [ csrf_element csrf ()
             ; content
             ; div
-                ~a:[ a_class [ "gap" ] ]
+                ~a:[ a_class [ "gap"; "flexrow" ] ]
                 [ submit_element
+                    ~classnames:[ "push" ]
                     language
                     Pool_common.Message.(Assign (Some Field.Contact))
                     ()

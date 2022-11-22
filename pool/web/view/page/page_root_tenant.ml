@@ -24,7 +24,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
           ])
         tenant_list
     in
-    Table.horizontal_table `Striped ~thead language body
+    Table.horizontal_table `Striped ~thead ~align_last_end:true language body
   in
   let build_root_rows root_list =
     let open Sihl.Contract.User in
@@ -53,7 +53,12 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
           [ txt user.email; status ])
         root_list
     in
-    Component.Table.horizontal_table `Striped language rows ~thead
+    Component.Table.horizontal_table
+      `Striped
+      language
+      rows
+      ~align_last_end:true
+      ~thead
   in
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in
@@ -110,7 +115,15 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
                   ; a_class [ "stack" ]
                   ]
                 ((csrf_element csrf () :: input_fields)
-                @ [ submit_element language Message.(Create None) () ])
+                @ [ div
+                      ~a:[ a_class [ "flexrow" ] ]
+                      [ submit_element
+                          ~classnames:[ "push" ]
+                          language
+                          Message.(Create None)
+                          ()
+                      ]
+                  ])
             ]
         ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Root users" ]
         ; root_list
@@ -123,8 +136,15 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
             (CCList.map
                (input_element language `Text)
                Message.Field.[ Email; Password; Firstname; Lastname ]
-            @ [ submit_element language Message.(Create (Some Field.root)) () ]
-            )
+            @ [ div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Create (Some Field.root))
+                      ()
+                  ]
+              ])
         ]
     ]
 ;;
@@ -160,22 +180,29 @@ let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
                     ; Firstname, `Text
                     ; Lastname, `Text
                     ])
-            @ [ submit_element
-                  language
-                  Message.(Create (Some Field.operator))
-                  ()
-              ])
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path
-                         (Format.asprintf "/root/tenants/%s" (Id.value id)))
+            @ [ div
+                  ~a:[ a_class [ "flexrow"; "align-center"; "flex-gap" ] ]
+                  [ div
+                      [ a
+                          ~a:
+                            [ a_href
+                                (Sihl.Web.externalize_path
+                                   (Format.asprintf
+                                      "/root/tenants/%s"
+                                      (Id.value id)))
+                            ]
+                          [ txt
+                              Pool_common.(
+                                Utils.control_to_string language Message.back)
+                          ]
+                      ]
+                  ; submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Create (Some Field.operator))
+                      ()
                   ]
-                [ txt
-                    Pool_common.(Utils.control_to_string language Message.back)
-                ]
-            ]
+              ])
         ]
     ]
 ;;
@@ -264,11 +291,12 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
       (CCList.map
          (fun (file : File.t) ->
            div
-             [ img
-                 ~src:(File.path file)
-                 ~alt:""
-                 ~a:[ a_style "width: 200px" ]
-                 ()
+             [ div
+                 ~a:
+                   [ a_class [ "aspect-ratio"; "contain" ]
+                   ; a_style "width: 200px"
+                   ]
+                 [ img ~src:(File.path file) ~alt:"" () ]
              ; form
                  ~a:
                    [ a_action
@@ -339,7 +367,16 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             ((csrf_element csrf () :: detail_input_fields)
-            @ [ disabled; submit_element language Message.(Update None) () ])
+            @ [ disabled
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Update None)
+                      ()
+                  ]
+              ])
         ; delete_file_forms
         ; form
             ~a:
@@ -353,7 +390,15 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
               ; a_class [ "stack" ]
               ]
             ((csrf_element csrf () :: database_input_fields)
-            @ [ submit_element language Message.(Update None) () ])
+            @ [ div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.(Update None)
+                      ()
+                  ]
+              ])
         ; p
             [ a
                 ~a:[ a_href (Sihl.Web.externalize_path "/root/tenants") ]
