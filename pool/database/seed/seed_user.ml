@@ -22,9 +22,11 @@ let known_users =
     let get = CCResult.get_exn in
     let id = Id.create () in
     let first_name =
-      "firstname" ^ CCInt.to_string i |> Firstname.create |> get
+      i |> Format.asprintf "firstname%i" |> Firstname.create |> get
     in
-    let last_name = "lastname" ^ CCInt.to_string i |> Lastname.create |> get in
+    let last_name =
+      i |> Format.asprintf "lastname%i" |> Lastname.create |> get
+    in
     let email =
       "contact-" ^ CCInt.to_string i ^ "@econ.uzh.ch"
       |> EmailAddress.create
@@ -222,6 +224,24 @@ let contacts db_pool =
     >>= Lwt_list.iter_s (Contact.handle_event db_pool)
   in
   let open Lwt.Infix in
+  let%lwt () =
+    Lwt_list.map_s
+      (fun (id, _, _, _, _, _, _, _, _, _) ->
+        let%lwt contact = Contact.find db_pool id in
+        match contact with
+        | Ok contact ->
+          [ Contact.EmailVerified contact
+          ; Contact.TermsAccepted contact
+          ; Contact.EmailVerified contact
+          ]
+          |> CCOption.pure
+          |> Lwt.return
+        | Error _ -> Lwt.return_none)
+      known_users
+    |> Lwt.map (CCList.filter_map CCFun.id)
+    >|= CCList.flatten
+    >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+  in
   Lwt_list.fold_left_s
     (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
       let%lwt contact = Contact.find db_pool user_id in

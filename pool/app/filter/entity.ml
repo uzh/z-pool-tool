@@ -217,9 +217,7 @@ module Key = struct
       | Nr _, Nr
       | Str _, Str -> Ok ()
       | Language lang, Languages languages ->
-        CCList.find_opt
-          (fun language -> Pool_common.Language.equal language lang)
-          languages
+        CCList.find_opt (Pool_common.Language.equal lang) languages
         |> CCOption.to_result error
         >|= CCFun.const ()
       | Option selected, Select options | Option selected, MultiSelect options

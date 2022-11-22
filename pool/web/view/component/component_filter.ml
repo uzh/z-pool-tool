@@ -196,9 +196,7 @@ let value_input language input_type ?value () =
          single_value
          >>= function[@warning "-4"]
          | Language lang ->
-           CCList.find_opt
-             (fun language -> Pool_common.Language.equal language lang)
-             languages
+           CCList.find_opt (Pool_common.Language.equal lang) languages
          | _ -> None
        in
        Component_input.selector
