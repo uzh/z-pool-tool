@@ -8,8 +8,6 @@ module Field = struct
     Format.pp_print_string fmt name
   ;;
 
-  (* TODO: Remove unused (Birthday) *)
-
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]

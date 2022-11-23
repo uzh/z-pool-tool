@@ -1,6 +1,12 @@
 $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
 
+// Index page
+.index-page>*:nth-child(2) {
+    flex-basis: 25%;
+    flex-shrink: 0;
+}
+
 .toggled {
     display: flex;
 }
@@ -100,8 +106,54 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     gap: $space-lg;
 }
 
-// Index page
-.index-page>*:nth-child(2) {
-    flex-basis: 25%;
-    flex-shrink: 0;
+// Modal
+
+body[data-noscroll] {
+    overflow-y: hidden;
+}
+
+.modal {
+    display: none;
+    z-index: 10;
+    padding: $space-lg $space-base;
+    background-color: rgba($black, .8);
+    overflow-y: unset;
+    flex-direction: column;
+    justify-content: center;
+
+    &.active {
+        display: flex;
+    }
+}
+
+.modal-body {
+    @extend .trim;
+    @extend .measure;
+    @extend .border-radius;
+    background-color: $white;
+    max-height: 50rem;
+    overflow-y: scroll;
+    height: fit-content;
+}
+
+.modal-header {
+    @extend .inset;
+    border-bottom: 1px solid $grey-border;
+    background-color: $grey-light;
+}
+
+.modal-content {
+    @extend .inset;
+}
+
+.modal-close {
+    cursor: pointer;
+}
+
+.modal-heading {
+    @extend .heading-2;
+    margin-bottom: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
