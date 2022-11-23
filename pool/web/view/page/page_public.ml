@@ -4,7 +4,11 @@ module HttpUtils = Http_utils
 
 let txt_to_string lang m = [ txt (Pool_common.Utils.text_to_string lang m) ]
 
-let index (tenant : Pool_tenant.t) Pool_context.{ language; _ } welcome_text =
+let index
+  (tenant : Pool_tenant.t)
+  Pool_context.{ language; query_language; _ }
+  welcome_text
+  =
   let text_to_string = Pool_common.Utils.text_to_string language in
   let aspect_ratio img =
     img
@@ -30,7 +34,16 @@ let index (tenant : Pool_tenant.t) Pool_context.{ language; _ } welcome_text =
     ; h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
-    ; div [ txt (I18n.content_to_string welcome_text) ]
+    ; div [ I18n.content_to_string welcome_text |> HttpUtils.add_line_breaks ]
+    ; h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
+    ; p Pool_common.[ Utils.text_to_string language I18n.SignUpCTA |> txt ]
+    ; p
+        [ link_as_button
+            ~control:(language, Pool_common.Message.SignUp)
+            (HttpUtils.path_with_language query_language "/signup")
+        ]
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h2

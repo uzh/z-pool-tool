@@ -2,6 +2,7 @@ open Entity_i18n
 
 let to_string = function
   | DashboardTitle -> "Dashboard"
+  | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
   | EmailConfirmationTitle -> "Email confirmation"
@@ -18,7 +19,7 @@ let to_string = function
      settings can be overwritten for each session."
   | Files -> "Files"
   | FollowUpSessionFor -> "Follow-up for:"
-  | HomeTitle -> "Welcome to the Pool Tool"
+  | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
@@ -52,6 +53,7 @@ let to_string = function
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionSignUpTitle -> "Sign up for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
+  | SignUpCTA -> "Register now to participate in economic experiments"
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"

@@ -43,7 +43,7 @@ let global_stylesheets =
          ())
 ;;
 
-let header ?(children = []) title =
+let header ?(children = []) query_language title =
   header
     ~a:
       [ a_class
@@ -55,7 +55,15 @@ let header ?(children = []) title =
           ; "border-bottom"
           ]
       ]
-    [ div [ span ~a:[ a_class [ "heading-2" ] ] [ txt title ] ]; div children ]
+    [ div
+        ~a:[ a_class [ "app-title" ] ]
+        [ a
+            ~a:
+              [ a_href (Http_utils.path_with_language query_language "/index") ]
+            [ txt title ]
+        ]
+    ; div children
+    ]
 ;;
 
 let footer title =
@@ -269,7 +277,7 @@ module Tenant = struct
          ([ charset; viewport; custom_stylesheet; favicon ] @ global_stylesheets))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ header ~children:header_content title_text
+         [ header ~children:header_content query_language title_text
          ; content
          ; footer title_text
          ; scripts
@@ -307,7 +315,7 @@ let create_root_layout children language message user ?active_navigation () =
        @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
-       [ header ~children:[ navigation ] title_text
+       [ header None ~children:[ navigation ] title_text
        ; content
        ; footer title_text
        ; scripts
@@ -327,5 +335,5 @@ let create_error_layout children =
     (head page_title ([ charset; viewport ] @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
-       [ header title_text; content; footer title_text; scripts ])
+       [ header None title_text; content; footer title_text; scripts ])
 ;;

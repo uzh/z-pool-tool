@@ -1,5 +1,6 @@
 type t =
   | DashboardTitle
+  | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
@@ -36,6 +37,7 @@ type t =
   | SessionReminderDefaultText of Entity.Reminder.Text.t
   | SessionSignUpTitle
   | SignUpAcceptTermsAndConditions
+  | SignUpCTA
   | SignUpTitle
   | SortUngroupedFields
   | SwitchChronological

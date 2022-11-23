@@ -2,6 +2,7 @@ open Entity_i18n
 
 let to_string = function
   | DashboardTitle -> "Dashboard"
+  | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
@@ -19,7 +20,7 @@ let to_string = function
   | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
   | ExperimentWaitingListTitle -> "Warteliste"
-  | HomeTitle -> "Willkommen beim Pool Tool"
+  | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | I18nTitle -> "Übersetzungen"
   | NoEntries field ->
     Format.asprintf
@@ -59,6 +60,7 @@ let to_string = function
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
+  | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
   | SignUpTitle -> "Registrieren"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
