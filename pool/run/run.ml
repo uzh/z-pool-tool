@@ -14,6 +14,7 @@ let commands =
   ; Contact.tenant_specific_profile_update_trigger
   ; Matcher.run_tenant
   ; Matcher.run_all
+  ; Mail.send_mail
   ]
 ;;
 
