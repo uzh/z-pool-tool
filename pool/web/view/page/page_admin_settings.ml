@@ -143,10 +143,7 @@ let show
                        ]
                    ])
                  email_suffixes
-              |> Component.Table.horizontal_table
-                   ~align_last_end:true
-                   `Striped
-                   language
+              |> Component.Table.horizontal_table ~align_last_end:true `Striped
               |> CCList.pure)
           ]
       ]

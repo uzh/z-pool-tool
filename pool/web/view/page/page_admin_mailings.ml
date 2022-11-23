@@ -143,9 +143,20 @@ module List = struct
     experiment_id
     mailings
     =
-    let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
-    let thead = if with_link then base_head @ [ None ] else base_head in
-    Table.(horizontal_table `Striped language ~align_last_end:true ~thead)
+    let base_head =
+      (Field.[ Start; End; Rate ] |> Table.fields_to_txt language) @ [ txt "" ]
+    in
+    let thead =
+      let new_btn () =
+        link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~control:(language, Message.(Add (Some Field.Mailing)))
+          (mailings_path ~suffix:"create" experiment_id)
+      in
+      if with_link then base_head @ [ new_btn () ] else base_head
+    in
+    Table.(horizontal_table `Striped ~align_last_end:true ~thead)
       (CCList.map (row with_link context experiment_id) mailings)
   ;;
 end
@@ -154,27 +165,18 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
   let html =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ a
-          ~a:[ mailings_path ~suffix:"create" experiment_id |> a_href ]
-          [ Message.(Add (Some Field.Mailing))
-            |> Utils.control_to_string language
-            |> txt
-          ]
-      ; (if CCList.is_empty mailings
-        then
-          div
-            [ p
-                (* TODO [aerben] this is wrong, should be plural, add a Plural
-                   constructor?*)
-                [ I18n.EmtpyList Field.Mailing
-                  |> Utils.text_to_string language
-                  |> txt
-                ]
+    if CCList.is_empty mailings
+    then
+      div
+        [ p
+            (* TODO [aerben] this is wrong, should be plural, add a Plural
+               constructor?*)
+            [ I18n.EmtpyList Field.Mailing
+              |> Utils.text_to_string language
+              |> txt
             ]
-        else List.create true context experiment_id mailings)
-      ]
+        ]
+    else List.create true context experiment_id mailings
   in
   Page_admin_experiments.experiment_layout
     language
@@ -189,51 +191,43 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
   let mailing_overview =
     div
       ~a:[ a_class [ "stack" ] ]
-      ([ (* TODO [aerben] use better formatted date *)
-         (let rows =
-            let open Message in
-            [ Field.Start, mailing.start_at |> StartAt.to_human
-            ; Field.End, mailing.end_at |> EndAt.to_human
-            ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
-            ; ( Field.Distribution
-              , mailing.distribution
-                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
-            ]
-            |> CCList.map (fun (field, value) ->
-                 tr
-                   [ th
-                       [ txt
-                           (field
-                           |> Pool_common.Utils.field_to_string language
-                           |> CCString.capitalize_ascii)
-                       ]
-                   ; td [ txt value ]
-                   ])
-          in
-          table ~a:[ a_class [ "striped"; "table" ] ] rows)
-       ]
-      @
-      if StartAt.value mailing.start_at > Ptime_clock.now ()
-      then
-        [ p
-            [ a
-                ~a:
-                  [ detail_mailing_path
-                      ~suffix:"edit"
-                      experiment.Experiment.id
-                      mailing
-                    |> a_href
-                  ]
-                [ Message.(Edit (Some Field.Mailing))
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
-                ]
-            ]
-        ]
-      else [])
+      [ (* TODO [aerben] use better formatted date *)
+        (let rows =
+           let open Message in
+           [ Field.Start, mailing.start_at |> StartAt.to_human
+           ; Field.End, mailing.end_at |> EndAt.to_human
+           ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+           ; ( Field.Distribution
+             , mailing.distribution
+               |> CCOption.map_or ~default:"" Mailing.Distribution.show )
+           ]
+           |> CCList.map (fun (field, value) ->
+                tr
+                  [ th
+                      [ txt
+                          (field
+                          |> Pool_common.Utils.field_to_string language
+                          |> CCString.capitalize_ascii)
+                      ]
+                  ; td [ txt value ]
+                  ])
+         in
+         table ~a:[ a_class [ "striped"; "table" ] ] rows)
+      ]
+  in
+  let edit_button =
+    if StartAt.value mailing.start_at > Ptime_clock.now ()
+    then
+      link_as_button
+        ~icon:`CreateOutline
+        ~classnames:[ "small" ]
+        ~control:(language, Message.(Edit (Some Field.Mailing)))
+        (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
+    else txt ""
   in
   let html = div ~a:[ a_class [ "stack" ] ] [ mailing_overview ] in
   Page_admin_experiments.experiment_layout
+    ~buttons:edit_button
     language
     (Page_admin_experiments.I18n (mailing_title mailing))
     experiment

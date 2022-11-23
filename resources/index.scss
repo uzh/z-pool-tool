@@ -9,6 +9,10 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     display: none;
 }
 
+.table thead .btn {
+    font-weight: normal;
+}
+
 // Sortable
 [data-sortable-item] {
     cursor: move;

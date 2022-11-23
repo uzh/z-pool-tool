@@ -1,18 +1,25 @@
 open Tyxml.Html
 
-let table_head language fields =
-  CCList.map
-    (fun field ->
-      th
-        [ txt
-            (CCOption.map_or
-               ~default:""
-               (fun f ->
-                 Pool_common.Utils.field_to_string language f
-                 |> CCString.capitalize_ascii)
-               field)
-        ])
-    fields
+let field_to_txt language =
+  CCFun.(
+    Pool_common.Utils.field_to_string language
+    %> CCString.capitalize_ascii
+    %> txt)
+;;
+
+let fields_to_txt language = CCList.map (field_to_txt language)
+
+let table_head align_last_end elements =
+  CCList.mapi
+    (fun index elm ->
+      let th =
+        match align_last_end && CCList.length elements = index + 1 with
+        | true ->
+          fun elm -> th [ div ~a:[ a_class [ "flexrow"; "justify-end" ] ] elm ]
+        | false -> th ~a:[]
+      in
+      th [ elm ])
+    elements
   |> tr
   |> CCList.pure
   |> thead
@@ -32,14 +39,15 @@ let table_classes layout align_top =
 
 let horizontal_table
   layout
-  language
   ?thead
   ?(align_top = false)
   ?(align_last_end = false)
   rows
   =
   let classes = table_classes layout align_top in
-  let thead = CCOption.map (fun thead -> thead |> table_head language) thead in
+  let thead =
+    CCOption.map (fun thead -> thead |> table_head align_last_end) thead
+  in
   table
     ?thead
     ~a:[ a_class classes ]

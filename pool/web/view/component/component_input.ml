@@ -3,6 +3,13 @@ module Field = Pool_common.Message.Field
 module Icon = Component_icon
 open Tyxml.Html
 
+let submit_type_to_class = function
+  | `Disabled -> "disabled"
+  | `Error -> "error"
+  | `Primary -> "primary"
+  | `Success -> "success"
+;;
+
 let language_select
   options
   selected
@@ -358,16 +365,11 @@ let submit_element
   ()
   =
   let button_type_class =
+    submit_type_to_class submit_type
+    ::
     (match has_icon with
      | Some _ -> [ "has-icon" ]
      | None -> [])
-    @ CCList.pure
-    @@
-    match submit_type with
-    | `Disabled -> "disabled"
-    | `Error -> "error"
-    | `Primary -> "primary"
-    | `Success -> "success"
   in
   let text_content =
     span [ txt Pool_common.Utils.(control_to_string lang control) ]
@@ -391,6 +393,43 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
       ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
       @ attributes)
     [ Icon.icon icon_type ]
+;;
+
+let link_as_button
+  ?(style = `Primary)
+  ?(classnames = [])
+  ?(attributes = [])
+  ?icon
+  ?control
+  href
+  =
+  let classnames =
+    let base = submit_type_to_class style :: "btn" :: classnames in
+    match icon with
+    | None -> base
+    | Some _ -> "has-icon" :: base
+  in
+  let attrs =
+    [ a_href (Sihl.Web.externalize_path href); a_class classnames ] @ attributes
+  in
+  let content =
+    let icon_elm =
+      match icon with
+      | None -> txt ""
+      | Some i -> Icon.icon i
+    in
+    let control =
+      match control with
+      | None -> txt ""
+      | Some (language, control) ->
+        let base =
+          Pool_common.Utils.(control_to_string language control) |> txt
+        in
+        if CCOption.is_some icon then span [ base ] else base
+    in
+    [ icon_elm; control ]
+  in
+  a ~a:attrs content
 ;;
 
 let selector

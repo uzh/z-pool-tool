@@ -39,8 +39,9 @@ module Partials = struct
     | true -> p [ language |> empty ]
     | false ->
       let thead =
-        Pool_common.Message.Field.
-          [ Some Name; Some Email; Some CanceledAt; None ]
+        (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
+        |> Component.Table.fields_to_txt language)
+        @ [ txt "" ]
       in
       let rows =
         CCList.map
@@ -67,7 +68,7 @@ module Partials = struct
             | Some _ -> base @ [ txt "" ])
           assignments
       in
-      Component.Table.horizontal_table `Striped language ~thead rows
+      Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   ;;
 end
 

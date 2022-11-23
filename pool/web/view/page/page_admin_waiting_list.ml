@@ -55,7 +55,10 @@ let detail
                   (I18n.EmtpyList Message.Field.Sessions))
           ]
       else (
-        let thead = Pool_common.Message.Field.[ Some Date; None ] in
+        let thead =
+          Pool_common.Message.
+            [ Field.Date |> Component.Table.field_to_txt language; txt "" ]
+        in
         let rows =
           CCList.map
             (fun (session : Session.t) ->
@@ -84,7 +87,7 @@ let detail
               ])
             sessions
         in
-        Component.Table.horizontal_table `Striped language ~thead rows
+        Component.Table.horizontal_table `Striped ~thead rows
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->

@@ -1,9 +1,12 @@
 open Tyxml.Html
+open Component
 
 let public_overview sessions experiment language =
   let open Experiment.Public in
   let thead =
-    Pool_common.Message.Field.[ Some Start; Some Duration; Some Location; None ]
+    (Pool_common.Message.Field.[ Start; Duration; Location ]
+    |> Table.fields_to_txt language)
+    @ [ txt "" ]
   in
   CCList.map
     (fun (session : Session.Public.t) ->
@@ -39,7 +42,7 @@ let public_overview sessions experiment language =
              ])
       ])
     sessions
-  |> Component.Table.horizontal_table `Striped language ~thead
+  |> Component.Table.horizontal_table `Striped ~thead
 ;;
 
 let public_detail (session : Session.Public.t) language =

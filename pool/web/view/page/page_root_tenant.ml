@@ -7,7 +7,10 @@ module Message = Pool_common.Message
 
 let list tenant_list root_list Pool_context.{ language; csrf; _ } =
   let build_tenant_rows tenant_list =
-    let thead = Pool_common.Message.Field.[ Some Tenant; None ] in
+    let thead =
+      Pool_common.Message.
+        [ Field.Tenant |> Table.field_to_txt language; txt "" ]
+    in
     let open Pool_tenant in
     let body =
       CCList.map
@@ -24,7 +27,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
           ])
         tenant_list
     in
-    Table.horizontal_table `Striped ~thead ~align_last_end:true language body
+    Table.horizontal_table `Striped ~thead ~align_last_end:true body
   in
   let build_root_rows root_list =
     let open Sihl.Contract.User in
@@ -44,7 +47,9 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
           ]
         [ submit_element language text ~classnames:[ style ] () ]
     in
-    let thead = Pool_common.Message.Field.[ Some Email; None ] in
+    let thead =
+      Pool_common.Message.[ Field.Email |> Table.field_to_txt language; txt "" ]
+    in
     let rows =
       CCList.map
         (fun root ->
@@ -53,12 +58,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
           [ txt user.email; status ])
         root_list
     in
-    Component.Table.horizontal_table
-      `Striped
-      language
-      rows
-      ~align_last_end:true
-      ~thead
+    Component.Table.horizontal_table `Striped rows ~align_last_end:true ~thead
   in
   let tenant_list = build_tenant_rows tenant_list in
   let root_list = build_root_rows root_list in

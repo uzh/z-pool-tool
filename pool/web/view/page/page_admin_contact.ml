@@ -11,7 +11,11 @@ let personal_detail language contact =
 
 let contact_overview language contacts =
   let open Contact in
-  let thead = Pool_common.Message.Field.[ Some Email; Some Name; None ] in
+  let thead =
+    (Pool_common.Message.Field.[ Email; Name ]
+    |> Component.Table.fields_to_txt language)
+    @ [ txt "" ]
+  in
   CCList.map
     (fun contact ->
       [ txt (email_address contact |> Pool_user.EmailAddress.value)
@@ -27,7 +31,7 @@ let contact_overview language contacts =
           [ txt Pool_common.(Utils.control_to_string language Message.More) ]
       ])
     contacts
-  |> Component.Table.horizontal_table `Striped ~thead language
+  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
 ;;
 
 let index Pool_context.{ language; _ } contacts =

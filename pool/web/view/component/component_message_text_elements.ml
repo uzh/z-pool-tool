@@ -136,7 +136,7 @@ let build_help language toggle_id help =
   help
   |> CCList.map (fun (elm, example) ->
        [ txt (Format.asprintf "{%s}" elm); example ])
-  |> Component_table.horizontal_table `Simple language ~align_top:true
+  |> Component_table.horizontal_table `Simple ~align_top:true
   |> wrap_hints
 ;;
 

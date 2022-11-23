@@ -17,8 +17,9 @@ let form_action ?path id =
 module Partials = struct
   let list Pool_context.{ csrf; language; _ } experiment invitation_list =
     let thead =
-      Pool_common.Message.Field.
-        [ Some contact; Some ResentAt; Some CreatedAt; None ]
+      (Pool_common.Message.Field.[ Contact; ResentAt; CreatedAt ]
+      |> Table.fields_to_txt language)
+      @ [ txt "" ]
     in
     let rows =
       CCList.map
@@ -56,7 +57,7 @@ module Partials = struct
           ])
         invitation_list
     in
-    Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped ~thead rows
   ;;
 
   let send_invitation
@@ -90,7 +91,7 @@ module Partials = struct
                   ]
               ])
             filtered_contacts
-          |> Table.horizontal_table `Striped language
+          |> Table.horizontal_table `Striped
       in
       div
         [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Filtered contacts" ]; rows ]

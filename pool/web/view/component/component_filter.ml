@@ -338,6 +338,7 @@ let add_predicate_btn identifier templates_disabled =
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
     [ Input.submit_icon
+        ~classnames:[ "success" ]
         ~attributes:
           (htmx_attribs
              ~action:(form_action "add-predicate")

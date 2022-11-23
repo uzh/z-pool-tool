@@ -91,35 +91,7 @@ let custom_fields_layout language current_model html =
     ; h2
         ~a:[ a_class [ "heading-2" ] ]
         [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
-    ; div
-        ~a:[ a_class [ "stack" ] ]
-        [ div
-            ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-            [ a
-                ~a:
-                  [ a_href
-                      (Url.Field.new_path current_model
-                      |> Sihl.Web.externalize_path)
-                  ]
-                [ txt
-                    Pool_common.(
-                      Message.(Add (Some Field.CustomField))
-                      |> Utils.control_to_string language)
-                ]
-            ; a
-                ~a:
-                  [ a_href
-                      (Url.Group.new_path current_model
-                      |> Sihl.Web.externalize_path)
-                  ]
-                [ txt
-                    Pool_common.(
-                      Message.(Add (Some Field.CustomFieldGroup))
-                      |> Utils.control_to_string language)
-                ]
-            ]
-        ; html
-        ]
+    ; html
     ]
 ;;
 
@@ -357,6 +329,7 @@ let field_form
                                       ()
                                   ]
                               ; td
+                                  ~a:[ a_class [ "flexrow"; "justify-end" ] ]
                                   [ a
                                       ~a:
                                         [ a_href
@@ -387,27 +360,35 @@ let field_form
                 ])
          in
          div
-           [ h2
-               ~a:[ a_class [ "heading-2" ] ]
-               [ txt
-                   (Message.Field.CustomFieldOption
-                   |> Pool_common.Utils.field_to_string language
-                   |> CCString.capitalize_ascii)
-               ]
-           ; p
-               [ a
-                   ~a:
-                     [ a_href
-                         (Url.Option.new_path (model m, id m)
-                         |> Sihl.Web.externalize_path)
+           [ div
+               ~a:
+                 [ a_class
+                     [ "flexrow"
+                     ; "flex-gap"
+                     ; "justify-between"
+                     ; "align-center"
                      ]
-                   [ txt
-                       Pool_common.(
-                         Message.(Add (Some Field.CustomFieldOption))
-                         |> Utils.control_to_string language)
+                 ]
+               [ div
+                   [ h2
+                       ~a:[ a_class [ "heading-2" ] ]
+                       [ txt
+                           (Message.Field.CustomFieldOption
+                           |> Pool_common.Utils.field_to_string language
+                           |> CCString.capitalize_ascii)
+                       ]
+                   ]
+               ; div
+                   [ link_as_button
+                       ~style:`Success
+                       ~icon:`CreateOutline
+                       ~classnames:[ "small" ]
+                       ~control:
+                         (language, Message.(Add (Some Field.CustomFieldOption)))
+                       (Url.Option.new_path (model m, id m))
                    ]
                ]
-           ; list
+           ; div ~a:[ a_class [ "gap" ] ] [ list ]
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
@@ -665,7 +646,14 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
   =
   let grouped, ungrouped = Custom_field.group_fields group_list field_list in
   let thead =
-    Message.Field.[ Some Title; Some CustomFieldGroup; Some PublishedAt; None ]
+    (Message.Field.[ Title; CustomFieldGroup; PublishedAt ]
+    |> Table.fields_to_txt language)
+    @ [ link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~control:(language, Message.(Add (Some Field.CustomField)))
+          (Url.Field.new_path current_model)
+      ]
   in
   let field_name field =
     let open Custom_field in
@@ -818,32 +806,29 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
            ])
     in
     div
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt
-              (Message.Field.CustomFieldGroup
-              |> Pool_common.Utils.field_to_string language
-              |> CCString.capitalize_ascii)
-          ]
-      ; p
-          [ a
-              ~a:
-                [ a_href
-                    (Url.Group.new_path current_model
-                    |> Sihl.Web.externalize_path)
-                ]
+      ~a:[ a_class [ "stack" ] ]
+      [ div
+          ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+          [ h2
+              ~a:[ a_class [ "heading-3" ] ]
               [ txt
-                  Pool_common.(
-                    Message.(Create (Some Field.CustomFieldGroup))
-                    |> Utils.control_to_string language)
+                  (Message.Field.CustomFieldGroup
+                  |> Pool_common.Utils.field_to_string language
+                  |> CCString.capitalize_ascii)
               ]
+          ; link_as_button
+              ~style:`Success
+              ~icon:`Add
+              ~classnames:[ "small" ]
+              ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
+              (Url.Group.new_path current_model)
           ]
       ; list
       ]
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]
-    [ Table.horizontal_table `Striped language ~thead rows
+    [ Table.horizontal_table `Striped ~thead ~align_last_end:true rows
     ; groups_html
     ; sort_ungrouped
     ]

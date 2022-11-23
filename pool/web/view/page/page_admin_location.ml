@@ -1,5 +1,6 @@
 open Tyxml.Html
-open Component.Input
+open Component
+open Input
 module Partials = Component.Partials
 module Table = Component.Table
 module Message = Pool_common.Message
@@ -13,9 +14,16 @@ let first_n_characters ?(n = 47) m : string =
 module List = struct
   open Pool_location
 
-  let thead =
-    Pool_common.Message.Field.
-      [ Some Name; Some Description; Some Location; None ]
+  let thead language =
+    (Pool_common.Message.Field.[ Name; Description; Location ]
+    |> Table.fields_to_txt language)
+    @ [ link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~classnames:[ "small" ]
+          ~control:(language, Pool_common.Message.(Add (Some Field.Location)))
+          "admin/locations/create"
+      ]
   ;;
 
   let rows language locations =
@@ -45,8 +53,7 @@ module List = struct
     let rows = rows language locations in
     Table.horizontal_table
       `Striped
-      language
-      ~thead
+      ~thead:(thead language)
       ~align_top:true
       ~align_last_end:true
       rows
@@ -61,15 +68,6 @@ let index location_list Pool_context.{ language; _ } =
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
         ]
     ; List.create language location_list
-    ; p
-        [ a
-            ~a:[ a_href (Sihl.Web.externalize_path "/admin/locations/create") ]
-            [ txt
-                Pool_common.(
-                  Message.(Create (Some Field.Location))
-                  |> Utils.control_to_string language)
-            ]
-        ]
     ]
 ;;
 
@@ -337,8 +335,21 @@ module FileList = struct
         [ Add (Some Field.File) |> Utils.control_to_string language |> txt ]
   ;;
 
-  let thead =
-    Pool_common.Message.Field.[ Some Label; Some Language; None; None ]
+  let add_file_btn language id =
+    link_as_button
+      ~style:`Success
+      ~icon:`CreateOutline
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Add (Some Field.File)))
+      (id
+      |> Pool_location.Id.value
+      |> Format.asprintf "/admin/locations/%s/files/create")
+  ;;
+
+  let thead language location_id =
+    (Pool_common.Message.Field.[ Label; Language ]
+    |> Table.fields_to_txt language)
+    @ [ add_file_btn language location_id ]
   ;;
 
   let row
@@ -371,7 +382,8 @@ module FileList = struct
     in
     [ label |> Mapping.Label.show |> txt
     ; language |> Pool_common.Language.show |> txt
-    ; p
+    ; div
+        ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
         [ a
             ~a:
               [ Format.asprintf
@@ -385,8 +397,8 @@ module FileList = struct
                 Pool_common.(
                   Message.More |> Utils.control_to_string visual_language)
             ]
+        ; delete_form
         ]
-    ; delete_form
     ]
   ;;
 
@@ -396,18 +408,26 @@ module FileList = struct
       match CCList.is_empty files with
       | true ->
         div
-          [ Pool_common.(I18n.LocationNoFiles |> Utils.text_to_string language)
-            |> txt
+          [ p
+              [ Pool_common.(
+                  I18n.LocationNoFiles |> Utils.text_to_string language)
+                |> txt
+              ]
+          ; div [ add_file_btn language id ]
           ]
       | false ->
         let body = CCList.map (row csrf language id) files in
-        Table.horizontal_table `Striped language ~thead body
+        Table.horizontal_table
+          `Striped
+          ~align_last_end:true
+          ~thead:(thead language id)
+          body
     in
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
-      ; div ~a:[ a_class [ "stack" ] ] [ form; p [ add_link id language ] ]
+      ; form
       ]
   ;;
 end
@@ -460,16 +480,13 @@ module SessionList = struct
           ]
       else (
         let thead =
-          Pool_common.Message.Field.
-            [ Some Session
-            ; Some Experiment
-            ; Some Duration
-            ; Some CanceledAt
-            ; None
-            ]
+          (Pool_common.Message.Field.
+             [ Session; Experiment; Duration; CanceledAt ]
+          |> Table.fields_to_txt language)
+          @ [ txt "" ]
         in
         let rows = rows language sessions in
-        Table.horizontal_table `Striped language ~thead rows)
+        Table.horizontal_table `Striped ~thead rows)
     in
     div
       [ h2
@@ -488,46 +505,46 @@ let detail
   let open Pool_location in
   let location_details =
     let open Pool_common.Message in
-    let table =
-      [ Field.Name, location.name |> Name.value |> txt
-      ; ( Field.Description
-        , location.description
-          |> CCOption.map_or ~default:"" Description.value
-          |> txt )
-      ; Field.Location, Partials.address_to_html language location.address
-      ; ( Field.Link
-        , location.link |> CCOption.map_or ~default:"" Link.value |> txt )
-      ; ( Field.Status
-        , location.status |> Status.show |> txt (* TODO: Show files *) )
-      ]
-      |> Table.vertical_table `Striped ~align_top:true language
-    in
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ table
-      ; p
-          [ a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/admin/locations/%s/edit"
-                          (location.Pool_location.id |> Id.value)))
-                ]
-              [ txt
-                  Pool_common.(
-                    Message.(Edit (Some Field.Location))
-                    |> Utils.control_to_string language)
-              ]
-          ]
-      ]
+    [ Field.Name, location.name |> Name.value |> txt
+    ; ( Field.Description
+      , location.description
+        |> CCOption.map_or ~default:"" Description.value
+        |> txt )
+    ; Field.Location, Partials.address_to_html language location.address
+    ; Field.Link, location.link |> CCOption.map_or ~default:"" Link.value |> txt
+    ; Field.Status, location.status |> Status.show |> txt (* TODO: Show files *)
+    ]
+    |> Table.vertical_table
+         ~classnames:[ "gap" ]
+         `Striped
+         ~align_top:true
+         language
+  in
+  let edit_button =
+    link_as_button
+      ~icon:`Create
+      ~classnames:[ "small" ]
+      ~control:(language, Pool_common.Message.(Edit (Some Field.Location)))
+      (Format.asprintf
+         "/admin/locations/%s/edit"
+         (location.Pool_location.id |> Id.value))
   in
   div
     ~a:[ a_class [ "safety-margin"; "trim" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (location.name |> Name.value) ]
-    ; div
+    [ div
         ~a:[ a_class [ "stack-lg" ] ]
-        [ location_details
+        [ div
+            [ div
+                ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+                [ div
+                    [ h1
+                        ~a:[ a_class [ "heading-1" ] ]
+                        [ txt (location.name |> Name.value) ]
+                    ]
+                ; div [ edit_button ]
+                ]
+            ; location_details
+            ]
         ; FileList.create csrf language location
         ; SessionList.create language sessions
         ]

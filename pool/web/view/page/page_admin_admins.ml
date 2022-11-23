@@ -1,7 +1,10 @@
 open Tyxml.Html
 
 let admin_overview language admins =
-  let thead = Pool_common.Message.Field.[ Some Email; Some Name; None ] in
+  let thead =
+    let to_txt = Component.Table.field_to_txt language in
+    Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt; txt "" ]
+  in
   CCList.map
     (fun admin ->
       let open Sihl_user in
@@ -23,7 +26,7 @@ let admin_overview language admins =
           [ txt Pool_common.(Utils.control_to_string language Message.More) ]
       ])
     admins
-  |> Component.Table.horizontal_table `Striped ~thead language
+  |> Component.Table.horizontal_table `Striped ~thead
 ;;
 
 let index Pool_context.{ language; _ } admins =

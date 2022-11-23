@@ -17,7 +17,7 @@ let title_to_string language text =
   | I18n text -> text_to_string language text
 ;;
 
-let experiment_layout language title experiment ?active html =
+let experiment_layout ?buttons language title experiment ?active html =
   let subnav_links =
     Pool_common.I18n.
       [ Overview, "/"
@@ -33,6 +33,18 @@ let experiment_layout language title experiment ?active html =
       "/admin/experiments/%s"
       (Pool_common.Id.value experiment.Experiment.id)
   in
+  let title =
+    let base =
+      h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
+    in
+    match buttons with
+    | None -> base
+    | Some btns ->
+      div
+        ~a:
+          [ a_class [ "flexrow"; "justify-between"; "align-center"; "gap-lg" ] ]
+        [ div [ base ]; div [ btns ] ]
+  in
   let open Experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -40,13 +52,22 @@ let experiment_layout language title experiment ?active html =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
     ; Navigation.subnav language subnav_links base_url active
-    ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
-    ; html
+    ; title
+    ; div ~a:[ a_class [ "gap" ] ] [ html ]
     ]
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
-  let thead = Pool_common.Message.Field.[ Some Title; None ] in
+  let thead =
+    Pool_common.Message.
+      [ Field.Title |> Table.field_to_txt language
+      ; link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~control:(language, Message.(Add (Some Field.Experiment)))
+          "/admin/experiments/create"
+      ]
+  in
   let rows =
     CCList.map
       (fun (experiment : Experiment.t) ->
@@ -74,20 +95,7 @@ let index experiment_list Pool_context.{ language; _ } =
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped language ~thead rows
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path "/admin/experiments/create")
-                  ]
-                [ txt
-                    Pool_common.(
-                      Message.(Add (Some Field.Experiment))
-                      |> Utils.control_to_string language)
-                ]
-            ]
-        ]
+        [ Table.horizontal_table `Striped ~align_last_end:true ~thead rows ]
     ]
 ;;
 
@@ -438,25 +446,20 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
       ; experiment.invitation_template
         |> CCOption.map_or ~default:(txt "") invitation_rows
       ; session_reminder_rows
-      ; p
-          [ a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/admin/experiments/%s/edit"
-                          (experiment.id |> Pool_common.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(
-                    Message.(Edit (Some Field.Experiment))
-                    |> Utils.control_to_string language)
-              ]
-          ]
       ; delete_form
       ]
   in
+  let edit_button =
+    link_as_button
+      ~icon:`CreateOutline
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Edit (Some Field.Experiment)))
+      (Format.asprintf
+         "/admin/experiments/%s/edit"
+         (experiment.id |> Pool_common.Id.value))
+  in
   experiment_layout
+    ~buttons:edit_button
     language
     (NavLink Pool_common.I18n.Overview)
     experiment
@@ -524,8 +527,9 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
     let thead =
-      Pool_common.Message.Field.
-        [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
+      (Pool_common.Message.Field.[ Name; Email; CreatedAt; Comment ]
+      |> Table.fields_to_txt language)
+      @ [ txt "" ]
     in
     let rows =
       CCList.map
@@ -558,7 +562,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
           ])
         waiting_list.waiting_list_entries
     in
-    Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
   experiment_layout
     language

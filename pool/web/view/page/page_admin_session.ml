@@ -392,28 +392,34 @@ let index
             |> CCOption.map_or ~default:"" (fun t ->
                  Pool_common.Utils.Time.formatted_date_time t)
             |> txt
-          ; a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(Utils.control_to_string language Message.(More))
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+              [ a
+                  ~a:
+                    [ a_href
+                        (Format.asprintf
+                           "/admin/experiments/%s/sessions/%s"
+                           (Pool_common.Id.value experiment_id)
+                           (Pool_common.Id.value session.id)
+                        |> Sihl.Web.externalize_path)
+                    ]
+                  [ txt
+                      Pool_common.(
+                        Utils.control_to_string language Message.(More))
+                  ]
+              ; cancel_form
+              ; delete_form
               ]
-          ; cancel_form
-          ; delete_form
           ]
         in
         session_row parent :: CCList.map session_row follow_ups)
       grouped_sessions
   in
   let thead =
-    Pool_common.Message.Field.
-      [ Some Date; Some AssignmentCount; Some CanceledAt; None; None; None ]
+    Pool_common.Message.(
+      [ Field.Date; Field.AssignmentCount; Field.CanceledAt ]
+      |> Table.fields_to_txt language)
+    @ [ txt "" ]
   in
   let html =
     div
@@ -467,7 +473,7 @@ let index
                 ]
             ]
           (* TODO [aerben] allow tables to be sorted generally? *)
-        ; Table.horizontal_table `Striped language ~thead rows
+        ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
         ]))
   in
   Page_admin_experiments.experiment_layout
