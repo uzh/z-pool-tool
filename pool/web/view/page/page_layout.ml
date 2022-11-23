@@ -87,6 +87,7 @@ let footer title =
           ; "justify-center"
           ; "bg-grey-light"
           ; "border-top"
+          ; "push"
           ]
       ]
     content
