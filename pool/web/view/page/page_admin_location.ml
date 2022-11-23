@@ -465,7 +465,7 @@ module SessionList = struct
           @ [ txt "" ]
         in
         let rows = rows sessions in
-        Table.horizontal_table `Striped ~thead rows)
+        Table.horizontal_table `Striped ~align_last_end:true ~thead rows)
     in
     div
       [ h2
