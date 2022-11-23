@@ -432,6 +432,10 @@ let link_as_button
   a ~a:attrs content
 ;;
 
+let edit_link ?classnames ?attributes href =
+  link_as_button ?classnames ?attributes ~icon:`CreateOutline href
+;;
+
 let selector
   language
   field

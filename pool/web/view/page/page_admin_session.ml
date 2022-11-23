@@ -313,6 +313,16 @@ let index
   chronological
   =
   let experiment_id = experiment.Experiment.id in
+  let add_session_btn =
+    link_as_button
+      ~style:`Success
+      ~icon:`Add
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Add (Some Field.Session)))
+      (Format.asprintf
+         "/admin/experiments/%s/sessions/create"
+         (experiment_id |> Pool_common.Id.value))
+  in
   let rows =
     CCList.flat_map
       (fun (parent, follow_ups) ->
@@ -394,19 +404,11 @@ let index
             |> txt
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-              [ a
-                  ~a:
-                    [ a_href
-                        (Format.asprintf
-                           "/admin/experiments/%s/sessions/%s"
-                           (Pool_common.Id.value experiment_id)
-                           (Pool_common.Id.value session.id)
-                        |> Sihl.Web.externalize_path)
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Utils.control_to_string language Message.(More))
-                  ]
+              [ Format.asprintf
+                  "/admin/experiments/%s/sessions/%s"
+                  (Pool_common.Id.value experiment_id)
+                  (Pool_common.Id.value session.id)
+                |> edit_link
               ; cancel_form
               ; delete_form
               ]
@@ -419,26 +421,11 @@ let index
     Pool_common.Message.(
       [ Field.Date; Field.AssignmentCount; Field.CanceledAt ]
       |> Table.fields_to_txt language)
-    @ [ txt "" ]
+    @ [ add_session_btn ]
   in
   let html =
     div
       ~a:[ a_class [ "stack" ] ]
-      (a
-         ~a:
-           [ a_href
-               (Format.asprintf
-                  "/admin/experiments/%s/sessions/create"
-                  (experiment.Experiment.id |> Pool_common.Id.value)
-               |> Sihl.Web.externalize_path)
-           ]
-         [ txt
-             Pool_common.(
-               Utils.control_to_string
-                 language
-                 Message.(Create (Some Field.Session)))
-         ]
-      ::
       (if CCList.is_empty rows
       then
         [ p
@@ -448,6 +435,7 @@ let index
                     language
                     (I18n.EmtpyList Message.Field.Sessions))
             ]
+        ; p [ add_session_btn ]
         ]
       else
         [ p
@@ -474,7 +462,7 @@ let index
             ]
           (* TODO [aerben] allow tables to be sorted generally? *)
         ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
-        ]))
+        ])
   in
   Page_admin_experiments.experiment_layout
     language
@@ -572,12 +560,6 @@ let detail
         ; Field.MaxParticipants, amount session.max_participants |> txt
         ; Field.MinParticipants, amount session.min_participants |> txt
         ; Field.Overbook, amount session.overbook |> txt
-        ; ( Field.ClosedAt
-          , session.closed_at
-            |> CCOption.map_or
-                 ~default:""
-                 Pool_common.Utils.Time.formatted_date_time
-            |> txt )
         ]
         |> fun rows ->
         let canceled =
@@ -635,10 +617,21 @@ let detail
       ; assignment_list
       ]
   in
+  let edit_button =
+    link_as_button
+      ~icon:`CreateOutline
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Edit (Some Field.Session)))
+      (Format.asprintf
+         "/admin/experiments/%s/sessions/%s/edit"
+         (Pool_common.Id.value experiment.Experiment.id)
+         (Pool_common.Id.value session.id))
+  in
   let html =
     div ~a:[ a_class [ "stack-lg" ] ] [ session_overview; assignments_html ]
   in
   Page_admin_experiments.experiment_layout
+    ~buttons:edit_button
     language
     (Page_admin_experiments.I18n (session_title session))
     experiment
@@ -755,7 +748,7 @@ let close
           ; checkbox_element ~disabled:true contact Message.Field.Participated
           ])
         assignments
-      |> Table.horizontal_table `Striped language
+      |> Table.horizontal_table `Striped
       |> fun table ->
       form
         ~a:

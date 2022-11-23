@@ -119,9 +119,7 @@ module List = struct
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
     ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
-    ; a
-        ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
-        [ txt Pool_common.(Utils.control_to_string language Message.(More)) ]
+    ; detail_mailing_path experiment_id mailing |> edit_link
     ]
     @
     if with_link

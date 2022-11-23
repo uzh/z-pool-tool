@@ -73,16 +73,10 @@ let index experiment_list Pool_context.{ language; _ } =
       (fun (experiment : Experiment.t) ->
         let open Experiment in
         [ txt (Title.value experiment.title)
-        ; a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/experiments/%s"
-                        (experiment.id |> Pool_common.Id.value)))
-              ]
-            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
-            ]
+        ; Format.asprintf
+            "/admin/experiments/%s"
+            (experiment.id |> Pool_common.Id.value)
+          |> edit_link
         ])
       experiment_list
   in
@@ -546,19 +540,11 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
             |> HttpUtils.add_line_breaks
-          ; a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/admin/experiments/%s/waiting-list/%s"
-                          (waiting_list.experiment.Experiment.id
-                          |> Pool_common.Id.value)
-                          (entry.id |> Pool_common.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(Message.More |> Utils.control_to_string language)
-              ]
+          ; Format.asprintf
+              "/admin/experiments/%s/waiting-list/%s"
+              (waiting_list.experiment.Experiment.id |> Pool_common.Id.value)
+              (entry.id |> Pool_common.Id.value)
+            |> edit_link
           ])
         waiting_list.waiting_list_entries
     in

@@ -35,16 +35,10 @@ module List = struct
           |> first_n_characters
           |> txt
         ; Partials.address_to_html language location.address
-        ; a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/locations/%s"
-                        (location.Pool_location.id |> Id.value)))
-              ]
-            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
-            ]
+        ; Format.asprintf
+            "/admin/locations/%s"
+            (location.Pool_location.id |> Id.value)
+          |> edit_link
         ])
       locations
   ;;
@@ -354,7 +348,6 @@ module FileList = struct
 
   let row
     csrf
-    visual_language
     location_id
     (Mapping.{ id; label; language; file } : Mapping.file)
     =
@@ -384,19 +377,11 @@ module FileList = struct
     ; language |> Pool_common.Language.show |> txt
     ; div
         ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-        [ a
-            ~a:
-              [ Format.asprintf
-                  "/admin/locations/%s/files/%s"
-                  (Id.value location_id)
-                  Pool_common.(Id.value file.File.id)
-                |> Sihl.Web.externalize_path
-                |> a_href
-              ]
-            [ txt
-                Pool_common.(
-                  Message.More |> Utils.control_to_string visual_language)
-            ]
+        [ Format.asprintf
+            "/admin/locations/%s/files/%s"
+            (Id.value location_id)
+            Pool_common.(Id.value file.File.id)
+          |> edit_link
         ; delete_form
         ]
     ]
@@ -416,7 +401,7 @@ module FileList = struct
           ; div [ add_file_btn language id ]
           ]
       | false ->
-        let body = CCList.map (row csrf language id) files in
+        let body = CCList.map (row csrf id) files in
         Table.horizontal_table
           `Striped
           ~align_last_end:true
@@ -440,7 +425,7 @@ module SessionList = struct
     |> Format.asprintf "Session at %s"
   ;;
 
-  let rows language sessions =
+  let rows sessions =
     CCList.map
       (fun (session, (experiment_id, experiment_title)) ->
         let open Session.Public in
@@ -454,17 +439,11 @@ module SessionList = struct
           |> CCOption.map_or ~default:"" (fun t ->
                Pool_common.Utils.Time.formatted_date_time t)
           |> txt
-        ; a
-            ~a:
-              [ Format.asprintf
-                  "/admin/experiments/%s/sessions/%s"
-                  (Pool_common.Id.value experiment_id)
-                  (Pool_common.Id.value session.id)
-                |> Sihl.Web.externalize_path
-                |> a_href
-              ]
-            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
-            ]
+        ; Format.asprintf
+            "/admin/experiments/%s/sessions/%s"
+            (Pool_common.Id.value experiment_id)
+            (Pool_common.Id.value session.id)
+          |> edit_link
         ])
       sessions
   ;;
@@ -485,7 +464,7 @@ module SessionList = struct
           |> Table.fields_to_txt language)
           @ [ txt "" ]
         in
-        let rows = rows language sessions in
+        let rows = rows sessions in
         Table.horizontal_table `Striped ~thead rows)
     in
     div
