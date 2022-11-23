@@ -67,18 +67,29 @@ let header ?(children = []) query_language title =
 ;;
 
 let footer title =
+  let version =
+    Sihl.Configuration.read_string "VERSION"
+    |> CCOption.map (fun v ->
+         v |> Format.asprintf "z-Root %s" |> txt |> CCList.pure |> span)
+  in
+  let title = span [ txt title ] in
+  let content =
+    version
+    |> CCOption.map_or ~default:[ title ] (fun version ->
+         [ title; span [ txt "|" ]; version ])
+  in
   footer
     ~a:
       [ a_class
           [ "inset"
-          ; "flexcolumn"
-          ; "push"
-          ; "align-center"
+          ; "flexrow"
+          ; "flex-gap"
+          ; "justify-center"
           ; "bg-grey-light"
           ; "border-top"
           ]
       ]
-    [ p [ txt title ] ]
+    content
 ;;
 
 let rec build_nav_link
