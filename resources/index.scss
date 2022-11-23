@@ -67,6 +67,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     object-fit: contain;
 }
 
+// FRAMEWORK
+
 // Tabs
 // TODO: Move to framework and remove subnav
 .tab-nav {
@@ -91,4 +93,15 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
         border-top-left-radius: $border-radius;
         border-top-right-radius: $border-radius;
     }
+}
+
+// Flex
+.flex-gap-lg {
+    gap: $space-lg;
+}
+
+// Index page
+.index-page>*:nth-child(2) {
+    flex-basis: 25%;
+    flex-shrink: 0;
 }
