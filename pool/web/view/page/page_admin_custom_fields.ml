@@ -81,17 +81,20 @@ let custom_fields_layout language current_model html =
            , f |> Url.index_path
            , equal current_model f )))
   in
+  let html =
+    [ h2
+        ~a:[ a_class [ "heading-2" ] ]
+        [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
+    ; html
+    ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
         ]
-    ; Component.Navigation.make_subnav subnav_links
-    ; h2
-        ~a:[ a_class [ "heading-2" ] ]
-        [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
-    ; html
+    ; Component.Navigation.make_tabs html subnav_links
     ]
 ;;
 

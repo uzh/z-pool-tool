@@ -18,7 +18,7 @@ let title_to_string language text =
 ;;
 
 let experiment_layout ?buttons language title experiment ?active html =
-  let subnav_links =
+  let tab_links =
     Pool_common.I18n.
       [ Overview, "/"
       ; Invitations, "/invitations"
@@ -27,11 +27,12 @@ let experiment_layout ?buttons language title experiment ?active html =
       ; Assignments, "/assignments"
       ; Mailings, "/mailings"
       ]
-  in
-  let base_url =
-    Format.asprintf
-      "/admin/experiments/%s"
-      (Pool_common.Id.value experiment.Experiment.id)
+    |> CCList.map (fun (label, url) ->
+         ( label
+         , Format.asprintf
+             "/admin/experiments/%s/%s"
+             (Pool_common.Id.value experiment.Experiment.id)
+             url ))
   in
   let title =
     let base =
@@ -41,19 +42,17 @@ let experiment_layout ?buttons language title experiment ?active html =
     | None -> base
     | Some btns ->
       div
-        ~a:
-          [ a_class [ "flexrow"; "justify-between"; "align-center"; "gap-lg" ] ]
+        ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
         [ div [ base ]; div [ btns ] ]
   in
+  let html = [ title; div ~a:[ a_class [ "gap" ] ] [ html ] ] in
   let open Experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
-    ; Navigation.subnav language subnav_links base_url active
-    ; title
-    ; div ~a:[ a_class [ "gap" ] ] [ html ]
+    ; Navigation.tab_navigation language tab_links active html
     ]
 ;;
 

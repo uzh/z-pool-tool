@@ -66,3 +66,29 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 .aspect-ratio.contain>*:first-child {
     object-fit: contain;
 }
+
+// Tabs
+// TODO: Move to framework and remove subnav
+.tab-nav {
+    border-bottom: 1px solid $grey-border;
+    margin-bottom: $space-lg;
+
+    a {
+        text-decoration: none;
+        color: $color-text-dark;
+    }
+
+    &>span,
+    &>a {
+        padding: $space-sm;
+        transform: translateY(1px);
+    }
+
+    &>.active {
+        color: $color-primary;
+        border: 1px solid $grey-border;
+        border-bottom-color: $white;
+        border-top-left-radius: $border-radius;
+        border-top-right-radius: $border-radius;
+    }
+}
