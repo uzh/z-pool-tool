@@ -4,22 +4,12 @@ open Input
 module Message = Pool_common.Message
 module HttpUtils = Http_utils
 
-let contact_profile_layout language title ?active html =
-  let open Pool_common in
-  let subnav_links =
-    I18n.
-      [ Overview, "/"
-      ; PersonalDetails, "/personal-details"
-      ; LoginInformation, "/login-information"
-      ]
-  in
-  let base_url = "/user" in
+let contact_profile_layout language title html =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
-    [ Navigation.subnav language subnav_links base_url active
-    ; h1
+    [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt (Utils.nav_link_to_string language title) ]
+        [ txt (Pool_common.Utils.nav_link_to_string language title) ]
     ; html
     ]
 ;;
@@ -101,37 +91,6 @@ let personal_details_form
     ]
 ;;
 
-let detail contact Pool_context.{ language; query_language; _ } =
-  let open Contact in
-  let text_to_string = Pool_common.Utils.text_to_string language in
-  div
-    [ div
-        ([ p [ contact |> fullname |> Format.asprintf "Name: %s" |> txt ] ]
-        @
-        if contact.paused |> Pool_user.Paused.value
-        then
-          [ p [ txt (text_to_string Pool_common.I18n.UserProfilePausedNote) ] ]
-        else [])
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (HttpUtils.externalize_path_with_lang
-                     query_language
-                     "/user/personal-details")
-              ]
-            [ txt
-                Pool_common.(
-                  Utils.control_to_string language (Message.Edit None))
-            ]
-        ]
-    ]
-  |> contact_profile_layout
-       language
-       Pool_common.I18n.Overview
-       ~active:Pool_common.I18n.Overview
-;;
-
 let personal_details
   (contact : Contact.t)
   custom_fields
@@ -161,10 +120,7 @@ let personal_details
             ]
         ]
     ]
-  |> contact_profile_layout
-       language
-       Pool_common.I18n.PersonalDetails
-       ~active:Pool_common.I18n.PersonalDetails
+  |> contact_profile_layout language Pool_common.I18n.PersonalDetails
 ;;
 
 let login_information
@@ -240,8 +196,5 @@ let login_information
             [ txt Pool_common.(Utils.control_to_string language Message.Back) ]
         ]
     ]
-  |> contact_profile_layout
-       language
-       Pool_common.I18n.LoginInformation
-       ~active:Pool_common.I18n.LoginInformation
+  |> contact_profile_layout language Pool_common.I18n.LoginInformation
 ;;

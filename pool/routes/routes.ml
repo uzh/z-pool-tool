@@ -96,7 +96,6 @@ module Contact = struct
         ]
       in
       [ get "/dashboard" Handler.Contact.dashboard
-      ; get "/user" UserProfile.details
       ; get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; post "/user/update" UserProfile.update

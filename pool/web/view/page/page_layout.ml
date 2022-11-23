@@ -1,5 +1,23 @@
 open Tyxml.Html
 module Message = Page_message
+module I18n = Pool_common.I18n
+
+type nav_link =
+  { url : string
+  ; label : I18n.nav_link
+  ; icon : [ `Person ] option
+  ; children : nav_link list option
+  }
+
+let create_nav_link ?icon ?children url label = { url; label; icon; children }
+
+let logout_nav_link =
+  { url = "/logout"; label = I18n.Logout; icon = None; children = None }
+;;
+
+let standard_to_nav_link items =
+  items |> CCList.map (fun (url, label) -> create_nav_link url label)
+;;
 
 let charset = meta ~a:[ a_charset "utf8" ] ()
 let body_tag_classnames = [ "height-100"; "flexcolumn" ]
@@ -55,33 +73,65 @@ let footer title =
     [ p [ txt title ] ]
 ;;
 
-let build_nav_link (url, title) language query_language active_navigation =
-  let classnames = [ "nav-link" ] in
+let rec build_nav_link
+  language
+  query_language
+  active_navigation
+  { url; label; icon; children }
+  =
+  (* TODO: add active class to parents of active element *)
+  let classnames =
+    let base = [ "nav-link" ] in
+    active_navigation
+    |> CCOption.map_or ~default:base (fun active ->
+         if CCString.equal active url then "active" :: base else base)
+  in
   let txt_to_string m =
     Pool_common.Utils.nav_link_to_string language m |> txt
   in
-  let nav_link =
-    a
-      ~a:
-        [ a_href (Http_utils.externalize_path_with_lang query_language url)
-        ; a_class classnames
-        ]
-      [ txt_to_string title ]
+  let label =
+    match icon with
+    | None -> [ txt_to_string label ]
+    | Some icon ->
+      [ span
+          ~a:[ a_class [ "has-icon" ] ]
+          [ Component.Icon.icon icon; span [ txt_to_string label ] ]
+      ]
   in
-  active_navigation
-  |> CCOption.map_or ~default:nav_link (fun active ->
-       if CCString.equal active url
-       then
-         span
-           ~a:[ a_class (CCList.cons "active" classnames) ]
-           [ txt_to_string title ]
-       else nav_link)
+  let is_span =
+    match active_navigation, children with
+    | Some active, Some children
+      when CCString.equal active url || not (CCList.is_empty children) -> true
+    | _, _ -> false
+  in
+  let nav_link =
+    match is_span with
+    | false ->
+      a
+        ~a:
+          [ a_href (Http_utils.externalize_path_with_lang query_language url)
+          ; a_class classnames
+          ]
+        label
+    | true -> span ~a:[ a_class classnames ] label
+  in
+  match children with
+  | None -> li [ nav_link ]
+  | Some children ->
+    let children =
+      children
+      |> CCList.map (build_nav_link language query_language active_navigation)
+      |> ul ~a:[ a_class [ "dropdown" ] ]
+    in
+    li ~a:[ a_class [ "has-dropdown" ] ] [ nav_link; children ]
 ;;
 
-let to_main_nav language query_language active_navigation lst =
-  lst
+let to_main_nav language query_language active_navigation items =
+  items
   |> CCList.map (fun item ->
-       build_nav_link item language query_language active_navigation)
+       build_nav_link language query_language active_navigation item)
+  |> ul
+  |> CCList.pure
   |> nav ~a:[ a_class [ "main-nav" ] ]
 ;;
 
@@ -128,8 +178,16 @@ module Tenant = struct
     let open Pool_context in
     let to_main_nav = to_main_nav language query_language active_navigation in
     let language_switch = i18n_links tenant_languages active_lang in
-    let not_logged_in = [ "/login", Login ] |> to_main_nav in
-    let logout = "/logout", Logout in
+    let not_logged_in =
+      [ "/login", Login ] |> standard_to_nav_link |> to_main_nav
+    in
+    let profile_dropdown =
+      I18n.
+        [ "/user/personal-details", PersonalDetails
+        ; "/user/login-information", LoginInformation
+        ]
+      |> standard_to_nav_link
+    in
     let nav_links =
       match user with
       | None -> [ not_logged_in; language_switch ]
@@ -145,12 +203,17 @@ module Tenant = struct
            ; "/admin/i18n", I18n
            ; "/admin/contacts", Contacts
            ; "/admin/admins", Admins
-           ; logout
            ]
-           |> to_main_nav
-           |> CCList.pure
+           |> standard_to_nav_link
+           |> fun links ->
+           links @ [ logout_nav_link ] |> to_main_nav |> CCList.pure
          | Contact _ ->
-           [ [ "/experiments", Experiments; "/user", Profile; logout ]
+           [ [ "/experiments", Experiments, None, None
+             ; "/user", Profile, Some `Person, Some profile_dropdown
+             ]
+             |> CCList.map (fun (url, label, icon, children) ->
+                  create_nav_link ?icon ?children url label)
+             |> (fun links -> links @ [ logout_nav_link ])
              |> to_main_nav
            ; language_switch
            ]
@@ -225,6 +288,7 @@ let create_root_layout children language message user ?active_navigation () =
     (match user with
      | None | Some (Contact _) | Some (Admin _) -> not_logged_in
      | Some (Root _) -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
+    |> standard_to_nav_link
     |> to_main_nav
   in
   let title_text = "Pool Tool" in
