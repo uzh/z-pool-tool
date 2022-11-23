@@ -112,7 +112,7 @@ let file_form
             [ submit_element
                 ~classnames:[ "push" ]
                 language
-                Message.(Create (Some Field.FileMapping))
+                Message.(Add (Some Field.File))
                 ~submit_type:`Primary
                 ()
             ]

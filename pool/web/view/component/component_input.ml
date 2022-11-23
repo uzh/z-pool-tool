@@ -276,7 +276,6 @@ let checkbox_element
 let input_element_file
   ?(orientation = `Vertical)
   ?(allow_multiple = false)
-  ?(has_icon = true)
   ?(required = false)
   ?label_field
   language
@@ -287,17 +286,18 @@ let input_element_file
   let visible_part =
     let placeholder =
       span
+        ~a:[ a_class [ "file-placeholder" ] ]
         [ txt
             Pool_common.(
               Utils.control_to_string language Message.SelectFilePlaceholder)
         ]
     in
-    match has_icon with
-    | false -> placeholder
-    | true ->
-      span
-        ~a:[ a_class [ "has-icon" ] ]
-        [ Icon.icon `UploadOutline; placeholder ]
+    span
+      ~a:[ a_class [ "has-icon" ] ]
+      [ Icon.icon `UploadOutline
+      ; span ~a:[ a_class [ "file-name" ] ] []
+      ; placeholder
+      ]
   in
   let input_attributes =
     let attributes =
