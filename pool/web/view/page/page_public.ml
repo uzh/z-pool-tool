@@ -97,7 +97,7 @@ let index
                 ]
             ]
         ; div
-            ~a:[ a_class [ "flexcolumn"; "stack" ] ]
+            ~a:[ a_class [ "flexcolumn"; "justify-center"; "stack" ] ]
             (CCList.map
                (fun logo ->
                  img
