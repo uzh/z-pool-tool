@@ -32,11 +32,31 @@ let layout_from_tenant (tenant : Pool_tenant.t) =
          CCFun.(Pool_common.File.path %> create_public_url tenant_url)
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
-  { logo_src; logo_alt }
+  let link = tenant_url |> Url.value |> Format.asprintf "http://%s" in
+  { link; logo_src; logo_alt }
+;;
+
+let root_layout () =
+  let open CCOption in
+  let root_url =
+    Sihl.Configuration.read_string "PUBLIC_URL"
+    >>= fun url -> url |> Pool_tenant.Url.create |> CCOption.of_result
+  in
+  let logo_src =
+    root_url
+    >|= (fun url -> create_public_url url "assets/images/root_logo.svg")
+    |> value ~default:""
+  in
+  let logo_alt = "Logo Pool Tool" in
+  let link = root_url >|= Pool_tenant.Url.value |> value ~default:"" in
+  { link; logo_alt; logo_src }
 ;;
 
 let layout_params layout =
-  [ "logoSrc", layout.logo_src; "logoAlt", layout.logo_alt ]
+  [ "logoSrc", layout.logo_src
+  ; "logoAlt", layout.logo_alt
+  ; "logoHref", layout.link
+  ]
 ;;
 
 let prepare_email pool language label subject email layout params =

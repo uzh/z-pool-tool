@@ -40,11 +40,16 @@ let combine_html language html_title content =
           ~a:[ a_style "margin: 1em 1em 1em 1em; max-width: 50em;" ]
           [ section
               ~a:[ a_style "margin-bottom: 1em;" ]
-              [ img
-                  ~src:"{logoSrc}"
-                  ~alt:"{logoAlt}"
-                  ~a:[ a_style "width: 300px; height: auto; max-width: 100%;" ]
-                  ()
+              [ a
+                  ~a:[ a_href "{logoHref}" ]
+                  [ img
+                      ~src:"{logoSrc}"
+                      ~alt:"{logoAlt}"
+                      ~a:
+                        [ a_style "width: 300px; height: auto; max-width: 100%;"
+                        ]
+                      ()
+                  ]
               ]
           ; section ~a:[ a_style "padding-top: 1em; color: #383838;" ] content
           ; footer

@@ -131,10 +131,11 @@ let request_reset_password_post req =
            err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
       |> Lwt_result.lift
     in
+    let layout = Email.Helper.layout_from_tenant tenant in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= Contact.find_by_email tenant_db
-    >== (fun { Contact.user; _ } -> handle tenant language user)
+    >== (fun { Contact.user; _ } -> handle layout language user)
     |>> Pool_event.handle_events ~tags tenant_db
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->

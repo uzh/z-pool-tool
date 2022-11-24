@@ -13,10 +13,10 @@ module ResetPassword = struct
     Conformist.(make Field.[ Pool_user.EmailAddress.schema () ] command)
   ;;
 
-  let handle tenant language user =
+  let handle email_layout language user =
     Logs.info (fun m -> m "Handle command ResetPassword");
-    let layout = Email.Helper.layout_from_tenant tenant in
-    Ok [ Email.ResetPassword (user, language, layout) |> Pool_event.email ]
+    Ok
+      [ Email.ResetPassword (user, language, email_layout) |> Pool_event.email ]
   ;;
 
   let decode data =

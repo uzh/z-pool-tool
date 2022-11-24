@@ -16,7 +16,8 @@ end
 
 (* TODO: Add name to use instead of Pool Tool *)
 type email_layout =
-  { logo_src : string
+  { link : string
+  ; logo_src : string
   ; logo_alt : string
   }
 [@@deriving eq, show { with_path = false }]

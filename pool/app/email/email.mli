@@ -1,5 +1,6 @@
 type email_layout =
-  { logo_src : string
+  { link : string
+  ; logo_src : string
   ; logo_alt : string
   }
 
@@ -193,6 +194,7 @@ val verification_event_name : verification_event -> string
 
 module Helper : sig
   val layout_from_tenant : Pool_tenant.t -> email_layout
+  val root_layout : unit -> email_layout
 
   val prepare_email
     :  Pool_database.Label.t
