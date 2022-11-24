@@ -165,18 +165,14 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
   let html =
     if CCList.is_empty mailings
     then
-      div
-        [ p
-            (* TODO [aerben] this is wrong, should be plural, add a Plural
-               constructor?*)
-            [ I18n.EmtpyList Field.Mailing
-              |> Utils.text_to_string language
-              |> txt
-            ]
-        ]
+      p
+        (* TODO [aerben] this is wrong, should be plural, add a Plural
+           constructor?*)
+        [ I18n.EmtpyList Field.Mailing |> Utils.text_to_string language |> txt ]
     else List.create true context experiment_id mailings
   in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentMailings
     language
     (Page_admin_experiments.NavLink I18n.Mailings)
     experiment

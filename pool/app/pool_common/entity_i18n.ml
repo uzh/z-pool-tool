@@ -10,6 +10,7 @@ type t =
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
+  | FilterNrOfContacts
   | FollowUpSessionFor
   | HomeTitle
   | I18nTitle
@@ -80,9 +81,21 @@ type hint =
   | AssignContactFromWaitingList
   | CustomFieldAdminInputOnly
   | CustomFieldAdminViewOnly
+  | CustomFieldContactModel
+  | CustomFieldExperimentModel
+  | CustomFieldSessionModel
+  | CustomFieldGroups
+  | CustomFieldSort of Entity_message.Field.t
   | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
+  | ExperimentAssignment
+  | ExperimentMailings
+  | ExperimentWaitingList
+  | ExperimentSessions
+  | LocationFiles
+  | LocationSessions
+  | Locations
   | I18nText of string
   | NumberIsDaysHint
   | NumberIsSecondsHint

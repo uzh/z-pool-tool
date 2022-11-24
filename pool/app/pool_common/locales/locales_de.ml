@@ -22,8 +22,11 @@ let field_to_string =
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
   | CustomField -> "Feld"
+  | CustomFields -> "Felder"
   | CustomFieldGroup -> "Gruppe"
+  | CustomFieldGroups -> "Gruppen"
   | CustomFieldOption -> "Option"
+  | CustomFieldOptions -> "Optionen"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomHtmx (label, _) -> label

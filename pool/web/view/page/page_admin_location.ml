@@ -61,6 +61,11 @@ let index location_list Pool_context.{ language; _ } =
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.text_to_string language I18n.LocationListTitle)
         ]
+    ; p
+        Pool_common.
+          [ Utils.hint_to_string language I18n.Locations
+            |> HttpUtils.add_line_breaks
+          ]
     ; List.create language location_list
     ]
 ;;
@@ -412,6 +417,11 @@ module FileList = struct
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.text_to_string language I18n.Files) ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.LocationFiles
+              |> HttpUtils.add_line_breaks
+            ]
       ; form
       ]
   ;;
@@ -471,6 +481,11 @@ module SessionList = struct
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
           [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.LocationSessions
+              |> HttpUtils.add_line_breaks
+            ]
       ; div ~a:[ a_class [ "stack" ] ] [ html ]
       ]
   ;;

@@ -17,7 +17,7 @@ let title_to_string language text =
   | I18n text -> text_to_string language text
 ;;
 
-let experiment_layout ?buttons language title experiment ?active html =
+let experiment_layout ?buttons ?hint language title experiment ?active html =
   let tab_links =
     Pool_common.I18n.
       [ Overview, "/"
@@ -38,14 +38,25 @@ let experiment_layout ?buttons language title experiment ?active html =
     let base =
       h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
     in
-    match buttons with
-    | None -> base
-    | Some btns ->
-      div
-        ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-        [ div [ base ]; div [ btns ] ]
+    let title =
+      match buttons with
+      | None -> base
+      | Some btns ->
+        div
+          ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+          [ div [ base ]; div [ btns ] ]
+    in
+    match hint with
+    | None -> [ title ]
+    | Some hint ->
+      [ title
+      ; p
+          [ Pool_common.(
+              Utils.hint_to_string language hint |> HttpUtils.add_line_breaks)
+          ]
+      ]
   in
-  let html = [ title; div ~a:[ a_class [ "gap" ] ] [ html ] ] in
+  let html = title @ [ div ~a:[ a_class [ "gap-lg" ] ] [ html ] ] in
   let open Experiment in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -550,6 +561,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
   experiment_layout
+    ~hint:Pool_common.I18n.ExperimentWaitingList
     language
     (NavLink Pool_common.I18n.WaitingList)
     experiment

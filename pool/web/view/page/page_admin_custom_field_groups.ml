@@ -46,6 +46,13 @@ let form
                 |> Pool_common.Utils.field_to_string language
                 |> CCString.capitalize_ascii)
             ]
+        ; p
+            Pool_common.
+              [ Utils.hint_to_string
+                  language
+                  I18n.(CustomFieldSort Message.Field.CustomFields)
+                |> txt
+              ]
         ; form
             ~a:
               [ a_class [ "stack" ]

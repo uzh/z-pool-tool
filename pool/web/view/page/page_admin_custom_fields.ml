@@ -71,10 +71,9 @@ let model_subtitle language model =
     ]
 ;;
 
-let custom_fields_layout language current_model html =
-  let open Custom_field in
+let custom_fields_layout ?hint language current_model html =
   let subnav_links =
-    Model.(
+    Custom_field.Model.(
       all
       |> CCList.map (fun f ->
            ( f |> show |> CCString.capitalize_ascii
@@ -82,11 +81,27 @@ let custom_fields_layout language current_model html =
            , equal current_model f )))
   in
   let html =
-    [ h2
+    let open CCFun in
+    let title =
+      h2
         ~a:[ a_class [ "heading-2" ] ]
-        [ txt (current_model |> Model.show |> CCString.capitalize_ascii) ]
-    ; html
-    ]
+        [ txt
+            (current_model
+            |> Custom_field.Model.show
+            |> CCString.capitalize_ascii)
+        ]
+    in
+    let text =
+      hint
+      |> CCOption.map_or
+           ~default:(txt "")
+           Pool_common.(
+             Utils.hint_to_string language
+             %> HttpUtils.add_line_breaks
+             %> CCList.pure
+             %> p)
+    in
+    [ title; text; div ~a:[ a_class [ "gap-lg" ] ] [ html ] ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
@@ -391,6 +406,13 @@ let field_form
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
+           ; p
+               Pool_common.
+                 [ Utils.hint_to_string
+                     language
+                     I18n.(CustomFieldSort Message.Field.CustomFieldOptions)
+                   |> HttpUtils.add_line_breaks
+                 ]
            ; div ~a:[ a_class [ "gap" ] ] [ list ]
            ]
        | Boolean _ | Number _ | Text _ -> empty)
@@ -662,6 +684,14 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     let open Custom_field in
     field |> name |> Name.find_opt_or language "-"
   in
+  let hint =
+    let open Pool_common.I18n in
+    let open Custom_field.Model in
+    match current_model with
+    | Contact -> CustomFieldContactModel
+    | Experiment -> CustomFieldExperimentModel
+    | Session -> CustomFieldSessionModel
+  in
   let rows =
     let open Custom_field in
     let open CCOption in
@@ -699,6 +729,13 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               Pool_common.(
                 Utils.text_to_string language I18n.SortUngroupedFields)
           ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string
+                language
+                I18n.(CustomFieldSort Message.Field.CustomFields)
+              |> HttpUtils.add_line_breaks
+            ]
       ; form
           ~a:
             [ a_class [ "stack" ]
@@ -826,6 +863,11 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
               ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
               (Url.Group.new_path current_model)
           ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.CustomFieldGroups
+              |> HttpUtils.add_line_breaks
+            ]
       ; list
       ]
   in
@@ -835,5 +877,5 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     ; groups_html
     ; sort_ungrouped
     ]
-  |> custom_fields_layout language current_model
+  |> custom_fields_layout ~hint language current_model
 ;;

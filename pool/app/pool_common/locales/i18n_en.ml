@@ -15,9 +15,11 @@ let to_string = function
   | ExperimentListTitle -> "Experiments"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentSessionReminderHint ->
-    "There are default settings for the sessions of this experiment. These \
+    "These are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
   | Files -> "Files"
+  | FilterNrOfContacts ->
+    "Number of contacts meeting the criteria of this filter:"
   | FollowUpSessionFor -> "Follow-up for:"
   | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
@@ -94,7 +96,7 @@ let nav_link_to_string = function
   | WaitingList -> "Waiting list"
 ;;
 
-let hint_to_string = function
+let rec hint_to_string = function
   | AllowUninvitedSignup ->
     "Contacts who have not been invited will be able to sign up for the \
      experiment."
@@ -110,6 +112,22 @@ let hint_to_string = function
       "This option implies \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
       |> CCString.capitalize_ascii)
+  | CustomFieldContactModel ->
+    "Questions that contacts can, or must, answer. Based on this information, \
+     contacts are invited to take part in experiments."
+  | CustomFieldExperimentModel -> "Customziable attributes for experiments."
+  | CustomFieldSessionModel -> "Customziable attributes for sessions."
+  | CustomFieldGroups ->
+    Format.asprintf
+      {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.
+
+     %s
+     |}
+      (hint_to_string (CustomFieldSort Entity_message.Field.CustomFieldGroups))
+  | CustomFieldSort field ->
+    Format.asprintf
+      "The %s will be displayed to the contacts in this order."
+      (Locales_en.field_to_string field)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
@@ -117,6 +135,30 @@ let hint_to_string = function
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first."
+  | ExperimentAssignment ->
+    "All assignments of contacts to sessions of this experiment, sorted by \
+     session."
+  | ExperimentMailings ->
+    {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
+
+    Started mailings can no longer be deleted.|}
+  | ExperimentWaitingList ->
+    "Contacts that have been invited to this experiment and have placed \
+     themselves on the waiting list. They have to be manually assigned to a \
+     session."
+  | ExperimentSessions ->
+    {|All existing session of this experiment.
+      Once someone has registered for the session, it can no longer be deleted.
+    |}
+  | LocationFiles ->
+    "Additional information about the location, such as directions. Contacts \
+     who are participating in a session at this location can access access \
+     these files."
+  | LocationSessions ->
+    "Future sessions, that will be conducted at this location."
+  | Locations ->
+    "Locations, where experiments are conducted. Every session has to have a \
+     location."
   | I18nText str -> str
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
@@ -124,7 +166,7 @@ let hint_to_string = function
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
-  | Rate -> "Generated Invitations per hour"
+  | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
      bellow. In case the sum of all rates reaches the maximum of the server, \

@@ -477,7 +477,9 @@ let filter_form csrf language param key_list template_list =
     | FilterParam _ -> txt ""
     | ExperimentParam experiment ->
       div
-        [ txt "Nr of contacts: "
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
+        ; txt " "
         ; span
             ~a:
               [ a_id "contact-counter"

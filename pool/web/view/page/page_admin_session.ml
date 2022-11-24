@@ -465,6 +465,7 @@ let index
         ])
   in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentSessions
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Sessions)
     experiment

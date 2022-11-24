@@ -17,6 +17,8 @@ let to_string = function
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
   | Files -> "Dateien"
+  | FilterNrOfContacts ->
+    "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
   | ExperimentWaitingListTitle -> "Warteliste"
@@ -101,7 +103,7 @@ let nav_link_to_string = function
   | WaitingList -> "Warteliste"
 ;;
 
-let hint_to_string = function
+let rec hint_to_string = function
   | AllowUninvitedSignup ->
     "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
      anmelden."
@@ -117,6 +119,22 @@ let hint_to_string = function
       "Diese Option impliziert \"%s\"."
       (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
       |> CCString.capitalize_ascii)
+  | CustomFieldContactModel ->
+    "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser \
+     Informationen werden die Kontakte zu Experimenten eingeladen."
+  | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
+  | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
+  | CustomFieldGroups ->
+    Format.asprintf
+      {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.
+
+       %s
+       |}
+      (hint_to_string (CustomFieldSort Entity_message.Field.CustomFieldGroups))
+  | CustomFieldSort field ->
+    Format.asprintf
+      "In dieser Reihenfolge werden die %s den Kontakten angezeigt."
+      (Locales_de.field_to_string field)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
@@ -124,7 +142,31 @@ let hint_to_string = function
   | Distribution ->
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
+  | ExperimentAssignment ->
+    "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
+     nach Session."
+  | ExperimentMailings ->
+    {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
+
+    Gestartete Mailings können nicht mehr gelöscht werden.|}
+  | ExperimentWaitingList ->
+    "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
+     Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
+     werden."
+  | ExperimentSessions ->
+    {|Alle existierenden Session dieses Experiments.
+  Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.
+  |}
   | I18nText str -> str
+  | LocationFiles ->
+    "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
+     Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \
+     diese Dateien zugreiffen."
+  | LocationSessions ->
+    "Zukünftige Sessions, die an diesem Standort durchgeführt werden."
+  | Locations ->
+    "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
+     eine Location haben."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"

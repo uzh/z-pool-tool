@@ -83,9 +83,10 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
           ; Partials.overview_list context experiment.Experiment.id assignments
           ])
       assignments
-    |> div ~a:[ a_class [ "stack-lg" ] ]
+    |> div
   in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentAssignment
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Assignments)
     experiment
