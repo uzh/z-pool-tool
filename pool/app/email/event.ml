@@ -11,6 +11,7 @@ type confirmation_email =
 
 let send_confirmation
   pool
+  layout
   ({ Sihl_user.email; _ } as user)
   { subject; text; language; session_text }
   =
@@ -24,6 +25,7 @@ let send_confirmation
       TemplateLabel.Boilerplate
       (subject |> I18n.Content.value)
       email
+      layout
       [ ( "name"
         , CCString.concat
             " "
@@ -48,9 +50,16 @@ let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
 ;;
 
-let send_confirmation_email pool language email firstname lastname event =
+let send_confirmation_email pool language tenant email firstname lastname event =
   let open Utils.Lwt_result.Infix in
-  Helper.ConfirmationEmail.create pool language email firstname lastname event
+  Helper.ConfirmationEmail.create
+    pool
+    language
+    tenant
+    email
+    firstname
+    lastname
+    event
   >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
@@ -61,7 +70,9 @@ type verification_event =
       * User.Firstname.t
       * User.Lastname.t
       * Pool_common.Language.t
-  | Updated of User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
+      * email_layout
+  | Updated of
+      User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t * email_layout
   | EmailVerified of unverified t
 
 let verification_event_name = function
@@ -73,7 +84,7 @@ let verification_event_name = function
 let handle_verification_event pool : verification_event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
-  let create_email language user_id address firstname lastname label
+  let create_email language layout user_id address firstname lastname label
     : unit Lwt.t
     =
     let%lwt token = create_token pool address in
@@ -88,24 +99,33 @@ let handle_verification_event pool : verification_event -> unit Lwt.t =
     | Some user ->
       let email = create address user token in
       let%lwt () = Repo.insert pool email in
-      send_confirmation_email pool language email firstname lastname label
+      send_confirmation_email
+        pool
+        language
+        layout
+        email
+        firstname
+        lastname
+        label
   in
   function
-  | Created (address, user_id, firstname, lastname, language) ->
+  | Created (address, user_id, firstname, lastname, language, layout) ->
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     create_email
       language
+      layout
       user_id
       address
       (Some firstname)
       (Some lastname)
       TemplateLabel.SignUpVerification
-  | Updated (address, user, language) ->
+  | Updated (address, user, language, layout) ->
     let open Sihl_user in
     let user_id = user.id |> Pool_common.Id.of_string in
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     create_email
       language
+      layout
       user_id
       address
       (user.given_name |> CCOption.map Pool_user.Firstname.of_string)
@@ -123,14 +143,19 @@ let[@warning "-4"] equal_verification_event
   : bool
   =
   match one, two with
-  | Created (a1, id1, f1, l1, _), Created (a2, id2, f2, l2, _) ->
+  | ( Created (a1, id1, f1, l1, lang1, layout1)
+    , Created (a2, id2, f2, l2, lang2, layout2) ) ->
     User.EmailAddress.equal a1 a2
     && Pool_common.Id.equal id1 id2
     && User.Firstname.equal f1 f2
     && User.Lastname.equal l1 l2
-  | Updated (a1, u1, _), Updated (a2, u2, _) ->
+    && Pool_common.Language.equal lang1 lang2
+    && equal_email_layout layout1 layout2
+  | Updated (a1, u1, lang1, layout1), Updated (a2, u2, lang2, layout2) ->
     User.EmailAddress.equal a1 a2
     && CCString.equal u1.Sihl_user.id u2.Sihl_user.id
+    && Pool_common.Language.equal lang1 lang2
+    && equal_email_layout layout1 layout2
   | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
@@ -138,25 +163,28 @@ let[@warning "-4"] equal_verification_event
 let pp_verification_event formatter (event : verification_event) : unit =
   let pp_address = User.EmailAddress.pp formatter in
   match event with
-  | Created (m, id, f, l, language) ->
+  | Created (m, id, f, l, language, layout) ->
     pp_address m;
     Pool_common.Id.pp formatter id;
     User.Firstname.pp formatter f;
     User.Lastname.pp formatter l;
-    Pool_common.Language.pp formatter language
-  | Updated (m, u, language) ->
+    Pool_common.Language.pp formatter language;
+    pp_email_layout formatter layout
+  | Updated (m, u, language, layout) ->
     pp_address m;
     Sihl_user.pp formatter u;
-    Pool_common.Language.pp formatter language
+    Pool_common.Language.pp formatter language;
+    pp_email_layout formatter layout
   | EmailVerified m -> pp formatter m
 ;;
 
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
-  | AssignmentConfirmationSent of Sihl_user.t * confirmation_email
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t * email_layout
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t * email_layout
+  | AssignmentConfirmationSent of
+      Sihl_user.t * confirmation_email * email_layout
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
   | InvitationBulkSent of
       (Sihl_user.t * text_component list * CustomTemplate.t) list
@@ -170,22 +198,23 @@ let handle_event pool : event -> unit Lwt.t =
   | Sent email -> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool) email
   | BulkSent emails ->
     Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
-  | ResetPassword (user, language) ->
-    Helper.PasswordReset.create pool language user
+  | ResetPassword (user, language, layout) ->
+    Helper.PasswordReset.create pool language layout user
     >|- Pool_common.Utils.with_log_error
     >|> (function
     | Ok email -> Service.Email.send ~ctx email
     | Error (_ : PoolError.error) -> Lwt.return_unit)
-  | ChangedPassword (({ Sihl_user.email; _ } as user), language) ->
+  | ChangedPassword (({ Sihl_user.email; _ } as user), language, layout) ->
     Helper.PasswordChange.create
       pool
       language
+      layout
       (Pool_user.EmailAddress.of_string email)
       (user |> User.user_firstname)
       (user |> User.user_lastname)
     >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
-  | AssignmentConfirmationSent (user, confirmation_email) ->
-    send_confirmation pool user confirmation_email
+  | AssignmentConfirmationSent (user, confirmation_email, layout) ->
+    send_confirmation pool layout user confirmation_email
   | InvitationSent (user, data, template) ->
     Helper.prepare_boilerplate_email
       template

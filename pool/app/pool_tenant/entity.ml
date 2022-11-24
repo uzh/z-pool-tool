@@ -39,6 +39,7 @@ module Styles = struct
   let value m = m
   let id m = m.File.id
   let mime_type m = m.File.mime_type
+  let create m = m
 
   module Write = struct
     include Pool_common.Model.String
@@ -53,6 +54,7 @@ module Icon = struct
   type t = File.t [@@deriving eq, show, sexp_of]
 
   let value m = m
+  let of_file m = m
 
   module Write = struct
     include Pool_common.Model.String
@@ -75,6 +77,8 @@ module Logos = struct
       (CCList.map Common.Id.value)
       PoolError.Field.TenantLogos
   ;;
+
+  let of_files lst = lst
 end
 
 module PartnerLogos = struct
@@ -89,6 +93,8 @@ module PartnerLogos = struct
       (fun l -> l |> CCList.map Common.Id.value)
       PoolError.Field.PartnerLogos
   ;;
+
+  let of_files lst = lst
 end
 
 module Maintenance = struct

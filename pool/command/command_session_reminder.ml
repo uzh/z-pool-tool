@@ -16,7 +16,7 @@ let reminder_email sys_languages contact (session : Session.t) template =
 let create_reminders pool default_language sys_languages session =
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find_of_session pool session.Session.id in
-  let custom_template =
+  let custom_template layout =
     let open CCOption in
     let custom_reminder_text =
       session.Session.reminder_text
@@ -33,7 +33,10 @@ let create_reminders pool default_language sys_languages session =
       let text = Text.value text in
       Some
         Email.CustomTemplate.
-          { subject = Subject.String subject; content = Content.String text }
+          { subject = Subject.String subject
+          ; content = Content.String text
+          ; layout
+          }
     | _ -> None
   in
   let i18n_texts = Hashtbl.create ~random:true (CCList.length sys_languages) in
@@ -44,13 +47,15 @@ let create_reminders pool default_language sys_languages session =
     Lwt_list.map_s
       (fun (assignment : Assignment.t) ->
         let contact = assignment.Assignment.contact in
-        match custom_template with
+        let message_language =
+          CCOption.value ~default:default_language contact.Contact.language
+        in
+        let* tenant = Pool_tenant.find_by_label pool in
+        let layout = Email.Helper.layout_from_tenant tenant in
+        match custom_template layout with
         | Some template ->
           Lwt_result.ok (reminder_email sys_languages contact session template)
         | None ->
-          let message_language =
-            CCOption.value ~default:default_language contact.Contact.language
-          in
           (match Hashtbl.find_opt i18n_texts message_language with
            | Some template ->
              Lwt_result.ok
@@ -61,7 +66,10 @@ let create_reminders pool default_language sys_languages session =
              let* text = find I18n.Key.InvitationText in
              let template =
                Email.CustomTemplate.
-                 { subject = Subject.I18n subject; content = Content.I18n text }
+                 { subject = Subject.I18n subject
+                 ; content = Content.I18n text
+                 ; layout
+                 }
              in
              let () = Hashtbl.add i18n_texts message_language template in
              Lwt_result.ok

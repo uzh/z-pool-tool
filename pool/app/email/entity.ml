@@ -14,6 +14,13 @@ module Sihl_email = struct
   ;;
 end
 
+(* TODO: Add name to use instead of Pool Tool *)
+type email_layout =
+  { logo_src : string
+  ; logo_alt : string
+  }
+[@@deriving eq, show { with_path = false }]
+
 module TemplateLabel = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
@@ -61,6 +68,7 @@ module CustomTemplate = struct
   type t =
     { subject : Subject.t
     ; content : Content.t
+    ; layout : email_layout
     }
   [@@deriving eq, show]
 end

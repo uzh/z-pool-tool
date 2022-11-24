@@ -63,11 +63,14 @@ let sign_up_create req =
          if CCList.is_empty suffixes then None else Some suffixes
        in
        let preferred_language = HttpUtils.browser_language_from_req req in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* events =
          let open CCResult.Infix in
          Command.SignUp.(
            decode urlencoded
-           >>= handle ~tags ?allowed_email_suffixes preferred_language)
+           >>= handle ~tags ?allowed_email_suffixes tenant preferred_language)
          >>= (fun e -> Ok (remove_contact_event @ e))
          |> Lwt_result.lift
        in

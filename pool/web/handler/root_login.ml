@@ -75,6 +75,14 @@ let request_reset_password_post req =
   let result { Pool_context.tenant_db; language; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
+    let open Lwt_result.Syntax in
+    let redirect_path = "/root/request-reset-password" in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req
+      |> CCResult.map_err (fun err ->
+           err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
+      |> Lwt_result.lift
+    in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
@@ -82,12 +90,12 @@ let request_reset_password_post req =
           |> Pool_user.EmailAddress.value
           |> Service.User.find_by_email_opt ~ctx
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
-    >== CCFun.flip handle language
+    >== handle tenant language
     |>> Pool_event.handle_events ~tags tenant_db
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions
-        "/root/request-reset-password"
+        redirect_path
         [ Message.set
             ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
         ]

@@ -45,7 +45,9 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
       then (
         let%lwt events =
           let open CCResult.Infix in
+          let open Lwt_result.Syntax in
           let open Cqrs_command.Contact_command.SignUp in
+          let* tenant = Pool_tenant.find_by_label db_pool in
           let language =
             Pool_common.Language.create language |> CCResult.to_opt
           in
@@ -56,7 +58,7 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
           ; "recruitment_channel", [ recruitment_channel ]
           ]
           |> decode
-          >>= handle language
+          >>= handle tenant language
           |> Lwt_result.lift
         in
         match events with
@@ -86,6 +88,7 @@ let create_message contact template =
 
 let trigger_profile_update_by_tenant pool =
   let open Utils.Lwt_result.Infix in
+  let* tenant = Pool_tenant.find_by_label pool in
   let* contacts = Contact.find_to_trigger_profile_update pool in
   match contacts with
   | [] -> Lwt_result.return ()
@@ -106,7 +109,8 @@ let trigger_profile_update_by_tenant pool =
           I18n.(find_by_key pool Key.TriggerProfileUpdateText msg_language)
           >|+ Email.CustomTemplate.Content.i18n
         in
-        let template = Email.CustomTemplate.{ subject; content } in
+        let layout = Email.Helper.layout_from_tenant tenant in
+        let template = Email.CustomTemplate.{ subject; content; layout } in
         let () = Hashtbl.add i18n_texts msg_language template in
         Lwt_result.return template
     in

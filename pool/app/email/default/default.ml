@@ -40,7 +40,7 @@ let boilerplate language =
   let html =
     let open Tyxml.Html in
     let open Default_utils in
-    [ salutation; p [ txt "{content}" ]; complimentary_close ]
+    [ salutation; txt "{content}"; complimentary_close ]
     |> combine_html language None
     |> html_to_string
   in
