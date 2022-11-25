@@ -107,7 +107,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 // Modal
-
 body[data-noscroll] {
     overflow-y: hidden;
 }
@@ -156,4 +155,29 @@ body[data-noscroll] {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+// Grid -> To framework?
+
+[class*="grid-"] {
+    display: flex;
+}
+
+@supports (display: grid) {
+    [class*="grid-"] {
+        display: grid;
+        gap: $space-base;
+
+        &.gap-lg {
+            gap: $space-lg;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .grid-col-2 {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }

@@ -421,7 +421,7 @@ let form
           ; div
               ~a:
                 [ a_id "mailings"
-                ; a_class [ "stack" ]
+                ; a_class [ "grid-col-2" ]
                 ; hx_target "#overlaps"
                 ; hx_trigger "change"
                 ; hx_swap "innerHTML"

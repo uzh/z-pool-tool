@@ -67,7 +67,6 @@ let to_string = function
   | UserProfilePausedNote ->
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
-  | UserProfileTitle -> "User Profile"
   | Validation -> "Validation"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;

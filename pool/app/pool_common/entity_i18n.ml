@@ -48,7 +48,6 @@ type t =
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
-  | UserProfileTitle
   | Validation
   | WaitingListIsDisabled
 

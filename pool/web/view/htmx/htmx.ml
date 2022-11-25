@@ -135,7 +135,6 @@ let create
   | Boolean boolean ->
     Input.checkbox_element
       ~as_switch:true
-      ~orientation:`Horizontal
       ~additional_attributes:(additional_attributes ())
       ~classnames
       ~value:boolean

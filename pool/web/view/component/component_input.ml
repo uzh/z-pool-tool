@@ -264,7 +264,10 @@ let checkbox_element
     in
     match orientation with
     | `Vertical ->
-      [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ]
+      (match as_switch with
+       | true -> [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
+       | false ->
+         [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ])
     | `Horizontal ->
       [ label ~a:[ a_label_for id ] [ txt input_label ]
       ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]

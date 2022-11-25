@@ -74,7 +74,6 @@ let to_string = function
   | UserProfilePausedNote ->
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
-  | UserProfileTitle -> "Benutzerprofil"
   | Validation -> "Validierung"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;

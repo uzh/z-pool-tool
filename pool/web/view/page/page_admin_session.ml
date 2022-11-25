@@ -109,67 +109,70 @@ let session_form
       ; a_action (action |> Sihl.Web.externalize_path)
       ]
     [ csrf_element csrf ()
-    ; flatpicker_element
-        language
-        `Datetime_local
-        Pool_common.Message.Field.Start
-        ~required:true
-        ~flash_fetcher
-        ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
-        ~warn_past:true
-        ~additional_attributes:
-          (if has_assignments then [ a_disabled () ] else [])
-    ; flatpicker_element
-        language
-        ~required:true
-        `Time
-        Pool_common.Message.Field.Duration
-        ~help:Pool_common.I18n.TimeSpanPickerHint
-        ~value:
-          (value (fun s ->
-             s.duration
-             |> Duration.value
-             |> Pool_common.Utils.Time.timespan_spanpicker))
-        ~flash_fetcher
-        ~additional_attributes:
-          (if has_assignments then [ a_disabled () ] else [])
-    ; reschedule_hint ()
-    ; textarea_element
-        language
-        Pool_common.Message.Field.Description
-        ~value:
-          (value (fun s ->
-             s.description |> CCOption.map_or ~default:"" Description.value))
-        ~flash_fetcher
-    ; location_select locations None ()
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.MaxParticipants
-        ~required:true
-        ~value:(amount (fun s -> s.max_participants))
-        ~flash_fetcher
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.MinParticipants
-        ~required:true
-        ~value:(amount (fun s -> s.min_participants))
-        ~flash_fetcher
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.Overbook
-        ~required:true
-        ~value:(amount (fun s -> s.overbook))
-        ~flash_fetcher
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ flatpicker_element
+            language
+            `Datetime_local
+            Pool_common.Message.Field.Start
+            ~required:true
+            ~flash_fetcher
+            ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
+            ~warn_past:true
+            ~additional_attributes:
+              (if has_assignments then [ a_disabled () ] else [])
+        ; flatpicker_element
+            language
+            ~required:true
+            `Time
+            Pool_common.Message.Field.Duration
+            ~help:Pool_common.I18n.TimeSpanPickerHint
+            ~value:
+              (value (fun s ->
+                 s.duration
+                 |> Duration.value
+                 |> Pool_common.Utils.Time.timespan_spanpicker))
+            ~flash_fetcher
+            ~additional_attributes:
+              (if has_assignments then [ a_disabled () ] else [])
+        ; reschedule_hint ()
+        ; textarea_element
+            language
+            Pool_common.Message.Field.Description
+            ~value:
+              (value (fun s ->
+                 s.description |> CCOption.map_or ~default:"" Description.value))
+            ~flash_fetcher
+        ; location_select locations None ()
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.MaxParticipants
+            ~required:true
+            ~value:(amount (fun s -> s.max_participants))
+            ~flash_fetcher
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.MinParticipants
+            ~required:true
+            ~value:(amount (fun s -> s.min_participants))
+            ~flash_fetcher
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.Overbook
+            ~required:true
+            ~value:(amount (fun s -> s.overbook))
+            ~flash_fetcher
+        ]
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3
             ~a:[ a_class [ "heading-3" ] ]
             [ txt Pool_common.(Utils.text_to_string language I18n.Reminder) ]
         ; div
-            ~a:[ a_class [ "stack" ] ]
+            ~a:[ a_class [ "grid-col-2" ] ]
             [ div
                 [ flatpicker_element
                     language
@@ -190,58 +193,52 @@ let session_form
                        |> to_default_value)
                 ]
             ; div
+                ~a:[ a_class [ "full-width" ] ]
                 [ MessageTextElements.session_reminder_help
                     language
                     sys_languages
                     ?session:default_value_session
                     ()
-                ; div
-                    ~a:[ a_class [ "stack"; "gap-lg" ] ]
-                    [ div
-                        [ input_element
-                            language
-                            `Text
-                            Pool_common.Message.Field.ReminderSubject
-                            ~value:
-                              (value (fun s ->
-                                 s.reminder_subject
-                                 |> CCOption.map_or
-                                      ~default:""
-                                      Pool_common.Reminder.Subject.value))
-                            ~flash_fetcher
-                        ; experiment.Experiment.session_reminder_subject
-                          |> CCOption.map_or ~default:(txt "") (fun text ->
-                               Pool_common.(
-                                 Utils.text_to_string
-                                   language
-                                   (I18n.SessionReminderDefaultSubject
-                                      (text |> Reminder.Subject.value)))
-                               |> Http_utils.add_line_breaks
-                               |> to_default_value)
-                        ]
-                    ; div
-                        [ textarea_element
-                            language
-                            Pool_common.Message.Field.ReminderText
-                            ~value:
-                              (value (fun s ->
-                                 s.reminder_text
-                                 |> CCOption.map_or
-                                      ~default:""
-                                      Pool_common.Reminder.Text.value))
-                            ~flash_fetcher
-                        ; experiment.Experiment.session_reminder_text
-                          |> CCOption.map_or ~default:(txt "") (fun text ->
-                               Pool_common.(
-                                 Utils.text_to_string
-                                   language
-                                   (I18n.SessionReminderDefaultText
-                                      (text |> Reminder.Text.value)))
-                               |> Http_utils.add_line_breaks
-                               |> to_default_value)
-                        ]
-                    ]
                 ]
+            ; input_element
+                language
+                `Text
+                Pool_common.Message.Field.ReminderSubject
+                ~value:
+                  (value (fun s ->
+                     s.reminder_subject
+                     |> CCOption.map_or
+                          ~default:""
+                          Pool_common.Reminder.Subject.value))
+                ~flash_fetcher
+            ; experiment.Experiment.session_reminder_subject
+              |> CCOption.map_or ~default:(txt "") (fun text ->
+                   Pool_common.(
+                     Utils.text_to_string
+                       language
+                       (I18n.SessionReminderDefaultSubject
+                          (text |> Reminder.Subject.value)))
+                   |> Http_utils.add_line_breaks
+                   |> to_default_value)
+            ; textarea_element
+                language
+                Pool_common.Message.Field.ReminderText
+                ~value:
+                  (value (fun s ->
+                     s.reminder_text
+                     |> CCOption.map_or
+                          ~default:""
+                          Pool_common.Reminder.Text.value))
+                ~flash_fetcher
+            ; experiment.Experiment.session_reminder_text
+              |> CCOption.map_or ~default:(txt "") (fun text ->
+                   Pool_common.(
+                     Utils.text_to_string
+                       language
+                       (I18n.SessionReminderDefaultText
+                          (text |> Reminder.Text.value)))
+                   |> Http_utils.add_line_breaks
+                   |> to_default_value)
             ]
         ]
     ; div

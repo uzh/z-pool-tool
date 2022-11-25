@@ -59,7 +59,7 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
   let html = title @ [ div ~a:[ a_class [ "gap-lg" ] ] [ html ] ] in
   let open Experiment in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
@@ -146,27 +146,30 @@ let experiment_form
       ; a_class [ "stack" ]
       ]
     [ csrf_element csrf ()
-    ; input_element
-        language
-        `Text
-        Pool_common.Message.Field.Title
-        ~value:(value title_value)
-        ~required:true
-        ~flash_fetcher
-    ; input_element
-        language
-        `Text
-        Pool_common.Message.Field.publictitle
-        ~value:(value public_title_value)
-        ~required:true
-        ~flash_fetcher
-    ; textarea_element
-        language
-        Pool_common.Message.Field.Description
-        ~value:(value description_value)
-        ~required:true
-        ~flash_fetcher
-    ; div ~a:[ a_class [ "switcher" ] ] [ experiment_type_select; div [] ]
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ input_element
+            language
+            `Text
+            Pool_common.Message.Field.Title
+            ~value:(value title_value)
+            ~required:true
+            ~flash_fetcher
+        ; input_element
+            language
+            `Text
+            Pool_common.Message.Field.publictitle
+            ~value:(value public_title_value)
+            ~required:true
+            ~flash_fetcher
+        ; textarea_element
+            language
+            Pool_common.Message.Field.Description
+            ~value:(value description_value)
+            ~required:true
+            ~flash_fetcher
+        ; experiment_type_select
+        ]
     ; checkbox_element
         ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
@@ -194,27 +197,30 @@ let experiment_form
                 language
                 ?experiment
                 ()
-            ; input_element
-                language
-                `Text
-                Pool_common.Message.Field.InvitationSubject
-                ~value:
-                  (value (fun e ->
-                     e.invitation_template
-                     |> CCOption.map_or
-                          ~default:""
-                          InvitationTemplate.subject_value))
-                ~flash_fetcher
-            ; textarea_element
-                language
-                Pool_common.Message.Field.InvitationText
-                ~value:
-                  (value (fun e ->
-                     e.invitation_template
-                     |> CCOption.map_or
-                          ~default:""
-                          InvitationTemplate.text_value))
-                ~flash_fetcher
+            ; div
+                ~a:[ a_class [ "grid-col-2" ] ]
+                [ input_element
+                    language
+                    `Text
+                    Pool_common.Message.Field.InvitationSubject
+                    ~value:
+                      (value (fun e ->
+                         e.invitation_template
+                         |> CCOption.map_or
+                              ~default:""
+                              InvitationTemplate.subject_value))
+                    ~flash_fetcher
+                ; textarea_element
+                    language
+                    Pool_common.Message.Field.InvitationText
+                    ~value:
+                      (value (fun e ->
+                         e.invitation_template
+                         |> CCOption.map_or
+                              ~default:""
+                              InvitationTemplate.text_value))
+                    ~flash_fetcher
+                ]
             ]
         ]
     ; div
@@ -233,24 +239,27 @@ let experiment_form
                         language
                         I18n.ExperimentSessionReminderHint)
                 ]
-            ; flatpicker_element
-                language
-                `Time
-                Pool_common.Message.Field.LeadTime
-                ~help:Pool_common.I18n.TimeSpanPickerHint
-                ~value:
-                  (value (fun e ->
-                     session_reminder_lead_time_value e
-                     |> CCOption.map_or
-                          ~default:""
-                          Pool_common.Utils.Time.timespan_spanpicker))
-                ~flash_fetcher
             ; div
-                ~a:[ a_class [ "stack" ] ]
-                [ MessageTextElements.session_reminder_help
+                ~a:[ a_class [ "grid-col-2" ] ]
+                [ flatpicker_element
                     language
-                    sys_languages
-                    ()
+                    `Time
+                    Pool_common.Message.Field.LeadTime
+                    ~help:Pool_common.I18n.TimeSpanPickerHint
+                    ~value:
+                      (value (fun e ->
+                         session_reminder_lead_time_value e
+                         |> CCOption.map_or
+                              ~default:""
+                              Pool_common.Utils.Time.timespan_spanpicker))
+                    ~flash_fetcher
+                ; div
+                    ~a:[ a_class [ "full-width" ] ]
+                    [ MessageTextElements.session_reminder_help
+                        language
+                        sys_languages
+                        ()
+                    ]
                 ; input_element
                     language
                     `Text

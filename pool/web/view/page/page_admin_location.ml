@@ -185,7 +185,7 @@ let form
       ()
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "narrow"; "stack" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         [ txt
             Pool_common.(Utils.text_to_string Language.En I18n.LocationNewTitle)
@@ -197,24 +197,27 @@ let form
           ; a_class [ "stack" ]
           ]
         ([ csrf_element csrf ()
-         ; input_element
-             language
-             `Text
-             Message.Field.Name
-             ~value:(value (fun m -> m.name) Name.value)
-             ~flash_fetcher
-         ; input_element
-             language
-             `Text
-             Message.Field.Description
-             ~value:(value_opt (fun m -> m.description) Description.value)
-             ~flash_fetcher
-         ; input_element
-             language
-             `Text
-             Message.Field.Link
-             ~value:(value_opt (fun m -> m.link) Link.value)
-             ~flash_fetcher
+         ; div
+             ~a:[ a_class [ "grid-col-2" ] ]
+             [ input_element
+                 language
+                 `Text
+                 Message.Field.Name
+                 ~value:(value (fun m -> m.name) Name.value)
+                 ~flash_fetcher
+             ; input_element
+                 language
+                 `Text
+                 Message.Field.Description
+                 ~value:(value_opt (fun m -> m.description) Description.value)
+                 ~flash_fetcher
+             ; input_element
+                 language
+                 `Text
+                 Message.Field.Link
+                 ~value:(value_opt (fun m -> m.link) Link.value)
+                 ~flash_fetcher
+             ]
          ]
         @ status_select_opt
         @ [ div

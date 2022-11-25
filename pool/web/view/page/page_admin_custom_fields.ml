@@ -104,7 +104,7 @@ let custom_fields_layout ?hint language current_model html =
     [ title; text; div ~a:[ a_class [ "gap-lg" ] ] [ html ] ]
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.CustomFields)
@@ -234,13 +234,12 @@ let field_form
       let prefixed_name =
         Format.asprintf "%s[%s]" Message.Field.(show Validation) name
       in
-      let wrapper_class = [ "switcher"; "flex-gap"; "align-center" ] in
+      let wrapper_class = [ "form-group"; "horizontal" ] in
       let input_attributes =
         [ a_input_type input_type
         ; a_name prefixed_name
         ; a_id name
         ; a_value value
-        ; a_class [ "grow-2" ]
         ]
       in
       let attrs, classes =
@@ -253,10 +252,8 @@ let field_form
           [ a_class classes
           ; a_user_data "field-type" (FieldType.show field_type)
           ]
-        [ div
-            ~a:[ a_class [ "grow" ] ]
-            [ label ~a:[ a_label_for name ] [ txt name ] ]
-        ; input ~a:attrs ()
+        [ label ~a:[ a_label_for name ] [ txt name ]
+        ; div ~a:[ a_class [ "input-group" ] ] [ input ~a:attrs () ]
         ]
     in
     let functions =
@@ -425,7 +422,7 @@ let field_form
         ]
       [ csrf_element csrf ()
       ; div
-          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          ~a:[ a_class [ "grid-col-2" ] ]
           [ selector
               language
               Message.Field.FieldType
@@ -453,44 +450,42 @@ let field_form
                 ~add_empty:true
                 ~flash_fetcher
                 ())
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ h4
-              ~a:[ a_class [ "heading-4" ] ]
-              [ txt
-                  Pool_common.(
-                    Message.Field.Name
-                    |> Utils.field_to_string language
-                    |> CCString.capitalize_ascii)
+          ; div
+              [ h4
+                  ~a:[ a_class [ "heading-3" ] ]
+                  [ txt
+                      Pool_common.(
+                        Message.Field.Name
+                        |> Utils.field_to_string language
+                        |> CCString.capitalize_ascii)
+                  ]
+              ; div ~a:[ a_class [ "stack" ] ] name_inputs
               ]
-          ; div ~a:[ a_class [ "stack" ] ] name_inputs
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ h4
-              ~a:[ a_class [ "heading-4" ] ]
-              [ txt
-                  Pool_common.(
-                    Message.Field.Hint
-                    |> Utils.field_to_string language
-                    |> CCString.capitalize_ascii)
+          ; div
+              [ h4
+                  ~a:[ a_class [ "heading-3" ] ]
+                  [ txt
+                      Pool_common.(
+                        Message.Field.Hint
+                        |> Utils.field_to_string language
+                        |> CCString.capitalize_ascii)
+                  ]
+              ; div ~a:[ a_class [ "stack" ] ] hint_inputs
               ]
-          ; div ~a:[ a_class [ "stack" ] ] hint_inputs
-          ]
-      ; div
-          ~a:[ a_class [ "stack" ] ]
-          [ h4
-              ~a:[ a_class [ "heading-4" ] ]
-              [ txt
-                  Pool_common.(I18n.Validation |> Utils.text_to_string language)
+          ; div
+              [ h4
+                  ~a:[ a_class [ "heading-3" ] ]
+                  [ txt
+                      Pool_common.(
+                        I18n.Validation |> Utils.text_to_string language)
+                  ]
+              ; validation_subform
               ]
           ]
-      ; validation_subform
       ; div
           ~a:[ a_class [ "stack" ] ]
           [ h4
-              ~a:[ a_class [ "heading-4" ] ]
+              ~a:[ a_class [ "heading-3" ] ]
               [ txt
                   Pool_common.(
                     Message.Field.Admin
@@ -648,7 +643,7 @@ let detail
   =
   let button_form = field_buttons language csrf current_model custom_field in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ Partials.form_title language Message.Field.CustomField custom_field
     ; div
         ~a:
