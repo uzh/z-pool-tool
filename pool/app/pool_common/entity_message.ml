@@ -361,6 +361,7 @@ type control =
   | More
   | PleaseSelect
   | Publish of Field.t option
+  | Register
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option

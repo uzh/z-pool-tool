@@ -27,7 +27,7 @@ let detail session experiment Pool_context.{ language; csrf; _ } =
                 [ submit_element
                     ~classnames:[ "push" ]
                     language
-                    Pool_common.Message.(Enroll)
+                    Pool_common.Message.Register
                     ~submit_type:`Primary
                     ()
                 ]

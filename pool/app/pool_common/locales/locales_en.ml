@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "only visible for admins"
   | AdminHint -> "hint for admins"
   | Answer -> "answer"
-  | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
+  | AllowUninvitedSignup -> "Allow registration up of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
@@ -374,6 +374,7 @@ let control_to_string = function
   | More -> format_submit "more" None
   | PleaseSelect -> "please select"
   | Publish field -> format_submit "publish" field
+  | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field

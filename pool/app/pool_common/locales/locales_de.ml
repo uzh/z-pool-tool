@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AdminHint -> "Hint für Administratoren"
   | Answer -> "Antwort"
-  | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
+  | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anz. Anmeldungen"
@@ -395,11 +395,12 @@ let control_to_string = function
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
-  | Login -> format_submit "anmelden" None
+  | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
   | PleaseSelect -> "bitte wählen"
   | Publish field -> format_submit "veröffentlichen" field
+  | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
@@ -408,7 +409,7 @@ let control_to_string = function
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
-  | SignUp -> format_submit "registrieren" None
+  | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"

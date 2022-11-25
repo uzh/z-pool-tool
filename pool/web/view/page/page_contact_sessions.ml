@@ -32,7 +32,8 @@ let public_overview sessions experiment language =
                       (session.Session.Public.id |> Pool_common.Id.value)
                    |> Sihl.Web.externalize_path)
                ]
-             [ txt Pool_common.(Utils.control_to_string language Message.signup)
+             [ txt
+                 Pool_common.(Utils.control_to_string language Message.register)
              ]
          | true ->
            span
@@ -42,7 +43,7 @@ let public_overview sessions experiment language =
              ])
       ])
     sessions
-  |> Component.Table.horizontal_table `Striped ~thead
+  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
 ;;
 
 let public_detail (session : Session.Public.t) language =

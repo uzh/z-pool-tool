@@ -35,7 +35,7 @@ let to_string = function
   | LocationNewTitle -> "Neuer Standort erstellen"
   | LocationNoFiles -> "Es existieren keine Dateien zu diesem Standort."
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
-  | LoginTitle -> "Anmelden"
+  | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
   | MailingNewTitle -> "Neuen Versand erstellen"
@@ -63,7 +63,7 @@ let to_string = function
   | SessionSignUpTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
-  | SignUpTitle -> "Registrieren"
+  | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
