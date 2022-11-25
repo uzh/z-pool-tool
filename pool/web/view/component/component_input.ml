@@ -264,13 +264,13 @@ let checkbox_element
     in
     match orientation with
     | `Vertical ->
-      div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ]
+      [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ]
     | `Horizontal ->
-      div
-        ~a:[ a_class [ "input-group" ] ]
-        [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
+      [ label ~a:[ a_label_for id ] [ txt input_label ]
+      ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
+      ]
   in
-  div ~a:[ a_class group_class ] ([ input_element ] @ help @ error)
+  div ~a:[ a_class group_class ] (input_element @ help @ error)
 ;;
 
 let input_element_file
