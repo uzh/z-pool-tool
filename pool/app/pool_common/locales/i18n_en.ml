@@ -53,7 +53,7 @@ let to_string = function
     Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionSignUpTitle -> "Sign up for this session"
+  | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpCTA -> "Register now to participate in economic experiments"
   | SignUpTitle -> "Sign up"
@@ -183,6 +183,7 @@ let rec hint_to_string = function
   | SelectedDateIsPast -> "The selected date is in the past."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
+  | SessionRegistrationHint -> "The registration for a session is binding."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."

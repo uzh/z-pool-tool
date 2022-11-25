@@ -36,7 +36,7 @@ type t =
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
   | SessionReminderDefaultText of Entity.Reminder.Text.t
-  | SessionSignUpTitle
+  | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
   | SignUpCTA
   | SignUpTitle
@@ -107,6 +107,7 @@ type hint =
   | RegistrationDisabled
   | SelectedDateIsPast
   | SessionReminderLanguageHint
+  | SessionRegistrationHint
   | SignUpForWaitingList
   | TemplateTextElementsHint
   | TimeSpanPickerHint

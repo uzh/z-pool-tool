@@ -60,7 +60,7 @@ let to_string = function
       text
   | SessionReminder -> "Sessionerinnerung"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
-  | SessionSignUpTitle -> "Für diese Session anmelden"
+  | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
   | SignUpTitle -> "Anmeldung"
@@ -191,6 +191,8 @@ let rec hint_to_string = function
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
+  | SessionRegistrationHint ->
+    "Die Registrierung für eine Session ist verbindlich."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
