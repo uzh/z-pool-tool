@@ -9,78 +9,14 @@ let allowed_email_suffixes =
 ;;
 
 module TestContacts = struct
-  open Contact_test
-  open Contact_command
-
-  let create (email, user_id) =
-    email
-    |> contact_info
-    |> sign_up_contact
-    |> SignUp.decode
-    |> Pool_common.Utils.get_or_failwith
-    |> SignUp.handle ~user_id ~allowed_email_suffixes None
-  ;;
-
-  let verify contact =
-    let open Utils.Lwt_result.Infix in
-    let terms = AcceptTermsAndConditions.handle contact |> CCResult.get_exn in
-    let%lwt verify =
-      Contact.email_address contact
-      |> Email.find_unverified_by_address Test_utils.Data.database_label
-      ||> CCResult.get_exn
-      ||> fun email ->
-      VerifyEmail.(handle contact { email } |> CCResult.get_exn)
-    in
-    [ terms; verify ] |> CCList.flatten |> Lwt_result.return
-  ;;
-
-  let prepare data =
-    let%lwt () =
-      let open CCResult in
-      data
-      |> CCList.map create
-      |> CCList.all_ok
-      |> get_exn
-      |> CCList.flatten
-      |> Lwt_list.iter_s
-           (Pool_event.handle_event Test_utils.Data.database_label)
-    in
-    let%lwt contacts =
-      data
-      |> CCList.map snd
-      |> Contact.find_multiple Test_utils.Data.database_label
-    in
-    let%lwt () =
-      let open Lwt.Infix in
-      contacts
-      |> Lwt_list.map_s verify
-      >|= CCList.all_ok
-      >|= CCResult.get_exn
-      >|= CCList.flatten
-      >>= Lwt_list.iter_s
-            (Pool_event.handle_event Test_utils.Data.database_label)
-    in
-    contacts |> Lwt.return
-  ;;
-
-  let data =
-    CCList.range 0 5
-    |> CCList.map (fun i ->
-         Format.asprintf "%i-test@mail.com" i, Pool_common.Id.create ())
-  ;;
-
-  let create_contacts () = prepare data
-
-  let find_contacts () =
-    data
-    |> CCList.map snd
+  let all () =
+    Seed.Contacts.contact_ids
     |> Contact.find_multiple Test_utils.Data.database_label
   ;;
 
   let get_contact index =
     index
-    |> CCList.nth data
-    |> snd
+    |> CCList.nth Seed.Contacts.contact_ids
     |> Contact.find Test_utils.Data.database_label
     |> Lwt.map CCResult.get_exn
   ;;
@@ -252,7 +188,7 @@ let firstname firstname =
 
 let filter_contacts _ () =
   let%lwt () =
-    let%lwt contacts = TestContacts.create_contacts () in
+    let%lwt contacts = TestContacts.all () in
     let%lwt experiment =
       Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
     in
