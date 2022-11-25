@@ -103,3 +103,21 @@ let create db_pool =
   >|= CCList.flatten
   >>= Lwt_list.iter_s (Contact.handle_event db_pool)
 ;;
+
+let cleanup db_pool =
+  let delete_sihl_user_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM user_users
+      WHERE uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  in
+  let delete_sihl_user id =
+    Utils.Database.exec
+      (Pool_database.Label.value db_pool)
+      delete_sihl_user_request
+      (Pool_common.Id.value id)
+  in
+  Lwt_list.iter_s delete_sihl_user contact_ids
+;;
