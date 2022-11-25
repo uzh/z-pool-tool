@@ -106,6 +106,25 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     gap: $space-lg;
 }
 
+// Card
+.card {
+    border-radius: $border-radius;
+    border: 1px solid $grey-border;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .card-header {
+        background-color: $grey-light;
+        padding: $space-sm;
+    }
+
+    .card-body {
+        border-top: 1px solid $grey-border;
+        padding: $space-sm;
+    }
+}
+
 // Modal
 body[data-noscroll] {
     overflow-y: hidden;
@@ -131,7 +150,7 @@ body[data-noscroll] {
     @extend .border-radius;
     background-color: $white;
     max-height: 50rem;
-    overflow-y: scroll;
+    overflow-y: auto;
     height: fit-content;
 }
 
