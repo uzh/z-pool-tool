@@ -8,9 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ocaml/opam:debian-ocaml-4.12
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.github_token }}
+      options: --user root
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
