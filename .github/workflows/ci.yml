@@ -44,23 +44,10 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
 
-      - name: Pin Sihl and other custom libraries
+      - name: Setup project and install dependencies
         run: |
-          opam pin add -yn sihl https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
-          opam pin add -yn canary https://github.com/uzh/canary.git
-          opam pin add -yn conformist https://github.com/oxidizing/conformist.git
-          opam pin add -ywn guardian https://github.com/uzh/guardian.git
-
-      - name: Pin current pool tool
-        run: |
-          opam pin add -yn pool .
-          OPAMSOLVERTIMEOUT=180 opam depext -y pool
+          opam init -a
+          sh ./scripts/setup.sh
 
       - name: Install dependencies
         run: opam install --deps-only --with-test -y .
