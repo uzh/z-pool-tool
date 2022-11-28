@@ -5,9 +5,9 @@ on:
 jobs:
   build:
     name: Build and test
-
     runs-on: ${{ matrix.os }}
-
+    container:
+      image: ocaml/opam:debian-ocaml-4.12
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
@@ -15,7 +15,6 @@ jobs:
       MYSQL_ROOT_PASSWORD: password
       SIHL_ENV: test
       TEST_EMAIL: test@econ.uzh.ch
-
     services:
       database-root:
         image: mariadb:10.6
@@ -32,38 +31,15 @@ jobs:
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
         ports: ["3307:3306"]
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        ocaml-compiler: [4.12.x]
-        openssl-package: [1.1.1f-1ubuntu2_amd64]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install OpenSSL
-        run: |
-          openssl version
-          ldconfig -p|grep ssl
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/openssl_${{ matrix.openssl-package }}.deb
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_${{ matrix.openssl-package }}.deb
-          wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_${{ matrix.openssl-package }}.deb
-          sudo dpkg -i openssl_${{ matrix.openssl-package }}.deb < echo "Y"
-          /usr/bin/yes '' | sudo dpkg -i openssl_${{ matrix.openssl-package }}.deb
-          sudo dpkg -i libssl-dev_${{ matrix.openssl-package }}.deb
-          sudo dpkg -i libssl1.1_${{ matrix.openssl-package }}.deb
-          openssl version
-          sudo dpkg -l *ssl*
-      - name: Setup OCaml
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          dune-cache: true
-          opam-pin: true
-          opam-depext: false
       - name: Debug OpenSSL
         run: |
           openssl version
@@ -91,6 +67,10 @@ jobs:
 
       - name: Install dependencies
         run: opam install --deps-only --with-test -y .
+
+      - name: Debug OpenSSL
+        run: |
+          openssl version
 
       - name: Build
         run: opam exec -- dune build --root .
