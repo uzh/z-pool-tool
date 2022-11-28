@@ -5,8 +5,8 @@ let create db_pool () =
   Lwt.return_unit
 ;;
 
-let[@warning "-21"] cleanup db_pool () =
-  failwith "Cleaning up";
-  let%lwt () = Contacts.cleanup db_pool in
+let cleanup _ () =
+  let pool = Test_utils.Data.database_label in
+  let%lwt () = Contacts.cleanup pool in
   Lwt.return_unit
 ;;
