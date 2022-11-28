@@ -17,7 +17,7 @@ module Data = struct
     let single_query : query =
       Pred
         (Predicate.create
-           Key.(Hardcoded Email)
+           Key.(Hardcoded Firstname)
            Operator.Equal
            (Single (Str "Foo")))
     ;;

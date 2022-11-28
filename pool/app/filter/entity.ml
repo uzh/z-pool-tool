@@ -25,6 +25,8 @@ let print m fmt _ = Format.pp_print_string fmt m
 type single_val =
   | Bool of bool [@printer print "bool"] [@name "bool"]
   | Date of Ptime.t [@printer print "date"] [@name "date"]
+  | Language of Pool_common.Language.t [@printer print "language"]
+      [@name "language"]
   | Nr of float [@printer print "nr"] [@name "nr"]
   | Option of Custom_field.SelectOption.Id.t [@printer print "option"]
       [@name "option"]
@@ -38,6 +40,7 @@ type value =
 
 let single_value_of_yojson (yojson : Yojson.Safe.t) =
   let error = Pool_common.Message.(Invalid Field.Value) in
+  let open CCResult in
   match yojson with
   | `Assoc [ (key, value) ] ->
     (match key, value with
@@ -46,6 +49,8 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
        str
        |> Ptime.of_rfc3339
        |> CCResult.map2 (fun (date, _, _) -> Date date) (fun _ -> error)
+     | "language", `String str ->
+       str |> Pool_common.Language.create >|= fun l -> Language l
      | "nr", `Float n -> Ok (Nr n)
      | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
      | "option", `String id ->
@@ -74,6 +79,7 @@ let yojson_of_single_val value =
   match value with
   | Bool b -> `Bool b
   | Date ptime -> `String (Ptime.to_rfc3339 ptime)
+  | Language lang -> `String (Pool_common.Language.show lang)
   | Nr n -> `Float n
   | Option id -> `String (Custom_field.SelectOption.Id.value id)
   | Str str -> `String str
@@ -89,6 +95,7 @@ module Key = struct
   type input_type =
     | Bool [@printer print "bool"]
     | Date [@printer print "date"]
+    | Languages of Pool_common.Language.t list [@printer print "language"]
     | Nr [@printer print "nr"]
     | Str [@printer print "str"]
     | Select of Custom_field.SelectOption.t list [@printer print "option"]
@@ -96,12 +103,11 @@ module Key = struct
   [@@deriving show]
 
   type hardcoded =
-    | Email [@printer print "email"] [@name "email"]
+    | ContactLanguage [@printer print "contact_language"]
+        [@name "contact_language"]
+    | Firstname [@printer print "first_name"] [@name "first_name"]
     | Name [@printer print "name"] [@name "name"]
-    | Paused [@printer print "paused"] [@name "paused"]
-    | Verified [@printer print "verified"] [@name "verified"]
-    | VerifiedAt [@printer print "verified_at"] [@name "verified_at"]
-  [@@deriving show { with_path = false }, eq, yojson, variants]
+  [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
     | CustomField of Custom_field.t
@@ -171,21 +177,16 @@ module Key = struct
   ;;
 
   let hardcoded_to_sql = function
-    | Email -> "user_users.email"
+    | Firstname -> "user_users.given_name"
     | Name -> "user_users.name"
-    | Paused -> "pool_contacts.paused"
-    | Verified ->
-      "pool_contacts.verified" (* TODO: This column does not exists*)
-    | VerifiedAt -> "pool_contacts.verified"
+    | ContactLanguage -> "pool_contacts.language"
   ;;
 
   let type_of_hardcoded m : input_type =
     match m with
-    | Email -> Str
+    | Firstname -> Str
     | Name -> Str
-    | Paused -> Bool
-    | Verified -> Bool
-    | VerifiedAt -> Date
+    | ContactLanguage -> Languages Pool_common.Language.all
   ;;
 
   let type_of_custom_field m : input_type =
@@ -215,6 +216,10 @@ module Key = struct
       | Date _, Date
       | Nr _, Nr
       | Str _, Str -> Ok ()
+      | Language lang, Languages languages ->
+        CCList.find_opt (Pool_common.Language.equal lang) languages
+        |> CCOption.to_result error
+        >|= CCFun.const ()
       | Option selected, Select options | Option selected, MultiSelect options
         ->
         CCList.find_opt
@@ -254,7 +259,11 @@ module Key = struct
   ;;
 
   let all_hardcoded : hardcoded list =
-    [ Email; Name; Paused; Verified; VerifiedAt ]
+    CCList.range min_hardcoded max_hardcoded
+    |> CCList.map hardcoded_of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "Hardcoded filter keys: Could not create list of all keys!"
   ;;
 end
 
@@ -276,10 +285,12 @@ module Operator = struct
     let open Key in
     function
     | Key.Bool -> [ Equal; NotEqual ]
-    | Str -> [ Equal; NotEqual; Like ]
-    | Date | Nr -> [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
-    | Select _ -> [ Equal; NotEqual ]
+    | Key.Date | Nr ->
+      [ Equal; NotEqual; Greater; GreaterEqual; Less; LessEqual ]
+    | Key.Languages _ -> [ Equal; NotEqual ]
     | MultiSelect _ -> [ ContainsAll; ContainsSome; ContainsNone ]
+    | Select _ -> [ Equal; NotEqual ]
+    | Str -> [ Equal; NotEqual; Like ]
   ;;
 
   let of_string m =

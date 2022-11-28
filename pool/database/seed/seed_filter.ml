@@ -3,16 +3,16 @@ let test_filter =
   let p1 =
     Pred
       (Predicate.create
-         Key.(Hardcoded Email)
+         Key.(Hardcoded ContactLanguage)
          Operator.Equal
-         (Single (Str "Foo")))
+         (Single (Language Pool_common.Language.En)))
   in
   let p2 =
     Pred
       (Predicate.create
-         Key.(Hardcoded Email)
+         Key.(Hardcoded Name)
          Operator.Like
-         (Single (Str "%email.com")))
+         (Single (Str "lastname%")))
   in
   Or [ p1; p2 ]
 ;;

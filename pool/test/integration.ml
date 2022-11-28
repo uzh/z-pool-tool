@@ -82,6 +82,7 @@ let suite =
     ; ( "matcher"
       , Matcher_test.
           [ test_case "send invitations" `Quick create_invitations_repo ] )
+    ; "cleanup", [ test_case "clean up test database" `Quick Seed.cleanup ]
     ]
 ;;
 
@@ -99,7 +100,9 @@ let services =
 
 let () =
   Lwt_main.run
-    (let%lwt () = Test_utils.setup_test () in
-     let%lwt _ = Sihl.Container.start_services services in
-     Alcotest_lwt.run "integration" @@ suite)
+    (let open Test_utils in
+    let%lwt () = setup_test () in
+    let%lwt _ = Sihl.Container.start_services services in
+    let%lwt () = Seed.create Data.database_label () in
+    Alcotest_lwt.run "integration" @@ suite)
 ;;

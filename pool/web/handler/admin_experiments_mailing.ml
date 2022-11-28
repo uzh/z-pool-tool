@@ -241,18 +241,11 @@ let add_condition req =
       |> CCOption.to_result (invalid field)
     in
     let distribution =
+      let open Mailing.Distribution in
       let open CCResult in
       let* field =
         let field = Pool_common.Message.Field.DistributionField in
-        field
-        |> find_in_urlencoded Pool_common.Message.Field.read
-        >>= fun field ->
-        if CCList.mem
-             ~eq:Pool_common.Message.Field.equal
-             field
-             Mailing.Distribution.sortable_fields
-        then Ok field
-        else Error (invalid field)
+        field |> find_in_urlencoded read_sortable_field
       in
       let* order =
         let field = Pool_common.Message.Field.SortOrder in
