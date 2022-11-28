@@ -113,11 +113,20 @@ let cleanup db_pool =
     |sql}
     |> Caqti_type.(string ->. unit)
   in
-  let delete_sihl_user id =
+  let delete_contact_request =
+    let open Caqti_request.Infix in
+    {sql|
+      DELETE FROM pool_contacts
+      WHERE user_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->. unit)
+  in
+  let exec request id =
     Utils.Database.exec
       (Pool_database.Label.value db_pool)
-      delete_sihl_user_request
+      request
       (Pool_common.Id.value id)
   in
-  Lwt_list.iter_s delete_sihl_user contact_ids
+  let%lwt () = Lwt_list.iter_s (exec delete_sihl_user_request) contact_ids in
+  Lwt_list.iter_s (exec delete_contact_request) contact_ids
 ;;
