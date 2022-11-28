@@ -50,6 +50,7 @@ jobs:
           sudo dpkg -l *ssl*
           ldconfig -p|grep ssl
           ls -la /lib/x86_64-linux-gnu
+          sudo mv /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf.bkp
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/openssl_${{ matrix.openssl-package }}.deb
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_${{ matrix.openssl-package }}.deb
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_${{ matrix.openssl-package }}.deb
