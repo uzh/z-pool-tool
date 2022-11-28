@@ -52,6 +52,7 @@ jobs:
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_${{ matrix.openssl-package }}.deb
           wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_${{ matrix.openssl-package }}.deb
           sudo dpkg -i openssl_${{ matrix.openssl-package }}.deb < echo "Y"
+          /usr/bin/yes '' | sudo dpkg -i openssl_${{ matrix.openssl-package }}.deb
           sudo dpkg -i libssl-dev_${{ matrix.openssl-package }}.deb
           sudo dpkg -i libssl1.1_${{ matrix.openssl-package }}.deb
           openssl version
