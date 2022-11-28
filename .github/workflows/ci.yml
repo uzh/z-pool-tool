@@ -1,9 +1,6 @@
 name: CI
 on:
-  pull_request:
   push:
-    branches: [main]
-    tags: ["v*"]
 
 jobs:
   build:
@@ -46,13 +43,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use OCaml ${{ matrix.ocaml-version }}
+      - name: Debug OpenSSL
+        run: |
+          openssl version
+      - name: Setup OCaml
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
           dune-cache: true
           opam-pin: true
           opam-depext: false
+      - name: Debug OpenSSL
+        run: |
+          openssl version
 
       - name: Install system dependencies
         run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
