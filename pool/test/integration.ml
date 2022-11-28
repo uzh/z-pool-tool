@@ -104,6 +104,5 @@ let () =
     let%lwt () = setup_test () in
     let%lwt _ = Sihl.Container.start_services services in
     let%lwt () = Seed.create Data.database_label () in
-    let%lwt () = Alcotest_lwt.run "integration" @@ suite in
-    Seed.cleanup Data.database_label ())
+    Alcotest_lwt.run "integration" @@ suite)
 ;;
