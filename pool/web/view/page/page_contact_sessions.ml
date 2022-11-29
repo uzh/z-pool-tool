@@ -66,12 +66,6 @@ let public_detail (session : Session.Public.t) language =
     ; ( Field.Location
       , session.Session.Public.location
         |> Component.Partials.location_to_html ~public:true language )
-    ; ( Field.CanceledAt
-      , CCOption.map_or
-          ~default:"Not canceled"
-          (Ptime.to_rfc3339 ~space:true)
-          session.Public.canceled_at
-        |> txt )
     ]
   in
   Component.Table.vertical_table `Striped language ~align_top:true rows

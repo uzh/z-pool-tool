@@ -71,13 +71,24 @@ let show
     | false -> Pool_common.Message.(AddToWaitingList), "primary"
   in
   let session_list sessions =
-    div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
-      ; div [ Session.public_overview sessions experiment language ]
-      ]
+    if CCList.is_empty sessions
+    then
+      p
+        [ Pool_common.(
+            Utils.text_to_string
+              language
+              (I18n.EmtpyList Message.Field.Sessions))
+          |> txt
+        ]
+    else
+      div
+        ~a:[ a_class [ "stack-lg" ] ]
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions)
+            ]
+        ; div [ Session.public_overview sessions experiment language ]
+        ]
   in
   let waiting_list_form () =
     div
@@ -89,7 +100,12 @@ let show
                 Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
       ; (if user_is_enlisted
-        then div []
+        then
+          p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.ContactOnWaitingList)
+            ]
         else
           p
             [ txt

@@ -423,43 +423,31 @@ let index
   let html =
     div
       ~a:[ a_class [ "stack" ] ]
-      (if CCList.is_empty rows
-      then
-        [ p
-            [ txt
-                Pool_common.(
-                  Utils.text_to_string
-                    language
-                    (I18n.EmtpyList Message.Field.Sessions))
+      [ p
+          [ Pool_common.I18n.SessionIndent
+            |> Pool_common.Utils.text_to_string language
+            |> txt
+          ]
+      ; a
+          ~a:
+            [ a_href
+                (Format.asprintf
+                   "/admin/experiments/%s/sessions%s"
+                   (Pool_common.Id.value experiment_id)
+                   (if chronological then "" else "?chronological=true")
+                |> Sihl.Web.externalize_path)
             ]
-        ; p [ add_session_btn ]
-        ]
-      else
-        [ p
-            [ Pool_common.I18n.SessionIndent
-              |> Pool_common.Utils.text_to_string language
-              |> txt
-            ]
-        ; a
-            ~a:
-              [ a_href
-                  (Format.asprintf
-                     "/admin/experiments/%s/sessions%s"
-                     (Pool_common.Id.value experiment_id)
-                     (if chronological then "" else "?chronological=true")
-                  |> Sihl.Web.externalize_path)
+          [ p
+              [ (if chronological
+                then Pool_common.I18n.SwitchGrouped
+                else Pool_common.I18n.SwitchChronological)
+                |> Pool_common.Utils.text_to_string language
+                |> txt
               ]
-            [ p
-                [ (if chronological
-                  then Pool_common.I18n.SwitchGrouped
-                  else Pool_common.I18n.SwitchChronological)
-                  |> Pool_common.Utils.text_to_string language
-                  |> txt
-                ]
-            ]
-          (* TODO [aerben] allow tables to be sorted generally? *)
-        ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
-        ])
+          ]
+        (* TODO [aerben] allow tables to be sorted generally? *)
+      ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+      ]
   in
   Page_admin_experiments.experiment_layout
     ~hint:Pool_common.I18n.ExperimentSessions

@@ -162,15 +162,7 @@ end
 let index (Pool_context.{ language; _ } as context) experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
-  let html =
-    if CCList.is_empty mailings
-    then
-      p
-        (* TODO [aerben] this is wrong, should be plural, add a Plural
-           constructor?*)
-        [ I18n.EmtpyList Field.Mailing |> Utils.text_to_string language |> txt ]
-    else List.create true context experiment_id mailings
-  in
+  let html = List.create true context experiment_id mailings in
   Page_admin_experiments.experiment_layout
     ~hint:Pool_common.I18n.ExperimentMailings
     language

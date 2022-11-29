@@ -301,78 +301,102 @@ let field_form
       (match m with
        | Select (_, options) | MultiSelect (_, options) ->
          let list =
-           form
-             ~a:
-               [ a_method `Post
-               ; a_action
-                   (Sihl.Web.externalize_path
-                      (Url.Field.detail_path (model m, id m)
-                      |> Format.asprintf "%s/sort-options"))
-               ; a_class [ "stack" ]
-               ]
-             (CCList.cons
-                (tablex
-                   ~a:[ a_class [ "table"; "simple"; "sortable" ] ]
-                   [ tbody
-                       ~a:[ a_user_data "sortable" "" ]
-                       (CCList.map
-                          (fun option ->
-                            tr
-                              ~a:[ a_user_data "sortable-item" "" ]
-                              [ td [ txt (SelectOption.name language option) ]
-                              ; td
-                                  [ txt
-                                      (if CCOption.is_some
-                                            option.SelectOption.published_at
-                                      then
-                                        Pool_common.(
-                                          Utils.field_to_string
-                                            language
-                                            Message.Field.PublishedAt)
-                                      else "")
-                                  ]
-                              ; td
-                                  [ input
-                                      ~a:
-                                        [ a_input_type `Hidden
-                                        ; a_name
-                                            Message.Field.(
-                                              CustomFieldOption |> array_key)
-                                        ; a_value
-                                            SelectOption.(Id.value option.id)
-                                        ]
-                                      ()
-                                  ]
-                              ; td
-                                  ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-                                  [ a
-                                      ~a:
-                                        [ a_href
-                                            (Url.Option.edit_path
-                                               (model m, id m)
-                                               option.SelectOption.id
-                                            |> Sihl.Web.externalize_path)
-                                        ]
-                                      [ txt
-                                          Pool_common.(
-                                            Message.(Edit None)
-                                            |> Utils.control_to_string language)
+           if CCList.is_empty options
+           then
+             [ p
+                 Pool_common.
+                   [ Utils.text_to_string
+                       language
+                       (I18n.NoEntries Message.Field.CustomFieldOptions)
+                     |> txt
+                   ]
+             ]
+           else
+             [ p
+                 Pool_common.
+                   [ Utils.hint_to_string
+                       language
+                       I18n.(CustomFieldSort Message.Field.CustomFieldOptions)
+                     |> HttpUtils.add_line_breaks
+                   ]
+             ; form
+                 ~a:
+                   [ a_method `Post
+                   ; a_action
+                       (Sihl.Web.externalize_path
+                          (Url.Field.detail_path (model m, id m)
+                          |> Format.asprintf "%s/sort-options"))
+                   ; a_class [ "stack" ]
+                   ]
+                 (CCList.cons
+                    (tablex
+                       ~a:[ a_class [ "table"; "simple"; "sortable" ] ]
+                       [ tbody
+                           ~a:[ a_user_data "sortable" "" ]
+                           (CCList.map
+                              (fun option ->
+                                tr
+                                  ~a:[ a_user_data "sortable-item" "" ]
+                                  [ td
+                                      [ txt (SelectOption.name language option)
                                       ]
-                                  ]
-                              ])
-                          options)
-                   ])
-                [ csrf_element csrf ()
-                ; div
-                    ~a:[ a_class [ "flexrow" ] ]
-                    [ submit_element
-                        ~classnames:[ "push" ]
-                        language
-                        Message.UpdateOrder
-                        ~submit_type:`Primary
-                        ()
-                    ]
-                ])
+                                  ; td
+                                      [ txt
+                                          (if CCOption.is_some
+                                                option.SelectOption.published_at
+                                          then
+                                            Pool_common.(
+                                              Utils.field_to_string
+                                                language
+                                                Message.Field.PublishedAt)
+                                          else "")
+                                      ]
+                                  ; td
+                                      [ input
+                                          ~a:
+                                            [ a_input_type `Hidden
+                                            ; a_name
+                                                Message.Field.(
+                                                  CustomFieldOption |> array_key)
+                                            ; a_value
+                                                SelectOption.(
+                                                  Id.value option.id)
+                                            ]
+                                          ()
+                                      ]
+                                  ; td
+                                      ~a:
+                                        [ a_class [ "flexrow"; "justify-end" ] ]
+                                      [ a
+                                          ~a:
+                                            [ a_href
+                                                (Url.Option.edit_path
+                                                   (model m, id m)
+                                                   option.SelectOption.id
+                                                |> Sihl.Web.externalize_path)
+                                            ]
+                                          [ txt
+                                              Pool_common.(
+                                                Message.(Edit None)
+                                                |> Utils.control_to_string
+                                                     language)
+                                          ]
+                                      ]
+                                  ])
+                              options)
+                       ])
+                    [ csrf_element csrf ()
+                    ; div
+                        ~a:[ a_class [ "flexrow" ] ]
+                        [ submit_element
+                            ~classnames:[ "push" ]
+                            language
+                            Message.UpdateOrder
+                            ~submit_type:`Primary
+                            ()
+                        ]
+                    ])
+             ]
          in
          div
            [ div
@@ -403,14 +427,7 @@ let field_form
                        (Url.Option.new_path (model m, id m))
                    ]
                ]
-           ; p
-               Pool_common.
-                 [ Utils.hint_to_string
-                     language
-                     I18n.(CustomFieldSort Message.Field.CustomFieldOptions)
-                   |> HttpUtils.add_line_breaks
-                 ]
-           ; div ~a:[ a_class [ "gap" ] ] [ list ]
+           ; div ~a:[ a_class [ "gap" ] ] list
            ]
        | Boolean _ | Number _ | Text _ -> empty)
   in
@@ -717,154 +734,190 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
     @ CCList.map (field_row None) ungrouped
   in
   let sort_ungrouped =
-    div
-      [ h3
-          ~a:[ a_class [ "heading-3" ] ]
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.SortUngroupedFields)
-          ]
-      ; p
-          Pool_common.
-            [ Utils.hint_to_string
-                language
-                I18n.(CustomFieldSort Message.Field.CustomFields)
-              |> HttpUtils.add_line_breaks
-            ]
-      ; form
-          ~a:
-            [ a_class [ "stack" ]
-            ; a_method `Post
-            ; a_action
-                (Sihl.Web.externalize_path (Url.index_path current_model)
-                |> Format.asprintf "%s/sort-fields")
-            ]
-          [ csrf_element csrf ()
-          ; div
-              ~a:[ a_user_data "sortable" "" ]
-              (CCList.map
-                 (fun field ->
-                   div
-                     ~a:
-                       [ a_class [ "flexrow"; "align-center"; "inset-sm" ]
-                       ; a_user_data "sortable-item" ""
-                       ]
-                     [ txt (field |> field_name)
-                     ; input
-                         ~a:
-                           [ a_input_type `Hidden
-                           ; a_name Message.Field.(CustomField |> array_key)
-                           ; a_value Custom_field.(field |> id |> Id.value)
-                           ]
-                         ()
-                     ])
-                 ungrouped)
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element
-                  ~classnames:[ "push" ]
+    let sort_form =
+      if CCList.is_empty ungrouped
+      then
+        [ p
+            Pool_common.
+              [ Utils.text_to_string
                   language
-                  Message.UpdateOrder
-                  ~submit_type:`Primary
-                  ()
+                  (I18n.NoEntries Message.Field.CustomFields)
+                |> txt
               ]
-          ]
-      ]
+        ]
+      else
+        [ p
+            Pool_common.
+              [ Utils.hint_to_string
+                  language
+                  I18n.(CustomFieldSort Message.Field.CustomFields)
+                |> HttpUtils.add_line_breaks
+              ]
+        ; form
+            ~a:
+              [ a_class [ "stack" ]
+              ; a_method `Post
+              ; a_action
+                  (Sihl.Web.externalize_path (Url.index_path current_model)
+                  |> Format.asprintf "%s/sort-fields")
+              ]
+            [ csrf_element csrf ()
+            ; div
+                ~a:[ a_user_data "sortable" "" ]
+                (CCList.map
+                   (fun field ->
+                     div
+                       ~a:
+                         [ a_class [ "flexrow"; "align-center"; "inset-sm" ]
+                         ; a_user_data "sortable-item" ""
+                         ]
+                       [ txt (field |> field_name)
+                       ; input
+                           ~a:
+                             [ a_input_type `Hidden
+                             ; a_name Message.Field.(CustomField |> array_key)
+                             ; a_value Custom_field.(field |> id |> Id.value)
+                             ]
+                           ()
+                       ])
+                   ungrouped)
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.UpdateOrder
+                    ~submit_type:`Primary
+                    ()
+                ]
+            ]
+        ]
+    in
+    div
+      (h3
+         ~a:[ a_class [ "heading-3" ] ]
+         [ txt
+             Pool_common.(
+               Utils.text_to_string language I18n.SortUngroupedFields)
+         ]
+      :: sort_form)
   in
   let groups_html =
     let list =
-      form
-        ~a:
-          [ a_method `Post
-          ; a_action
-              (Url.Group.index_path current_model
-              |> Format.asprintf "%s/group/sort"
-              |> Sihl.Web.externalize_path)
-          ; a_class [ "stack" ]
-          ]
-        (CCList.cons
-           (div
-              ~a:[ a_user_data "sortable" "" ]
-              (CCList.map
-                 (fun group ->
-                   let open Custom_field in
-                   div
-                     ~a:
-                       [ a_class
-                           [ "flexrow"
-                           ; "flex-gap"
-                           ; "justify-between"
-                           ; "align-center"
-                           ; "inset-sm"
-                           ]
-                       ; a_user_data "sortable-item" ""
-                       ]
-                     [ div [ txt Group.(group |> name language) ]
-                     ; div
-                         [ input
-                             ~a:
-                               [ a_input_type `Hidden
-                               ; a_name
-                                   Message.Field.(CustomFieldGroup |> array_key)
-                               ; a_value Group.(Id.value group.id)
-                               ]
-                             ()
-                         ]
-                     ; div
+      if CCList.is_empty group_list
+      then
+        [ p
+            Pool_common.
+              [ Utils.text_to_string
+                  language
+                  (I18n.NoEntries Message.Field.CustomFieldGroups)
+                |> txt
+              ]
+        ]
+      else
+        [ p
+            Pool_common.
+              [ Utils.hint_to_string
+                  language
+                  (I18n.CustomFieldSort Message.Field.CustomFieldGroups)
+                |> txt
+              ]
+        ; form
+            ~a:
+              [ a_method `Post
+              ; a_action
+                  (Url.Group.index_path current_model
+                  |> Format.asprintf "%s/group/sort"
+                  |> Sihl.Web.externalize_path)
+              ; a_class [ "stack" ]
+              ]
+            (CCList.cons
+               (div
+                  ~a:[ a_user_data "sortable" "" ]
+                  (CCList.map
+                     (fun group ->
+                       let open Custom_field in
+                       div
                          ~a:
-                           [ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-                         [ a
-                             ~a:
-                               [ a_href
-                                   (Url.Group.edit_path
-                                      Group.(group.model, group.id)
-                                   |> Sihl.Web.externalize_path)
+                           [ a_class
+                               [ "flexrow"
+                               ; "flex-gap"
+                               ; "justify-between"
+                               ; "align-center"
+                               ; "inset-sm"
                                ]
-                             [ txt
-                                 Pool_common.(
-                                   Message.(Edit None)
-                                   |> Utils.control_to_string language)
+                           ; a_user_data "sortable-item" ""
+                           ]
+                         [ div [ txt Group.(group |> name language) ]
+                         ; div
+                             [ input
+                                 ~a:
+                                   [ a_input_type `Hidden
+                                   ; a_name
+                                       Message.Field.(
+                                         CustomFieldGroup |> array_key)
+                                   ; a_value Group.(Id.value group.id)
+                                   ]
+                                 ()
                              ]
-                         ]
-                     ])
-                 group_list))
-           [ csrf_element csrf ()
-           ; div
-               ~a:[ a_class [ "flexrow" ] ]
-               [ submit_element
-                   ~classnames:[ "push" ]
-                   language
-                   Message.UpdateOrder
-                   ~submit_type:`Primary
-                   ()
-               ]
-           ])
+                         ; div
+                             ~a:
+                               [ a_class
+                                   [ "flexrow"; "flex-gap"; "align-center" ]
+                               ]
+                             [ a
+                                 ~a:
+                                   [ a_href
+                                       (Url.Group.edit_path
+                                          Group.(group.model, group.id)
+                                       |> Sihl.Web.externalize_path)
+                                   ]
+                                 [ txt
+                                     Pool_common.(
+                                       Message.(Edit None)
+                                       |> Utils.control_to_string language)
+                                 ]
+                             ]
+                         ])
+                     group_list))
+               [ csrf_element csrf ()
+               ; div
+                   ~a:[ a_class [ "flexrow" ] ]
+                   [ submit_element
+                       ~classnames:[ "push" ]
+                       language
+                       Message.UpdateOrder
+                       ~submit_type:`Primary
+                       ()
+                   ]
+               ])
+        ]
     in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ div
-          ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
-          [ h2
-              ~a:[ a_class [ "heading-3" ] ]
-              [ txt
-                  (Message.Field.CustomFieldGroup
-                  |> Pool_common.Utils.field_to_string language
-                  |> CCString.capitalize_ascii)
-              ]
-          ; link_as_button
-              ~style:`Success
-              ~icon:`Add
-              ~classnames:[ "small" ]
-              ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
-              (Url.Group.new_path current_model)
-          ]
-      ; p
-          Pool_common.
-            [ Utils.hint_to_string language I18n.CustomFieldGroups
-              |> HttpUtils.add_line_breaks
-            ]
-      ; list
-      ]
+      ([ div
+           ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+           [ h2
+               ~a:[ a_class [ "heading-3" ] ]
+               [ txt
+                   (Message.Field.CustomFieldGroup
+                   |> Pool_common.Utils.field_to_string language
+                   |> CCString.capitalize_ascii)
+               ]
+           ; link_as_button
+               ~style:`Success
+               ~icon:`Add
+               ~classnames:[ "small" ]
+               ~control:(language, Message.(Add (Some Field.CustomFieldGroup)))
+               (Url.Group.new_path current_model)
+           ]
+       ; p
+           Pool_common.
+             [ Utils.hint_to_string language I18n.CustomFieldGroups
+               |> HttpUtils.add_line_breaks
+             ]
+       ]
+      @ list)
   in
   div
     ~a:[ a_class [ "stack-lg" ] ]

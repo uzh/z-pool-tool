@@ -104,12 +104,15 @@ let nav_link_to_string = function
   | WaitingList -> "Warteliste"
 ;;
 
-let rec hint_to_string = function
+let hint_to_string = function
   | AllowUninvitedSignup ->
     "Kontakte, die nicht eingeladen wurden, können sich für das Experiment \
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | ContactOnWaitingList ->
+    "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
+     Session zuweisen."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
@@ -126,12 +129,7 @@ let rec hint_to_string = function
   | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
   | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
   | CustomFieldGroups ->
-    Format.asprintf
-      {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.
-
-       %s
-       |}
-      (hint_to_string (CustomFieldSort Entity_message.Field.CustomFieldGroups))
+    {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
   | CustomFieldSort field ->
     Format.asprintf
       "In dieser Reihenfolge werden die %s den Kontakten angezeigt."

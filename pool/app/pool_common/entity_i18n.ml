@@ -80,6 +80,7 @@ type nav_link =
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | ContactOnWaitingList
   | CustomFieldAdminInputOnly
   | CustomFieldAdminViewOnly
   | CustomFieldContactModel

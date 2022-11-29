@@ -8,7 +8,7 @@ let to_string = function
   | EmailConfirmationTitle -> "Email confirmation"
   | EmtpyList field ->
     Format.asprintf
-      "There are no %s available."
+      "Currently, there are no %s available."
       (Locales_en.field_to_string field)
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | ExperimentNewTitle -> "Create new experiment"
@@ -97,12 +97,15 @@ let nav_link_to_string = function
   | WaitingList -> "Waiting list"
 ;;
 
-let rec hint_to_string = function
+let hint_to_string = function
   | AllowUninvitedSignup ->
     "Contacts who have not been invited will be able to sign up for the \
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | ContactOnWaitingList ->
+    "You are on the waiting list. The recruitment team will assign you to a \
+     session."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."
@@ -119,12 +122,7 @@ let rec hint_to_string = function
   | CustomFieldExperimentModel -> "Customziable attributes for experiments."
   | CustomFieldSessionModel -> "Customziable attributes for sessions."
   | CustomFieldGroups ->
-    Format.asprintf
-      {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.
-
-     %s
-     |}
-      (hint_to_string (CustomFieldSort Entity_message.Field.CustomFieldGroups))
+    {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
   | CustomFieldSort field ->
     Format.asprintf
       "The %s will be displayed to the contacts in this order."
