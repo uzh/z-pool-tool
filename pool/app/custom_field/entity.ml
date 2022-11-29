@@ -182,17 +182,37 @@ module Validation = struct
   end
 
   module Text = struct
-    let text_min_length = "text_length_min"
-    let text_max_length = "text_length_max"
+    type key =
+      | TextLengthMin [@name "text_length_min"]
+          [@printer printer "text_length_min"]
+      | TextLengthMax [@name "text_length_max"]
+          [@printer printer "text_length_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | TextLengthMin -> "Text min. length"
+      | TextLengthMax -> "Text max. length"
+    ;;
+
+    let read_key m =
+      try
+        Some
+          (m
+          |> Format.asprintf "[\"%s\"]"
+          |> Yojson.Safe.from_string
+          |> key_of_yojson)
+      with
+      | _ -> None
+    ;;
 
     let check_min_length rule_value value =
-      if CCString.length value > rule_value
+      if CCString.length value >= rule_value
       then Ok value
       else Error (Message.TextLengthMin rule_value)
     ;;
 
     let check_max_length rule_value value =
-      if CCString.length value < rule_value
+      if CCString.length value <= rule_value
       then Ok value
       else Error (Message.TextLengthMax rule_value)
     ;;
@@ -203,36 +223,56 @@ module Validation = struct
           CCList.fold_left
             (fun result (key, rule_value) ->
               let map_or = CCOption.map_or ~default:result in
-              match key with
-              | _ when CCString.equal key text_min_length ->
+              match read_key key with
+              | Some TextLengthMin ->
                 rule_value
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_min_length rule)
-              | _ when CCString.equal key text_max_length ->
+              | Some TextLengthMax ->
                 rule_value
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_max_length rule)
-              | _ -> result)
+              | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all = [ text_min_length, `Number; text_max_length, `Number ]
+    let all =
+      [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
+    ;;
   end
 
   module Number = struct
-    let number_min = "number_min"
-    let number_max = "number_max"
+    type key =
+      | NumberMin [@name "number_min"] [@printer printer "number_min"]
+      | NumberMax [@name "number_max"] [@printer printer "number_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | NumberMin -> "Number min."
+      | NumberMax -> "Number max."
+    ;;
+
+    let read_key m =
+      try
+        Some
+          (m
+          |> Format.asprintf "[\"%s\"]"
+          |> Yojson.Safe.from_string
+          |> key_of_yojson)
+      with
+      | _ -> None
+    ;;
 
     let check_min rule_value value =
-      if value > rule_value
+      if value >= rule_value
       then Ok value
       else Error (Message.NumberMin rule_value)
     ;;
 
     let check_max rule_value value =
-      if value < rule_value
+      if value <= rule_value
       then Ok value
       else Error (Message.NumberMax rule_value)
     ;;
@@ -243,32 +283,29 @@ module Validation = struct
           CCList.fold_left
             (fun result (key, rule) ->
               let map_or = CCOption.map_or ~default:result in
-              match key with
-              | _ when CCString.equal key number_min ->
+              match read_key key with
+              | Some NumberMin ->
                 rule
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_min rule)
-              | _ when CCString.equal key number_max ->
+              | Some NumberMax ->
                 rule
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_max rule)
-              | _ -> result)
+              | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all = [ number_min, `Number; number_max, `Number ]
+    let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
   end
 
   let key_to_human key =
-    let equal = CCString.equal key in
-    match key with
-    | _ when equal Text.text_min_length -> "Text min. length"
-    | _ when equal Text.text_max_length -> "Text max. length"
-    | _ when equal Number.number_min -> "Number min."
-    | _ when equal Number.number_max -> "Number max."
-    | _ -> key
+    let open CCOption in
+    let text = Text.(read_key key >|= key_to_human) in
+    let number = Number.(read_key key >|= key_to_human) in
+    CCOption.value ~default:key (text <+> number)
   ;;
 
   let pure = CCResult.pure, []
