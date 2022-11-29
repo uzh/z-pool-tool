@@ -22,17 +22,16 @@ let prepend_root_directory pool url =
 
 let layout_from_tenant (tenant : Pool_tenant.t) =
   let open Pool_tenant in
-  let tenant_url = tenant.url in
   let logo_src =
     tenant.logos
     |> Logos.value
     |> CCList.head_opt
     |> CCOption.map_or
          ~default:""
-         CCFun.(Pool_common.File.path %> create_public_url tenant_url)
+         CCFun.(Pool_common.File.path %> create_public_url tenant.url)
   in
   let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
-  let link = tenant_url |> Url.value |> Format.asprintf "http://%s" in
+  let link = tenant.url |> Url.value |> Format.asprintf "http://%s" in
   { link; logo_src; logo_alt }
 ;;
 
@@ -40,7 +39,7 @@ let root_layout () =
   let open CCOption in
   let root_url =
     Sihl.Configuration.read_string "PUBLIC_URL"
-    >>= fun url -> url |> Pool_tenant.Url.create |> CCOption.of_result
+    >>= CCFun.(Pool_tenant.Url.create %> CCOption.of_result)
   in
   let logo_src =
     root_url
