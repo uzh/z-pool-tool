@@ -1,5 +1,6 @@
 $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
+@import "responsiveness.scss";
 
 // Index page
 .index-page>*:nth-child(2) {
@@ -7,6 +8,13 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     flex-shrink: 0;
 }
 
+@include mobile {
+    .index-page {
+        flex-direction: column;
+    }
+}
+
+// Mailings toggle
 .toggled {
     display: flex;
 }
@@ -68,12 +76,21 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     cursor: pointer;
 }
 
+// FRAMEWORK
+
+.heading-1,
+.heading-2 {
+    word-wrap: break-word;
+}
+
+.word-wrap-break {
+    word-wrap: break-word;
+}
+
 // Images
 .aspect-ratio.contain>*:first-child {
     object-fit: contain;
 }
-
-// FRAMEWORK
 
 // Tabs
 // TODO: Move to framework and remove subnav
@@ -177,7 +194,6 @@ body[data-noscroll] {
 }
 
 // Grid -> To framework?
-
 [class*="grid-"] {
     display: flex;
 }
@@ -198,5 +214,84 @@ body[data-noscroll] {
 
     .grid-col-2 {
         grid-template-columns: repeat(2, 1fr);
+
+        @include until($tablet-breakpoint) {
+            grid-template-columns: repeat(1, 1fr);
+        }
+    }
+}
+
+// Navigation
+.fullscreen-overlay {
+    overflow-y: auto;
+}
+
+.desktop-nav {
+    display: none;
+}
+
+.icon-lg {
+    font-size: ms-font-size(3);
+}
+
+.mobile-nav {
+    display: none;
+
+    &.active {
+        display: flex;
+        flex-direction: column;
+
+        .fade-in {
+            animation-name: fade-in;
+            animation-duration: $transition-duration;
+            animation-fill-mode: forwards;
+        }
+    }
+
+    header {
+        padding: $space-base;
+        border-bottom: 1px solid $grey-border;
+        background-color: $grey-light;
+    }
+
+    .main-nav {
+        li {
+            display: inline;
+        }
+
+        &>ul {
+            flex-direction: column;
+
+            &>li {
+                margin-bottom: $space-base;
+            }
+        }
+
+        .nav-link {
+            padding: $space-xs 0;
+            display: inline-flex;
+        }
+    }
+
+    .children {
+        display: flex;
+        flex-direction: column;
+        padding-left: $space-lg;
+    }
+
+    ul {
+        list-style: none;
+        margin: 0;
+    }
+}
+
+
+@include from($navigation-breakpoint) {
+    .desktop-nav {
+        display: flex;
+    }
+
+    .mobile-nav-wrapper {
+        display: none;
     }
 }

@@ -62,8 +62,8 @@ type nav_link =
   | I18n
   | Invitations
   | Locations
-  | LoginInformation
   | Login
+  | LoginInformation
   | Logout
   | Mailings
   | Overview
@@ -71,7 +71,9 @@ type nav_link =
   | Profile
   | Sessions
   | Settings
+  | SystemSettings
   | Tenants
+  | Users
   | WaitingList
 [@@deriving eq]
 

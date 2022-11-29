@@ -1,0 +1,40 @@
+$tablet-breakpoint: 768px + ($body-line-height * 16) !default;
+$desktop-breakpoint: 1024px + ($body-line-height * 16) !default;
+$navigation-breakpoint: $tablet-breakpoint !default;
+
+@mixin until($value) {
+    @media (max-width: #{$value}) {
+        @content;
+    }
+}
+
+@mixin from($value) {
+    @media (min-width: #{$value}) {
+        @content;
+    }
+}
+
+@mixin mobile {
+    @media (max-width: #{$tablet-breakpoint - 1px}) {
+        @content;
+    }
+}
+
+@mixin tablet {
+    @media (min-width: #{$tablet-breakpoint}) and (max-width: #{$desktop-breakpoint - 1px}) {
+        @content;
+    }
+}
+
+@mixin desktop {
+    @media (min-width: #{$desktop-breakpoint}) {
+        @content;
+    }
+}
+
+// Flex
+.flexcolumn-mobile {
+    @include mobile {
+        flex-direction: column;
+    }
+}

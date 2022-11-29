@@ -91,7 +91,9 @@ let nav_link_to_string = function
   | Profile -> "Profile"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
+  | SystemSettings -> "System settings"
   | Tenants -> "Tenants"
+  | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;
 

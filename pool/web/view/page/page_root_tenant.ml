@@ -91,7 +91,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
         [ Field.TenantLogos; Field.PartnerLogos ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow" ] ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt Pool_common.(Utils.nav_link_to_string language I18n.Tenants) ]
@@ -151,7 +151,7 @@ let list tenant_list root_list Pool_context.{ language; csrf; _ } =
 
 let manage_operators { Pool_tenant.id; _ } Pool_context.{ language; csrf; _ } =
   div
-    ~a:[ a_class [ "trim"; "narrow" ] ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -336,7 +336,7 @@ let detail (tenant : Pool_tenant.t) Pool_context.{ language; csrf; _ } =
       ]
   in
   div
-    ~a:[ a_class [ "trim"; "narrow" ] ]
+    ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (tenant.Pool_tenant.title |> Pool_tenant.Title.value) ]
