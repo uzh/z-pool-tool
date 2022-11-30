@@ -140,10 +140,12 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
+  (* TODO: Show past sessions and disable registration? or do not show? *)
   let find_public_request =
     let open Caqti_request.Infix in
     {sql|
         WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND start > NOW()
         ORDER BY start
       |sql}
     |> find_public_sql
@@ -179,10 +181,12 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  (* TODO: Show past sessions and disable registration? or do not show? *)
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
         WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND start > NOW()
         ORDER BY start
       |sql}
     |> find_public_sql
