@@ -27,6 +27,18 @@ module NumberOfAssignments : sig
   val init : t
 end
 
+module NumberOfShowUps : sig
+  type t
+
+  val init : t
+end
+
+module NumberOfParticipations : sig
+  type t
+
+  val init : t
+end
+
 type t =
   { user : Service.User.t
   ; recruitment_channel : RecruitmentChannel.t option
@@ -39,6 +51,8 @@ type t =
   ; email_verified : Pool_user.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
+  ; num_show_ups : NumberOfShowUps.t
+  ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
@@ -134,6 +148,11 @@ type create =
   ; language : Pool_common.Language.t option
   }
 
+type session_participation =
+  { show_up : bool
+  ; participated : bool
+  }
+
 type event =
   | Created of create
   | Updated of PartialUpdate.t * t
@@ -148,9 +167,10 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  | AssignmentIncreased of t
-  | ShowUpIncreased of t
+  | NumAssignmentsIncreased of t
+  | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
+  | SessionParticipationSet of t * session_participation
 
 val created : create -> event
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

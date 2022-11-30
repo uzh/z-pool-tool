@@ -72,11 +72,18 @@ let set_attendance () =
       [ assignment, show_up, participated ]
   in
   let expected =
+    let open Contact in
+    let update =
+      { show_up = ShowUp.value show_up
+      ; participated = Participated.value participated
+      }
+    in
     Ok
       [ Session.Closed session |> Pool_event.session
       ; Assignment.AttendanceSet (assignment, show_up, participated)
         |> Pool_event.assignment
-      ; Contact.ShowUpIncreased assignment.contact |> Pool_event.contact
+      ; Contact.SessionParticipationSet (assignment.contact, update)
+        |> Pool_event.contact
       ]
   in
   Test_utils.check_result expected events

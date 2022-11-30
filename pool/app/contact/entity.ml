@@ -51,6 +51,24 @@ module NumberOfAssignments = struct
   let increment m = m + 1
 end
 
+module NumberOfShowUps = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+  let increment m = m + 1
+end
+
+module NumberOfParticipations = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+  let increment m = m + 1
+end
+
 type t =
   { user : Sihl_user.t
   ; recruitment_channel : RecruitmentChannel.t option
@@ -63,6 +81,8 @@ type t =
   ; email_verified : User.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
+  ; num_show_ups : NumberOfShowUps.t
+  ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
@@ -86,6 +106,8 @@ module Write = struct
     ; email_verified : User.EmailVerified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
+    ; num_show_ups : NumberOfShowUps.t
+    ; num_participations : NumberOfParticipations.t
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
@@ -106,6 +128,8 @@ module Write = struct
     ; email_verified = m.email_verified
     ; num_invitations = m.num_invitations
     ; num_assignments = m.num_assignments
+    ; num_show_ups = m.num_show_ups
+    ; num_participations = m.num_participations
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version
@@ -125,6 +149,7 @@ let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
+(* TODO[timhub]: Can I remove this module? *)
 module Preview = struct
   type t =
     { user : Sihl_user.t

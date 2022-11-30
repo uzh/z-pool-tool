@@ -120,18 +120,20 @@ end = struct
         |> validate_participation
         >|= fun ((assignment : Assignment.t), showup, participated) ->
         let contact_event =
-          if ShowUp.value showup
-          then
-            (* TODO[timhuber]: There seems to be some mistake naming the contact
-               events*)
-            [ Contact.ShowUpIncreased assignment.contact |> Pool_event.contact ]
-          else []
+          let open Contact in
+          let update =
+            { show_up = ShowUp.value showup
+            ; participated = Participated.value participated
+            }
+          in
+          SessionParticipationSet (assignment.contact, update)
+          |> Pool_event.contact
         in
         events
         @ [ Assignment.AttendanceSet (assignment, showup, participated)
             |> Pool_event.assignment
-          ]
-        @ contact_event)
+          ; contact_event
+          ])
       (Ok [ Session.Closed session |> Pool_event.session ])
       command
   ;;

@@ -15,6 +15,12 @@ type create =
   }
 [@@deriving eq, show]
 
+type session_participation =
+  { show_up : bool
+  ; participated : bool
+  }
+[@@deriving eq, show]
+
 let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
@@ -49,10 +55,12 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  (* TODO[timhub]: naming *)
-  | AssignmentIncreased of t
-  | ShowUpIncreased of t
+  (* TODO[timhub]: Actually implement those events, on invite / assignment (Do
+     not forget to undo, when entity gets deleted) *)
+  | NumAssignmentsIncreased of t
+  | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
+  | SessionParticipationSet of t * session_participation
 [@@deriving eq, show, variants]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -79,6 +87,8 @@ let handle_event pool : event -> unit Lwt.t =
     ; email_verified = None
     ; num_invitations = NumberOfInvitations.init
     ; num_assignments = NumberOfAssignments.init
+    ; num_show_ups = NumberOfShowUps.init
+    ; num_participations = NumberOfParticipations.init
     ; firstname_version = Pool_common.Version.create ()
     ; lastname_version = Pool_common.Version.create ()
     ; paused_version = Pool_common.Version.create ()
@@ -137,14 +147,14 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
-  | AssignmentIncreased contact ->
+  | NumInvitationsIncreased contact ->
     Repo.update
       pool
       { contact with
         num_invitations =
           contact.num_invitations |> NumberOfInvitations.increment
       }
-  | ShowUpIncreased contact ->
+  | NumAssignmentsIncreased contact ->
     Repo.update
       pool
       { contact with
@@ -153,4 +163,16 @@ let handle_event pool : event -> unit Lwt.t =
       }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
+  | SessionParticipationSet (contact, { show_up; participated }) ->
+    let num_show_ups =
+      if show_up
+      then contact.num_show_ups |> NumberOfShowUps.increment
+      else contact.num_show_ups
+    in
+    let num_participations =
+      if participated
+      then contact.num_participations |> NumberOfParticipations.increment
+      else contact.num_participations
+    in
+    { contact with num_show_ups; num_participations } |> Repo.update pool
 ;;

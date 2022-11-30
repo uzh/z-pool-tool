@@ -141,6 +141,8 @@ module Model = struct
           |> CCOption.pure
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
+      ; num_show_ups = NumberOfShowUps.init
+      ; num_participations = NumberOfParticipations.init
       ; firstname_version = Pool_common.Version.create ()
       ; lastname_version = Pool_common.Version.create ()
       ; paused_version = Pool_common.Version.create ()
