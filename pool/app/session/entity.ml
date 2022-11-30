@@ -96,7 +96,8 @@ type t =
      * Could this model as the following, just flatten tail of linked list
      *  : ; follow_up : t *)
     (* TODO [aerben] make type for canceled_at? *)
-    canceled_at : Ptime.t option
+    closed_at : Ptime.t option
+  ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -134,6 +135,7 @@ let create
   ; reminder_lead_time
   ; reminder_sent_at = None
   ; assignment_count = 0
+  ; closed_at = None
   ; canceled_at = None
   ; created_at = Ptime_clock.now ()
   ; updated_at = Ptime_clock.now ()

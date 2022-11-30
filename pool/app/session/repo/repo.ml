@@ -51,6 +51,7 @@ module Sql = struct
           pool_sessions.reminder_lead_time,
           pool_sessions.reminder_sent_at,
           (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          pool_sessions.closed_at,
           pool_sessions.canceled_at,
           pool_sessions.created_at,
           pool_sessions.updated_at
@@ -305,6 +306,7 @@ module Sql = struct
         reminder_text,
         reminder_lead_time,
         reminder_sent_at,
+        closed_at,
         canceled_at
       ) VALUES (
         UNHEX(REPLACE($2, '-', '')),
@@ -321,13 +323,15 @@ module Sql = struct
         $12,
         $13,
         $14,
-        $15
+        $15,
+        $16
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
   ;;
 
   let insert pool (experiment_id, session) =
+    print_endline "";
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request
@@ -351,7 +355,8 @@ module Sql = struct
         reminder_text = $11,
         reminder_lead_time = $12,
         reminder_sent_at = $13,
-        canceled_at = $14
+        closed_at = $14,
+        canceled_at = $15
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

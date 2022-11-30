@@ -500,6 +500,29 @@ let detail
   assignments
   =
   let open Session in
+  let close_link =
+    match
+      CCOption.is_none session.closed_at
+      && Ptime.is_earlier
+           (session.start |> Start.value)
+           ~than:Ptime_clock.(now ())
+    with
+    | false -> txt ""
+    | true ->
+      a
+        ~a:
+          [ a_href
+              (Format.asprintf
+                 "/admin/experiments/%s/sessions/%s/close"
+                 (Pool_common.Id.value experiment.Experiment.id)
+                 (Pool_common.Id.value session.id)
+              |> Sihl.Web.externalize_path)
+          ]
+        [ Message.(Close (Some Field.Session))
+          |> Pool_common.Utils.control_to_string language
+          |> txt
+        ]
+  in
   let session_overview =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -544,15 +567,27 @@ let detail
           ; Field.MaxParticipants, amount session.max_participants |> txt
           ; Field.MinParticipants, amount session.min_participants |> txt
           ; Field.Overbook, amount session.overbook |> txt
+          ; ( Field.ClosedAt
+            , session.closed_at
+              |> CCOption.map_or
+                   ~default:""
+                   Pool_common.Utils.Time.formatted_date_time
+              |> txt )
           ]
           |> fun rows ->
-          match session.canceled_at with
-          | None -> rows
-          | Some canceled ->
-            rows
-            @ [ ( Field.CanceledAt
-                , Pool_common.Utils.Time.formatted_date_time canceled |> txt )
-              ]
+          let canceled =
+            session.canceled_at
+            |> CCOption.map (fun c ->
+                 ( Field.CanceledAt
+                 , Pool_common.Utils.Time.formatted_date_time c |> txt ))
+          in
+          let closed =
+            session.closed_at
+            |> CCOption.map (fun c ->
+                 ( Field.ClosedAt
+                 , Pool_common.Utils.Time.formatted_date_time c |> txt ))
+          in
+          rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
         in
         Table.vertical_table `Striped language ~align_top:true
         @@ CCOption.map_or ~default:rows (CCList.cons' rows) parent)
@@ -590,24 +625,25 @@ let detail
                  ]
              ]
            else []))
-          @
-          if session.assignment_count |> AssignmentCount.value > 0
-          then
-            [ a
-                ~a:
-                  [ a_href
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/reschedule"
-                         (Pool_common.Id.value experiment.Experiment.id)
-                         (Pool_common.Id.value session.id)
-                      |> Sihl.Web.externalize_path)
+          @ (if session.assignment_count |> AssignmentCount.value > 0
+                && CCOption.is_none session.closed_at
+            then
+              [ a
+                  ~a:
+                    [ a_href
+                        (Format.asprintf
+                           "/admin/experiments/%s/sessions/%s/reschedule"
+                           (Pool_common.Id.value experiment.Experiment.id)
+                           (Pool_common.Id.value session.id)
+                        |> Sihl.Web.externalize_path)
+                    ]
+                  [ Message.(Reschedule (Some Field.Session))
+                    |> Pool_common.Utils.control_to_string language
+                    |> txt
                   ]
-                [ Message.(Reschedule (Some Field.Session))
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
-                ]
-            ]
-          else [])
+              ]
+            else [])
+          @ [ close_link ])
       ]
   in
   let assignments_html =
@@ -699,5 +735,94 @@ let follow_up
        language
        (Page_admin_experiments.Control
           Pool_common.Message.(Create (Some Field.FollowUpSession)))
+       experiment
+;;
+
+let close
+  Pool_context.{ language; csrf; _ }
+  experiment
+  (session : Session.t)
+  assignments
+  =
+  let open Pool_common in
+  let control = Message.(Close (Some Field.Session)) in
+  let field_to_string f =
+    Utils.field_to_string language f |> CCString.capitalize_ascii
+  in
+  let form =
+    let checkbox_element contact field =
+      let id =
+        Format.asprintf
+          "%s_%s"
+          (Contact.id contact |> Id.value)
+          Message.Field.(show field)
+      in
+      (* TODO: Order by what here? name=showup[] value=id or the other way
+         around? *)
+      div
+        [ input
+            ~a:
+              [ a_input_type `Checkbox
+              ; a_name Message.Field.(array_key field)
+              ; a_id id
+              ; a_value (contact |> Contact.id |> Id.value)
+              ]
+            ()
+        ; label
+            ~a:[ a_label_for id ]
+            [ txt (field_to_string field |> CCString.capitalize_ascii) ]
+        ]
+    in
+    let table =
+      CCList.map
+        (fun ({ Assignment.contact; _ } : Assignment.t) ->
+          [ div [ strong [ txt (Contact.fullname contact) ] ]
+          ; checkbox_element contact Message.Field.ShowUp
+          ; checkbox_element contact Message.Field.Participated
+          ])
+        assignments
+      |> Table.horizontal_table `Striped language
+      |> fun table ->
+      form
+        ~a:
+          [ a_method `Post
+          ; a_class [ "stack" ]
+          ; a_action
+              (Format.asprintf
+                 "/admin/experiments/%s/sessions/%s/close"
+                 (Id.value experiment.Experiment.id)
+                 (Id.value session.Session.id)
+              |> Sihl.Web.externalize_path)
+          ]
+        [ Input.csrf_element csrf ()
+        ; table
+        ; div
+            ~a:[ a_class [ "flexrow"; "justify-end" ] ]
+            [ Input.submit_element language control ~submit_type:`Primary () ]
+        ]
+    in
+    div
+      [ h4
+          ~a:[ a_class [ "heading-4" ] ]
+          [ txt
+              Pool_common.(
+                Utils.field_to_string language Message.Field.Participants
+                |> CCString.capitalize_ascii)
+          ]
+      ; table
+      ]
+  in
+  div
+    [ p
+        [ txt
+            (session
+            |> session_title
+            |> Pool_common.Utils.text_to_string language)
+        ]
+    ; form
+    ]
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control control)
        experiment
 ;;

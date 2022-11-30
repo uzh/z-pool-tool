@@ -88,51 +88,52 @@ end = struct
   ;;
 end
 
+let validate_participation ((_, show_up, participated) as participation) =
+  let open Assignment in
+  if Participated.value participated && not (ShowUp.value show_up)
+  then
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+  else Ok participation
+;;
+
 module SetAttendance : sig
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
   val handle
-    :  Assignment.t
+    :  Session.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
   val effects : Assignment.t -> Guard.Authorizer.effect list
 end = struct
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
-  let command (show_up : Assignment.ShowUp.t) participated =
-    { show_up; participated }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.[ Assignment.ShowUp.schema (); Assignment.Participated.schema () ]
-        command)
-  ;;
-
-  let handle assignment (command : t) =
-    Ok
-      [ Assignment.ShowedUp (assignment, command.show_up)
-        |> Pool_event.assignment
-      ; Assignment.Participated (assignment, command.participated)
-        |> Pool_event.assignment
-      ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  let handle session command =
+    let open CCResult in
+    let open Assignment in
+    CCList.fold_left
+      (fun events participation ->
+        events
+        >>= fun events ->
+        participation
+        |> validate_participation
+        >|= fun ((assignment : Assignment.t), showup, participated) ->
+        let contact_event =
+          if ShowUp.value showup
+          then
+            (* TODO[timhuber]: There seems to be some mistake naming the contact
+               events*)
+            [ Contact.ShowUpIncreased assignment.contact |> Pool_event.contact ]
+          else []
+        in
+        events
+        @ [ Assignment.AttendanceSet (assignment, showup, participated)
+            |> Pool_event.assignment
+          ]
+        @ contact_event)
+      (Ok [ Session.Closed session |> Pool_event.session ])
+      command
   ;;
 
   let effects assignment =

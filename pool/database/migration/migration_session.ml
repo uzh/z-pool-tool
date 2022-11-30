@@ -52,11 +52,21 @@ let add_reminder_columns =
      |sql}
 ;;
 
+let add_closed_at_column =
+  Sihl.Database.Migration.create_step
+    ~label:"add closed at column"
+    {sql|
+     ALTER TABLE pool_sessions
+      ADD COLUMN closed_at TIMESTAMP NULL AFTER reminder_sent_at
+     |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "session"
     |> add_step create_participant_table
     |> add_step add_location
     |> add_step add_follow_up
-    |> add_step add_reminder_columns)
+    |> add_step add_reminder_columns
+    |> add_step add_closed_at_column)
 ;;

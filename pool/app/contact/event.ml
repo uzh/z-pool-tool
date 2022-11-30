@@ -49,6 +49,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
+  (* TODO[timhub]: naming *)
   | AssignmentIncreased of t
   | ShowUpIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list

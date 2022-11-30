@@ -61,28 +61,41 @@ let canceled () =
 ;;
 
 let set_attendance () =
+  let open Assignment in
   let assignment = Model.create_assignment () in
-  let show_up = "true" in
-  let participated = "false" in
+  let session = Model.create_session () in
+  let show_up = true |> ShowUp.create in
+  let participated = false |> Participated.create in
   let events =
-    let attendance =
-      Pool_common.Utils.get_or_failwith
-      @@ AssignmentCommand.SetAttendance.decode
-           [ Field.(ShowUp |> show), show_up |> CCList.pure
-           ; Field.(Participated |> show), participated |> CCList.pure
-           ]
-    in
-    AssignmentCommand.SetAttendance.handle assignment attendance
+    AssignmentCommand.SetAttendance.handle
+      session
+      [ assignment, show_up, participated ]
   in
   let expected =
-    let open Assignment in
     Ok
-      [ ShowedUp (assignment, show_up |> bool_of_string |> ShowUp.create)
+      [ Session.Closed session |> Pool_event.session
+      ; Assignment.AttendanceSet (assignment, show_up, participated)
         |> Pool_event.assignment
-      ; Participated
-          (assignment, participated |> bool_of_string |> Participated.create)
-        |> Pool_event.assignment
+      ; Contact.ShowUpIncreased assignment.contact |> Pool_event.contact
       ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let set_invalid_attendance () =
+  let open Assignment in
+  let assignment = Model.create_assignment () in
+  let session = Model.create_session () in
+  let show_up = false |> ShowUp.create in
+  let participated = true |> Participated.create in
+  let events =
+    AssignmentCommand.SetAttendance.handle
+      session
+      [ assignment, show_up, participated ]
+  in
+  let expected =
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
   in
   Test_utils.check_result expected events
 ;;

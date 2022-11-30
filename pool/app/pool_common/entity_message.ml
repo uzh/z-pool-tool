@@ -26,6 +26,7 @@ module Field = struct
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
+    | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
     | Comment [@name "comment"] [@printer go "comment"]
     | Contact [@name "contact"] [@printer go "contact"]
     | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
@@ -295,6 +296,7 @@ type success =
   | AddedToWaitingList
   | AssignmentCreated
   | Canceled of Field.t
+  | Closed of Field.t
   | Created of Field.t
   | Deleted of Field.t
   | EmailConfirmationMessage
@@ -340,6 +342,7 @@ type control =
   | Back
   | Cancel of Field.t option
   | Choose of Field.t option
+  | Close of Field.t option
   | Create of Field.t option
   | Decline
   | Delete of Field.t option

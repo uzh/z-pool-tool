@@ -188,6 +188,8 @@ module Admin = struct
             ; post "/delete" delete
             ; get "/reschedule" reschedule_form
             ; post "/reschedule" reschedule
+            ; get "/close" close
+            ; post "/close" close_post
             ]
         in
         Session.
