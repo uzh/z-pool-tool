@@ -40,6 +40,7 @@ let create () =
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
       ; Email.InvitationBulkSent email |> Pool_event.email
+      ; Contact.NumInvitationsIncreased contact |> Pool_event.contact
       ]
   in
   Test_utils.check_result expected events

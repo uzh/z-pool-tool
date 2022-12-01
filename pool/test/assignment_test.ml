@@ -42,6 +42,7 @@ let create () =
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
+      ; Contact.NumAssignmentsIncreased contact |> Pool_event.contact
       ; Email.(
           AssignmentConfirmationSent
             (waiting_list.Waiting_list.contact.Contact.user, confirmation_email))
@@ -55,7 +56,11 @@ let canceled () =
   let assignment = Model.create_assignment () in
   let events = AssignmentCommand.Cancel.handle assignment in
   let expected =
-    Ok [ Assignment.Canceled assignment |> Pool_event.assignment ]
+    Ok
+      [ Assignment.Canceled assignment |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
+        |> Pool_event.contact
+      ]
   in
   Test_utils.check_result expected events
 ;;
