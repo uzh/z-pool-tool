@@ -17,7 +17,7 @@ let handle_event pool : event -> unit Lwt.t = function
     { assignment with participated; show_up } |> Repo.update pool
   | Canceled assignment ->
     let%lwt () =
-      (* TODO: Check timestamp? Is it UTC? Use DB NOW()? *)
+      (* TODO: Check timestamps? Issue #126 *)
       { assignment with canceled_at = Some (CanceledAt.create_now ()) }
       |> Repo.update pool
     in

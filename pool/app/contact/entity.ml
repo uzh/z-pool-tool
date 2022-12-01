@@ -149,7 +149,6 @@ let sexp_of_t t =
   t |> id |> Pool_common.Id.value |> fun s -> Sexplib0.Sexp.Atom s
 ;;
 
-(* TODO[timhub]: Can I remove this module? *)
 module Preview = struct
   type t =
     { user : Sihl_user.t

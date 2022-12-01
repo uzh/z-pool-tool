@@ -757,8 +757,6 @@ let close
           (Contact.id contact |> Id.value)
           Message.Field.(show field)
       in
-      (* TODO: Order by what here? name=showup[] value=id or the other way
-         around? *)
       div
         [ input
             ~a:

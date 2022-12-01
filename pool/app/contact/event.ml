@@ -163,16 +163,18 @@ let handle_event pool : event -> unit Lwt.t =
       }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool
-  | SessionParticipationSet (contact, { show_up; participated }) ->
+  | SessionParticipationSet
+      ( ({ num_show_ups; num_participations; _ } as contact)
+      , { show_up; participated } ) ->
     let num_show_ups =
       if show_up
-      then contact.num_show_ups |> NumberOfShowUps.increment
-      else contact.num_show_ups
+      then num_show_ups |> NumberOfShowUps.increment
+      else num_show_ups
     in
     let num_participations =
       if participated
-      then contact.num_participations |> NumberOfParticipations.increment
-      else contact.num_participations
+      then num_participations |> NumberOfParticipations.increment
+      else num_participations
     in
     { contact with num_show_ups; num_participations } |> Repo.update pool
 ;;
