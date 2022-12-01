@@ -8,7 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ocaml/opam:alpine-ocaml-4.12
-      options: --user root
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
@@ -36,19 +35,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Install system dependencies
-        run: apk add openssl-libs-static mariadb-static sqlite-static zlib-static
+        run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
 
       - name: Setup project
-        run: su opam -c ./scripts/setup.sh
+        run: ./scripts/setup.sh
 
       - name: Install project dependencies
-        run: su opam -c "opam install --deps-only --with-test -y ."
+        run: opam install --deps-only --with-test -y .
 
       - name: Install project dependencies
-        run: su opam -c "opam exec -- dune build --root ."
+        run: opam exec -- dune build --root .
 
       - name: Check formatting
         run: make format
