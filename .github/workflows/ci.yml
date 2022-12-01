@@ -7,7 +7,7 @@ jobs:
     name: Build and test
     runs-on: ubuntu-latest
     container:
-      image: ocaml/opam:debian-ocaml-4.12
+      image: ocaml/opam:alpine-ocaml-4.12
       options: --user root
     env:
       EMAIL_RATE_LIMIT: 3600
@@ -37,27 +37,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug OpenSSL
-        run: |
-          openssl version
 
       - name: Install system dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
+        run: apk add openssl-libs-static mariadb-static sqlite-static zlib-static
 
-      - name: Setup project and install dependencies
-        run: |
-          opam init -a
-          sh ./scripts/setup.sh
+      - name: Setup project
+        run: su opam -c ./scripts/setup.sh
 
-      - name: Install dependencies
-        run: opam install --deps-only --with-test -y .
+      - name: Install project dependencies
+        run: su opam -c "opam install --deps-only --with-test -y ."
 
-      - name: Debug OpenSSL
-        run: |
-          openssl version
-
-      - name: Build
-        run: opam exec -- dune build --root .
+      - name: Install project dependencies
+        run: su opam -c "opam exec -- dune build --root ."
 
       - name: Check formatting
         run: make format

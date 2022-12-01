@@ -1,5 +1,19 @@
 (executable
  (name run)
+ (flags
+  (:standard
+   -cclib
+   -static
+   -cclib
+   -no-pie
+   -cclib
+   -lz
+   -cclib
+   -lssl
+   -cclib
+   -lcrypto
+   -cclib
+   -lrt))
  (preprocess
   (pps lwt_ppx ppx_deriving.show))
  (libraries
