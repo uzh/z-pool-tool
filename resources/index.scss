@@ -87,6 +87,15 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     word-wrap: break-word;
 }
 
+// Table
+.table.align-last-end {
+
+    th:last-child,
+    td:last-child {
+        text-align: right;
+    }
+}
+
 // Images
 .aspect-ratio.contain>*:first-child {
     object-fit: contain;
