@@ -40,6 +40,7 @@ module NumberOfInvitations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 0 then m - 1 else 0
 end
 
 module NumberOfAssignments = struct
@@ -49,6 +50,7 @@ module NumberOfAssignments = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 0 then m - 1 else 0
 end
 
 module NumberOfShowUps = struct

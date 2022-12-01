@@ -57,6 +57,7 @@ type event =
   | UnverifiedDeleted of t
   (* TODO[timhub]: Actually implement those events, on invite / assignment (Do
      not forget to undo, when entity gets deleted) *)
+  | NumAssignmentsDecreased of t
   | NumAssignmentsIncreased of t
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
@@ -147,19 +148,23 @@ let handle_event pool : event -> unit Lwt.t =
     Repo.update pool { contact with disabled = User.Disabled.create true }
   | UnverifiedDeleted contact ->
     contact |> Entity.id |> Repo.delete_unverified pool
-  | NumInvitationsIncreased contact ->
+  | NumAssignmentsDecreased ({ num_assignments; _ } as contact) ->
     Repo.update
       pool
       { contact with
-        num_invitations =
-          contact.num_invitations |> NumberOfInvitations.increment
+        num_assignments = num_assignments |> NumberOfAssignments.decrement
       }
-  | NumAssignmentsIncreased contact ->
+  | NumAssignmentsIncreased ({ num_assignments; _ } as contact) ->
     Repo.update
       pool
       { contact with
-        num_assignments =
-          contact.num_assignments |> NumberOfAssignments.increment
+        num_assignments = num_assignments |> NumberOfAssignments.increment
+      }
+  | NumInvitationsIncreased ({ num_invitations; _ } as contact) ->
+    Repo.update
+      pool
+      { contact with
+        num_invitations = num_invitations |> NumberOfInvitations.increment
       }
   | ProfileUpdateTriggeredAtUpdated contacts ->
     contacts |> CCList.map id |> Repo.update_profile_updated_triggered pool

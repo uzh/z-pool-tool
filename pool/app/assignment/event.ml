@@ -18,6 +18,7 @@ let handle_event pool : event -> unit Lwt.t = function
   | Canceled assignment ->
     let%lwt () =
       (* TODO: Check timestamps? Issue #126 *)
+      (* TODO: Notification to user? *)
       { assignment with canceled_at = Some (CanceledAt.create_now ()) }
       |> Repo.update pool
     in

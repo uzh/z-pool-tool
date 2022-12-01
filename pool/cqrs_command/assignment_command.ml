@@ -57,6 +57,8 @@ end = struct
       Ok
         (delete_events
         @ [ Assignment.Created create |> Pool_event.assignment
+          ; Contact.NumAssignmentsIncreased command.contact
+            |> Pool_event.contact
           ; Email.AssignmentConfirmationSent
               (command.contact.Contact.user, confirmation_email)
             |> Pool_event.email
@@ -77,7 +79,11 @@ end = struct
   let handle (command : t)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
-    Ok [ Assignment.Canceled command |> Pool_event.assignment ]
+    Ok
+      [ Assignment.Canceled command |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased command.Assignment.contact
+        |> Pool_event.contact
+      ]
   ;;
 
   let effects command =

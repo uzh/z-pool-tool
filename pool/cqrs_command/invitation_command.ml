@@ -96,10 +96,14 @@ end = struct
       | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
-          [ Invitation.Created (contacts, command.experiment)
-            |> Pool_event.invitation
-          ; Email.InvitationBulkSent emails |> Pool_event.email
-          ]
+          ([ Invitation.Created (contacts, command.experiment)
+             |> Pool_event.invitation
+           ; Email.InvitationBulkSent emails |> Pool_event.email
+           ]
+          @ CCList.map
+              (fun contact ->
+                Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+              contacts)
       | Error err -> Error err)
   ;;
 

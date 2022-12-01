@@ -167,6 +167,7 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
+  | NumAssignmentsDecreased of t
   | NumAssignmentsIncreased of t
   | NumInvitationsIncreased of t
   | ProfileUpdateTriggeredAtUpdated of t list
