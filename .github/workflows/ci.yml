@@ -33,6 +33,15 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
+      - name: Debug
+        run: |
+          whoami
+          pwd
+          ls -la
+
+      - name: Change working folder permissions
+        run: sudo chown -R $USER:$USER .
+
       - name: Checkout code
         run: git clone "https://${{ secrets.GITHUB_TOKEN }}@${{ github.repository }}" .
 
