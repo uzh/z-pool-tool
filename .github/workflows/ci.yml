@@ -34,9 +34,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          path: ${{ github.workspace }}
+        run: git clone "https://${{ secrets.GITHUB_TOKEN }}@${{ github.repository }}" .
 
       - name: Install system dependencies
         run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
