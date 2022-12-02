@@ -151,8 +151,8 @@ let rec build_nav_link
   in
   let is_span =
     match active_navigation, children with
-    | Some active, Some children
-      when CCString.equal active url || not (CCList.is_empty children) -> true
+    | Some active, _ when CCString.equal active url -> true
+    | _, Some children when not (CCList.is_empty children) -> true
     | _, _ -> false
   in
   let nav_link =

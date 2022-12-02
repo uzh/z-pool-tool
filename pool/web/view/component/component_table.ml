@@ -40,6 +40,47 @@ let horizontal_table
     (CCList.map (fun row -> tr (CCList.map (fun cell -> td [ cell ]) row)) rows)
 ;;
 
+let responsive_horizontal_table
+  layout
+  language
+  header
+  ?(align_top = false)
+  ?(align_last_end = false)
+  rows
+  =
+  let classes = table_classes layout align_top align_last_end in
+  let header =
+    header
+    |> CCList.map
+         (CCOption.map
+            CCFun.(
+              Pool_common.Utils.field_to_string language
+              %> CCString.capitalize_ascii))
+  in
+  let thead =
+    header
+    |> CCList.map (fun h ->
+         h |> CCOption.value ~default:"" |> txt |> CCList.pure |> th)
+    |> tr
+    |> CCList.pure
+    |> thead
+  in
+  let find_label i = CCList.nth_opt header i |> CCOption.flatten in
+  table
+    ~thead
+    ~a:[ a_class ("break-mobile" :: classes) ]
+    (CCList.map
+       (fun row ->
+         tr
+           (CCList.mapi
+              (fun i cell ->
+                match find_label i with
+                | None -> td [ cell ]
+                | Some label -> td ~a:[ a_user_data "label" label ] [ cell ])
+              row))
+       rows)
+;;
+
 let vertical_table layout language ?(align_top = false) ?(classnames = []) rows =
   let classes = table_classes layout align_top false in
   table

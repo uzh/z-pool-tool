@@ -23,10 +23,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     display: none;
 }
 
-.table thead .btn {
-    font-weight: normal;
-}
-
 // Sortable
 [data-sortable-item] {
     cursor: move;
@@ -88,6 +84,11 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 // Table
+
+.table thead .btn {
+    font-weight: normal;
+}
+
 .table.align-last-end {
 
     th:last-child,
@@ -95,6 +96,44 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
         text-align: right;
     }
 }
+
+@include mobile {
+    .table.break-mobile {
+        thead {
+            display: none;
+        }
+
+        tr {
+            display: flex;
+            flex-direction: column;
+            padding: $space-xs;
+        }
+
+        td {
+            display: flex;
+            flex-direction: column;
+
+            &[data-label]:before {
+                display: block;
+                content: attr(data-label);
+                width: 30%;
+                font-weight: bold;
+            }
+        }
+
+        &.striped,
+        & {
+            td {
+                padding: $space-xs;
+            }
+        }
+
+        &.align-last-end td {
+            text-align: left;
+        }
+    }
+}
+
 
 // Images
 .aspect-ratio.contain>*:first-child {

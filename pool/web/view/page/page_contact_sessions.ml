@@ -4,9 +4,7 @@ open Component
 let public_overview sessions experiment language =
   let open Experiment.Public in
   let thead =
-    (Pool_common.Message.Field.[ Start; Duration; Location ]
-    |> Table.fields_to_txt language)
-    @ [ txt "" ]
+    Pool_common.Message.Field.[ Some Start; Some Duration; Some Location; None ]
   in
   CCList.map
     (fun (session : Session.Public.t) ->
@@ -43,7 +41,11 @@ let public_overview sessions experiment language =
              ])
       ])
     sessions
-  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
+  |> Component.Table.responsive_horizontal_table
+       `Striped
+       language
+       ~align_last_end:true
+       thead
 ;;
 
 let public_detail (session : Session.Public.t) language =
@@ -65,8 +67,8 @@ let public_detail (session : Session.Public.t) language =
         |> txt )
     ; ( Field.Location
       , session.Session.Public.location
-        |> Component.Partials.location_to_html ~public:true language )
+        |> Partials.location_to_html ~public:true language )
     ]
   in
-  Component.Table.vertical_table `Striped language ~align_top:true rows
+  Table.vertical_table `Striped language ~align_top:true rows
 ;;
