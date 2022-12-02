@@ -1,19 +1,21 @@
 #!/bin/sh
 
-project_dir=/app
+printTitle () {
+  echo -e "\e[1;43m  $1:  \e[0m"
+}
 
-# Install system dependencies
+printTitle "Installing system dependencies"
 sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
 
-# Mark source dir as save
-git config --global --add safe.directory $project_dir
+printTitle "Mark source dir as save"
+git config --global --add safe.directory $(pwd)
 
-# Setup project
-$project_dir/scripts/setup.sh
+printTitle "Setup project"
+./scripts/setup.sh
 
-# Install project dependencies
+printTitle "Install project dependencies"
 opam install --deps-only --with-test -y .
 eval $(opam env)
 
-# Install project dependencies
+printTitle "Build project"
 opam exec -- dune build --root .
