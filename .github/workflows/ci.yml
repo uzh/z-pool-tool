@@ -38,10 +38,12 @@ jobs:
           whoami
           pwd
           ls -la
+          sudo chown -R opam: .
+          ls -la
           echo $USER
 
       - name: Change working folder permissions
-        run: sudo chown -R $USER:$USER .
+        run: "sudo chown -R opam: ."
 
       - name: Checkout code
         run: git clone "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" .
