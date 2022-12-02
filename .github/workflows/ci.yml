@@ -36,27 +36,15 @@ jobs:
       - name: Debug
         run: |
           ls -la
-          echo "${{ runner.temp }}"
-          echo ${RUNNER_TEMP}
-          echo "${{ github.path }}"
           env
-          ls -la ${RUNNER_TEMP}
 
-      # WORKAROUND: setting the folder permissions manually https://github.com/actions/checkout/issues/211
-      - name: Reclaim required directory permissions
-        env:
-          USER: opam
-        run: |
-          sudo mkdir -p ${{ runner.temp }}
-          sudo chown -R ${USER}: .
-          sudo chown -R ${USER}: ${RUNNER_TEMP}
-          sudo chmod -R 777 ${{ runner.temp }}
-          ls -la
-          ls -la ${RUNNER_TEMP}
-          ls -la ${{ runner.temp }}
 
       - name: Checkout code
         uses: actions/checkout@v3
+        container:
+          options: --user root
+      - name: Debug
+        run: ls -la
 
       - name: Install system dependencies
         run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
