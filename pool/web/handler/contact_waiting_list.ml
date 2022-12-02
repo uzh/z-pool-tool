@@ -13,8 +13,7 @@ let handle req action =
     Format.asprintf "/experiments/%s" (Pool_common.Id.value experiment_id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
          Experiment.find_public tenant_db experiment_id contact

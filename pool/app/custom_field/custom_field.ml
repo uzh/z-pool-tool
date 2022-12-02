@@ -21,8 +21,8 @@ let all_required_answered = Repo_public.all_required_answered
 let find_option = Repo_option.find
 
 let find_options_by_field pool id =
-  let open Lwt.Infix in
-  Repo_option.find_by_field pool id >|= CCList.map Repo_entity.Option.to_entity
+  let open Utils.Lwt_result.Infix in
+  Repo_option.find_by_field pool id ||> CCList.map Repo_entity.Option.to_entity
 ;;
 
 let find_group = Repo_group.find

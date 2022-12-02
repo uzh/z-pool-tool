@@ -18,15 +18,14 @@ let index req =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
   in
   let result context =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* experiment = Experiment.find tenant_db id in
     let* waiting_list = Waiting_list.find_by_experiment tenant_db id in
     Page.Admin.Experiments.waiting_list waiting_list experiment context
     |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -45,8 +44,7 @@ let detail req =
       (Pool_common.Id.value experiment_id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* waiting_list = Waiting_list.find tenant_db id in
        let* sessions =
          Session.find_all_for_experiment tenant_db experiment_id
@@ -59,7 +57,7 @@ let detail req =
          context
          flash_fetcher
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -81,8 +79,7 @@ let update req =
   in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result context =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
@@ -120,14 +117,13 @@ let assign_contact req =
     Format.asprintf "/admin/experiments/%s/waiting-list" (experiment_id |> value)
   in
   let result context =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       ( err
       , Format.asprintf
           "%s/%s"
           redirect_path
           (Pool_common.Id.value waiting_list_id) ))
     @@
-    let open Lwt_result.Syntax in
     let tenant_db = context.Pool_context.tenant_db in
     let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
     let* session =
@@ -141,12 +137,12 @@ let assign_contact req =
       >>= fun id -> id |> Pool_common.Id.of_string |> Session.find tenant_db
     in
     let%lwt already_enrolled =
-      let open Lwt.Infix in
+      let open Utils.Lwt_result.Infix in
       Assignment.find_by_experiment_and_contact_opt
         tenant_db
         experiment_id
         waiting_list.Waiting_list.contact
-      >|= CCOption.is_some
+      ||> CCOption.is_some
     in
     let* confirmation_email =
       let* language =
@@ -160,14 +156,14 @@ let assign_contact req =
           tenant_db
           I18n.Key.ConfirmationWithoutSelfRegistrationSubject
           language
-        >|= I18n.content
+        >|+ I18n.content
       in
       let* text =
         I18n.find_by_key
           tenant_db
           I18n.Key.ConfirmationWithoutSelfRegistrationText
           language
-        >|= I18n.content
+        >|+ I18n.content
       in
       let session_text = Session.(to_email_text language session) in
       Lwt_result.return Email.{ subject; text; language; session_text }

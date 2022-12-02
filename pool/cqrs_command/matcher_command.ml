@@ -33,7 +33,7 @@ end = struct
   ;;
 
   let effects db_label =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* tenant = Pool_tenant.find_by_label db_label in
     Lwt.return_ok
       [ ( `Update

@@ -18,7 +18,7 @@ let get_field_id req =
 
 let get_custom_field fnc req =
   let%lwt custom_field =
-    let open Lwt_result.Infix in
+    let open Utils.Lwt_result.Infix in
     Pool_context.find req
     |> Lwt_result.lift
     >>= fun { Pool_context.tenant_db; _ } ->
@@ -34,15 +34,14 @@ let get_custom_field fnc req =
 
 let form ?id req custom_field =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       ( err
       , Url.Field.edit_path Custom_field.(model custom_field, id custom_field) ))
     @@ let* custom_field_option =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-              Custom_field.find_option tenant_db id >|= CCOption.pure)
+              Custom_field.find_option tenant_db id >|+ CCOption.pure)
        in
        let* custom_field = req |> get_field_id |> Custom_field.find tenant_db in
        let* sys_languages =
@@ -56,7 +55,7 @@ let form ?id req custom_field =
          sys_languages
          flash_fetcher
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -70,7 +69,6 @@ let edit req =
 
 let write ?id req custom_field =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
@@ -90,7 +88,7 @@ let write ?id req custom_field =
     go Message.Field.Name encode_lang
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
@@ -144,32 +142,30 @@ let toggle_action action req =
       let redirect_path =
         Url.Field.edit_path Custom_field.(model custom_field, id custom_field)
       in
-      Lwt_result.map_error (fun err -> err, redirect_path)
-      @@
-      let open Utils.Lwt_result.Syntax in
-      let* option = id |> Custom_field.find_option tenant_db in
-      let events =
-        Lwt_result.lift
-        @@
-        match action with
-        | `Delete ->
-          option |> Cqrs_command.Custom_field_option_command.Destroy.handle
-        | `Publish ->
-          option |> Cqrs_command.Custom_field_option_command.Publish.handle
-      in
-      let success =
-        let open Pool_common.Message in
-        match action with
-        | `Delete -> Deleted Field.CustomFieldOption
-        | `Publish -> Published Field.CustomFieldOption
-      in
-      let handle events =
-        let%lwt () = Pool_event.handle_events tenant_db events in
-        Http_utils.redirect_to_with_actions
-          redirect_path
-          [ Message.set ~success:[ success ] ]
-      in
-      events |>> handle
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
+      @@ let* option = id |> Custom_field.find_option tenant_db in
+         let events =
+           Lwt_result.lift
+           @@
+           match action with
+           | `Delete ->
+             option |> Cqrs_command.Custom_field_option_command.Destroy.handle
+           | `Publish ->
+             option |> Cqrs_command.Custom_field_option_command.Publish.handle
+         in
+         let success =
+           let open Pool_common.Message in
+           match action with
+           | `Delete -> Deleted Field.CustomFieldOption
+           | `Publish -> Published Field.CustomFieldOption
+         in
+         let handle events =
+           let%lwt () = Pool_event.handle_events tenant_db events in
+           Http_utils.redirect_to_with_actions
+             redirect_path
+             [ Message.set ~success:[ success ] ]
+         in
+         events |>> handle
     in
     result |> HttpUtils.extract_happy_path req
   in

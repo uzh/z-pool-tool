@@ -176,12 +176,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_full_request =
@@ -191,12 +191,12 @@ module Sql = struct
   ;;
 
   let find_full pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_full_request
       (Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_by_label_request =
@@ -208,12 +208,12 @@ module Sql = struct
   ;;
 
   let find_by_label pool label =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_by_label_request
       (Database.Label.value label)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_all_request =
@@ -340,14 +340,14 @@ let set_logos tenant logos =
 ;;
 
 let find pool id =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let* tenant = Sql.find pool id in
   let%lwt logos = LogoMappingRepo.find_by_tenant id in
   set_logos tenant logos |> Lwt.return_ok
 ;;
 
 let find_by_label pool label =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let* tenant = Sql.find_by_label pool label in
   let%lwt logos = LogoMappingRepo.find_by_tenant tenant.Entity.Read.id in
   set_logos tenant logos |> Lwt.return_ok

@@ -6,11 +6,11 @@ let create_layout req = General.create_tenant_layout req
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let%lwt admin_users = Admin.find_all tenant_db () in
        Page.Admin.Admins.index context admin_users
        |> create_layout req ~active_navigation:"/admin/admins" context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -19,8 +19,7 @@ let admin_detail req is_edit =
   (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, "/admin/admins")
+    Utils.Lwt_result.map_error (fun err -> err, "/admin/admins")
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Admin
@@ -35,7 +34,7 @@ let admin_detail req is_edit =
      | true -> Page.Admin.Admins.edit context admin
      | false -> Page.Admin.Admins.detail context admin)
     |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

@@ -85,7 +85,6 @@ let create_message contact template =
 ;;
 
 let trigger_profile_update_by_tenant pool =
-  let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let* contacts = Contact.find_to_trigger_profile_update pool in
   match contacts with
@@ -101,11 +100,11 @@ let trigger_profile_update_by_tenant pool =
       | None ->
         let* subject =
           I18n.(find_by_key pool Key.TriggerProfileUpdateSubject msg_language)
-          >|= Email.CustomTemplate.Subject.i18n
+          >|+ Email.CustomTemplate.Subject.i18n
         in
         let* content =
           I18n.(find_by_key pool Key.TriggerProfileUpdateText msg_language)
-          >|= Email.CustomTemplate.Content.i18n
+          >|+ Email.CustomTemplate.Content.i18n
         in
         let template = Email.CustomTemplate.{ subject; content } in
         let () = Hashtbl.add i18n_texts msg_language template in
@@ -158,10 +157,10 @@ let all_profile_update_triggers =
     match args with
     | [] ->
       let open CCFun in
-      let open Lwt.Infix in
+      let open Utils.Lwt_result.Infix in
       Command_utils.setup_databases ()
-      >>= Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
-      >|= CCList.all_ok
-      >|= (fun _ -> Ok ()) %> CCOption.of_result
+      >|> Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
+      ||> CCList.all_ok
+      ||> (fun _ -> Ok ()) %> CCOption.of_result
     | _ -> failwith "Argument missmatch")
 ;;

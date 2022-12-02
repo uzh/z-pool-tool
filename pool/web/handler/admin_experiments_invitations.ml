@@ -2,7 +2,7 @@ module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
 let invitation_template_data tenant_db system_languages =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt res =
     Lwt_list.map_s
       (fun lang ->
@@ -30,8 +30,7 @@ let index req =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let%lwt key_list = Filter.all_keys tenant_db in
        let%lwt template_list = Filter.find_all_templates tenant_db () in
@@ -49,7 +48,7 @@ let index req =
          filtered_contacts
          context
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -63,15 +62,14 @@ let sent_invitations req =
       (Pool_common.Id.value id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let* invitations =
          Invitation.find_by_experiment tenant_db experiment.Experiment.id
        in
        Page.Admin.Experiments.sent_invitations context experiment invitations
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -85,15 +83,14 @@ let create req =
       (Pool_common.Id.value experiment_id)
   in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact_ids =
-         let open Lwt.Infix in
+         let open Utils.Lwt_result.Infix in
          Sihl.Web.Request.urlencoded_list
            Pool_common.Message.Field.(Contacts |> array_key)
            req
-         >|= CCList.map Pool_common.Id.of_string
-         >|= fun list ->
+         ||> CCList.map Pool_common.Id.of_string
+         ||> fun list ->
          if CCList.is_empty list
          then Error Pool_common.Message.(NoOptionSelected Field.Contact)
          else Ok list
@@ -168,8 +165,7 @@ let resend req =
       (Pool_common.Id.value experiment_id)
   in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* invitation = Invitation.find tenant_db id in
        let* experiment = Experiment.find tenant_db experiment_id in
        let* system_languages =

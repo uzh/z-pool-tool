@@ -6,11 +6,11 @@ let create_layout req = General.create_tenant_layout req
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let%lwt contacts = Contact.find_all tenant_db () in
        Page.Admin.Contact.index context contacts
        |> create_layout req ~active_navigation:"/admin/contacts" context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -19,32 +19,30 @@ let detail_view action req =
   (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/contacts")
-    @@
-    let open Lwt_result.Syntax in
-    let* contact =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Contact
-      |> Pool_common.Id.of_string
-      |> Contact.find tenant_db
-    in
-    match action with
-    | `Show ->
-      Page.Admin.Contact.detail context contact
-      |> create_layout req context
-      >|= Sihl.Web.Response.of_html
-    | `Edit ->
-      let* tenant_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
-      let%lwt custom_fields =
-        Custom_field.find_all_by_contact
-          ~is_admin:true
-          tenant_db
-          (Contact.id contact)
-      in
-      Page.Admin.Contact.edit context tenant_languages contact custom_fields
-      |> create_layout req context
-      >|= Sihl.Web.Response.of_html
+    Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")
+    @@ let* contact =
+         HttpUtils.get_field_router_param req Pool_common.Message.Field.Contact
+         |> Pool_common.Id.of_string
+         |> Contact.find tenant_db
+       in
+       match action with
+       | `Show ->
+         Page.Admin.Contact.detail context contact
+         |> create_layout req context
+         >|+ Sihl.Web.Response.of_html
+       | `Edit ->
+         let* tenant_languages =
+           Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+         in
+         let%lwt custom_fields =
+           Custom_field.find_all_by_contact
+             ~is_admin:true
+             tenant_db
+             (Contact.id contact)
+         in
+         Page.Admin.Contact.edit context tenant_languages contact custom_fields
+         |> create_layout req context
+         >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

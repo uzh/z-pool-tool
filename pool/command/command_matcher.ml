@@ -33,7 +33,7 @@ let run_all =
   Sihl.Command.make
     ~name:"matcher.run_all"
     ~description:"Run invitation matcher on all tenants"
-    (let open Lwt.Infix in
+    (let open Utils.Lwt_result.Infix in
     let help_text =
       {|No additional arguments allowed.
 
@@ -43,7 +43,7 @@ Example: sihl matcher.run_all
     function
     | [] ->
       let () = Database.Root.setup () in
-      let%lwt () = Database.Tenant.setup () >>= Matcher.match_invitations in
+      let%lwt () = Database.Tenant.setup () >|> Matcher.match_invitations in
       return
     | _ ->
       print_endline help_text;

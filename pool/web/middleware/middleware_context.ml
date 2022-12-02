@@ -4,7 +4,7 @@ let context context () =
     =
     (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
        host cannot be handled at the moment *)
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* host =
       req
       |> Sihl.Web.Request.header "host"
@@ -22,16 +22,14 @@ let context context () =
     |> Lwt_result.lift
   in
   let language_from_request ?contact req tenant_db =
-    let open CCOption in
     let%lwt tenant_languages = Settings.find_languages tenant_db in
     let is_valid lang =
       match CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages with
       | true -> Some lang
       | false -> None
     in
-    let user_language =
-      let open Utils.Lwt_result.Infix in
-      function
+    let open Utils.Lwt_result.Infix in
+    let user_language = function
       | Some (p : Contact.t) -> p.Contact.language |> Lwt.return
       | None ->
         let%lwt lang =
@@ -39,27 +37,28 @@ let context context () =
           ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
           >>= fun user ->
           Contact.find tenant_db (user.Sihl_user.id |> Pool_common.Id.of_string)
-          >|= fun p -> p.Contact.language
+          >|+ fun p -> p.Contact.language
         in
         CCResult.get_or lang ~default:None |> Lwt.return
     in
+    let open CCOption in
     let query_language = Http_utils.find_query_lang req >>= is_valid in
     query_language
     |> function
     | Some lang -> Lwt.return lang
     | None ->
       user_language contact
-      |> Lwt.map (fun l ->
-           l
-           >>= is_valid
-           |> value
-                ~default:
-                  (CCOption.get_exn_or
-                     "Cannot determine language"
-                     (CCList.head_opt tenant_languages)))
+      ||> fun l ->
+      l
+      >>= is_valid
+      |> value
+           ~default:
+             (CCOption.get_exn_or
+                "Cannot determine language"
+                (CCList.head_opt tenant_languages))
   in
   let filter handler req =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let query_lang = Http_utils.find_query_lang req in
     let csrf = Sihl.Web.Csrf.find_exn req in
     let message =
@@ -90,9 +89,9 @@ let context context () =
       | true ->
         let pool = Pool_database.root in
         let%lwt user =
-          let open Lwt.Infix in
+          let open Utils.Lwt_result.Infix in
           Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
-          >|= CCFun.flip CCOption.bind (fun user ->
+          ||> CCFun.flip CCOption.bind (fun user ->
                 if Sihl_user.is_admin user
                 then Some (Pool_context.root user)
                 else None)

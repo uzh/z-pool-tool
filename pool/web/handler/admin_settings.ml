@@ -4,10 +4,9 @@ module Message = HttpUtils.Message
 let create_layout req = General.create_tenant_layout req
 
 let show req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Infix in
-    Lwt_result.map_error (fun err -> err, "/")
+    Utils.Lwt_result.map_error (fun err -> err, "/")
     @@ let* languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
@@ -41,20 +40,19 @@ let show req =
          context
          flash_fetcher
        |> create_layout req ~active_navigation:"/admin/settings" context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let update_settings req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let redirect_path = "/admin/settings" in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* system_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift

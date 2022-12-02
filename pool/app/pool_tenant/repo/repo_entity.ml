@@ -27,12 +27,12 @@ module Url = struct
   ;;
 
   let of_pool pool =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value Database.root)
       find_url_request
       pool
-    >|= function
+    ||> function
     | None ->
       Sihl.Configuration.read_string "PUBLIC_URL"
       |> CCOption.get_exn_or "PUBLIC_URL not found in configuration"

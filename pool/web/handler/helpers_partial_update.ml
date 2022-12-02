@@ -3,7 +3,6 @@ module HttpUtils = Http_utils
 
 let parse_urlencoded req tenant_db language urlencoded contact_id =
   let open Pool_common.Message in
-  let open Utils.Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let find_param_list name =
     CCList.assoc_opt ~eq:CCString.equal name urlencoded
@@ -33,7 +32,7 @@ let parse_urlencoded req tenant_db language urlencoded contact_id =
       |> CCOption.to_result InvalidHtmxRequest
       |> Lwt_result.lift
       >>= Custom_field.find_by_contact tenant_db contact_id
-      >|= fun f -> Custom_field.Public.to_common_field language f
+      >|+ fun f -> Custom_field.Public.to_common_field language f
   in
   let* version =
     find_param "version" (HtmxVersionNotFound field_str)
@@ -67,7 +66,6 @@ let update ?contact req =
   let result
     ({ Pool_context.tenant_db; language; query_language; _ } as context)
     =
-    let open Utils.Lwt_result.Syntax in
     let path_with_lang = HttpUtils.path_with_language query_language in
     let with_redirect path res =
       res |> CCResult.map_err (fun err -> err, path_with_lang path)

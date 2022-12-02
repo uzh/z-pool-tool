@@ -6,11 +6,11 @@ let has_options field_type m =
 ;;
 
 let to_entity pool to_entity field_type id m =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (if has_options field_type m
   then Repo_option.find_by_field pool (id m)
   else [] |> Lwt.return)
-  >|= fun options -> to_entity options m
+  ||> fun options -> to_entity options m
 ;;
 
 let get_options_of_multiple pool field_type id fields =
@@ -21,9 +21,9 @@ let get_options_of_multiple pool field_type id fields =
 ;;
 
 let multiple_to_entity pool to_entity field_type id fields =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   get_options_of_multiple pool field_type id fields
-  >|= fun options -> fields |> CCList.map (to_entity options)
+  ||> fun options -> fields |> CCList.map (to_entity options)
 ;;
 
 let get_field_type m = m.Repo_entity.field_type
@@ -84,12 +84,12 @@ module Sql = struct
   ;;
 
   let find_by_model pool model =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       find_by_model_request
       (Entity.Model.show model)
-    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let find_by_group_request =
@@ -100,12 +100,12 @@ module Sql = struct
   ;;
 
   let find_by_group pool group =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       find_by_group_request
       (group |> Entity.Group.Id.value)
-    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let find_ungrouped_by_model_request =
@@ -119,12 +119,12 @@ module Sql = struct
   ;;
 
   let find_ungrouped_by_model pool model =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       find_ungrouped_by_model_request
       (Entity.Model.show model)
-    >>= multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
+    >|> multiple_to_entity pool Repo_entity.to_entity get_field_type get_id
   ;;
 
   let find_request =
@@ -290,7 +290,7 @@ let publish = Sql.publish
 let delete = Sql.delete
 
 let sort_fields pool ids =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
       Utils.Database.exec
@@ -298,5 +298,5 @@ let sort_fields pool ids =
         Sql.update_position_request
         (index, Entity.Id.value id))
     ids
-  >|= CCFun.const ()
+  ||> CCFun.const ()
 ;;

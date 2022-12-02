@@ -19,9 +19,9 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
     let events () =
-      Lwt_result.map_error (fun err -> err, "/root/tenants")
+      Utils.Lwt_result.map_error (fun err -> err, "/root/tenants")
       @@
-      let open Lwt_result.Syntax in
+      let open Utils.Lwt_result.Infix in
       let%lwt multipart_encoded =
         Sihl.Web.Request.to_multipart_form_data_exn req
       in
@@ -65,10 +65,10 @@ let create req =
 ;;
 
 let manage_operators req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let open Sihl.Web in
   let result context =
-    Lwt_result.map_error (fun err -> err, "/root/tenants")
+    Utils.Lwt_result.map_error (fun err -> err, "/root/tenants")
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
@@ -120,18 +120,17 @@ let create_operator req =
     >>= find_tenant
     >> events
     >>= handle
-    |> Lwt_result.map_error (fun err ->
-         err, Format.asprintf "%s/operator" redirect_path)
+    >|- (fun err -> err, Format.asprintf "%s/operator" redirect_path)
     |>> return_to_overview
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let tenant_detail req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let open Sihl.Web in
   let result context =
-    Lwt_result.map_error (fun err -> err, "/root/tenants")
+    Utils.Lwt_result.map_error (fun err -> err, "/root/tenants")
     @@
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
