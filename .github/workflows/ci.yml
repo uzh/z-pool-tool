@@ -38,7 +38,26 @@ jobs:
         run: "sudo chown -R opam: ."
 
       - name: Debug
-        run: ls -la && pwd
+        run: |
+          ls -la
+          echo "${{ runner.temp }}"
+          echo "${{ github.path }}"
+          env
+
+      - name: Reclaim required directory permissions
+        env:
+          USER: opam
+        run: |
+          sudo chown -R ${USER}: .
+          sudo chown -R ${USER}: ${{ runner.temp }}
+          sudo chown -R ${USER}: ${{ github.path }}
+
+      - name: Debug
+        run: |
+          ls -la
+          pwd
+          ls -la ${{ runner.temp }}
+          ls -la ${{ github.path }}
 
       - name: Checkout code
         uses: actions/checkout@v3
