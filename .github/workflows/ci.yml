@@ -6,8 +6,6 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
-    container:
-      image: ocaml/opam:alpine-ocaml-4.12
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
@@ -33,33 +31,22 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Debug
-        run: |
-          ls -la
-          env
 
 
       - name: Checkout code
         uses: actions/checkout@v3
-        container:
-          options: --user root
-      - name: Debug
-        run: ls -la
+      - name: Run the build process with Docker
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ocaml/opam:alpine-ocaml-4.12
+          options: -v ${{ github.workspace }}:/app -w /app
+          run: /app/scripts/build.sh
+      
 
-      - name: Install system dependencies
-        run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
 
-      - name: Debug
-        run: ls -la && pwd
 
-      - name: Setup project
-        run: ${{ github.workspace }}/scripts/setup.sh
 
-      - name: Install project dependencies
-        run: opam install --deps-only --with-test -y .
 
-      - name: Install project dependencies
-        run: opam exec -- dune build --root .
 
       - name: Check formatting
         run: make format
