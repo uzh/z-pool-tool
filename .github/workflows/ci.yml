@@ -33,15 +33,7 @@ jobs:
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
-      - name: Debug
-        run: |
-          whoami
-          pwd
-          ls -la
-          sudo chown -R opam: .
-          ls -la
-          echo $USER
-
+      # WORKAROUND: setting the folder permissions manually https://github.com/actions/checkout/issues/211
       - name: Change working folder permissions
         run: "sudo chown -R opam: ."
 
@@ -51,8 +43,11 @@ jobs:
       - name: Install system dependencies
         run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
 
+      - name: Debug
+        run: ls -la && pwd
+
       - name: Setup project
-        run: ./scripts/setup.sh
+        run: ${{ github.workspace }}/scripts/setup.sh
 
       - name: Install project dependencies
         run: opam install --deps-only --with-test -y .
