@@ -47,7 +47,7 @@ jobs:
         env:
           USER: opam
         run: |
-          sudo mkdir -P ${{ runner.temp }}
+          sudo mkdir -p ${{ runner.temp }}
           sudo chown -R ${USER}: .
           sudo chown -R ${USER}: ${RUNNER_TEMP}
           sudo chown -R ${USER}: ${{ runner.temp }}
