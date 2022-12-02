@@ -41,6 +41,7 @@ jobs:
           echo "${{ github.path }}"
           env
           ls -la ${RUNNER_TEMP}
+          ls -la ${{ runner.temp }}
 
       # WORKAROUND: setting the folder permissions manually https://github.com/actions/checkout/issues/211
       - name: Reclaim required directory permissions
@@ -49,8 +50,10 @@ jobs:
         run: |
           sudo chown -R ${USER}: .
           sudo chown -R ${USER}: ${RUNNER_TEMP}
+          sudo chown -R ${USER}: ${{ runner.temp }}
           ls -la
           ls -la ${RUNNER_TEMP}
+          ls -la ${{ runner.temp }}
 
       - name: Checkout code
         uses: actions/checkout@v3
@@ -109,39 +112,12 @@ jobs:
           EOF
           curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
 
-  assets:
-    name: Build assets
-    runs-on: ubuntu-latest
-    container:
-      image: node:16
-      env:
-        ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: install yarn packages
-        run: yarn install
 
-      - name: build yarn package
-        run: yarn build
 
-      - name: move all assets to one folder
-        run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
 
-      - uses: actions/upload-artifact@v3
-        with:
-          name: assets
-          path: public
 
-      - name: Notify about failure
-        if: failure()
-        run: |
-          cat << EOF > message.json
-          {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
-          EOF
-          curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
 
   release:
     name: Release a new version
