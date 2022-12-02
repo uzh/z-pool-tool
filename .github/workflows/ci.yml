@@ -41,13 +41,13 @@ jobs:
           echo "${{ github.path }}"
           env
           ls -la ${RUNNER_TEMP}
-          ls -la ${{ runner.temp }}
 
       # WORKAROUND: setting the folder permissions manually https://github.com/actions/checkout/issues/211
       - name: Reclaim required directory permissions
         env:
           USER: opam
         run: |
+          sudo mkdir -P ${{ runner.temp }}
           sudo chown -R ${USER}: .
           sudo chown -R ${USER}: ${RUNNER_TEMP}
           sudo chown -R ${USER}: ${{ runner.temp }}
