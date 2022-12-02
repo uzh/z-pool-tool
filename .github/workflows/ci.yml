@@ -50,7 +50,7 @@ jobs:
           sudo mkdir -p ${{ runner.temp }}
           sudo chown -R ${USER}: .
           sudo chown -R ${USER}: ${RUNNER_TEMP}
-          sudo chown -R ${USER}: ${{ runner.temp }}
+          sudo chmod -R 777 ${{ runner.temp }}
           ls -la
           ls -la ${RUNNER_TEMP}
           ls -la ${{ runner.temp }}
