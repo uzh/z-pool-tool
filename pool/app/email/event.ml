@@ -37,11 +37,11 @@ let send_confirmation
 ;;
 
 let create_token pool address =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Service.Token.create
     ~ctx:(Pool_tenant.to_ctx pool)
     [ "email", User.EmailAddress.value address ]
-  >|= Token.create
+  ||> Token.create
 ;;
 
 let deactivate_token pool token =
@@ -49,9 +49,9 @@ let deactivate_token pool token =
 ;;
 
 let send_confirmation_email pool language email firstname lastname event =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Helper.ConfirmationEmail.create pool language email firstname lastname event
-  >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+  >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 type verification_event =
@@ -65,7 +65,7 @@ type verification_event =
   | EmailVerified of unverified t
 
 let handle_verification_event pool : verification_event -> unit Lwt.t =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   let create_email language user_id address firstname lastname label
     : unit Lwt.t
@@ -74,7 +74,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t =
     user_id
     |> Pool_common.Id.value
     |> Service.User.find_opt ~ctx
-    >>= function
+    >|> function
     | None ->
       let error = PoolError.(NotFound Field.User |> show_error) in
       Logs.err (fun m -> m "Cannot create verification email: %s" error);
@@ -158,7 +158,7 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   function
   | Sent email -> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool) email
@@ -166,8 +166,8 @@ let handle_event pool : event -> unit Lwt.t =
     Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool) emails
   | ResetPassword (user, language) ->
     Helper.PasswordReset.create pool language user
-    |> Lwt_result.map_error Pool_common.Utils.with_log_error
-    >>= (function
+    >|- Pool_common.Utils.with_log_error
+    >|> (function
     | Ok email -> Service.Email.send ~ctx email
     | Error (_ : PoolError.error) -> Lwt.return_unit)
   | ChangedPassword (({ Sihl_user.email; _ } as user), language) ->
@@ -177,7 +177,7 @@ let handle_event pool : event -> unit Lwt.t =
       (Pool_user.EmailAddress.of_string email)
       (user |> User.user_firstname)
       (user |> User.user_lastname)
-    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+    >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
   | AssignmentConfirmationSent (user, confirmation_email) ->
     send_confirmation pool user confirmation_email
   | InvitationSent (user, data, template) ->
@@ -185,7 +185,7 @@ let handle_event pool : event -> unit Lwt.t =
       template
       user.Sihl_user.email
       ([ "name", User.user_fullname user ] @ data)
-    >>= Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+    >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
   | InvitationBulkSent multi_data ->
     multi_data
     |> Lwt_list.map_s (fun (user, data, template) ->
@@ -193,7 +193,7 @@ let handle_event pool : event -> unit Lwt.t =
            template
            user.Sihl_user.email
            ([ "name", User.user_fullname user ] @ data))
-    >>= Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
+    >|> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->

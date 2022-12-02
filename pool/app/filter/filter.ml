@@ -10,7 +10,7 @@ module Human = struct
   include Entity_human
 end
 
-module Utils = struct
+module UtilsF = struct
   include Filter_utils
 end
 
@@ -19,15 +19,15 @@ module Repo = struct
 end
 
 let all_keys tenant_db =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let open Custom_field in
   find_by_model tenant_db Model.Contact
-  >|= CCList.map Key.customfield
-  >|= CCList.append Key.(all_hardcoded |> CCList.map hardcoded)
+  ||> CCList.map Key.customfield
+  ||> CCList.append Key.(all_hardcoded |> CCList.map hardcoded)
 ;;
 
 let key_of_string tenant_db str =
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let open Key in
   match Key.read str with
   | Some hardcoded -> (Hardcoded hardcoded : human) |> Lwt_result.return
@@ -35,7 +35,7 @@ let key_of_string tenant_db str =
     str
     |> Custom_field.Id.of_string
     |> Custom_field.find tenant_db
-    >|= fun field : human -> CustomField field
+    >|+ fun field : human -> CustomField field
 ;;
 
 let rec t_to_human key_list subquery_list (t : query) =
@@ -100,7 +100,7 @@ let rec search_templates ids query =
 ;;
 
 let find_templates_of_query tenant_db query =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let rec go queries ids templates =
     match queries with
     | [] -> templates |> Lwt.return
@@ -110,7 +110,7 @@ let find_templates_of_query tenant_db query =
         (fun id -> Stdlib.not (CCList.mem ~eq:Pool_common.Id.equal id ids))
         new_ids
       |> find_multiple_templates tenant_db
-      >>= fun filter_list ->
+      >|> fun filter_list ->
       go
         (filter_list |> CCList.map (fun f -> f.query))
         (ids @ new_ids)

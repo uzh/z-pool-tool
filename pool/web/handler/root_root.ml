@@ -28,7 +28,7 @@ let create req =
     ()
     |> user
     >>= events
-    |> Lwt_result.map_error (fun err -> err, "/root/tenants/")
+    >|- (fun err -> err, "/root/tenants/")
     |>> handle
     |>> return_to_overview
   in
@@ -54,7 +54,7 @@ let toggle_status req =
     id
     |> Root.find
     >>= events
-    |> Lwt_result.map_error (fun err -> err, "/root/tenants/")
+    >|- (fun err -> err, "/root/tenants/")
     |>> handle
     |>> return_to_overview
   in

@@ -44,12 +44,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Location)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Location)
   ;;
 
   let find_all_request =
@@ -158,9 +158,9 @@ let find pool id =
 ;;
 
 let find_all pool =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
-  Sql.find_all pool >>= Lwt_list.map_s (files_to_location pool)
+  Sql.find_all pool >|> Lwt_list.map_s (files_to_location pool)
 ;;
 
 let insert pool location files =

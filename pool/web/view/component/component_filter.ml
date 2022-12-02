@@ -316,18 +316,18 @@ let predicate_type_select
       ~templates_disabled
       ()
   in
+  let open UtilsF in
   let all_labels =
-    let open Utils in
     if templates_disabled
     then CCList.remove ~eq:equal_filter_label ~key:Template all_filter_labels
     else all_filter_labels
   in
   Component_input.selector
-    ~option_formatter:Utils.to_label
+    ~option_formatter:to_label
     ~attributes
     language
     Pool_common.Message.Field.Predicate
-    Utils.show_filter_label
+    show_filter_label
     all_labels
     selected
     ()
@@ -364,12 +364,13 @@ let rec predicate_form
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
+    let open UtilsF in
     match query with
-    | And _ -> Utils.And
-    | Or _ -> Utils.Or
-    | Not _ -> Utils.Not
-    | Pred _ -> Utils.Pred
-    | Template _ -> Utils.Template
+    | And _ -> UtilsF.And
+    | Or _ -> Or
+    | Not _ -> Not
+    | Pred _ -> Pred
+    | Template _ -> Template
   in
   let delete_button () =
     div

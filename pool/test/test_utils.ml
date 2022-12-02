@@ -389,7 +389,7 @@ end
 
 module Repo = struct
   let create_contact pool () =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     let contact = Model.create_contact ~with_terms_accepted:false () in
     let verified =
       if contact.Contact.user.Sihl_user.confirmed
@@ -415,6 +415,6 @@ module Repo = struct
       @ verified
       |> Lwt_list.iter_s (Contact.handle_event pool)
     in
-    contact |> Contact.id |> Contact.find pool >|= get_or_failwith_pool_error
+    contact |> Contact.id |> Contact.find pool ||> get_or_failwith_pool_error
   ;;
 end

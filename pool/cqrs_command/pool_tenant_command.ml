@@ -360,7 +360,7 @@ end = struct
   ;;
 
   let effects dblabel =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* tenant = Pool_tenant.find_by_label dblabel in
     Lwt.return_ok
       [ `Update, `Target (tenant.Pool_tenant.id |> Guard.Uuid.target_of Id.value)

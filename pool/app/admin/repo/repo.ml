@@ -95,13 +95,13 @@ module Sql = struct
   ;;
 
   let find pool role id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     let caqti_type, role_val = extract role in
     Utils.Database.find_opt
       (Database.Label.value pool)
       (find_request caqti_type)
       (id, role_val)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
   ;;
 
   let find_role_by_user_request =
@@ -163,7 +163,7 @@ let update = Sql.update
 
 let find_any_admin_by_user_id pool id =
   let open Utils.Lwt_result.Infix in
-  let find_admin carrier = find pool carrier id >|= fun m -> Any m in
+  let find_admin carrier = find pool carrier id >|+ fun m -> Any m in
   let user =
     Service.User.find_opt
       ~ctx:(Pool_tenant.to_ctx pool)

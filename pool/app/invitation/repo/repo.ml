@@ -52,12 +52,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_by_experiment_request =
@@ -116,13 +116,13 @@ module Sql = struct
   ;;
 
   let find_experiment_id_of_invitation pool invitation =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_experiment_id_of_invitation_request
       (invitation.Entity.id |> Pool_common.Id.value)
-    >|= CCOption.map Pool_common.Id.of_string
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.map Pool_common.Id.of_string
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let update_request =
@@ -156,13 +156,13 @@ module Sql = struct
   ;;
 
   let contact_was_invited_to_experiment pool experiment contact =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       contact_was_invited_to_experiment_request
       ( experiment.Experiment.id |> Pool_common.Id.value
       , Contact.id contact |> Pool_common.Id.value )
-    >|= CCOption.is_some
+    ||> CCOption.is_some
   ;;
 
   let find_multiple_by_experiment_and_contacts_request ids =
@@ -216,7 +216,7 @@ end
 
 let contact_to_invitation pool invitation =
   let open Utils.Lwt_result.Infix in
-  Contact.find pool invitation.RepoEntity.contact_id >|= to_entity invitation
+  Contact.find pool invitation.RepoEntity.contact_id >|+ to_entity invitation
 ;;
 
 let find pool id =
@@ -226,23 +226,23 @@ let find pool id =
 ;;
 
 let find_by_experiment pool id =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
   Sql.find_by_experiment pool id
-  >>= Lwt_list.map_s (contact_to_invitation pool)
-  |> Lwt.map CCList.all_ok
+  >|> Lwt_list.map_s (contact_to_invitation pool)
+  ||> CCList.all_ok
 ;;
 
 let find_by_contact pool contact =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
   contact
   |> Contact.id
   |> Sql.find_by_contact pool
   (* Reload contact from DB, does not allow already made updates of the provided
      contact record *)
-  >>= Lwt_list.map_s (contact_to_invitation pool)
-  |> Lwt.map CCList.all_ok
+  >|> Lwt_list.map_s (contact_to_invitation pool)
+  ||> CCList.all_ok
 ;;
 
 let find_experiment_id_of_invitation = Sql.find_experiment_id_of_invitation

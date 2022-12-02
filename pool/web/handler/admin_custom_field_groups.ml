@@ -13,9 +13,8 @@ let get_model = Admin_custom_fields.get_model
 
 let form ?id req model =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, Url.index_path model)
+    Utils.Lwt_result.map_error (fun err -> err, Url.index_path model)
     @@ let* custom_field_group =
          id
          |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
@@ -32,7 +31,7 @@ let form ?id req model =
          sys_languages
          flash_fetcher
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -46,7 +45,6 @@ let edit req =
 
 let write ?id req model =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
   in
@@ -64,7 +62,7 @@ let write ?id req model =
     go Message.Field.Name encode_lang
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let events =
@@ -108,9 +106,8 @@ let delete req =
     let id = req |> get_group_id in
     let result { Pool_context.tenant_db; _ } =
       let redirect_path = Url.Group.edit_path (model, id) in
-      Lwt_result.map_error (fun err -> err, redirect_path)
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path)
       @@
-      let open Utils.Lwt_result.Syntax in
       let open Utils.Lwt_result.Infix in
       let* events =
         let open CCFun.Infix in
@@ -137,16 +134,16 @@ let sort req =
     let open Utils.Lwt_result.Infix in
     let redirect_path = Url.index_path model in
     let result { Pool_context.tenant_db; _ } =
-      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@ let%lwt ids =
            Sihl.Web.Request.urlencoded_list
              Message.Field.(CustomFieldGroup |> array_key)
              req
          in
          let%lwt groups =
-           let open Lwt.Infix in
+           let open Utils.Lwt_result.Infix in
            Custom_field.find_groups_by_model tenant_db model
-           >|= fun options ->
+           ||> fun options ->
            CCList.filter_map
              (fun id ->
                CCList.find_opt

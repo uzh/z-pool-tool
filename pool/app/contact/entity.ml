@@ -219,8 +219,7 @@ module PartialUpdate = struct
       >>= check_version contact.language_version
       |> Lwt.return
     | _ ->
-      let open Lwt_result.Syntax in
-      let open Lwt_result.Infix in
+      let open Utils.Lwt_result.Infix in
       let check_permission m =
         Lwt_result.lift
         @@

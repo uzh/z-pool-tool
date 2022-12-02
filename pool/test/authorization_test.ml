@@ -1,6 +1,6 @@
 let update_language_as actor =
   let open Guard in
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let subject =
     "john@gmail.com"
     |> Contact_test.contact_info
@@ -23,7 +23,7 @@ let update_language_as actor =
   in
   let* () =
     (Persistence.checker_of_effects ~ctx effects) actor
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   in
   Lwt.return_ok ()
 ;;
@@ -51,7 +51,7 @@ let guest_cannot_update_language _switch () =
 let operator_works _ () =
   let ctx = Pool_tenant.to_ctx Test_utils.Data.database_label in
   let%lwt actual =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let target =
       "chris@gmail.com"
       |> Contact_test.contact_info
@@ -71,7 +71,7 @@ let operator_works _ () =
         actor.Guard.Authorizable.uuid
         (Guard.ActorRoleSet.singleton
            (`Operator target'.Guard.AuthorizableTarget.uuid))
-      |> Lwt_result.map_error Pool_common.Message.authorization
+      >|- Pool_common.Message.authorization
     in
     let* actor = Guard.Contact.to_authorizable ~ctx subject in
     let* () =
@@ -80,12 +80,12 @@ let operator_works _ () =
         ( `ActorEntity (`Operator target'.Guard.AuthorizableTarget.uuid)
         , `Manage
         , `Target target'.Guard.AuthorizableTarget.uuid )
-      |> Lwt_result.map_error Pool_common.Message.authorization
+      >|- Pool_common.Message.authorization
     in
     let effects = [ `Manage, `Target target'.Guard.AuthorizableTarget.uuid ] in
     let* () =
       Guard.Persistence.checker_of_effects ~ctx effects actor
-      |> Lwt_result.map_error Pool_common.Message.authorization
+      >|- Pool_common.Message.authorization
     in
     Lwt_result.return ()
   in

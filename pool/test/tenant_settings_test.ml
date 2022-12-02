@@ -90,7 +90,7 @@ let update_terms_and_conditions _ () =
   let%lwt languages = Settings.find_languages database_label in
   let terms_and_conditions_text = "Terms and conditions" in
   let%lwt events =
-    let open Lwt_result.Infix in
+    let open Utils.Lwt_result.Infix in
     let data =
       CCList.map
         (fun lang ->
@@ -104,7 +104,7 @@ let update_terms_and_conditions _ () =
       |> Lwt_result.lift
     in
     let%lwt (_ : (unit Lwt.t, Pool_common.Message.error) result) =
-      result >|= Lwt_list.iter_s (Pool_event.handle_event database_label)
+      result >|+ Lwt_list.iter_s (Pool_event.handle_event database_label)
     in
     result
   in
@@ -134,10 +134,10 @@ let update_terms_and_conditions _ () =
 ;;
 
 let login_after_terms_update _ () =
+  let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let%lwt user = Test_utils.Repo.create_contact database_label () in
   let accepted =
-    let open Utils.Lwt_result.Infix in
     let contact =
       Contact.find_by_email database_label (Contact.email_address user)
     in
@@ -147,17 +147,15 @@ let login_after_terms_update _ () =
       | true -> Lwt.return_ok contact
       | false -> Lwt.return_error TermsAndConditionsNotAccepted
     in
-    contact
-    |> Lwt_result.map_error (CCFun.const (NotFound Field.Contact))
-    >>= terms_agreed
+    contact >|- CCFun.const (NotFound Field.Contact) >>= terms_agreed
   in
   let expected = Error TermsAndConditionsNotAccepted in
   accepted
-  |> Lwt.map (fun accepted ->
-       Alcotest.(
-         check
-           (result Test_utils.contact Test_utils.error)
-           "succeeds"
-           expected
-           accepted))
+  ||> fun accepted ->
+  Alcotest.(
+    check
+      (result Test_utils.contact Test_utils.error)
+      "succeeds"
+      expected
+      accepted)
 ;;

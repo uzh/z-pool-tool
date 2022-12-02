@@ -1,7 +1,7 @@
 let valid_tenant () =
   let filter handler req =
     let%lwt result =
-      let open Lwt_result.Syntax in
+      let open Utils.Lwt_result.Infix in
       let* tenant_db =
         let open CCResult.Infix in
         req

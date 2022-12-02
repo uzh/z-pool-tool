@@ -1,7 +1,7 @@
 include Core
 include Event
 module Persistence = Repo
-open Utils.Lwt_result.Syntax
+open Utils.Lwt_result.Infix
 
 (** [console_authorizable] is an [\[ `Admin \] Authorizable.t] for use in
     administrative tasks, such as working with the command line or running
@@ -36,7 +36,7 @@ module User = struct
           `User
           (Uuid.Actor.of_string_exn t.Sihl_user.id))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 
   (** Many request handlers do not extract a [User.t] at any point. This
@@ -56,7 +56,7 @@ module User = struct
           `Contact
           (Uuid.Actor.of_string_exn id))
       user_id
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 end
 
@@ -74,9 +74,9 @@ module ContactTarget = struct
           `Contact
           (Uuid.Target.of_string_exn (Pool_common.Id.value (Contact.id t))))
       t
-    |> Lwt_result.map_error (fun s ->
-         Format.asprintf "Failed to convert Contact to authorizable: %s" s)
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- (fun s ->
+          Format.asprintf "Failed to convert Contact to authorizable: %s" s)
+    >|- Pool_common.Message.authorization
   ;;
 end
 
@@ -92,9 +92,9 @@ module Contact = struct
           `Contact
           (Uuid.Actor.of_string_exn (Pool_common.Id.value (Contact.id t))))
       t
-    |> Lwt_result.map_error (fun s ->
-         Format.asprintf "Failed to convert Contact to authorizable: %s" s)
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- (fun s ->
+          Format.asprintf "Failed to convert Contact to authorizable: %s" s)
+    >|- Pool_common.Message.authorization
   ;;
 end
 
@@ -110,7 +110,7 @@ module PoolTenantTarget = struct
           `Tenant
           (Uuid.Target.of_string_exn (Pool_common.Id.value t.Pool_tenant.id)))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 end
 
@@ -126,7 +126,7 @@ module PoolTenant = struct
           `Tenant
           (Uuid.Actor.of_string_exn (Pool_common.Id.value t.Pool_tenant.id)))
       t
-    |> Lwt_result.map_error Pool_common.Message.authorization
+    >|- Pool_common.Message.authorization
   ;;
 
   module Write = struct
@@ -142,7 +142,7 @@ module PoolTenant = struct
             (Uuid.Actor.of_string_exn
                (Pool_common.Id.value t.Pool_tenant.Write.id)))
         t
-      |> Lwt_result.map_error Pool_common.Message.authorization
+      >|- Pool_common.Message.authorization
     ;;
   end
 end
@@ -156,7 +156,7 @@ module Admin = struct
   let of_authorizable ?ctx (auth : _ Authorizable.t) =
     let* roles =
       Persistence.Actor.find_roles ?ctx auth.Authorizable.uuid
-      |> Lwt_result.map_error Pool_common.Message.authorization
+      >|- Pool_common.Message.authorization
     in
     if ActorRoleSet.mem `Admin roles
     then Lwt.return_ok { auth with Authorizable.typ = `Admin }

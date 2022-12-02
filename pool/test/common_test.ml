@@ -14,8 +14,7 @@ module Data = struct
 end
 
 let validate_email _ () =
-  let open Lwt.Syntax in
-  let* () =
+  let%lwt () =
     let msg = "Missing 'TEST_EMAIL' env variable." in
     Service.Email.handle
       ~without_email_fcn:(fun _ -> failwith msg)

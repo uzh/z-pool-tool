@@ -113,12 +113,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_all_for_experiment_request =
@@ -150,12 +150,12 @@ module Sql = struct
   ;;
 
   let find_public pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_public_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_public_by_assignment_request =
@@ -170,12 +170,12 @@ module Sql = struct
   ;;
 
   let find_public_by_assignment pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_public_by_assignment_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_all_public_for_experiment_request =
@@ -233,12 +233,12 @@ module Sql = struct
   ;;
 
   let find_experiment_id_and_title pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_experiment_id_and_title_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_sessions_to_remind_request =
@@ -384,13 +384,13 @@ end
 
 let location_to_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
-  Pool_location.find pool session.RepoEntity.location_id >|= to_entity session
+  Pool_location.find pool session.RepoEntity.location_id >|+ to_entity session
 ;;
 
 let location_to_public_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
   Pool_location.find pool session.RepoEntity.Public.location_id
-  >|= RepoEntity.Public.to_entity session
+  >|+ RepoEntity.Public.to_entity session
 ;;
 
 let find pool id =

@@ -163,9 +163,9 @@ let htmx_urlencoded_list key req =
 
 (* TODO[timhub]: hide information, at least on public site *)
 let validate_email_existance pool email =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Service.User.find_by_email_opt ~ctx:(Pool_tenant.to_ctx pool) email
-  >|= function
+  ||> function
   | None -> Ok ()
   | Some _ -> Error Pool_common.Message.EmailAlreadyInUse
 ;;

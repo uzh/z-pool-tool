@@ -15,10 +15,11 @@ module TestContacts = struct
   ;;
 
   let get_contact index =
+    let open Utils.Lwt_result.Infix in
     index
     |> CCList.nth Seed.Contacts.contact_ids
     |> Contact.find Test_utils.Data.database_label
-    |> Lwt.map CCResult.get_exn
+    ||> CCResult.get_exn
   ;;
 end
 
@@ -188,9 +189,10 @@ let firstname firstname =
 
 let filter_contacts _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contacts = TestContacts.all () in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     let%lwt () =
       (* Save field and answer with 3 *)
@@ -215,7 +217,7 @@ let filter_contacts _ () =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res =
       filtered_contacts
@@ -230,9 +232,10 @@ let filter_contacts _ () =
 
 let filter_by_email _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     let filter =
       Filter.(
@@ -258,7 +261,7 @@ let filter_by_email _ () =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -322,6 +325,7 @@ let validate_filter_with_invalid_value _ () =
 
 let test_list_filter answer_index operator contact experiment expected =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let filter =
       let open Filter in
       let value =
@@ -356,7 +360,7 @@ let test_list_filter answer_index operator contact experiment expected =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -366,6 +370,7 @@ let test_list_filter answer_index operator contact experiment expected =
 
 let filter_by_list_contains_all _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 0; 1 ] in
     let%lwt () =
@@ -378,7 +383,7 @@ let filter_by_list_contains_all _ () =
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index
@@ -392,10 +397,11 @@ let filter_by_list_contains_all _ () =
 
 let filter_by_list_contains_none _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index
@@ -409,10 +415,11 @@ let filter_by_list_contains_none _ () =
 
 let filter_by_list_contains_some _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index

@@ -13,7 +13,7 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let sort translations =
       let update m t =
@@ -34,7 +34,7 @@ let index req =
     let%lwt translation_list = I18n.find_all tenant_db () >|> sort in
     Page.Admin.I18n.list translation_list context
     |> create_layout req ~active_navigation:"/admin/i18n" context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -47,7 +47,7 @@ let update req =
   in
   let redirect_path = Format.asprintf "/admin/i18n" in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let property () = I18n.find tenant_db id in
     let events property =
