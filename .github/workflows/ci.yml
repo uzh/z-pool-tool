@@ -40,6 +40,7 @@ jobs:
           echo ${RUNNER_TEMP}
           echo "${{ github.path }}"
           env
+          ls -la ${RUNNER_TEMP}
 
       # WORKAROUND: setting the folder permissions manually https://github.com/actions/checkout/issues/211
       - name: Reclaim required directory permissions
@@ -48,11 +49,7 @@ jobs:
         run: |
           sudo chown -R ${USER}: .
           sudo chown -R ${USER}: ${RUNNER_TEMP}
-
-      - name: Debug
-        run: |
           ls -la
-          pwd
           ls -la ${RUNNER_TEMP}
 
       - name: Checkout code
