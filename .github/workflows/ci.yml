@@ -37,8 +37,11 @@ jobs:
       - name: Change working folder permissions
         run: "sudo chown -R opam: ."
 
+      - name: Debug
+        run: ls -la && pwd
+
       - name: Checkout code
-        run: git clone "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" .
+        uses: actions/checkout@v3
 
       - name: Install system dependencies
         run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
