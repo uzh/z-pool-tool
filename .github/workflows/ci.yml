@@ -51,8 +51,6 @@ jobs:
 
             # DEBUG
             ls -la
-            ping database-tenant
-            ping database-root
 
             # Build and test executable
             /app/scripts/build.sh
