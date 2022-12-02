@@ -44,7 +44,7 @@ jobs:
           SMTP_SENDER: test@econ.uzh.ch
         with:
           image: ocaml/opam:alpine-ocaml-4.12
-          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e SMTP_SENDER
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e SMTP_SENDER -e SIHL_ENV
           run: |
             # DEBUG
             pwd
@@ -60,20 +60,9 @@ jobs:
             pwd
             ls -la
 
-            # Build executable
+            # Build and test executable
             /app/scripts/build.sh
 
-            # Check formatting
-            make format
-
-            # Setup test
-            opam config exec -- dune exec --root . pool/run/run.exe migrate.root
-            opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
-            opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
-            opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
-
-            # Test
-            opam config exec -- make test
 
 
 

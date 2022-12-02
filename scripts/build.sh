@@ -1,7 +1,7 @@
 #!/bin/sh
 
 printTitle () {
-  echo -e "\e[1;43m  $1:  \e[0m"
+  echo -e "\e[1;33m~~~ $1: ~~~\e[0m"
 }
 
 printTitle "Installing system dependencies"
@@ -19,3 +19,17 @@ eval $(opam env)
 
 printTitle "Build project"
 opam exec -- dune build --root .
+
+printTitle "Check formatting"
+make format
+
+printTitle "Setup test"
+opam config exec -- dune exec --root . pool/run/run.exe migrate.root
+opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
+opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
+opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+
+printTitle "Execute tests"
+opam config exec -- make test
+
+printTitle "Build script finished"
