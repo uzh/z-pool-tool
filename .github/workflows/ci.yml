@@ -38,12 +38,13 @@ jobs:
           whoami
           pwd
           ls -la
+          echo $USER
 
       - name: Change working folder permissions
         run: sudo chown -R $USER:$USER .
 
       - name: Checkout code
-        run: git clone "https://${{ secrets.GITHUB_TOKEN }}@${{ github.repository }}" .
+        run: git clone "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" .
 
       - name: Install system dependencies
         run: sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
