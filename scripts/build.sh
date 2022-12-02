@@ -13,6 +13,7 @@ $project_dir/scripts/setup.sh
 
 # Install project dependencies
 opam install --deps-only --with-test -y .
+eval $(opam env)
 
 # Install project dependencies
 opam exec -- dune build --root .

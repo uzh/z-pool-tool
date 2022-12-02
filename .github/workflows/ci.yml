@@ -35,38 +35,47 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Run the build process with Docker
+
+      - name: Build and test with Docker
         uses: addnab/docker-run-action@v3
-        with:
-          image: ocaml/opam:alpine-ocaml-4.12
-          options: -v ${{ github.workspace }}:/app -w /app
-          run: /app/scripts/build.sh
-      
-
-
-
-
-
-
-      - name: Check formatting
-        run: make format
-
-      - name: Migrate and seed test database
-        env:
-          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ env.MYSQL_DATABASE }}
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3307/${{ env.MYSQL_DATABASE }}
-        run: |
-          opam config exec -- dune exec --root . pool/run/run.exe migrate.root
-          opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
-          opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
-          opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
-
-      - name: Run tests
         env:
           DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ env.MYSQL_DATABASE }}
           DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3307/${{ env.MYSQL_DATABASE }}
           SMTP_SENDER: test@econ.uzh.ch
-        run: opam config exec -- make test
+        with:
+          image: ocaml/opam:alpine-ocaml-4.12
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e SMTP_SENDER
+          run: |
+            # DEBUG
+            pwd
+            ls -la
+            echo $DATABASE_URL
+            echo $DATABASE_URL_TENANT_TEST
+            echo $SMTP_SENDER
+
+            # Reclaim required directory permissions
+            sudo chown -R opam .
+
+            # DEBUG
+            pwd
+            ls -la
+
+            # Build executable
+            /app/scripts/build.sh
+
+            # Check formatting
+            make format
+
+            # Setup test
+            opam config exec -- dune exec --root . pool/run/run.exe migrate.root
+            opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
+            opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
+            opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
+
+            # Test
+            opam config exec -- make test
+
+
 
       - uses: actions/upload-artifact@v3
         with:
@@ -79,13 +88,6 @@ jobs:
           name: tests
           path: _build/default/pool/test/
 
-      - name: Notify about failure
-        if: failure()
-        run: |
-          cat << EOF > message.json
-          {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
-          EOF
-          curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
 
 
 
