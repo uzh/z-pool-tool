@@ -2,6 +2,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "contact.cqrs"
+
 module SignUp : sig
   type t =
     { email : User.EmailAddress.t
@@ -12,7 +14,8 @@ module SignUp : sig
     }
 
   val handle
-    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?user_id:Id.t
@@ -53,6 +56,7 @@ end = struct
   ;;
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
     ?password_policy
     ?(user_id = Id.create ())
@@ -60,6 +64,7 @@ end = struct
     default_language
     command
     =
+    Logs.info ~src (fun m -> m "Handle command SignUp" ~tags);
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () = User.EmailAddress.validate allowed_email_suffixes command.email in
@@ -98,12 +103,14 @@ end
 
 module DeleteUnverified : sig
   val handle
-    :  Contact.t
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
-  let handle contact =
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command DeleteUnverified" ~tags);
     if contact.Contact.email_verified |> CCOption.is_some
     then Error Pool_common.Message.EmailDeleteAlreadyVerified
     else Ok [ Contact.UnverifiedDeleted contact |> Pool_event.contact ]
@@ -121,7 +128,8 @@ module Update : sig
   type t = Contact.PartialUpdate.t
 
   val handle
-    :  Contact.t
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -129,7 +137,8 @@ module Update : sig
 end = struct
   type t = Contact.PartialUpdate.t
 
-  let handle contact (field : t) =
+  let handle ?(tags = Logs.Tag.empty) contact (field : t) =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok [ Contact.Updated (field, contact) |> Pool_event.contact ]
   ;;
 
@@ -152,7 +161,8 @@ module UpdatePassword : sig
     }
 
   val handle
-    :  ?password_policy:
+    :  ?tags:Logs.Tag.set
+    -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> Contact.t
     -> t
@@ -186,7 +196,8 @@ end = struct
         command)
   ;;
 
-  let handle ?password_policy contact command =
+  let handle ?(tags = Logs.Tag.empty) ?password_policy contact command =
+    Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
     let open CCResult in
     let* () =
       User.Password.validate_current_password
@@ -234,7 +245,8 @@ module RequestEmailValidation : sig
   type t = Pool_user.EmailAddress.t
 
   val handle
-    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -243,7 +255,8 @@ module RequestEmailValidation : sig
 end = struct
   type t = Pool_user.EmailAddress.t
 
-  let handle ?allowed_email_suffixes contact email =
+  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes contact email =
+    Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     Ok
@@ -271,7 +284,8 @@ module UpdateEmail : sig
   type t = Email.unverified Email.t
 
   val handle
-    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -280,7 +294,8 @@ module UpdateEmail : sig
 end = struct
   type t = Email.unverified Email.t
 
-  let handle ?allowed_email_suffixes contact email =
+  let handle ?(tags = Logs.Tag.empty) ?allowed_email_suffixes contact email =
+    Logs.info ~src (fun m -> m "Handle command UpdateEmail" ~tags);
     let open CCResult in
     let* () =
       User.EmailAddress.validate allowed_email_suffixes (Email.address email)
@@ -305,12 +320,14 @@ end
 
 module AcceptTermsAndConditions : sig
   val handle
-    :  Contact.t
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
-  let handle contact =
+  let handle ?(tags = Logs.Tag.empty) contact =
+    Logs.info ~src (fun m -> m "Handle command AcceptTermsAndCondition" ~tags);
     Ok [ Contact.TermsAccepted contact |> Pool_event.contact ]
   ;;
 
@@ -326,7 +343,8 @@ module VerifyEmail : sig
   type t = { email : Email.unverified Email.t }
 
   val handle
-    :  Contact.t
+    :  ?tags:Logs.Tag.set
+    -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -334,7 +352,8 @@ module VerifyEmail : sig
 end = struct
   type t = { email : Email.unverified Email.t }
 
-  let handle contact command =
+  let handle ?(tags = Logs.Tag.empty) contact command =
+    Logs.info ~src (fun m -> m "Handle command VerifyEmail" ~tags);
     Ok
       [ Contact.EmailVerified contact |> Pool_event.contact
       ; Email.EmailVerified command.email |> Pool_event.email_verification
@@ -350,7 +369,11 @@ module SendProfileUpdateTrigger : sig
     ; emails : Sihl_email.t list
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
   type t =
@@ -358,7 +381,8 @@ end = struct
     ; emails : Sihl_email.t list
     }
 
-  let handle ({ contacts; emails } : t) =
+  let handle ?(tags = Logs.Tag.empty) ({ contacts; emails } : t) =
+    Logs.info ~src (fun m -> m "Handle command SendProfileUpdateTrigger" ~tags);
     Ok
       [ Contact.ProfileUpdateTriggeredAtUpdated contacts |> Pool_event.contact
       ; Email.BulkSent emails |> Pool_event.email

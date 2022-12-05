@@ -50,6 +50,7 @@ let update_settings req =
   let open Cqrs_command.Settings_command in
   let lift = Lwt_result.lift in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
+  let tags = Logger.req req in
   let redirect_path = "/admin/settings" in
   let result { Pool_context.tenant_db; _ } =
     Utils.Lwt_result.map_error (fun err ->
@@ -72,39 +73,44 @@ let update_settings req =
                     | true -> Some (k |> Pool_common.Language.create)
                     | false -> None)
                |> CCResult.flatten_l
-               >>= UpdateLanguages.handle terms_and_conditions
+               >>= UpdateLanguages.handle ~tags terms_and_conditions
                |> lift
            | `UpdateTenantEmailSuffixes ->
-             fun m -> m |> UpdateEmailSuffixes.handle |> lift
+             fun m -> m |> UpdateEmailSuffixes.handle ~tags |> lift
            | `CreateTenantEmailSuffix ->
              fun m ->
                let%lwt suffixes = Settings.find_email_suffixes tenant_db in
-               CreateEmailSuffix.(m |> decode >>= handle suffixes) |> lift
+               CreateEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
            | `DeleteTenantEmailSuffix ->
              fun m ->
                let%lwt suffixes = Settings.find_email_suffixes tenant_db in
-               DeleteEmailSuffix.(m |> decode >>= handle suffixes) |> lift
+               DeleteEmailSuffix.(m |> decode >>= handle ~tags suffixes) |> lift
            | `UpdateDefaultLeadTime ->
-             fun m -> UpdateDefaultLeadTime.(m |> decode >>= handle) |> lift
+             fun m ->
+               UpdateDefaultLeadTime.(m |> decode >>= handle ~tags) |> lift
            | `UpdateTenantContactEmail ->
-             fun m -> UpdateContactEmail.(m |> decode >>= handle) |> lift
+             fun m -> UpdateContactEmail.(m |> decode >>= handle ~tags) |> lift
            | `UpdateInactiveUserDisableAfter ->
-             fun m -> InactiveUser.DisableAfter.(m |> decode >>= handle) |> lift
+             fun m ->
+               InactiveUser.DisableAfter.(m |> decode >>= handle ~tags) |> lift
            | `UpdateInactiveUserWarning ->
-             fun m -> InactiveUser.Warning.(m |> decode >>= handle) |> lift
+             fun m ->
+               InactiveUser.Warning.(m |> decode >>= handle ~tags) |> lift
            | `UpdateTermsAndConditions ->
              fun m ->
-               UpdateTermsAndConditions.(handle system_languages m) |> lift
+               UpdateTermsAndConditions.(handle ~tags system_languages m)
+               |> lift
            | `UpdateTriggerProfileUpdateAfter ->
              fun m ->
-               UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle) |> lift
+               UpdateTriggerProfileUpdateAfter.(m |> decode >>= handle ~tags)
+               |> lift
          in
          Sihl.Web.Router.param req "action"
          |> Settings.action_of_param
          |> lift
          >>= CCFun.flip command_handler urlencoded
        in
-       let handle = Lwt_list.iter_s (Pool_event.handle_event tenant_db) in
+       let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) in
        let return_to_settings () =
          Http_utils.redirect_to_with_actions
            redirect_path

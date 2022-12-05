@@ -128,9 +128,11 @@ let create req =
            (CCList.map Contact.id contacts)
            experiment
        in
+       let tags = Logger.req req in
        let%lwt events =
          Cqrs_command.Invitation_command.Create.(
            handle
+             ~tags
              { experiment; contacts; invited_contacts }
              system_languages
              i18n_texts
@@ -138,7 +140,7 @@ let create req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -172,14 +174,15 @@ let resend req =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
        let* i18n_texts = invitation_template_data tenant_db system_languages in
+       let tags = Logger.req req in
        let events =
          let open Cqrs_command.Invitation_command.Resend in
-         handle { invitation; experiment } system_languages i18n_texts
+         handle ~tags { invitation; experiment } system_languages i18n_texts
          |> Lwt.return
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

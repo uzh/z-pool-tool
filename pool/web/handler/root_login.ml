@@ -14,6 +14,7 @@ let login_get req =
     >|> function
     | Some _ -> redirect_to_entrypoint |> Lwt_result.ok
     | None ->
+      Logs.info (fun m -> m "User not found in session" ~tags:(Logger.req req));
       let open Sihl.Web in
       Page.Root.Login.login context
       |> General.create_root_layout ~active_navigation:"/root/login" context
@@ -34,8 +35,8 @@ let login_post req =
       |> CCOption.to_result Pool_common.Message.LoginProvideDetails
       |> Lwt_result.lift
     in
-    let email = List.assoc "email" params in
-    let password = List.assoc "password" params in
+    let email = CCList.assoc ~eq:CCString.equal "email" params in
+    let password = CCList.assoc ~eq:CCString.equal "password" params in
     let* user =
       Service.User.login ~ctx email ~password
       >|- Pool_common.Message.handle_sihl_login_error
@@ -73,6 +74,7 @@ let request_reset_password_post req =
   let open Cqrs_command.Common_command.ResetPassword in
   let result { Pool_context.tenant_db; language; _ } =
     let open Utils.Lwt_result.Infix in
+    let tags = Logger.req req in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= (fun email ->
@@ -81,7 +83,7 @@ let request_reset_password_post req =
           |> Service.User.find_by_email_opt ~ctx
           ||> CCOption.to_result Pool_common.Message.PasswordResetFailMessage)
     >== CCFun.flip handle language
-    |>> Pool_event.handle_events tenant_db
+    |>> Pool_event.handle_events ~tags tenant_db
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions

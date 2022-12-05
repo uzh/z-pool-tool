@@ -52,12 +52,14 @@ let cancel req =
   let result { Pool_context.tenant_db; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* assignment = Assignment.find tenant_db id in
+       let tags = Logger.req req in
        let events =
-         Cqrs_command.Assignment_command.Cancel.handle assignment |> Lwt.return
+         Cqrs_command.Assignment_command.Cancel.handle ~tags assignment
+         |> Lwt.return
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

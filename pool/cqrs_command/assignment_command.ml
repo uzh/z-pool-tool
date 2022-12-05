@@ -1,5 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "assignment.cqrs"
+
 module Create : sig
   type t =
     { contact : Contact.t
@@ -9,7 +11,8 @@ module Create : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
     -> Email.confirmation_email
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -23,7 +26,13 @@ end = struct
     ; experiment : Experiment.Public.t
     }
 
-  let handle (command : t) confirmation_email already_enrolled =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (command : t)
+    confirmation_email
+    already_enrolled
+    =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
@@ -71,14 +80,19 @@ end
 module Cancel : sig
   type t = Assignment.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Assignment.t
 
-  let handle (command : t)
+  let handle ?(tags = Logs.Tag.empty) (command : t)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
+    Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     Ok
       [ Assignment.Canceled command |> Pool_event.assignment
       ; Contact.NumAssignmentsDecreased command.Assignment.contact
@@ -107,7 +121,8 @@ module SetAttendance : sig
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
   val handle
-    :  Session.t
+    :  ?tags:Logs.Tag.set
+    -> Session.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -115,7 +130,8 @@ module SetAttendance : sig
 end = struct
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
-  let handle (session : Session.t) command =
+  let handle ?(tags = Logs.Tag.empty) (session : Session.t) command =
+    Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
     let open CCResult in
     let open Assignment in
     let open Session in
@@ -174,7 +190,8 @@ module CreateFromWaitingList : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
     -> Email.confirmation_email
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -186,7 +203,8 @@ end = struct
     ; already_enrolled : bool
     }
 
-  let handle (command : t) confirmation_email =
+  let handle ?(tags = Logs.Tag.empty) (command : t) confirmation_email =
+    Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if command.already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)

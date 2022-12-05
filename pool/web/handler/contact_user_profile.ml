@@ -74,7 +74,8 @@ let update_email req =
            handle ?allowed_email_suffixes contact new_email |> Lwt_result.lift)
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events tenant_db events in
+         let tags = Logger.req req in
+         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/email-confirmation")
@@ -88,17 +89,18 @@ let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result ({ Pool_context.tenant_db; query_language; _ } as context) =
     let open Utils.Lwt_result.Infix in
+    let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* events =
          let open CCResult.Infix in
-         Command.UpdatePassword.(decode urlencoded >>= handle contact)
+         Command.UpdatePassword.(decode urlencoded >>= handle ~tags contact)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events tenant_db events in
+         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/user/login-information")
@@ -148,11 +150,13 @@ let completion_post req =
       |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
       |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
     in
+    let tags = Logger.req req in
     let events =
       let open Utils.Lwt_result.Infix in
       let open Public in
       let handle =
         Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
+          ~tags
           (Contact.id contact)
       in
       Lwt_list.map_s
@@ -176,7 +180,7 @@ let completion_post req =
     in
     let handle events =
       let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+        Lwt_list.map_s (Pool_event.handle_event ~tags tenant_db) events
       in
       let%lwt required_answers_given =
         Custom_field.all_required_answered tenant_db (Contact.id contact)

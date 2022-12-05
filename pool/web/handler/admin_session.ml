@@ -149,7 +149,8 @@ let create req =
         urlencoded |> decode >>= handle experiment_id location)
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let tags = Logger.req req in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_common.Message.(Created Field.Experiment) ]
@@ -255,6 +256,7 @@ let update_handler action req =
       | None -> Lwt_result.return None
       | Some parent_id -> parent_id |> Session.find tenant_db >|+ CCOption.some
     in
+    let tags = Logger.req req in
     let* events =
       match action with
       | `Update ->
@@ -263,7 +265,7 @@ let update_handler action req =
         Cqrs_command.Session_command.Update.(
           urlencoded
           |> decode
-          >>= handle ?parent_session:parent follow_ups session location
+          >>= handle ~tags ?parent_session:parent follow_ups session location
           |> Lwt_result.lift)
       | `Reschedule ->
         let open Cqrs_command.Session_command.Reschedule in
@@ -279,10 +281,10 @@ let update_handler action req =
           |> reschedule_messages tenant_db system_languages
         in
         decoded
-        |> handle ?parent_session:parent follow_ups session messages
+        |> handle ~tags ?parent_session:parent follow_ups session messages
         |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ success_msg ] ]
@@ -309,7 +311,8 @@ let disabler req command ctor =
     let session_id = id req Pool_common.Message.Field.Session in
     let* session = Session.find tenant_db session_id in
     let* events = session |> command |> Lwt_result.lift in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let tags = Logger.req req in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       error_path
       [ Message.set ~success:[ Pool_common.Message.(ctor Field.Session) ] ]
@@ -388,15 +391,16 @@ let create_follow_up req =
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in
     let* session = Session.find tenant_db session_id in
+    let tags = Logger.req req in
     let* events =
       let open CCResult.Infix in
       Cqrs_command.Session_command.Create.(
         urlencoded
         |> decode
-        >>= handle ~parent_session:session experiment_id location)
+        >>= handle ~tags ~parent_session:session experiment_id location)
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       (Format.asprintf
          "/admin/experiments/%s/sessions"
@@ -417,7 +421,7 @@ let close_post req =
       (Pool_common.Id.value session_id)
   in
   let result context =
-    let open Utils.Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
     @@
     let tenant_db = context.Pool_context.tenant_db in

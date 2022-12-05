@@ -1,5 +1,9 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let log_src = Logs.Src.create "common.cqrs"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
+
 module ResetPassword = struct
   type t = Pool_user.EmailAddress.t
 
@@ -10,6 +14,7 @@ module ResetPassword = struct
   ;;
 
   let handle user language =
+    Logs.info (fun m -> m "Handle command ResetPassword");
     Ok [ Email.ResetPassword (user, language) |> Pool_event.email ]
   ;;
 

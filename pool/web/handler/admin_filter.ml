@@ -103,6 +103,7 @@ let create ?model req =
     in
     let%lwt key_list = Filter.all_keys tenant_db in
     let%lwt template_list = Filter.find_templates_of_query tenant_db query in
+    let tags = Logger.req req in
     let events =
       let open Pool_common.Message in
       let open HttpUtils in
@@ -116,7 +117,7 @@ let create ?model req =
         in
         let* experiment = Experiment.find tenant_db experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle experiment key_list template_list query |> Lwt_result.lift
+        handle ~tags experiment key_list template_list query |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
@@ -126,16 +127,16 @@ let create ?model req =
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list template_list filter query %> lift
+        >>= handle ~tags key_list template_list filter query %> lift
       | None ->
         let open Cqrs_command.Filter_command.Create in
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list template_list query %> lift
+        >>= handle ~tags key_list template_list query %> lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
     in
     events |>> handle
   in

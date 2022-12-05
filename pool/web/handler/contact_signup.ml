@@ -71,7 +71,8 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events tenant_db events in
+         let tags = Logger.req req in
+         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/email-confirmation")
@@ -115,13 +116,15 @@ let email_verification req =
        >|- fun _ -> Field.(Invalid Token)
      in
      let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+     let tags = Logger.req req in
      let* events =
        match contact.Contact.user.Sihl.Contract.User.confirmed with
        | false ->
-         Command.VerifyEmail.(handle contact { email }) |> Lwt_result.lift
-       | true -> Command.UpdateEmail.(handle contact email) |> Lwt_result.lift
+         Command.VerifyEmail.(handle ~tags contact { email }) |> Lwt_result.lift
+       | true ->
+         Command.UpdateEmail.(handle ~tags contact email) |> Lwt_result.lift
      in
-     let%lwt () = Pool_event.handle_events tenant_db events in
+     let%lwt () = Pool_event.handle_events ~tags tenant_db events in
      HttpUtils.(
        redirect_to_with_actions
          (path_with_language query_language redirect_path)
@@ -161,7 +164,8 @@ let terms_accept req =
     let* events =
       Command.AcceptTermsAndConditions.handle contact |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let tags = Logger.req req in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     HttpUtils.(redirect_to (path_with_language query_language "/dashboard"))
     |> Lwt_result.ok
   in

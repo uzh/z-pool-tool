@@ -1,3 +1,5 @@
+let () = Printexc.record_backtrace true
+
 let commands =
   let open Command in
   [ Migrate.root
@@ -40,5 +42,5 @@ let () =
     |> before_start (fun () ->
          let () = Middleware.Error.before_start () in
          Printexc.record_backtrace true |> Lwt.return)
-    |> run ~commands)
+    |> run ~commands ~log_reporter:Logger.reporter)
 ;;

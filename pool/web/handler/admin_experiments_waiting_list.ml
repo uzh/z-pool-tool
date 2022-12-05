@@ -84,16 +84,19 @@ let update req =
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* waiting_list = Waiting_list.find tenant_db waiting_list_id in
+    let tags = Logger.req req in
     let events =
       let open Cqrs_command.Waiting_list_command in
       let open CCResult in
       urlencoded
       |> Update.decode
-      >>= Update.handle waiting_list
+      >>= Update.handle ~tags waiting_list
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ Message.set
@@ -168,14 +171,17 @@ let assign_contact req =
       let session_text = Session.(to_email_text language session) in
       Lwt_result.return Email.{ subject; text; language; session_text }
     in
+    let tags = Logger.req req in
     let events =
       Cqrs_command.Assignment_command.CreateFromWaitingList.(
-        handle { session; waiting_list; already_enrolled })
+        handle ~tags { session; waiting_list; already_enrolled })
         confirmation_email
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       Http_utils.redirect_to_with_actions
         redirect_path
         [ HttpUtils.Message.set

@@ -40,8 +40,10 @@ let login_post req =
          |> CCOption.to_result LoginProvideDetails
          |> Lwt_result.lift
        in
-       let email = List.assoc Field.(Email |> show) params in
-       let password = List.assoc Field.(Password |> show) params in
+       let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
+       let password =
+         CCList.assoc ~eq:String.equal Field.(Password |> show) params
+       in
        let* user =
          Service.User.login ~ctx:(to_ctx tenant_db) email ~password
          >|- handle_sihl_login_error
@@ -118,12 +120,13 @@ let request_reset_password_post req =
   let open Cqrs_command.Common_command.ResetPassword in
   let query_lang = find_query_lang req in
   let result { Pool_context.tenant_db; language; _ } =
+    let tags = Logger.req req in
     let open Utils.Lwt_result.Infix in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= Contact.find_by_email tenant_db
     >== (fun { Contact.user; _ } -> handle user language)
-    |>> Pool_event.handle_events tenant_db
+    |>> Pool_event.handle_events ~tags tenant_db
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions

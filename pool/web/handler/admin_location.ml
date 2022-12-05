@@ -42,6 +42,7 @@ let create req =
       , "/admin/locations/create"
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
+    let tags = Logger.req req in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Location_command.Create in
@@ -49,11 +50,13 @@ let create req =
       |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
       |> HttpUtils.remove_empty_values
       |> decode
-      >>= handle
+      >>= handle ~tags
       |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       Http_utils.redirect_to_with_actions
         "/admin/locations"
         [ Message.set ~success:[ Pool_common.Message.(Created Field.Location) ]
@@ -103,6 +106,7 @@ let add_file req =
            [ Field.(FileMapping |> show) ]
            req
        in
+       let tags = Logger.req req in
        let finalize = function
          | Ok resp -> Lwt.return_ok resp
          | Error err ->
@@ -113,6 +117,7 @@ let add_file req =
                  |> Service.Storage.delete ~ctx:(Pool_tenant.to_ctx tenant_db))
                files
            in
+           Logs.err (fun m -> m "One of the events failed while adding a file");
            Lwt.return_error err
        in
        let events =
@@ -121,12 +126,12 @@ let add_file req =
          files @ multipart_encoded
          |> HttpUtils.File.multipart_form_data_to_urlencoded
          |> decode
-         >>= handle location
+         >>= handle ~tags location
          |> Lwt_result.lift
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            path
@@ -210,6 +215,7 @@ let update req =
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@ let* location = Pool_location.find tenant_db id in
+       let tags = Logger.req req in
        let events =
          let open CCResult.Infix in
          let open Cqrs_command.Location_command.Update in
@@ -217,12 +223,12 @@ let update req =
          |> HttpUtils.format_request_boolean_values [ Field.(Virtual |> show) ]
          |> HttpUtils.remove_empty_values
          |> decode
-         >>= handle location
+         >>= handle ~tags location
          |> Lwt_result.lift
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            detail_path
@@ -249,12 +255,13 @@ let delete req =
     Utils.Lwt_result.map_error (fun err -> err, path)
     @@
     let open Utils.Lwt_result.Infix in
+    let tags = Logger.req req in
     let* events =
       mapping_id
-      |> Cqrs_command.Location_command.DeleteFile.handle
+      |> Cqrs_command.Location_command.DeleteFile.handle ~tags
       |> Lwt_result.lift
     in
-    let%lwt () = Pool_event.handle_events tenant_db events in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       path
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.File) ] ]

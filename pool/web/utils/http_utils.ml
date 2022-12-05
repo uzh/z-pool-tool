@@ -56,31 +56,43 @@ let redirect_to path = redirect_to_with_actions path []
 
 let extract_happy_path_generic req result msgf =
   let context = Pool_context.find req in
+  let tags = Logger.req req in
   match context with
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
          redirect_to_with_actions
            (path_with_language query_language error_path)
            [ msgf error_msg ])
-  | Error _ -> redirect_to "/error"
+  | Error err ->
+    Printexc.print_backtrace stderr;
+    Logs.warn (fun m ->
+      m "Context not found: %s" (Message.Message.show_error err) ~tags);
+    redirect_to "/error"
 ;;
 
 let extract_happy_path req result =
   extract_happy_path_generic req result (fun err ->
+    Printexc.print_backtrace stderr;
+    Logs.warn (fun m ->
+      m
+        "A user experienced an error: %s"
+        (Message.Message.show_error err)
+        ~tags:(Logger.req req));
     Message.set ~warning:[] ~success:[] ~info:[] ~error:[ err ])
 ;;
 
 let extract_happy_path_with_actions req result =
   let context = Pool_context.find req in
+  let tags = Logger.req req in
   match context with
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error (fun (err, _, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_key, error_path, error_actions) ->
          redirect_to_with_actions
@@ -93,7 +105,11 @@ let extract_happy_path_with_actions req result =
                   ~error:[ error_key ]
               ]
               error_actions))
-  | Error _ -> redirect_to "/error"
+  | Error err ->
+    Printexc.print_backtrace stderr;
+    Logs.warn (fun m ->
+      m "Context not found: %s" (Message.Message.show_error err) ~tags);
+    redirect_to "/error"
 ;;
 
 let htmx_redirect path ?query_language ?(actions = []) () =
@@ -107,11 +123,12 @@ let htmx_redirect path ?query_language ?(actions = []) () =
 
 let extract_happy_path_htmx req result =
   let context = Pool_context.find req in
+  let tags = Logger.req req in
   match context with
   | Ok ({ Pool_context.query_language; _ } as context) ->
     let%lwt res = result context in
     res
-    |> Pool_common.Utils.with_log_result_error (fun (err, _) -> err)
+    |> Pool_common.Utils.with_log_result_error ~tags (fun (err, _) -> err)
     |> CCResult.map Lwt.return
     |> CCResult.get_lazy (fun (error_msg, error_path) ->
          htmx_redirect
@@ -121,7 +138,11 @@ let extract_happy_path_htmx req result =
            ())
   | Error err ->
     Logs.err (fun m ->
-      m "%s" @@ Pool_common.(Utils.error_to_string Language.En err));
+      m ~tags:(Logger.req req) "%s"
+      @@ Pool_common.(Utils.error_to_string Language.En err));
+    Printexc.print_backtrace stderr;
+    Logs.warn (fun m ->
+      m "Context not found: %s" (Message.Message.show_error err) ~tags);
     htmx_redirect "/error" ()
 ;;
 

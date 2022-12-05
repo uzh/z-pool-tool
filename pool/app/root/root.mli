@@ -19,6 +19,7 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 val user : t -> Sihl_user.t
 val find_all : unit -> t list Lwt.t
 val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t

@@ -72,17 +72,18 @@ let create req =
            [ distribution ]
            urlencoded
        in
+       let tags = Logger.req req in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Create in
          urlencoded
          |> HttpUtils.remove_empty_values
          |> decode
-         >>= handle experiment
+         >>= handle ~tags experiment
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            (experiment_path ~suffix:"mailings" experiment_id)
@@ -158,14 +159,15 @@ let update req =
            [ distribution ]
            urlencoded
        in
+       let tags = Logger.req req in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Update in
-         urlencoded |> decode >>= handle mailing
+         urlencoded |> decode >>= handle ~tags mailing
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -276,7 +278,8 @@ let disabler command success_handler req =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* mailing = Mailing.find tenant_db mailing_id in
        let* events = command mailing |> Lwt_result.lift in
-       let%lwt () = Pool_event.handle_events tenant_db events in
+       let tags = Logger.req req in
+       let%lwt () = Pool_event.handle_events ~tags tenant_db events in
        Http_utils.redirect_to_with_actions
          redirect_path
          [ Message.set

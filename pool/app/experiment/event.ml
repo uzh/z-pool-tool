@@ -24,6 +24,7 @@ type event =
   | ExperimenterDivested of t * Admin.experimenter Admin.t
   | AssistantAssigned of t * Admin.assistant Admin.t
   | AssistantDivested of t * Admin.assistant Admin.t
+[@@deriving variants]
 
 let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
@@ -85,3 +86,5 @@ let pp_event formatter event =
     pp formatter experiment;
     Admin.pp formatter user
 ;;
+
+let show_event = Variants_of_event.to_name

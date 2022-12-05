@@ -65,12 +65,13 @@ let write ?id req model =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
+    let tags = Logger.req req in
     let events =
       let%lwt sys_languages = Settings.find_languages tenant_db in
       match id with
       | None ->
         Cqrs_command.Custom_field_group_command.(
-          Create.handle sys_languages field_names model |> Lwt_result.lift)
+          Create.handle ~tags sys_languages field_names model |> Lwt_result.lift)
       | Some id ->
         let* custom_field_group = id |> Custom_field.find_group tenant_db in
         Cqrs_command.Custom_field_group_command.(
@@ -78,7 +79,9 @@ let write ?id req model =
           |> Lwt_result.lift)
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       let success =
         let open Message in
         if CCOption.is_some id
@@ -152,14 +155,15 @@ let sort req =
                  options)
              ids
          in
+         let tags = Logger.req req in
          let events =
            groups
-           |> Cqrs_command.Custom_field_group_command.Sort.handle
+           |> Cqrs_command.Custom_field_group_command.Sort.handle ~tags
            |> Lwt_result.lift
          in
          let handle events =
            let%lwt () =
-             Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+             Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
            in
            Http_utils.redirect_to_with_actions
              redirect_path

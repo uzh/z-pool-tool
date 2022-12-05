@@ -52,6 +52,7 @@ let create req =
            contact
          ||> CCOption.is_some
        in
+       let tags = Logger.req req in
        let events =
          Cqrs_command.Assignment_command.Create.(
            handle
@@ -62,7 +63,7 @@ let create req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

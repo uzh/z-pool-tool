@@ -184,3 +184,5 @@ let pp_event formatter event =
   | RecruiterEvents m -> pp_person_event formatter m
   | OperatorEvents m -> pp_person_event formatter m
 ;;
+
+let show_event = Format.asprintf "%a" pp_event

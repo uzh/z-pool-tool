@@ -501,11 +501,13 @@ module Utils : sig
 
   val with_log_error
     :  ?level:Logs.level
+    -> ?tags:Logs.Tag.set
     -> Entity_message.error
     -> Entity_message.error
 
   val with_log_result_error
-    :  ('a -> Message.error)
+    :  tags:Logs.Tag.set
+    -> ('a -> Message.error)
     -> ('b, 'a) result
     -> ('b, 'a) result
 

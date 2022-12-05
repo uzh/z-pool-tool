@@ -18,7 +18,10 @@ let valid_tenant () =
     in
     match result with
     | Ok context -> context |> Pool_context.Tenant.set req |> handler
-    | Error _ -> Http_utils.redirect_to "/not-found"
+    | Error _ ->
+      Logs.err (fun m ->
+        m "Not pool context found in request" ~tags:(Logger.req req));
+      Http_utils.redirect_to "/not-found"
   in
   Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;

@@ -109,9 +109,11 @@ let update ?contact req =
           tenant_db
           (field, version, value, field_id)
       in
+      let tags = Logger.req req in
       let events =
         let open CCResult in
-        partial_update >>= Cqrs_command.Contact_command.Update.handle contact
+        partial_update
+        >>= Cqrs_command.Contact_command.Update.handle ~tags contact
       in
       let htmx_element () =
         let hx_post =
@@ -196,7 +198,7 @@ let update ?contact req =
         (* This case cannot occur, cqrs handler always returns an Ok result *)
         | Error _ -> Lwt.return_unit
         | Ok events ->
-          events |> Lwt_list.iter_s (Pool_event.handle_event tenant_db)
+          events |> Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db)
       in
       () |> htmx_element
     in

@@ -9,7 +9,7 @@ let add_key ?(prefix = "") ?(suffix = "") field =
 ;;
 
 let global_middlewares =
-  [ Middleware.id ()
+  [ Middleware.id ~id:(fun () -> String.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
@@ -37,6 +37,7 @@ module Public = struct
             ~middlewares:
               [ CustomMiddleware.Context.context `Contact ()
               ; CustomMiddleware.Tenant.valid_tenant ()
+              ; CustomMiddleware.Logger.logger
               ]
             [ get "/index" index
             ; get "/custom/assets/index.css" index_css
@@ -105,7 +106,10 @@ module Contact = struct
       ]
     in
     [ choose
-        ~middlewares:[ CustomMiddleware.Contact.completion_in_progress () ]
+        ~middlewares:
+          [ CustomMiddleware.Contact.completion_in_progress ()
+          ; CustomMiddleware.Logger.logger
+          ]
         locked
     ; get "/user/completion" UserProfile.completion
     ; post "/user/completion" UserProfile.completion_post
@@ -117,11 +121,14 @@ module Contact = struct
       ~middlewares:
         [ CustomMiddleware.Context.context `Contact ()
         ; CustomMiddleware.Tenant.valid_tenant ()
+        ; CustomMiddleware.Logger.logger
         ]
       [ choose public
       ; choose
           ~middlewares:
-            [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
+            [ CustomMiddleware.Contact.confirmed_and_terms_agreed ()
+            ; CustomMiddleware.Logger.logger
+            ]
           locked_routes
       ]
   ;;
@@ -132,6 +139,7 @@ module Admin = struct
     [ CustomMiddleware.Context.context `Admin ()
     ; CustomMiddleware.Tenant.valid_tenant ()
     ; CustomMiddleware.Admin.require_admin ()
+    ; CustomMiddleware.Logger.logger
     ]
   ;;
 
@@ -357,6 +365,7 @@ module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
     ; CustomMiddleware.Context.context `Admin ()
+    ; CustomMiddleware.Logger.logger
     ]
   ;;
 

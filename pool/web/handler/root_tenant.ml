@@ -16,6 +16,7 @@ let tenants req =
 ;;
 
 let create req =
+  let tags = Logger.req req in
   let open Utils.Lwt_result.Infix in
   let result { Pool_context.tenant_db; _ } =
     let events () =
@@ -48,12 +49,14 @@ let create req =
         files @ multipart_encoded
         |> File.multipart_form_data_to_urlencoded
         |> decode
-        >>= handle
+        >>= handle ~tags
         |> Lwt_result.lift
       in
       events >|> finalize
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
@@ -100,14 +103,15 @@ let create_operator req =
       >>= HttpUtils.validate_email_existance tenant_db
     in
     let find_tenant () = Pool_tenant.find_full id in
+    let tags = Logger.req req in
     let events =
       let open CCResult.Infix in
       let open Cqrs_command.Admin_command.CreateOperator in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-      urlencoded |> decode >>= handle |> Lwt_result.lift
+      urlencoded |> decode >>= handle ~tags |> Lwt_result.lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
       |> Lwt_result.ok
     in
     let return_to_overview () =

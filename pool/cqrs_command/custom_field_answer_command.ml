@@ -1,8 +1,11 @@
+let src = Logs.Src.create "custom_field_answer.cqrs"
+
 module UpdateMultiple : sig
   type t = Custom_field.Public.t
 
   val handle
-    :  Pool_common.Id.t
+    :  ?tags:Logs.Tag.set
+    -> Pool_common.Id.t
     -> t
     -> (Pool_event.t, Pool_common.Message.error) result
 
@@ -10,7 +13,8 @@ module UpdateMultiple : sig
 end = struct
   type t = Custom_field.Public.t
 
-  let handle contact_id f =
+  let handle ?(tags = Logs.Tag.empty) contact_id f =
+    Logs.info ~src (fun m -> m "Handle command UpdateMultiple" ~tags);
     Ok (Custom_field.AnswerUpserted (f, contact_id) |> Pool_event.custom_field)
   ;;
 

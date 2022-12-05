@@ -160,12 +160,16 @@ module Admin = struct
     in
     if ActorRoleSet.mem `Admin roles
     then Lwt.return_ok { auth with Authorizable.typ = `Admin }
-    else
+    else (
+      Logs.err (fun m ->
+        m
+          "Entity %s cannot be treated as an `Admin"
+          (Uuid.Actor.to_string auth.Authorizable.uuid));
       Lwt.return_error
         (Pool_common.Message.authorization
         @@ Format.asprintf
              "Entity %s cannot be treated as an `Admin"
-             (Uuid.Actor.to_string auth.Authorizable.uuid))
+             (Uuid.Actor.to_string auth.Authorizable.uuid)))
   ;;
 end
 

@@ -87,6 +87,7 @@ let write ?id req custom_field =
     in
     go Message.Field.Name encode_lang
   in
+  let tags = Logger.req req in
   let result { Pool_context.tenant_db; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
@@ -98,6 +99,7 @@ let write ?id req custom_field =
       match id with
       | None ->
         Cqrs_command.Custom_field_option_command.Create.handle
+          ~tags
           sys_languages
           custom_field
           field_names
@@ -105,13 +107,16 @@ let write ?id req custom_field =
       | Some id ->
         let* custom_field_option = Custom_field.find_option tenant_db id in
         Cqrs_command.Custom_field_option_command.Update.handle
+          ~tags
           sys_languages
           custom_field_option
           field_names
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       let success =
         let open Pool_common.Message in
         if CCOption.is_some id
@@ -144,14 +149,17 @@ let toggle_action action req =
       in
       Utils.Lwt_result.map_error (fun err -> err, redirect_path)
       @@ let* option = id |> Custom_field.find_option tenant_db in
+         let tags = Logger.req req in
          let events =
            Lwt_result.lift
            @@
            match action with
            | `Delete ->
-             option |> Cqrs_command.Custom_field_option_command.Destroy.handle
+             option
+             |> Cqrs_command.Custom_field_option_command.Destroy.handle ~tags
            | `Publish ->
-             option |> Cqrs_command.Custom_field_option_command.Publish.handle
+             option
+             |> Cqrs_command.Custom_field_option_command.Publish.handle ~tags
          in
          let success =
            let open Pool_common.Message in
@@ -160,7 +168,7 @@ let toggle_action action req =
            | `Publish -> Published Field.CustomFieldOption
          in
          let handle events =
-           let%lwt () = Pool_event.handle_events tenant_db events in
+           let%lwt () = Pool_event.handle_events ~tags tenant_db events in
            Http_utils.redirect_to_with_actions
              redirect_path
              [ Message.set ~success:[ success ] ]

@@ -129,6 +129,7 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 val find_languages : Pool_database.Label.t -> Pool_common.Language.t list Lwt.t
 val find_email_suffixes : Pool_database.Label.t -> EmailSuffix.t list Lwt.t
 val find_contact_email : Pool_database.Label.t -> ContactEmail.t Lwt.t

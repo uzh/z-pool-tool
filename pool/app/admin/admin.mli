@@ -50,6 +50,7 @@ val equal_person_event : 'a person_event -> 'a person_event -> bool
 val pp_person_event : Format.formatter -> 'a person_event -> unit
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 
 type person = Entity.person =
   { user : Sihl_user.t

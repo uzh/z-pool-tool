@@ -145,7 +145,10 @@ let login_after_terms_update _ () =
       let%lwt accepted = Contact.has_terms_accepted database_label contact in
       match accepted with
       | true -> Lwt.return_ok contact
-      | false -> Lwt.return_error TermsAndConditionsNotAccepted
+      | false ->
+        Logs.warn (fun m ->
+          m "Can not log in, terms and conditions not accepted");
+        Lwt.return_error TermsAndConditionsNotAccepted
     in
     contact >|- CCFun.const (NotFound Field.Contact) >>= terms_agreed
   in

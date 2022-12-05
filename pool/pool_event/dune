@@ -20,6 +20,7 @@
   settings
   sihl
   tenant
-  waiting_list)
+  waiting_list
+  logger)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show)))
+  (pps ppx_deriving.eq ppx_deriving.show ppx_variants_conv)))

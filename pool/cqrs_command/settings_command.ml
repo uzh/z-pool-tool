@@ -1,10 +1,13 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "settings.cqrs"
+
 module UpdateLanguages : sig
   type t = Pool_common.Language.t list
 
   val handle
-    :  Settings.TermsAndConditions.t list
+    :  ?tags:Logs.Tag.set
+    -> Settings.TermsAndConditions.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -12,7 +15,8 @@ module UpdateLanguages : sig
 end = struct
   type t = Pool_common.Language.t list
 
-  let handle terms command =
+  let handle ?(tags = Logs.Tag.empty) terms command =
+    Logs.info ~src (fun m -> m "Handle command UpdateLanguage" ~tags);
     let open CCResult in
     match CCList.length command > 0 with
     | false -> Error Pool_common.Message.(NoOptionSelected Field.Language)
@@ -36,7 +40,8 @@ module CreateEmailSuffix : sig
   type t = Settings.EmailSuffix.t
 
   val handle
-    :  Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> Settings.EmailSuffix.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -54,7 +59,8 @@ end = struct
     Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
   ;;
 
-  let handle suffixes email_suffix =
+  let handle ?(tags = Logs.Tag.empty) suffixes email_suffix =
+    Logs.info ~src (fun m -> m "Handle command CreateEmailSuffix" ~tags);
     let suffixes = suffixes @ [ email_suffix ] in
     Ok [ Settings.EmailSuffixesUpdated suffixes |> Pool_event.settings ]
   ;;
@@ -70,12 +76,17 @@ end
 module UpdateEmailSuffixes : sig
   type t = (string * string list) list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t = (string * string list) list
 
-  let handle suffixes =
+  let handle ?(tags = Logs.Tag.empty) suffixes =
+    Logs.info ~src (fun m -> m "Handle command UpdateEmailSuffixes" ~tags);
     let open CCResult in
     let* suffixes =
       CCList.filter_map
@@ -96,7 +107,8 @@ module DeleteEmailSuffix : sig
   type t = Settings.EmailSuffix.t
 
   val handle
-    :  Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> Settings.EmailSuffix.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -114,7 +126,8 @@ end = struct
     Conformist.(make Field.[ Settings.EmailSuffix.schema () ] command)
   ;;
 
-  let handle suffixes email_suffix =
+  let handle ?(tags = Logs.Tag.empty) suffixes email_suffix =
+    Logs.info ~src (fun m -> m "Handle command DeleteEmailSuffix" ~tags);
     let suffixes =
       CCList.filter
         (fun s -> not (Settings.EmailSuffix.equal s email_suffix))
@@ -134,7 +147,10 @@ end
 module UpdateContactEmail : sig
   type t = Settings.ContactEmail.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -150,7 +166,8 @@ end = struct
     Conformist.(make Field.[ Settings.ContactEmail.schema () ] command)
   ;;
 
-  let handle contact_email =
+  let handle ?(tags = Logs.Tag.empty) contact_email =
+    Logs.info ~src (fun m -> m "Handle command UpdateContactEmail" ~tags);
     Ok [ Settings.ContactEmailUpdated contact_email |> Pool_event.settings ]
   ;;
 
@@ -166,7 +183,10 @@ module InactiveUser = struct
   module DisableAfter : sig
     type t = Settings.InactiveUser.DisableAfter.t
 
-    val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> t
+      -> (Pool_event.t list, Pool_common.Message.error) result
 
     val decode
       :  (string * string list) list
@@ -181,7 +201,8 @@ module InactiveUser = struct
         make Field.[ Settings.InactiveUser.DisableAfter.schema () ] command)
     ;;
 
-    let handle inactive_user_disable_after =
+    let handle ?(tags = Logs.Tag.empty) inactive_user_disable_after =
+      Logs.info ~src (fun m -> m "Handle command DisableAfter" ~tags);
       Ok
         [ Settings.InactiveUserDisableAfterUpdated inactive_user_disable_after
           |> Pool_event.settings
@@ -197,7 +218,10 @@ module InactiveUser = struct
   module Warning : sig
     type t = Settings.InactiveUser.Warning.t
 
-    val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+    val handle
+      :  ?tags:Logs.Tag.set
+      -> t
+      -> (Pool_event.t list, Pool_common.Message.error) result
 
     val decode
       :  (string * string list) list
@@ -212,7 +236,8 @@ module InactiveUser = struct
         make Field.[ Settings.InactiveUser.Warning.schema () ] command)
     ;;
 
-    let handle inactive_user_warning =
+    let handle ?(tags = Logs.Tag.empty) inactive_user_warning =
+      Logs.info ~src (fun m -> m "Handle command Warning" ~tags);
       Ok
         [ Settings.InactiveUserWarningUpdated inactive_user_warning
           |> Pool_event.settings
@@ -229,7 +254,10 @@ end
 module UpdateTriggerProfileUpdateAfter : sig
   type t = Settings.TriggerProfileUpdateAfter.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -244,7 +272,9 @@ end = struct
       make Field.[ Settings.TriggerProfileUpdateAfter.schema () ] command)
   ;;
 
-  let handle inactive_user_warning =
+  let handle ?(tags = Logs.Tag.empty) inactive_user_warning =
+    Logs.info ~src (fun m ->
+      m "Handle command UpdateTriggerProfileUpdateAfter" ~tags);
     Ok
       [ Settings.TriggerProfileUpdateAfterUpdated inactive_user_warning
         |> Pool_event.settings
@@ -261,13 +291,15 @@ module UpdateTermsAndConditions : sig
   type t = (string * string list) list
 
   val handle
-    :  Pool_common.Language.t list
+    :  ?tags:Logs.Tag.set
+    -> Pool_common.Language.t list
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t = (string * string list) list
 
-  let handle tenant_languages urlencoded =
+  let handle ?(tags = Logs.Tag.empty) tenant_languages urlencoded =
+    Logs.info ~src (fun m -> m "Handle command UpdateTermsAndConditions" ~tags);
     let open CCResult in
     let ignore_emtpy =
       CCList.filter_map (fun (lang, terms) ->
@@ -312,12 +344,17 @@ end
 module RestoreDefault : sig
   type t = Pool_tenant.t
 
-  val handle : unit -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> unit
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_tenant.t
 
-  let handle () =
+  let handle ?(tags = Logs.Tag.empty) () =
+    Logs.info ~src (fun m -> m "Handle command RestoreDefault" ~tags);
     Ok [ Settings.(DefaultRestored default_values) |> Pool_event.settings ]
   ;;
 
@@ -332,7 +369,10 @@ end
 module UpdateDefaultLeadTime : sig
   type t = Pool_common.Reminder.LeadTime.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -348,7 +388,8 @@ end = struct
     Conformist.(make Field.[ Pool_common.Reminder.LeadTime.schema () ] command)
   ;;
 
-  let handle contact_email =
+  let handle ?(tags = Logs.Tag.empty) contact_email =
+    Logs.info ~src (fun m -> m "Handle command UpdateDefaultLeadTime" ~tags);
     Ok
       [ Settings.DefaultReminderLeadTimeUpdated contact_email
         |> Pool_event.settings

@@ -64,6 +64,12 @@ type verification_event =
   | Updated of User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
   | EmailVerified of unverified t
 
+let verification_event_name = function
+  | Created _ -> "Created"
+  | Updated _ -> "Updated"
+  | EmailVerified _ -> "EmailVerified"
+;;
+
 let handle_verification_event pool : verification_event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
