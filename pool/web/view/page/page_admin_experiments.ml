@@ -43,7 +43,14 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
       | None -> base
       | Some btns ->
         div
-          ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "justify-between"
+                ; "flex-gap"
+                ; "flexcolumn-mobile"
+                ]
+            ]
           [ div [ base ]; div [ btns ] ]
     in
     match hint with
