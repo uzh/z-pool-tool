@@ -266,7 +266,12 @@ module Tenant = struct
         (match user with
          | Admin _ ->
            let settings_nav =
-             [ "/admin/settings", SystemSettings; "/admin/i18n", I18n ]
+             [ "/admin/custom-fields", CustomFields
+             ; "/admin/filter", Filter
+             ; "/admin/locations", Locations
+             ; "/admin/settings", SystemSettings
+             ; "/admin/i18n", I18n
+             ]
              |> to_nav_elements
              |> fun children ->
              create_nav_element ~children "/admin/settings" Settings
@@ -277,12 +282,7 @@ module Tenant = struct
              |> fun children ->
              create_nav_element ~children "/admin/users" Users
            in
-           ([ "/admin/dashboard", Dashboard
-            ; "/admin/experiments", Experiments
-            ; "/admin/custom-fields", CustomFields
-            ; "/admin/filter", Filter
-            ; "/admin/locations", Locations
-            ]
+           ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
            |> to_nav_elements)
            @ [ settings_nav; user_nav ]
            |> fun links ->
