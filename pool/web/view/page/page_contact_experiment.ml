@@ -162,7 +162,7 @@ let show
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ txt (Experiment.PublicTitle.value experiment.public_title) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
