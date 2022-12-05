@@ -68,7 +68,6 @@ let extract_happy_path_generic req result msgf =
            (path_with_language query_language error_path)
            [ msgf error_msg ])
   | Error err ->
-    Printexc.print_backtrace stderr;
     Logs.warn (fun m ->
       m "Context not found: %s" (Message.Message.show_error err) ~tags);
     redirect_to "/error"
@@ -76,7 +75,6 @@ let extract_happy_path_generic req result msgf =
 
 let extract_happy_path req result =
   extract_happy_path_generic req result (fun err ->
-    Printexc.print_backtrace stderr;
     Logs.warn (fun m ->
       m
         "A user experienced an error: %s"
@@ -106,7 +104,6 @@ let extract_happy_path_with_actions req result =
               ]
               error_actions))
   | Error err ->
-    Printexc.print_backtrace stderr;
     Logs.warn (fun m ->
       m "Context not found: %s" (Message.Message.show_error err) ~tags);
     redirect_to "/error"
@@ -140,7 +137,6 @@ let extract_happy_path_htmx req result =
     Logs.err (fun m ->
       m ~tags:(Logger.req req) "%s"
       @@ Pool_common.(Utils.error_to_string Language.En err));
-    Printexc.print_backtrace stderr;
     Logs.warn (fun m ->
       m "Context not found: %s" (Message.Message.show_error err) ~tags);
     htmx_redirect "/error" ()
