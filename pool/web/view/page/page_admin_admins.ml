@@ -17,16 +17,11 @@ let admin_overview language admins =
              (user.given_name |> default_empty)
              (user.name |> default_empty)
           |> CCString.trim)
-      ; a
-          ~a:
-            [ a_href
-                (Sihl.Web.externalize_path
-                   (Format.asprintf "/admin/admins/%s" user.id))
-            ]
-          [ txt Pool_common.(Utils.control_to_string language Message.More) ]
+      ; Sihl.Web.externalize_path (Format.asprintf "/admin/admins/%s" user.id)
+        |> Component.Input.edit_link
       ])
     admins
-  |> Component.Table.horizontal_table `Striped ~thead
+  |> Component.Table.horizontal_table ~align_last_end:true `Striped ~thead
 ;;
 
 let index Pool_context.{ language; _ } admins =

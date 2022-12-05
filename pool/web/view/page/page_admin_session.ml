@@ -490,18 +490,15 @@ let detail
     match show with
     | false -> None
     | true ->
-      Some
-        (a
-           ~a:
-             [ a_href
-                 (Format.asprintf
-                    "/admin/experiments/%s/sessions/%s/%s"
-                    (Pool_common.Id.value experiment.Experiment.id)
-                    (Pool_common.Id.value session.id)
-                    url
-                 |> Sihl.Web.externalize_path)
-             ]
-           [ control |> Pool_common.Utils.control_to_string language |> txt ])
+      link_as_button
+        ~control:(language, control)
+        ~classnames:[ "small" ]
+        (Format.asprintf
+           "/admin/experiments/%s/sessions/%s/%s"
+           (Pool_common.Id.value experiment.Experiment.id)
+           (Pool_common.Id.value session.id)
+           url)
+      |> CCOption.pure
   in
   let session_overview =
     let table =

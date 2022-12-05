@@ -780,7 +780,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
             ; div
                 ~a:[ a_class [ "flexrow" ] ]
                 [ submit_element
-                    ~classnames:[ "push" ]
+                    ~classnames:[ "push"; "small" ]
                     language
                     Message.UpdateOrder
                     ~submit_type:`Primary
@@ -865,7 +865,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                ; div
                    ~a:[ a_class [ "flexrow" ] ]
                    [ submit_element
-                       ~classnames:[ "push" ]
+                       ~classnames:[ "push"; "small" ]
                        language
                        Message.UpdateOrder
                        ~submit_type:`Primary
