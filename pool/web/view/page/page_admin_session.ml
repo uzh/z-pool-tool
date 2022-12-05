@@ -727,19 +727,23 @@ let close
         ]
     in
     let table =
+      let link (id, field) =
+        span
+          ~a:[ a_id id; a_class [ "btn" ] ]
+          [ txt
+              Pool_common.(
+                Utils.control_to_string
+                  language
+                  Pool_common.Message.(SelectAll (Some field)))
+          ]
+      in
       let thead =
-        [ txt ""
-        ; span
-            ~a:[ a_id "all-showup"; a_class [ "btn" ] ]
-            [ txt
-                Pool_common.(Utils.control_to_string language Message.SelectAll)
+        let open Pool_common.Message in
+        txt ""
+        :: ([ "all-showup", Field.ShowUp
+            ; "all-participated", Field.Participated
             ]
-        ; span
-            ~a:[ a_id "all-participated"; a_class [ "btn" ] ]
-            [ txt
-                Pool_common.(Utils.control_to_string language Message.SelectAll)
-            ]
-        ]
+           |> CCList.map link)
       in
       CCList.map
         (fun ({ Assignment.contact; _ } : Assignment.t) ->
@@ -748,7 +752,10 @@ let close
           ; checkbox_element ~disabled:true contact Message.Field.Participated
           ])
         assignments
-      |> Table.horizontal_table ~thead `Striped
+      |> Table.horizontal_table
+           ~classnames:[ "break-mobile"; "keep-head" ]
+           ~thead
+           `Striped
       |> fun table ->
       form
         ~a:

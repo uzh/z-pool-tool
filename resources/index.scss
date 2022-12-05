@@ -99,8 +99,17 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
 @include mobile {
     .table.break-mobile {
-        thead {
-            display: none;
+
+        &:not(.keep-head) {
+            thead {
+                display: none;
+            }
+        }
+
+        &.keep-head {
+            th {
+                border: none;
+            }
         }
 
         tr {
@@ -142,27 +151,57 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
 // Tabs
 // TODO: Move to framework and remove subnav
-.tab-nav {
-    border-bottom: 1px solid $grey-border;
+
+.tab-nav-container {
     margin-bottom: $space-lg;
+}
 
-    a {
-        text-decoration: none;
-        color: $color-text-dark;
+.tab-nav {
+    flex-direction: column;
+}
+
+.tab-nav-header {
+    background-color: $grey-light;
+    padding: $space-sm;
+    border: 1px solid $grey-border;
+    border-radius: $border-radius;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: $space-base;
+}
+
+.toggle:checked~.toggle-body[class*="flex"] {
+    display: flex;
+}
+
+@include from($tablet-breakpoint) {
+    .tab-nav-header {
+        display: none;
     }
 
-    &>span,
-    &>a {
-        padding: $space-sm;
-        transform: translateY(1px);
-    }
+    .tab-nav {
+        border-bottom: 1px solid $grey-border;
+        flex-direction: row;
+        display: flex;
 
-    &>.active {
-        color: $color-primary;
-        border: 1px solid $grey-border;
-        border-bottom-color: $white;
-        border-top-left-radius: $border-radius;
-        border-top-right-radius: $border-radius;
+        a {
+            text-decoration: none;
+            color: $color-text-dark;
+        }
+
+        &>span,
+        &>a {
+            padding: $space-sm;
+            transform: translateY(1px);
+        }
+
+        &>.active {
+            color: $color-primary;
+            border: 1px solid $grey-border;
+            border-bottom-color: $white;
+            border-top-left-radius: $border-radius;
+            border-top-right-radius: $border-radius;
+        }
     }
 }
 

@@ -368,7 +368,7 @@ type control =
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
-  | SelectAll
+  | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Show
   | SignUp

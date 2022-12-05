@@ -378,7 +378,7 @@ let control_to_string = function
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
-  | SelectAll -> format_submit "select all" None
+  | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | Reschedule field -> format_submit "reschedule" field

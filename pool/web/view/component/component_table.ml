@@ -27,12 +27,13 @@ let table_classes layout align_top align_last_end =
 
 let horizontal_table
   layout
+  ?(classnames = [])
   ?thead
   ?(align_top = false)
   ?(align_last_end = false)
   rows
   =
-  let classes = table_classes layout align_top align_last_end in
+  let classes = table_classes layout align_top align_last_end @ classnames in
   let thead = CCOption.map table_head thead in
   table
     ?thead
