@@ -371,17 +371,16 @@ let form
               ]
           ]
       ; div
-          [ div
-              ~a:
-                [ a_id "distribution-list"
-                ; a_class [ "gap"; "flexcolumn" ]
-                ; a_user_data "sortable" ""
-                ]
-              (CCOption.map_or
-                 ~default:[]
-                 (fun distribution ->
-                   CCList.map (distribution_form_field language) distribution)
-                 distribution)
+          [ CCOption.map_or
+              ~default:[]
+              (fun distribution ->
+                CCList.map (distribution_form_field language) distribution)
+              distribution
+            |> Component.Sortable.create
+                 ~classnames:[ "flexcolumn" ]
+                 ~attributes:[ a_id "distribution-list" ]
+            |> CCList.pure
+            |> div ~a:[ a_class [ "gap" ] ]
           ; script (Unsafe.data distribution_fncs)
           ]
       ]

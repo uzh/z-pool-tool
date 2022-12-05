@@ -41,35 +41,34 @@ let show
       CCList.map Settings.TermsAndConditions.value terms_and_conditions
     in
     let field_elements =
-      div
-        ~a:[ a_user_data "sortable" "" ]
-        (CCList.map
-           (fun (language, selected) ->
-             let attrs =
-               [ a_input_type `Checkbox
-               ; a_name (Pool_common.Language.show language)
-               ]
-             in
-             let selected =
-               match selected with
-               | false -> []
-               | true -> [ a_checked () ]
-             in
-             let disabled =
-               match
-                 CCList.assoc_opt
-                   ~eq:Pool_common.Language.equal
-                   language
-                   terms_and_conditions
-               with
-               | Some _ -> []
-               | None -> [ a_disabled () ]
-             in
-             let checkbox = input ~a:(attrs @ selected @ disabled) () in
-             div
-               ~a:[ a_user_data "sortable-item" ""; a_class [ "inset-sm" ] ]
-               [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
-           all_languages)
+      CCList.map
+        (fun (language, selected) ->
+          let attrs =
+            [ a_input_type `Checkbox
+            ; a_name (Pool_common.Language.show language)
+            ]
+          in
+          let selected =
+            match selected with
+            | false -> []
+            | true -> [ a_checked () ]
+          in
+          let disabled =
+            match
+              CCList.assoc_opt
+                ~eq:Pool_common.Language.equal
+                language
+                terms_and_conditions
+            with
+            | Some _ -> []
+            | None -> [ a_disabled () ]
+          in
+          let checkbox = input ~a:(attrs @ selected @ disabled) () in
+          div
+            ~a:[ a_user_data "sortable-item" ""; a_class [ "inset-sm" ] ]
+            [ checkbox; label [ txt (Pool_common.Language.show language) ] ])
+        all_languages
+      |> Component.Sortable.create
     in
     div
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Languages" ]

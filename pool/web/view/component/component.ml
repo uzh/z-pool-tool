@@ -8,3 +8,4 @@ module Modal = Component_modal
 module Navigation = Component_nav
 module Partials = Component_partials
 module Table = Component_table
+module Sortable = Component_sortable

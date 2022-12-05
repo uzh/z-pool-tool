@@ -206,6 +206,10 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 // Flex
+.flex-gap-sm {
+    gap: $space-sm;
+}
+
 .flex-gap-lg {
     gap: $space-lg;
 }

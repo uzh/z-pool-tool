@@ -63,39 +63,36 @@ let form
                      |> Format.asprintf "%s/sort-fields"))
               ]
             [ csrf_element csrf ()
-            ; div
-                ~a:[ a_user_data "sortable" "" ]
-                (CCList.map
-                   (fun field ->
-                     div
-                       ~a:
-                         [ a_class
-                             [ "flexrow"
-                             ; "flex-gap"
-                             ; "justify-between"
-                             ; "align-center"
-                             ; "inset-sm"
-                             ]
-                         ; a_user_data "sortable-item" ""
-                         ]
-                       [ div
-                           [ txt (field |> name |> Name.find_opt_or language "-")
-                           ]
-                       ; div
-                           [ input
-                               ~a:
-                                 [ a_input_type `Hidden
-                                 ; a_name
-                                     Message.Field.(CustomField |> array_key)
-                                 ; a_value (field |> id |> Id.value)
-                                 ]
-                               ()
-                           ]
-                       ; Url.Field.edit_path (model field, id field)
-                         |> Sihl.Web.externalize_path
-                         |> edit_link ~classnames:[ "small" ]
-                       ])
-                   fields)
+            ; CCList.map
+                (fun field ->
+                  div
+                    ~a:
+                      [ a_class
+                          [ "flexrow"
+                          ; "flex-gap"
+                          ; "justify-between"
+                          ; "align-center"
+                          ; "inset-sm"
+                          ]
+                      ; a_user_data "sortable-item" ""
+                      ]
+                    [ div
+                        [ txt (field |> name |> Name.find_opt_or language "-") ]
+                    ; div
+                        [ input
+                            ~a:
+                              [ a_input_type `Hidden
+                              ; a_name Message.Field.(CustomField |> array_key)
+                              ; a_value (field |> id |> Id.value)
+                              ]
+                            ()
+                        ]
+                    ; Url.Field.edit_path (model field, id field)
+                      |> Sihl.Web.externalize_path
+                      |> edit_link ~classnames:[ "small" ]
+                    ])
+                fields
+              |> Component.Sortable.create
             ; div
                 ~a:[ a_class [ "flexrow" ] ]
                 [ submit_element
