@@ -405,6 +405,7 @@ let control_to_string = function
   | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
+  | SelectAll -> format_submit "alle auswählen" None
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None

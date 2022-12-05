@@ -727,6 +727,20 @@ let close
         ]
     in
     let table =
+      let thead =
+        [ txt ""
+        ; span
+            ~a:[ a_id "all-showup"; a_class [ "btn" ] ]
+            [ txt
+                Pool_common.(Utils.control_to_string language Message.SelectAll)
+            ]
+        ; span
+            ~a:[ a_id "all-participated"; a_class [ "btn" ] ]
+            [ txt
+                Pool_common.(Utils.control_to_string language Message.SelectAll)
+            ]
+        ]
+      in
       CCList.map
         (fun ({ Assignment.contact; _ } : Assignment.t) ->
           [ div [ strong [ txt (Contact.fullname contact) ] ]
@@ -734,7 +748,7 @@ let close
           ; checkbox_element ~disabled:true contact Message.Field.Participated
           ])
         assignments
-      |> Table.horizontal_table `Striped
+      |> Table.horizontal_table ~thead `Striped
       |> fun table ->
       form
         ~a:
@@ -757,6 +771,7 @@ let close
     let scripts =
       {js|
         const showUp = document.querySelectorAll('[name="show_up[]"]');
+        const participated = document.querySelectorAll('[name="participated[]"]');
         for(let i = 0; i < showUp.length; i++) {
           let elm = showUp[i];
           let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
@@ -764,6 +779,23 @@ let close
             target.disabled = !elm.checked;
           })
         }
+        const toggleShowUp = document.getElementById("all-showup");
+        toggleShowUp.addEventListener("click", () => {
+          showUp.forEach( (elm) => {
+            var event = new Event('change');
+            elm.checked = true;
+            elm.dispatchEvent(event);
+          })
+        })
+
+        const toggleParticipated = document.getElementById("all-participated");
+        toggleParticipated.addEventListener("click", () => {
+          participated.forEach( (elm) => {
+            if(!elm.disabled) {
+              elm.checked = true;
+            }
+          })
+        })
       |js}
     in
     div
