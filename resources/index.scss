@@ -1,5 +1,8 @@
-$icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
-@import "../node_modules/@econ/frontend-framework/dist/main.scss";
+// $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
+// @import "../node_modules/@econ/frontend-framework/dist/main.scss";
+$icons-font-path: "../framework/font";
+@import "../framework/main.scss";
+
 @import "responsiveness.scss";
 
 // Index page
@@ -21,32 +24,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 
 .toggle-address:checked~.toggled {
     display: none;
-}
-
-// Sortable
-[data-sortable-item] {
-    cursor: move;
-    cursor: grab;
-}
-
-[data-sortable-item].origin {
-    background-color: $grey-light;
-    cursor: grabbing;
-}
-
-[data-sortable-item].active {
-    background-color: #48c78e50;
-}
-
-[data-sortable]:not(:empty):not(tbody),
-.table.sortable {
-    border: 1px solid $grey-border;
-    border-radius: $border-radius;
-    border-collapse: initial;
-}
-
-[data-sortable-item]:not(:last-child) {
-    border-bottom: 1px solid $grey-border;
 }
 
 // Filter
@@ -73,23 +50,8 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 }
 
 // FRAMEWORK
-.word-wrap-break {
-    word-wrap: break-word;
-}
 
 // Table
-
-.table thead .btn {
-    font-weight: normal;
-}
-
-.table.align-last-end {
-
-    th:last-child,
-    td:last-child {
-        text-align: right;
-    }
-}
 
 @include mobile {
     .table.break-mobile {
@@ -135,147 +97,6 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
             text-align: left;
         }
     }
-}
-
-
-// Images
-.aspect-ratio.contain>*:first-child {
-    object-fit: contain;
-}
-
-// Tabs
-// TODO: Move to framework and remove subnav
-
-.tab-nav-container {
-    margin-bottom: $space-lg;
-}
-
-.tab-nav {
-    flex-direction: column;
-}
-
-.tab-nav-header {
-    background-color: $grey-light;
-    padding: $space-sm;
-    border: 1px solid $grey-border;
-    border-radius: $border-radius;
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: $space-base;
-}
-
-.toggle:checked~.toggle-body[class*="flex"] {
-    display: flex;
-}
-
-@include from($tablet-breakpoint) {
-    .tab-nav-header {
-        display: none;
-    }
-
-    .tab-nav {
-        border-bottom: 1px solid $grey-border;
-        flex-direction: row;
-        display: flex;
-
-        a {
-            text-decoration: none;
-            color: $color-text-dark;
-        }
-
-        &>span,
-        &>a {
-            padding: $space-sm;
-            transform: translateY(1px);
-        }
-
-        &>.active {
-            color: $color-primary;
-            border: 1px solid $grey-border;
-            border-bottom-color: $white;
-            border-top-left-radius: $border-radius;
-            border-top-right-radius: $border-radius;
-        }
-    }
-}
-
-// Flex
-.flex-gap-sm {
-    gap: $space-sm;
-}
-
-.flex-gap-lg {
-    gap: $space-lg;
-}
-
-// Card
-.card {
-    border-radius: $border-radius;
-    border: 1px solid $grey-border;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-
-    .card-header {
-        background-color: $grey-light;
-        padding: $space-sm;
-    }
-
-    .card-body {
-        border-top: 1px solid $grey-border;
-        padding: $space-sm;
-    }
-}
-
-// Modal
-body[data-noscroll] {
-    overflow-y: hidden;
-}
-
-.modal {
-    display: none;
-    z-index: 10;
-    padding: $space-lg $space-base;
-    background-color: rgba($black, .8);
-    overflow-y: unset;
-    flex-direction: column;
-    justify-content: center;
-
-    &.active {
-        display: flex;
-    }
-}
-
-.modal-body {
-    @extend .trim;
-    @extend .measure;
-    @extend .border-radius;
-    background-color: $white;
-    max-height: 50rem;
-    overflow-y: auto;
-    height: fit-content;
-}
-
-.modal-header {
-    @extend .inset;
-    border-bottom: 1px solid $grey-border;
-    background-color: $grey-light;
-}
-
-.modal-content {
-    @extend .inset;
-}
-
-.modal-close {
-    cursor: pointer;
-}
-
-.modal-heading {
-    @extend .heading-2;
-    margin-bottom: 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 // Grid -> To framework?
