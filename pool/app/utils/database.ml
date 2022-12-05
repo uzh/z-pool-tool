@@ -145,9 +145,9 @@ let clean_requests db_pool =
   let open Lwt_result.Infix in
   let truncate_table table =
     Logs.debug (fun m -> m "Truncate table '%s' from pool '%s'" table db_pool);
-    Format.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
+    CCFormat.asprintf "TRUNCATE TABLE %s" table |> Caqti_type.(unit ->. unit)
   in
-  () |> collect db_pool table_names_request ||> List.map truncate_table
+  () |> collect db_pool table_names_request ||> CCList.map truncate_table
 ;;
 
 let clean_all db_pool =

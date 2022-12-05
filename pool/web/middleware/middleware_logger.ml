@@ -30,7 +30,7 @@ end
 
 let body_to_string ?(content_type = "text/plain") ?(max_len = 1000) body =
   let lhs, rhs =
-    match String.split_on_char ~sep:'/' content_type with
+    match CCString.split_on_char '/' content_type with
     | [ lhs; rhs ] -> lhs, rhs
     | _ -> "application", "octet-stream"
   in
@@ -38,11 +38,13 @@ let body_to_string ?(content_type = "text/plain") ?(max_len = 1000) body =
   | "text", _ | "application", "json" | "application", "x-www-form-urlencoded"
     ->
     let%lwt s = Opium.Body.copy body |> Opium.Body.to_string in
-    if String.length s > max_len
+    if CCString.length s > max_len
     then
       Lwt.return
-      @@ String.sub s ~pos:0 ~len:(min (String.length s) max_len)
-      ^ Format.asprintf " [truncated %d characters]" (String.length s - max_len)
+      @@ CCString.sub s 0 (min (CCString.length s) max_len)
+      ^ CCFormat.asprintf
+          " [truncated %d characters]"
+          (String.length s - max_len)
     else Lwt.return s
   | _ -> Lwt.return ("<" ^ content_type ^ ">")
 ;;

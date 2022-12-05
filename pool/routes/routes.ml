@@ -9,7 +9,7 @@ let add_key ?(prefix = "") ?(suffix = "") field =
 ;;
 
 let global_middlewares =
-  [ Middleware.id ~id:(fun () -> String.sub (Sihl.Random.base64 12) 0 10) ()
+  [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()

@@ -1,6 +1,6 @@
 let tag_req : Sihl.Web.Request.t Logs.Tag.def =
   let pp (f : Format.formatter) (req : Sihl.Web.Request.t) =
-    let id = Sihl.Web.Id.find req |> Option.value ~default:"none" in
+    let id = Sihl.Web.Id.find req |> CCOption.value ~default:"none" in
     Format.fprintf f "%s" id
   in
   Logs.Tag.def "request" ~doc:"A Sihl request" pp
@@ -59,20 +59,21 @@ let pp_context = Fmt.(styled `Green string)
 let pp_id = Fmt.(styled `Red string)
 
 let pp_exec_header tags src =
+  let open CCOption.Infix in
   let pp_h ppf style h =
     let id =
       tags
-      |> CCOption.flat_map @@ Logs.Tag.find tag_req
-      |> CCOption.flat_map Sihl.Web.Id.find
-      |> CCOption.map (Format.sprintf "%s")
+      >>= Logs.Tag.find tag_req
+      >>= Sihl.Web.Id.find
+      >|= Format.sprintf "%s"
       |> CCOption.value ~default:"-"
     in
     let context =
       tags
-      |> CCOption.flat_map @@ Logs.Tag.find tag_req
-      |> CCOption.map Pool_context.find
-      |> CCOption.flat_map CCResult.to_opt
-      |> CCOption.map Pool_context.show_log
+      >>= Logs.Tag.find tag_req
+      >|= Pool_context.find
+      >>= CCResult.to_opt
+      >|= Pool_context.show_log
       |> CCOption.value ~default:"-"
     in
     let src = Logs.Src.name src in

@@ -324,13 +324,15 @@ let disabler req command ctor =
 (* TODO [aerben] add a confirmation before cancelling *)
 (* TODO [aerben] if already canceled, allow uncancel *)
 let cancel req =
-  disabler req Cqrs_command.Session_command.Cancel.handle (fun m ->
+  let tags = Logger.req req in
+  disabler req (Cqrs_command.Session_command.Cancel.handle ~tags) (fun m ->
     Pool_common.Message.Canceled m)
 ;;
 
 (* TODO [aerben] add a confirmation before deleting *)
 let delete req =
-  disabler req Cqrs_command.Session_command.Delete.handle (fun m ->
+  let tags = Logger.req req in
+  disabler req (Cqrs_command.Session_command.Delete.handle ~tags) (fun m ->
     Pool_common.Message.Deleted m)
 ;;
 

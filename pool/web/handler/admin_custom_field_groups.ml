@@ -75,7 +75,7 @@ let write ?id req model =
       | Some id ->
         let* custom_field_group = id |> Custom_field.find_group tenant_db in
         Cqrs_command.Custom_field_group_command.(
-          Update.handle sys_languages custom_field_group field_names model
+          Update.handle ~tags sys_languages custom_field_group field_names model
           |> Lwt_result.lift)
     in
     let handle events =

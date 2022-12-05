@@ -22,23 +22,23 @@ end
 module PoolConformist = struct
   include Conformist.Make (Error)
 
-  let pp_schema (f : Format.formatter) (schema, input) =
+  let pp_schema (f : CCFormat.formatter) (schema, input) =
     let schema =
       fold_left
-        ~f:(fun res field -> List.cons (Field.name field) res)
+        ~f:(fun res field -> CCList.cons (Field.name field) res)
         ~init:[]
         schema
-      |> List.rev
-      |> String.concat ", "
+      |> CCList.rev
+      |> CCString.concat ", "
     in
     let input =
       input
-      |> List.map (fun (k, v) ->
-           Format.sprintf "(%s: %s)" k (String.concat ", " v))
-      |> String.concat ", "
-      |> Format.sprintf "(%s)"
+      |> CCList.map (fun (k, v) ->
+           CCFormat.sprintf "(%s: %s)" k (CCString.concat ", " v))
+      |> CCString.concat ", "
+      |> CCFormat.sprintf "(%s)"
     in
-    Format.fprintf f "Schema fields: %s\n\nInput: %s" schema input
+    CCFormat.fprintf f "Schema fields: %s\n\nInput: %s" schema input
   ;;
 
   let decode_and_validate schema input =
@@ -47,17 +47,17 @@ module PoolConformist = struct
     | Ok _ as result -> result
     | Error errors as result ->
       let msg =
-        List.map
+        CCList.map
           (fun (field, values, error_msg) ->
-            let values = String.concat ", " values in
-            Format.sprintf
+            let values = CCString.concat ", " values in
+            CCFormat.sprintf
               "(%s, (%s), %s)"
               field
               values
               (Error.show_error error_msg))
           errors
-        |> String.concat ", "
-        |> Format.sprintf "(%s)"
+        |> CCString.concat ", "
+        |> CCFormat.sprintf "(%s)"
       in
       Logs.warn (fun m ->
         m

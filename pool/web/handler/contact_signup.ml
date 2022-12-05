@@ -28,6 +28,7 @@ let sign_up_create req =
   in
   let result { Pool_context.tenant_db; query_language; _ } =
     let open Utils.Lwt_result.Infix in
+    let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
       msg, "/signup", [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* () =
@@ -53,7 +54,7 @@ let sign_up_create req =
          >== Pool_user.EmailAddress.create
          >>= find_contact
          >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
-               Command.DeleteUnverified.handle p |> Lwt_result.lift)
+               Command.DeleteUnverified.handle ~tags p |> Lwt_result.lift)
        in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
@@ -66,7 +67,7 @@ let sign_up_create req =
          let open CCResult.Infix in
          Command.SignUp.(
            decode urlencoded
-           >>= handle ?allowed_email_suffixes preferred_language)
+           >>= handle ~tags ?allowed_email_suffixes preferred_language)
          >>= (fun e -> Ok (remove_contact_event @ e))
          |> Lwt_result.lift
        in
@@ -161,8 +162,9 @@ let terms_accept req =
         Sihl.Web.Router.param req Message.Field.(Id |> show) |> Id.of_string)
     in
     let* contact = Contact.find tenant_db id in
+    let tags = Logger.req req in
     let* events =
-      Command.AcceptTermsAndConditions.handle contact |> Lwt_result.lift
+      Command.AcceptTermsAndConditions.handle ~tags contact |> Lwt_result.lift
     in
     let tags = Logger.req req in
     let%lwt () = Pool_event.handle_events ~tags tenant_db events in
