@@ -87,7 +87,11 @@ let detail
               ])
             sessions
         in
-        Component.Table.horizontal_table `Striped ~thead rows
+        Component.Table.horizontal_table
+          ~align_last_end:true
+          `Striped
+          ~thead
+          rows
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->

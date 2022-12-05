@@ -369,6 +369,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
         ; submit_element
             language
             Message.(Delete (Some Field.Experiment))
+            ~classnames:[ "small" ]
             ~submit_type:`Error
             ~has_icon:`TrashOutline
             ()

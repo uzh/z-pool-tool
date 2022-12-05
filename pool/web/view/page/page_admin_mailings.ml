@@ -116,23 +116,26 @@ module List = struct
         ; submit_element ~submit_type language (name None) ()
         ]
     in
+    let buttons =
+      (if with_link
+      then (
+        match
+          StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
+        with
+        | true, true ->
+          [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+        | false, true ->
+          [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
+        | _ -> [ txt "" ])
+      else [])
+      @ [ detail_mailing_path experiment_id mailing |> edit_link ]
+      |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+    in
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
     ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
-    ; detail_mailing_path experiment_id mailing |> edit_link
+    ; buttons
     ]
-    @
-    if with_link
-    then (
-      match
-        StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
-      with
-      | true, true ->
-        [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
-      | false, true ->
-        [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
-      | _ -> [ txt "" ])
-    else []
   ;;
 
   let create
@@ -142,7 +145,7 @@ module List = struct
     mailings
     =
     let base_head =
-      (Field.[ Start; End; Rate ] |> Table.fields_to_txt language) @ [ txt "" ]
+      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
     in
     let thead =
       let new_btn () =
