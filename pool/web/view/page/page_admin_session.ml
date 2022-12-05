@@ -400,7 +400,7 @@ let index
                  Pool_common.Utils.Time.formatted_date_time t)
             |> txt
           ; div
-              ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
               [ Format.asprintf
                   "/admin/experiments/%s/sessions/%s"
                   (Pool_common.Id.value experiment_id)
@@ -567,8 +567,7 @@ let detail
     in
     let links =
       Message.
-        [ true, "edit", Edit (Some Field.Session)
-        ; ( CCOption.is_none session.follow_up_to
+        [ ( CCOption.is_none session.follow_up_to
           , "follow-up"
           , Create (Some Field.FollowUpSession) )
         ; ( session.assignment_count |> AssignmentCount.value > 0

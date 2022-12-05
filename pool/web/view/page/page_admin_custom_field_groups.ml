@@ -91,22 +91,9 @@ let form
                                  ]
                                ()
                            ]
-                       ; div
-                           ~a:
-                             [ a_class [ "flexrow"; "flex-gap"; "align-center" ]
-                             ]
-                           [ a
-                               ~a:
-                                 [ a_href
-                                     (Url.Field.edit_path (model field, id field)
-                                     |> Sihl.Web.externalize_path)
-                                 ]
-                               [ txt
-                                   Pool_common.(
-                                     Message.More
-                                     |> Utils.control_to_string language)
-                               ]
-                           ]
+                       ; Url.Field.edit_path (model field, id field)
+                         |> Sihl.Web.externalize_path
+                         |> edit_link ~classnames:[ "small" ]
                        ])
                    fields)
             ; div

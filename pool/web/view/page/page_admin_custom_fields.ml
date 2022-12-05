@@ -719,13 +719,9 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                  PublishedAt.value
                  %> Ptime.to_date
                  %> Pool_common.Utils.Time.formatted_date))
-      ; a
-          ~a:
-            [ a_href
-                (Url.Field.edit_path (model field, id field)
-                |> Sihl.Web.externalize_path)
-            ]
-          [ txt Pool_common.(Message.More |> Utils.control_to_string language) ]
+      ; Url.Field.edit_path (model field, id field)
+        |> Sihl.Web.externalize_path
+        |> edit_link
       ]
     in
     CCList.flat_map
@@ -860,24 +856,9 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                                    ]
                                  ()
                              ]
-                         ; div
-                             ~a:
-                               [ a_class
-                                   [ "flexrow"; "flex-gap"; "align-center" ]
-                               ]
-                             [ a
-                                 ~a:
-                                   [ a_href
-                                       (Url.Group.edit_path
-                                          Group.(group.model, group.id)
-                                       |> Sihl.Web.externalize_path)
-                                   ]
-                                 [ txt
-                                     Pool_common.(
-                                       Message.(Edit None)
-                                       |> Utils.control_to_string language)
-                                 ]
-                             ]
+                         ; Url.Group.edit_path Group.(group.model, group.id)
+                           |> Sihl.Web.externalize_path
+                           |> edit_link ~classnames:[ "small" ]
                          ])
                      group_list))
                [ csrf_element csrf ()
