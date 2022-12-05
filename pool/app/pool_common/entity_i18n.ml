@@ -109,6 +109,7 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SelectedDateIsPast
+  | SessionClose
   | SessionReminderLanguageHint
   | SessionRegistrationHint
   | SignUpForWaitingList

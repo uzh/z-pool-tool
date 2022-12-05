@@ -188,6 +188,12 @@ let hint_to_string = function
     "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | SessionClose ->
+    {|S: Der Kontakt ist an der Session erschienen
+    P: Der Kontakt hat am Experiment teilgenommen
+
+    Um 'participated' anzuwählen ist 'show up' erforderlich.
+    |}
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."

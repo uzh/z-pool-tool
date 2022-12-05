@@ -180,6 +180,12 @@ let hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | SessionClose ->
+    {|S: the contact showed up
+    P: the contact participated in the experiment
+
+  To set 'participated', 'show up' is required.
+  |}
   | SelectedDateIsPast -> "The selected date is in the past."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."

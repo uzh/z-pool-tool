@@ -695,51 +695,25 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let field_to_string f =
-    Utils.field_to_string language f |> CCString.capitalize_ascii
-  in
   let form =
     let checkbox_element ?(disabled = false) contact field =
-      let id =
-        Format.asprintf
-          "%s_%s"
-          (Contact.id contact |> Id.value)
-          Message.Field.(show field)
-      in
       let disabled = if disabled then [ a_disabled () ] else [] in
       div
         [ input
             ~a:
               ([ a_input_type `Checkbox
                ; a_name Message.Field.(array_key field)
-               ; a_id id
                ; a_value (contact |> Contact.id |> Id.value)
                ]
               @ disabled)
             ()
-        ; label
-            ~a:[ a_label_for id ]
-            [ txt (field_to_string field |> CCString.capitalize_ascii) ]
         ]
     in
     let table =
-      let link (id, field) =
-        span
-          ~a:[ a_id id; a_class [ "btn" ] ]
-          [ txt
-              Pool_common.(
-                Utils.control_to_string
-                  language
-                  Pool_common.Message.(SelectAll (Some field)))
-          ]
-      in
+      let link (id, label) = span ~a:[ a_id id ] [ txt label ] in
       let thead =
-        let open Pool_common.Message in
         txt ""
-        :: ([ "all-showup", Field.ShowUp
-            ; "all-participated", Field.Participated
-            ]
-           |> CCList.map link)
+        :: ([ "all-showup", "S"; "all-participated", "P" ] |> CCList.map link)
       in
       CCList.map
         (fun ({ Assignment.contact; _ } : Assignment.t) ->
@@ -748,10 +722,7 @@ let close
           ; checkbox_element ~disabled:true contact Message.Field.Participated
           ])
         assignments
-      |> Table.horizontal_table
-           ~classnames:[ "break-mobile"; "keep-head" ]
-           ~thead
-           `Striped
+      |> Table.horizontal_table ~thead `Striped
       |> fun table ->
       form
         ~a:
@@ -782,22 +753,38 @@ let close
             target.disabled = !elm.checked;
           })
         }
+
         const toggleShowUp = document.getElementById("all-showup");
+
+        const isActive = (elm) => {
+          return elm.dataset.active;
+        }
+
+        const toggleActive = (elm) => {
+          if(isActive(elm)) {
+            elm.removeAttribute("data-active");
+          } else {
+            elm.dataset.active = true;
+          }
+        }
+
         toggleShowUp.addEventListener("click", () => {
-          showUp.forEach( (elm) => {
+          showUp.forEach((elm) => {
             var event = new Event('change');
-            elm.checked = true;
+            elm.checked = !isActive(toggleShowUp);
             elm.dispatchEvent(event);
-          })
+          });
+          toggleActive(toggleShowUp);
         })
 
         const toggleParticipated = document.getElementById("all-participated");
         toggleParticipated.addEventListener("click", () => {
-          participated.forEach( (elm) => {
+          participated.forEach((elm) => {
             if(!elm.disabled) {
-              elm.checked = true;
+              elm.checked = !isActive(toggleParticipated);
             }
-          })
+          });
+          toggleActive(toggleParticipated)
         })
       |js}
     in
@@ -809,6 +796,11 @@ let close
                 Utils.field_to_string language Message.Field.Participants
                 |> CCString.capitalize_ascii)
           ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.SessionClose
+              |> HttpUtils.add_line_breaks
+            ]
       ; table
       ; script (Unsafe.data scripts)
       ]
