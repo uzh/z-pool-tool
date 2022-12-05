@@ -2,6 +2,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 module Message = Pool_common.Message
 open Mailing
 
+let src = Logs.Src.create "mailing.cqrs"
+
 module Create : sig
   type t =
     { start_at : StartAt.t
@@ -11,7 +13,8 @@ module Create : sig
     }
 
   val handle
-    :  ?id:Id.t
+    :  ?tags:Logs.Tag.set
+    -> ?id:Id.t
     -> Experiment.t
     -> t
     -> (Pool_event.t list, Message.error) result
@@ -48,10 +51,12 @@ end = struct
   ;;
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?(id = Mailing.Id.create ())
     experiment
     ({ start_at; end_at; rate; distribution } : t)
     =
+    Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
     let* mailing = Mailing.create ~id start_at end_at rate distribution in
     Ok
@@ -73,7 +78,12 @@ end
 module Update : sig
   type t = Mailing.update
 
-  val handle : Mailing.t -> t -> (Pool_event.t list, Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Mailing.t
+    -> t
+    -> (Pool_event.t list, Message.error) result
+
   val decode : Conformist.input -> (t, Message.error) result
   val effects : Mailing.t -> Guard.Authorizer.effect list
 end = struct
@@ -100,7 +110,12 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let handle ({ start_at; _ } as mailing : Mailing.t) (update : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ({ start_at; _ } as mailing : Mailing.t)
+    (update : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     match Ptime_clock.now () < Mailing.StartAt.value start_at with
     | true -> Ok [ Mailing.Updated (update, mailing) |> Pool_event.mailing ]
     | false -> Error Pool_common.Message.AlreadyStarted
@@ -117,14 +132,16 @@ module Delete : sig
   type t = Mailing.t
 
   val handle
-    :  Mailing.t
+    :  ?tags:Logs.Tag.set
+    -> Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
-  let handle (mailing : t) =
+  let handle ?(tags = Logs.Tag.empty) (mailing : t) =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     if StartAt.value mailing.start_at < Ptime_clock.now ()
     then Error Message.AlreadyInPast
     else Ok [ Deleted mailing |> Pool_event.mailing ]
@@ -141,14 +158,16 @@ module Stop : sig
   type t = Mailing.t
 
   val handle
-    :  Mailing.t
+    :  ?tags:Logs.Tag.set
+    -> Mailing.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Mailing.t
 
-  let handle (mailing : t) =
+  let handle ?(tags = Logs.Tag.empty) (mailing : t) =
+    Logs.info ~src (fun m -> m "Handle command Stop" ~tags);
     let now = Ptime_clock.now () in
     if StartAt.value mailing.start_at < now && now < EndAt.value mailing.end_at
     then Ok [ Mailing.Stopped mailing |> Pool_event.mailing ]

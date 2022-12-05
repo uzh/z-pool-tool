@@ -75,10 +75,10 @@ let find_request =
 ;;
 
 let find pool id contact =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
     find_request
     Pool_common.Id.(Contact.id contact |> value, id |> value)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
 ;;

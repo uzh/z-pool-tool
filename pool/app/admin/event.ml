@@ -34,7 +34,7 @@ let set_password
     -> (unit, string) result Lwt.t
   =
  fun pool person password password_confirmation ->
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   match person with
   | Assistant { user; _ }
   | Experimenter { user; _ }
@@ -46,7 +46,7 @@ let set_password
       user
       ~password
       ~password_confirmation
-    >|= ignore
+    >|+ ignore
 ;;
 
 type 'a person_event =
@@ -78,58 +78,61 @@ let handle_person_event pool : 'a person_event -> unit Lwt.t = function
   | Verified _ -> Utils.todo ()
 ;;
 
-let handle_event pool : event -> unit Lwt.t = function
-  | Created (role, admin) ->
-    let%lwt user =
-      Service.User.create_admin
-        ~ctx:(Pool_tenant.to_ctx pool)
-        ~name:(admin.lastname |> User.Lastname.value)
-        ~given_name:(admin.firstname |> User.Firstname.value)
-        ~password:(admin.password |> User.Password.to_sihl)
-        (User.EmailAddress.value admin.email)
-    in
-    let person =
-      { user
-      ; created_at = Common.CreatedAt.create ()
-      ; updated_at = Common.UpdatedAt.create ()
-      }
-    in
-    let%lwt () =
-      match role with
-      | Assistant -> Repo.insert pool (Assistant person)
-      | Experimenter -> Repo.insert pool (Experimenter person)
-      | Recruiter -> Repo.insert pool (Recruiter person)
-      | LocationManager -> Repo.insert pool (LocationManager person)
-      | Operator -> Repo.insert pool (Operator person)
-    in
-    let%lwt role =
-      let%lwt tenant_id =
-        Pool_tenant.find_by_label pool
-        |> Lwt_result.map_error Pool_common.Message.error_to_exn
-        |> Lwt_result.get_exn
-        |> Lwt.map (fun tenant ->
-             Guard.Uuid.Target.of_string_exn
-               (Common.Id.value tenant.Pool_tenant.id))
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  fun e ->
+    match e with
+    | Created (role, admin) ->
+      let%lwt user =
+        Service.User.create_admin
+          ~ctx:(Pool_tenant.to_ctx pool)
+          ~name:(admin.lastname |> User.Lastname.value)
+          ~given_name:(admin.firstname |> User.Firstname.value)
+          ~password:(admin.password |> User.Password.to_sihl)
+          (User.EmailAddress.value admin.email)
       in
-      Lwt.return
-      @@
-      match role with
-      | Assistant -> `Assistant tenant_id
-      | Experimenter -> `Experimenter tenant_id
-      | Recruiter -> `Recruiter tenant_id
-      | LocationManager -> `LocationManager tenant_id
-      | Operator -> `Operator tenant_id
-    in
-    Guard.Persistence.Actor.grant_roles
-      (Guardian.Uuid.Actor.of_string_exn user.Sihl_user.id)
-      (Guard.ActorRoleSet.singleton role)
-    |> Lwt_result.map_error (fun s -> Failure s)
-    |> Lwt_result.get_exn
-  | AssistantEvents event -> handle_person_event pool event
-  | ExperimenterEvents event -> handle_person_event pool event
-  | LocationManagerEvents event -> handle_person_event pool event
-  | RecruiterEvents event -> handle_person_event pool event
-  | OperatorEvents event -> handle_person_event pool event
+      let person =
+        { user
+        ; created_at = Common.CreatedAt.create ()
+        ; updated_at = Common.UpdatedAt.create ()
+        }
+      in
+      let%lwt () =
+        match role with
+        | Assistant -> Repo.insert pool (Assistant person)
+        | Experimenter -> Repo.insert pool (Experimenter person)
+        | Recruiter -> Repo.insert pool (Recruiter person)
+        | LocationManager -> Repo.insert pool (LocationManager person)
+        | Operator -> Repo.insert pool (Operator person)
+      in
+      let%lwt role =
+        let%lwt tenant_id =
+          Pool_tenant.find_by_label pool
+          >|- Pool_common.Message.error_to_exn
+          |> Lwt_result.get_exn
+          ||> fun tenant ->
+          Guard.Uuid.Target.of_string_exn
+            (Common.Id.value tenant.Pool_tenant.id)
+        in
+        Lwt.return
+        @@
+        match role with
+        | Assistant -> `Assistant tenant_id
+        | Experimenter -> `Experimenter tenant_id
+        | Recruiter -> `Recruiter tenant_id
+        | LocationManager -> `LocationManager tenant_id
+        | Operator -> `Operator tenant_id
+      in
+      Guard.Persistence.Actor.grant_roles
+        (Guardian.Uuid.Actor.of_string_exn user.Sihl_user.id)
+        (Guard.ActorRoleSet.singleton role)
+      >|- (fun s -> Failure s)
+      |> Lwt_result.get_exn
+    | AssistantEvents event -> handle_person_event pool event
+    | ExperimenterEvents event -> handle_person_event pool event
+    | LocationManagerEvents event -> handle_person_event pool event
+    | RecruiterEvents event -> handle_person_event pool event
+    | OperatorEvents event -> handle_person_event pool event
 ;;
 
 let[@warning "-4"] equal_person_event
@@ -181,3 +184,5 @@ let pp_event formatter event =
   | RecruiterEvents m -> pp_person_event formatter m
   | OperatorEvents m -> pp_person_event formatter m
 ;;
+
+let show_event = Format.asprintf "%a" pp_event

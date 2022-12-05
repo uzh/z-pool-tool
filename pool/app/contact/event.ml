@@ -25,13 +25,13 @@ let set_password
   : Database.Label.t -> t -> string -> string -> (unit, string) Lwt_result.t
   =
  fun pool { user; _ } password password_confirmation ->
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   Service.User.set_password
     ~ctx:(Pool_tenant.to_ctx pool)
     user
     ~password
     ~password_confirmation
-  >|= ignore
+  >|+ ignore
 ;;
 
 let has_terms_accepted pool (contact : t) =

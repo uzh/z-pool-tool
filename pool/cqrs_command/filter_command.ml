@@ -1,6 +1,8 @@
 module Conformist = Pool_common.Utils.PoolConformist
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "filter.cqrs"
+
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
     make Field.[ Filter.Title.schema () ] command)
@@ -23,7 +25,8 @@ module Create : sig
   type t = Filter.Title.t
 
   val handle
-    :  Filter.Key.human list
+    :  ?tags:Logs.Tag.set
+    -> Filter.Key.human list
     -> Filter.t list
     -> Filter.query
     -> t
@@ -37,7 +40,8 @@ module Create : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle key_list template_list query title =
+  let handle ?(tags = Logs.Tag.empty) key_list template_list query title =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* query = validate_query key_list template_list query in
     Ok
@@ -61,7 +65,8 @@ module Update : sig
   type t = Filter.Title.t
 
   val handle
-    :  Filter.Key.human list
+    :  ?tags:Logs.Tag.set
+    -> Filter.Key.human list
     -> Filter.t list
     -> Filter.t
     -> Filter.query
@@ -76,7 +81,8 @@ module Update : sig
 end = struct
   type t = Filter.Title.t
 
-  let handle key_list template_list filter query title =
+  let handle ?(tags = Logs.Tag.empty) key_list template_list filter query title =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* query = validate_query key_list template_list query in
     Ok

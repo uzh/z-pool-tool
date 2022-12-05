@@ -1,23 +1,10 @@
 module Countries = Countries
 module Database = Database
 module LanguageCodes = Language_codes
+module Lwt_result = Lwt_trace
 
 let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure
-
-module Lwt_result = struct
-  include Lwt_result
-
-  module Infix = struct
-    include Infix
-
-    let ( >== ) = Lwt_result.bind_result
-    let ( >> ) m k = m >>= fun _ -> k
-    let ( |>> ) = Lwt_result.bind_lwt
-    let ( >|> ) = Lwt.bind
-    let ( ||> ) m k = Lwt.map k m
-  end
-end
 
 module Url = struct
   let public_host =

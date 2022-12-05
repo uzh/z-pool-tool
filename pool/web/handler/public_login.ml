@@ -5,14 +5,14 @@ let to_ctx = Pool_tenant.to_ctx
 let create_layout req = General.create_tenant_layout req
 
 let redirect_to_dashboard tenant_db user =
-  let open Lwt.Infix in
-  General.dashboard_path tenant_db user >>= HttpUtils.redirect_to
+  let open Utils.Lwt_result.Infix in
+  General.dashboard_path tenant_db user >|> HttpUtils.redirect_to
 ;;
 
 let login_get req =
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/index")
+    Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@ let%lwt user =
          Service.User.Web.user_from_session ~ctx:(to_ctx tenant_db) req
        in
@@ -22,7 +22,7 @@ let login_get req =
          let open Sihl.Web in
          Page.Public.login context
          |> create_layout req ~active_navigation:"/login" context
-         >|= Response.of_html
+         >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -30,10 +30,9 @@ let login_get req =
 let login_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; query_language; _ } =
-    let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
-    Lwt_result.map_error (fun err -> err, "/login")
+    Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* params =
          Field.[ Email; Password ]
          |> CCList.map Field.show
@@ -41,11 +40,13 @@ let login_post req =
          |> CCOption.to_result LoginProvideDetails
          |> Lwt_result.lift
        in
-       let email = List.assoc Field.(Email |> show) params in
-       let password = List.assoc Field.(Password |> show) params in
+       let email = CCList.assoc ~eq:String.equal Field.(Email |> show) params in
+       let password =
+         CCList.assoc ~eq:String.equal Field.(Password |> show) params
+       in
        let* user =
          Service.User.login ~ctx:(to_ctx tenant_db) email ~password
-         |> Lwt_result.map_error handle_sihl_login_error
+         >|- handle_sihl_login_error
        in
        let redirect ?(set_completion_cookie = false) path actions =
          HttpUtils.(
@@ -95,7 +96,7 @@ let login_post req =
 
 let request_reset_password_get req =
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/index")
+    Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
@@ -109,7 +110,7 @@ let request_reset_password_get req =
     | None ->
       Page.Public.request_reset_password context
       |> create_layout req ~active_navigation:"/request-reset-password" context
-      >|= Response.of_html
+      >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -119,12 +120,13 @@ let request_reset_password_post req =
   let open Cqrs_command.Common_command.ResetPassword in
   let query_lang = find_query_lang req in
   let result { Pool_context.tenant_db; language; _ } =
+    let tags = Logger.req req in
     let open Utils.Lwt_result.Infix in
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= Contact.find_by_email tenant_db
     >== (fun { Contact.user; _ } -> handle user language)
-    |>> Pool_event.handle_events tenant_db
+    |>> Pool_event.handle_events ~tags tenant_db
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
       redirect_to_with_actions
@@ -139,9 +141,9 @@ let request_reset_password_post req =
 
 let reset_password_get req =
   let result context =
-    let open Lwt_result.Infix in
+    let open Utils.Lwt_result.Infix in
     let error_path = "/request-reset-password/" in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let token =
       Sihl.Web.Request.query Pool_common.Message.Field.(Token |> show) req
@@ -155,7 +157,7 @@ let reset_password_get req =
     | Some token ->
       Page.Public.reset_password token context
       |> create_layout req ~active_navigation:"/reset-password" context
-      >|= Sihl.Web.Response.of_html
+      >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -163,7 +165,7 @@ let reset_password_get req =
 let reset_password_post req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.tenant_db; query_language; _ } =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
     let* params =
       Field.[ Token; Password; PasswordConfirmation ]
@@ -180,11 +182,10 @@ let reset_password_post req =
         ~token
         (go Field.Password)
         (go Field.PasswordConfirmation)
-      |> Lwt_result.map_error
-           (CCFun.const
-              ( passwordresetinvaliddata
-              , [ Field.Token, token ]
-                |> add_field_query_params "/reset-password/" ))
+      >|- CCFun.const
+            ( passwordresetinvaliddata
+            , [ Field.Token, token ]
+              |> add_field_query_params "/reset-password/" )
     in
     HttpUtils.(
       redirect_to_with_actions

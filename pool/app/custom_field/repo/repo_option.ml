@@ -92,7 +92,7 @@ let find pool id =
     find_request
     (Pool_common.Id.value id)
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.CustomFieldOption)
-  >|= Repo_entity.Option.to_entity
+  >|+ Repo_entity.Option.to_entity
 ;;
 
 let insert_sql =
@@ -221,7 +221,7 @@ let update_position_request =
 ;;
 
 let sort_options pool ids =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
       Utils.Database.exec
@@ -229,7 +229,7 @@ let sort_options pool ids =
         update_position_request
         (index, Entity.Id.value id))
     ids
-  >|= CCFun.const ()
+  ||> CCFun.const ()
 ;;
 
 module Public = struct

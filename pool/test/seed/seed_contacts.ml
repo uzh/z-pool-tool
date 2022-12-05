@@ -36,7 +36,7 @@ let data =
 let contact_ids = CCList.map (fun (id, _, _, _, _, _, _) -> id) data
 
 let create db_pool =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx db_pool in
   (* let error = CCList.map (fun (k, v) -> Format.asprintf "%s: %s" k v) ctx |>
      CCString.concat " +++ " in failwith error; *)
@@ -84,7 +84,7 @@ let create db_pool =
           contacts)
       []
       data
-    >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+    >|> Lwt_list.iter_s (Contact.handle_event db_pool)
   in
   Lwt_list.map_s
     (fun (id, _, _, _, _, _, _) ->
@@ -99,9 +99,9 @@ let create db_pool =
         |> Lwt.return
       | Error _ -> Lwt.return_none)
     data
-  |> Lwt.map (CCList.filter_map CCFun.id)
-  >|= CCList.flatten
-  >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+  ||> CCList.filter_map CCFun.id
+  ||> CCList.flatten
+  >|> Lwt_list.iter_s (Contact.handle_event db_pool)
 ;;
 
 let cleanup db_pool =

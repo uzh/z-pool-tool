@@ -45,3 +45,6 @@ module Tenant : sig
     :  Rock.Request.t
     -> (Pool_common.Language.t list, Pool_common.Message.error) result
 end
+
+val sexp_of_t : t -> Sexplib.Sexp.t
+val show_log : t -> string

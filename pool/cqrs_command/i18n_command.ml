@@ -1,5 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "i18n.cqrs"
+
 module Create : sig
   type t =
     { key : I18n.Key.t
@@ -7,7 +9,10 @@ module Create : sig
     ; content : I18n.Content.t
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -34,7 +39,8 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) =
+  let handle ?(tags = Logs.Tag.empty) (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let property : I18n.create =
       I18n.
         { key = command.key
@@ -62,7 +68,8 @@ module Update : sig
   type t = { content : I18n.Content.t }
 
   val handle
-    :  I18n.t
+    :  ?tags:Logs.Tag.set
+    -> I18n.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -77,7 +84,8 @@ end = struct
   let command content = { content }
   let schema = Conformist.(make Field.[ I18n.Content.schema () ] command)
 
-  let handle property (command : t) =
+  let handle ?(tags = Logs.Tag.empty) property (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let edit : I18n.edit = I18n.{ content = command.content } in
     Ok [ I18n.Updated (property, edit) |> Pool_event.i18n ]
   ;;

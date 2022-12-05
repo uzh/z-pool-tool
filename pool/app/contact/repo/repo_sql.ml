@@ -87,12 +87,12 @@ let find_request =
 ;;
 
 let find pool id =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let find_by_email_request =
@@ -106,12 +106,12 @@ let find_by_email_request =
 ;;
 
 let find_by_email pool email =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_by_email_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let find_confirmed_request =
@@ -126,12 +126,12 @@ let find_confirmed_request =
 ;;
 
 let find_confirmed pool email =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let filter_to_sql template_list dyn query =
@@ -323,7 +323,7 @@ let filtered_params ?group_by ?order_by template_list experiment_id filter =
 
 let find_filtered pool ?order_by ?limit experiment_id filter =
   let filter = filter |> CCOption.map (fun f -> f.Filter.query) in
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let%lwt template_list =
     match filter with
     | None -> Lwt.return []
@@ -349,7 +349,7 @@ let find_filtered pool ?order_by ?limit experiment_id filter =
 ;;
 
 let count_filtered pool experiment_id query =
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let%lwt template_list =
     match query with
     | None -> Lwt.return []

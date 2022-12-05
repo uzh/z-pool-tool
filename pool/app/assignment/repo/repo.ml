@@ -74,12 +74,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Tenant)
   ;;
 
   let find_by_session_request ?where_condition () =
@@ -209,7 +209,7 @@ end
 
 let contact_to_assignment pool assignment =
   let open Utils.Lwt_result.Infix in
-  Contact.find pool assignment.RepoEntity.contact_id >|= to_entity assignment
+  Contact.find pool assignment.RepoEntity.contact_id >|+ to_entity assignment
 ;;
 
 let find pool id =
@@ -221,7 +221,7 @@ let find pool id =
 let uncanceled_condition = "pool_assignments.canceled_at IS NULL"
 
 let find_by_session filter pool id =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
   let sql =
     match filter with
@@ -229,19 +229,19 @@ let find_by_session filter pool id =
     | `Uncanceled ->
       Sql.find_by_session ~where_condition:uncanceled_condition pool id
   in
-  sql >>= Lwt_list.map_s (contact_to_assignment pool) |> Lwt.map CCList.all_ok
+  sql >|> Lwt_list.map_s (contact_to_assignment pool) ||> CCList.all_ok
 ;;
 
 let find_by_contact pool contact =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   (* TODO Implement as transaction *)
   contact
   |> Contact.id
   |> Sql.find_by_contact pool
   (* Reload contact from DB, does not allow already made updates of the provided
      contact record *)
-  >>= Lwt_list.map_s (contact_to_assignment pool)
-  |> Lwt.map CCList.all_ok
+  >|> Lwt_list.map_s (contact_to_assignment pool)
+  ||> CCList.all_ok
 ;;
 
 let insert pool session_id model =

@@ -14,7 +14,7 @@ let reminder_email sys_languages contact (session : Session.t) template =
 ;;
 
 let create_reminders pool default_language sys_languages session =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find_of_session pool session.Session.id in
   let custom_template =
     let open CCOption in
@@ -73,11 +73,10 @@ let create_reminders pool default_language sys_languages session =
 ;;
 
 let send_tenant_reminder pool =
-  Lwt_result.map_error Pool_common.Utils.with_log_error
+  Utils.Lwt_result.map_error Pool_common.Utils.with_log_error
   @@
   let open CCFun in
   let open Utils.Lwt_result.Infix in
-  let open Utils.Lwt_result.Syntax in
   let data =
     let* sessions = Session.find_sessions_to_remind pool in
     let%lwt sys_languages = Settings.find_languages pool in
@@ -89,7 +88,7 @@ let send_tenant_reminder pool =
     Lwt_list.map_s
       (fun session ->
         create_reminders pool default_language sys_languages session
-        >|= fun emails -> session, emails)
+        >|+ fun emails -> session, emails)
       sessions
     ||> CCResult.flatten_l
   in
@@ -124,10 +123,10 @@ let all_tenants_session_reminder =
     match args with
     | [] ->
       let open CCFun in
-      let open Lwt.Infix in
+      let open Utils.Lwt_result.Infix in
       Command_utils.setup_databases ()
-      >>= Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
-      >|= CCList.all_ok
-      >|= (fun _ -> Ok ()) %> CCOption.of_result
+      >|> Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
+      ||> CCList.all_ok
+      ||> (fun _ -> Ok ()) %> CCOption.of_result
     | _ -> failwith "Argument missmatch")
 ;;

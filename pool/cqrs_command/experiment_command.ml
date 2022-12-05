@@ -2,6 +2,8 @@ open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "experiment_command.cqrs"
+
 let default_schema command =
   Pool_common.Utils.PoolConformist.(
     make
@@ -54,7 +56,10 @@ let default_command
 module Create : sig
   type t = create
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -64,7 +69,8 @@ module Create : sig
 end = struct
   type t = create
 
-  let handle (command : t) =
+  let handle ?(tags = Logs.Tag.empty) (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* experiment =
       Experiment.create
@@ -96,7 +102,8 @@ module Update : sig
   type t = create
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -108,7 +115,8 @@ module Update : sig
 end = struct
   type t = create
 
-  let handle experiment (command : t) =
+  let handle ?(tags = Logs.Tag.empty) experiment (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* experiment =
       Experiment.create
@@ -147,7 +155,11 @@ module Delete : sig
     ; session_count : int
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   (* Only when no sessions added *)
@@ -157,7 +169,8 @@ end = struct
     ; session_count : int
     }
 
-  let handle { experiment_id; session_count } =
+  let handle ?(tags = Logs.Tag.empty) { experiment_id; session_count } =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     match session_count > 0 with
     | true -> Error Pool_common.Message.ExperimentSessionCountNotZero
     | false ->
@@ -176,7 +189,8 @@ module UpdateFilter : sig
   type t = Filter.query
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Filter.Key.human list
     -> Filter.t list
     -> t
@@ -186,7 +200,8 @@ module UpdateFilter : sig
 end = struct
   type t = Filter.query
 
-  let handle experiment key_list template_list query =
+  let handle ?(tags = Logs.Tag.empty) experiment key_list template_list query =
+    Logs.info ~src (fun m -> m "Handle command UpdateFilter" ~tags);
     let open CCResult in
     let* query = Filter.validate_query key_list template_list query in
     match experiment.filter with
@@ -214,7 +229,8 @@ module AddExperimenter : sig
   type t = { user_id : Id.t }
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
@@ -225,7 +241,8 @@ module AddExperimenter : sig
 end = struct
   type t = { user_id : Id.t }
 
-  let handle experiment user =
+  let handle ?(tags = Logs.Tag.empty) experiment user =
+    Logs.info ~src (fun m -> m "Handle command AddExperimenter" ~tags);
     Ok
       [ Experiment.ExperimenterAssigned (experiment, user)
         |> Pool_event.experiment
@@ -249,7 +266,8 @@ module DivestExperimenter : sig
     }
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Admin.experimenter Admin.t
     -> (Pool_event.t list, 'a) result
 
@@ -260,7 +278,8 @@ end = struct
     ; experiment_id : Id.t
     }
 
-  let handle experiment user =
+  let handle ?(tags = Logs.Tag.empty) experiment user =
+    Logs.info ~src (fun m -> m "Handle command DivestExperimenter" ~tags);
     Ok
       [ Experiment.ExperimenterDivested (experiment, user)
         |> Pool_event.experiment
@@ -279,7 +298,8 @@ module AddAssistant : sig
   type t = { user_id : Id.t }
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
@@ -287,7 +307,8 @@ module AddAssistant : sig
 end = struct
   type t = { user_id : Id.t }
 
-  let handle experiment user =
+  let handle ?(tags = Logs.Tag.empty) experiment user =
+    Logs.info ~src (fun m -> m "Handle command AddAssistant" ~tags);
     Ok
       [ Experiment.AssistantAssigned (experiment, user) |> Pool_event.experiment
       ]
@@ -310,7 +331,8 @@ module DivestAssistant : sig
     }
 
   val handle
-    :  Experiment.t
+    :  ?tags:Logs.Tag.set
+    -> Experiment.t
     -> Admin.assistant Admin.t
     -> (Pool_event.t list, 'a) result
 
@@ -324,7 +346,8 @@ end = struct
     ; experiment_id : Id.t
     }
 
-  let handle experiment user =
+  let handle ?(tags = Logs.Tag.empty) experiment user =
+    Logs.info ~src (fun m -> m "Handle command DivestAssistant" ~tags);
     Ok
       [ Experiment.AssistantDivested (experiment, user) |> Pool_event.experiment
       ]

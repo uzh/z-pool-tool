@@ -6,11 +6,11 @@ let assignment pool =
       (fun experiment ->
         let%lwt experiment_invitations =
           Invitation.find_by_experiment pool experiment.Experiment.id
-          |> Lwt.map CCResult.get_exn
+          ||> CCResult.get_exn
         in
         let%lwt session =
           Session.find_all_for_experiment pool experiment.Experiment.id
-          >|= CCList.hd
+          >|+ CCList.hd
           ||> CCResult.get_exn
         in
         Lwt.return (session, experiment_invitations))

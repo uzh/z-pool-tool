@@ -1,3 +1,5 @@
+let () = Printexc.record_backtrace true
+
 let commands =
   let open Command in
   [ Migrate.root
@@ -14,6 +16,7 @@ let commands =
   ; Contact.tenant_specific_profile_update_trigger
   ; Matcher.run_tenant
   ; Matcher.run_all
+  ; Mail.send_mail
   ]
 ;;
 
@@ -36,8 +39,6 @@ let () =
   Sihl.App.(
     empty
     |> with_services services
-    |> before_start (fun () ->
-         let () = Middleware.Error.before_start () in
-         Printexc.record_backtrace true |> Lwt.return)
-    |> run ~commands)
+    |> before_start (fun () -> Lwt.return @@ Middleware.Error.before_start ())
+    |> run ~commands ~log_reporter:Logger.reporter)
 ;;

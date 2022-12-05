@@ -117,12 +117,12 @@ module Sql = struct
   ;;
 
   let find_all_by_model model ?(required = false) ?(is_admin = false) pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       (find_all_by_model_request required is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
-    >>= to_grouped_public pool model
+    >|> to_grouped_public pool model
   ;;
 
   let find_multiple_by_contact_request is_admin ids =
@@ -146,7 +146,7 @@ module Sql = struct
     if CCList.is_empty ids
     then Lwt.return []
     else
-      let open Lwt.Infix in
+      let open Utils.Lwt_result.Infix in
       let open Caqti_request.Infix in
       let dyn =
         let base =
@@ -167,7 +167,7 @@ module Sql = struct
         |> pt ->* Repo_entity.Public.t
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
-      >>= fun fields ->
+      >|> fun fields ->
       let%lwt options = get_options_of_multiple pool fields in
       fields |> Repo_entity.Public.to_ungrouped_entities options |> Lwt.return
   ;;
@@ -222,12 +222,12 @@ module Sql = struct
   ;;
 
   let all_required_answered pool contact_id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find
       (Database.Label.value pool)
       all_required_answered_request
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
-    >|= CCInt.equal 0
+    ||> CCInt.equal 0
   ;;
 
   let upsert_answer_request =

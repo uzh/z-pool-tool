@@ -1,6 +1,7 @@
 let invitations pool =
   let%lwt experiments = Experiment.find_all pool () in
   let%lwt events =
+    let open Utils.Lwt_result.Infix in
     Lwt_list.fold_left_s
       (fun events experiment ->
         let%lwt filtered_contacts =
@@ -8,7 +9,7 @@ let invitations pool =
             pool
             experiment.Experiment.id
             experiment.Experiment.filter
-          |> Lwt.map CCResult.get_exn
+          ||> CCResult.get_exn
         in
         let n = CCList.length filtered_contacts / 2 in
         let contacts = CCList.take n filtered_contacts in

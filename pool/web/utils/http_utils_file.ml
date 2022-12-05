@@ -19,10 +19,11 @@ let raise_if_failed msg process_result =
 ;;
 
 let prepare_import_directory () =
+  let open Utils.Lwt_result.Infix in
   Logs.debug (fun m -> m "IMPORT: Making sure directory exist");
   let message = Format.asprintf "while creating directory %s" import_dir in
   Lwt_process.exec ("", [| "mkdir"; "-p"; import_dir |])
-  |> Lwt.map (raise_if_failed message)
+  ||> raise_if_failed message
 ;;
 
 let save_files allow_list req =
@@ -33,13 +34,14 @@ let save_files allow_list req =
     if CCString.equal filename ""
        || not (CCList.mem ~eq:CCString.equal name allow_list)
     then Lwt.return_unit
-    else (
+    else
+      let open Utils.Lwt_result.Infix in
       let filename = Filename.basename filename in
       let write file =
         string
         |> CCString.length
         |> Lwt_unix.write_string file string 0
-        |> Lwt.map ignore
+        ||> ignore
       in
       match Hashtbl.find_opt files filename with
       | Some file -> write file
@@ -52,7 +54,7 @@ let save_files allow_list req =
         in
         Hashtbl.add files filename file;
         Hashtbl.add assocs name filename;
-        write file)
+        write file
   in
   let%lwt _ = Sihl.Web.Request.to_multipart_form_data_exn ~callback req in
   CCList.map
@@ -62,9 +64,10 @@ let save_files allow_list req =
 ;;
 
 let remove_imported_file filename =
+  let open Utils.Lwt_result.Infix in
   Logs.debug (fun m -> m "IMPORT: Remove imported file");
   Lwt_process.exec ("", [| "rm"; "-f"; filename |])
-  |> Lwt.map (raise_if_failed ("while deleting file " ^ filename))
+  ||> raise_if_failed ("while deleting file " ^ filename)
 ;;
 
 let load_file filename =
@@ -80,7 +83,7 @@ let load_file filename =
 ;;
 
 let file_to_storage_add pool filename =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let* filesize, mime, data = load_file filename |> Lwt_result.lift in
   let asset_id = Id.(create () |> value) in
   let file =
@@ -113,7 +116,6 @@ let multipart_form_data_to_urlencoded list =
 ;;
 
 let upload_files pool allow_list req =
-  let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   save_files allow_list req
   >|> Lwt_list.map_s (fun (k, v) ->

@@ -89,21 +89,21 @@ let find_by_address_request
 ;;
 
 let find_by_user pool carrier user_id =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Pool_database.Label.value pool)
     (find_by_user_request carrier)
     (Pool_common.Id.value user_id)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
 ;;
 
 let find_by_address pool carrier address =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     (find_by_address_request carrier)
     (address |> User.EmailAddress.value)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Email)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Email)
 ;;
 
 let insert_request =
