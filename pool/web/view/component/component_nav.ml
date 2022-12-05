@@ -16,7 +16,7 @@ let make_tabs html links =
           ~a:[ a_class [ "tab-nav-header" ] ]
           [ label
               ~a:[ a_class [ "icon-lg" ]; a_label_for toggle_id ]
-              [ Component_icon.icon `SchoolOutline ]
+              [ Component_icon.icon `MenuOutline ]
           ]
       ; input
           ~a:[ a_input_type `Checkbox; a_class [ "toggle" ]; a_id toggle_id ]

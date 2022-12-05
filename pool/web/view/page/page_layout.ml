@@ -93,7 +93,7 @@ let mobile_nav query_language title navigation =
           ]
       ]
   in
-  div ~a:[ a_class [ "mobile-nav-wrapper" ] ] [ label `SchoolOutline; overlay ]
+  div ~a:[ a_class [ "mobile-nav-wrapper" ] ] [ label `MenuOutline; overlay ]
 ;;
 
 let footer title =
