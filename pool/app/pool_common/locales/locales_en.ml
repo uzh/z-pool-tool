@@ -316,6 +316,8 @@ let rec error_to_string = function
     "Please enter both a subject and a text for the session reminder."
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
+  | SessionAlreadyClosed -> "This session is already closed."
+  | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."

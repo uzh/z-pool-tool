@@ -111,8 +111,10 @@ let add_contact_participation_counts =
     ~label:"add contact participation counts"
     {sql|
      ALTER TABLE pool_contacts
-     ADD COLUMN num_show_ups SMALLINT(3) UNSIGNED NOT NULL AFTER num_assignments,
-     ADD COLUMN num_participations SMALLINT(3) UNSIGNED NOT NULL AFTER num_show_ups
+     ADD COLUMN num_show_ups INT UNSIGNED NOT NULL AFTER num_assignments,
+     ADD COLUMN num_participations INT UNSIGNED NOT NULL AFTER num_show_ups,
+     MODIFY COLUMN num_invitations INT UNSIGNED,
+     MODIFY COLUMN num_assignments INT UNSIGNED
     |sql}
 ;;
 

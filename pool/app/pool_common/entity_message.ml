@@ -270,6 +270,8 @@ type error =
   | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
+  | SessionAlreadyClosed
+  | SessionNotStarted
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
   | TerminatoryRootErrorTitle

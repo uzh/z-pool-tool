@@ -115,9 +115,22 @@ module SetAttendance : sig
 end = struct
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
-  let handle session command =
+  let handle (session : Session.t) command =
     let open CCResult in
     let open Assignment in
+    let open Session in
+    let* () =
+      if CCOption.is_some session.closed_at
+      then Error Pool_common.Message.SessionAlreadyClosed
+      else Ok ()
+    in
+    let* () =
+      if Ptime.is_earlier
+           (session.start |> Start.value)
+           ~than:Ptime_clock.(now ())
+      then Ok ()
+      else Error Pool_common.Message.SessionNotStarted
+    in
     CCList.fold_left
       (fun events participation ->
         events
@@ -140,7 +153,7 @@ end = struct
             |> Pool_event.assignment
           ; contact_event
           ])
-      (Ok [ Session.Closed session |> Pool_event.session ])
+      (Ok [ Closed session |> Pool_event.session ])
       command
   ;;
 

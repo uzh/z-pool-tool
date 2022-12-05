@@ -140,7 +140,6 @@ module Sql = struct
       (Pool_common.Id.value id)
   ;;
 
-  (* TODO: Show past sessions and disable registration? or do not show? *)
   let find_public_request =
     let open Caqti_request.Infix in
     {sql|
@@ -181,7 +180,6 @@ module Sql = struct
     >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
-  (* TODO: Show past sessions and disable registration? or do not show? *)
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -335,7 +333,6 @@ module Sql = struct
   ;;
 
   let insert pool (experiment_id, session) =
-    print_endline "";
     Utils.Database.exec
       (Database.Label.value pool)
       insert_request

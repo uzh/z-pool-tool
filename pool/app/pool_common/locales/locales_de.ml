@@ -341,6 +341,8 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
      kontaktieren."
+  | SessionAlreadyClosed -> "Diese Session wurde bereits geschlossen."
+  | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s kleiner als %s"

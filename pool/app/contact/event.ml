@@ -55,8 +55,6 @@ type event =
   | TermsAccepted of t
   | Disabled of t
   | UnverifiedDeleted of t
-  (* TODO[timhub]: Actually implement those events, on invite / assignment (Do
-     not forget to undo, when entity gets deleted) *)
   | NumAssignmentsDecreased of t
   | NumAssignmentsIncreased of t
   | NumInvitationsIncreased of t
