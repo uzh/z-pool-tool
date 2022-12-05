@@ -6,6 +6,8 @@ type t =
   | EmtpyList of Entity_message.Field.t
   | ExperimentContactEnrolledNote
   | ExperimentListTitle
+  | ExperimentListEmpty
+  | ExperimentListPublicTitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
@@ -95,6 +97,7 @@ type hint =
   | ExperimentMailings
   | ExperimentWaitingList
   | ExperimentSessions
+  | ExperimentSessionsPublic
   | LocationFiles
   | LocationSessions
   | Locations

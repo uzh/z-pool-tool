@@ -21,6 +21,9 @@ let to_string = function
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
+  | ExperimentListEmpty ->
+    "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
+  | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentWaitingListTitle -> "Warteliste"
   | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | I18nTitle -> "Übersetzungen"
@@ -156,6 +159,11 @@ let hint_to_string = function
     {|Alle existierenden Session dieses Experiments.
   Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.
   |}
+  | ExperimentSessionsPublic ->
+    "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
+     Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
+     alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
+     angezeigt."
   | I18nText str -> str
   | LocationFiles ->
     "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \

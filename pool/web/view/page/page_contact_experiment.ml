@@ -41,11 +41,18 @@ let index experiment_list Pool_context.{ language; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
-            Pool_common.(Utils.text_to_string language I18n.ExperimentListTitle)
+            Pool_common.(
+              Utils.text_to_string language I18n.ExperimentListPublicTitle)
         ]
-    ; div
-        ~a:[ a_class [ "striped" ] ]
-        (CCList.map experiment_item experiment_list)
+    ; (if CCList.is_empty experiment_list
+      then
+        p
+          Pool_common.
+            [ Utils.text_to_string language I18n.ExperimentListEmpty |> txt ]
+      else
+        div
+          ~a:[ a_class [ "striped" ] ]
+          (CCList.map experiment_item experiment_list))
     ]
 ;;
 
@@ -82,10 +89,14 @@ let show
         ]
     else
       div
-        ~a:[ a_class [ "stack-lg" ] ]
         [ h2
             ~a:[ a_class [ "heading-2" ] ]
             [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions)
+            ]
+        ; p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.ExperimentSessionsPublic)
             ]
         ; div [ Session.public_overview sessions experiment language ]
         ]

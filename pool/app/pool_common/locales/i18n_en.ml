@@ -13,6 +13,9 @@ let to_string = function
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
+  | ExperimentListEmpty ->
+    "Currently there are no experiments you can participate."
+  | ExperimentListPublicTitle -> "Register for experiment sessions"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentSessionReminderHint ->
     "These are default settings for the sessions of this experiment. These \
@@ -149,6 +152,10 @@ let hint_to_string = function
     {|All existing session of this experiment.
       Once someone has registered for the session, it can no longer be deleted.
     |}
+  | ExperimentSessionsPublic ->
+    "Please note: Maybe sessions or complete experiments are no longer \
+     displayed, although listed in the email. Once all the available seats are \
+     assigned a session, it is no longer displayed."
   | LocationFiles ->
     "Additional information about the location, such as directions. Contacts \
      who are participating in a session at this location can access access \
