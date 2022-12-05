@@ -20,6 +20,7 @@ let index experiment_list Pool_context.{ language; _ } =
               ~a:[ a_class [ "grow" ] ]
               [ txt (Experiment.Description.value experiment.description) ]
           ; div
+              ~a:[ a_class [ "text-align-right" ] ]
               [ a
                   ~a:
                     [ a_href
