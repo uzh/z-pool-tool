@@ -16,6 +16,7 @@ let field_to_string =
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
+  | ClosedAt -> "Geschlossen am"
   | Comment -> "Kommentar"
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
@@ -165,6 +166,8 @@ let success_to_string : success -> string = function
   | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
     field_message "" (field_to_string field) "wurde erfolgreich abgesagt."
+  | Closed field ->
+    field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
@@ -338,6 +341,8 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
      kontaktieren."
+  | SessionAlreadyClosed -> "Diese Session wurde bereits geschlossen."
+  | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s kleiner als %s"
@@ -378,6 +383,7 @@ let control_to_string = function
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field
+  | Close field -> format_submit "schliessen" field
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field

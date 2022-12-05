@@ -42,6 +42,7 @@ let create () =
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
+      ; Contact.NumAssignmentsIncreased contact |> Pool_event.contact
       ; Email.(
           AssignmentConfirmationSent
             (waiting_list.Waiting_list.contact.Contact.user, confirmation_email))
@@ -55,34 +56,74 @@ let canceled () =
   let assignment = Model.create_assignment () in
   let events = AssignmentCommand.Cancel.handle assignment in
   let expected =
-    Ok [ Assignment.Canceled assignment |> Pool_event.assignment ]
+    Ok
+      [ Assignment.Canceled assignment |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
+        |> Pool_event.contact
+      ]
   in
   Test_utils.check_result expected events
 ;;
 
 let set_attendance () =
+  let open Assignment in
   let assignment = Model.create_assignment () in
-  let show_up = "true" in
-  let participated = "false" in
+  let session = Model.create_session () in
+  let hour = 3600 |> Ptime.Span.of_int_s in
+  let start =
+    Ptime_clock.now ()
+    |> CCFun.flip Ptime.sub_span hour
+    |> CCOption.get_exn_or "Invalid time span"
+    |> Session.Start.create
+  in
+  let session = Session.{ session with start } in
+  let show_up = true |> ShowUp.create in
+  let participated = false |> Participated.create in
   let events =
-    let attendance =
-      Pool_common.Utils.get_or_failwith
-      @@ AssignmentCommand.SetAttendance.decode
-           [ Field.(ShowUp |> show), show_up |> CCList.pure
-           ; Field.(Participated |> show), participated |> CCList.pure
-           ]
-    in
-    AssignmentCommand.SetAttendance.handle assignment attendance
+    AssignmentCommand.SetAttendance.handle
+      session
+      [ assignment, show_up, participated ]
   in
   let expected =
-    let open Assignment in
+    let open Contact in
+    let update =
+      { show_up = ShowUp.value show_up
+      ; participated = Participated.value participated
+      }
+    in
     Ok
-      [ ShowedUp (assignment, show_up |> bool_of_string |> ShowUp.create)
+      [ Session.Closed session |> Pool_event.session
+      ; Assignment.AttendanceSet (assignment, show_up, participated)
         |> Pool_event.assignment
-      ; Participated
-          (assignment, participated |> bool_of_string |> Participated.create)
-        |> Pool_event.assignment
+      ; Contact.SessionParticipationSet (assignment.contact, update)
+        |> Pool_event.contact
       ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let set_invalid_attendance () =
+  let open Assignment in
+  let assignment = Model.create_assignment () in
+  let session = Model.create_session () in
+  let hour = 3600 |> Ptime.Span.of_int_s in
+  let start =
+    Ptime_clock.now ()
+    |> CCFun.flip Ptime.sub_span hour
+    |> CCOption.get_exn_or "Invalid time span"
+    |> Session.Start.create
+  in
+  let session = Session.{ session with start } in
+  let show_up = false |> ShowUp.create in
+  let participated = true |> Participated.create in
+  let events =
+    AssignmentCommand.SetAttendance.handle
+      session
+      [ assignment, show_up, participated ]
+  in
+  let expected =
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
   in
   Test_utils.check_result expected events
 ;;

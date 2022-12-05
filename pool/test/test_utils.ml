@@ -141,6 +141,8 @@ module Model = struct
           |> CCOption.pure
       ; num_invitations = NumberOfInvitations.init
       ; num_assignments = NumberOfAssignments.init
+      ; num_show_ups = NumberOfShowUps.init
+      ; num_participations = NumberOfParticipations.init
       ; firstname_version = Pool_common.Version.create ()
       ; lastname_version = Pool_common.Version.create ()
       ; paused_version = Pool_common.Version.create ()
@@ -300,6 +302,7 @@ module Model = struct
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+      ; closed_at = None
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()

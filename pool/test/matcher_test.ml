@@ -23,9 +23,13 @@ let expected_events experiment contacts i18n_templates =
     |> CCResult.get_exn
   in
   Ok
-    [ Invitation.Created (contacts, experiment) |> Pool_event.invitation
-    ; Email.InvitationBulkSent emails |> Pool_event.email
-    ]
+    ([ Invitation.Created (contacts, experiment) |> Pool_event.invitation
+     ; Email.InvitationBulkSent emails |> Pool_event.email
+     ]
+    @ CCList.map
+        (fun contact ->
+          Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+        contacts)
 ;;
 
 let create_invitations_model () =
@@ -82,10 +86,15 @@ let create_invitations_repo _ () =
               |> CCResult.get_exn
             in
             Ok
-              [ Invitation.Created (contacts, experiment)
-                |> Pool_event.invitation
-              ; Email.InvitationBulkSent emails |> Pool_event.email
-              ]
+              ([ Invitation.Created (contacts, experiment)
+                 |> Pool_event.invitation
+               ; Email.InvitationBulkSent emails |> Pool_event.email
+               ]
+              @ CCList.map
+                  (fun contact ->
+                    Contact.NumInvitationsIncreased contact
+                    |> Pool_event.contact)
+                  contacts)
           in
           Test_utils.check_result expected events |> Lwt.return)
   in

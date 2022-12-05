@@ -16,6 +16,7 @@ let field_to_string =
   | Building -> "building"
   | CanceledAt -> "canceled at"
   | City -> "city"
+  | ClosedAt -> "Closed at"
   | Comment -> "comment"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
@@ -166,6 +167,8 @@ let success_to_string : success -> string = function
   | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
     field_message "" (field_to_string field) "was successfully canceled."
+  | Closed field ->
+    field_message "" (field_to_string field) "was successfully closed."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
   | Deleted field ->
@@ -313,6 +316,8 @@ let rec error_to_string = function
     "Please enter both a subject and a text for the session reminder."
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
+  | SessionAlreadyClosed -> "This session is already closed."
+  | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."
@@ -352,6 +357,7 @@ let control_to_string = function
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field
+  | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field

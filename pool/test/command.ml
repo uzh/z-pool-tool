@@ -91,6 +91,10 @@ let () =
             `Quick
             Assignment_test.set_attendance
         ; test_case
+            "set invalid attendance on assignment"
+            `Quick
+            Assignment_test.set_invalid_attendance
+        ; test_case
             "assign to fully booked session"
             `Quick
             Assignment_test.assign_to_fully_booked_session

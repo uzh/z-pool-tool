@@ -106,6 +106,18 @@ let make_recruitment_channel_optional =
     |sql}
 ;;
 
+let add_contact_participation_counts =
+  Sihl.Database.Migration.create_step
+    ~label:"add contact participation counts"
+    {sql|
+     ALTER TABLE pool_contacts
+     ADD COLUMN num_show_ups INT UNSIGNED NOT NULL AFTER num_assignments,
+     ADD COLUMN num_participations INT UNSIGNED NOT NULL AFTER num_show_ups,
+     MODIFY COLUMN num_invitations INT UNSIGNED,
+     MODIFY COLUMN num_assignments INT UNSIGNED
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "participant"
@@ -118,5 +130,6 @@ let migration () =
     |> add_step rename_subjects_to_contacts_table
     |> add_step add_experiment_type_preference
     |> add_step add_profile_update_triggered_timestamp
-    |> add_step make_recruitment_channel_optional)
+    |> add_step make_recruitment_channel_optional
+    |> add_step add_contact_participation_counts)
 ;;

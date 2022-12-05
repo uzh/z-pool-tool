@@ -201,6 +201,12 @@ let detail req page =
          sys_languages
          flash_fetcher
        |> Lwt.return_ok
+     | `Close ->
+       let* assignments =
+         Assignment.find_by_session tenant_db session.Session.id
+       in
+       Page.Admin.Session.close context experiment session assignments
+       |> Lwt.return_ok
      | `Reschedule ->
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let* experiment = Experiment.find tenant_db experiment_id in
@@ -219,6 +225,7 @@ let detail req page =
 let show req = detail req `Detail
 let edit req = detail req `Edit
 let reschedule_form req = detail req `Reschedule
+let close req = detail req `Close
 
 let update_handler action req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
@@ -406,4 +413,58 @@ let create_follow_up req =
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+let close_post req =
+  let experiment_id = id req Pool_common.Message.Field.Experiment in
+  let session_id = id req Pool_common.Message.Field.session in
+  let path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Pool_common.Id.value experiment_id)
+      (Pool_common.Id.value session_id)
+  in
+  let result context =
+    let open Utils.Lwt_result.Syntax in
+    Lwt_result.map_error (fun err -> err, Format.asprintf "%s/close" path)
+    @@
+    let tenant_db = context.Pool_context.tenant_db in
+    let* session = Session.find tenant_db session_id in
+    let* assignments =
+      Assignment.find_by_session tenant_db session.Session.id
+    in
+    let* events =
+      let urlencoded_list field =
+        Sihl.Web.Request.urlencoded_list
+          Pool_common.Message.Field.(array_key field)
+          req
+      in
+      let%lwt show_ups = urlencoded_list Pool_common.Message.Field.ShowUp in
+      let%lwt participated =
+        urlencoded_list Pool_common.Message.Field.Participated
+      in
+      let assignments =
+        CCList.map
+          (fun (assigment : Assignment.t) ->
+            let id =
+              assigment.Assignment.contact |> Contact.id |> Pool_common.Id.value
+            in
+            let find = CCList.mem ~eq:CCString.equal id in
+            let show_up = show_ups |> find |> Assignment.ShowUp.create in
+            let participated =
+              participated |> find |> Assignment.Participated.create
+            in
+            assigment, show_up, participated)
+          assignments
+      in
+      let open Cqrs_command.Assignment_command.SetAttendance in
+      assignments |> handle session |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events tenant_db events in
+    Http_utils.redirect_to_with_actions
+      path
+      [ Message.set ~success:[ Pool_common.Message.(Closed Field.Session) ] ]
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path req
 ;;

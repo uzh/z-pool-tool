@@ -57,6 +57,8 @@ end = struct
       Ok
         (delete_events
         @ [ Assignment.Created create |> Pool_event.assignment
+          ; Contact.NumAssignmentsIncreased command.contact
+            |> Pool_event.contact
           ; Email.AssignmentConfirmationSent
               (command.contact.Contact.user, confirmation_email)
             |> Pool_event.email
@@ -77,7 +79,11 @@ end = struct
   let handle (command : t)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
-    Ok [ Assignment.Canceled command |> Pool_event.assignment ]
+    Ok
+      [ Assignment.Canceled command |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased command.Assignment.contact
+        |> Pool_event.contact
+      ]
   ;;
 
   let effects command =
@@ -88,51 +94,67 @@ end = struct
   ;;
 end
 
+let validate_participation ((_, show_up, participated) as participation) =
+  let open Assignment in
+  if Participated.value participated && not (ShowUp.value show_up)
+  then
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+  else Ok participation
+;;
+
 module SetAttendance : sig
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
   val handle
-    :  Assignment.t
+    :  Session.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
   val effects : Assignment.t -> Guard.Authorizer.effect list
 end = struct
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
-  let command (show_up : Assignment.ShowUp.t) participated =
-    { show_up; participated }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.[ Assignment.ShowUp.schema (); Assignment.Participated.schema () ]
-        command)
-  ;;
-
-  let handle assignment (command : t) =
-    Ok
-      [ Assignment.ShowedUp (assignment, command.show_up)
-        |> Pool_event.assignment
-      ; Assignment.Participated (assignment, command.participated)
-        |> Pool_event.assignment
-      ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  let handle (session : Session.t) command =
+    let open CCResult in
+    let open Assignment in
+    let open Session in
+    let* () =
+      if CCOption.is_some session.closed_at
+      then Error Pool_common.Message.SessionAlreadyClosed
+      else Ok ()
+    in
+    let* () =
+      if Ptime.is_earlier
+           (session.start |> Start.value)
+           ~than:Ptime_clock.(now ())
+      then Ok ()
+      else Error Pool_common.Message.SessionNotStarted
+    in
+    CCList.fold_left
+      (fun events participation ->
+        events
+        >>= fun events ->
+        participation
+        |> validate_participation
+        >|= fun ((assignment : Assignment.t), showup, participated) ->
+        let contact_event =
+          let open Contact in
+          let update =
+            { show_up = ShowUp.value showup
+            ; participated = Participated.value participated
+            }
+          in
+          SessionParticipationSet (assignment.contact, update)
+          |> Pool_event.contact
+        in
+        events
+        @ [ Assignment.AttendanceSet (assignment, showup, participated)
+            |> Pool_event.assignment
+          ; contact_event
+          ])
+      (Ok [ Closed session |> Pool_event.session ])
+      command
   ;;
 
   let effects assignment =
