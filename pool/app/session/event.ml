@@ -64,7 +64,7 @@ let handle_event pool =
     in
     let%lwt () = Repo.insert pool (Experiment.Id.value experiment_id, sess) in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) sess
-    ||> Pool_common.(Utils.get_or_failwith)
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | Canceled session ->
     (* TODO: Check timestamps? Issue #126 *)

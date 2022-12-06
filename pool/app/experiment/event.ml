@@ -46,10 +46,20 @@ let handle_event pool : event -> unit Lwt.t =
     ||> CCResult.get_exn
   in
   function
-  | Created t ->
+  | Created ({ id; _ } as t) ->
     let%lwt () = Repo.insert pool t in
-    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) t
-    ||> Pool_common.(Utils.get_or_failwith)
+    let%lwt (_ : Guard.Authorizer.auth_rule list) =
+      Admin.Guard.RuleSet.experimenter id @ Admin.Guard.RuleSet.assistant id
+      |> Guard.Persistence.Actor.save_rules ~ctx
+      >|- (fun err ->
+            Pool_common.Message.nothandled
+            @@ Format.asprintf
+                 "Failed to save: %s"
+                 ([%show: Guard.Authorizer.auth_rule list] err))
+      ||> Pool_common.Utils.get_or_failwith
+    in
+    Entity_guard.Target.to_authorizable ~ctx t
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Experiment ] Guard.AuthorizableTarget.t) -> ()
   | Updated t -> Repo.update pool t
   | Destroyed experiment_id -> Repo.destroy pool experiment_id

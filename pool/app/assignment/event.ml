@@ -32,7 +32,7 @@ let handle_event pool : event -> unit Lwt.t = function
     Entity_guard.Target.to_authorizable
       ~ctx:(Pool_tenant.to_ctx pool)
       assignment
-    ||> Pool_common.(Utils.get_or_failwith)
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Assignment ] Guard.AuthorizableTarget.t) -> ()
   | Participated (assignment, participated) ->
     let%lwt () = { assignment with participated } |> Repo.update pool in

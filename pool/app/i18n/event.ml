@@ -24,7 +24,7 @@ let handle_event pool : event -> unit Lwt.t =
     let%lwt () = Repo.insert pool i18n in
     i18n
     |> Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool)
-    ||> Pool_common.(Utils.get_or_failwith)
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `I18n ] Guard.AuthorizableTarget.t) -> ()
   | Updated (property, update) ->
     let%lwt () =

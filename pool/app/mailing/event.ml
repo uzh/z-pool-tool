@@ -21,7 +21,7 @@ let handle_event pool =
   | Created (mailing, experiment_id) ->
     let%lwt () = Repo.insert pool experiment_id mailing in
     Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) mailing
-    ||> Pool_common.(Utils.get_or_failwith)
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | Updated ({ start_at; end_at; rate; distribution }, mailing) ->
     { mailing with start_at; end_at; rate; distribution } |> Repo.update pool

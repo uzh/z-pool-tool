@@ -38,7 +38,7 @@ let handle_event pool event =
       (fun (id, contact) ->
         Entity.create ~id contact
         |> Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool)
-        ||> Pool_common.(Utils.get_or_failwith)
+        ||> Pool_common.Utils.get_or_failwith
         ||> fun (_ : [> `Invitation ] Guard.AuthorizableTarget.t) -> ())
       contacts
   | Resent invitation ->

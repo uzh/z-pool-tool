@@ -95,4 +95,10 @@ module Guard : sig
     val pp : Format.formatter -> t -> unit
     val show : t -> string
   end
+
+  module RuleSet : sig
+    val assistant : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+    val experimenter : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+    val location_manager : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+  end
 end

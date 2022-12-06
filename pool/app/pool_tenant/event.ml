@@ -35,17 +35,22 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
-  | Created tenant ->
+  | Created ({ Write.id; _ } as tenant) ->
     let open Utils.Lwt_result.Infix in
     let%lwt () = Repo.insert Database.root tenant in
-    let%lwt tenant =
-      Repo.find pool tenant.Write.id ||> Pool_common.(Utils.get_or_failwith)
-    in
+    let%lwt tenant = Repo.find pool id ||> Pool_common.Utils.get_or_failwith in
     (* This is Pool_tenant.to_ctx, to avoid circular dependencies *)
     let ctx = [ "pool", Database.Label.value pool ] in
     let%lwt () =
+      let target_id = Guard.Uuid.target_of Entity.Id.value id in
+      (`ActorEntity (`Operator target_id), `Manage, `Target target_id)
+      |> Guard.Persistence.Actor.save_rule ~ctx
+      >|- (fun err -> Pool_common.Message.nothandled err)
+      ||> Pool_common.Utils.get_or_failwith
+    in
+    let%lwt () =
       Entity_guard.Target.to_authorizable ~ctx tenant
-      ||> Pool_common.(Utils.get_or_failwith)
+      ||> Pool_common.Utils.get_or_failwith
       ||> fun (_ : [> `Tenant ] Guard.AuthorizableTarget.t) -> ()
     in
     Lwt.return_unit

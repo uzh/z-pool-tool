@@ -54,11 +54,17 @@ let create_persons n_persons =
 ;;
 
 let admins db_pool =
+  let open Utils.Lwt_result.Infix in
+  let%lwt experimenter_roles =
+    Experiment.find_all db_pool ()
+    ||> CCList.map (fun { Experiment.id; _ } ->
+          `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
+  in
   let data =
-    [ "The", "One", "admin@example.com", `Admin
-    ; "engineering", "admin", "engineering@econ.uzh.ch", `OperatorAll
-    ; "Scooby", "Doo", "assistant@econ.uzh.ch", `LocationManagerAll
-    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", `RecruiterAll
+    [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
+    ; "engineering", "admin", "engineering@econ.uzh.ch", [ `OperatorAll ]
+    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
+    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `RecruiterAll ]
     ]
   in
   let ctx = Pool_tenant.to_ctx db_pool in
@@ -67,7 +73,7 @@ let admins db_pool =
     |> CCOption.value ~default:"admin"
   in
   Lwt_list.iter_s
-    (fun (given_name, name, email, role) ->
+    (fun (given_name, name, email, (role : Guard.ActorRoleSet.elt list)) ->
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->
@@ -84,7 +90,7 @@ let admins db_pool =
           Guard.Persistence.Actor.grant_roles
             ~ctx
             (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
-            (Guard.ActorRoleSet.singleton role)
+            Guard.ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty role)
           |> Lwt.map CCResult.get_or_failwith
         in
         Lwt.return_unit

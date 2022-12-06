@@ -26,7 +26,7 @@ let handle_event pool : event -> unit Lwt.t =
     waiting_list
     |> Entity_guard.Target.to_authorizable_of_repo
          ~ctx:(Pool_tenant.to_ctx pool)
-    ||> Pool_common.(Utils.get_or_failwith)
+    ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `WaitingList ] Guard.AuthorizableTarget.t) -> ()
   | Updated (command, waiting_list) ->
     { waiting_list with comment = command.comment } |> Repo.update pool
