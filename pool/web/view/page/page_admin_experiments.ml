@@ -165,7 +165,7 @@ let experiment_form
         ; input_element
             language
             `Text
-            Pool_common.Message.Field.publictitle
+            Pool_common.Message.Field.PublicTitle
             ~value:(value public_title_value)
             ~required:true
             ~flash_fetcher

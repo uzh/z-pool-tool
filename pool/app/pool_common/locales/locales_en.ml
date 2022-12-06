@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "only visible for admins"
   | AdminHint -> "hint for admins"
   | Answer -> "answer"
-  | AllowUninvitedSignup -> "Allow registration up of uninvited contacts"
+  | AllowUninvitedSignup -> "Allow registration of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
