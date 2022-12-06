@@ -88,11 +88,15 @@ let form
           ]
         Component.(
           (Input.csrf_element csrf () :: custom_fields_form)
-          @ [ Input.submit_element
-                language
-                Message.(Save None)
-                ~submit_type:`Primary
-                ()
+          @ [ div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ Input.submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.(Save None)
+                    ~submit_type:`Primary
+                    ()
+                ]
             ])
     ]
 ;;

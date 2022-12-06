@@ -11,23 +11,23 @@ let personal_detail language contact =
 
 let contact_overview language contacts =
   let open Contact in
-  let thead = Pool_common.Message.Field.[ Some Email; Some Name; None ] in
+  let thead =
+    (Pool_common.Message.Field.[ Email; Name ]
+    |> Component.Table.fields_to_txt language)
+    @ [ txt "" ]
+  in
   CCList.map
     (fun contact ->
       [ txt (email_address contact |> Pool_user.EmailAddress.value)
       ; txt (fullname contact)
-      ; a
-          ~a:
-            [ a_href
-                (Sihl.Web.externalize_path
-                   (Format.asprintf
-                      "/admin/contacts/%s"
-                      (id contact |> Pool_common.Id.value)))
-            ]
-          [ txt Pool_common.(Utils.control_to_string language Message.More) ]
+      ; Sihl.Web.externalize_path
+          (Format.asprintf
+             "/admin/contacts/%s"
+             (id contact |> Pool_common.Id.value))
+        |> Component.Input.edit_link
       ])
     contacts
-  |> Component.Table.horizontal_table `Striped ~thead language
+  |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
 ;;
 
 let index Pool_context.{ language; _ } contacts =
@@ -43,22 +43,27 @@ let index Pool_context.{ language; _ } contacts =
 let detail Pool_context.{ language; _ } contact =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt (Contact.fullname contact) ]
-    ; personal_detail language contact
-    ; p
-        [ a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/contacts/%s/edit"
-                        (contact |> Contact.id |> Pool_common.Id.value)))
-              ]
-            [ txt
-                Pool_common.(
-                  Message.(Edit None) |> Utils.control_to_string language)
+    [ div
+        ~a:
+          [ a_class
+              [ "flexrow"; "justify-between"; "flex-gap"; "flexcolumn-mobile" ]
+          ]
+        [ div
+            [ h1
+                ~a:[ a_class [ "heading-1" ] ]
+                [ txt (Contact.fullname contact) ]
             ]
+        ; Sihl.Web.externalize_path
+            (Format.asprintf
+               "/admin/contacts/%s/edit"
+               (contact |> Contact.id |> Pool_common.Id.value))
+          |> Component.Input.link_as_button
+               ~icon:`Create
+               ~classnames:[ "small" ]
+               ~control:
+                 Pool_common.(language, Message.(Edit (Some Field.Contact)))
         ]
+    ; div ~a:[ a_class [ "gap-lg" ] ] [ personal_detail language contact ]
     ]
 ;;
 

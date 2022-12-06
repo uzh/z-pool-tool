@@ -109,67 +109,70 @@ let session_form
       ; a_action (action |> Sihl.Web.externalize_path)
       ]
     [ csrf_element csrf ()
-    ; flatpicker_element
-        language
-        `Datetime_local
-        Pool_common.Message.Field.Start
-        ~required:true
-        ~flash_fetcher
-        ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
-        ~warn_past:true
-        ~additional_attributes:
-          (if has_assignments then [ a_disabled () ] else [])
-    ; flatpicker_element
-        language
-        ~required:true
-        `Time
-        Pool_common.Message.Field.Duration
-        ~help:Pool_common.I18n.TimeSpanPickerHint
-        ~value:
-          (value (fun s ->
-             s.duration
-             |> Duration.value
-             |> Pool_common.Utils.Time.timespan_spanpicker))
-        ~flash_fetcher
-        ~additional_attributes:
-          (if has_assignments then [ a_disabled () ] else [])
-    ; reschedule_hint ()
-    ; textarea_element
-        language
-        Pool_common.Message.Field.Description
-        ~value:
-          (value (fun s ->
-             s.description |> CCOption.map_or ~default:"" Description.value))
-        ~flash_fetcher
-    ; location_select locations None ()
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.MaxParticipants
-        ~required:true
-        ~value:(amount (fun s -> s.max_participants))
-        ~flash_fetcher
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.MinParticipants
-        ~required:true
-        ~value:(amount (fun s -> s.min_participants))
-        ~flash_fetcher
-    ; input_element
-        language
-        `Number
-        Pool_common.Message.Field.Overbook
-        ~required:true
-        ~value:(amount (fun s -> s.overbook))
-        ~flash_fetcher
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ flatpicker_element
+            language
+            `Datetime_local
+            Pool_common.Message.Field.Start
+            ~required:true
+            ~flash_fetcher
+            ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
+            ~warn_past:true
+            ~additional_attributes:
+              (if has_assignments then [ a_disabled () ] else [])
+        ; flatpicker_element
+            language
+            ~required:true
+            `Time
+            Pool_common.Message.Field.Duration
+            ~help:Pool_common.I18n.TimeSpanPickerHint
+            ~value:
+              (value (fun s ->
+                 s.duration
+                 |> Duration.value
+                 |> Pool_common.Utils.Time.timespan_spanpicker))
+            ~flash_fetcher
+            ~additional_attributes:
+              (if has_assignments then [ a_disabled () ] else [])
+        ; reschedule_hint ()
+        ; textarea_element
+            language
+            Pool_common.Message.Field.Description
+            ~value:
+              (value (fun s ->
+                 s.description |> CCOption.map_or ~default:"" Description.value))
+            ~flash_fetcher
+        ; location_select locations None ()
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.MaxParticipants
+            ~required:true
+            ~value:(amount (fun s -> s.max_participants))
+            ~flash_fetcher
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.MinParticipants
+            ~required:true
+            ~value:(amount (fun s -> s.min_participants))
+            ~flash_fetcher
+        ; input_element
+            language
+            `Number
+            Pool_common.Message.Field.Overbook
+            ~required:true
+            ~value:(amount (fun s -> s.overbook))
+            ~flash_fetcher
+        ]
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3
             ~a:[ a_class [ "heading-3" ] ]
             [ txt Pool_common.(Utils.text_to_string language I18n.Reminder) ]
         ; div
-            ~a:[ a_class [ "stack" ] ]
+            ~a:[ a_class [ "grid-col-2" ] ]
             [ div
                 [ flatpicker_element
                     language
@@ -190,61 +193,57 @@ let session_form
                        |> to_default_value)
                 ]
             ; div
+                ~a:[ a_class [ "full-width" ] ]
                 [ MessageTextElements.session_reminder_help
                     language
                     sys_languages
                     ?session:default_value_session
                     ()
-                ; div
-                    ~a:[ a_class [ "stack"; "gap-lg" ] ]
-                    [ div
-                        [ input_element
-                            language
-                            `Text
-                            Pool_common.Message.Field.ReminderSubject
-                            ~value:
-                              (value (fun s ->
-                                 s.reminder_subject
-                                 |> CCOption.map_or
-                                      ~default:""
-                                      Pool_common.Reminder.Subject.value))
-                            ~flash_fetcher
-                        ; experiment.Experiment.session_reminder_subject
-                          |> CCOption.map_or ~default:(txt "") (fun text ->
-                               Pool_common.(
-                                 Utils.text_to_string
-                                   language
-                                   (I18n.SessionReminderDefaultSubject
-                                      (text |> Reminder.Subject.value)))
-                               |> Http_utils.add_line_breaks
-                               |> to_default_value)
-                        ]
-                    ; div
-                        [ textarea_element
-                            language
-                            Pool_common.Message.Field.ReminderText
-                            ~value:
-                              (value (fun s ->
-                                 s.reminder_text
-                                 |> CCOption.map_or
-                                      ~default:""
-                                      Pool_common.Reminder.Text.value))
-                            ~flash_fetcher
-                        ; experiment.Experiment.session_reminder_text
-                          |> CCOption.map_or ~default:(txt "") (fun text ->
-                               Pool_common.(
-                                 Utils.text_to_string
-                                   language
-                                   (I18n.SessionReminderDefaultText
-                                      (text |> Reminder.Text.value)))
-                               |> Http_utils.add_line_breaks
-                               |> to_default_value)
-                        ]
-                    ]
                 ]
+            ; input_element
+                language
+                `Text
+                Pool_common.Message.Field.ReminderSubject
+                ~value:
+                  (value (fun s ->
+                     s.reminder_subject
+                     |> CCOption.map_or
+                          ~default:""
+                          Pool_common.Reminder.Subject.value))
+                ~flash_fetcher
+            ; experiment.Experiment.session_reminder_subject
+              |> CCOption.map_or ~default:(txt "") (fun text ->
+                   Pool_common.(
+                     Utils.text_to_string
+                       language
+                       (I18n.SessionReminderDefaultSubject
+                          (text |> Reminder.Subject.value)))
+                   |> Http_utils.add_line_breaks
+                   |> to_default_value)
+            ; textarea_element
+                language
+                Pool_common.Message.Field.ReminderText
+                ~value:
+                  (value (fun s ->
+                     s.reminder_text
+                     |> CCOption.map_or
+                          ~default:""
+                          Pool_common.Reminder.Text.value))
+                ~flash_fetcher
+            ; experiment.Experiment.session_reminder_text
+              |> CCOption.map_or ~default:(txt "") (fun text ->
+                   Pool_common.(
+                     Utils.text_to_string
+                       language
+                       (I18n.SessionReminderDefaultText
+                          (text |> Reminder.Text.value)))
+                   |> Http_utils.add_line_breaks
+                   |> to_default_value)
             ]
         ]
-    ; submit_element language submit ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element ~classnames:[ "push" ] language submit () ]
     ]
 ;;
 
@@ -288,10 +287,14 @@ let reschedule_session
           |> Duration.value
           |> Pool_common.Utils.Time.timespan_spanpicker)
         ~flash_fetcher
-    ; submit_element
-        language
-        Pool_common.Message.(Reschedule (Some Field.Session))
-        ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element
+            ~classnames:[ "push" ]
+            language
+            Pool_common.Message.(Reschedule (Some Field.Session))
+            ()
+        ]
     ]
   |> Page_admin_experiments.experiment_layout
        language
@@ -307,6 +310,16 @@ let index
   chronological
   =
   let experiment_id = experiment.Experiment.id in
+  let add_session_btn =
+    link_as_button
+      ~style:`Success
+      ~icon:`Add
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Add (Some Field.Session)))
+      (Format.asprintf
+         "/admin/experiments/%s/sessions/create"
+         (experiment_id |> Pool_common.Id.value))
+  in
   let rows =
     CCList.flat_map
       (fun (parent, follow_ups) ->
@@ -386,85 +399,58 @@ let index
             |> CCOption.map_or ~default:"" (fun t ->
                  Pool_common.Utils.Time.formatted_date_time t)
             |> txt
-          ; a
-              ~a:
-                [ a_href
-                    (Format.asprintf
-                       "/admin/experiments/%s/sessions/%s"
-                       (Pool_common.Id.value experiment_id)
-                       (Pool_common.Id.value session.id)
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ txt
-                  Pool_common.(Utils.control_to_string language Message.(More))
+          ; div
+              ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+              [ Format.asprintf
+                  "/admin/experiments/%s/sessions/%s"
+                  (Pool_common.Id.value experiment_id)
+                  (Pool_common.Id.value session.id)
+                |> edit_link
+              ; cancel_form
+              ; delete_form
               ]
-          ; cancel_form
-          ; delete_form
           ]
         in
         session_row parent :: CCList.map session_row follow_ups)
       grouped_sessions
   in
   let thead =
-    Pool_common.Message.Field.
-      [ Some Date; Some AssignmentCount; Some CanceledAt; None; None; None ]
+    Pool_common.Message.(
+      [ Field.Date; Field.AssignmentCount; Field.CanceledAt ]
+      |> Table.fields_to_txt language)
+    @ [ add_session_btn ]
   in
   let html =
     div
       ~a:[ a_class [ "stack" ] ]
-      (a
-         ~a:
-           [ a_href
-               (Format.asprintf
-                  "/admin/experiments/%s/sessions/create"
-                  (experiment.Experiment.id |> Pool_common.Id.value)
-               |> Sihl.Web.externalize_path)
-           ]
-         [ txt
-             Pool_common.(
-               Utils.control_to_string
-                 language
-                 Message.(Create (Some Field.Session)))
-         ]
-      ::
-      (if CCList.is_empty rows
-      then
-        [ p
-            [ txt
-                Pool_common.(
-                  Utils.text_to_string
-                    language
-                    (I18n.EmtpyList Message.Field.Sessions))
+      [ p
+          [ Pool_common.I18n.SessionIndent
+            |> Pool_common.Utils.text_to_string language
+            |> txt
+          ]
+      ; a
+          ~a:
+            [ a_href
+                (Format.asprintf
+                   "/admin/experiments/%s/sessions%s"
+                   (Pool_common.Id.value experiment_id)
+                   (if chronological then "" else "?chronological=true")
+                |> Sihl.Web.externalize_path)
             ]
-        ]
-      else
-        [ p
-            [ Pool_common.I18n.SessionIndent
-              |> Pool_common.Utils.text_to_string language
-              |> txt
-            ]
-        ; a
-            ~a:
-              [ a_href
-                  (Format.asprintf
-                     "/admin/experiments/%s/sessions%s"
-                     (Pool_common.Id.value experiment_id)
-                     (if chronological then "" else "?chronological=true")
-                  |> Sihl.Web.externalize_path)
+          [ p
+              [ (if chronological
+                then Pool_common.I18n.SwitchGrouped
+                else Pool_common.I18n.SwitchChronological)
+                |> Pool_common.Utils.text_to_string language
+                |> txt
               ]
-            [ p
-                [ (if chronological
-                  then Pool_common.I18n.SwitchGrouped
-                  else Pool_common.I18n.SwitchChronological)
-                  |> Pool_common.Utils.text_to_string language
-                  |> txt
-                ]
-            ]
-          (* TODO [aerben] allow tables to be sorted generally? *)
-        ; Table.horizontal_table `Striped language ~thead rows
-        ]))
+          ]
+        (* TODO [aerben] allow tables to be sorted generally? *)
+      ; Table.horizontal_table `Striped ~align_last_end:true ~thead rows
+      ]
   in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentSessions
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Sessions)
     experiment
@@ -504,18 +490,15 @@ let detail
     match show with
     | false -> None
     | true ->
-      Some
-        (a
-           ~a:
-             [ a_href
-                 (Format.asprintf
-                    "/admin/experiments/%s/sessions/%s/%s"
-                    (Pool_common.Id.value experiment.Experiment.id)
-                    (Pool_common.Id.value session.id)
-                    url
-                 |> Sihl.Web.externalize_path)
-             ]
-           [ control |> Pool_common.Utils.control_to_string language |> txt ])
+      link_as_button
+        ~control:(language, control)
+        ~classnames:[ "small" ]
+        (Format.asprintf
+           "/admin/experiments/%s/sessions/%s/%s"
+           (Pool_common.Id.value experiment.Experiment.id)
+           (Pool_common.Id.value session.id)
+           url)
+      |> CCOption.pure
   in
   let session_overview =
     let table =
@@ -560,12 +543,6 @@ let detail
         ; Field.MaxParticipants, amount session.max_participants |> txt
         ; Field.MinParticipants, amount session.min_participants |> txt
         ; Field.Overbook, amount session.overbook |> txt
-        ; ( Field.ClosedAt
-          , session.closed_at
-            |> CCOption.map_or
-                 ~default:""
-                 Pool_common.Utils.Time.formatted_date_time
-            |> txt )
         ]
         |> fun rows ->
         let canceled =
@@ -587,8 +564,7 @@ let detail
     in
     let links =
       Message.
-        [ true, "edit", Edit (Some Field.Session)
-        ; ( CCOption.is_none session.follow_up_to
+        [ ( CCOption.is_none session.follow_up_to
           , "follow-up"
           , Create (Some Field.FollowUpSession) )
         ; ( session.assignment_count |> AssignmentCount.value > 0
@@ -623,10 +599,21 @@ let detail
       ; assignment_list
       ]
   in
+  let edit_button =
+    link_as_button
+      ~icon:`Create
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Edit (Some Field.Session)))
+      (Format.asprintf
+         "/admin/experiments/%s/sessions/%s/edit"
+         (Pool_common.Id.value experiment.Experiment.id)
+         (Pool_common.Id.value session.id))
+  in
   let html =
     div ~a:[ a_class [ "stack-lg" ] ] [ session_overview; assignments_html ]
   in
   Page_admin_experiments.experiment_layout
+    ~buttons:edit_button
     language
     (Page_admin_experiments.I18n (session_title session))
     experiment
@@ -708,34 +695,26 @@ let close
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
-  let field_to_string f =
-    Utils.field_to_string language f |> CCString.capitalize_ascii
-  in
   let form =
     let checkbox_element ?(disabled = false) contact field =
-      let id =
-        Format.asprintf
-          "%s_%s"
-          (Contact.id contact |> Id.value)
-          Message.Field.(show field)
-      in
       let disabled = if disabled then [ a_disabled () ] else [] in
       div
         [ input
             ~a:
               ([ a_input_type `Checkbox
                ; a_name Message.Field.(array_key field)
-               ; a_id id
                ; a_value (contact |> Contact.id |> Id.value)
                ]
               @ disabled)
             ()
-        ; label
-            ~a:[ a_label_for id ]
-            [ txt (field_to_string field |> CCString.capitalize_ascii) ]
         ]
     in
     let table =
+      let link (id, label) = span ~a:[ a_id id ] [ txt label ] in
+      let thead =
+        txt ""
+        :: ([ "all-showup", "S"; "all-participated", "P" ] |> CCList.map link)
+      in
       CCList.map
         (fun ({ Assignment.contact; _ } : Assignment.t) ->
           [ div [ strong [ txt (Contact.fullname contact) ] ]
@@ -743,7 +722,7 @@ let close
           ; checkbox_element ~disabled:true contact Message.Field.Participated
           ])
         assignments
-      |> Table.horizontal_table `Striped language
+      |> Table.horizontal_table ~thead `Striped
       |> fun table ->
       form
         ~a:
@@ -766,6 +745,7 @@ let close
     let scripts =
       {js|
         const showUp = document.querySelectorAll('[name="show_up[]"]');
+        const participated = document.querySelectorAll('[name="participated[]"]');
         for(let i = 0; i < showUp.length; i++) {
           let elm = showUp[i];
           let target = document.querySelector(`[name="participated[]"][value="${elm.value}"]`)
@@ -773,6 +753,39 @@ let close
             target.disabled = !elm.checked;
           })
         }
+
+        const toggleShowUp = document.getElementById("all-showup");
+
+        const isActive = (elm) => {
+          return elm.dataset.active;
+        }
+
+        const toggleActive = (elm) => {
+          if(isActive(elm)) {
+            elm.removeAttribute("data-active");
+          } else {
+            elm.dataset.active = true;
+          }
+        }
+
+        toggleShowUp.addEventListener("click", () => {
+          showUp.forEach((elm) => {
+            var event = new Event('change');
+            elm.checked = !isActive(toggleShowUp);
+            elm.dispatchEvent(event);
+          });
+          toggleActive(toggleShowUp);
+        })
+
+        const toggleParticipated = document.getElementById("all-participated");
+        toggleParticipated.addEventListener("click", () => {
+          participated.forEach((elm) => {
+            if(!elm.disabled) {
+              elm.checked = !isActive(toggleParticipated);
+            }
+          });
+          toggleActive(toggleParticipated)
+        })
       |js}
     in
     div
@@ -783,6 +796,11 @@ let close
                 Utils.field_to_string language Message.Field.Participants
                 |> CCString.capitalize_ascii)
           ]
+      ; p
+          Pool_common.
+            [ Utils.hint_to_string language I18n.SessionClose
+              |> HttpUtils.add_line_breaks
+            ]
       ; table
       ; script (Unsafe.data scripts)
       ]

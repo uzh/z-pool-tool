@@ -3,6 +3,13 @@ module Field = Pool_common.Message.Field
 module Icon = Component_icon
 open Tyxml.Html
 
+let submit_type_to_class = function
+  | `Disabled -> "disabled"
+  | `Error -> "error"
+  | `Primary -> "primary"
+  | `Success -> "success"
+;;
+
 let language_select
   options
   selected
@@ -257,19 +264,21 @@ let checkbox_element
     in
     match orientation with
     | `Vertical ->
-      div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ]
+      (match as_switch with
+       | true -> [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
+       | false ->
+         [ div [ checkbox; label ~a:[ a_label_for id ] [ txt input_label ] ] ])
     | `Horizontal ->
-      div
-        ~a:[ a_class [ "input-group" ] ]
-        [ label ~a:[ a_label_for id ] [ txt input_label ]; checkbox ]
+      [ label ~a:[ a_label_for id ] [ txt input_label ]
+      ; div ~a:[ a_class [ "input-group" ] ] [ checkbox ]
+      ]
   in
-  div ~a:[ a_class group_class ] ([ input_element ] @ help @ error)
+  div ~a:[ a_class group_class ] (input_element @ help @ error)
 ;;
 
 let input_element_file
   ?(orientation = `Vertical)
   ?(allow_multiple = false)
-  ?(has_icon = true)
   ?(required = false)
   ?label_field
   language
@@ -280,17 +289,18 @@ let input_element_file
   let visible_part =
     let placeholder =
       span
+        ~a:[ a_class [ "file-placeholder" ] ]
         [ txt
             Pool_common.(
               Utils.control_to_string language Message.SelectFilePlaceholder)
         ]
     in
-    match has_icon with
-    | false -> placeholder
-    | true ->
-      span
-        ~a:[ a_class [ "has-icon" ] ]
-        [ Icon.icon `UploadOutline; placeholder ]
+    span
+      ~a:[ a_class [ "has-icon" ] ]
+      [ Icon.icon `UploadOutline
+      ; span ~a:[ a_class [ "file-name" ] ] []
+      ; placeholder
+      ]
   in
   let input_attributes =
     let attributes =
@@ -358,16 +368,11 @@ let submit_element
   ()
   =
   let button_type_class =
+    submit_type_to_class submit_type
+    ::
     (match has_icon with
      | Some _ -> [ "has-icon" ]
      | None -> [])
-    @ CCList.pure
-    @@
-    match submit_type with
-    | `Disabled -> "disabled"
-    | `Error -> "error"
-    | `Primary -> "primary"
-    | `Success -> "success"
   in
   let text_content =
     span [ txt Pool_common.Utils.(control_to_string lang control) ]
@@ -391,6 +396,47 @@ let submit_icon ?(classnames = []) ?(attributes = []) icon_type =
       ([ a_button_type `Submit; a_class (classnames @ [ "has-icon" ]) ]
       @ attributes)
     [ Icon.icon icon_type ]
+;;
+
+let link_as_button
+  ?(style = `Primary)
+  ?(classnames = [])
+  ?(attributes = [])
+  ?icon
+  ?control
+  href
+  =
+  let classnames =
+    let base = submit_type_to_class style :: "btn" :: classnames in
+    match icon with
+    | None -> base
+    | Some _ -> "has-icon" :: base
+  in
+  let attrs =
+    [ a_href (Sihl.Web.externalize_path href); a_class classnames ] @ attributes
+  in
+  let content =
+    let icon_elm =
+      match icon with
+      | None -> txt ""
+      | Some i -> Icon.icon i
+    in
+    let control =
+      match control with
+      | None -> txt ""
+      | Some (language, control) ->
+        let base =
+          Pool_common.Utils.(control_to_string language control) |> txt
+        in
+        if CCOption.is_some icon then span [ base ] else base
+    in
+    [ icon_elm; control ]
+  in
+  a ~a:attrs content
+;;
+
+let edit_link ?classnames ?attributes href =
+  link_as_button ?classnames ?attributes ~icon:`Create href
 ;;
 
 let selector

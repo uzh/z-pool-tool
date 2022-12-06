@@ -145,6 +145,7 @@ module Sql = struct
     {sql|
         WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
         AND start > NOW()
+        AND canceled_at IS NULL
         ORDER BY start
       |sql}
     |> find_public_sql
@@ -185,6 +186,7 @@ module Sql = struct
     {sql|
         WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
         AND start > NOW()
+        AND canceled_at IS NULL
         ORDER BY start
       |sql}
     |> find_public_sql

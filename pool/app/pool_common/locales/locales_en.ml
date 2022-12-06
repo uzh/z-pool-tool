@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "only visible for admins"
   | AdminHint -> "hint for admins"
   | Answer -> "answer"
-  | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
+  | AllowUninvitedSignup -> "Allow registration of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
@@ -22,8 +22,11 @@ let field_to_string =
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
   | CustomField -> "field"
+  | CustomFields -> "fields"
   | CustomFieldGroup -> "group"
+  | CustomFieldGroups -> "groups"
   | CustomFieldOption -> "option"
+  | CustomFieldOptions -> "options"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomHtmx (label, _) -> label
@@ -371,9 +374,11 @@ let control_to_string = function
   | More -> format_submit "more" None
   | PleaseSelect -> "please select"
   | Publish field -> format_submit "publish" field
+  | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
+  | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | Reschedule field -> format_submit "reschedule" field

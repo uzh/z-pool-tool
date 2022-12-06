@@ -8,8 +8,6 @@ module Field = struct
     Format.pp_print_string fmt name
   ;;
 
-  (* TODO: Remove unused (Birthday) *)
-
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -35,10 +33,15 @@ module Field = struct
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomFields [@name "custom_fields"] [@printer go "custom_fields"]
     | CustomFieldGroup [@name "custom_field_group"]
         [@printer go "custom_field_group"]
+    | CustomFieldGroups [@name "custom_field_groups"]
+        [@printer go "custom_field_groups"]
     | CustomFieldOption [@name "custom_field_option"]
         [@printer go "custom_field_option"]
+    | CustomFieldOptions [@name "custom_field_options"]
+        [@printer go "custom_field_options"]
     | CustomHtmx of (string * string) [@name "custom"]
         [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
@@ -358,12 +361,14 @@ type control =
   | More
   | PleaseSelect
   | Publish of Field.t option
+  | Register
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
+  | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Show
   | SignUp

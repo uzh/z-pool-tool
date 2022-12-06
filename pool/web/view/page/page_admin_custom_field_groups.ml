@@ -46,6 +46,13 @@ let form
                 |> Pool_common.Utils.field_to_string language
                 |> CCString.capitalize_ascii)
             ]
+        ; p
+            Pool_common.
+              [ Utils.hint_to_string
+                  language
+                  I18n.(CustomFieldSort Message.Field.CustomFields)
+                |> txt
+              ]
         ; form
             ~a:
               [ a_class [ "stack" ]
@@ -56,57 +63,45 @@ let form
                      |> Format.asprintf "%s/sort-fields"))
               ]
             [ csrf_element csrf ()
+            ; CCList.map
+                (fun field ->
+                  div
+                    ~a:
+                      [ a_class
+                          [ "flexrow"
+                          ; "flex-gap"
+                          ; "justify-between"
+                          ; "align-center"
+                          ; "inset-sm"
+                          ]
+                      ; a_user_data "sortable-item" ""
+                      ]
+                    [ div
+                        [ txt (field |> name |> Name.find_opt_or language "-") ]
+                    ; div
+                        [ input
+                            ~a:
+                              [ a_input_type `Hidden
+                              ; a_name Message.Field.(CustomField |> array_key)
+                              ; a_value (field |> id |> Id.value)
+                              ]
+                            ()
+                        ]
+                    ; Url.Field.edit_path (model field, id field)
+                      |> Sihl.Web.externalize_path
+                      |> edit_link ~classnames:[ "small" ]
+                    ])
+                fields
+              |> Component.Sortable.create
             ; div
-                ~a:[ a_user_data "sortable" "" ]
-                (CCList.map
-                   (fun field ->
-                     div
-                       ~a:
-                         [ a_class
-                             [ "flexrow"
-                             ; "flex-gap"
-                             ; "justify-between"
-                             ; "align-center"
-                             ; "inset-sm"
-                             ]
-                         ; a_user_data "sortable-item" ""
-                         ]
-                       [ div
-                           [ txt (field |> name |> Name.find_opt_or language "-")
-                           ]
-                       ; div
-                           [ input
-                               ~a:
-                                 [ a_input_type `Hidden
-                                 ; a_name
-                                     Message.Field.(CustomField |> array_key)
-                                 ; a_value (field |> id |> Id.value)
-                                 ]
-                               ()
-                           ]
-                       ; div
-                           ~a:
-                             [ a_class [ "flexrow"; "flex-gap"; "align-center" ]
-                             ]
-                           [ a
-                               ~a:
-                                 [ a_href
-                                     (Url.Field.edit_path (model field, id field)
-                                     |> Sihl.Web.externalize_path)
-                                 ]
-                               [ txt
-                                   Pool_common.(
-                                     Message.More
-                                     |> Utils.control_to_string language)
-                               ]
-                           ]
-                       ])
-                   fields)
-            ; submit_element
-                language
-                Message.UpdateOrder
-                ~submit_type:`Success
-                ()
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.UpdateOrder
+                    ~submit_type:`Primary
+                    ()
+                ]
             ]
         ]
   in
@@ -131,15 +126,19 @@ let form
                 ]
             ; div ~a:[ a_class [ "stack" ] ] name_inputs
             ]
-        ; submit_element
-            language
-            Message.(
-              let field = Some Field.CustomField in
-              match custom_field_group with
-              | None -> Create field
-              | Some _ -> Update field)
-            ~submit_type:`Success
-            ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(
+                  let field = Some Field.CustomField in
+                  match custom_field_group with
+                  | None -> Create field
+                  | Some _ -> Update field)
+                ~submit_type:`Primary
+                ()
+            ]
         ]
     ; sort_fields_form
     ]

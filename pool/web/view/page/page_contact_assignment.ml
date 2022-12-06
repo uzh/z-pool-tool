@@ -14,19 +14,29 @@ let detail session experiment Pool_context.{ language; csrf; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
-            Pool_common.(Utils.text_to_string language I18n.SessionSignUpTitle)
+            Pool_common.(
+              Utils.text_to_string language I18n.SessionRegistrationTitle)
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
         [ Page_contact_sessions.public_detail session language
+        ; p
+            Pool_common.
+              [ Utils.hint_to_string language I18n.SessionRegistrationHint
+                |> txt
+              ]
         ; form
             ~a:[ a_action form_action; a_method `Post ]
             [ csrf_element csrf ()
-            ; submit_element
-                language
-                Pool_common.Message.(Enroll)
-                ~submit_type:`Success
-                ()
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Pool_common.Message.Register
+                    ~submit_type:`Primary
+                    ()
+                ]
             ]
         ]
     ]

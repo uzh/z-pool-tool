@@ -12,16 +12,15 @@ let show usage req =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
-       | `Overview ->
-         Page.Contact.detail contact context
-         |> create_layout ~active_navigation:"/user" req context
-         >|+ Sihl.Web.Response.of_html
        | `LoginInformation ->
          let* password_policy =
            I18n.find_by_key tenant_db I18n.Key.PasswordPolicyText language
          in
          Page.Contact.login_information contact context password_policy
-         |> create_layout ~active_navigation:"/user" req context
+         |> create_layout
+              ~active_navigation:"/user/login-information"
+              req
+              context
          >|+ Sihl.Web.Response.of_html
        | `PersonalDetails ->
          let* tenant_languages =
@@ -37,13 +36,15 @@ let show usage req =
            custom_fields
            tenant_languages
            context
-         |> create_layout req ~active_navigation:"/user" context
+         |> create_layout
+              req
+              ~active_navigation:"/user/personal-details"
+              context
          >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let details = show `Overview
 let personal_details = show `PersonalDetails
 let login_information = show `LoginInformation
 let update = Helpers.PartialUpdate.update

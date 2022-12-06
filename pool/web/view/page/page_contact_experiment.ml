@@ -10,15 +10,17 @@ let index experiment_list Pool_context.{ language; _ } =
     div
       ~a:[ a_class [ "stack-sm"; "inset-sm" ] ]
       [ p
+          ~a:[ a_class [ "word-wrap-break" ] ]
           [ strong
               [ txt (Experiment.PublicTitle.value experiment.public_title) ]
           ]
       ; div
-          ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
+          ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
           [ div
               ~a:[ a_class [ "grow" ] ]
               [ txt (Experiment.Description.value experiment.description) ]
           ; div
+              ~a:[ a_class [ "text-align-right" ] ]
               [ a
                   ~a:
                     [ a_href
@@ -40,11 +42,18 @@ let index experiment_list Pool_context.{ language; _ } =
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
-            Pool_common.(Utils.text_to_string language I18n.ExperimentListTitle)
+            Pool_common.(
+              Utils.text_to_string language I18n.ExperimentListPublicTitle)
         ]
-    ; div
-        ~a:[ a_class [ "striped" ] ]
-        (CCList.map experiment_item experiment_list)
+    ; (if CCList.is_empty experiment_list
+      then
+        p
+          Pool_common.
+            [ Utils.text_to_string language I18n.ExperimentListEmpty |> txt ]
+      else
+        div
+          ~a:[ a_class [ "striped" ] ]
+          (CCList.map experiment_item experiment_list))
     ]
 ;;
 
@@ -67,16 +76,31 @@ let show
   let form_control, submit_class =
     match user_is_enlisted with
     | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
-    | false -> Pool_common.Message.(AddToWaitingList), "success"
+    | false -> Pool_common.Message.(AddToWaitingList), "primary"
   in
   let session_list sessions =
-    div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ h2
-          ~a:[ a_class [ "heading-2" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
-      ; div [ Session.public_overview sessions experiment language ]
-      ]
+    if CCList.is_empty sessions
+    then
+      p
+        [ Pool_common.(
+            Utils.text_to_string
+              language
+              (I18n.EmtpyList Message.Field.Sessions))
+          |> txt
+        ]
+    else
+      div
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions)
+            ]
+        ; p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.ExperimentSessionsPublic)
+            ]
+        ; div [ Session.public_overview sessions experiment language ]
+        ]
   in
   let waiting_list_form () =
     div
@@ -88,7 +112,12 @@ let show
                 Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
       ; (if user_is_enlisted
-        then div []
+        then
+          p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.ContactOnWaitingList)
+            ]
         else
           p
             [ txt
@@ -98,7 +127,14 @@ let show
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()
-          ; submit_element language form_control ~classnames:[ submit_class ] ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  language
+                  form_control
+                  ~classnames:[ submit_class; "push" ]
+                  ()
+              ]
           ]
       ]
   in
@@ -126,7 +162,7 @@ let show
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
-        ~a:[ a_class [ "heading-1" ] ]
+        ~a:[ a_class [ "heading-1"; "word-wrap-break" ] ]
         [ txt (Experiment.PublicTitle.value experiment.public_title) ]
     ; div
         ~a:[ a_class [ "stack" ] ]

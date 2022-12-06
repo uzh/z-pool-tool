@@ -41,15 +41,19 @@ let option_form
       ]
     [ csrf_element csrf ()
     ; div ~a:[ a_class [ "stack" ] ] name_inputs
-    ; submit_element
-        language
-        Message.(
-          let field = Some Field.CustomFieldOption in
-          match custom_field_option with
-          | None -> Create field
-          | Some _ -> Update field)
-        ~submit_type:`Success
-        ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element
+            ~classnames:[ "push" ]
+            language
+            Message.(
+              let field = Some Field.CustomFieldOption in
+              match custom_field_option with
+              | None -> Create field
+              | Some _ -> Update field)
+            ~submit_type:`Primary
+            ()
+        ]
     ]
 ;;
 

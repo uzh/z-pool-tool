@@ -1,14 +1,18 @@
 type t =
   | DashboardTitle
+  | DontHaveAnAccount
   | EmailConfirmationNote
   | EmailConfirmationTitle
   | EmtpyList of Entity_message.Field.t
   | ExperimentContactEnrolledNote
   | ExperimentListTitle
+  | ExperimentListEmpty
+  | ExperimentListPublicTitle
   | ExperimentNewTitle
   | ExperimentSessionReminderHint
   | ExperimentWaitingListTitle
   | Files
+  | FilterNrOfContacts
   | FollowUpSessionFor
   | HomeTitle
   | I18nTitle
@@ -34,8 +38,9 @@ type t =
   | SessionReminderDefaultLeadTime of Entity.Reminder.LeadTime.t
   | SessionReminderDefaultSubject of Entity.Reminder.Subject.t
   | SessionReminderDefaultText of Entity.Reminder.Text.t
-  | SessionSignUpTitle
+  | SessionRegistrationTitle
   | SignUpAcceptTermsAndConditions
+  | SignUpCTA
   | SignUpTitle
   | SortUngroupedFields
   | SwitchChronological
@@ -45,7 +50,6 @@ type t =
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote
-  | UserProfileTitle
   | Validation
   | WaitingListIsDisabled
 
@@ -60,8 +64,8 @@ type nav_link =
   | I18n
   | Invitations
   | Locations
-  | LoginInformation
   | Login
+  | LoginInformation
   | Logout
   | Mailings
   | Overview
@@ -69,18 +73,34 @@ type nav_link =
   | Profile
   | Sessions
   | Settings
+  | SystemSettings
   | Tenants
+  | Users
   | WaitingList
 [@@deriving eq]
 
 type hint =
   | AllowUninvitedSignup
   | AssignContactFromWaitingList
+  | ContactOnWaitingList
   | CustomFieldAdminInputOnly
   | CustomFieldAdminViewOnly
+  | CustomFieldContactModel
+  | CustomFieldExperimentModel
+  | CustomFieldSessionModel
+  | CustomFieldGroups
+  | CustomFieldSort of Entity_message.Field.t
   | CustomHtmx of string
   | DirectRegistrationDisbled
   | Distribution
+  | ExperimentAssignment
+  | ExperimentMailings
+  | ExperimentWaitingList
+  | ExperimentSessions
+  | ExperimentSessionsPublic
+  | LocationFiles
+  | LocationSessions
+  | Locations
   | I18nText of string
   | NumberIsDaysHint
   | NumberIsSecondsHint
@@ -92,7 +112,9 @@ type hint =
   | RateNumberPerMinutes of int * float
   | RegistrationDisabled
   | SelectedDateIsPast
+  | SessionClose
   | SessionReminderLanguageHint
+  | SessionRegistrationHint
   | SignUpForWaitingList
   | TemplateTextElementsHint
   | TimeSpanPickerHint

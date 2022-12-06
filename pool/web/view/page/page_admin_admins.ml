@@ -1,7 +1,10 @@
 open Tyxml.Html
 
 let admin_overview language admins =
-  let thead = Pool_common.Message.Field.[ Some Email; Some Name; None ] in
+  let thead =
+    let to_txt = Component.Table.field_to_txt language in
+    Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt; txt "" ]
+  in
   CCList.map
     (fun admin ->
       let open Sihl_user in
@@ -14,16 +17,11 @@ let admin_overview language admins =
              (user.given_name |> default_empty)
              (user.name |> default_empty)
           |> CCString.trim)
-      ; a
-          ~a:
-            [ a_href
-                (Sihl.Web.externalize_path
-                   (Format.asprintf "/admin/admins/%s" user.id))
-            ]
-          [ txt Pool_common.(Utils.control_to_string language Message.More) ]
+      ; Sihl.Web.externalize_path (Format.asprintf "/admin/admins/%s" user.id)
+        |> Component.Input.edit_link
       ])
     admins
-  |> Component.Table.horizontal_table `Striped ~thead language
+  |> Component.Table.horizontal_table ~align_last_end:true `Striped ~thead
 ;;
 
 let index Pool_context.{ language; _ } admins =

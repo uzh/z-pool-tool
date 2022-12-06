@@ -1,38 +1,25 @@
 $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
 @import "../node_modules/@econ/frontend-framework/dist/main.scss";
 
+// Index page
+.index-page>*:nth-child(2) {
+    flex-basis: 25%;
+    flex-shrink: 0;
+}
+
+@include mobile {
+    .index-page {
+        flex-direction: column;
+    }
+}
+
+// Mailings toggle
 .toggled {
     display: flex;
 }
 
 .toggle-address:checked~.toggled {
     display: none;
-}
-
-// Sortable
-[data-sortable-item] {
-    cursor: move;
-    cursor: grab;
-}
-
-[data-sortable-item].origin {
-    background-color: $grey-light;
-    cursor: grabbing;
-}
-
-[data-sortable-item].active {
-    background-color: #48c78e50;
-}
-
-[data-sortable]:not(:empty):not(tbody),
-.table.sortable {
-    border: 1px solid $grey-border;
-    border-radius: $border-radius;
-    border-collapse: initial;
-}
-
-[data-sortable-item]:not(:last-child) {
-    border-bottom: 1px solid $grey-border;
 }
 
 // Filter
@@ -56,9 +43,4 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     right: 0.5rem;
     margin: 0;
     cursor: pointer;
-}
-
-// Images
-.aspect-ratio.contain>*:first-child {
-    object-fit: contain;
 }

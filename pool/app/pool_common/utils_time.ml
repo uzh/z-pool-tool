@@ -11,8 +11,8 @@ let formatted_date date =
 ;;
 
 let formatted_time time =
-  let _, ((h, m, s), _) = time in
-  Format.asprintf "%s:%s:%s" (decimal h) (decimal m) (decimal s)
+  let _, ((h, m, _), _) = time in
+  Format.asprintf "%s:%s" (decimal h) (decimal m)
 ;;
 
 let formatted_date_time (date : Ptime.t) =
