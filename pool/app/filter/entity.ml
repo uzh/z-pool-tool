@@ -107,6 +107,13 @@ module Key = struct
         [@name "contact_language"]
     | Firstname [@printer print "first_name"] [@name "first_name"]
     | Name [@printer print "name"] [@name "name"]
+    | NumAssignments [@printer print "num_assignments"]
+        [@name "num_assignments"]
+    | NumInvitations [@printer print "num_invitations"]
+        [@name "num_invitations"]
+    | NumParticipations [@printer print "num_participations"]
+        [@name "num_participations"]
+    | NumShowUps [@printer print "num_show_ups"] [@name "num_show_ups"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
 
   type human =
@@ -177,16 +184,21 @@ module Key = struct
   ;;
 
   let hardcoded_to_sql = function
+    | ContactLanguage -> "pool_contacts.language"
     | Firstname -> "user_users.given_name"
     | Name -> "user_users.name"
-    | ContactLanguage -> "pool_contacts.language"
+    | NumAssignments -> "pool_contacts.num_assignments"
+    | NumInvitations -> "pool_contacts.num_invitations"
+    | NumParticipations -> "pool_contacts.num_participations"
+    | NumShowUps -> "pool_contacts.num_show_ups"
   ;;
 
   let type_of_hardcoded m : input_type =
     match m with
+    | ContactLanguage -> Languages Pool_common.Language.all
     | Firstname -> Str
     | Name -> Str
-    | ContactLanguage -> Languages Pool_common.Language.all
+    | NumAssignments | NumInvitations | NumParticipations | NumShowUps -> Nr
   ;;
 
   let type_of_custom_field m : input_type =

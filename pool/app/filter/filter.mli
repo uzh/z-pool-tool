@@ -30,6 +30,10 @@ module Key : sig
     | ContactLanguage
     | Firstname
     | Name
+    | NumAssignments
+    | NumInvitations
+    | NumParticipations
+    | NumShowUps
 
   type t =
     | CustomField of Custom_field.Id.t
