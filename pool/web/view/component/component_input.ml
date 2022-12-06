@@ -436,7 +436,7 @@ let link_as_button
 ;;
 
 let edit_link ?classnames ?attributes href =
-  link_as_button ?classnames ?attributes ~icon:`CreateOutline href
+  link_as_button ?classnames ?attributes ~icon:`Create href
 ;;
 
 let selector

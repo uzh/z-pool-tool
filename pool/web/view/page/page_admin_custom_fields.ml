@@ -358,19 +358,10 @@ let field_form
                                ]
                            ; td
                                ~a:[ a_class [ "flexrow"; "justify-end" ] ]
-                               [ a
-                                   ~a:
-                                     [ a_href
-                                         (Url.Option.edit_path
-                                            (model m, id m)
-                                            option.SelectOption.id
-                                         |> Sihl.Web.externalize_path)
-                                     ]
-                                   [ txt
-                                       Pool_common.(
-                                         Message.(Edit None)
-                                         |> Utils.control_to_string language)
-                                   ]
+                               [ Url.Option.edit_path
+                                   (model m, id m)
+                                   option.SelectOption.id
+                                 |> Component.Input.edit_link
                                ]
                            ])
                        options
@@ -411,7 +402,7 @@ let field_form
                ; div
                    [ link_as_button
                        ~style:`Success
-                       ~icon:`CreateOutline
+                       ~icon:`Create
                        ~classnames:[ "small" ]
                        ~control:
                          (language, Message.(Add (Some Field.CustomFieldOption)))

@@ -58,7 +58,7 @@ let detail Pool_context.{ language; _ } contact =
                "/admin/contacts/%s/edit"
                (contact |> Contact.id |> Pool_common.Id.value))
           |> Component.Input.link_as_button
-               ~icon:`CreateOutline
+               ~icon:`Create
                ~classnames:[ "small" ]
                ~control:
                  Pool_common.(language, Message.(Edit (Some Field.Contact)))

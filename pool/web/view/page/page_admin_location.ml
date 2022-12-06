@@ -340,7 +340,7 @@ module FileList = struct
   let add_file_btn language id =
     link_as_button
       ~style:`Success
-      ~icon:`CreateOutline
+      ~icon:`Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Add (Some Field.File)))
       (id

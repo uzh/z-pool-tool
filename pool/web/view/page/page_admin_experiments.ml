@@ -472,7 +472,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
   in
   let edit_button =
     link_as_button
-      ~icon:`CreateOutline
+      ~icon:`Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Experiment)))
       (Format.asprintf

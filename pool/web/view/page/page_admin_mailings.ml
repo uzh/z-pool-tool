@@ -208,7 +208,7 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
     if StartAt.value mailing.start_at > Ptime_clock.now ()
     then
       link_as_button
-        ~icon:`CreateOutline
+        ~icon:`Create
         ~classnames:[ "small" ]
         ~control:(language, Message.(Edit (Some Field.Mailing)))
         (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)

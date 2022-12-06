@@ -601,7 +601,7 @@ let detail
   in
   let edit_button =
     link_as_button
-      ~icon:`CreateOutline
+      ~icon:`Create
       ~classnames:[ "small" ]
       ~control:(language, Message.(Edit (Some Field.Session)))
       (Format.asprintf

@@ -30,10 +30,10 @@
   dependencies:
     regenerator-runtime "^0.13.10"
 
-"@econ/frontend-framework@^1.0.2":
-  version "1.0.4"
-  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-1.0.4.tgz#781d06e09e244d3acd1fd89ee1c7c166e2ab41b1"
-  integrity sha1-eB0G4J4kTTrNH9ie4cfBZuKrQbE=
+"@econ/frontend-framework@^1.0.5":
+  version "1.0.5"
+  resolved "https://gitlab.uzh.ch/api/v4/projects/662/packages/npm/@econ/frontend-framework/-/@econ/frontend-framework-1.0.5.tgz#26b7c8786799b4f387d3bfcc7829e13c60cce40b"
+  integrity sha1-JrfIeGeZtPOH07/MeCnhPGDM5As=
   dependencies:
     fantasticon "^1.2.3"
     minify "^8.0.0"
