@@ -147,13 +147,13 @@ let assign_contact req =
         waiting_list.Waiting_list.contact
       ||> CCOption.is_some
     in
+    let* language =
+      let* default = Settings.default_language tenant_db in
+      waiting_list.Waiting_list.contact.Contact.language
+      |> CCOption.value ~default
+      |> Lwt_result.return
+    in
     let* confirmation_email =
-      let* language =
-        let* default = Settings.default_language tenant_db in
-        waiting_list.Waiting_list.contact.Contact.language
-        |> CCOption.value ~default
-        |> Lwt_result.return
-      in
       let* subject =
         I18n.find_by_key
           tenant_db
@@ -169,12 +169,16 @@ let assign_contact req =
         >|+ I18n.content
       in
       let session_text = Session.(to_email_text language session) in
-      Lwt_result.return Email.{ subject; text; language; session_text }
+      Lwt_result.return Email.{ subject; text; session_text; language }
+    in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
     in
     let tags = Logger.req req in
     let events =
       Cqrs_command.Assignment_command.CreateFromWaitingList.(
         handle ~tags { session; waiting_list; already_enrolled })
+        tenant
         confirmation_email
       |> Lwt_result.lift
     in

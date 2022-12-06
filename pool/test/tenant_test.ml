@@ -5,9 +5,9 @@ module HttpUtils = Http_utils
 module Common = Pool_common
 
 module Data = struct
-  module Asset = struct
-    open Database.SeedAssets
+  open Database.SeedAssets
 
+  module Asset = struct
     let styles = dummy_css () |> fun { id; _ } -> id
     let icon = dummy_icon () |> fun { id; _ } -> id
     let tenant_logo = dummy_tenant_logo () |> fun { id; _ } -> id
@@ -77,21 +77,24 @@ module Data = struct
     |> CCList.map (CCPair.map_fst Field.show)
   ;;
 
-  let tenant =
-    let open Pool_tenant in
+  let smtp_auth =
     let open CCResult in
-    let* title = title |> Title.create in
-    let* description = description |> Description.create in
-    let* url = url |> Pool_tenant.Url.create in
-    let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
-    let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
-    let* smtp_auth_username = smtp_auth_username |> SmtpAuth.Username.create in
-    let* smtp_auth_password = smtp_auth_password |> SmtpAuth.Password.create in
-    let* smtp_auth_authentication_method =
-      smtp_auth_authentication_method |> SmtpAuth.AuthenticationMethod.create
-    in
-    let* smtp_auth_protocol = smtp_auth_protocol |> SmtpAuth.Protocol.create in
-    let* smtp_auth =
+    let open Pool_tenant in
+    let auth =
+      let* smtp_auth_server = smtp_auth_server |> SmtpAuth.Server.create in
+      let* smtp_auth_port = smtp_auth_port |> SmtpAuth.Port.create in
+      let* smtp_auth_username =
+        smtp_auth_username |> SmtpAuth.Username.create
+      in
+      let* smtp_auth_password =
+        smtp_auth_password |> SmtpAuth.Password.create
+      in
+      let* smtp_auth_authentication_method =
+        smtp_auth_authentication_method |> SmtpAuth.AuthenticationMethod.create
+      in
+      let* smtp_auth_protocol =
+        smtp_auth_protocol |> SmtpAuth.Protocol.create
+      in
       SmtpAuth.Write.create
         smtp_auth_server
         smtp_auth_port
@@ -100,6 +103,15 @@ module Data = struct
         smtp_auth_authentication_method
         smtp_auth_protocol
     in
+    auth |> CCResult.get_exn
+  ;;
+
+  let tenant =
+    let open Pool_tenant in
+    let open CCResult in
+    let* title = title |> Title.create in
+    let* description = description |> Description.create in
+    let* url = url |> Pool_tenant.Url.create in
     let* database = Pool_database.create database_label database_url in
     Ok
       Write.
@@ -117,6 +129,79 @@ module Data = struct
         ; created_at = Common.CreatedAt.create ()
         ; updated_at = Common.UpdatedAt.create ()
         }
+  ;;
+
+  let full_tenant =
+    let open Pool_tenant in
+    let open CCResult in
+    let smtp_auth =
+      (SmtpAuth.
+         { server = smtp_auth.SmtpAuth.Write.server
+         ; port = smtp_auth.SmtpAuth.Write.port
+         ; username = smtp_auth.SmtpAuth.Write.username
+         ; authentication_method =
+             smtp_auth.SmtpAuth.Write.authentication_method
+         ; protocol = smtp_auth.SmtpAuth.Write.protocol
+         }
+        : SmtpAuth.t)
+    in
+    let* title = title |> Title.create in
+    let* description = description |> Description.create in
+    let* url = url |> Pool_tenant.Url.create in
+    let* database_label = database_label |> Pool_database.Label.create in
+    let styles =
+      let open Pool_common.File in
+      let* name = Name.create "styles.css" in
+      let* size = Size.create 20 in
+      let mime_type = Mime.Css in
+      Ok
+        ({ id = Pool_common.Id.create ()
+         ; name
+         ; size
+         ; mime_type
+         ; created_at = Ptime_clock.now ()
+         ; updated_at = Ptime_clock.now ()
+         }
+        |> Styles.create)
+    in
+    let logo_file =
+      let open Pool_common.File in
+      let* name = Name.create "logo.png" in
+      let* size = Size.create 20 in
+      let mime_type = Mime.Png in
+      Ok
+        { id = Pool_common.Id.create ()
+        ; name
+        ; size
+        ; mime_type
+        ; created_at = Ptime_clock.now ()
+        ; updated_at = Ptime_clock.now ()
+        }
+    in
+    let logos =
+      logo_file |> CCResult.get_exn |> CCList.pure |> Logos.of_files
+    in
+    let partner_logo =
+      logo_file |> CCResult.get_exn |> CCList.pure |> PartnerLogos.of_files
+    in
+    let icon = logo_file |> CCResult.get_exn |> Icon.of_file in
+    Ok
+      { id = Common.Id.create ()
+      ; title
+      ; description
+      ; url
+      ; database_label
+      ; smtp_auth
+      ; styles = styles |> CCResult.get_exn
+      ; icon
+      ; logos
+      ; partner_logo
+      ; maintenance = Maintenance.create false
+      ; disabled = Disabled.create false
+      ; default_language = Common.Language.En
+      ; created_at = Common.CreatedAt.create ()
+      ; updated_at = Common.UpdatedAt.create ()
+      }
   ;;
 end
 

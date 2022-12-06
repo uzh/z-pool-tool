@@ -21,6 +21,8 @@ let contact_info email_address =
   , Some Language.En )
 ;;
 
+let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
+
 let sign_up_contact contact_info =
   let email_address, password, firstname, lastname, recruitment_channel, _ =
     contact_info
@@ -99,7 +101,7 @@ let sign_up_not_allowed_suffix () =
     |> sign_up_contact
     |> decode
     |> Pool_common.Utils.get_or_failwith
-    |> handle ~allowed_email_suffixes None
+    |> handle ~allowed_email_suffixes tenant None
   in
   let expected =
     Error
@@ -136,7 +138,12 @@ let sign_up () =
     |> sign_up_contact
     |> decode
     |> Pool_common.Utils.get_or_failwith
-    |> handle ~allowed_email_suffixes ~user_id ~terms_accepted_at language
+    |> handle
+         ~allowed_email_suffixes
+         ~user_id
+         ~terms_accepted_at
+         tenant
+         language
   in
   CCList.iter
     (fun m -> print_endline (Pool_event.show m))
@@ -169,7 +176,8 @@ let sign_up () =
           , user_id
           , firstname
           , lastname
-          , language |> CCOption.get_exn_or "Test failed" )
+          , language |> CCOption.get_exn_or "Test failed"
+          , Email.Helper.layout_from_tenant tenant )
         |> Pool_event.email_verification
       ]
   in
@@ -221,9 +229,10 @@ let update_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) contact)
+      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
   in
   let expected =
+    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.PasswordUpdated
           ( contact
@@ -237,7 +246,8 @@ let update_password () =
         |> Pool_event.contact
       ; Email.ChangedPassword
           ( contact.Contact.user
-          , language |> CCOption.get_or ~default:Language.En )
+          , language |> CCOption.get_or ~default:Pool_common.Language.En
+          , email_layout )
         |> Pool_event.email
       ]
   in
@@ -256,7 +266,7 @@ let update_password_wrong_current_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle contact)
+      |> handle tenant contact)
   in
   let expected = Error Message.(Invalid Field.CurrentPassword) in
   check_result expected events
@@ -276,7 +286,7 @@ let update_password_wrong_policy () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle contact)
+      |> handle tenant contact)
   in
   let expected = Error Message.PasswordPolicy in
   check_result expected events
@@ -297,7 +307,7 @@ let update_password_wrong_confirmation () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) contact)
+      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
   in
   let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
   check_result expected events
@@ -317,15 +327,17 @@ let request_email_validation () =
       new_email
       |> Pool_user.EmailAddress.create
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes contact)
+      |> handle ~allowed_email_suffixes tenant contact)
   in
   let expected =
+    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Email.Updated
           ( new_email |> Pool_user.EmailAddress.of_string
           , contact.Contact.user
           , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En )
+            |> CCOption.get_or ~default:Pool_common.Language.En
+          , email_layout )
         |> Pool_event.email_verification
       ]
   in
@@ -346,7 +358,7 @@ let request_email_validation_wrong_suffix () =
       new_email
       |> Pool_user.EmailAddress.create
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes contact)
+      |> handle ~allowed_email_suffixes tenant contact)
   in
   let expected =
     Error

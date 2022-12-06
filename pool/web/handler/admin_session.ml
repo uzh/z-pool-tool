@@ -23,7 +23,7 @@ let location urlencoded tenant_db =
   >>= Pool_location.find tenant_db
 ;;
 
-let reschedule_messages tenant_db sys_languages session =
+let reschedule_messages tenant tenant_db sys_languages session =
   let open Utils.Lwt_result.Infix in
   let create_message sys_languages contact (session : Session.t) template =
     (* TODO[tinhub]: What text element are required? Do we need custom
@@ -53,6 +53,7 @@ let reschedule_messages tenant_db sys_languages session =
       let message_language =
         CCOption.value ~default:default_language contact.Contact.language
       in
+      let email_layout = Email.Helper.layout_from_tenant tenant in
       match Hashtbl.find_opt i18n_texts message_language with
       | Some template ->
         create_message sys_languages contact session template |> Lwt_result.ok
@@ -67,7 +68,10 @@ let reschedule_messages tenant_db sys_languages session =
         in
         let template =
           Email.CustomTemplate.
-            { subject = Subject.I18n subject; content = Content.I18n text }
+            { subject = Subject.I18n subject
+            ; content = Content.I18n text
+            ; layout = email_layout
+            }
         in
         let () = Hashtbl.add i18n_texts message_language template in
         create_message sys_languages contact session template |> Lwt_result.ok)
@@ -249,6 +253,9 @@ let update_handler action req =
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
     let* session = Session.find tenant_db session_id in
     let* follow_ups = Session.find_follow_ups tenant_db session.Session.id in
     let* parent =
@@ -278,7 +285,7 @@ let update_handler action req =
         let (Session.{ start; duration } : Session.reschedule) = decoded in
         let* messages =
           Session.{ session with start; duration }
-          |> reschedule_messages tenant_db system_languages
+          |> reschedule_messages tenant tenant_db system_languages
         in
         decoded
         |> handle ~tags ?parent_session:parent follow_ups session messages

@@ -44,6 +44,9 @@ let create req =
          let session_text = Session.(public_to_email_text language session) in
          Lwt_result.return Email.{ subject; text; language; session_text }
        in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in
          Assignment.find_by_experiment_and_contact_opt
@@ -57,6 +60,7 @@ let create req =
          Cqrs_command.Assignment_command.Create.(
            handle
              { contact; session; waiting_list; experiment }
+             tenant
              confirmation_email
              already_enrolled)
          |> Lwt_result.lift

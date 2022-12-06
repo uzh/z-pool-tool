@@ -196,12 +196,14 @@ let match_invitations ?interval pools =
         None
     in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
+      let open Lwt_result.Syntax in
       let%lwt events =
+        let* tenant = Pool_tenant.find_by_label pool in
         limited_mailings
         |> Lwt_list.map_s (fun (mailing, limit) ->
              find_contacts_by_mailing pool mailing limit
              >|+ fun (experiment, contacts, i18n_templates) ->
-             { mailing; experiment; contacts; i18n_templates })
+             { tenant; mailing; experiment; contacts; i18n_templates })
         ||> CCList.all_ok
       in
       let open CCResult in

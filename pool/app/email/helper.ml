@@ -20,7 +20,45 @@ let prepend_root_directory pool url =
   | false -> url
 ;;
 
-let prepare_email pool language label subject email params =
+let layout_from_tenant (tenant : Pool_tenant.t) =
+  let open Pool_tenant in
+  let logo_src =
+    tenant.logos
+    |> Logos.value
+    |> CCList.head_opt
+    |> CCOption.map_or
+         ~default:""
+         CCFun.(Pool_common.File.path %> create_public_url tenant.url)
+  in
+  let logo_alt = tenant.title |> Title.value |> Format.asprintf "Logo %s" in
+  let link = tenant.url |> Url.value |> Format.asprintf "http://%s" in
+  { link; logo_src; logo_alt }
+;;
+
+let root_layout () =
+  let open CCOption in
+  let root_url =
+    Sihl.Configuration.read_string "PUBLIC_URL"
+    >>= CCFun.(Pool_tenant.Url.create %> CCOption.of_result)
+  in
+  let logo_src =
+    root_url
+    >|= (fun url -> create_public_url url "assets/images/root_logo.svg")
+    |> value ~default:""
+  in
+  let logo_alt = "Logo Pool Tool" in
+  let link = root_url >|= Pool_tenant.Url.value |> value ~default:"" in
+  { link; logo_alt; logo_src }
+;;
+
+let layout_params layout =
+  [ "logoSrc", layout.logo_src
+  ; "logoAlt", layout.logo_alt
+  ; "logoHref", layout.link
+  ]
+;;
+
+let prepare_email pool language label subject email layout params =
   let%lwt template =
     Service.EmailTemplate.get_by_label
       ~ctx:(Pool_tenant.to_ctx pool)
@@ -42,6 +80,7 @@ let prepare_email pool language label subject email params =
         ; bcc = []
         }
     in
+    let params = params @ layout_params layout in
     Sihl_email.Template.email_of_template ~template mail params
 ;;
 
@@ -49,7 +88,7 @@ let prepare_boilerplate_email template email params =
   match Sihl.Configuration.read_string "SMTP_SENDER" with
   | None -> failwith "SMTP_SENDER not found in configuration"
   | Some sender ->
-    let CustomTemplate.{ subject; content } = template in
+    let CustomTemplate.{ subject; content; layout } = template in
     let subject = subject |> CustomTemplate.Subject.value in
     let text = content |> CustomTemplate.Content.value in
     let html =
@@ -60,6 +99,7 @@ let prepare_boilerplate_email template email params =
           (text |> string_to_html)
         |> html_to_string)
     in
+    let params = params @ layout_params layout in
     let mail =
       Sihl_email.
         { sender
@@ -75,7 +115,7 @@ let prepare_boilerplate_email template email params =
 ;;
 
 module PasswordReset = struct
-  let create pool language ({ Sihl_user.email; _ } as user) =
+  let create pool language layout ({ Sihl_user.email; _ } as user) =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let%lwt reset_token =
       Service.PasswordReset.create_reset_token
@@ -99,20 +139,20 @@ module PasswordReset = struct
         |> prepend_root_directory pool
         |> create_public_url url
       in
-      Logs.info (fun m -> m "%s" reset_url);
       prepare_email
         pool
         language
         TemplateLabel.PasswordReset
         subject
         email
+        layout
         [ "resetUrl", reset_url; "name", user |> User.user_fullname ]
       |> Lwt_result.ok
   ;;
 end
 
 module PasswordChange = struct
-  let create pool language email firstname lastname =
+  let create pool language layout email firstname lastname =
     let name =
       Format.asprintf
         "%s %s"
@@ -126,12 +166,13 @@ module PasswordChange = struct
       TemplateLabel.PasswordChange
       subject
       (email |> Pool_user.EmailAddress.value)
+      layout
       [ "name", name ]
   ;;
 end
 
 module ConfirmationEmail = struct
-  let create pool language email firstname lastname label =
+  let create pool language layout email firstname lastname label =
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let name =
       CCString.concat
@@ -154,6 +195,7 @@ module ConfirmationEmail = struct
       label
       subject
       (address email |> Pool_user.EmailAddress.value)
+      layout
       [ "verificationUrl", validation_url; "name", name ]
   ;;
 end

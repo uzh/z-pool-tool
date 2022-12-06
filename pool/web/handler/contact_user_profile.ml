@@ -70,9 +70,13 @@ let update_email req =
            |> CCList.hd)
          |> Lwt_result.lift
        in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* events =
          Command.RequestEmailValidation.(
-           handle ?allowed_email_suffixes contact new_email |> Lwt_result.lift)
+           handle ?allowed_email_suffixes tenant contact new_email
+           |> Lwt_result.lift)
        in
        Utils.Database.with_transaction tenant_db (fun () ->
          let tags = Logger.req req in
@@ -95,9 +99,13 @@ let update_password req =
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* events =
          let open CCResult.Infix in
-         Command.UpdatePassword.(decode urlencoded >>= handle ~tags contact)
+         Command.UpdatePassword.(
+           decode urlencoded >>= handle ~tags tenant contact)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
