@@ -39,6 +39,8 @@ let () =
   Sihl.App.(
     empty
     |> with_services services
-    |> before_start (fun () -> Lwt.return @@ Middleware.Error.before_start ())
+    |> before_start (fun () ->
+         Logger.create_logs_dir ();
+         Lwt.return @@ Middleware.Error.before_start ())
     |> run ~commands ~log_reporter:Logger.reporter)
 ;;
