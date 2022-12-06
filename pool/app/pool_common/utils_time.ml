@@ -1,25 +1,37 @@
-let tz_offset_s ?(hours = 2) () = 3600 * hours
-
 (* Formatting *)
 let decimal n =
   if n < 10 then Format.asprintf "0%d" n else Format.asprintf "%d" n
 ;;
 
-let formatted_date date =
+let date_to_human date =
   let year, month, day = date in
   Format.asprintf "%s.%s.%d" (decimal day) (decimal month) year
 ;;
 
-let formatted_time time =
+let time_to_human time =
   let _, ((h, m, _), _) = time in
   Format.asprintf "%s:%s" (decimal h) (decimal m)
 ;;
 
+(* Public functions *)
+let to_local_date date =
+  let open CCOption in
+  let open CCFun in
+  Ptime_clock.current_tz_offset_s ()
+  >>= Ptime.Span.of_int_s %> Ptime.add_span date
+  |> value ~default:date
+;;
+
 let formatted_date_time (date : Ptime.t) =
+  let date = date |> to_local_date in
   Format.asprintf
     "%s %s"
-    (formatted_date (Ptime.to_date date))
-    (formatted_time (Ptime.to_date_time ~tz_offset_s:(tz_offset_s ()) date))
+    (date_to_human (Ptime.to_date date))
+    (time_to_human (Ptime.to_date_time date))
+;;
+
+let ptime_to_formatted_date ptime =
+  ptime |> to_local_date |> Ptime.to_date |> date_to_human
 ;;
 
 let formatted_timespan timespan =
@@ -66,9 +78,6 @@ let parse_time str =
   Ptime.of_rfc3339 str
   |> Ptime.rfc3339_error_to_msg
   |> CCResult.map_err (fun (`Msg e) -> Entity_message.NotADatetime (str, e))
-  (* TODO [aerben] dont discard timezone *)
-  (* TODO [aerben] should experimenter add timezone for start? *)
-  (* TODO [aerben] HANDLE ALL TIMEZONES consistently *)
   >|= fun (time, _, _) -> time
 ;;
 
