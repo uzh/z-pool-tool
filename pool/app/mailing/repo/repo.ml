@@ -45,9 +45,9 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt (Pool_database.Label.value pool) find_request id
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Mailing)
   ;;
 
   let find_by_experiment_request =
@@ -168,7 +168,7 @@ end
 
 let find pool id =
   let open Utils.Lwt_result.Infix in
-  Sql.find pool id >|= to_entity
+  Sql.find pool id >|+ to_entity
 ;;
 
 let find_by_experiment pool id =

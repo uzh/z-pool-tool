@@ -1,4 +1,5 @@
 open Tyxml.Html
+open Component
 
 let public_overview sessions experiment language =
   let open Experiment.Public in
@@ -29,7 +30,8 @@ let public_overview sessions experiment language =
                       (session.Session.Public.id |> Pool_common.Id.value)
                    |> Sihl.Web.externalize_path)
                ]
-             [ txt Pool_common.(Utils.control_to_string language Message.signup)
+             [ txt
+                 Pool_common.(Utils.control_to_string language Message.register)
              ]
          | true ->
            span
@@ -39,7 +41,11 @@ let public_overview sessions experiment language =
              ])
       ])
     sessions
-  |> Component.Table.horizontal_table `Striped language ~thead
+  |> Component.Table.responsive_horizontal_table
+       `Striped
+       language
+       ~align_last_end:true
+       thead
 ;;
 
 let public_detail (session : Session.Public.t) language =
@@ -61,14 +67,8 @@ let public_detail (session : Session.Public.t) language =
         |> txt )
     ; ( Field.Location
       , session.Session.Public.location
-        |> Component.Partials.location_to_html ~public:true language )
-    ; ( Field.CanceledAt
-      , CCOption.map_or
-          ~default:"Not canceled"
-          (Ptime.to_rfc3339 ~space:true)
-          session.Public.canceled_at
-        |> txt )
+        |> Partials.location_to_html ~public:true language )
     ]
   in
-  Component.Table.vertical_table `Striped language ~align_top:true rows
+  Table.vertical_table `Striped language ~align_top:true rows
 ;;

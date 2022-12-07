@@ -35,8 +35,8 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       Input.
         { options
         ; selected
-        ; to_label = SelectOption.name language
-        ; to_value = SelectOption.show_id
+        ; to_label = SelectOption.Public.name language
+        ; to_value = SelectOption.Public.show_id
         }
     in
     Input.multi_select language t field ()
@@ -50,11 +50,11 @@ let custom_field_to_input ?flash_fetcher language custom_field =
       ?flash_fetcher
       ?help
       ~required
-      ~option_formatter:SelectOption.(name language)
+      ~option_formatter:SelectOption.Public.(name language)
       ~add_empty:true
       language
       field
-      SelectOption.show_id
+      SelectOption.Public.show_id
       options
       value
       ()
@@ -88,11 +88,15 @@ let form
           ]
         Component.(
           (Input.csrf_element csrf () :: custom_fields_form)
-          @ [ Input.submit_element
-                language
-                Message.(Save None)
-                ~submit_type:`Primary
-                ()
+          @ [ div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ Input.submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.(Save None)
+                    ~submit_type:`Primary
+                    ()
+                ]
             ])
     ]
 ;;

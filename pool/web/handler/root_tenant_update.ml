@@ -16,7 +16,7 @@ let update req command success_message =
       Format.asprintf "/root/tenants/%s" (Common.Id.value id)
     in
     let events tenant =
-      let open Lwt_result.Syntax in
+      let open Utils.Lwt_result.Infix in
       let%lwt multipart_encoded =
         Sihl.Web.Request.to_multipart_form_data_exn req
       in
@@ -38,14 +38,15 @@ let update req command success_message =
           req
       in
       let events_list urlencoded =
+        let tags = Logger.req req in
         let open CCResult.Infix in
         match command with
         | `EditDetail ->
           Cqrs_command.Pool_tenant_command.EditDetails.(
-            decode urlencoded >>= handle tenant)
+            decode urlencoded >>= handle ~tags tenant)
         | `EditDatabase ->
           Cqrs_command.Pool_tenant_command.EditDatabase.(
-            decode urlencoded >>= handle tenant)
+            decode urlencoded >>= handle ~tags tenant)
       in
       logo_files @ multipart_encoded
       |> File.multipart_form_data_to_urlencoded
@@ -53,7 +54,10 @@ let update req command success_message =
       |> events_list
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let tags = Logger.req req in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         redirect_path
@@ -62,7 +66,7 @@ let update req command success_message =
     id
     |> Pool_tenant.find_full
     >>= events
-    |> Lwt_result.map_error (fun err -> err, redirect_path)
+    >|- (fun err -> err, redirect_path)
     |>> handle
     |>> return_to_overview
   in
@@ -87,7 +91,7 @@ let delete_asset req =
     Format.asprintf "root/tenants/%s" (Common.Id.value tenant_id)
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@
     let open Utils.Lwt_result.Infix in
     let ctx = tenant_db |> Pool_tenant.to_ctx in

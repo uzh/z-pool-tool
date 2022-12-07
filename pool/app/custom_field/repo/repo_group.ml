@@ -121,7 +121,7 @@ let update_position_request =
 ;;
 
 let sort_groups pool ids =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Lwt_list.mapi_s
     (fun index id ->
       Utils.Database.exec
@@ -129,5 +129,5 @@ let sort_groups pool ids =
         update_position_request
         (index, Entity.Id.value id))
     ids
-  >|= CCFun.const ()
+  ||> CCFun.const ()
 ;;

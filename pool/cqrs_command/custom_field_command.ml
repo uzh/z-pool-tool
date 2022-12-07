@@ -1,5 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "custom_field.cqrs"
+
 type command =
   { field_type : Custom_field.FieldType.t
   ; required : Custom_field.Required.t
@@ -58,7 +60,8 @@ module Create : sig
   type t = command
 
   val handle
-    :  ?id:Custom_field.Id.t
+    :  ?tags:Logs.Tag.set
+    -> ?id:Custom_field.Id.t
     -> Pool_common.Language.t list
     -> Custom_field.Model.t
     -> (Pool_common.Language.t * string) list
@@ -72,6 +75,7 @@ end = struct
   type t = command
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?id
     sys_languages
     model
@@ -88,6 +92,7 @@ end = struct
     ; admin_input_only
     }
     =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
@@ -121,7 +126,8 @@ module Update : sig
   type t = command
 
   val handle
-    :  Pool_common.Language.t list
+    :  ?tags:Logs.Tag.set
+    -> Pool_common.Language.t list
     -> Custom_field.t
     -> (Pool_common.Language.t * string) list
     -> (Pool_common.Language.t * string) list
@@ -134,6 +140,7 @@ end = struct
   type t = command
 
   let handle
+    ?(tags = Logs.Tag.empty)
     sys_languages
     custom_field
     name
@@ -149,6 +156,7 @@ end = struct
     ; admin_input_only
     }
     =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open CCResult in
     let* name = Custom_field.Name.create sys_languages name in
     let* hint = Custom_field.Hint.create hint in
@@ -182,11 +190,61 @@ end
 module Sort : sig
   type t = Custom_field.t list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.t list
 
-  let handle t = Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
+  let handle ?(tags = Logs.Tag.empty) t =
+    Logs.info ~src (fun m -> m "Handle command Sort" ~tags);
+    Ok [ Custom_field.FieldsSorted t |> Pool_event.custom_field ]
+  ;;
+
+  let effects = [ `Create, `TargetEntity `Admin ]
+end
+
+module Publish : sig
+  type t = Custom_field.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Custom_field.t
+
+  let handle ?(tags = Logs.Tag.empty) m =
+    Logs.info ~src (fun m -> m "Handle command Publish" ~tags);
+    Ok [ Custom_field.Published m |> Pool_event.custom_field ]
+  ;;
+
+  let effects = [ `Create, `TargetEntity `Admin ]
+end
+
+module Delete : sig
+  type t = Custom_field.t
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val effects : Guard.Authorizer.effect list
+end = struct
+  type t = Custom_field.t
+
+  let handle ?(tags = Logs.Tag.empty) m =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
+    match Custom_field.published_at m with
+    | None -> Ok [ Custom_field.Deleted m |> Pool_event.custom_field ]
+    | Some _ -> Error Pool_common.Message.(AlreadyPublished Field.CustomField)
+  ;;
+
   let effects = [ `Create, `TargetEntity `Admin ]
 end

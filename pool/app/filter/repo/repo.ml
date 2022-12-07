@@ -33,12 +33,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
   let component_base_query =
@@ -59,12 +59,12 @@ module Sql = struct
   ;;
 
   let find_template pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_template_request
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Filter)
   ;;
 
   let find_all_templates_request =

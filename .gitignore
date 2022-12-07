@@ -30,6 +30,7 @@ _opam/
 .cache
 .bsb.lock
 *.log
+!.log/.gitkeep
 .parcel-cache
 
 # NPM

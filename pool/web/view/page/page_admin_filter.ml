@@ -1,7 +1,17 @@
 open Tyxml.Html
 
 let index { Pool_context.language; _ } filter_list =
-  let thead = Pool_common.Message.Field.[ Some Title; None ] in
+  let thead =
+    Pool_common.Message.
+      [ Field.Title |> Component.Table.field_to_txt language
+      ; Component.Input.link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~classnames:[ "small" ]
+          ~control:(language, Pool_common.Message.(Add (Some Field.Filter)))
+          "/admin/filter/new"
+      ]
+  in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
     [ h1
@@ -9,16 +19,6 @@ let index { Pool_context.language; _ } filter_list =
         [ txt
             (Pool_common.(Utils.field_to_string language Message.Field.Filter)
             |> CCString.capitalize_ascii)
-        ]
-    ; p
-        [ a
-            ~a:[ a_href (Sihl.Web.externalize_path "/admin/filter/new") ]
-            [ txt
-                Pool_common.(
-                  Utils.control_to_string
-                    language
-                    Message.(Create (Some Field.Filter)))
-            ]
         ]
     ; CCList.map
         (fun filter ->
@@ -36,7 +36,7 @@ let index { Pool_context.language; _ } filter_list =
               ]
           ])
         filter_list
-      |> Component.Table.horizontal_table `Striped language ~thead
+      |> Component.Table.horizontal_table `Striped ~align_last_end:true ~thead
     ]
 ;;
 

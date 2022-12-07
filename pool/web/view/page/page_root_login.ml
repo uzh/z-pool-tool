@@ -20,17 +20,27 @@ let login Pool_context.{ language; csrf; _ } =
             [ csrf_element csrf ()
             ; input_element `Text Message.Field.Email
             ; input_element `Password Message.Field.Password
-            ; submit_element language Message.Login ()
-            ]
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path "/root/request-reset-password")
-                  ]
-                [ txt
-                    Pool_common.(
-                      Utils.text_to_string language I18n.ResetPasswordLink)
+            ; div
+                ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
+                [ div
+                    [ a
+                        ~a:
+                          [ a_href
+                              (Sihl.Web.externalize_path
+                                 "/root/request-reset-password")
+                          ]
+                        [ txt
+                            Pool_common.(
+                              Utils.text_to_string
+                                language
+                                I18n.ResetPasswordLink)
+                        ]
+                    ]
+                ; submit_element
+                    ~classnames:[ "push" ]
+                    language
+                    Message.Login
+                    ()
                 ]
             ]
         ]
@@ -50,7 +60,14 @@ let request_reset_password Pool_context.{ language; csrf; _ } =
           ]
         [ csrf_element csrf ()
         ; input_element `Text Message.Field.Email
-        ; submit_element language Message.SendResetLink ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.SendResetLink
+                ()
+            ]
         ]
     ]
 ;;
@@ -63,12 +80,20 @@ let reset_password token Pool_context.{ language; csrf; _ } =
         ~a:
           [ a_action (Sihl.Web.externalize_path "/root/reset-password")
           ; a_method `Post
+          ; a_class [ "stack" ]
           ]
         [ csrf_element csrf ()
         ; input_element language `Hidden ~value:token Message.Field.Token
         ; input_element language `Password Message.Field.Password
         ; input_element language `Password Message.Field.PasswordConfirmation
-        ; submit_element language Message.(Save (Some Field.password)) ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ submit_element
+                ~classnames:[ "push" ]
+                language
+                Message.(Save (Some Field.password))
+                ()
+            ]
         ]
     ]
 ;;

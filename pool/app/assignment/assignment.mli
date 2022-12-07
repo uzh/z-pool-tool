@@ -68,11 +68,11 @@ type create =
   }
 
 type event =
+  | AttendanceSet of (t * ShowUp.t * Participated.t)
   | Canceled of t
   | Created of create
-  | Participated of t * Participated.t
-  | ShowedUp of t * ShowUp.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string

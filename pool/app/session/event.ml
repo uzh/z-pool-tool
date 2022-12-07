@@ -37,6 +37,7 @@ type event =
   | Created of
       (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
+  | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
   | ReminderSent of t
@@ -61,7 +62,11 @@ let handle_event pool = function
     in
     Repo.insert pool (Pool_common.Id.value experiment_id, sess)
   | Canceled session ->
+    (* TODO: Check timestamps? Issue #126 *)
     { session with canceled_at = Some (Ptime_clock.now ()) } |> Repo.update pool
+  | Closed session ->
+    (* TODO: Check timestamps? Issue #126 *)
+    { session with closed_at = Some (Ptime_clock.now ()) } |> Repo.update pool
   | Deleted session -> Repo.delete pool session.id
   | Updated
       ( { start

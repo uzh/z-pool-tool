@@ -47,16 +47,15 @@ let find_assocs_in_urlencoded urlencoded field encoder =
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let open Custom_field in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/admin/dashboard")
+    Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
     @@ let* model = model_from_router req |> Lwt_result.lift in
        let%lwt group_list = Custom_field.find_groups_by_model tenant_db model in
        let%lwt field_list = find_by_model tenant_db model in
        Page.Admin.CustomFields.index field_list group_list model context
        |> create_layout ~active_navigation:Url.fallback_path req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -71,15 +70,14 @@ let redirect _ =
 
 let form ?id req model =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, Url.index_path model)
+    Utils.Lwt_result.map_error (fun err -> err, Url.index_path model)
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* custom_field =
       id
       |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
-           Custom_field.find tenant_db id >|= CCOption.pure)
+           Custom_field.find tenant_db id >|+ CCOption.pure)
     in
     let%lwt groups = Custom_field.find_groups_by_model tenant_db model in
     let* sys_languages =
@@ -93,7 +91,7 @@ let form ?id req model =
       sys_languages
       flash_fetcher
     |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -130,11 +128,12 @@ let write ?id req model =
     | Some id -> Url.Field.edit_path (model, id), Created Field.CustomField
   in
   let result { Pool_context.tenant_db; _ } =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
+    let tags = Logger.req req in
     let events =
-      let open Lwt_result.Syntax in
+      let open Utils.Lwt_result.Infix in
       let* sys_languages =
         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
       in
@@ -146,6 +145,7 @@ let write ?id req model =
       match id with
       | None ->
         Cqrs_command.Custom_field_command.Create.handle
+          ~tags
           sys_languages
           model
           field_names
@@ -156,6 +156,7 @@ let write ?id req model =
       | Some id ->
         let* custom_field = Custom_field.find tenant_db id in
         Cqrs_command.Custom_field_command.Update.handle
+          ~tags
           sys_languages
           custom_field
           field_names
@@ -165,7 +166,9 @@ let write ?id req model =
         |> Lwt_result.lift
     in
     let handle events =
-      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event tenant_db) events in
+      let%lwt () =
+        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      in
       Http_utils.redirect_to_with_actions
         (Url.index_path model)
         [ HttpUtils.Message.set ~success:[ success ] ]
@@ -185,17 +188,57 @@ let update req =
   get_model (write ~id) req
 ;;
 
+let toggle_action action req =
+  let open Utils.Lwt_result.Infix in
+  let id =
+    HttpUtils.get_field_router_param req Message.Field.CustomField
+    |> Custom_field.Id.of_string
+  in
+  let result { Pool_context.tenant_db; _ } =
+    Utils.Lwt_result.map_error (fun err -> err, Url.fallback_path, [])
+    @@ let* custom_field = Custom_field.find tenant_db id in
+       let* model = model_from_router req |> Lwt_result.lift in
+       let tags = Logger.req req in
+       let events =
+         match action with
+         | `Publish ->
+           Cqrs_command.Custom_field_command.Publish.handle ~tags custom_field
+           |> Lwt_result.lift
+         | `Delete ->
+           Cqrs_command.Custom_field_command.Delete.handle ~tags custom_field
+           |> Lwt_result.lift
+       in
+       let success =
+         match action with
+         | `Publish -> Pool_common.Message.(Published Field.CustomField)
+         | `Delete -> Pool_common.Message.(Deleted Field.CustomField)
+       in
+       let handle events =
+         let%lwt () =
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+         in
+         Http_utils.redirect_to_with_actions
+           (Url.index_path model)
+           [ HttpUtils.Message.set ~success:[ success ] ]
+       in
+       events |>> handle
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+let publish = toggle_action `Publish
+let delete = toggle_action `Delete
+
 let sort_options req =
   let handler req model =
     let open Utils.Lwt_result.Infix in
-    let open Lwt_result.Syntax in
     let custom_field_id =
       HttpUtils.get_field_router_param req Message.Field.CustomField
       |> Custom_field.Id.of_string
     in
     let redirect_path = Url.Field.edit_path (model, custom_field_id) in
     let result { Pool_context.tenant_db; _ } =
-      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@ let* custom_field = custom_field_id |> Custom_field.find tenant_db in
          let%lwt ids =
            Sihl.Web.Request.urlencoded_list
@@ -203,10 +246,10 @@ let sort_options req =
              req
          in
          let%lwt options =
-           let open Lwt.Infix in
+           let open Utils.Lwt_result.Infix in
            let open Custom_field in
            find_options_by_field tenant_db (id custom_field)
-           >|= fun options ->
+           ||> fun options ->
            CCList.filter_map
              (fun id ->
                CCList.find_opt
@@ -215,14 +258,15 @@ let sort_options req =
                  options)
              ids
          in
+         let tags = Logger.req req in
          let events =
            options
-           |> Cqrs_command.Custom_field_option_command.Sort.handle
+           |> Cqrs_command.Custom_field_option_command.Sort.handle ~tags
            |> Lwt_result.lift
          in
          let handle events =
            let%lwt () =
-             Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+             Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
            in
            Http_utils.redirect_to_with_actions
              redirect_path
@@ -246,7 +290,7 @@ let sort_fields req ?group () =
       | Some group -> Url.Group.edit_path (current_model, group)
     in
     let result { Pool_context.tenant_db; _ } =
-      Lwt_result.map_error (fun err -> err, redirect_path, [])
+      Utils.Lwt_result.map_error (fun err -> err, redirect_path, [])
       @@
       let open Custom_field in
       let%lwt ids =
@@ -267,14 +311,15 @@ let sort_fields req ?group () =
               fields)
           ids
       in
+      let tags = Logger.req req in
       let events =
         fields
-        |> Cqrs_command.Custom_field_command.Sort.handle
+        |> Cqrs_command.Custom_field_command.Sort.handle ~tags
         |> Lwt_result.lift
       in
       let handle events =
         let%lwt () =
-          Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+          Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
         in
         Http_utils.redirect_to_with_actions
           redirect_path

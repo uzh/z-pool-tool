@@ -81,7 +81,8 @@ type t =
   ; reminder_sent_at : Pool_common.Reminder.SentAt.t option
   ; assignment_count : AssignmentCount.t
   ; (* TODO [aerben] make type for canceled_at? *)
-    canceled_at : Ptime.t option
+    closed_at : Ptime.t option
+  ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
   }
@@ -99,6 +100,7 @@ type event =
   | Created of
       (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
   | Canceled of t
+  | Closed of t
   | Deleted of t
   | Updated of (base * Pool_location.t * t)
   | ReminderSent of t
@@ -107,6 +109,7 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 
 module Public : sig
   type t =

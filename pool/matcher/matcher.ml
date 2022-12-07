@@ -104,18 +104,16 @@ let i18n_templates pool { Experiment.invitation_template; _ } languages =
 
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let%lwt ({ Experiment.id; _ } as experiment) =
     Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
     ||> get_or_failwith
   in
   let order_by =
-    distribution
-    |> CCOption.map_or ~default:"" Mailing.Distribution.get_order_element
+    distribution |> CCOption.map Mailing.Distribution.get_order_element
   in
   let* contacts =
     Contact.find_filtered
-      ~order_by
+      ?order_by
       ~limit:(max limit 0)
       pool
       id
@@ -198,13 +196,15 @@ let match_invitations ?interval pools =
         None
     in
     Lwt_list.filter_map_s (fun (pool, limited_mailings) ->
+      let open Lwt_result.Syntax in
       let%lwt events =
+        let* tenant = Pool_tenant.find_by_label pool in
         limited_mailings
         |> Lwt_list.map_s (fun (mailing, limit) ->
              find_contacts_by_mailing pool mailing limit
-             >|= fun (experiment, contacts, i18n_templates) ->
-             { mailing; experiment; contacts; i18n_templates })
-        |> Lwt.map CCList.all_ok
+             >|+ fun (experiment, contacts, i18n_templates) ->
+             { tenant; mailing; experiment; contacts; i18n_templates })
+        ||> CCList.all_ok
       in
       let open CCResult in
       events
@@ -232,14 +232,14 @@ let match_invitations ?interval pools =
 let stop_matcher : (unit -> unit) option ref = ref None
 
 let start_matcher () =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   let interval = Sihl.Time.TenMinutes in
   Logs.debug (fun m -> m "Start matcher");
   let scheduled_function () =
     Logs.info (fun m -> m "Matcher: Run");
     Pool_tenant.find_all ()
-    >|= CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
-    >>= match_invitations ~interval
+    ||> CCList.map (fun Pool_tenant.{ database_label; _ } -> database_label)
+    >|> match_invitations ~interval
   in
   let schedule =
     Sihl.Schedule.create

@@ -103,6 +103,7 @@ module Styles : sig
   val equal : t -> t -> bool
   val id : t -> Pool_common.Id.t
   val mime_type : t -> Pool_common.File.Mime.t
+  val create : Pool_common.File.t -> t
 
   module Write : sig
     type t
@@ -121,6 +122,7 @@ module Icon : sig
 
   val value : t -> Pool_common.File.t
   val equal : t -> t -> bool
+  val of_file : Pool_common.File.t -> t
 
   module Write : sig
     type t
@@ -145,6 +147,8 @@ module Logos : sig
     -> ( Pool_common.Message.error
        , Pool_common.Id.t list )
        Pool_common.Utils.PoolConformist.Field.t
+
+  val of_files : Pool_common.File.t list -> t
 end
 
 module PartnerLogos : sig
@@ -158,6 +162,8 @@ module PartnerLogos : sig
     -> ( Pool_common.Message.error
        , Pool_common.Id.t list )
        Pool_common.Utils.PoolConformist.Field.t
+
+  val of_files : Pool_common.File.t list -> t
 end
 
 module Maintenance : sig
@@ -230,6 +236,7 @@ type t =
 val id : t -> Pool_common.Id.t
 val sexp_of_t : t -> Ppx_sexp_conv_lib.Sexp.t
 val pp : Format.formatter -> t -> unit
+val equal : t -> t -> bool
 
 module Write : sig
   type t =
@@ -294,6 +301,7 @@ type event =
 val handle_event : Database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 val to_ctx : Database.Label.t -> (string * string) list
 val find : Pool_common.Id.t -> (t, Pool_common.Message.error) result Lwt.t
 

@@ -51,6 +51,7 @@ module Sql = struct
           pool_sessions.reminder_lead_time,
           pool_sessions.reminder_sent_at,
           (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
+          pool_sessions.closed_at,
           pool_sessions.canceled_at,
           pool_sessions.created_at,
           pool_sessions.updated_at
@@ -113,12 +114,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_all_for_experiment_request =
@@ -143,6 +144,8 @@ module Sql = struct
     let open Caqti_request.Infix in
     {sql|
         WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
+        AND start > NOW()
+        AND canceled_at IS NULL
         ORDER BY start
       |sql}
     |> find_public_sql
@@ -150,12 +153,12 @@ module Sql = struct
   ;;
 
   let find_public pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_public_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_public_by_assignment_request =
@@ -170,18 +173,20 @@ module Sql = struct
   ;;
 
   let find_public_by_assignment pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_public_by_assignment_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
         WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+        AND start > NOW()
+        AND canceled_at IS NULL
         ORDER BY start
       |sql}
     |> find_public_sql
@@ -233,12 +238,12 @@ module Sql = struct
   ;;
 
   let find_experiment_id_and_title pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Database.Label.value pool)
       find_experiment_id_and_title_request
       (Pool_common.Id.value id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
   let find_sessions_to_remind_request =
@@ -305,6 +310,7 @@ module Sql = struct
         reminder_text,
         reminder_lead_time,
         reminder_sent_at,
+        closed_at,
         canceled_at
       ) VALUES (
         UNHEX(REPLACE($2, '-', '')),
@@ -321,7 +327,8 @@ module Sql = struct
         $12,
         $13,
         $14,
-        $15
+        $15,
+        $16
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -351,7 +358,8 @@ module Sql = struct
         reminder_text = $11,
         reminder_lead_time = $12,
         reminder_sent_at = $13,
-        canceled_at = $14
+        closed_at = $14,
+        canceled_at = $15
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}
@@ -384,13 +392,13 @@ end
 
 let location_to_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
-  Pool_location.find pool session.RepoEntity.location_id >|= to_entity session
+  Pool_location.find pool session.RepoEntity.location_id >|+ to_entity session
 ;;
 
 let location_to_public_repo_entity pool session =
   let open Utils.Lwt_result.Infix in
   Pool_location.find pool session.RepoEntity.Public.location_id
-  >|= RepoEntity.Public.to_entity session
+  >|+ RepoEntity.Public.to_entity session
 ;;
 
 let find pool id =

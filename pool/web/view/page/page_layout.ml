@@ -1,5 +1,25 @@
 open Tyxml.Html
 module Message = Page_message
+module I18n = Pool_common.I18n
+
+type nav_element =
+  { url : string
+  ; label : I18n.nav_link
+  ; icon : [ `Person ] option
+  ; children : nav_element list option
+  }
+
+let create_nav_element ?icon ?children url label =
+  { url; label; icon; children }
+;;
+
+let logout_nav_link =
+  { url = "/logout"; label = I18n.Logout; icon = None; children = None }
+;;
+
+let to_nav_elements items =
+  items |> CCList.map (fun (url, label) -> create_nav_element url label)
+;;
 
 let charset = meta ~a:[ a_charset "utf8" ] ()
 let body_tag_classnames = [ "height-100"; "flexcolumn" ]
@@ -25,7 +45,16 @@ let global_stylesheets =
          ())
 ;;
 
-let header ?(children = []) title =
+let app_title query_language title =
+  div
+    ~a:[ a_class [ "app-title" ] ]
+    [ a
+        ~a:[ a_href (Http_utils.path_with_language query_language "/index") ]
+        [ txt title ]
+    ]
+;;
+
+let website_header ?(children = []) query_language title =
   header
     ~a:
       [ a_class
@@ -37,59 +66,148 @@ let header ?(children = []) title =
           ; "border-bottom"
           ]
       ]
-    [ div [ span ~a:[ a_class [ "heading-2" ] ] [ txt title ] ]; div children ]
+    [ app_title query_language title; div children ]
+;;
+
+let mobile_nav query_language title navigation =
+  let pure = CCList.pure in
+  let id = "navigation-overlay" in
+  let label label =
+    Component.Icon.icon label
+    |> pure
+    |> div ~a:[ a_user_data "modal" id; a_class [ "icon-lg" ] ]
+  in
+  let overlay =
+    div
+      ~a:[ a_id id; a_class [ "fullscreen-overlay"; "mobile-nav"; "bg-white" ] ]
+      [ div
+          ~a:[ a_class [ "flexcolumn"; "full-height" ] ]
+          [ header
+              ~a:[ a_class [ "flexrow"; "justify-between"; "align-center" ] ]
+              [ app_title query_language Pool_tenant.(Title.value title)
+              ; label `Close
+              ]
+          ; div
+              ~a:[ a_class [ "fade-in"; "inset"; "flexcolumn"; "grow" ] ]
+              navigation
+          ]
+      ]
+  in
+  div ~a:[ a_class [ "mobile-nav-wrapper" ] ] [ label `MenuOutline; overlay ]
 ;;
 
 let footer title =
+  let version =
+    Sihl.Configuration.read_string "VERSION"
+    |> CCOption.map (fun v ->
+         v |> Format.asprintf "z-Root %s" |> txt |> CCList.pure |> span)
+  in
+  let title = span [ txt title ] in
+  let content =
+    version
+    |> CCOption.map_or ~default:[ title ] (fun version ->
+         [ title; span [ txt "|" ]; version ])
+  in
   footer
     ~a:
       [ a_class
           [ "inset"
-          ; "flexcolumn"
-          ; "push"
-          ; "align-center"
+          ; "flexrow"
+          ; "flex-gap"
+          ; "justify-center"
           ; "bg-grey-light"
           ; "border-top"
+          ; "push"
           ]
       ]
-    [ p [ txt title ] ]
+    content
 ;;
 
-let build_nav_link (url, title) language query_language active_navigation =
-  let classnames = [ "nav-link" ] in
+let rec build_nav_link
+  ?(mobile = false)
+  language
+  query_language
+  active_navigation
+  { url; label; icon; children }
+  =
+  (* TODO: add active class to parents of active element *)
+  let classnames =
+    let base = [ "nav-link" ] in
+    active_navigation
+    |> CCOption.map_or ~default:base (fun active ->
+         if CCString.equal active url then "active" :: base else base)
+  in
   let txt_to_string m =
     Pool_common.Utils.nav_link_to_string language m |> txt
   in
-  let nav_link =
-    a
-      ~a:
-        [ a_href (Http_utils.externalize_path_with_lang query_language url)
-        ; a_class classnames
-        ]
-      [ txt_to_string title ]
+  let label =
+    match icon with
+    | None -> [ txt_to_string label ]
+    | Some icon ->
+      [ span
+          ~a:[ a_class [ "has-icon" ] ]
+          [ Component.Icon.icon icon; span [ txt_to_string label ] ]
+      ]
   in
-  active_navigation
-  |> CCOption.map_or ~default:nav_link (fun active ->
-       if CCString.equal active url
-       then
-         span
-           ~a:[ a_class (CCList.cons "active" classnames) ]
-           [ txt_to_string title ]
-       else nav_link)
+  let is_span =
+    match active_navigation, children with
+    | Some active, _ when CCString.equal active url -> true
+    | _, Some children when not (CCList.is_empty children) -> true
+    | _, _ -> false
+  in
+  let nav_link =
+    match is_span with
+    | false ->
+      a
+        ~a:
+          [ a_href (Http_utils.externalize_path_with_lang query_language url)
+          ; a_class classnames
+          ]
+        label
+    | true -> span ~a:[ a_class classnames ] label
+  in
+  match children with
+  | None -> li [ nav_link ]
+  | Some children ->
+    let parent_attrs, list_attrs =
+      match mobile with
+      | true -> [], [ a_class [ "children" ] ]
+      | false -> [ a_class [ "has-dropdown" ] ], [ a_class [ "dropdown" ] ]
+    in
+    let children =
+      children
+      |> CCList.map
+           (build_nav_link ~mobile language query_language active_navigation)
+      |> ul ~a:list_attrs
+    in
+    li ~a:parent_attrs [ nav_link; children ]
 ;;
 
-let to_main_nav language query_language active_navigation lst =
-  lst
-  |> CCList.map (fun item ->
-       build_nav_link item language query_language active_navigation)
-  |> nav ~a:[ a_class [ "main-nav" ] ]
+let to_main_nav ?mobile language query_language active_navigation items =
+  let nav =
+    items
+    |> CCList.map (fun item ->
+         build_nav_link ?mobile language query_language active_navigation item)
+    |> ul
+    |> CCList.pure
+    |> nav ~a:[ a_class [ "main-nav" ] ]
+  in
+  match mobile with
+  | Some true ->
+    div ~a:[ a_class [ "grow"; "flexcolumn"; "justify-center" ] ] [ nav ]
+  | _ -> nav
 ;;
 
 module Tenant = struct
-  let i18n_links tenant_languages active_lang =
+  let i18n_links tenant_languages active_lang mobile =
     let link_classes = [ "nav-link" ] in
-    div
-      ~a:[ a_class [ "main-nav" ] ]
+    let nav_class =
+      if mobile
+      then [ "language-nav"; "gap"; "flexrow"; "flex-gap"; "justify-center" ]
+      else [ "main-nav" ]
+    in
+    nav
+      ~a:[ a_class nav_class ]
       (CCList.map
          (fun tenant_language ->
            let label = Pool_common.Language.show tenant_language in
@@ -123,40 +241,70 @@ module Tenant = struct
     active_navigation
     tenant_languages
     active_lang
+    title
     =
     let open Pool_common.I18n in
     let open Pool_context in
-    let to_main_nav = to_main_nav language query_language active_navigation in
+    let to_main_nav mobile =
+      to_main_nav ~mobile language query_language active_navigation
+    in
     let language_switch = i18n_links tenant_languages active_lang in
-    let not_logged_in = [ "/login", Login ] |> to_main_nav in
-    let logout = "/logout", Logout in
-    let nav_links =
+    let not_logged_in mobile =
+      [ "/login", Login ] |> to_nav_elements |> to_main_nav mobile
+    in
+    let profile_dropdown =
+      I18n.
+        [ "/user/personal-details", PersonalDetails
+        ; "/user/login-information", LoginInformation
+        ]
+      |> to_nav_elements
+    in
+    let nav_links mobile =
       match user with
-      | None -> [ not_logged_in; language_switch ]
+      | None -> [ not_logged_in mobile; language_switch mobile ]
       | Some user ->
         (match user with
          | Admin _ ->
-           [ "/admin/dashboard", Dashboard
-           ; "/admin/experiments", Experiments
-           ; "/admin/custom-fields", CustomFields
-           ; "/admin/filter", Filter
-           ; "/admin/locations", Locations
-           ; "/admin/settings", Settings
-           ; "/admin/i18n", I18n
-           ; "/admin/contacts", Contacts
-           ; "/admin/admins", Admins
-           ; logout
-           ]
-           |> to_main_nav
-           |> CCList.pure
+           let settings_nav =
+             [ "/admin/custom-fields", CustomFields
+             ; "/admin/filter", Filter
+             ; "/admin/locations", Locations
+             ; "/admin/settings", SystemSettings
+             ; "/admin/i18n", I18n
+             ]
+             |> to_nav_elements
+             |> fun children ->
+             create_nav_element ~children "/admin/settings" Settings
+           in
+           let user_nav =
+             [ "/admin/contacts", Contacts; "/admin/admins", Admins ]
+             |> to_nav_elements
+             |> fun children ->
+             create_nav_element ~children "/admin/users" Users
+           in
+           ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
+           |> to_nav_elements)
+           @ [ settings_nav; user_nav ]
+           |> fun links ->
+           links @ [ logout_nav_link ] |> to_main_nav mobile |> CCList.pure
          | Contact _ ->
-           [ [ "/experiments", Experiments; "/user", Profile; logout ]
-             |> to_main_nav
-           ; language_switch
+           [ [ "/experiments", Experiments, None, None
+             ; "/user", Profile, Some `Person, Some profile_dropdown
+             ]
+             |> CCList.map (fun (url, label, icon, children) ->
+                  create_nav_element ?icon ?children url label)
+             |> (fun links -> links @ [ logout_nav_link ])
+             |> to_main_nav mobile
+           ; language_switch mobile
            ]
-         | Root _ -> [ not_logged_in ])
+         | Root _ -> [ not_logged_in mobile ])
     in
-    nav_links
+    let desktop_nav =
+      nav_links false
+      |> div ~a:[ a_class [ "desktop-nav"; "flexrow"; "flex-gap" ] ]
+    in
+    let mobile_nav = nav_links true |> mobile_nav query_language title in
+    [ desktop_nav; mobile_nav ]
   ;;
 
   let create_layout
@@ -192,8 +340,7 @@ module Tenant = struct
         active_navigation
         tenant_languages
         active_lang
-      |> fun nav ->
-      nav |> div ~a:[ a_class [ "flexrow"; "flex-gap" ] ] |> CCList.pure
+        tenant.Pool_tenant.title
     in
     let content = main_tag [ message; children ] in
     let favicon =
@@ -206,7 +353,7 @@ module Tenant = struct
          ([ charset; viewport; custom_stylesheet; favicon ] @ global_stylesheets))
       (body
          ~a:[ a_class body_tag_classnames ]
-         [ header ~children:header_content title_text
+         [ website_header ~children:header_content query_language title_text
          ; content
          ; footer title_text
          ; scripts
@@ -225,6 +372,7 @@ let create_root_layout children language message user ?active_navigation () =
     (match user with
      | None | Some (Contact _) | Some (Admin _) -> not_logged_in
      | Some (Root _) -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
+    |> to_nav_elements
     |> to_main_nav
   in
   let title_text = "Pool Tool" in
@@ -243,7 +391,7 @@ let create_root_layout children language message user ?active_navigation () =
        @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
-       [ header ~children:[ navigation ] title_text
+       [ website_header None ~children:[ navigation ] title_text
        ; content
        ; footer title_text
        ; scripts
@@ -263,5 +411,5 @@ let create_error_layout children =
     (head page_title ([ charset; viewport ] @ global_stylesheets))
     (body
        ~a:[ a_class body_tag_classnames ]
-       [ header title_text; content; footer title_text; scripts ])
+       [ website_header None title_text; content; footer title_text; scripts ])
 ;;

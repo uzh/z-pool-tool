@@ -3,6 +3,8 @@ module Id = Pool_common.Id
 module User = Pool_user
 module File = Pool_common.File
 
+let src = Logs.Src.create "pool_tenant.cqrs"
+
 let create_logo_mappings files tenant logo_type =
   let open Pool_tenant in
   CCList.map
@@ -33,7 +35,10 @@ module Create : sig
     ; partner_logos : Id.t list
     }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
 
   val decode
     :  (string * string list) list
@@ -122,7 +127,8 @@ end = struct
         command)
   ;;
 
-  let handle (command : t) =
+  let handle ?(tags = Logs.Tag.empty) (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let database =
       Pool_database.
         { url = command.database_url; label = command.database_label }
@@ -192,7 +198,8 @@ module EditDetails : sig
     }
 
   val handle
-    :  Pool_tenant.Write.t
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -267,7 +274,12 @@ end = struct
         command)
   ;;
 
-  let handle (tenant : Pool_tenant.Write.t) (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (tenant : Pool_tenant.Write.t)
+    (command : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command EditDetails" ~tags);
     let update =
       Pool_tenant.
         { title = command.title
@@ -318,7 +330,8 @@ module EditDatabase : sig
     }
 
   val handle
-    :  Pool_tenant.Write.t
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.Write.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -344,7 +357,12 @@ end = struct
         command)
   ;;
 
-  let handle (tenant : Pool_tenant.Write.t) (command : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (tenant : Pool_tenant.Write.t)
+    (command : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command EditDatabase" ~tags);
     let database =
       Pool_database.
         { url = command.database_url; label = command.database_label }
@@ -360,7 +378,7 @@ end = struct
   ;;
 
   let effects dblabel =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* tenant = Pool_tenant.find_by_label dblabel in
     Lwt.return_ok
       [ `Update, `Target (tenant.Pool_tenant.id |> Guard.Uuid.target_of Id.value)
@@ -370,13 +388,15 @@ end
 
 module DestroyLogo : sig
   val handle
-    :  Pool_tenant.t
+    :  ?tags:Logs.Tag.set
+    -> Pool_tenant.t
     -> Id.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
-  let handle tenant asset_id =
+  let handle ?(tags = Logs.Tag.empty) tenant asset_id =
+    Logs.info ~src (fun m -> m "Handle command DestroyLogo" ~tags);
     Ok [ Pool_tenant.LogoDeleted (tenant, asset_id) |> Pool_event.pool_tenant ]
   ;;
 
@@ -387,12 +407,17 @@ module Destroy : sig
   (* TODO: Type safety *)
   type t = { tenant_id : string }
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = { tenant_id : string }
 
-  let handle t =
+  let handle ?(tags = Logs.Tag.empty) t =
+    Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
     Ok
       [ Pool_tenant.Destroyed (t.tenant_id |> Id.of_string)
         |> Pool_event.pool_tenant

@@ -146,7 +146,7 @@ let contacts db_pool =
     |> Pool_common.Utils.get_or_failwith
   in
   let%lwt () =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Lwt_list.fold_left_s
       (fun contacts
            ( user_id
@@ -187,9 +187,9 @@ let contacts db_pool =
           contacts)
       []
       users
-    >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+    >|> Lwt_list.iter_s (Contact.handle_event db_pool)
   in
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Lwt_list.fold_left_s
     (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
       let%lwt contact = Contact.find db_pool user_id in
@@ -210,5 +210,5 @@ let contacts db_pool =
         contacts |> Lwt.return)
     []
     users
-  >>= Lwt_list.iter_s (Contact.handle_event db_pool)
+  >|> Lwt_list.iter_s (Contact.handle_event db_pool)
 ;;

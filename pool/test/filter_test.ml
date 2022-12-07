@@ -1,5 +1,6 @@
 let contact_email_address = "jane.doe@email.com"
 let lang = Pool_common.Language.En
+let tenant = Tenant_test.Data.full_tenant
 
 let allowed_email_suffixes =
   [ "mail.com" ]
@@ -9,86 +10,24 @@ let allowed_email_suffixes =
 ;;
 
 module TestContacts = struct
-  open Contact_test
-  open Contact_command
-
-  let create (email, user_id) =
-    email
-    |> contact_info
-    |> sign_up_contact
-    |> SignUp.decode
-    |> Pool_common.Utils.get_or_failwith
-    |> SignUp.handle ~user_id ~allowed_email_suffixes None
-  ;;
-
-  let verify contact =
-    let open Utils.Lwt_result.Infix in
-    let terms = AcceptTermsAndConditions.handle contact |> CCResult.get_exn in
-    let%lwt verify =
-      Contact.email_address contact
-      |> Email.find_unverified_by_address Test_utils.Data.database_label
-      ||> CCResult.get_exn
-      ||> fun email ->
-      VerifyEmail.(handle contact { email } |> CCResult.get_exn)
-    in
-    [ terms; verify ] |> CCList.flatten |> Lwt_result.return
-  ;;
-
-  let prepare data =
-    let%lwt () =
-      let open CCResult in
-      data
-      |> CCList.map create
-      |> CCList.all_ok
-      |> get_exn
-      |> CCList.flatten
-      |> Lwt_list.iter_s
-           (Pool_event.handle_event Test_utils.Data.database_label)
-    in
-    let%lwt contacts =
-      data
-      |> CCList.map snd
-      |> Contact.find_multiple Test_utils.Data.database_label
-    in
-    let%lwt () =
-      let open Lwt.Infix in
-      contacts
-      |> Lwt_list.map_s verify
-      >|= CCList.all_ok
-      >|= CCResult.get_exn
-      >|= CCList.flatten
-      >>= Lwt_list.iter_s
-            (Pool_event.handle_event Test_utils.Data.database_label)
-    in
-    contacts |> Lwt.return
-  ;;
-
-  let data =
-    CCList.range 0 5
-    |> CCList.map (fun i ->
-         Format.asprintf "%i-test@mail.com" i, Pool_common.Id.create ())
-  ;;
-
-  let create_contacts () = prepare data
-
-  let find_contacts () =
-    data
-    |> CCList.map snd
+  let all () =
+    Seed.Contacts.contact_ids
     |> Contact.find_multiple Test_utils.Data.database_label
   ;;
 
   let get_contact index =
+    let open Utils.Lwt_result.Infix in
     index
-    |> CCList.nth data
-    |> snd
+    |> CCList.nth Seed.Contacts.contact_ids
     |> Contact.find Test_utils.Data.database_label
-    |> Lwt.map CCResult.get_exn
+    ||> CCResult.get_exn
   ;;
 end
 
 module CustomFieldData = struct
   let admin_data = Custom_field_test.Data.admin
   let nr_of_siblings_answer = 3
+  let published = () |> Custom_field.PublishedAt.create_now |> CCOption.pure
 
   let nr_of_siblings =
     Custom_field.(
@@ -103,6 +42,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         })
   ;;
 
@@ -123,20 +63,34 @@ module CustomFieldData = struct
       , answer )
   ;;
 
-  let multi_select_options =
+  let multi_select_option_data =
     let open Custom_field in
-    let open SelectOption in
     let open CCList in
-    CCList.range 0 5
+    range 0 5
     |> map (fun i -> [ lang, CCInt.to_string i ])
     |> map (Name.create [ lang ])
     |> CCList.all_ok
     |> CCResult.get_exn
-    |> map create
+    |> map (fun name -> Custom_field.SelectOption.Id.create (), name)
+  ;;
+
+  let multi_select_options =
+    multi_select_option_data
+    |> CCList.map (fun (id, name) -> Custom_field.SelectOption.create ~id name)
+  ;;
+
+  let multi_select_options_public =
+    multi_select_option_data
+    |> CCList.map (fun (id, name) ->
+         Custom_field.SelectOption.Public.create ~id name)
   ;;
 
   let multi_select_options_by_index =
     CCList.map (CCList.nth multi_select_options)
+  ;;
+
+  let multi_select_options_public_by_index =
+    CCList.map (CCList.nth multi_select_options_public)
   ;;
 
   let multi_select_custom_field =
@@ -152,6 +106,7 @@ module CustomFieldData = struct
         ; disabled = false |> Disabled.create
         ; custom_field_group_id = None
         ; admin = admin_data
+        ; published_at = published
         }
       , multi_select_options )
   ;;
@@ -159,7 +114,8 @@ module CustomFieldData = struct
   let multi_select_custom_field_public answer_index =
     let open Custom_field in
     let answer =
-      multi_select_options_by_index answer_index |> CCList.map Answer.create
+      multi_select_options_public_by_index answer_index
+      |> CCList.map Answer.create
     in
     let version = 0 |> Pool_common.Version.of_int in
     Public.MultiSelect
@@ -172,7 +128,7 @@ module CustomFieldData = struct
         ; admin_input_only = admin_data.Admin.input_only
         ; version
         }
-      , multi_select_options
+      , multi_select_options_public
       , answer )
   ;;
 
@@ -206,6 +162,12 @@ module CustomFieldData = struct
         |> Pool_event.custom_field)
       contacts
   ;;
+
+  let publish_fields () =
+    [ multi_select_custom_field; nr_of_siblings ]
+    |> CCList.map (fun field ->
+         Custom_field.Published field |> Pool_event.custom_field)
+  ;;
 end
 
 let nr_of_siblings =
@@ -217,20 +179,21 @@ let nr_of_siblings =
        (Single (Nr (CustomFieldData.nr_of_siblings_answer |> CCFloat.of_int))))
 ;;
 
-let email email_address =
+let firstname firstname =
   let open Filter in
   Pred
     (Predicate.create
-       Key.(Hardcoded Email)
+       Key.(Hardcoded Firstname)
        Operator.Equal
-       (Single (Str email_address)))
+       (Single (Str firstname)))
 ;;
 
 let filter_contacts _ () =
   let%lwt () =
-    let%lwt contacts = TestContacts.create_contacts () in
+    let open Utils.Lwt_result.Infix in
+    let%lwt contacts = TestContacts.all () in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     let%lwt () =
       (* Save field and answer with 3 *)
@@ -255,7 +218,7 @@ let filter_contacts _ () =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res =
       filtered_contacts
@@ -270,9 +233,10 @@ let filter_contacts _ () =
 
 let filter_by_email _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     let filter =
       Filter.(
@@ -280,8 +244,7 @@ let filter_by_email _ () =
           None
           (And
              [ nr_of_siblings
-             ; email
-                 (Contact.email_address contact |> Pool_user.EmailAddress.value)
+             ; firstname (Contact.firstname contact |> Pool_user.Firstname.value)
              ]))
     in
     let experiment = Experiment.{ experiment with filter = Some filter } in
@@ -299,7 +262,7 @@ let filter_by_email _ () =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -363,6 +326,7 @@ let validate_filter_with_invalid_value _ () =
 
 let test_list_filter answer_index operator contact experiment expected =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let filter =
       let open Filter in
       let value =
@@ -397,7 +361,7 @@ let test_list_filter answer_index operator contact experiment expected =
         Test_utils.Data.database_label
         experiment.Experiment.id
         experiment.Experiment.filter
-      |> Lwt.map CCResult.get_exn
+      ||> CCResult.get_exn
     in
     let res = CCList.mem ~eq:Contact.equal contact filtered_contacts in
     Alcotest.(check bool "succeeds" expected res) |> Lwt.return
@@ -407,17 +371,20 @@ let test_list_filter answer_index operator contact experiment expected =
 
 let filter_by_list_contains_all _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 0; 1 ] in
     let%lwt () =
       (* Save field and answer *)
       CustomFieldData.(
-        create_multi_select () @ answer_multi_select [ contact ] answer_index)
+        create_multi_select ()
+        @ answer_multi_select [ contact ] answer_index
+        @ publish_fields ())
       |> Lwt_list.iter_s
            (Pool_event.handle_event Test_utils.Data.database_label)
     in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index
@@ -431,10 +398,11 @@ let filter_by_list_contains_all _ () =
 
 let filter_by_list_contains_none _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index
@@ -448,10 +416,11 @@ let filter_by_list_contains_none _ () =
 
 let filter_by_list_contains_some _ () =
   let%lwt () =
+    let open Utils.Lwt_result.Infix in
     let%lwt contact = TestContacts.get_contact 0 in
     let answer_index = [ 1; 2 ] in
     let%lwt experiment =
-      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+      Experiment.find_all Test_utils.Data.database_label () ||> CCList.hd
     in
     test_list_filter
       answer_index

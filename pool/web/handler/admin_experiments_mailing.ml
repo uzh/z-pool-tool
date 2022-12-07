@@ -19,15 +19,14 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
+    Utils.Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt mailings =
          Mailing.find_by_experiment tenant_db experiment.Experiment.id
        in
        Page.Admin.Mailing.index context experiment mailings
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -36,16 +35,14 @@ let new_form req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
-    @@
-    let open Lwt_result.Syntax in
-    let* experiment = Experiment.find tenant_db experiment_id in
-    Page.Admin.Mailing.form
-      context
-      experiment
-      (CCFun.flip Sihl.Web.Flash.find req)
-    |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    Utils.Lwt_result.map_error (fun err -> err, experiment_path experiment_id)
+    @@ let* experiment = Experiment.find tenant_db experiment_id in
+       Page.Admin.Mailing.form
+         context
+         experiment
+         (CCFun.flip Sihl.Web.Flash.find req)
+       |> create_layout req context
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -54,11 +51,10 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       ( err
       , experiment_path ~suffix:"mailings/create" experiment_id
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
@@ -76,17 +72,18 @@ let create req =
            [ distribution ]
            urlencoded
        in
+       let tags = Logger.req req in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Create in
          urlencoded
          |> HttpUtils.remove_empty_values
          |> decode
-         >>= handle experiment
+         >>= handle ~tags experiment
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            (experiment_path ~suffix:"mailings" experiment_id)
@@ -104,8 +101,7 @@ let detail edit req =
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let id = id req Field.Mailing Mailing.Id.of_string in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, experiment_path ~suffix:"mailings" experiment_id)
     @@ let* mailing =
          Mailing.find tenant_db id
@@ -125,7 +121,7 @@ let detail edit req =
             experiment
             (CCFun.flip Sihl.Web.Flash.find req))
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -144,11 +140,10 @@ let update req =
       experiment_id
   in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* mailing = Mailing.find tenant_db id in
        let* distribution =
@@ -164,14 +159,15 @@ let update req =
            [ distribution ]
            urlencoded
        in
+       let tags = Logger.req req in
        let events =
          let open CCResult in
          let open Cqrs_command.Mailing_command.Update in
-         urlencoded |> decode >>= handle mailing
+         urlencoded |> decode >>= handle ~tags mailing
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -187,7 +183,7 @@ let update req =
 let search_info req =
   let experiment_id = id req Field.Experiment Pool_common.Id.of_string in
   let%lwt result =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* ({ Pool_context.tenant_db; _ } as context) =
       Pool_context.find req |> Lwt_result.lift
     in
@@ -223,7 +219,7 @@ let search_info req =
 
 let add_condition req =
   let%lwt result =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* { Pool_context.language; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
@@ -241,18 +237,11 @@ let add_condition req =
       |> CCOption.to_result (invalid field)
     in
     let distribution =
+      let open Mailing.Distribution in
       let open CCResult in
       let* field =
         let field = Pool_common.Message.Field.DistributionField in
-        field
-        |> find_in_urlencoded Pool_common.Message.Field.read
-        >>= fun field ->
-        if CCList.mem
-             ~eq:Pool_common.Message.Field.equal
-             field
-             Mailing.Distribution.sortable_fields
-        then Ok field
-        else Error (invalid field)
+        field |> find_in_urlencoded read_sortable_field
       in
       let* order =
         let field = Pool_common.Message.Field.SortOrder in
@@ -285,11 +274,12 @@ let disabler command success_handler req =
   in
   let mailing_id = id req Field.Mailing Mailing.Id.of_string in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    let open Utils.Lwt_result.Infix in
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* mailing = Mailing.find tenant_db mailing_id in
        let* events = command mailing |> Lwt_result.lift in
-       let%lwt () = Pool_event.handle_events tenant_db events in
+       let tags = Logger.req req in
+       let%lwt () = Pool_event.handle_events ~tags tenant_db events in
        Http_utils.redirect_to_with_actions
          redirect_path
          [ Message.set

@@ -50,11 +50,11 @@ let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = Format.asprintf "/admin/filter" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let%lwt filter_list = Filter.find_all_templates tenant_db () in
        Page.Admin.Filter.index context filter_list
        |> create_layout ~active_navigation:"/admin/filter" req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -62,20 +62,19 @@ let index req =
 let form is_edit req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, Format.asprintf "/admin/filter")
+    Utils.Lwt_result.map_error (fun err -> err, Format.asprintf "/admin/filter")
     @@ let* filter =
          if is_edit
          then
            get_id req Field.Filter Pool_common.Id.of_string
            |> Filter.find_template tenant_db
-           >|= CCOption.pure
+           >|+ CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
        let%lwt key_list = Filter.all_keys tenant_db in
        Page.Admin.Filter.edit context filter key_list
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -84,7 +83,6 @@ let edit = form true
 let new_form = form false
 
 let create ?model req =
-  let open Lwt_result.Syntax in
   let open Utils.Lwt_result.Infix in
   let language =
     let open CCResult in
@@ -105,6 +103,7 @@ let create ?model req =
     in
     let%lwt key_list = Filter.all_keys tenant_db in
     let%lwt template_list = Filter.find_templates_of_query tenant_db query in
+    let tags = Logger.req req in
     let events =
       let open Pool_common.Message in
       let open HttpUtils in
@@ -118,7 +117,7 @@ let create ?model req =
         in
         let* experiment = Experiment.find tenant_db experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
-        handle experiment key_list template_list query |> Lwt_result.lift
+        handle ~tags experiment key_list template_list query |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
@@ -128,16 +127,16 @@ let create ?model req =
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list template_list filter query %> lift
+        >>= handle ~tags key_list template_list filter query %> lift
       | None ->
         let open Cqrs_command.Filter_command.Create in
         urlencoded
         |> decode
         |> lift
-        >>= handle key_list template_list query %> lift
+        >>= handle ~tags key_list template_list query %> lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
     in
     events |>> handle
   in
@@ -176,7 +175,7 @@ let create_template req = create req
 let update_template req = create ~model:`Filter req
 
 let toggle_predicate_type req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
@@ -224,14 +223,13 @@ let toggle_predicate_type req =
 ;;
 
 let toggle_key req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
-      let open Lwt_result.Infix in
       find_in_params urlencoded Pool_common.Message.Field.Key
       |> Lwt_result.lift
       >>= Filter.key_of_string tenant_db
@@ -252,7 +250,7 @@ let toggle_key req =
 ;;
 
 let add_predicate req =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
@@ -306,14 +304,14 @@ let count_contacts req =
     get_field_router_param req Experiment |> Pool_common.Id.of_string
   in
   let%lwt result =
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let* { Pool_context.language; tenant_db; _ } =
       req
       |> Pool_context.find
       |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
       |> Lwt_result.lift
     in
-    Lwt_result.map_error Pool_common.(Utils.error_to_string language)
+    Utils.Lwt_result.map_error Pool_common.(Utils.error_to_string language)
     @@ let* experiment = Experiment.find tenant_db experiment_id in
        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
        let* query =

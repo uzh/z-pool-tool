@@ -40,9 +40,29 @@ module NumberOfInvitations = struct
   let value m = m
   let of_int m = m
   let increment m = m + 1
+  let decrement m = if m > 0 then m - 1 else 0
 end
 
 module NumberOfAssignments = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+  let increment m = m + 1
+  let decrement m = if m > 0 then m - 1 else 0
+end
+
+module NumberOfShowUps = struct
+  type t = int [@@deriving eq, show]
+
+  let init = 0
+  let value m = m
+  let of_int m = m
+  let increment m = m + 1
+end
+
+module NumberOfParticipations = struct
   type t = int [@@deriving eq, show]
 
   let init = 0
@@ -63,6 +83,8 @@ type t =
   ; email_verified : User.EmailVerified.t option
   ; num_invitations : NumberOfInvitations.t
   ; num_assignments : NumberOfAssignments.t
+  ; num_show_ups : NumberOfShowUps.t
+  ; num_participations : NumberOfParticipations.t
   ; firstname_version : Pool_common.Version.t
   ; lastname_version : Pool_common.Version.t
   ; paused_version : Pool_common.Version.t
@@ -86,6 +108,8 @@ module Write = struct
     ; email_verified : User.EmailVerified.t option
     ; num_invitations : NumberOfInvitations.t
     ; num_assignments : NumberOfAssignments.t
+    ; num_show_ups : NumberOfShowUps.t
+    ; num_participations : NumberOfParticipations.t
     ; firstname_version : Pool_common.Version.t
     ; lastname_version : Pool_common.Version.t
     ; paused_version : Pool_common.Version.t
@@ -106,6 +130,8 @@ module Write = struct
     ; email_verified = m.email_verified
     ; num_invitations = m.num_invitations
     ; num_assignments = m.num_assignments
+    ; num_show_ups = m.num_show_ups
+    ; num_participations = m.num_participations
     ; firstname_version = m.firstname_version
     ; lastname_version = m.lastname_version
     ; paused_version = m.paused_version
@@ -154,6 +180,11 @@ module PartialUpdate = struct
     | Language of Pool_common.Version.t * Pool_common.Language.t option
     | Custom of Custom_field.Public.t
   [@@deriving eq, show, variants]
+
+  let is_required = function
+    | Firstname _ | Lastname _ | Paused _ | Language _ -> true
+    | Custom field -> Custom_field.(Public.required field |> Required.value)
+  ;;
 
   let increment_version =
     let increment = Pool_common.Version.increment in
@@ -214,8 +245,7 @@ module PartialUpdate = struct
       >>= check_version contact.language_version
       |> Lwt.return
     | _ ->
-      let open Lwt_result.Syntax in
-      let open Lwt_result.Infix in
+      let open Utils.Lwt_result.Infix in
       let check_permission m =
         Lwt_result.lift
         @@

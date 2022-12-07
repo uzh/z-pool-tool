@@ -17,8 +17,8 @@ let title_to_string language text =
   | I18n text -> text_to_string language text
 ;;
 
-let experiment_layout language title experiment ?active html =
-  let subnav_links =
+let experiment_layout ?buttons ?hint language title experiment ?active html =
+  let tab_links =
     Pool_common.I18n.
       [ Overview, "/"
       ; Invitations, "/invitations"
@@ -27,41 +27,73 @@ let experiment_layout language title experiment ?active html =
       ; Assignments, "/assignments"
       ; Mailings, "/mailings"
       ]
+    |> CCList.map (fun (label, url) ->
+         ( label
+         , Format.asprintf
+             "/admin/experiments/%s/%s"
+             (Pool_common.Id.value experiment.Experiment.id)
+             url ))
   in
-  let base_url =
-    Format.asprintf
-      "/admin/experiments/%s"
-      (Pool_common.Id.value experiment.Experiment.id)
+  let title =
+    let base =
+      h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
+    in
+    let title =
+      match buttons with
+      | None -> base
+      | Some btns ->
+        div
+          ~a:
+            [ a_class
+                [ "flexrow"
+                ; "justify-between"
+                ; "flex-gap"
+                ; "flexcolumn-mobile"
+                ]
+            ]
+          [ div [ base ]; div [ btns ] ]
+    in
+    match hint with
+    | None -> [ title ]
+    | Some hint ->
+      [ title
+      ; p
+          [ Pool_common.(
+              Utils.hint_to_string language hint |> HttpUtils.add_line_breaks)
+          ]
+      ]
   in
+  let html = title @ [ div ~a:[ a_class [ "gap-lg" ] ] [ html ] ] in
   let open Experiment in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt (experiment.title |> Title.value) ]
-    ; Navigation.subnav language subnav_links base_url active
-    ; h2 ~a:[ a_class [ "heading-2" ] ] [ txt (title_to_string language title) ]
-    ; html
+    ; Navigation.tab_navigation language tab_links active html
     ]
 ;;
 
 let index experiment_list Pool_context.{ language; _ } =
-  let thead = Pool_common.Message.Field.[ Some Title; None ] in
+  let thead =
+    Pool_common.Message.
+      [ Field.Title |> Table.field_to_txt language
+      ; link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~control:(language, Message.(Add (Some Field.Experiment)))
+          "/admin/experiments/create"
+      ]
+  in
   let rows =
     CCList.map
       (fun (experiment : Experiment.t) ->
         let open Experiment in
         [ txt (Title.value experiment.title)
-        ; a
-            ~a:
-              [ a_href
-                  (Sihl.Web.externalize_path
-                     (Format.asprintf
-                        "/admin/experiments/%s"
-                        (experiment.id |> Pool_common.Id.value)))
-              ]
-            [ txt Pool_common.(Message.More |> Utils.control_to_string language)
-            ]
+        ; Format.asprintf
+            "/admin/experiments/%s"
+            (experiment.id |> Pool_common.Id.value)
+          |> edit_link
         ])
       experiment_list
   in
@@ -74,20 +106,7 @@ let index experiment_list Pool_context.{ language; _ } =
         ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ Table.horizontal_table `Striped language ~thead rows
-        ; p
-            [ a
-                ~a:
-                  [ a_href
-                      (Sihl.Web.externalize_path "/admin/experiments/create")
-                  ]
-                [ txt
-                    Pool_common.(
-                      Message.(Add (Some Field.Experiment))
-                      |> Utils.control_to_string language)
-                ]
-            ]
-        ]
+        [ Table.horizontal_table `Striped ~align_last_end:true ~thead rows ]
     ]
 ;;
 
@@ -134,27 +153,30 @@ let experiment_form
       ; a_class [ "stack" ]
       ]
     [ csrf_element csrf ()
-    ; input_element
-        language
-        `Text
-        Pool_common.Message.Field.Title
-        ~value:(value title_value)
-        ~required:true
-        ~flash_fetcher
-    ; input_element
-        language
-        `Text
-        Pool_common.Message.Field.publictitle
-        ~value:(value public_title_value)
-        ~required:true
-        ~flash_fetcher
-    ; textarea_element
-        language
-        Pool_common.Message.Field.Description
-        ~value:(value description_value)
-        ~required:true
-        ~flash_fetcher
-    ; div ~a:[ a_class [ "switcher" ] ] [ experiment_type_select; div [] ]
+    ; div
+        ~a:[ a_class [ "grid-col-2" ] ]
+        [ input_element
+            language
+            `Text
+            Pool_common.Message.Field.Title
+            ~value:(value title_value)
+            ~required:true
+            ~flash_fetcher
+        ; input_element
+            language
+            `Text
+            Pool_common.Message.Field.PublicTitle
+            ~value:(value public_title_value)
+            ~required:true
+            ~flash_fetcher
+        ; textarea_element
+            language
+            Pool_common.Message.Field.Description
+            ~value:(value description_value)
+            ~required:true
+            ~flash_fetcher
+        ; experiment_type_select
+        ]
     ; checkbox_element
         ~help:Pool_common.I18n.DirectRegistrationDisbled
         Pool_common.Message.Field.DirectRegistrationDisabled
@@ -182,27 +204,30 @@ let experiment_form
                 language
                 ?experiment
                 ()
-            ; input_element
-                language
-                `Text
-                Pool_common.Message.Field.InvitationSubject
-                ~value:
-                  (value (fun e ->
-                     e.invitation_template
-                     |> CCOption.map_or
-                          ~default:""
-                          InvitationTemplate.subject_value))
-                ~flash_fetcher
-            ; textarea_element
-                language
-                Pool_common.Message.Field.InvitationText
-                ~value:
-                  (value (fun e ->
-                     e.invitation_template
-                     |> CCOption.map_or
-                          ~default:""
-                          InvitationTemplate.text_value))
-                ~flash_fetcher
+            ; div
+                ~a:[ a_class [ "grid-col-2" ] ]
+                [ input_element
+                    language
+                    `Text
+                    Pool_common.Message.Field.InvitationSubject
+                    ~value:
+                      (value (fun e ->
+                         e.invitation_template
+                         |> CCOption.map_or
+                              ~default:""
+                              InvitationTemplate.subject_value))
+                    ~flash_fetcher
+                ; textarea_element
+                    language
+                    Pool_common.Message.Field.InvitationText
+                    ~value:
+                      (value (fun e ->
+                         e.invitation_template
+                         |> CCOption.map_or
+                              ~default:""
+                              InvitationTemplate.text_value))
+                    ~flash_fetcher
+                ]
             ]
         ]
     ; div
@@ -221,24 +246,27 @@ let experiment_form
                         language
                         I18n.ExperimentSessionReminderHint)
                 ]
-            ; flatpicker_element
-                language
-                `Time
-                Pool_common.Message.Field.LeadTime
-                ~help:Pool_common.I18n.TimeSpanPickerHint
-                ~value:
-                  (value (fun e ->
-                     session_reminder_lead_time_value e
-                     |> CCOption.map_or
-                          ~default:""
-                          Pool_common.Utils.Time.timespan_spanpicker))
-                ~flash_fetcher
             ; div
-                ~a:[ a_class [ "stack" ] ]
-                [ MessageTextElements.session_reminder_help
+                ~a:[ a_class [ "grid-col-2" ] ]
+                [ flatpicker_element
                     language
-                    sys_languages
-                    ()
+                    `Time
+                    Pool_common.Message.Field.LeadTime
+                    ~help:Pool_common.I18n.TimeSpanPickerHint
+                    ~value:
+                      (value (fun e ->
+                         session_reminder_lead_time_value e
+                         |> CCOption.map_or
+                              ~default:""
+                              Pool_common.Utils.Time.timespan_spanpicker))
+                    ~flash_fetcher
+                ; div
+                    ~a:[ a_class [ "full-width" ] ]
+                    [ MessageTextElements.session_reminder_help
+                        language
+                        sys_languages
+                        ()
+                    ]
                 ; input_element
                     language
                     `Text
@@ -259,15 +287,19 @@ let experiment_form
                 ]
             ]
         ]
-    ; submit_element
-        language
-        Message.(
-          let field = Some Field.Experiment in
-          match experiment with
-          | None -> Create field
-          | Some _ -> Update field)
-        ~submit_type:`Success
-        ()
+    ; div
+        ~a:[ a_class [ "flexrow" ] ]
+        [ submit_element
+            ~classnames:[ "push" ]
+            language
+            Message.(
+              let field = Some Field.Experiment in
+              match experiment with
+              | None -> Create field
+              | Some _ -> Update field)
+            ~submit_type:`Primary
+            ()
+        ]
     ]
 ;;
 
@@ -337,6 +369,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
         ; submit_element
             language
             Message.(Delete (Some Field.Experiment))
+            ~classnames:[ "small" ]
             ~submit_type:`Error
             ~has_icon:`TrashOutline
             ()
@@ -434,25 +467,20 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
       ; experiment.invitation_template
         |> CCOption.map_or ~default:(txt "") invitation_rows
       ; session_reminder_rows
-      ; p
-          [ a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/admin/experiments/%s/edit"
-                          (experiment.id |> Pool_common.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(
-                    Message.(Edit (Some Field.Experiment))
-                    |> Utils.control_to_string language)
-              ]
-          ]
       ; delete_form
       ]
   in
+  let edit_button =
+    link_as_button
+      ~icon:`Create
+      ~classnames:[ "small" ]
+      ~control:(language, Message.(Edit (Some Field.Experiment)))
+      (Format.asprintf
+         "/admin/experiments/%s/edit"
+         (experiment.id |> Pool_common.Id.value))
+  in
   experiment_layout
+    ~buttons:edit_button
     language
     (NavLink Pool_common.I18n.Overview)
     experiment
@@ -520,8 +548,9 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
     let thead =
-      Pool_common.Message.Field.
-        [ Some Name; Some Email; Some CreatedAt; Some Comment; None ]
+      (Pool_common.Message.Field.[ Name; Email; CreatedAt; Comment ]
+      |> Table.fields_to_txt language)
+      @ [ txt "" ]
     in
     let rows =
       CCList.map
@@ -538,25 +567,18 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
           ; entry.comment
             |> CCOption.map_or ~default:"" Waiting_list.Comment.value
             |> HttpUtils.add_line_breaks
-          ; a
-              ~a:
-                [ a_href
-                    (Sihl.Web.externalize_path
-                       (Format.asprintf
-                          "/admin/experiments/%s/waiting-list/%s"
-                          (waiting_list.experiment.Experiment.id
-                          |> Pool_common.Id.value)
-                          (entry.id |> Pool_common.Id.value)))
-                ]
-              [ txt
-                  Pool_common.(Message.More |> Utils.control_to_string language)
-              ]
+          ; Format.asprintf
+              "/admin/experiments/%s/waiting-list/%s"
+              (waiting_list.experiment.Experiment.id |> Pool_common.Id.value)
+              (entry.id |> Pool_common.Id.value)
+            |> edit_link
           ])
         waiting_list.waiting_list_entries
     in
-    Table.horizontal_table `Striped language ~thead rows
+    Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   in
   experiment_layout
+    ~hint:Pool_common.I18n.ExperimentWaitingList
     language
     (NavLink Pool_common.I18n.WaitingList)
     experiment

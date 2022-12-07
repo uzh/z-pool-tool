@@ -1,3 +1,5 @@
 (library
  (name service)
- (libraries sihl sihl-email sihl-queue sihl-storage sihl-token sihl-user))
+ (libraries sihl sihl-email sihl-queue sihl-storage sihl-token sihl-user)
+ (preprocess
+  (pps lwt_ppx)))

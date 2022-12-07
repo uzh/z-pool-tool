@@ -13,17 +13,17 @@ let handle req action =
     Format.asprintf "/experiments/%s" (Pool_common.Id.value experiment_id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
          Experiment.find_public tenant_db experiment_id contact
        in
+       let tags = Logger.req req in
        let events =
          match action with
          | `Create ->
            Waiting_list.{ contact; experiment }
-           |> Cqrs_command.Waiting_list_command.Create.handle
+           |> Cqrs_command.Waiting_list_command.Create.handle ~tags
            |> Lwt_result.lift
          | `Destroy ->
            let* waiting_list =
@@ -36,12 +36,12 @@ let handle req action =
            waiting_list
            |> CCOption.to_result
                 Pool_common.Message.(NotFound Field.WaitingList)
-           >>= Cqrs_command.Waiting_list_command.Destroy.handle
+           >>= Cqrs_command.Waiting_list_command.Destroy.handle ~tags
            |> Lwt_result.lift
        in
        let handle events =
          let%lwt (_ : unit list) =
-           Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.map_s (Pool_event.handle_event ~tags tenant_db) events
          in
          let success_message =
            let open Pool_common.Message in

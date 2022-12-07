@@ -24,34 +24,38 @@ type event =
   | ExperimenterDivested of t * Admin.experimenter Admin.t
   | AssistantAssigned of t * Admin.assistant Admin.t
   | AssistantDivested of t * Admin.assistant Admin.t
+[@@deriving variants]
 
-let handle_event pool : event -> unit Lwt.t = function
-  | Created t -> Repo.insert pool t
-  | Updated t -> Repo.update pool t
-  | Destroyed experiment_id -> Repo.destroy pool experiment_id
-  (* TODO: was placeholder *)
-  | ExperimenterAssigned (experiment, user)
-  | ExperimenterDivested (experiment, user) ->
-    let user_id =
-      Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
-    in
-    Guard.Persistence.Actor.revoke_roles
-      user_id
-      (Guard.ActorRoleSet.singleton
-         (`Experimenter (experiment.id |> Guard.Uuid.target_of Id.value)))
-    |> Lwt_result.map_error (fun x -> Failure x)
-    |> Lwt_result.get_exn
-  | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
-    ->
-    let user_id =
-      Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
-    in
-    Guard.Persistence.Actor.revoke_roles
-      user_id
-      (Guard.ActorRoleSet.singleton
-         (`Assistant (experiment.id |> Guard.Uuid.target_of Id.value)))
-    |> Lwt_result.map_error (fun x -> Failure x)
-    |> Lwt_result.get_exn
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  fun e ->
+    match e with
+    | Created t -> Repo.insert pool t
+    | Updated t -> Repo.update pool t
+    | Destroyed experiment_id -> Repo.destroy pool experiment_id
+    (* TODO: was placeholder *)
+    | ExperimenterAssigned (experiment, user)
+    | ExperimenterDivested (experiment, user) ->
+      let user_id =
+        Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
+      in
+      Guard.Persistence.Actor.revoke_roles
+        user_id
+        (Guard.ActorRoleSet.singleton
+           (`Experimenter (experiment.id |> Guard.Uuid.target_of Id.value)))
+      >|- (fun x -> Failure x)
+      |> Lwt_result.get_exn
+    | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
+      ->
+      let user_id =
+        Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
+      in
+      Guard.Persistence.Actor.revoke_roles
+        user_id
+        (Guard.ActorRoleSet.singleton
+           (`Assistant (experiment.id |> Guard.Uuid.target_of Id.value)))
+      >|- (fun x -> Failure x)
+      |> Lwt_result.get_exn
 ;;
 
 let[@warning "-4"] equal_event event1 event2 =
@@ -82,3 +86,5 @@ let pp_event formatter event =
     pp formatter experiment;
     Admin.pp formatter user
 ;;
+
+let show_event = Variants_of_event.to_name

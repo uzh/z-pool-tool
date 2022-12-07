@@ -59,6 +59,15 @@ let change_position_datatype =
     |sql}
 ;;
 
+let add_published_at_to_custom_fields =
+  Sihl.Database.Migration.create_step
+    ~label:"add published at to custom fields"
+    {sql|
+      ALTER TABLE pool_custom_fields
+        ADD COLUMN published_at timestamp NULL AFTER position
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "custom_fields"
@@ -66,5 +75,6 @@ let migration () =
     |> add_step add_admin_boolean_columns
     |> add_step add_group_column_to_custom_fields
     |> add_step add_position_to_custom_fields
-    |> add_step change_position_datatype)
+    |> add_step change_position_datatype
+    |> add_step add_published_at_to_custom_fields)
 ;;

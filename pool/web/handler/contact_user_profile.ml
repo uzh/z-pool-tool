@@ -9,26 +9,24 @@ let create_layout = Contact_general.create_layout
 let show usage req =
   let result ({ Pool_context.tenant_db; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, "/login")
+    Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
-       | `Overview ->
-         Page.Contact.detail contact context
-         |> create_layout ~active_navigation:"/user" req context
-         >|= Sihl.Web.Response.of_html
        | `LoginInformation ->
          let* password_policy =
            I18n.find_by_key tenant_db I18n.Key.PasswordPolicyText language
          in
          Page.Contact.login_information contact context password_policy
-         |> create_layout ~active_navigation:"/user" req context
-         >|= Sihl.Web.Response.of_html
+         |> create_layout
+              ~active_navigation:"/user/login-information"
+              req
+              context
+         >|+ Sihl.Web.Response.of_html
        | `PersonalDetails ->
          let* tenant_languages =
            Pool_context.Tenant.find req
            |> Lwt_result.lift
-           >|= fun c -> c.Pool_context.Tenant.tenant_languages
+           >|+ fun c -> c.Pool_context.Tenant.tenant_languages
          in
          let%lwt custom_fields =
            Custom_field.find_all_by_contact tenant_db (Contact.id contact)
@@ -38,13 +36,15 @@ let show usage req =
            custom_fields
            tenant_languages
            context
-         |> create_layout req ~active_navigation:"/user" context
-         >|= Sihl.Web.Response.of_html
+         |> create_layout
+              req
+              ~active_navigation:"/user/personal-details"
+              context
+         >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let details = show `Overview
 let personal_details = show `PersonalDetails
 let login_information = show `LoginInformation
 let update = Helpers.PartialUpdate.update
@@ -53,8 +53,8 @@ let update_email req =
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result ({ Pool_context.tenant_db; query_language; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun msg ->
+    let open Utils.Lwt_result.Infix in
+    Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
@@ -70,12 +70,17 @@ let update_email req =
            |> CCList.hd)
          |> Lwt_result.lift
        in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* events =
          Command.RequestEmailValidation.(
-           handle ?allowed_email_suffixes contact new_email |> Lwt_result.lift)
+           handle ?allowed_email_suffixes tenant contact new_email
+           |> Lwt_result.lift)
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events tenant_db events in
+         let tags = Logger.req req in
+         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/email-confirmation")
@@ -88,18 +93,23 @@ let update_email req =
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result ({ Pool_context.tenant_db; query_language; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun msg ->
+    let open Utils.Lwt_result.Infix in
+    let tags = Logger.req req in
+    Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
         msg, "/user/login-information", [ urlencoded_to_flash urlencoded ]))
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* events =
          let open CCResult.Infix in
-         Command.UpdatePassword.(decode urlencoded >>= handle contact)
+         Command.UpdatePassword.(
+           decode urlencoded >>= handle ~tags tenant contact)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events tenant_db events in
+         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/user/login-information")
@@ -111,9 +121,8 @@ let update_password req =
 
 let completion req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, "/login")
+    Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
@@ -122,14 +131,13 @@ let completion req =
     in
     Page.Contact.completion context flash_fetcher custom_fields
     |> create_layout req ~active_navigation:"/user" context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let completion_post req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.format_request_boolean_values []
@@ -138,7 +146,7 @@ let completion_post req =
   let result
     ({ Pool_context.tenant_db; query_language; language; _ } as context)
     =
-    Lwt_result.map_error (fun err ->
+    Utils.Lwt_result.map_error (fun err ->
       HttpUtils.(
         ( err
         , path_with_language query_language "/user/completion"
@@ -151,11 +159,13 @@ let completion_post req =
       |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
       |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
     in
+    let tags = Logger.req req in
     let events =
       let open Utils.Lwt_result.Infix in
       let open Public in
       let handle =
         Cqrs_command.Custom_field_answer_command.UpdateMultiple.handle
+          ~tags
           (Contact.id contact)
       in
       Lwt_list.map_s
@@ -179,7 +189,7 @@ let completion_post req =
     in
     let handle events =
       let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event tenant_db) events
+        Lwt_list.map_s (Pool_event.handle_event ~tags tenant_db) events
       in
       let%lwt required_answers_given =
         Custom_field.all_required_answered tenant_db (Contact.id contact)

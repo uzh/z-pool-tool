@@ -34,18 +34,57 @@ module Rate = struct
 end
 
 module Distribution = struct
-  let sortable_fields =
-    Pool_common.Message.Field.
-      [ AssignmentCount; InvitationCount; Firstname; Name ]
+  (* let sortable_fields = Pool_common.Message.Field. [ AssignmentCount;
+     InvitationCount; Firstname; Name ] ;; *)
+  let print m fmt _ = Format.pp_print_string fmt m
+
+  type sortable_field =
+    | AssignmentCount [@name "assignment_count"]
+        [@printer print "assignment_count"]
+    | Firstname [@name "firstname"] [@printer print "firstname"]
+    | InvitationCount [@name "invitation_count"]
+        [@printer print "invitation_count"]
+    | Lastname [@name "lastname"] [@printer print "lastname"]
+  [@@deriving eq, show, yojson, enum]
+
+  let all_sortable_fields : sortable_field list =
+    CCList.range min_sortable_field max_sortable_field
+    |> CCList.map sortable_field_of_enum
+    |> CCList.all_some
+    |> CCOption.get_exn_or
+         "Distribution order: Could not create list of all sortable keys!"
+  ;;
+
+  let sortable_field_to_string language =
+    let go = Pool_common.Utils.field_to_string language in
+    let open Pool_common.Message in
+    function
+    | AssignmentCount -> Field.AssignmentCount |> go
+    | Firstname -> Field.Firstname |> go
+    | InvitationCount -> Field.InvitationCount |> go
+    | Lastname -> Field.Lastname |> go
+  ;;
+
+  let sortable_field_to_sql = function
+    | AssignmentCount -> "pool_contacts.num_assignments"
+    | Firstname -> "user_users.given_name"
+    | InvitationCount -> "pool_contacts.num_invitations"
+    | Lastname -> "user_users.name"
+  ;;
+
+  let read_sortable_field m =
+    m
+    |> Format.asprintf "[\"%s\"]"
+    |> Yojson.Safe.from_string
+    |> sortable_field_of_yojson
   ;;
 
   module SortOrder = struct
     let field = Pool_common.Message.Field.SortOrder
-    let go m fmt _ = Format.pp_print_string fmt m
 
     type t =
-      | Ascending [@name "ASC"] [@printer go "ASC"]
-      | Descending [@name "DESC"] [@printer go "DESC"]
+      | Ascending [@name "ASC"] [@printer print "ASC"]
+      | Descending [@name "DESC"] [@printer print "DESC"]
     [@@deriving eq, show, yojson, enum]
 
     let to_human m lang =
@@ -79,8 +118,7 @@ module Distribution = struct
     let schema () = Pool_common.Utils.schema_decoder create show field
   end
 
-  type t = (Pool_common.Message.Field.t * SortOrder.t) list
-  [@@deriving eq, show, yojson]
+  type t = (sortable_field * SortOrder.t) list [@@deriving eq, show, yojson]
 
   let field = Pool_common.Message.Field.Distribution
   let create m = m
@@ -94,9 +132,7 @@ module Distribution = struct
       |> CCList.map (fun (field, order) ->
            CCString.concat
              " "
-             [ field |> Pool_common.Message.Field.show
-             ; order |> SortOrder.show
-             ])
+             [ field |> sortable_field_to_sql; order |> SortOrder.show ])
       |> CCString.concat ", "
       |> Format.asprintf "ORDER BY %s"
   ;;
