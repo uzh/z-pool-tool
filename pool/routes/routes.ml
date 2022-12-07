@@ -36,12 +36,12 @@ module Public = struct
         ~middlewares:
           [ CustomMiddleware.Tenant.valid_tenant ()
           ; CustomMiddleware.Context.context ()
+          ; CustomMiddleware.Logger.logger
           ]
         [ choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
                   Pool_context.UserType.[ Guest; Contact; Admin ]
-              ; CustomMiddleware.Logger.logger
               ]
             [ get "/index" index
             ; get "/denied" Handler.Public.denied
@@ -121,10 +121,7 @@ module Contact = struct
       ]
     in
     [ choose
-        ~middlewares:
-          [ CustomMiddleware.Contact.completion_in_progress ()
-          ; CustomMiddleware.Logger.logger
-          ]
+        ~middlewares:[ CustomMiddleware.Contact.completion_in_progress () ]
         locked
     ; get "/user/completion" UserProfile.completion
     ; post "/user/completion" UserProfile.completion_post
@@ -149,7 +146,6 @@ module Contact = struct
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Contact ]
             ; CustomMiddleware.Contact.confirmed_and_terms_agreed ()
-            ; CustomMiddleware.Logger.logger
             ]
           locked_routes
       ]
@@ -167,8 +163,8 @@ module Admin = struct
   let middlewares =
     [ CustomMiddleware.Tenant.valid_tenant ()
     ; CustomMiddleware.Context.context ()
-    ; CustomMiddleware.Admin.require_admin ()
     ; CustomMiddleware.Logger.logger
+    ; CustomMiddleware.Admin.require_admin ()
     ]
   ;;
 
@@ -543,7 +539,10 @@ let router =
     ; Public.global_routes
     ; get
         "/**"
-        ~middlewares:[ CustomMiddleware.Context.context () ]
+        ~middlewares:
+          [ CustomMiddleware.Context.context ()
+          ; CustomMiddleware.Logger.logger
+          ]
         Handler.Public.not_found
     ]
 ;;
