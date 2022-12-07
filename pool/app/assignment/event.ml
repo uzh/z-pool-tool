@@ -10,8 +10,6 @@ type event =
   | AttendanceSet of (t * ShowUp.t * Participated.t)
   | Canceled of t
   | Created of create
-  | Participated of (t * Participated.t)
-  | ShowedUp of (t * ShowUp.t)
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
@@ -34,10 +32,4 @@ let handle_event pool : event -> unit Lwt.t = function
       assignment
     ||> Pool_common.Utils.get_or_failwith
     ||> fun (_ : [> `Assignment ] Guard.AuthorizableTarget.t) -> ()
-  | Participated (assignment, participated) ->
-    let%lwt () = { assignment with participated } |> Repo.update pool in
-    Lwt.return_unit
-  | ShowedUp (assignment, show_up) ->
-    let%lwt () = { assignment with show_up } |> Repo.update pool in
-    Lwt.return_unit
 ;;

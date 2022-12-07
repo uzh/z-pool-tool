@@ -121,7 +121,7 @@ module SetAttendance : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Assignment.t -> Guard.Authorizer.effect list
+  val effects : Assignment.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
@@ -168,12 +168,8 @@ end = struct
       command
   ;;
 
-  let effects assignment =
-    [ ( `Update
-      , `Target
-          (assignment.Assignment.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Assignment.Id.value) ]
   ;;
 end
 
