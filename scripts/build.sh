@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# set subsequent(*) commands which fail to cause the shell script to exit immediately
+set -e
+
 printTitle () {
   echo -e "\e[1;33m~~~ $1: ~~~\e[0m"
 }
