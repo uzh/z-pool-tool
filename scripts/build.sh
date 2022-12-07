@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# set subsequent(*) commands which fail to cause the shell script to exit immediately
-set -e
+# immediately when a command fails and print each command
+set -ex
 
 printTitle () {
   echo -e "\e[1;33m~~~ $1: ~~~\e[0m"
