@@ -8,6 +8,7 @@ type event =
   | OperatorAssigned of Id.t * Admin.operator Admin.t
   | OperatorDivested of Id.t * Admin.operator Admin.t
   | StatusReportGenerated of unit
+[@@deriving variants]
 
 let handle_event _ : event -> unit Lwt.t = function
   | OperatorAssigned (tenant_id, user) ->
@@ -42,4 +43,10 @@ let pp_event formatter event =
     Id.pp formatter tenant_id;
     Admin.pp formatter user
   | StatusReportGenerated () -> Utils.todo ()
+;;
+
+let show_event = function
+  | OperatorAssigned _ -> "OperatorAssigned"
+  | OperatorDivested _ -> "OperatorDivested"
+  | StatusReportGenerated _ -> "StatusReportGenerated"
 ;;

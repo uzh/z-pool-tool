@@ -2,6 +2,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "root.cqrs"
+
 module Create : sig
   type t =
     { email : User.EmailAddress.t
@@ -11,7 +13,8 @@ module Create : sig
     }
 
   val handle
-    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> t
@@ -46,7 +49,13 @@ end = struct
         command)
   ;;
 
-  let handle ?allowed_email_suffixes ?password_policy command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?allowed_email_suffixes
+    ?password_policy
+    command
+    =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
@@ -74,12 +83,17 @@ end
 module ToggleStatus : sig
   type t = Root.t
 
-  val handle : Root.t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> Root.t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Guard.Authorizer.effect list
 end = struct
   type t = Root.t
 
-  let handle (root : Root.t) =
+  let handle ?(tags = Logs.Tag.empty) (root : Root.t) =
+    Logs.info ~src (fun m -> m "Handle command ToggleStatus" ~tags);
     let open Sihl.Contract.User in
     let status = (root |> Root.user).status in
     match status with

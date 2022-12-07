@@ -91,6 +91,10 @@ let () =
             `Quick
             Assignment_test.set_attendance
         ; test_case
+            "set invalid attendance on assignment"
+            `Quick
+            Assignment_test.set_invalid_attendance
+        ; test_case
             "assign to fully booked session"
             `Quick
             Assignment_test.assign_to_fully_booked_session
@@ -179,6 +183,14 @@ let () =
             "create with missing admin option"
             `Quick
             Custom_field_test.create_with_missing_admin_option
+        ; test_case
+            "delete published field"
+            `Quick
+            Custom_field_test.delete_published_field
+        ; test_case
+            "delete published field option"
+            `Quick
+            Custom_field_test.delete_published_option
         ] )
     ; ( "matcher"
       , [ test_case

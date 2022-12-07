@@ -78,6 +78,12 @@ module Disabled = struct
   let t = Caqti_type.bool
 end
 
+module PublishedAt = struct
+  include PublishedAt
+
+  let t = Caqti_type.ptime
+end
+
 module Admin = struct
   include Admin
 
@@ -136,20 +142,69 @@ module Option = struct
   type repo = Pool_common.Id.t * t
 
   let t =
-    let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
-    let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
+    let encode ((field_id, m) : repo) =
+      Ok (field_id, (m.id, (m.name, m.published_at)))
+    in
+    let decode (field_id, (id, (name, published_at))) =
+      Ok (field_id, { id; name; published_at })
+    in
     Caqti_type.(
-      custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
+      custom
+        ~encode
+        ~decode
+        (tup2
+           Pool_common.Repo.Id.t
+           (tup2 Id.t (tup2 Name.t (option PublishedAt.t)))))
   ;;
+
+  module Public = struct
+    open Public
+
+    type repo = Pool_common.Id.t * t
+
+    let t =
+      let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
+      let decode (field_id, (id, name)) = Ok (field_id, { id; name }) in
+      Caqti_type.(
+        custom ~encode ~decode (tup2 Pool_common.Repo.Id.t (tup2 Id.t Name.t)))
+    ;;
+
+    let to_entity = snd
+    let of_entity field_id m = field_id, m
+  end
 
   let to_entity = snd
   let of_entity field_id m = field_id, m
 
-  module Write = struct
+  module Insert = struct
     let t =
-      let encode m = Ok (m.SelectOption.id, m.name) in
-      let decode (id, name) = Ok { id; name } in
-      Caqti_type.(custom ~encode ~decode (tup2 Pool_common.Repo.Id.t Name.t))
+      let encode ((field_id, m) : repo) = Ok (field_id, (m.id, m.name)) in
+      let decode _ =
+        failwith
+          Pool_common.(
+            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_common.Repo.Id.t (tup2 Pool_common.Repo.Id.t Name.t)))
+    ;;
+  end
+
+  module Update = struct
+    let t =
+      let encode m = Ok (m.SelectOption.id, (m.name, m.published_at)) in
+      let decode _ =
+        failwith
+          Pool_common.(
+            Message.WriteOnlyModel |> Utils.error_to_string Language.En)
+      in
+      Caqti_type.(
+        custom
+          ~encode
+          ~decode
+          (tup2 Pool_common.Repo.Id.t (tup2 Name.t (option PublishedAt.t))))
     ;;
   end
 end
@@ -296,7 +351,7 @@ module Public = struct
         |> Id.of_string
         |> fun selected ->
         CCList.find
-          (fun (_, { SelectOption.id; _ }) -> Id.equal id selected)
+          (fun (_, { SelectOption.Public.id; _ }) -> Id.equal id selected)
           select_options
         |> snd
         |> Entity_answer.create ~id
@@ -334,7 +389,7 @@ module Public = struct
              |> Id.of_string
              |> fun selected ->
              CCList.find_opt
-               (fun { SelectOption.id; _ } -> Id.equal id selected)
+               (fun { SelectOption.Public.id; _ } -> Id.equal id selected)
                options
              >|= Entity_answer.create ~id)
       in
@@ -420,7 +475,9 @@ module Public = struct
         ([], group_fields fields)
         groups
     in
-    grouped, ungrouped |> CCList.map to_entity
+    ( grouped
+      |> CCList.filter (fun g -> CCList.is_empty g.Group.Public.fields |> not)
+    , ungrouped |> CCList.map to_entity )
   ;;
 
   let t =
@@ -492,6 +549,7 @@ type repo =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
+  ; published_at : PublishedAt.t option
   }
 
 let t =
@@ -506,8 +564,9 @@ let t =
         , ( hint
           , ( field_type
             , ( validation
-              , (required, (disabled, (custom_field_group_id, admin))) ) ) ) )
-      ) )
+              , ( required
+                , (disabled, (custom_field_group_id, (admin, published_at))) )
+              ) ) ) ) ) )
     =
     let open CCResult in
     Ok
@@ -521,6 +580,7 @@ let t =
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   in
   Caqti_type.(
@@ -543,7 +603,9 @@ let t =
                            Required.t
                            (tup2
                               Disabled.t
-                              (tup2 (option Common.Repo.Id.t) Admin.t))))))))))
+                              (tup2
+                                 (option Common.Repo.Id.t)
+                                 (tup2 Admin.t (option PublishedAt.t))))))))))))
 ;;
 
 let to_entity
@@ -558,6 +620,7 @@ let to_entity
   ; disabled
   ; custom_field_group_id
   ; admin
+  ; published_at
   }
   =
   let validation_schema schema =
@@ -575,6 +638,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   | FieldType.Number ->
     let validation = validation_schema Validation.Number.schema in
@@ -588,6 +652,7 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
   | FieldType.Select ->
     let options =
@@ -606,6 +671,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin
+        ; published_at
         }
       , options )
   | FieldType.MultiSelect ->
@@ -625,6 +691,7 @@ let to_entity
         ; disabled
         ; custom_field_group_id
         ; admin
+        ; published_at
         }
       , options )
   | FieldType.Text ->
@@ -639,5 +706,6 @@ let to_entity
       ; disabled
       ; custom_field_group_id
       ; admin
+      ; published_at
       }
 ;;

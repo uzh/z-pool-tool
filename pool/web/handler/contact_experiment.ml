@@ -4,17 +4,16 @@ let create_layout = Contact_general.create_layout
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let open Lwt_result.Syntax in
   let error_path = "/dashboard" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt experiment_list =
          Experiment.find_all_public_by_contact tenant_db contact
        in
        Page.Contact.Experiment.index experiment_list context
        |> create_layout ~active_navigation:"/experiments" req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -23,9 +22,8 @@ let show req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/experiments" in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
-    let open Lwt_result.Syntax in
     let id =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Experiment
       |> Pool_common.Id.of_string
@@ -64,7 +62,7 @@ let show req =
       context
     |> Lwt.return_ok
     >>= create_layout req context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

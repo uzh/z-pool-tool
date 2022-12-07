@@ -8,8 +8,6 @@ module Field = struct
     Format.pp_print_string fmt name
   ;;
 
-  (* TODO: Remove unused (Birthday) *)
-
   type t =
     | Admin [@name "admin"] [@printer go "admin"]
     | AdminHint [@name "admin_hint"] [@printer go "admin_hint"]
@@ -26,6 +24,7 @@ module Field = struct
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
+    | ClosedAt [@name "closed_at"] [@printer go "closed_at"]
     | Comment [@name "comment"] [@printer go "comment"]
     | Contact [@name "contact"] [@printer go "contact"]
     | ContactEmail [@name "contact_email"] [@printer go "contact_email"]
@@ -34,10 +33,15 @@ module Field = struct
     | CurrentPassword [@name "current_password"]
         [@printer go "current_password"]
     | CustomField [@name "custom_field"] [@printer go "custom_field"]
+    | CustomFields [@name "custom_fields"] [@printer go "custom_fields"]
     | CustomFieldGroup [@name "custom_field_group"]
         [@printer go "custom_field_group"]
+    | CustomFieldGroups [@name "custom_field_groups"]
+        [@printer go "custom_field_groups"]
     | CustomFieldOption [@name "custom_field_option"]
         [@printer go "custom_field_option"]
+    | CustomFieldOptions [@name "custom_field_options"]
+        [@printer go "custom_field_options"]
     | CustomHtmx of (string * string) [@name "custom"]
         [@printer custom "custom"]
     | Database [@name "database"] [@printer go "database"]
@@ -133,6 +137,7 @@ module Field = struct
     | Paused [@name "paused"] [@printer go "paused"]
     | Profile [@name "profile"] [@printer go "profile"]
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
+    | PublishedAt [@name "published_at"] [@printer go "published_at"]
     | Query [@name "query"] [@printer go "query"]
     | Rate [@name "rate"] [@printer go "rate"]
     | RecruitmentChannel [@name "recruitment_channel"]
@@ -207,10 +212,11 @@ end
    Field.t *)
 type error =
   | AllLanguagesRequired of Field.t
-  | AlreadySignedUpForExperiment
   | AlreadyInPast
-  | AlreadyStarted
   | AlreadyInvitedToExperiment of string list
+  | AlreadyPublished of Field.t
+  | AlreadySignedUpForExperiment
+  | AlreadyStarted
   | Authorization of string
   | Conformist of (Field.t * error) list
   | ConformistModuleErrorType
@@ -267,6 +273,8 @@ type error =
   | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
+  | SessionAlreadyClosed
+  | SessionNotStarted
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError
   | TerminatoryRootErrorTitle
@@ -293,6 +301,7 @@ type success =
   | AddedToWaitingList
   | AssignmentCreated
   | Canceled of Field.t
+  | Closed of Field.t
   | Created of Field.t
   | Deleted of Field.t
   | EmailConfirmationMessage
@@ -301,6 +310,7 @@ type success =
   | PasswordChanged
   | PasswordReset
   | PasswordResetSuccessMessage
+  | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
   | SentList of Field.t
@@ -337,6 +347,7 @@ type control =
   | Back
   | Cancel of Field.t option
   | Choose of Field.t option
+  | Close of Field.t option
   | Create of Field.t option
   | Decline
   | Delete of Field.t option
@@ -349,12 +360,15 @@ type control =
   | Manage of Field.t
   | More
   | PleaseSelect
+  | Publish of Field.t option
+  | Register
   | RemoveFromWaitingList
   | Reschedule of Field.t option
   | Resend of Field.t option
   | Save of Field.t option
   | Send of Field.t option
   | SendResetLink
+  | SelectAll of Field.t option
   | SelectFilePlaceholder
   | Show
   | SignUp

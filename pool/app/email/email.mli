@@ -1,3 +1,11 @@
+type email_layout =
+  { link : string
+  ; logo_src : string
+  ; logo_alt : string
+  }
+
+val equal_email_layout : email_layout -> email_layout -> bool
+
 module CustomTemplate : sig
   module Subject : sig
     type t =
@@ -28,6 +36,7 @@ module CustomTemplate : sig
   type t =
     { subject : Subject.t
     ; content : Content.t
+    ; layout : email_layout
     }
 
   val equal : t -> t -> bool
@@ -142,7 +151,12 @@ type verification_event =
       * Pool_user.Firstname.t
       * Pool_user.Lastname.t
       * Pool_common.Language.t
-  | Updated of Pool_user.EmailAddress.t * Sihl_user.t * Pool_common.Language.t
+      * email_layout
+  | Updated of
+      Pool_user.EmailAddress.t
+      * Sihl_user.t
+      * Pool_common.Language.t
+      * email_layout
   | EmailVerified of unverified t
 
 val handle_verification_event
@@ -163,9 +177,10 @@ type confirmation_email =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t
-  | AssignmentConfirmationSent of Sihl_user.t * confirmation_email
+  | ResetPassword of Sihl_user.t * Pool_common.Language.t * email_layout
+  | ChangedPassword of Sihl_user.t * Pool_common.Language.t * email_layout
+  | AssignmentConfirmationSent of
+      Sihl_user.t * confirmation_email * email_layout
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
   | InvitationBulkSent of
       (Sihl_user.t * text_component list * CustomTemplate.t) list
@@ -174,14 +189,20 @@ type event =
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
+val verification_event_name : verification_event -> string
 
 module Helper : sig
+  val layout_from_tenant : Pool_tenant.t -> email_layout
+  val root_layout : unit -> email_layout
+
   val prepare_email
     :  Pool_database.Label.t
     -> Pool_common.Language.t
     -> TemplateLabel.t
     -> string
     -> string
+    -> email_layout
     -> (string * string) list
     -> Sihl_email.t Lwt.t
 
@@ -195,6 +216,7 @@ module Helper : sig
     val create
       :  Pool_database.Label.t
       -> Pool_common.Language.t
+      -> email_layout
       -> unverified t
       -> Pool_user.Firstname.t option
       -> Pool_user.Lastname.t option

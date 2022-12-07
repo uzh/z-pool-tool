@@ -119,6 +119,11 @@ const predicateToJson = (outerPredicate, allowEmpty = false) => {
                             [inputDataType]: valueInput.value
                         }
                         break;
+                    case "language":
+                        value = {
+                            [inputDataType]: valueInput.value
+                        }
+                        break;
                     case "list":
                         value = {
                             ["option"]: valueInput.value
@@ -218,6 +223,9 @@ if (form) {
     addRemovePredicateListener(form);
     form.addEventListener('htmx:afterSwap', (e) => {
         addRemovePredicateListener(e.detail.elt)
+        if (e.detail.target.type === "submit") {
+            updateContactCount();
+        }
     })
     updateContactCount()
     form.addEventListener('htmx:configRequest', (e) => configRequest(e, form))

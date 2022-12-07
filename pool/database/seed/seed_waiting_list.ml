@@ -11,6 +11,7 @@ let waiting_list pool =
       }
   in
   let%lwt events =
+    let open Utils.Lwt_result.Infix in
     Lwt_list.map_s
       (fun experiment ->
         let%lwt filtered_contacts =
@@ -18,7 +19,7 @@ let waiting_list pool =
             pool
             experiment.Experiment.id
             experiment.Experiment.filter
-          |> Lwt.map CCResult.get_exn
+          ||> CCResult.get_exn
         in
         let n = CCList.length filtered_contacts / 2 in
         let contact = CCList.nth filtered_contacts n in

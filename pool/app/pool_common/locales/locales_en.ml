@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "only visible for admins"
   | AdminHint -> "hint for admins"
   | Answer -> "answer"
-  | AllowUninvitedSignup -> "Allow sign up of uninvited contacts"
+  | AllowUninvitedSignup -> "Allow registration of uninvited contacts"
   | AssetId -> "asset identifier"
   | Assignment -> "assignment"
   | AssignmentCount -> "no. assignments"
@@ -16,13 +16,17 @@ let field_to_string =
   | Building -> "building"
   | CanceledAt -> "canceled at"
   | City -> "city"
+  | ClosedAt -> "Closed at"
   | Comment -> "comment"
   | Contact -> "contact"
   | ContactEmail -> "contact email address"
   | Contacts -> "contacts"
   | CustomField -> "field"
+  | CustomFields -> "fields"
   | CustomFieldGroup -> "group"
+  | CustomFieldGroups -> "groups"
   | CustomFieldOption -> "option"
+  | CustomFieldOptions -> "options"
   | CreatedAt -> "created at"
   | CurrentPassword -> "current password"
   | CustomHtmx (label, _) -> label
@@ -103,6 +107,7 @@ let field_to_string =
   | Predicate -> "predicate"
   | Profile -> "profile"
   | PublicTitle -> "public title"
+  | PublishedAt -> "published"
   | Query -> "query"
   | Rate -> "rate limit"
   | ReminderText -> "reminder text"
@@ -165,6 +170,8 @@ let success_to_string : success -> string = function
   | AssignmentCreated -> "You have been signed up successfully."
   | Canceled field ->
     field_message "" (field_to_string field) "was successfully canceled."
+  | Closed field ->
+    field_message "" (field_to_string field) "was successfully closed."
   | Created field ->
     field_message "" (field_to_string field) "was successfully created."
   | Deleted field ->
@@ -179,6 +186,8 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "You will receive an email with a link to reset your password if an  \
      account with the provided email is existing."
+  | Published field ->
+    field_message "" (field_to_string field) "was successfully published."
   | RemovedFromWaitingList -> "You were removed from the waiting list."
   | Rescheduled field ->
     field_message "" (field_to_string field) "was successfully rescheduled."
@@ -211,6 +220,11 @@ let rec error_to_string = function
     Format.asprintf
       "The following contacts have already been invited to this experiment: %s"
       (CCString.concat ", " names)
+  | AlreadyPublished field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "has alredy been published."
   | Authorization message -> field_message "Unable to authorize: " message ""
   | Conformist errs ->
     CCList.map
@@ -305,6 +319,8 @@ let rec error_to_string = function
     "Please enter both a subject and a text for the session reminder."
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
+  | SessionAlreadyClosed -> "This session is already closed."
+  | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."
@@ -344,6 +360,7 @@ let control_to_string = function
   | Back -> format_submit "back" None
   | Cancel field -> format_submit "cancel" field
   | Choose field -> format_submit "choose" field
+  | Close field -> format_submit "close" field
   | Create field -> format_submit "create" field
   | Decline -> format_submit "decline" None
   | Delete field -> format_submit "delete" field
@@ -356,9 +373,12 @@ let control_to_string = function
   | Manage field -> format_submit "manage" (Some field)
   | More -> format_submit "more" None
   | PleaseSelect -> "please select"
+  | Publish field -> format_submit "publish" field
+  | Register -> format_submit "register" None
   | RemoveFromWaitingList -> "Remove from waiting list"
   | Resend field -> format_submit "resend" field
   | Save field -> format_submit "save" field
+  | SelectAll field -> format_submit "select all" field
   | SelectFilePlaceholder -> format_submit "select file.." None
   | Send field -> format_submit "send" field
   | Reschedule field -> format_submit "reschedule" field

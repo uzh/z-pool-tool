@@ -32,6 +32,8 @@ let select_fields =
       pool_contacts.email_verified,
       pool_contacts.num_invitations,
       pool_contacts.num_assignments,
+      pool_contacts.num_show_ups,
+      pool_contacts.num_participations,
       pool_contacts.firstname_version,
       pool_contacts.lastname_version,
       pool_contacts.paused_version,
@@ -85,12 +87,12 @@ let find_request =
 ;;
 
 let find pool id =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_request
     (Pool_common.Id.value id)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let find_by_email_request =
@@ -104,12 +106,12 @@ let find_by_email_request =
 ;;
 
 let find_by_email pool email =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_by_email_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let find_confirmed_request =
@@ -124,12 +126,12 @@ let find_confirmed_request =
 ;;
 
 let find_confirmed pool email =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Utils.Database.find_opt
     (Database.Label.value pool)
     find_confirmed_request
     (Pool_user.EmailAddress.value email)
-  >|= CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
+  ||> CCOption.to_result Pool_common.Message.(NotFound Field.Contact)
 ;;
 
 let filter_to_sql template_list dyn query =
@@ -137,11 +139,12 @@ let filter_to_sql template_list dyn query =
   let add_value_to_params value dyn =
     let add c v = Dynparam.add c v dyn in
     ( (match value with
-       | Str s -> add Caqti_type.string s
-       | Nr n -> add Caqti_type.float n
        | Bool b -> add Caqti_type.bool b
        | Date d -> add Caqti_type.ptime d
-       | Option id -> add Custom_field.Repo.SelectOption.Id.t id)
+       | Language lang -> add Caqti_type.string (Pool_common.Language.show lang)
+       | Nr n -> add Caqti_type.float n
+       | Option id -> add Custom_field.Repo.SelectOption.Id.t id
+       | Str s -> add Caqti_type.string s)
     , "?" )
   in
   let open CCResult in
@@ -289,7 +292,7 @@ let filtered_base_condition =
     |sql}
 ;;
 
-let filtered_params ?group_by template_list experiment_id filter =
+let filtered_params ?group_by ?order_by template_list experiment_id filter =
   let open CCResult in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
@@ -305,15 +308,22 @@ let filtered_params ?group_by template_list experiment_id filter =
   in
   query
   >|= fun (dyn, sql) ->
-  ( dyn
-  , match group_by with
+  let sql =
+    match group_by with
     | None -> sql
-    | Some group_by -> Format.asprintf "%s GROUP BY %s" sql group_by )
+    | Some group_by -> Format.asprintf "%s GROUP BY %s" sql group_by
+  in
+  let sql =
+    match order_by with
+    | None -> sql
+    | Some order_by -> Format.asprintf "%s %s" sql order_by
+  in
+  dyn, sql
 ;;
 
-let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
+let find_filtered pool ?order_by ?limit experiment_id filter =
   let filter = filter |> CCOption.map (fun f -> f.Filter.query) in
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let%lwt template_list =
     match filter with
     | None -> Lwt.return []
@@ -322,6 +332,7 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
   filtered_params
     template_list
     ~group_by:"pool_contacts.user_uuid"
+    ?order_by
     experiment_id
     filter
   |> Lwt_result.lift
@@ -338,7 +349,7 @@ let[@warning "-27"] find_filtered pool ?order_by ?limit experiment_id filter =
 ;;
 
 let count_filtered pool experiment_id query =
-  let open Lwt_result.Infix in
+  let open Utils.Lwt_result.Infix in
   let%lwt template_list =
     match query with
     | None -> Lwt.return []
@@ -407,6 +418,8 @@ let insert_request =
         email_verified,
         num_invitations,
         num_assignments,
+        num_show_ups,
+        num_participations,
         firstname_version,
         lastname_version,
         paused_version,
@@ -432,7 +445,9 @@ let insert_request =
         $15,
         $16,
         $17,
-        $18
+        $18,
+        $19,
+        $20
       )
     |sql}
   |> Repo_model.contact ->. Caqti_type.unit
@@ -456,11 +471,13 @@ let update_request =
         email_verified = $9,
         num_invitations = $10,
         num_assignments = $11,
-        firstname_version = $12,
-        lastname_version = $13,
-        paused_version = $14,
-        language_version = $15,
-        experiment_type_preference_version = $16
+        num_show_ups = $12,
+        num_participations = $13,
+        firstname_version = $14,
+        lastname_version = $15,
+        paused_version = $16,
+        language_version = $17,
+        experiment_type_preference_version = $18
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

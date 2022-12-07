@@ -1,14 +1,21 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "waiting_list.cqrs"
+
 module Create : sig
   type t = Waiting_list.create
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Guard.Authorizer.effect list
 end = struct
   type t = Waiting_list.create
 
-  let handle (command : Waiting_list.create) =
+  let handle ?(tags = Logs.Tag.empty) (command : Waiting_list.create) =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     if command.Waiting_list.experiment
          .Experiment.Public.direct_registration_disabled
        |> Experiment.DirectRegistrationDisabled.value
@@ -23,7 +30,8 @@ module Update : sig
   type t = Waiting_list.update
 
   val handle
-    :  Waiting_list.t
+    :  ?tags:Logs.Tag.set
+    -> Waiting_list.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -44,7 +52,8 @@ end = struct
         command)
   ;;
 
-  let handle waiting_list (command : t) =
+  let handle ?(tags = Logs.Tag.empty) waiting_list (command : t) =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok
       [ Waiting_list.Updated (command, waiting_list) |> Pool_event.waiting_list
       ]
@@ -67,12 +76,19 @@ end
 module Destroy : sig
   type t = Waiting_list.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val can : Waiting_list.t -> Guard.Authorizer.effect list
 end = struct
   type t = Waiting_list.t
 
-  let handle m = Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
+  let handle ?(tags = Logs.Tag.empty) m =
+    Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
+    Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
+  ;;
 
   let can waiting_list =
     [ `Manage, `TargetEntity `WaitingList

@@ -8,7 +8,7 @@ let field_to_string =
   | AdminViewOnly -> "Nur für Admins ersichtlich"
   | AdminHint -> "Hint für Administratoren"
   | Answer -> "Antwort"
-  | AllowUninvitedSignup -> "Anmeldung nicht eingeladener Kontakte erlauben"
+  | AllowUninvitedSignup -> "Einschreiben nicht eingeladener Kontakte erlauben"
   | AssetId -> "Anlagen Identifier"
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anz. Anmeldungen"
@@ -16,13 +16,17 @@ let field_to_string =
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
+  | ClosedAt -> "Geschlossen am"
   | Comment -> "Kommentar"
   | Contact -> "Proband"
   | ContactEmail -> "Kontakt Email Adresse"
   | Contacts -> "Probanden"
   | CustomField -> "Feld"
+  | CustomFields -> "Felder"
   | CustomFieldGroup -> "Gruppe"
+  | CustomFieldGroups -> "Gruppen"
   | CustomFieldOption -> "Option"
+  | CustomFieldOptions -> "Optionen"
   | CreatedAt -> "Erstellt am"
   | CurrentPassword -> "Aktuelles Passwort"
   | CustomHtmx (label, _) -> label
@@ -102,6 +106,7 @@ let field_to_string =
   | Predicate -> "Prädikat"
   | Profile -> "Profil"
   | PublicTitle -> "Öffentlicher Titel"
+  | PublishedAt -> "Veröffentlicht"
   | Query -> "Query"
   | Rate -> "Höchstrate"
   | RecruitmentChannel -> "Rekrutierungs Kanal"
@@ -164,6 +169,8 @@ let success_to_string : success -> string = function
   | AssignmentCreated -> "Sie wurden erfolgreich angemeldet."
   | Canceled field ->
     field_message "" (field_to_string field) "wurde erfolgreich abgesagt."
+  | Closed field ->
+    field_message "" (field_to_string field) "wurde erfolgreich geschlossen."
   | Created field ->
     field_message "" (field_to_string field) "wurde erfolgreich erstellt."
   | Deleted field ->
@@ -177,6 +184,8 @@ let success_to_string : success -> string = function
   | PasswordResetSuccessMessage ->
     "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
      wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+  | Published field ->
+    field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
@@ -206,6 +215,11 @@ let rec error_to_string = function
     "Mindestens der Startzeitpunkt liegt bereits in der Vergangenheit."
   | AlreadySignedUpForExperiment ->
     "Sie haben sich für dieses Experiment bereits angemeldet."
+  | AlreadyPublished field ->
+    field_message
+      ""
+      (field |> field_to_string |> CCString.trim)
+      "wurde bereits veröffentlich."
   | AlreadyStarted ->
     "Bereits gestarted oder beendet, aktion nicht mehr möglich."
   | AlreadyInvitedToExperiment names ->
@@ -330,6 +344,8 @@ let rec error_to_string = function
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \
      kontaktieren."
+  | SessionAlreadyClosed -> "Diese Session wurde bereits geschlossen."
+  | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
     Format.asprintf
       "%s kleiner als %s"
@@ -370,6 +386,7 @@ let control_to_string = function
   | Back -> format_submit "zurück" None
   | Cancel field -> format_submit "absagen" field
   | Choose field -> format_submit "wählen" field
+  | Close field -> format_submit "schliessen" field
   | Create field -> format_submit "erstellen" field
   | Decline -> format_submit "ablehnen" None
   | Delete field -> format_submit "löschen" field
@@ -378,19 +395,22 @@ let control_to_string = function
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
-  | Login -> format_submit "anmelden" None
+  | Login -> format_submit "login" None
   | Manage field -> format_submit "manage" (Some field)
   | More -> "mehr"
   | PleaseSelect -> "bitte wählen"
+  | Publish field -> format_submit "veröffentlichen" field
+  | Register -> format_submit "einschreiben" None
   | RemoveFromWaitingList -> "Ich möchte mich von der Warteliste austragen"
   | Reschedule field -> format_submit "verschieben" field
   | Resend field -> format_submit "erneut senden" field
   | Save field -> format_submit "speichern" field
+  | SelectAll field -> format_submit "alle auswählen" field
   | SelectFilePlaceholder -> format_submit "datei auswählen.." None
   | Send field -> format_submit "senden" field
   | SendResetLink -> format_submit "link senden" None
   | Show -> "anzeigen"
-  | SignUp -> format_submit "registrieren" None
+  | SignUp -> format_submit "anmelden" None
   | Stop field -> format_submit "stoppen" field
   | Update field -> format_submit "aktualisieren" field
   | UpdateOrder -> "Reihenfolge anpassen"

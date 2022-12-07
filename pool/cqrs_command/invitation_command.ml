@@ -1,4 +1,7 @@
+let src = Logs.Src.create "invitation.cqrs"
+
 let invitation_template_elements
+  tenant
   system_languages
   i18n_texts
   experiment
@@ -10,6 +13,7 @@ let invitation_template_elements
     |> CCList.head_opt
     |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
   in
+  let layout = Email.Helper.layout_from_tenant tenant in
   let open Experiment in
   match experiment.invitation_template with
   | Some template ->
@@ -21,7 +25,7 @@ let invitation_template_elements
       let open InvitationTemplate in
       template.text |> Text.value |> Email.CustomTemplate.Content.string
     in
-    Ok Email.CustomTemplate.{ subject; content }
+    Ok Email.CustomTemplate.{ subject; content; layout }
   | None ->
     let language =
       contact_langauge
@@ -36,7 +40,7 @@ let invitation_template_elements
     in
     Ok
       Email.CustomTemplate.
-        { subject = Subject.I18n subject; content = Content.I18n text }
+        { subject = Subject.I18n subject; content = Content.I18n text; layout }
 ;;
 
 module Create : sig
@@ -47,7 +51,9 @@ module Create : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -60,7 +66,14 @@ end = struct
     ; invited_contacts : Pool_common.Id.t list
     }
 
-  let handle (command : t) system_languages i18n_texts =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (command : t)
+    tenant
+    system_languages
+    i18n_texts
+    =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let errors, contacts =
       CCList.partition
@@ -76,6 +89,7 @@ end = struct
       CCList.map
         (fun { Contact.user; language; _ } ->
           invitation_template_elements
+            tenant
             system_languages
             i18n_texts
             command.experiment
@@ -96,10 +110,14 @@ end = struct
       | Ok emails when CCList.is_empty emails -> Ok []
       | Ok emails ->
         Ok
-          [ Invitation.Created (contacts, command.experiment)
-            |> Pool_event.invitation
-          ; Email.InvitationBulkSent emails |> Pool_event.email
-          ]
+          ([ Invitation.Created (contacts, command.experiment)
+             |> Pool_event.invitation
+           ; Email.InvitationBulkSent emails |> Pool_event.email
+           ]
+          @ CCList.map
+              (fun contact ->
+                Contact.NumInvitationsIncreased contact |> Pool_event.contact)
+              contacts)
       | Error err -> Error err)
   ;;
 
@@ -113,7 +131,9 @@ module Resend : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> Pool_tenant.t
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -125,10 +145,18 @@ end = struct
     ; experiment : Experiment.t
     }
 
-  let handle (command : t) system_languages i18n_texts =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (command : t)
+    tenant
+    system_languages
+    i18n_texts
+    =
+    Logs.info ~src (fun m -> m "Handle command Resend" ~tags);
     let open CCResult in
     let* email =
       invitation_template_elements
+        tenant
         system_languages
         i18n_texts
         command.experiment

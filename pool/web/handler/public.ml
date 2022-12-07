@@ -20,24 +20,22 @@ let index req =
     let result
       ({ Pool_context.tenant_db; language; query_language; _ } as context)
       =
-      let open Lwt_result.Syntax in
-      let open Lwt_result.Infix in
+      let open Utils.Lwt_result.Infix in
       let error_path = Http_utils.path_with_language query_language "/error" in
-      Lwt_result.map_error (fun err -> err, error_path)
+      Utils.Lwt_result.map_error (fun err -> err, error_path)
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
          let* welcome_text =
            I18n.find_by_key tenant_db I18n.Key.WelcomeText language
          in
          Page.Public.index tenant context welcome_text
          |> create_layout req context
-         >|= Sihl.Web.Response.of_html
+         >|+ Sihl.Web.Response.of_html
     in
     result |> Http_utils.extract_happy_path req)
 ;;
 
 let index_css req =
   let%lwt result =
-    let open Lwt_result.Syntax in
     let open Utils.Lwt_result.Infix in
     let* { Pool_context.tenant_db; _ } =
       Pool_context.find req |> Lwt_result.lift
@@ -69,8 +67,8 @@ let index_css req =
 
 let email_confirmation_note req =
   let result ({ Pool_context.language; _ } as context) =
-    let open Lwt_result.Infix in
-    Lwt_result.map_error (fun err -> err, "/")
+    let open Utils.Lwt_result.Infix in
+    Utils.Lwt_result.map_error (fun err -> err, "/")
     @@
     let txt_to_string m = Common.Utils.text_to_string language m in
     Common.I18n.(
@@ -78,7 +76,7 @@ let email_confirmation_note req =
         (txt_to_string EmailConfirmationTitle)
         (txt_to_string EmailConfirmationNote))
     |> create_layout req context
-    >|= Sihl.Web.Response.of_html
+    >|+ Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path req
 ;;
@@ -87,8 +85,7 @@ let not_found req =
   let result
     ({ Pool_context.language; query_language; tenant_db; _ } as context)
     =
-    let open Lwt_result.Infix in
-    let open Lwt_result.Syntax in
+    let open Utils.Lwt_result.Infix in
     let html = Page.Utils.error_page_not_found language () in
     match Http_utils.is_req_from_root_host req with
     | true ->
@@ -96,7 +93,7 @@ let not_found req =
       |> Sihl.Web.Response.of_html
       |> Lwt_result.return
     | false ->
-      Lwt_result.map_error (fun err ->
+      Utils.Lwt_result.map_error (fun err ->
         err, Http_utils.path_with_language query_language "/error")
       @@ let* tenant = Pool_tenant.find_by_label tenant_db in
          let%lwt tenant_languages = Settings.find_languages tenant_db in
@@ -105,7 +102,7 @@ let not_found req =
              req
              (Pool_context.Tenant.create tenant tenant_languages)
          in
-         html |> create_layout req context >|= Sihl.Web.Response.of_html
+         html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result |> Http_utils.extract_happy_path req
 ;;

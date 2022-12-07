@@ -35,7 +35,22 @@ module Rate : sig
 end
 
 module Distribution : sig
-  val sortable_fields : Pool_common.Message.Field.t list
+  type sortable_field =
+    | AssignmentCount
+    | Firstname
+    | InvitationCount
+    | Lastname
+
+  val all_sortable_fields : sortable_field list
+  val pp_sortable_field : Format.formatter -> sortable_field -> unit
+  val show_sortable_field : sortable_field -> string
+  val equal_sortable_field : sortable_field -> sortable_field -> bool
+  val read_sortable_field : string -> sortable_field
+
+  val sortable_field_to_string
+    :  Pool_common.Language.t
+    -> sortable_field
+    -> string
 
   module SortOrder : sig
     type t =
@@ -57,13 +72,13 @@ module Distribution : sig
       -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
-  type t = (Pool_common.Message.Field.t * SortOrder.t) list
+  type t = (sortable_field * SortOrder.t) list
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : (Pool_common.Message.Field.t * SortOrder.t) list -> t
-  val value : t -> (Pool_common.Message.Field.t * SortOrder.t) list
+  val create : (sortable_field * SortOrder.t) list -> t
+  val value : t -> (sortable_field * SortOrder.t) list
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string

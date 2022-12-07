@@ -14,8 +14,7 @@ let index req =
     Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
   in
   let result ({ Pool_context.tenant_db; _ } as context) =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, error_path)
+    Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find tenant_db id in
        let* sessions =
          Session.find_all_for_experiment tenant_db experiment.Experiment.id
@@ -28,11 +27,11 @@ let index req =
              in
              Lwt_result.return (session, assignments))
            sessions
-         |> Lwt.map CCList.all_ok
+         ||> CCList.all_ok
        in
        Page.Admin.Assignment.list assignments experiment context
        |> create_layout req context
-       >|= Sihl.Web.Response.of_html
+       >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -51,15 +50,16 @@ let cancel req =
       (Pool_common.Id.value experiment_id)
   in
   let result { Pool_context.tenant_db; _ } =
-    let open Lwt_result.Syntax in
-    Lwt_result.map_error (fun err -> err, redirect_path)
+    Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* assignment = Assignment.find tenant_db id in
+       let tags = Logger.req req in
        let events =
-         Cqrs_command.Assignment_command.Cancel.handle assignment |> Lwt.return
+         Cqrs_command.Assignment_command.Cancel.handle ~tags assignment
+         |> Lwt.return
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

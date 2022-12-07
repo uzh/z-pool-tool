@@ -1,5 +1,8 @@
 (* Put infrastructure service setup here. This is where you decide which service
    implementation to use. *)
+let log_src = Logs.Src.create "email"
+
+module Logs = (val Logs.src_log log_src : Logs.LOG)
 module Migration = Sihl.Database.Migration.MariaDb
 
 module User = struct
@@ -58,13 +61,31 @@ module Email = struct
          else_fcn email new_recipient)
   ;;
 
-  let send ?ctx =
-    handle (send ?ctx) (fun email new_recipient ->
-      email |> redirected_email new_recipient |> send ?ctx)
+  let send ?ctx email =
+    Logs.info (fun m -> m "Send email to %s" email.Sihl_email.recipient);
+    let%lwt () =
+      handle
+        (send ?ctx)
+        (fun email new_recipient ->
+          email |> redirected_email new_recipient |> send ?ctx)
+        email
+    in
+    Logs.info (fun m -> m "Email sent");
+    Lwt.return ()
   ;;
 
-  let bulk_send ?ctx =
-    handle (bulk_send ?ctx) (fun emails new_recipient ->
-      emails |> CCList.map (redirected_email new_recipient) |> bulk_send ?ctx)
+  let bulk_send ?ctx emails =
+    Logs.info (fun m -> m "Send %d emails" (CCList.length emails));
+    let%lwt () =
+      handle
+        (bulk_send ?ctx)
+        (fun emails new_recipient ->
+          emails
+          |> CCList.map (redirected_email new_recipient)
+          |> bulk_send ?ctx)
+        emails
+    in
+    Logs.info (fun m -> m "%d emails sent" (CCList.length emails));
+    Lwt.return ()
   ;;
 end

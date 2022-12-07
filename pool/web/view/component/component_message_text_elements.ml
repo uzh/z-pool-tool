@@ -70,6 +70,7 @@ module DummyData = struct
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
+      ; closed_at = None
       ; canceled_at = None
       ; created_at = Pool_common.CreatedAt.create ()
       ; updated_at = Pool_common.UpdatedAt.create ()
@@ -104,25 +105,25 @@ end
 let build_help language toggle_id help =
   let wrap_hints html =
     div
-      ~a:[ a_class [ "flexcolumn" ] ]
-      [ label
-          ~a:[ a_label_for toggle_id; a_class [ "flexrow"; "flex-gap-xs" ] ]
-          [ strong
-              [ txt
-                  Pool_common.(
-                    Utils.text_to_string language I18n.TextTemplates
-                    |> CCString.capitalize_ascii)
+      ~a:[ a_class [ "card" ] ]
+      [ div
+          ~a:[ a_class [ "card-header" ] ]
+          [ label
+              ~a:[ a_label_for toggle_id; a_class [ "flexrow"; "flex-gap-xs" ] ]
+              [ strong
+                  [ txt
+                      Pool_common.(
+                        Utils.text_to_string language I18n.TextTemplates
+                        |> CCString.capitalize_ascii)
+                  ]
+              ; Component_icon.icon `HelpOutline
               ]
-          ; Component_icon.icon `HelpOutline
           ]
       ; input
           ~a:[ a_input_type `Checkbox; a_class [ "toggle" ]; a_id toggle_id ]
           ()
       ; div
-          ~a:
-            [ a_class
-                [ "gap"; "toggle-body"; "inset-sm"; "border"; "bg-grey-light" ]
-            ]
+          ~a:[ a_class [ "toggle-body"; "card-body" ] ]
           [ p
               [ txt
                   Pool_common.(
@@ -135,7 +136,7 @@ let build_help language toggle_id help =
   help
   |> CCList.map (fun (elm, example) ->
        [ txt (Format.asprintf "{%s}" elm); example ])
-  |> Component_table.horizontal_table `Simple language ~align_top:true
+  |> Component_table.horizontal_table `Simple ~align_top:true
   |> wrap_hints
 ;;
 

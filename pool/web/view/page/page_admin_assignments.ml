@@ -39,8 +39,9 @@ module Partials = struct
     | true -> p [ language |> empty ]
     | false ->
       let thead =
-        Pool_common.Message.Field.
-          [ Some Name; Some Email; Some CanceledAt; None ]
+        (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
+        |> Component.Table.fields_to_txt language)
+        @ [ txt "" ]
       in
       let rows =
         CCList.map
@@ -67,7 +68,7 @@ module Partials = struct
             | Some _ -> base @ [ txt "" ])
           assignments
       in
-      Component.Table.horizontal_table `Striped language ~thead rows
+      Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
   ;;
 end
 
@@ -85,6 +86,7 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
     |> div ~a:[ a_class [ "stack-lg" ] ]
   in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentAssignment
     language
     (Page_admin_experiments.NavLink Pool_common.I18n.Assignments)
     experiment

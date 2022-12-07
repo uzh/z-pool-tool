@@ -50,12 +50,12 @@ module Sql = struct
   ;;
 
   let find pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (id |> Pool_common.Id.value)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.WaitingList)
   ;;
 
   let user_is_enlisted_request =
@@ -202,7 +202,7 @@ module Sql = struct
 end
 
 let find pool id =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let* waiting_list = Sql.find pool id in
   let* experiment =
     Experiment.find pool waiting_list.RepoEntity.experiment_id
@@ -212,7 +212,7 @@ let find pool id =
 ;;
 
 let find_by_contact_and_experiment pool contact experiment =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt waiting_list =
     Sql.find_by_contact_and_experiment pool contact experiment
   in
@@ -224,15 +224,15 @@ let find_by_contact_and_experiment pool contact experiment =
 ;;
 
 let user_is_enlisted pool contact experiment =
-  let open Lwt.Infix in
+  let open Utils.Lwt_result.Infix in
   Sql.find_by_contact_and_experiment pool contact experiment
-  >|= function
+  ||> function
   | None -> false
   | Some _ -> true
 ;;
 
 let find_by_experiment pool id =
-  let open Lwt_result.Syntax in
+  let open Utils.Lwt_result.Infix in
   let%lwt entries = Sql.find_by_experiment pool id in
   let* experiment = Experiment.find pool id in
   Entity.ExperimentList.{ waiting_list_entries = entries; experiment }

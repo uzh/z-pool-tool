@@ -2,6 +2,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 module User = Pool_user
 module Id = Pool_common.Id
 
+let src = Logs.Src.create "admin.cqrs"
+
 module CreateOperator : sig
   type t =
     { email : User.EmailAddress.t
@@ -11,7 +13,8 @@ module CreateOperator : sig
     }
 
   val handle
-    :  ?allowed_email_suffixes:Settings.EmailSuffix.t list
+    :  ?tags:Logs.Tag.set
+    -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> t
@@ -46,7 +49,13 @@ end = struct
         command)
   ;;
 
-  let handle ?allowed_email_suffixes ?password_policy command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?allowed_email_suffixes
+    ?password_policy
+    command
+    =
+    Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =

@@ -1,7 +1,6 @@
 include Entity
 include Event
 
-let find_all = Repo.find_all
 let find_by_model = Repo.find_by_model
 let find_by_group = Repo.find_by_group
 let find_ungrouped_by_model = Repo.find_ungrouped_by_model
@@ -22,8 +21,8 @@ let all_required_answered = Repo_public.all_required_answered
 let find_option = Repo_option.find
 
 let find_options_by_field pool id =
-  let open Lwt.Infix in
-  Repo_option.find_by_field pool id >|= CCList.map Repo_entity.Option.to_entity
+  let open Utils.Lwt_result.Infix in
+  Repo_option.find_by_field pool id ||> CCList.map Repo_entity.Option.to_entity
 ;;
 
 let find_group = Repo_group.find
@@ -47,7 +46,8 @@ let validate_htmx value (m : Public.t) =
     |> CCList.map (fun value ->
          let id = value |> SelectOption.Id.of_string in
          CCList.find_opt
-           (fun option -> SelectOption.Id.equal option.SelectOption.id id)
+           (fun option ->
+             SelectOption.Id.equal option.SelectOption.Public.id id)
            options
          |> CCOption.to_result
               Pool_common.Message.(Invalid Field.CustomFieldOption)
@@ -74,7 +74,8 @@ let validate_htmx value (m : Public.t) =
       |> CCOption.map SelectOption.Id.of_string
       |> CCFun.flip CCOption.bind (fun id ->
            CCList.find_opt
-             (fun option -> SelectOption.Id.equal option.SelectOption.id id)
+             (fun option ->
+               SelectOption.Id.equal option.SelectOption.Public.id id)
              options)
     in
     selected
@@ -94,7 +95,7 @@ let validate_htmx value (m : Public.t) =
 let validate_multiselect (public, options) values =
   let ids = values |> CCList.map SelectOption.Id.of_string in
   options
-  |> CCList.filter_map (fun ({ SelectOption.id; _ } as option) ->
+  |> CCList.filter_map (fun ({ SelectOption.Public.id; _ } as option) ->
        if CCList.mem ~eq:SelectOption.Id.equal id ids
        then Answer.create option |> CCOption.pure
        else None)

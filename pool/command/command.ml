@@ -4,3 +4,4 @@ module Seed = Command_seed
 module Tenant_pool = Command_pool_tenant
 module SessionReminder = Command_session_reminder
 module Matcher = Command_matcher
+module Mail = Command_mail

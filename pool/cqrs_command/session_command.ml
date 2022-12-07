@@ -1,5 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "session.cqrs"
+
 let create_command
   start
   duration
@@ -118,6 +120,7 @@ module Create = struct
   let schema = create_schema
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?parent_session
     experiment_id
     location
@@ -135,6 +138,7 @@ module Create = struct
        } :
       Session.base)
     =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     (* If session is follow-up, make sure it's later than parent *)
     let follow_up_is_ealier =
       let open Session in
@@ -194,7 +198,8 @@ module Update : sig
   type t = Session.update
 
   val handle
-    :  ?parent_session:Session.t
+    :  ?tags:Logs.Tag.set
+    -> ?parent_session:Session.t
     -> Session.t list
     -> Session.t
     -> Pool_location.t
@@ -210,6 +215,7 @@ end = struct
   type t = Session.update
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?parent_session
     follow_up_sessions
     session
@@ -227,6 +233,7 @@ end = struct
        } :
       Session.update)
     =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
     let open CCResult in
     let has_assignments = Session.has_assignments session in
@@ -280,7 +287,8 @@ module Reschedule : sig
   type t = Session.reschedule
 
   val handle
-    :  ?parent_session:Session.t
+    :  ?tags:Logs.Tag.set
+    -> ?parent_session:Session.t
     -> Session.t list
     -> Session.t
     -> Sihl_email.t list
@@ -303,12 +311,14 @@ end = struct
   ;;
 
   let handle
+    ?(tags = Logs.Tag.empty)
     ?parent_session
     follow_up_sessions
     session
     emails
     (Session.{ start; _ } as reschedule : Session.reschedule)
     =
+    Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
     let* () = validate_start follow_up_sessions parent_session start in
     let* () =
@@ -338,14 +348,16 @@ module Delete : sig
   type t = { session : Session.t }
 
   val handle
-    :  Session.t
+    :  ?tags:Logs.Tag.set
+    -> Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
   type t = { session : Session.t }
 
-  let handle session =
+  let handle ?(tags = Logs.Tag.empty) session =
+    Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     (* TODO [aerben] how to deal with follow-ups? currently they just
        disappear *)
     if not
@@ -364,7 +376,8 @@ module Cancel : sig
     }
 
   val handle
-    :  Session.t
+    :  ?tags:Logs.Tag.set
+    -> Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
@@ -376,19 +389,28 @@ end = struct
     ; notify_via : string
     }
 
-  let handle session = Ok [ Session.Canceled session |> Pool_event.session ]
+  let handle ?(tags = Logs.Tag.empty) session =
+    Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
+    Ok [ Session.Canceled session |> Pool_event.session ]
+  ;;
+
   let effects = [ `Manage, `TargetEntity `System ]
 end
 
 module SendReminder : sig
   type t = (Session.t * Sihl_email.t list) list
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : Guard.Authorizer.effect list
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
-  let handle command =
+  let handle ?(tags = Logs.Tag.empty) command =
+    Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
     Ok
       (CCList.flat_map
          (fun (session, emails) ->

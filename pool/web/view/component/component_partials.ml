@@ -101,3 +101,20 @@ let form_title ?(level = `H1) language field m =
   | `H1 -> h1 ~a:[ a_class [ "heading-1" ] ] [ text ]
   | `H2 -> h1 ~a:[ a_class [ "heading-2" ] ] [ text ]
 ;;
+
+let terms_and_conditions_label language id =
+  let open Pool_common.Language in
+  let terms lang =
+    Pool_common.(Utils.field_to_string lang Message.Field.TermsAndConditions)
+    |> txt
+    |> CCList.pure
+    |> a ~a:[ a_href "#"; a_user_data "modal" id ]
+  in
+  match language with
+  | En -> [ txt "I have read the "; terms En; txt " and I agree with them. *" ]
+  | De ->
+    [ txt "Ich habe die "
+    ; terms De
+    ; txt " gelesen und bin damit einverstanden. *"
+    ]
+;;

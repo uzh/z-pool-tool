@@ -18,6 +18,7 @@ type t =
   ; reminder_lead_time : Reminder.LeadTime.t option
   ; reminder_sent_at : Reminder.SentAt.t option
   ; assignment_count : Entity.AssignmentCount.t
+  ; closed_at : Ptime.t option
   ; canceled_at : Ptime.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -39,6 +40,7 @@ let of_entity (m : Entity.t) =
   ; reminder_lead_time = m.Entity.reminder_lead_time
   ; reminder_sent_at = m.Entity.reminder_sent_at
   ; assignment_count = m.Entity.assignment_count
+  ; closed_at = m.Entity.closed_at
   ; canceled_at = m.Entity.canceled_at
   ; created_at = m.Entity.created_at
   ; updated_at = m.Entity.updated_at
@@ -61,6 +63,7 @@ let to_entity (m : t) location : Entity.t =
     ; reminder_lead_time = m.reminder_lead_time
     ; reminder_sent_at = m.reminder_sent_at
     ; assignment_count = m.assignment_count
+    ; closed_at = m.closed_at
     ; canceled_at = m.canceled_at
     ; created_at = m.created_at
     ; updated_at = m.updated_at
@@ -85,8 +88,9 @@ let t =
                           , ( m.reminder_lead_time
                             , ( m.reminder_sent_at
                               , ( m.assignment_count
-                                , (m.canceled_at, (m.created_at, m.updated_at))
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                , ( m.closed_at
+                                  , (m.canceled_at, (m.created_at, m.updated_at))
+                                  ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( id
@@ -103,8 +107,9 @@ let t =
                         , ( reminder_lead_time
                           , ( reminder_sent_at
                             , ( assignment_count
-                              , (canceled_at, (created_at, updated_at)) ) ) ) )
-                      ) ) ) ) ) ) ) ) ) )
+                              , ( closed_at
+                                , (canceled_at, (created_at, updated_at)) ) ) )
+                          ) ) ) ) ) ) ) ) ) ) ) )
     =
     Ok
       { id
@@ -121,6 +126,7 @@ let t =
       ; reminder_lead_time
       ; reminder_sent_at
       ; assignment_count
+      ; closed_at
       ; canceled_at
       ; created_at
       ; updated_at
@@ -160,7 +166,9 @@ let t =
                                                 int
                                                 (tup2
                                                    (option ptime)
-                                                   (tup2 ptime ptime)))))))))))))))))
+                                                   (tup2
+                                                      (option ptime)
+                                                      (tup2 ptime ptime))))))))))))))))))
 ;;
 
 module Write = struct
@@ -178,6 +186,7 @@ module Write = struct
     ; reminder_text : Reminder.Text.t option
     ; reminder_lead_time : Reminder.LeadTime.t option
     ; reminder_sent_at : Reminder.SentAt.t option
+    ; closed_at : Ptime.t option
     ; canceled_at : Ptime.t option
     }
 
@@ -196,6 +205,7 @@ module Write = struct
        ; reminder_text
        ; reminder_lead_time
        ; reminder_sent_at
+       ; closed_at
        ; canceled_at
        ; _
        } :
@@ -214,6 +224,7 @@ module Write = struct
     ; reminder_text
     ; reminder_lead_time
     ; reminder_sent_at
+    ; closed_at
     ; canceled_at
     }
   ;;
@@ -233,8 +244,9 @@ module Write = struct
                         , ( m.reminder_subject
                           , ( m.reminder_text
                             , ( m.reminder_lead_time
-                              , (m.reminder_sent_at, m.canceled_at) ) ) ) ) ) )
-                  ) ) ) ) ) )
+                              , ( m.reminder_sent_at
+                                , (m.closed_at, m.canceled_at) ) ) ) ) ) ) ) )
+                ) ) ) ) )
     in
     let decode
       ( id
@@ -248,8 +260,9 @@ module Write = struct
                     , ( overbook
                       , ( reminder_subject
                         , ( reminder_text
-                          , (reminder_lead_time, (reminder_sent_at, canceled_at))
-                          ) ) ) ) ) ) ) ) ) ) )
+                          , ( reminder_lead_time
+                            , (reminder_sent_at, (closed_at, canceled_at)) ) )
+                        ) ) ) ) ) ) ) ) ) )
       =
       Ok
         { id
@@ -265,6 +278,7 @@ module Write = struct
         ; reminder_subject
         ; reminder_text
         ; reminder_sent_at
+        ; closed_at
         ; canceled_at
         }
     in
@@ -304,7 +318,9 @@ module Write = struct
                                                   Pool_common.Repo.Reminder
                                                   .SentAt
                                                   .t)
-                                               (option ptime)))))))))))))))
+                                               (tup2
+                                                  (option ptime)
+                                                  (option ptime))))))))))))))))
   ;;
 end
 

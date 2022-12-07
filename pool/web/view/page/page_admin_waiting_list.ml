@@ -32,10 +32,14 @@ let detail
               ~value:
                 (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
               ~flash_fetcher
-          ; submit_element
-              language
-              Pool_common.Message.(Save (Some Field.Comment))
-              ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Pool_common.Message.(Save (Some Field.Comment))
+                  ()
+              ]
           ]
       ]
   in
@@ -51,7 +55,10 @@ let detail
                   (I18n.EmtpyList Message.Field.Sessions))
           ]
       else (
-        let thead = Pool_common.Message.Field.[ Some Date; None ] in
+        let thead =
+          Pool_common.Message.
+            [ Field.Date |> Component.Table.field_to_txt language; txt "" ]
+        in
         let rows =
           CCList.map
             (fun (session : Session.t) ->
@@ -80,7 +87,11 @@ let detail
               ])
             sessions
         in
-        Component.Table.horizontal_table `Striped language ~thead rows
+        Component.Table.horizontal_table
+          ~align_last_end:true
+          `Striped
+          ~thead
+          rows
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->
@@ -88,11 +99,14 @@ let detail
             [ content
             ; div
                 ~a:[ a_class [ "gap" ] ]
-                [ submit_element
-                    language
-                    ~classnames:[ "disabled" ]
-                    Pool_common.Message.(Assign (Some Field.Contact))
-                    ()
+                [ div
+                    ~a:[ a_class [ "flexrow" ] ]
+                    [ submit_element
+                        language
+                        ~classnames:[ "disabled"; "push" ]
+                        Pool_common.Message.(Assign (Some Field.Contact))
+                        ()
+                    ]
                 ; p
                     ~a:[ a_class [ "help" ] ]
                     [ txt
@@ -117,8 +131,9 @@ let detail
             [ csrf_element csrf ()
             ; content
             ; div
-                ~a:[ a_class [ "gap" ] ]
+                ~a:[ a_class [ "gap"; "flexrow" ] ]
                 [ submit_element
+                    ~classnames:[ "push" ]
                     language
                     Pool_common.Message.(Assign (Some Field.Contact))
                     ()

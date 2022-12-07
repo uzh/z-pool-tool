@@ -2,6 +2,7 @@ open Entity_i18n
 
 let to_string = function
   | DashboardTitle -> "Dashboard"
+  | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
   | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
@@ -16,10 +17,15 @@ let to_string = function
   | ExperimentContactEnrolledNote ->
     "Sie sind an der folgenden Session angemeldet:"
   | Files -> "Dateien"
+  | FilterNrOfContacts ->
+    "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
   | FollowUpSessionFor -> "Folgesession für:"
   | ExperimentListTitle -> "Experimente"
+  | ExperimentListEmpty ->
+    "Aktuell gibt es keine Experimente an den Sie teilnehmen können."
+  | ExperimentListPublicTitle -> "Neuanmeldung zu Experiment-Sessions"
   | ExperimentWaitingListTitle -> "Warteliste"
-  | HomeTitle -> "Willkommen beim Pool Tool"
+  | HomeTitle -> "Universitäre Anmeldestelle für Studienteilnehmende"
   | I18nTitle -> "Übersetzungen"
   | NoEntries field ->
     Format.asprintf
@@ -32,7 +38,7 @@ let to_string = function
   | LocationNewTitle -> "Neuer Standort erstellen"
   | LocationNoFiles -> "Es existieren keine Dateien zu diesem Standort."
   | LocationNoSessions -> "Keine Sessions für diesen Standort gefunden."
-  | LoginTitle -> "Anmelden"
+  | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
   | MailingNewTitle -> "Neuen Versand erstellen"
@@ -57,9 +63,10 @@ let to_string = function
       text
   | SessionReminder -> "Sessionerinnerung"
   | SessionIndent -> "Einrückungen groupieren Folgesessions."
-  | SessionSignUpTitle -> "Für diese Session anmelden"
+  | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
-  | SignUpTitle -> "Registrieren"
+  | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
+  | SignUpTitle -> "Anmeldung"
   | SortUngroupedFields -> "Nicht gruppierte Felder sortieren"
   | SwitchChronological -> "Zu chronologische Ansicht wechseln"
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
@@ -70,7 +77,6 @@ let to_string = function
   | UserProfilePausedNote ->
     "Sie haben alle Benachrichtigungen für Ihren Benutzer pausiert! (Klicken \
      Sie auf 'Bearbeiten', um diese Einstellung)"
-  | UserProfileTitle -> "Benutzerprofil"
   | Validation -> "Validierung"
   | WaitingListIsDisabled -> "Die Warteliste ist deaktiviert."
 ;;
@@ -95,7 +101,9 @@ let nav_link_to_string = function
   | Profile -> "Profil"
   | Sessions -> "Sessions"
   | Settings -> "Einstellungen"
+  | SystemSettings -> "Systemeinstellungen"
   | Tenants -> "Tenants"
+  | Users -> "Benutzer"
   | WaitingList -> "Warteliste"
 ;;
 
@@ -105,6 +113,9 @@ let hint_to_string = function
      anmelden."
   | AssignContactFromWaitingList ->
     "Wählen Sie die Session, zu welcher Sie den Kontakt zuweisen wollen."
+  | ContactOnWaitingList ->
+    "Sie stehen auf der Warteliste. Das Rekrutierungsteam wird Sie einer \
+     Session zuweisen."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "Diese Option schliesst \"%s\" aus."
@@ -115,6 +126,17 @@ let hint_to_string = function
       "Diese Option impliziert \"%s\"."
       (Locales_de.field_to_string Entity_message.Field.AdminInputOnly
       |> CCString.capitalize_ascii)
+  | CustomFieldContactModel ->
+    "Fragen, die Kontakte beantworten können, bzw. müssen. Anhand dieser \
+     Informationen werden die Kontakte zu Experimenten eingeladen."
+  | CustomFieldExperimentModel -> "Anpassbare Attribute für Experimente."
+  | CustomFieldSessionModel -> "Anpassbare Attribute für Sessions."
+  | CustomFieldGroups ->
+    {|Gruppen, nach denen benutzerdefinierte Felder gruppiert werden können. Das Gruppieren von benutzerdefinierten Feldern hat keine keine Auswirkungen auf ihre Funktionalität. Sie hat lediglich grafische Auswirkungen.|}
+  | CustomFieldSort field ->
+    Format.asprintf
+      "In dieser Reihenfolge werden die %s den Kontakten angezeigt."
+      (Locales_de.field_to_string field)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "Ist diese Option aktiviert, können sich Kontakte auf die Warteliste \
@@ -122,7 +144,36 @@ let hint_to_string = function
   | Distribution ->
     "Mit der Verteilung kann beeinflusst werden, welche Einladungen als erstes \
      versendet werden."
+  | ExperimentAssignment ->
+    "Alle Anmeldungen von Kontakten an Sessions dieses Experiments, sortiert \
+     nach Session."
+  | ExperimentMailings ->
+    {|Einladungsversand dieses Experiments. Die 'Rate' definiert die maximal generierten Einladungen pro Stunde.
+
+    Gestartete Mailings können nicht mehr gelöscht werden.|}
+  | ExperimentWaitingList ->
+    "Kontakte, die zu diesem Experiment eingeladen wurden, und sich auf die \
+     Warteliste gesetzt haben. Sie müssen manuell einer Session zugewiesen \
+     werden."
+  | ExperimentSessions ->
+    {|Alle existierenden Session dieses Experiments.
+  Sobald sich jemand angemeldet hat, kann die Session nicht mehr gelöscht werden.
+  |}
+  | ExperimentSessionsPublic ->
+    "Hinweis: Möglicherweise werden einzelne Sessions oder komplette \
+     Experimente nicht mehr angezeigt, obwohl im E-Mail aufgeführt. Sobald \
+     alle verfügbaren Plätze einer Session belegt sind wird es nichtmehr \
+     angezeigt."
   | I18nText str -> str
+  | LocationFiles ->
+    "Zusatzinformationen zum Standort, wie z.B. eine Wegbeschreibung. \
+     Kontakte, die an einer Session an diesem Standort teilnehmen, können auf \
+     diese Dateien zugreiffen."
+  | LocationSessions ->
+    "Zukünftige Sessions, die an diesem Standort durchgeführt werden."
+  | Locations ->
+    "Standorte, an denen Experimente durchgeführt werden. Jede Session muss \
+     eine Location haben."
   | NumberIsSecondsHint -> "Anzahl Sekunden"
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
@@ -145,9 +196,17 @@ let hint_to_string = function
     "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | SessionClose ->
+    {|S: Der Kontakt ist an der Session erschienen
+    P: Der Kontakt hat am Experiment teilgenommen
+
+    Um 'participated' anzuwählen ist 'show up' erforderlich.
+    |}
   | SessionReminderLanguageHint ->
     "Falls sie einen eigenen Erinnerungstext angeben, wählen Sie dessen \
      Sprache hier."
+  | SessionRegistrationHint ->
+    "Die Registrierung für eine Session ist verbindlich."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
@@ -159,14 +218,27 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-   | CancelSession -> "die Session", "absagen"
-   | DeleteCustomFieldOption -> "das Option", "löschen"
-   | DeleteEmailSuffix -> "das Suffix", "löschen"
-   | DeleteExperiment -> "das Experiment", "löschen"
-   | DeleteFile -> "die Datei", "löschen"
-   | DeleteMailing -> "den Versand", "löschen"
-   | DeleteSession -> "die Session", "löschen"
-   | StopMailing -> "den Versand", "stoppen")
-  |> fun (obj, action) ->
+   | CancelSession -> "die Session", "absagen", None
+   | DeleteCustomField -> "das Feld", "löschen", None
+   | DeleteCustomFieldOption -> "das Option", "löschen", None
+   | DeleteEmailSuffix -> "das Suffix", "löschen", None
+   | DeleteExperiment -> "das Experiment", "löschen", None
+   | DeleteFile -> "die Datei", "löschen", None
+   | DeleteMailing -> "den Versand", "löschen", None
+   | DeleteSession -> "die Session", "löschen", None
+   | PublisCustomField ->
+     ( "das Feld und alle dazugehörigen Optionen"
+     , "publizieren"
+     , Some "Sie werden das Feld nicht mehr löschen können." )
+   | PublisCustomFieldOption ->
+     ( "die Option"
+     , "publizieren"
+     , Some "Sie werden die Option nicht mehr löschen können." )
+   | StopMailing -> "den Versand", "stoppen", None)
+  |> fun (obj, action, additive) ->
   Format.asprintf "Sind Sie sicher, dass Sie %s %s wollen?" obj action
+  |> fun msg ->
+  additive
+  |> CCOption.map_or ~default:msg (fun additive ->
+       Format.asprintf "%s %s" msg additive)
 ;;

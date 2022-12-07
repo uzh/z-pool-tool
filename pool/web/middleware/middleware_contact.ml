@@ -4,7 +4,6 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
   let filter handler req =
     let%lwt confirmed_and_terms_agreed =
       let open Utils.Lwt_result.Infix in
-      let open Lwt_result.Syntax in
       let* { Pool_context.tenant_db; user; _ } =
         Pool_context.find req |> Lwt_result.lift
       in

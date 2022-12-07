@@ -1,7 +1,7 @@
 let valid_tenant () =
   let filter handler req =
     let%lwt result =
-      let open Lwt_result.Syntax in
+      let open Utils.Lwt_result.Infix in
       let* tenant_db =
         let open CCResult.Infix in
         req
@@ -18,7 +18,10 @@ let valid_tenant () =
     in
     match result with
     | Ok context -> context |> Pool_context.Tenant.set req |> handler
-    | Error _ -> Http_utils.redirect_to "/not-found"
+    | Error _ ->
+      Logs.err (fun m ->
+        m "No pool context found in request" ~tags:(Logger.req req));
+      Http_utils.redirect_to "/not-found"
   in
   Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;

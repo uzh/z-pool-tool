@@ -113,12 +113,12 @@ module Sql = struct
   ;;
 
   let find pool mapping_id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
       (Pool_common.Id.value mapping_id)
-    >|= CCOption.to_result Pool_common.Message.(NotFound Field.FileMapping)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.FileMapping)
   ;;
 
   let find_by_location_request =

@@ -2,23 +2,29 @@ open Entity_i18n
 
 let to_string = function
   | DashboardTitle -> "Dashboard"
+  | DontHaveAnAccount -> "Don't have an account?"
   | EmailConfirmationNote ->
     "Please check your emails and confirm your address first."
   | EmailConfirmationTitle -> "Email confirmation"
   | EmtpyList field ->
     Format.asprintf
-      "There are no %s available."
+      "Currently, there are no %s available."
       (Locales_en.field_to_string field)
   | ExperimentContactEnrolledNote -> "You signed up for the following session:"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
+  | ExperimentListEmpty ->
+    "Currently there are no experiments you can participate."
+  | ExperimentListPublicTitle -> "Register for experiment sessions"
   | ExperimentWaitingListTitle -> "Waiting list"
   | ExperimentSessionReminderHint ->
-    "There are default settings for the sessions of this experiment. These \
+    "These are default settings for the sessions of this experiment. These \
      settings can be overwritten for each session."
   | Files -> "Files"
+  | FilterNrOfContacts ->
+    "Number of contacts meeting the criteria of this filter:"
   | FollowUpSessionFor -> "Follow-up for:"
-  | HomeTitle -> "Welcome to the Pool Tool"
+  | HomeTitle -> "University Registration Center for Study Participants"
   | I18nTitle -> "Translations"
   | NoEntries field ->
     Format.asprintf "There are no %s yet." (Locales_en.field_to_string field)
@@ -50,8 +56,9 @@ let to_string = function
     Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
   | SessionIndent -> "Indentations group follow-up sessions."
-  | SessionSignUpTitle -> "Sign up for this session"
+  | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
+  | SignUpCTA -> "Register now to participate in economic experiments"
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"
@@ -63,7 +70,6 @@ let to_string = function
   | UserProfilePausedNote ->
     "You paused all notifications for your user! (Click 'edit' to update this \
      setting)"
-  | UserProfileTitle -> "User Profile"
   | Validation -> "Validation"
   | WaitingListIsDisabled -> "The waiting list is disabled."
 ;;
@@ -88,7 +94,9 @@ let nav_link_to_string = function
   | Profile -> "Profile"
   | Sessions -> "Sessions"
   | Settings -> "Settings"
+  | SystemSettings -> "System settings"
   | Tenants -> "Tenants"
+  | Users -> "Users"
   | WaitingList -> "Waiting list"
 ;;
 
@@ -98,6 +106,9 @@ let hint_to_string = function
      experiment."
   | AssignContactFromWaitingList ->
     "Select the session to which you want to assign the contact."
+  | ContactOnWaitingList ->
+    "You are on the waiting list. The recruitment team will assign you to a \
+     session."
   | CustomFieldAdminInputOnly ->
     Format.asprintf
       "This option excludes \"%s\"."
@@ -108,6 +119,17 @@ let hint_to_string = function
       "This option implies \"%s\"."
       (Locales_en.field_to_string Entity_message.Field.AdminInputOnly
       |> CCString.capitalize_ascii)
+  | CustomFieldContactModel ->
+    "Questions that contacts can, or must, answer. Based on this information, \
+     contacts are invited to take part in experiments."
+  | CustomFieldExperimentModel -> "Customziable attributes for experiments."
+  | CustomFieldSessionModel -> "Customziable attributes for sessions."
+  | CustomFieldGroups ->
+    {|Groups to group custom fields by. Grouping custom fields does not have any effect on their functionality. It only has a graphical impact.|}
+  | CustomFieldSort field ->
+    Format.asprintf
+      "The %s will be displayed to the contacts in this order."
+      (Locales_en.field_to_string field)
   | CustomHtmx s -> s
   | DirectRegistrationDisbled ->
     "If this option is enabled, contacts can join the waiting list but cannot \
@@ -115,6 +137,34 @@ let hint_to_string = function
   | Distribution ->
     "The distribution can be used to influence which invitations are sent \
      first."
+  | ExperimentAssignment ->
+    "All assignments of contacts to sessions of this experiment, sorted by \
+     session."
+  | ExperimentMailings ->
+    {|Invitation mailings of this experiment. 'Rate' defines the maximum generated invitations per hour.
+
+    Started mailings can no longer be deleted.|}
+  | ExperimentWaitingList ->
+    "Contacts that have been invited to this experiment and have placed \
+     themselves on the waiting list. They have to be manually assigned to a \
+     session."
+  | ExperimentSessions ->
+    {|All existing session of this experiment.
+      Once someone has registered for the session, it can no longer be deleted.
+    |}
+  | ExperimentSessionsPublic ->
+    "Please note: Maybe sessions or complete experiments are no longer \
+     displayed, although listed in the email. Once all the available seats are \
+     assigned a session, it is no longer displayed."
+  | LocationFiles ->
+    "Additional information about the location, such as directions. Contacts \
+     who are participating in a session at this location can access access \
+     these files."
+  | LocationSessions ->
+    "Future sessions, that will be conducted at this location."
+  | Locations ->
+    "Locations, where experiments are conducted. Every session has to have a \
+     location."
   | I18nText str -> str
   | NumberIsSecondsHint -> "Nr. of seconds"
   | NumberIsDaysHint -> "Nr. of days"
@@ -122,7 +172,7 @@ let hint_to_string = function
   | Overbook ->
     "Number of subjects that can enroll in a session in addition to the \
      maximum number of contacts."
-  | Rate -> "Generated Invitations per hour"
+  | Rate -> "Max. generated Invitations per hour"
   | RateDependencyWith ->
     "There are other mailings running at the same time, see its details \
      bellow. In case the sum of all rates reaches the maximum of the server, \
@@ -137,9 +187,16 @@ let hint_to_string = function
   | RegistrationDisabled ->
     "If this option is activated, contacts can neither register nor join the \
      waiting list. The experiment is not visible to the contacts."
+  | SessionClose ->
+    {|S: the contact showed up
+    P: the contact participated in the experiment
+
+  To set 'participated', 'show up' is required.
+  |}
   | SelectedDateIsPast -> "The selected date is in the past."
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
+  | SessionRegistrationHint -> "The registration for a session is binding."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
@@ -150,14 +207,25 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
-   | CancelSession -> "session", "cancel"
-   | DeleteCustomFieldOption -> "option", "delete"
-   | DeleteEmailSuffix -> "email suffix", "delete"
-   | DeleteExperiment -> "experiment", "delete"
-   | DeleteFile -> "the file", "delete"
-   | DeleteMailing -> "mailing", "delete"
-   | DeleteSession -> "session", "delete"
-   | StopMailing -> "mailing", "stop")
-  |> fun (obj, action) ->
+   | CancelSession -> "session", "cancel", None
+   | DeleteCustomField -> "field", "delete", None
+   | DeleteCustomFieldOption -> "option", "delete", None
+   | DeleteEmailSuffix -> "email suffix", "delete", None
+   | DeleteExperiment -> "experiment", "delete", None
+   | DeleteFile -> "the file", "delete", None
+   | DeleteMailing -> "mailing", "delete", None
+   | DeleteSession -> "session", "delete", None
+   | PublisCustomField ->
+     ( "field an all associated options"
+     , "publish"
+     , Some "You will not be able to delete it field anymore." )
+   | PublisCustomFieldOption ->
+     "option", "publish", Some "You will not be able to delete the it anymore."
+   | StopMailing -> "mailing", "stop", None)
+  |> fun (obj, action, additive) ->
   Format.asprintf "Are you sure you want to %s the %s?" action obj
+  |> fun msg ->
+  additive
+  |> CCOption.map_or ~default:msg (fun additive ->
+       Format.asprintf "%s %s" msg additive)
 ;;

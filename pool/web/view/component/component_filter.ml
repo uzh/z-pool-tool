@@ -191,6 +191,22 @@ let value_input language input_type ?value () =
          options
          selected
          ()
+     | Key.Languages languages ->
+       let selected =
+         single_value
+         >>= function[@warning "-4"]
+         | Language lang ->
+           CCList.find_opt (Pool_common.Language.equal lang) languages
+         | _ -> None
+       in
+       Component_input.selector
+         ~attributes:additional_attributes
+         language
+         field_name
+         Pool_common.Language.show
+         languages
+         selected
+         ()
      | Key.MultiSelect options ->
        let[@warning "-4"] selected =
          CCOption.map_or
@@ -300,18 +316,18 @@ let predicate_type_select
       ~templates_disabled
       ()
   in
+  let open UtilsF in
   let all_labels =
-    let open Utils in
     if templates_disabled
     then CCList.remove ~eq:equal_filter_label ~key:Template all_filter_labels
     else all_filter_labels
   in
   Component_input.selector
-    ~option_formatter:Utils.to_label
+    ~option_formatter:to_label
     ~attributes
     language
     Pool_common.Message.Field.Predicate
-    Utils.show_filter_label
+    show_filter_label
     all_labels
     selected
     ()
@@ -322,6 +338,7 @@ let add_predicate_btn identifier templates_disabled =
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
     [ Input.submit_icon
+        ~classnames:[ "success" ]
         ~attributes:
           (htmx_attribs
              ~action:(form_action "add-predicate")
@@ -348,12 +365,13 @@ let rec predicate_form
   let predicate_identifier = format_identifiers ~prefix:"filter" identifier in
   let selected =
     let open Human in
+    let open UtilsF in
     match query with
-    | And _ -> Utils.And
-    | Or _ -> Utils.Or
-    | Not _ -> Utils.Not
-    | Pred _ -> Utils.Pred
-    | Template _ -> Utils.Template
+    | And _ -> UtilsF.And
+    | Or _ -> Or
+    | Not _ -> Not
+    | Pred _ -> Pred
+    | Template _ -> Template
   in
   let delete_button () =
     div
@@ -459,7 +477,9 @@ let filter_form csrf language param key_list template_list =
     | FilterParam _ -> txt ""
     | ExperimentParam experiment ->
       div
-        [ txt "Nr of contacts: "
+        [ txt
+            Pool_common.(Utils.text_to_string language I18n.FilterNrOfContacts)
+        ; txt " "
         ; span
             ~a:
               [ a_id "contact-counter"
@@ -520,18 +540,22 @@ let filter_form csrf language param key_list template_list =
         ; Component_input.csrf_element csrf ()
         ; title_input
         ; predicates
-        ; Component_input.submit_element
-            language
-            ~attributes:
-              (a_id "submit-filter-form"
-              :: htmx_attribs
-                   ~action
-                   ~swap:"none"
-                   ~trigger:"click"
-                   ~templates_disabled
-                   ())
-            Pool_common.Message.(Save None)
-            ()
+        ; div
+            ~a:[ a_class [ "flexrow" ] ]
+            [ Component_input.submit_element
+                language
+                ~classnames:[ "push" ]
+                ~attributes:
+                  (a_id "submit-filter-form"
+                  :: htmx_attribs
+                       ~action
+                       ~swap:"none"
+                       ~trigger:"click"
+                       ~templates_disabled
+                       ())
+                Pool_common.Message.(Save None)
+                ()
+            ]
         ]
     ; script
         ~a:[ a_src (Sihl.Web.externalize_path "/assets/filter.js"); a_defer () ]

@@ -49,7 +49,7 @@ let distribution_sort_select language ?field current_order =
                 | Some field ->
                   Format.asprintf
                     "%s,%s"
-                    (Pool_common.Message.Field.show field)
+                    (Mailing.Distribution.show_sortable_field field)
                     (order |> show))
            ]
           @ selected)
@@ -65,13 +65,13 @@ let distribution_sort_select language ?field current_order =
 let distribution_form_field language (field, current_order) =
   div
     ~a:
-      [ a_class [ "flexrow"; "flex-gap"; "distribution" ]
+      [ a_class [ "flexrow"; "flex-gap"; "distribution"; "inset-sm" ]
       ; a_user_data "sortable-item" ""
       ]
     [ div
         ~a:[ a_class [ "switcher"; "flex-gap"; "align-center"; "grow" ] ]
         [ label
-            [ Pool_common.(Utils.field_to_string language field)
+            [ Mailing.Distribution.sortable_field_to_string language field
               |> CCString.capitalize_ascii
               |> txt
             ]
@@ -85,7 +85,9 @@ let distribution_form_field language (field, current_order) =
               [ a_class [ "error" ]
               ; a_onclick "removeDistribution(event)"
               ; a_button_type `Button
-              ; a_user_data "field" Pool_common.Message.Field.(show field)
+              ; a_user_data
+                  "field"
+                  (Mailing.Distribution.show_sortable_field field)
               ]
             [ Icon.icon `Trash ]
         ]
@@ -114,25 +116,26 @@ module List = struct
         ; submit_element ~submit_type language (name None) ()
         ]
     in
+    let buttons =
+      (if with_link
+      then (
+        match
+          StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
+        with
+        | true, true ->
+          [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
+        | false, true ->
+          [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
+        | _ -> [ txt "" ])
+      else [])
+      @ [ detail_mailing_path experiment_id mailing |> edit_link ]
+      |> div ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
+    in
     [ mailing.start_at |> StartAt.to_human |> txt
     ; mailing.end_at |> EndAt.to_human |> txt
     ; mailing.rate |> Rate.value |> CCInt.to_string |> txt
-    ; a
-        ~a:[ detail_mailing_path experiment_id mailing |> a_href ]
-        [ txt Pool_common.(Utils.control_to_string language Message.(More)) ]
+    ; buttons
     ]
-    @
-    if with_link
-    then (
-      match
-        StartAt.value mailing.start_at < now, now < EndAt.value mailing.end_at
-      with
-      | true, true ->
-        [ button_form "stop" Message.stop `Primary I18n.StopMailing ]
-      | false, true ->
-        [ button_form "delete" Message.delete `Error I18n.DeleteMailing ]
-      | _ -> [ txt "" ])
-    else []
   ;;
 
   let create
@@ -141,9 +144,20 @@ module List = struct
     experiment_id
     mailings
     =
-    let base_head = Field.[ Some Start; Some End; Some Rate; None ] in
-    let thead = if with_link then base_head @ [ None ] else base_head in
-    Table.(horizontal_table `Striped language ~thead)
+    let base_head =
+      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
+    in
+    let thead =
+      let new_btn () =
+        link_as_button
+          ~style:`Success
+          ~icon:`Add
+          ~control:(language, Message.(Add (Some Field.Mailing)))
+          (mailings_path ~suffix:"create" experiment_id)
+      in
+      if with_link then base_head @ [ new_btn () ] else base_head
+    in
+    Table.(horizontal_table `Striped ~align_last_end:true ~thead)
       (CCList.map (row with_link context experiment_id) mailings)
   ;;
 end
@@ -151,30 +165,9 @@ end
 let index (Pool_context.{ language; _ } as context) experiment mailings =
   let experiment_id = experiment.Experiment.id in
   let open Pool_common in
-  let html =
-    div
-      ~a:[ a_class [ "stack" ] ]
-      [ a
-          ~a:[ mailings_path ~suffix:"create" experiment_id |> a_href ]
-          [ Message.(Add (Some Field.Mailing))
-            |> Utils.control_to_string language
-            |> txt
-          ]
-      ; (if CCList.is_empty mailings
-        then
-          div
-            [ p
-                (* TODO [aerben] this is wrong, should be plural, add a Plural
-                   constructor?*)
-                [ I18n.EmtpyList Field.Mailing
-                  |> Utils.text_to_string language
-                  |> txt
-                ]
-            ]
-        else List.create true context experiment_id mailings)
-      ]
-  in
+  let html = List.create true context experiment_id mailings in
   Page_admin_experiments.experiment_layout
+    ~hint:Pool_common.I18n.ExperimentMailings
     language
     (Page_admin_experiments.NavLink I18n.Mailings)
     experiment
@@ -187,51 +180,43 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
   let mailing_overview =
     div
       ~a:[ a_class [ "stack" ] ]
-      ([ (* TODO [aerben] use better formatted date *)
-         (let rows =
-            let open Message in
-            [ Field.Start, mailing.start_at |> StartAt.to_human
-            ; Field.End, mailing.end_at |> EndAt.to_human
-            ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
-            ; ( Field.Distribution
-              , mailing.distribution
-                |> CCOption.map_or ~default:"" Mailing.Distribution.show )
-            ]
-            |> CCList.map (fun (field, value) ->
-                 tr
-                   [ th
-                       [ txt
-                           (field
-                           |> Pool_common.Utils.field_to_string language
-                           |> CCString.capitalize_ascii)
-                       ]
-                   ; td [ txt value ]
-                   ])
-          in
-          table ~a:[ a_class [ "striped"; "table" ] ] rows)
-       ]
-      @
-      if StartAt.value mailing.start_at > Ptime_clock.now ()
-      then
-        [ p
-            [ a
-                ~a:
-                  [ detail_mailing_path
-                      ~suffix:"edit"
-                      experiment.Experiment.id
-                      mailing
-                    |> a_href
-                  ]
-                [ Message.(Edit (Some Field.Mailing))
-                  |> Pool_common.Utils.control_to_string language
-                  |> txt
-                ]
-            ]
-        ]
-      else [])
+      [ (* TODO [aerben] use better formatted date *)
+        (let rows =
+           let open Message in
+           [ Field.Start, mailing.start_at |> StartAt.to_human
+           ; Field.End, mailing.end_at |> EndAt.to_human
+           ; Field.Rate, mailing.rate |> Rate.value |> CCInt.to_string
+           ; ( Field.Distribution
+             , mailing.distribution
+               |> CCOption.map_or ~default:"" Mailing.Distribution.show )
+           ]
+           |> CCList.map (fun (field, value) ->
+                tr
+                  [ th
+                      [ txt
+                          (field
+                          |> Pool_common.Utils.field_to_string language
+                          |> CCString.capitalize_ascii)
+                      ]
+                  ; td [ txt value ]
+                  ])
+         in
+         table ~a:[ a_class [ "striped"; "table" ] ] rows)
+      ]
+  in
+  let edit_button =
+    if StartAt.value mailing.start_at > Ptime_clock.now ()
+    then
+      link_as_button
+        ~icon:`Create
+        ~classnames:[ "small" ]
+        ~control:(language, Message.(Edit (Some Field.Mailing)))
+        (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
+    else txt ""
   in
   let html = div ~a:[ a_class [ "stack" ] ] [ mailing_overview ] in
   Page_admin_experiments.experiment_layout
+    ~buttons:edit_button
     language
     (Page_admin_experiments.I18n (mailing_title mailing))
     experiment
@@ -259,11 +244,14 @@ let form
   in
   let distribution_select (distribution : Mailing.Distribution.t option) =
     let open Mailing.Distribution in
-    let open Pool_common.Message in
     let is_disabled field =
       CCOption.map_or
         ~default:false
-        (fun dist -> CCList.mem_assoc ~eq:Field.equal field dist)
+        (fun dist ->
+          CCList.mem_assoc
+            ~eq:Mailing.Distribution.equal_sortable_field
+            field
+            dist)
         distribution
     in
     let distribution_fncs =
@@ -314,12 +302,12 @@ let form
             if is_disabled field then [ a_disabled () ] else []
           in
           option
-            ~a:([ a_value (field |> Field.show) ] @ is_disabled)
+            ~a:([ a_value (field |> show_sortable_field) ] @ is_disabled)
             (field
-            |> Pool_common.Utils.field_to_string language
+            |> sortable_field_to_string language
             |> CCString.capitalize_ascii
             |> txt))
-        sortable_fields
+        all_sortable_fields
       |> fun options ->
       select
         ~a:
@@ -383,17 +371,16 @@ let form
               ]
           ]
       ; div
-          [ div
-              ~a:
-                [ a_id "distribution-list"
-                ; a_class [ "gap"; "flexcolumn" ]
-                ; a_user_data "sortable" ""
-                ]
-              (CCOption.map_or
-                 ~default:[]
-                 (fun distribution ->
-                   CCList.map (distribution_form_field language) distribution)
-                 distribution)
+          [ CCOption.map_or
+              ~default:[]
+              (fun distribution ->
+                CCList.map (distribution_form_field language) distribution)
+              distribution
+            |> Component.Sortable.create
+                 ~classnames:[ "flexcolumn" ]
+                 ~attributes:[ a_id "distribution-list" ]
+            |> CCList.pure
+            |> div ~a:[ a_class [ "gap" ] ]
           ; script (Unsafe.data distribution_fncs)
           ]
       ]
@@ -428,7 +415,7 @@ let form
           ; div
               ~a:
                 [ a_id "mailings"
-                ; a_class [ "stack" ]
+                ; a_class [ "grid-col-2" ]
                 ; hx_target "#overlaps"
                 ; hx_trigger "change"
                 ; hx_swap "innerHTML"
@@ -485,7 +472,9 @@ let form
               (CCOption.bind mailing (fun (m : Mailing.t) ->
                  m.Mailing.distribution))
             (* TODO: Add detailed description how distribution element works *)
-          ; submit_element language submit ()
+          ; div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ submit_element ~classnames:[ "push" ] language submit () ]
           ]
       ; div ~a:[ a_id "overlaps" ] []
       ; script (Unsafe.data functions)

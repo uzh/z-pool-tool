@@ -8,6 +8,7 @@ let save_custom_fields custom_field contact =
   let public = Custom_field_test.Data.to_public custom_field in
   let events =
     [ Custom_field.Created custom_field |> Pool_event.custom_field
+    ; Custom_field.Published custom_field |> Pool_event.custom_field
     ; Custom_field.AnswerUpserted (public, Contact.id contact)
       |> Pool_event.custom_field
     ]

@@ -119,6 +119,13 @@ module Disabled = struct
   let schema = schema Message.Field.Disabled
 end
 
+module PublishedAt = struct
+  include Pool_common.Model.Ptime
+
+  let create m = Ok m
+  let schema = schema Pool_common.Message.Field.PublishedAt create
+end
+
 module Admin = struct
   module Hint = struct
     include Pool_common.Model.String
@@ -175,17 +182,37 @@ module Validation = struct
   end
 
   module Text = struct
-    let text_min_length = "text_length_min"
-    let text_max_length = "text_length_max"
+    type key =
+      | TextLengthMin [@name "text_length_min"]
+          [@printer printer "text_length_min"]
+      | TextLengthMax [@name "text_length_max"]
+          [@printer printer "text_length_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | TextLengthMin -> "Text min. length"
+      | TextLengthMax -> "Text max. length"
+    ;;
+
+    let read_key m =
+      try
+        Some
+          (m
+          |> Format.asprintf "[\"%s\"]"
+          |> Yojson.Safe.from_string
+          |> key_of_yojson)
+      with
+      | _ -> None
+    ;;
 
     let check_min_length rule_value value =
-      if CCString.length value > rule_value
+      if CCString.length value >= rule_value
       then Ok value
       else Error (Message.TextLengthMin rule_value)
     ;;
 
     let check_max_length rule_value value =
-      if CCString.length value < rule_value
+      if CCString.length value <= rule_value
       then Ok value
       else Error (Message.TextLengthMax rule_value)
     ;;
@@ -196,36 +223,56 @@ module Validation = struct
           CCList.fold_left
             (fun result (key, rule_value) ->
               let map_or = CCOption.map_or ~default:result in
-              match key with
-              | _ when CCString.equal key text_min_length ->
+              match read_key key with
+              | Some TextLengthMin ->
                 rule_value
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_min_length rule)
-              | _ when CCString.equal key text_max_length ->
+              | Some TextLengthMax ->
                 rule_value
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_max_length rule)
-              | _ -> result)
+              | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all = [ text_min_length, `Number; text_max_length, `Number ]
+    let all =
+      [ show_key TextLengthMin, `Number; show_key TextLengthMax, `Number ]
+    ;;
   end
 
   module Number = struct
-    let number_min = "number_min"
-    let number_max = "number_max"
+    type key =
+      | NumberMin [@name "number_min"] [@printer printer "number_min"]
+      | NumberMax [@name "number_max"] [@printer printer "number_max"]
+    [@@deriving show, eq, yojson]
+
+    let key_to_human = function
+      | NumberMin -> "Number min."
+      | NumberMax -> "Number max."
+    ;;
+
+    let read_key m =
+      try
+        Some
+          (m
+          |> Format.asprintf "[\"%s\"]"
+          |> Yojson.Safe.from_string
+          |> key_of_yojson)
+      with
+      | _ -> None
+    ;;
 
     let check_min rule_value value =
-      if value > rule_value
+      if value >= rule_value
       then Ok value
       else Error (Message.NumberMin rule_value)
     ;;
 
     let check_max rule_value value =
-      if value < rule_value
+      if value <= rule_value
       then Ok value
       else Error (Message.NumberMax rule_value)
     ;;
@@ -236,23 +283,30 @@ module Validation = struct
           CCList.fold_left
             (fun result (key, rule) ->
               let map_or = CCOption.map_or ~default:result in
-              match key with
-              | _ when CCString.equal key number_min ->
+              match read_key key with
+              | Some NumberMin ->
                 rule
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_min rule)
-              | _ when CCString.equal key number_max ->
+              | Some NumberMax ->
                 rule
                 |> CCInt.of_string
                 |> map_or (fun rule -> result >>= check_max rule)
-              | _ -> result)
+              | None -> result)
             (Ok value)
             data)
       , data )
     ;;
 
-    let all = [ number_min, `Number; number_max, `Number ]
+    let all = [ show_key NumberMin, `Number; show_key NumberMax, `Number ]
   end
+
+  let key_to_human key =
+    let open CCOption in
+    let text = Text.(read_key key >|= key_to_human) in
+    let number = Number.(read_key key >|= key_to_human) in
+    CCOption.value ~default:key (text <+> number)
+  ;;
 
   let pure = CCResult.pure, []
   let encode_to_yojson t = t |> snd |> yojson_of_raw
@@ -280,6 +334,7 @@ module SelectOption = struct
   type t =
     { id : Id.t
     ; name : Name.t
+    ; published_at : PublishedAt.t option
     }
   [@@deriving eq, show, yojson]
 
@@ -291,12 +346,37 @@ module SelectOption = struct
     |> Pool_common.Utils.get_or_failwith
   ;;
 
-  let create ?(id = Id.create ()) name = { id; name }
+  let create ?(id = Id.create ()) ?published_at name =
+    { id; name; published_at }
+  ;;
 
   let to_common_field language m =
     let name = name language m in
     Message.(Field.CustomHtmx (name, m.id |> Id.value))
   ;;
+
+  module Public = struct
+    type t =
+      { id : Id.t
+      ; name : Name.t
+      }
+    [@@deriving eq, show, yojson]
+
+    let show_id (m : t) = m.id |> Id.value
+
+    let name lang (t : t) =
+      Name.find_opt lang t.name
+      |> CCOption.to_result Message.(NotFound Field.Name)
+      |> Pool_common.Utils.get_or_failwith
+    ;;
+
+    let create ?(id = Id.create ()) name = { id; name }
+
+    let to_common_field language m =
+      let name = name language m in
+      Message.(Field.CustomHtmx (name, m.id |> Id.value))
+    ;;
+  end
 end
 
 module Public = struct
@@ -315,14 +395,14 @@ module Public = struct
   type t =
     | Boolean of bool public * bool Answer.t option
     | MultiSelect of
-        SelectOption.t list public
-        * SelectOption.t list
-        * SelectOption.t Answer.t list
+        SelectOption.Public.t list public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t list
     | Number of int public * int Answer.t option
     | Select of
-        SelectOption.t public
-        * SelectOption.t list
-        * SelectOption.t Answer.t option
+        SelectOption.Public.t public
+        * SelectOption.Public.t list
+        * SelectOption.Public.t Answer.t option
     | Text of string public * string Answer.t option
   [@@deriving eq, show, variants]
 
@@ -482,6 +562,7 @@ type 'a custom_field =
   ; disabled : Disabled.t
   ; custom_field_group_id : Group.Id.t option
   ; admin : Admin.t
+  ; published_at : PublishedAt.t option
   }
 [@@deriving eq, show]
 
@@ -496,6 +577,7 @@ type t =
 let create
   ?(id = Pool_common.Id.create ())
   ?(select_options = [])
+  ?published_at
   field_type
   model
   name
@@ -521,6 +603,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.Number ->
     let validation = Validation.Number.schema validation in
@@ -535,6 +618,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.Text ->
     let validation = Validation.Text.schema validation in
@@ -549,6 +633,7 @@ let create
          ; disabled
          ; custom_field_group_id
          ; admin
+         ; published_at
          })
   | FieldType.MultiSelect ->
     Ok
@@ -565,6 +650,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin
+           ; published_at
            }
          , select_options ))
   | FieldType.Select ->
@@ -579,6 +665,7 @@ let create
            ; disabled
            ; custom_field_group_id
            ; admin
+           ; published_at
            }
          , select_options ))
 ;;
@@ -637,6 +724,14 @@ let disabled = function
   | MultiSelect ({ disabled; _ }, _)
   | Select ({ disabled; _ }, _)
   | Text { disabled; _ } -> disabled
+;;
+
+let published_at = function
+  | Boolean { published_at; _ }
+  | Number { published_at; _ }
+  | MultiSelect ({ published_at; _ }, _)
+  | Select ({ published_at; _ }, _)
+  | Text { published_at; _ } -> published_at
 ;;
 
 let group_id = function

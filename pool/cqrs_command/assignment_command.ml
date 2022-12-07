@@ -1,5 +1,7 @@
 module Conformist = Pool_common.Utils.PoolConformist
 
+let src = Logs.Src.create "assignment.cqrs"
+
 module Create : sig
   type t =
     { contact : Contact.t
@@ -9,7 +11,9 @@ module Create : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> Pool_tenant.t
     -> Email.confirmation_email
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -23,7 +27,14 @@ end = struct
     ; experiment : Experiment.Public.t
     }
 
-  let handle (command : t) confirmation_email already_enrolled =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (command : t)
+    tenant
+    confirmation_email
+    already_enrolled
+    =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     if already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
@@ -54,11 +65,14 @@ end = struct
         | Some waiting_list ->
           [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
+      let layout = Email.Helper.layout_from_tenant tenant in
       Ok
         (delete_events
         @ [ Assignment.Created create |> Pool_event.assignment
+          ; Contact.NumAssignmentsIncreased command.contact
+            |> Pool_event.contact
           ; Email.AssignmentConfirmationSent
-              (command.contact.Contact.user, confirmation_email)
+              (command.contact.Contact.user, confirmation_email, layout)
             |> Pool_event.email
           ])
   ;;
@@ -69,15 +83,24 @@ end
 module Cancel : sig
   type t = Assignment.t
 
-  val handle : t -> (Pool_event.t list, Pool_common.Message.error) result
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> (Pool_event.t list, Pool_common.Message.error) result
+
   val effects : t -> Guard.Authorizer.effect list
 end = struct
   type t = Assignment.t
 
-  let handle (command : t)
+  let handle ?(tags = Logs.Tag.empty) (command : t)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
-    Ok [ Assignment.Canceled command |> Pool_event.assignment ]
+    Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
+    Ok
+      [ Assignment.Canceled command |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased command.Assignment.contact
+        |> Pool_event.contact
+      ]
   ;;
 
   let effects command =
@@ -88,51 +111,69 @@ end = struct
   ;;
 end
 
+let validate_participation ((_, show_up, participated) as participation) =
+  let open Assignment in
+  if Participated.value participated && not (ShowUp.value show_up)
+  then
+    Error
+      Pool_common.Message.(FieldRequiresCheckbox Field.(Participated, ShowUp))
+  else Ok participation
+;;
+
 module SetAttendance : sig
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
   val handle
-    :  Assignment.t
+    :  ?tags:Logs.Tag.set
+    -> Session.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val decode
-    :  (string * string list) list
-    -> (t, Pool_common.Message.error) result
-
   val effects : Assignment.t -> Guard.Authorizer.effect list
 end = struct
-  type t =
-    { show_up : Assignment.ShowUp.t
-    ; participated : Assignment.Participated.t
-    }
+  type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
-  let command (show_up : Assignment.ShowUp.t) participated =
-    { show_up; participated }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.[ Assignment.ShowUp.schema (); Assignment.Participated.schema () ]
-        command)
-  ;;
-
-  let handle assignment (command : t) =
-    Ok
-      [ Assignment.ShowedUp (assignment, command.show_up)
-        |> Pool_event.assignment
-      ; Assignment.Participated (assignment, command.participated)
-        |> Pool_event.assignment
-      ]
-  ;;
-
-  let decode data =
-    Conformist.decode_and_validate schema data
-    |> CCResult.map_err Pool_common.Message.to_conformist_error
+  let handle ?(tags = Logs.Tag.empty) (session : Session.t) command =
+    Logs.info ~src (fun m -> m "Handle command SetAttendance" ~tags);
+    let open CCResult in
+    let open Assignment in
+    let open Session in
+    let* () =
+      if CCOption.is_some session.closed_at
+      then Error Pool_common.Message.SessionAlreadyClosed
+      else Ok ()
+    in
+    let* () =
+      if Ptime.is_earlier
+           (session.start |> Start.value)
+           ~than:Ptime_clock.(now ())
+      then Ok ()
+      else Error Pool_common.Message.SessionNotStarted
+    in
+    CCList.fold_left
+      (fun events participation ->
+        events
+        >>= fun events ->
+        participation
+        |> validate_participation
+        >|= fun ((assignment : Assignment.t), showup, participated) ->
+        let contact_event =
+          let open Contact in
+          let update =
+            { show_up = ShowUp.value showup
+            ; participated = Participated.value participated
+            }
+          in
+          SessionParticipationSet (assignment.contact, update)
+          |> Pool_event.contact
+        in
+        events
+        @ [ Assignment.AttendanceSet (assignment, showup, participated)
+            |> Pool_event.assignment
+          ; contact_event
+          ])
+      (Ok [ Closed session |> Pool_event.session ])
+      command
   ;;
 
   let effects assignment =
@@ -152,7 +193,9 @@ module CreateFromWaitingList : sig
     }
 
   val handle
-    :  t
+    :  ?tags:Logs.Tag.set
+    -> t
+    -> Pool_tenant.t
     -> Email.confirmation_email
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -164,7 +207,8 @@ end = struct
     ; already_enrolled : bool
     }
 
-  let handle (command : t) confirmation_email =
+  let handle ?(tags = Logs.Tag.empty) (command : t) tenant confirmation_email =
+    Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if command.already_enrolled
     then Error Pool_common.Message.(AlreadySignedUpForExperiment)
@@ -188,12 +232,14 @@ end = struct
             ; session_id = command.session.Session.id
             }
         in
+        let layout = Email.Helper.layout_from_tenant tenant in
         Ok
           [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
           ; Assignment.Created create |> Pool_event.assignment
           ; Email.AssignmentConfirmationSent
               ( command.waiting_list.Waiting_list.contact.Contact.user
-              , confirmation_email )
+              , confirmation_email
+              , layout )
             |> Pool_event.email
           ]
   ;;

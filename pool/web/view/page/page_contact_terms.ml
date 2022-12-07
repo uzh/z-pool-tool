@@ -26,13 +26,14 @@ let terms user_id terms Pool_context.{ language; query_language; csrf; _ } =
             ~required:true
         ; div
             ~a:[ a_class [ "flexrow"; "flex-gap"; "align-center" ] ]
-            [ submit_element
+            [ a
+                ~a:[ a_href ("/logout" |> externalize) ]
+                [ txt (Utils.control_to_string language Message.Decline) ]
+            ; submit_element
+                ~classnames:[ "push" ]
                 language
                 Message.(Accept (Some Field.termsandconditions))
                 ()
-            ; a
-                ~a:[ a_href ("/logout" |> externalize) ]
-                [ txt (Utils.control_to_string language Message.Decline) ]
             ]
         ]
     ]

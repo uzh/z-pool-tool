@@ -10,28 +10,31 @@ let has_options m =
 ;;
 
 let get_options pool m =
-  if has_options m then Repo_option.find_by_field pool (id m) else Lwt.return []
+  if has_options m
+  then Repo_option.Public.find_by_field pool (id m)
+  else Lwt.return []
 ;;
 
 let get_options_of_multiple pool fields =
   fields
   |> CCList.filter_map (fun m ->
        if has_options m then Some m.Repo_entity.Public.id else None)
-  |> Repo_option.find_by_multiple_fields pool
+  |> Repo_option.Public.find_by_multiple_fields pool
 ;;
 
 let to_grouped_public pool model fields =
   let%lwt groups = Repo_group.find_by_model pool model in
-  let%lwt options =
-    Repo.get_options_of_multiple pool get_field_type id fields
-  in
+  let%lwt options = get_options_of_multiple pool fields in
   Repo_entity.Public.to_grouped_entities options groups fields |> Lwt.return
 ;;
 
 let base_filter_conditions is_admin =
-  let base = {sql|
+  let base =
+    {sql|
     AND pool_custom_fields.disabled = 0
-  |sql} in
+    AND pool_custom_fields.published_at IS NOT NULL
+  |sql}
+  in
   if is_admin
   then base
   else Format.asprintf "%s AND pool_custom_fields.admin_view_only = 0 " base
@@ -114,12 +117,12 @@ module Sql = struct
   ;;
 
   let find_all_by_model model ?(required = false) ?(is_admin = false) pool id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.collect
       (Database.Label.value pool)
       (find_all_by_model_request required is_admin)
       (Pool_common.Id.value id, Entity.Model.show model)
-    >>= to_grouped_public pool model
+    >|> to_grouped_public pool model
   ;;
 
   let find_multiple_by_contact_request is_admin ids =
@@ -143,7 +146,7 @@ module Sql = struct
     if CCList.is_empty ids
     then Lwt.return []
     else
-      let open Lwt.Infix in
+      let open Utils.Lwt_result.Infix in
       let open Caqti_request.Infix in
       let dyn =
         let base =
@@ -164,7 +167,7 @@ module Sql = struct
         |> pt ->* Repo_entity.Public.t
       in
       Utils.Database.collect (pool |> Database.Label.value) request pv
-      >>= fun fields ->
+      >|> fun fields ->
       let%lwt options = get_options_of_multiple pool fields in
       fields |> Repo_entity.Public.to_ungrouped_entities options |> Lwt.return
   ;;
@@ -219,12 +222,12 @@ module Sql = struct
   ;;
 
   let all_required_answered pool contact_id =
-    let open Lwt.Infix in
+    let open Utils.Lwt_result.Infix in
     Utils.Database.find
       (Database.Label.value pool)
       all_required_answered_request
       (Pool_common.Id.value contact_id, Entity.Model.(show Contact))
-    >|= CCInt.equal 0
+    ||> CCInt.equal 0
   ;;
 
   let upsert_answer_request =
@@ -293,6 +296,7 @@ module Sql = struct
     let upsert =
       Utils.Database.exec (Database.Label.value pool) upsert_answer_request
     in
+    let option_id = Entity.SelectOption.Public.show_id in
     let open Entity.Public in
     let field_id = id t in
     let update_answer id value =
@@ -316,7 +320,7 @@ module Sql = struct
         in
         answers
         |> Lwt_list.iter_s (fun { Entity_answer.id; value } ->
-             update_answer id (value |> Entity.SelectOption.show_id))
+             update_answer id (value |> option_id))
       | Number (_, answer) ->
         answer
         |> map_or (fun { id; value; _ } ->
@@ -324,9 +328,7 @@ module Sql = struct
       | Select (_, _, answer) ->
         answer
         |> map_or (fun { id; value; _ } ->
-             update_answer
-               id
-               Entity.SelectOption.(value.Entity.SelectOption.id |> Id.value))
+             update_answer id (value |> option_id))
       | Text (_, answer) ->
         answer |> map_or (fun { id; value; _ } -> update_answer id value)
     in

@@ -5,6 +5,7 @@ end
 type single_val =
   | Bool of bool
   | Date of Ptime.t
+  | Language of Pool_common.Language.t
   | Nr of float
   | Option of Custom_field.SelectOption.Id.t
   | Str of string
@@ -17,6 +18,7 @@ module Key : sig
   type input_type =
     | Bool
     | Date
+    | Languages of Pool_common.Language.t list
     | Nr
     | Str
     | Select of Custom_field.SelectOption.t list
@@ -25,11 +27,13 @@ module Key : sig
   val show_input_type : input_type -> string
 
   type hardcoded =
-    | Email
+    | ContactLanguage
+    | Firstname
     | Name
-    | Paused
-    | Verified
-    | VerifiedAt
+    | NumAssignments
+    | NumInvitations
+    | NumParticipations
+    | NumShowUps
 
   type t =
     | CustomField of Custom_field.Id.t
@@ -158,9 +162,10 @@ type event =
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
+val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 
-module Utils : sig
+module UtilsF : sig
   type filter_label =
     | And
     | Or

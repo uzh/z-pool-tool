@@ -458,6 +458,7 @@ module Utils : sig
   module Time : sig
     val ptime_to_sexp : Ptime.t -> Sexplib0.Sexp.t
     val formatted_date_time : Ptime.t -> string
+    val ptime_to_formatted_date : Ptime.t -> string
     val formatted_timespan : Ptime.span -> string
     val timespan_spanpicker : Ptime.span -> string
     val parse_time : string -> (Ptime.t, Message.error) result
@@ -500,11 +501,13 @@ module Utils : sig
 
   val with_log_error
     :  ?level:Logs.level
+    -> ?tags:Logs.Tag.set
     -> Entity_message.error
     -> Entity_message.error
 
   val with_log_result_error
-    :  ('a -> Message.error)
+    :  tags:Logs.Tag.set
+    -> ('a -> Message.error)
     -> ('b, 'a) result
     -> ('b, 'a) result
 

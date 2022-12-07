@@ -11,15 +11,18 @@ let create req =
       ||> CCOption.to_result EmailAddressMissingRoot
       >>= HttpUtils.validate_email_existance tenant_db
     in
+    let tags = Logger.req req in
     let events () =
       let open CCResult.Infix in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       urlencoded
       |> Cqrs_command.Root_command.Create.decode
-      >>= Cqrs_command.Root_command.Create.handle
+      >>= Cqrs_command.Root_command.Create.handle ~tags
       |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event Database.root) in
+    let handle =
+      Lwt_list.iter_s (Pool_event.handle_event ~tags Database.root)
+    in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
@@ -28,7 +31,7 @@ let create req =
     ()
     |> user
     >>= events
-    |> Lwt_result.map_error (fun err -> err, "/root/tenants/")
+    >|- (fun err -> err, "/root/tenants/")
     |>> handle
     |>> return_to_overview
   in
@@ -42,10 +45,12 @@ let toggle_status req =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Root
       |> Pool_common.Id.of_string
     in
+    let tags = Logger.req req in
     let events user =
-      Cqrs_command.Root_command.ToggleStatus.handle user |> Lwt_result.lift
+      Cqrs_command.Root_command.ToggleStatus.handle ~tags user
+      |> Lwt_result.lift
     in
-    let handle = Lwt_list.iter_s (Pool_event.handle_event tenant_db) in
+    let handle = Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) in
     let return_to_overview () =
       Http_utils.redirect_to_with_actions
         "/root/tenants"
@@ -54,7 +59,7 @@ let toggle_status req =
     id
     |> Root.find
     >>= events
-    |> Lwt_result.map_error (fun err -> err, "/root/tenants/")
+    >|- (fun err -> err, "/root/tenants/")
     |>> handle
     |>> return_to_overview
   in

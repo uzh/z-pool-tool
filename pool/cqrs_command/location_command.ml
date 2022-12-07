@@ -2,6 +2,8 @@ module Conformist = Pool_common.Utils.PoolConformist
 module Message = Pool_common.Message
 open Pool_location
 
+let src = Logs.Src.create "location.cqrs"
+
 module Create = struct
   type base =
     { name : Name.t
@@ -32,7 +34,12 @@ module Create = struct
         command_base)
   ;;
 
-  let handle ?(id = Id.create ()) ({ name; description; link; address } : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?(id = Id.create ())
+    ({ name; description; link; address } : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let location =
       { id
@@ -103,7 +110,8 @@ module Update = struct
         command_base)
   ;;
 
-  let handle location update =
+  let handle ?(tags = Logs.Tag.empty) location update =
+    Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     Ok [ Updated (location, update) |> Pool_event.pool_location ]
   ;;
 
@@ -161,7 +169,12 @@ module AddFile = struct
         command)
   ;;
 
-  let handle location ({ label; language; asset_id } : t) =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    location
+    ({ label; language; asset_id } : t)
+    =
+    Logs.info ~src (fun m -> m "Handle command AddFile" ~tags);
     let open CCResult in
     let file =
       Mapping.Write.create
@@ -190,7 +203,11 @@ module DeleteFile = struct
 
   let command id = id
   let schema = Conformist.(make Field.[ Id.schema () ] command)
-  let handle (id : t) = Ok [ FileDeleted id |> Pool_event.pool_location ]
+
+  let handle ?(tags = Logs.Tag.empty) (id : t) =
+    Logs.info ~src (fun m -> m "Handle command DeleteFile" ~tags);
+    Ok [ FileDeleted id |> Pool_event.pool_location ]
+  ;;
 
   let decode data =
     Conformist.decode_and_validate schema data

@@ -9,7 +9,7 @@ let add_key ?(prefix = "") ?(suffix = "") field =
 ;;
 
 let global_middlewares =
-  [ Middleware.id ()
+  [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
   ; CustomMiddleware.Error.error ()
   ; Middleware.trailing_slash ()
   ; Middleware.static_file ()
@@ -37,6 +37,7 @@ module Public = struct
             ~middlewares:
               [ CustomMiddleware.Context.context `Contact ()
               ; CustomMiddleware.Tenant.valid_tenant ()
+              ; CustomMiddleware.Logger.logger
               ]
             [ get "/index" index
             ; get "/custom/assets/index.css" index_css
@@ -95,7 +96,6 @@ module Contact = struct
         ]
       in
       [ get "/dashboard" Handler.Contact.dashboard
-      ; get "/user" UserProfile.details
       ; get "/user/personal-details" UserProfile.personal_details
       ; get "/user/login-information" UserProfile.login_information
       ; post "/user/update" UserProfile.update
@@ -105,7 +105,10 @@ module Contact = struct
       ]
     in
     [ choose
-        ~middlewares:[ CustomMiddleware.Contact.completion_in_progress () ]
+        ~middlewares:
+          [ CustomMiddleware.Contact.completion_in_progress ()
+          ; CustomMiddleware.Logger.logger
+          ]
         locked
     ; get "/user/completion" UserProfile.completion
     ; post "/user/completion" UserProfile.completion_post
@@ -117,11 +120,14 @@ module Contact = struct
       ~middlewares:
         [ CustomMiddleware.Context.context `Contact ()
         ; CustomMiddleware.Tenant.valid_tenant ()
+        ; CustomMiddleware.Logger.logger
         ]
       [ choose public
       ; choose
           ~middlewares:
-            [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
+            [ CustomMiddleware.Contact.confirmed_and_terms_agreed ()
+            ; CustomMiddleware.Logger.logger
+            ]
           locked_routes
       ]
   ;;
@@ -132,6 +138,7 @@ module Admin = struct
     [ CustomMiddleware.Context.context `Admin ()
     ; CustomMiddleware.Tenant.valid_tenant ()
     ; CustomMiddleware.Admin.require_admin ()
+    ; CustomMiddleware.Logger.logger
     ]
   ;;
 
@@ -188,6 +195,8 @@ module Admin = struct
             ; post "/delete" delete
             ; get "/reschedule" reschedule_form
             ; post "/reschedule" reschedule
+            ; get "/close" close
+            ; post "/close" close_post
             ]
         in
         Session.
@@ -282,7 +291,11 @@ module Admin = struct
         let options =
           let specific =
             CustomFieldOption.
-              [ get "/edit" edit; post "" update; post "/delete" delete ]
+              [ get "/edit" edit
+              ; post "" update
+              ; post "/delete" delete
+              ; post "/publish" publish
+              ]
           in
           CustomFieldOption.
             [ get "/new" new_form
@@ -293,6 +306,8 @@ module Admin = struct
         CustomField.
           [ get "/edit" edit
           ; post "" update
+          ; post "/publish" publish
+          ; post "/delete" delete
           ; post "/sort-options" sort_options
           ; choose ~scope:"options" options
           ]
@@ -349,6 +364,7 @@ module Root = struct
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
     ; CustomMiddleware.Context.context `Admin ()
+    ; CustomMiddleware.Logger.logger
     ]
   ;;
 
