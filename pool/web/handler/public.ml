@@ -104,7 +104,9 @@ let not_found req =
          in
          html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path req
+  result
+  |> Http_utils.extract_happy_path req
+  |> Lwt.map @@ Opium.Response.set_status `Not_found
 ;;
 
 let denied req =
