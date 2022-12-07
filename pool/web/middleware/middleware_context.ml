@@ -1,4 +1,4 @@
-let context () =
+let context ?(is_root = false) () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let find_query_language = Http_utils.find_query_lang in
@@ -68,9 +68,13 @@ let context () =
       let* database_label = database_label_of_request req in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language =
-        match user with
-        | Admin _ -> Lwt.return (None, Pool_common.Language.En)
-        | Contact _ | Guest -> languages_from_request req database_label
+        let admin = Lwt.return (None, Pool_common.Language.En) in
+        if is_root
+        then admin
+        else (
+          match user with
+          | Admin _ -> admin
+          | Contact _ | Guest -> languages_from_request req database_label)
       in
       create (query_lang, language, database_label, message, csrf, user)
       |> Lwt.return_ok

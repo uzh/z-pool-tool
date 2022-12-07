@@ -442,7 +442,7 @@ module Root = struct
 
   let middlewares =
     [ CustomMiddleware.Root.from_root_only ()
-    ; CustomMiddleware.Context.context ()
+    ; CustomMiddleware.Context.context ~is_root:true ()
     ; CustomMiddleware.Logger.logger
     ]
   ;;

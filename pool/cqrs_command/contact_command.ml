@@ -154,7 +154,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
+    ; `Update, `TargetEntity `Contact
+    ]
   ;;
 end
 

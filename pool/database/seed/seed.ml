@@ -2,6 +2,7 @@ module Root = struct
   let create () =
     let%lwt () = Seed_tenant.create () in
     let%lwt () = Seed_emails.root () in
+    let%lwt () = Seed_guard.create Pool_database.root in
     Lwt.return_unit
   ;;
 end

@@ -47,6 +47,7 @@ module RuleSet = struct
   let assistant id =
     let target_id = Guard.Uuid.target_of Entity.Id.value id in
     [ `ActorEntity (`Assistant target_id), `Read, `Target target_id
+    ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Experiment
     ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Session
     ; `ActorEntity (`Assistant target_id), `Read, `TargetEntity `Assignment
     ]

@@ -306,7 +306,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value) ]
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Assistant)
+    ]
   ;;
 end
 
