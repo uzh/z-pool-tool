@@ -10,3 +10,6 @@ opam init -a --shell=zsh
 # install opam packages used for vscode ocaml platform package
 # e.g. when developing with emax, add also: utop merlin ocamlformat
 make deps
+
+# install yarn packages
+yarn

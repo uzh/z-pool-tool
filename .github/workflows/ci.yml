@@ -75,7 +75,7 @@ jobs:
     name: Build assets
     runs-on: ubuntu-latest
     container:
-      image: node:16
+      image: node:lts
       env:
         ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
 
