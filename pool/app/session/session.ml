@@ -12,11 +12,11 @@ let find_sessions_to_remind = Repo.find_sessions_to_remind
 let find_follow_ups = Repo.find_follow_ups
 
 let build_cancellation_messages
-    tenant_db
-    language
-    system_languages
-    session
-    contacts
+  tenant_db
+  language
+  system_languages
+  session
+  contacts
   =
   let open Utils.Lwt_result.Infix in
   (* TODO [aerben] this language is probably wrong? dont take admin language,
@@ -31,8 +31,8 @@ let build_cancellation_messages
   in
   let session_overview =
     (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , to_email_text lang session )))
+       ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+       , to_email_text lang session )))
       system_languages
   in
   (fun reason ->

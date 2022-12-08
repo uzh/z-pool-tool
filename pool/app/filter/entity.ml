@@ -25,11 +25,11 @@ let print m fmt _ = Format.pp_print_string fmt m
 type single_val =
   | Bool of bool [@printer print "bool"] [@name "bool"]
   | Date of Ptime.t [@printer print "date"] [@name "date"]
-  | Language of Pool_common.Language.t
-      [@printer print "language"] [@name "language"]
+  | Language of Pool_common.Language.t [@printer print "language"]
+      [@name "language"]
   | Nr of float [@printer print "nr"] [@name "nr"]
-  | Option of Custom_field.SelectOption.Id.t
-      [@printer print "option"] [@name "option"]
+  | Option of Custom_field.SelectOption.Id.t [@printer print "option"]
+      [@name "option"]
   | Str of string [@printer print "str"] [@name "str"]
 [@@deriving show { with_path = false }, eq]
 
@@ -44,19 +44,19 @@ let single_value_of_yojson (yojson : Yojson.Safe.t) =
   match yojson with
   | `Assoc [ (key, value) ] ->
     (match key, value with
-    | "bool", `Bool b -> Ok (Bool b)
-    | "date", `String str ->
-      str
-      |> Ptime.of_rfc3339
-      |> CCResult.map2 (fun (date, _, _) -> Date date) (fun _ -> error)
-    | "language", `String str ->
-      str |> Pool_common.Language.create >|= fun l -> Language l
-    | "nr", `Float n -> Ok (Nr n)
-    | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
-    | "option", `String id ->
-      Ok (Option (Custom_field.SelectOption.Id.of_string id))
-    | "str", `String str -> Ok (Str str)
-    | _ -> Error error)
+     | "bool", `Bool b -> Ok (Bool b)
+     | "date", `String str ->
+       str
+       |> Ptime.of_rfc3339
+       |> CCResult.map2 (fun (date, _, _) -> Date date) (fun _ -> error)
+     | "language", `String str ->
+       str |> Pool_common.Language.create >|= fun l -> Language l
+     | "nr", `Float n -> Ok (Nr n)
+     | "nr", `Int n -> Ok (Nr (CCInt.to_float n))
+     | "option", `String id ->
+       Ok (Option (Custom_field.SelectOption.Id.of_string id))
+     | "str", `String str -> Ok (Str str)
+     | _ -> Error error)
   | _ -> Error error
 ;;
 
@@ -103,8 +103,8 @@ module Key = struct
   [@@deriving show]
 
   type hardcoded =
-    | ContactLanguage
-        [@printer print "contact_language"] [@name "contact_language"]
+    | ContactLanguage [@printer print "contact_language"]
+        [@name "contact_language"]
     | Firstname [@printer print "first_name"] [@name "first_name"]
     | Name [@printer print "name"] [@name "name"]
   [@@deriving show { with_path = false }, eq, yojson, variants, enum]
@@ -146,14 +146,14 @@ module Key = struct
       (* The "validate_query" function will check, if the id belongs to an
          existing custom field *)
       (match yojson with
-      | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
-      | _ -> Error Pool_common.Message.(Invalid Field.Key))
+       | `String id -> Ok (CustomField (id |> Custom_field.Id.of_string))
+       | _ -> Error Pool_common.Message.(Invalid Field.Key))
  ;;
 
   let to_yojson (m : t) =
     (match m with
-    | Hardcoded h -> h |> show_hardcoded
-    | CustomField id -> id |> Custom_field.Id.value)
+     | Hardcoded h -> h |> show_hardcoded
+     | CustomField id -> id |> Custom_field.Id.value)
     |> fun str -> `String str
   ;;
 
@@ -399,11 +399,11 @@ type query =
 
 let rec yojson_of_query f : Yojson.Safe.t =
   (match f with
-  | And queries -> `List (CCList.map yojson_of_query queries)
-  | Or queries -> `List (CCList.map yojson_of_query queries)
-  | Not f -> f |> yojson_of_query
-  | Pred p -> Predicate.yojson_of_t p
-  | Template id -> `String (Pool_common.Id.value id))
+   | And queries -> `List (CCList.map yojson_of_query queries)
+   | Or queries -> `List (CCList.map yojson_of_query queries)
+   | Not f -> f |> yojson_of_query
+   | Pred p -> Predicate.yojson_of_t p
+   | Template id -> `String (Pool_common.Id.value id))
   |> fun pred -> `Assoc [ f |> show_query, pred ]
 ;;
 
@@ -413,21 +413,21 @@ let rec query_of_yojson json =
   match json with
   | `Assoc [ (key, filter) ] ->
     (match key, filter with
-    | "and", `List queries ->
-      queries
-      |> CCList.map query_of_yojson
-      |> CCList.all_ok
-      >|= fun lst -> And lst
-    | "or", `List queries ->
-      queries
-      |> CCList.map query_of_yojson
-      |> CCList.all_ok
-      >|= fun lst -> Or lst
-    | "not", f -> f |> query_of_yojson >|= not
-    | "pred", p -> p |> Predicate.t_of_yojson >|= pred
-    | "template", `String id ->
-      id |> Pool_common.Id.of_string |> template |> CCResult.pure
-    | _ -> Error error)
+     | "and", `List queries ->
+       queries
+       |> CCList.map query_of_yojson
+       |> CCList.all_ok
+       >|= fun lst -> And lst
+     | "or", `List queries ->
+       queries
+       |> CCList.map query_of_yojson
+       |> CCList.all_ok
+       >|= fun lst -> Or lst
+     | "not", f -> f |> query_of_yojson >|= not
+     | "pred", p -> p |> Predicate.t_of_yojson >|= pred
+     | "template", `String id ->
+       id |> Pool_common.Id.of_string |> template |> CCResult.pure
+     | _ -> Error error)
   | _ -> Error error
 ;;
 

@@ -267,8 +267,8 @@ module Validation = struct
   let to_strings all m =
     m
     |> CCList.filter_map (fun (key, value) ->
-           CCList.find_opt (fun (k, _) -> CCString.equal k key) all
-           |> CCOption.map (CCFun.const (key, value)))
+         CCList.find_opt (fun (k, _) -> CCString.equal k key) all
+         |> CCOption.map (CCFun.const (key, value)))
   ;;
 
   let all =
@@ -528,18 +528,18 @@ type t =
 [@@deriving eq, show]
 
 let create
-    ?(id = Pool_common.Id.create ())
-    ?(select_options = [])
-    ?published_at
-    field_type
-    model
-    name
-    hint
-    validation
-    required
-    disabled
-    custom_field_group_id
-    admin
+  ?(id = Pool_common.Id.create ())
+  ?(select_options = [])
+  ?published_at
+  field_type
+  model
+  name
+  hint
+  validation
+  required
+  disabled
+  custom_field_group_id
+  admin
   =
   let open CCResult in
   let required = if admin.Admin.input_only then false else required in

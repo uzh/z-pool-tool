@@ -10,9 +10,9 @@ type confirmation_email =
 [@@deriving eq, show]
 
 let send_confirmation
-    pool
-    ({ Sihl_user.email; _ } as user)
-    { subject; text; language; session_text }
+  pool
+  ({ Sihl_user.email; _ } as user)
+  { subject; text; language; session_text }
   =
   let%lwt email_template =
     let content =
@@ -74,7 +74,7 @@ let handle_verification_event pool : verification_event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   let create_email language user_id address firstname lastname label
-      : unit Lwt.t
+    : unit Lwt.t
     =
     let%lwt token = create_token pool address in
     user_id
@@ -118,9 +118,9 @@ let handle_verification_event pool : verification_event -> unit Lwt.t =
 ;;
 
 let[@warning "-4"] equal_verification_event
-    (one : verification_event)
-    (two : verification_event)
-    : bool
+  (one : verification_event)
+  (two : verification_event)
+  : bool
   =
   match one, two with
   | Created (a1, id1, f1, l1, _), Created (a2, id2, f2, l2, _) ->
@@ -195,10 +195,10 @@ let handle_event pool : event -> unit Lwt.t =
   | InvitationBulkSent multi_data ->
     multi_data
     |> CCList.map (fun (user, data, template) ->
-           Helper.prepare_boilerplate_email
-             template
-             user.Sihl_user.email
-             ([ "name", User.user_fullname user ] @ data))
+         Helper.prepare_boilerplate_email
+           template
+           user.Sihl_user.email
+           ([ "name", User.user_fullname user ] @ data))
     |> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s

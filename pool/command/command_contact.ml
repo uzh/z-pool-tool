@@ -6,9 +6,9 @@ let sign_up =
       "<Pool_database> <email> <password> <firstname> <lastname> \
        <recruitment_channel> <terms_excepted>"
     (fun args ->
-      let return = Lwt.return_some () in
-      let help_text =
-        {|Provide all fields to sign up a new contact:
+    let return = Lwt.return_some () in
+    let help_text =
+      {|Provide all fields to sign up a new contact:
     <Pool_database>       : string
     <email>               : string
     <password>            : string
@@ -22,56 +22,56 @@ Example: sihl contact.signup econ-uzh example@mail.com securePassword Max Muster
 
 Note: Make sure 'accept' is added as final argument, otherwise signup fails.
           |}
+    in
+    match args with
+    | [ db_pool
+      ; email
+      ; password
+      ; firstname
+      ; lastname
+      ; recruitment_channel
+      ; language
+      ; terms_accepted
+      ]
+      when CCString.equal terms_accepted "accept" ->
+      let db_pool =
+        Pool_database.Label.create db_pool
+        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
+        |> CCResult.get_or_failwith
       in
-      match args with
-      | [ db_pool
-        ; email
-        ; password
-        ; firstname
-        ; lastname
-        ; recruitment_channel
-        ; language
-        ; terms_accepted
-        ]
-        when CCString.equal terms_accepted "accept" ->
-        let db_pool =
-          Pool_database.Label.create db_pool
-          |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-          |> CCResult.get_or_failwith
-        in
-        Database.Root.setup ();
-        let%lwt available_pools = Database.Tenant.setup () in
-        if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
-        then (
-          let%lwt events =
-            let open CCResult.Infix in
-            let open Cqrs_command.Contact_command.SignUp in
-            let language =
-              Pool_common.Language.create language |> CCResult.to_opt
-            in
-            [ "email", [ email ]
-            ; "password", [ password ]
-            ; "firstname", [ firstname ]
-            ; "lastname", [ lastname ]
-            ; "recruitment_channel", [ recruitment_channel ]
-            ]
-            |> decode
-            >>= handle language
-            |> Lwt_result.lift
+      Database.Root.setup ();
+      let%lwt available_pools = Database.Tenant.setup () in
+      if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
+      then (
+        let%lwt events =
+          let open CCResult.Infix in
+          let open Cqrs_command.Contact_command.SignUp in
+          let language =
+            Pool_common.Language.create language |> CCResult.to_opt
           in
-          match events with
-          | Error err -> failwith (Pool_common.Message.show_error err)
-          | Ok events ->
-            let%lwt handle_event =
-              Lwt_list.iter_s (Pool_event.handle_event db_pool) events
-            in
-            Lwt.return_some handle_event)
-        else (
-          print_endline "The specified database pool is not available.";
-          return)
-      | _ ->
-        print_endline help_text;
+          [ "email", [ email ]
+          ; "password", [ password ]
+          ; "firstname", [ firstname ]
+          ; "lastname", [ lastname ]
+          ; "recruitment_channel", [ recruitment_channel ]
+          ]
+          |> decode
+          >>= handle language
+          |> Lwt_result.lift
+        in
+        match events with
+        | Error err -> failwith (Pool_common.Message.show_error err)
+        | Ok events ->
+          let%lwt handle_event =
+            Lwt_list.iter_s (Pool_event.handle_event db_pool) events
+          in
+          Lwt.return_some handle_event)
+      else (
+        print_endline "The specified database pool is not available.";
         return)
+    | _ ->
+      print_endline help_text;
+      return)
 ;;
 
 let create_message contact template =
@@ -137,16 +137,16 @@ let tenant_specific_profile_update_trigger =
     ~name:"trigger_profile_update.send"
     ~description:"Send profile update triggers of all tenants"
     (fun args ->
-      match args with
-      | [ pool ] ->
-        let open Utils.Lwt_result.Infix in
-        let%lwt _ = Command_utils.setup_databases () in
-        pool
-        |> Pool_database.Label.create
-        |> Lwt_result.lift
-        >>= trigger_profile_update_by_tenant
-        ||> CCOption.of_result
-      | _ -> failwith "Argument missmatch")
+    match args with
+    | [ pool ] ->
+      let open Utils.Lwt_result.Infix in
+      let%lwt _ = Command_utils.setup_databases () in
+      pool
+      |> Pool_database.Label.create
+      |> Lwt_result.lift
+      >>= trigger_profile_update_by_tenant
+      ||> CCOption.of_result
+    | _ -> failwith "Argument missmatch")
 ;;
 
 let all_profile_update_triggers =
@@ -154,13 +154,13 @@ let all_profile_update_triggers =
     ~name:"trigger_profile_update.send_all"
     ~description:"Send profile update triggers of all tenants"
     (fun args ->
-      match args with
-      | [] ->
-        let open CCFun in
-        let open Utils.Lwt_result.Infix in
-        Command_utils.setup_databases ()
-        >|> Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
-        ||> CCList.all_ok
-        ||> (fun _ -> Ok ()) %> CCOption.of_result
-      | _ -> failwith "Argument missmatch")
+    match args with
+    | [] ->
+      let open CCFun in
+      let open Utils.Lwt_result.Infix in
+      Command_utils.setup_databases ()
+      >|> Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
+      ||> CCList.all_ok
+      ||> (fun _ -> Ok ()) %> CCOption.of_result
+    | _ -> failwith "Argument missmatch")
 ;;

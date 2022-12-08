@@ -205,10 +205,10 @@ module PartialUpdate = struct
   ;;
 
   let validate
-      ?(is_admin = false)
-      contact
-      tenand_db
-      (field, current_version, value, field_id)
+    ?(is_admin = false)
+    contact
+    tenand_db
+    (field, current_version, value, field_id)
     =
     let check_version old_v t =
       let open Pool_common.Version in

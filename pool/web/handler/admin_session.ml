@@ -32,8 +32,8 @@ let reschedule_messages tenant_db sys_languages session =
     let email = Contact.email_address contact in
     let session_overview =
       (CCList.map (fun lang ->
-           ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-           , Session.(to_email_text lang session) )))
+         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+         , Session.(to_email_text lang session) )))
         sys_languages
     in
     Email.Helper.prepare_boilerplate_email
@@ -139,9 +139,9 @@ let create req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf "%s/%s" path "create"
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , Format.asprintf "%s/%s" path "create"
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in
@@ -179,43 +179,43 @@ let detail req page =
     let* experiment = Experiment.find tenant_db experiment_id in
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     (match page with
-    | `Detail ->
-      let* assignments =
-        Assignment.find_by_session tenant_db session.Session.id
-      in
-      Page.Admin.Session.detail context experiment session assignments
-      |> Lwt.return_ok
-    | `Edit ->
-      let* experiment = Experiment.find tenant_db experiment_id in
-      let%lwt locations = Pool_location.find_all tenant_db in
-      let* sys_languages =
-        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-      in
-      Page.Admin.Session.edit
-        context
-        experiment
-        session
-        locations
-        sys_languages
-        flash_fetcher
-      |> Lwt.return_ok
-    | `Close ->
-      let* assignments =
-        Assignment.find_by_session tenant_db session.Session.id
-      in
-      Page.Admin.Session.close context experiment session assignments
-      |> Lwt.return_ok
-    | `Reschedule ->
-      let* experiment = Experiment.find tenant_db experiment_id in
-      Page.Admin.Session.reschedule_session
-        context
-        experiment
-        session
-        flash_fetcher
-      |> Lwt.return_ok
-    | `Cancel ->
-      Page.Admin.Session.cancel context experiment session flash_fetcher
-      |> Lwt.return_ok)
+     | `Detail ->
+       let* assignments =
+         Assignment.find_by_session tenant_db session.Session.id
+       in
+       Page.Admin.Session.detail context experiment session assignments
+       |> Lwt.return_ok
+     | `Edit ->
+       let* experiment = Experiment.find tenant_db experiment_id in
+       let%lwt locations = Pool_location.find_all tenant_db in
+       let* sys_languages =
+         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
+       Page.Admin.Session.edit
+         context
+         experiment
+         session
+         locations
+         sys_languages
+         flash_fetcher
+       |> Lwt.return_ok
+     | `Close ->
+       let* assignments =
+         Assignment.find_by_session tenant_db session.Session.id
+       in
+       Page.Admin.Session.close context experiment session assignments
+       |> Lwt.return_ok
+     | `Reschedule ->
+       let* experiment = Experiment.find tenant_db experiment_id in
+       Page.Admin.Session.reschedule_session
+         context
+         experiment
+         session
+         flash_fetcher
+       |> Lwt.return_ok
+     | `Cancel ->
+       Page.Admin.Session.cancel context experiment session flash_fetcher
+       |> Lwt.return_ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
   in
@@ -249,9 +249,9 @@ let update_handler action req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf "%s/%s" path error_path
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , Format.asprintf "%s/%s" path error_path
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* session = Session.find tenant_db session_id in
@@ -321,7 +321,7 @@ let cancel req =
   in
   let result context =
     Utils.Lwt_result.map_error (fun err ->
-        err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+      err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* session = Session.find tenant_db session_id in
@@ -436,9 +436,9 @@ let create_follow_up req =
       Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
     in
     Utils.Lwt_result.map_error (fun err ->
-        ( err
-        , Format.asprintf "%s/follow-up" path
-        , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
+      ( err
+      , Format.asprintf "%s/follow-up" path
+      , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
     @@
     let tenant_db = context.Pool_context.tenant_db in
     let* location = location urlencoded tenant_db in

@@ -3,16 +3,16 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "session.cqrs"
 
 let create_command
-    start
-    duration
-    description
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
-    : Session.base
+  start
+  duration
+  description
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
+  : Session.base
   =
   Session.
     { start
@@ -47,16 +47,16 @@ let create_schema =
 ;;
 
 let update_command
-    start
-    duration
-    description
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
-    : Session.update
+  start
+  duration
+  description
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
+  : Session.update
   =
   Session.
     { start
@@ -145,23 +145,23 @@ end = struct
   let schema = create_schema
 
   let handle
-      ?(tags = Logs.Tag.empty)
-      ?parent_session
-      experiment_id
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; (* TODO [aerben] find a better name *)
-           overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.base)
+    ?(tags = Logs.Tag.empty)
+    ?parent_session
+    experiment_id
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; (* TODO [aerben] find a better name *)
+         overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.base)
     =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
@@ -226,23 +226,23 @@ end = struct
   type t = Session.update
 
   let handle
-      ?(tags = Logs.Tag.empty)
-      ?parent_session
-      follow_up_sessions
-      session
-      location
-      (Session.
-         { start
-         ; duration
-         ; description
-         ; max_participants
-         ; min_participants
-         ; overbook
-         ; reminder_subject
-         ; reminder_text
-         ; reminder_lead_time
-         } :
-        Session.update)
+    ?(tags = Logs.Tag.empty)
+    ?parent_session
+    follow_up_sessions
+    session
+    location
+    (Session.
+       { start
+       ; duration
+       ; description
+       ; max_participants
+       ; min_participants
+       ; overbook
+       ; reminder_subject
+       ; reminder_text
+       ; reminder_lead_time
+       } :
+      Session.update)
     =
     Logs.info ~src (fun m -> m "Handle command Update" ~tags);
     let open Session in
@@ -322,12 +322,12 @@ end = struct
   ;;
 
   let handle
-      ?(tags = Logs.Tag.empty)
-      ?parent_session
-      follow_up_sessions
-      session
-      emails
-      (Session.{ start; _ } as reschedule : Session.reschedule)
+    ?(tags = Logs.Tag.empty)
+    ?parent_session
+    follow_up_sessions
+    session
+    emails
+    (Session.{ start; _ } as reschedule : Session.reschedule)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in

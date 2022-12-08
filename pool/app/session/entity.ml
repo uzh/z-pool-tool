@@ -121,18 +121,18 @@ type t =
 (* TODO [aerben] write tests *)
 
 let create
-    ?id
-    ?follow_up_to
-    start
-    duration
-    description
-    location
-    max_participants
-    min_participants
-    overbook
-    reminder_subject
-    reminder_text
-    reminder_lead_time
+  ?id
+  ?follow_up_to
+  start
+  duration
+  description
+  location
+  max_participants
+  min_participants
+  overbook
+  reminder_subject
+  reminder_text
+  reminder_lead_time
   =
   { id = id |> CCOption.value ~default:(Pool_common.Id.create ())
   ; follow_up_to
@@ -174,7 +174,7 @@ type notification_log =
 type notification_history =
   { session : t
   ; queue_entries : (Sihl_email.t * Sihl_queue.instance) list
-        [@equal fun _ _ -> true]
+       [@equal fun _ _ -> true]
   }
 
 let find_by_experiment (_ : string) : t list Lwt.t = Lwt.return []
@@ -209,9 +209,9 @@ let group_and_sort sessions =
   let parents, follow_ups =
     sessions
     |> CCList.partition_filter_map (fun session ->
-           match session.follow_up_to with
-           | None -> `Left (session.id, (session, []))
-           | Some parent -> `Right (parent, session))
+         match session.follow_up_to with
+         | None -> `Left (session.id, (session, []))
+         | Some parent -> `Right (parent, session))
   in
   follow_ups
   |> CCList.fold_left
@@ -226,13 +226,13 @@ let group_and_sort sessions =
            groups)
        parents
   |> CCList.map (fun (_, (p, fs)) ->
-         ( p
-         , CCList.sort
-             (fun (f1 : t) (f2 : t) ->
-               Ptime.compare (Start.value f1.start) (Start.value f2.start))
-             fs ))
+       ( p
+       , CCList.sort
+           (fun (f1 : t) (f2 : t) ->
+             Ptime.compare (Start.value f1.start) (Start.value f2.start))
+           fs ))
   |> CCList.sort (fun ((f1 : t), _) ((f2 : t), _) ->
-         Ptime.compare (Start.value f1.start) (Start.value f2.start))
+       Ptime.compare (Start.value f1.start) (Start.value f2.start))
 ;;
 
 let email_text language start duration location =
@@ -266,8 +266,8 @@ let to_email_text language { start; duration; location; _ } =
 ;;
 
 let public_to_email_text
-    language
-    (Public.{ start; duration; location; _ } : Public.t)
+  language
+  (Public.{ start; duration; location; _ } : Public.t)
   =
   email_text language start duration location
 ;;

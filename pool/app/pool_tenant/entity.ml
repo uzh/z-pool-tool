@@ -162,14 +162,14 @@ module Write = struct
   [@@deriving eq, show]
 
   let create
-      title
-      description
-      url
-      database
-      smtp_auth
-      styles
-      icon
-      default_language
+    title
+    description
+    url
+    database
+    smtp_auth
+    styles
+    icon
+    default_language
     =
     { id = Id.create ()
     ; title

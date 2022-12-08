@@ -279,9 +279,9 @@ module Model = struct
   ;;
 
   let create_email
-      ?(sender = "sender@mail.com")
-      ?(recipient = "recipient@mail.com")
-      ()
+    ?(sender = "sender@mail.com")
+    ?(recipient = "recipient@mail.com")
+    ()
     =
     Sihl_email.create
       ~html:"<p>Hello</p>"

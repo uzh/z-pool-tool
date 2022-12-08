@@ -168,9 +168,10 @@ module Data = struct
     let updater k v =
       CCList.Assoc.update
         ~eq:CCString.equal
-        ~f:(function
-          | None -> failwith "Key not found"
-          | Some _ -> v)
+        ~f:
+          (function
+           | None -> failwith "Key not found"
+           | Some _ -> v)
         (Pool_common.Message.Field.show k)
     in
     CCList.fold_left (fun acc (k, v) -> updater k v acc) input kvs
@@ -542,11 +543,9 @@ let cancel_no_reason () =
       [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session (fun reason ->
-              CCList.map
-                (reason
-                |> Session.CancellationReason.value
-                |> Sihl_email.set_text)
-                [ email1; email2 ]))
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
   in
   check_result
     (Error
@@ -578,11 +577,9 @@ let cancel_no_message_channels () =
       ]
       |> decode
       >>= handle session (fun reason ->
-              CCList.map
-                (reason
-                |> Session.CancellationReason.value
-                |> Sihl_email.set_text)
-                [ email1; email2 ]))
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
   in
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
@@ -608,11 +605,9 @@ let cancel_valid () =
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session (fun reason ->
-              CCList.map
-                (reason
-                |> Session.CancellationReason.value
-                |> Sihl_email.set_text)
-                [ email1; email2 ]))
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
   in
   check_result
     (Ok
@@ -628,11 +623,9 @@ let cancel_valid () =
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
       >>= handle session (fun reason ->
-              CCList.map
-                (reason
-                |> Session.CancellationReason.value
-                |> Sihl_email.set_text)
-                [ email1; email2 ]))
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
   in
   check_result
     (Ok
@@ -651,11 +644,11 @@ let send_reminder () =
   let users =
     CCList.range 1 4
     |> CCList.map (fun i ->
-           Sihl_email.create
-             ~sender:"admin@mail.com"
-             ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
-             ~subject:"Reminder"
-             "Hello, this is a reminder for the session")
+         Sihl_email.create
+           ~sender:"admin@mail.com"
+           ~recipient:(CCFormat.asprintf "user%i@mail.com" i)
+           ~subject:"Reminder"
+           "Hello, this is a reminder for the session")
   in
   let res =
     SessionC.SendReminder.handle

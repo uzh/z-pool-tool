@@ -19,14 +19,14 @@ module TemplateLabel = struct
 
   type t =
     | Boilerplate [@name "boilerplate"] [@printer go "boilerplate"]
-    | EmailVerification
-        [@name "email_verification"] [@printer go "email_verification"]
+    | EmailVerification [@name "email_verification"]
+        [@printer go "email_verification"]
     | Invitation [@name "invitation"] [@printer go "invitation"]
     | PasswordChange [@name "password_change"] [@printer go "password_change"]
     | PasswordReset [@name "password_reset"] [@printer go "password_reset"]
     | SignUpVerification [@name "signup_verification"]
-    | SessionCancellation
-        [@name "session_cancellation"] [@printer go "session_cancellation"]
+    | SessionCancellation [@name "session_cancellation"]
+        [@printer go "session_cancellation"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =
