@@ -9,6 +9,7 @@ val sexp_of_t : t -> Sexplib0.Sexp.t
 val user : t -> Sihl_user.t
 val create : Sihl_user.t -> t
 val id : t -> Id.t
+val email : t -> string
 
 type create =
   { email : Pool_user.EmailAddress.t
@@ -55,6 +56,12 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_all_with_role
+  :  Pool_database.Label.t
+  -> Role.Actor.t list
+  -> exclude:Role.Actor.t list
+  -> t list Lwt.t
 
 module Duplicate : sig
   type t

@@ -21,6 +21,8 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
   let tab_links =
     Pool_common.I18n.
       [ Overview, "/"
+      ; Field Message.Field.Assistants, "/assistants"
+      ; Field Message.Field.Experimenter, "/experimenter"
       ; Invitations, "/invitations"
       ; WaitingList, "/waiting-list"
       ; Sessions, "/sessions"
@@ -584,4 +586,39 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     experiment
     ~active:Pool_common.I18n.WaitingList
     (waiting_list_entries ())
+;;
+
+let users
+  role
+  experiment
+  applicable_admins
+  currently_assigned
+  (Pool_context.{ language; _ } as context)
+  =
+  let base_url field admin =
+    Format.asprintf
+      "/admin/experiments/%s/%s/%s"
+      Experiment.(experiment.id |> Id.value)
+      (Pool_common.Message.Field.show field)
+      (Admin.id admin |> Admin.Id.value)
+  in
+  let field =
+    let open Pool_common.Message in
+    match role with
+    | `Assistants -> Field.Assistants
+    | `Experimenter -> Field.Experimenter
+  in
+  Page_admin_experiment_users.role_assignment
+    (base_url field)
+    field
+    context
+    ~assign:"assign"
+    ~divest:"divest"
+    ~applicable:applicable_admins
+    ~current:currently_assigned
+  |> experiment_layout
+       language
+       (NavLink Pool_common.(I18n.Field field))
+       experiment
+       ~active:Pool_common.(I18n.Field field)
 ;;

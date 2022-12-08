@@ -4,6 +4,7 @@ module Invitations = Admin_experiments_invitations
 module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
+module Users = Admin_experiments_users
 
 let create_layout req = General.create_tenant_layout req
 
@@ -188,11 +189,6 @@ let delete req =
 
 module Access : sig
   include Helpers.AccessSig
-
-  val addAssistant : Rock.Middleware.t
-  val divestAssistant : Rock.Middleware.t
-  val addExperimenter : Rock.Middleware.t
-  val divestExperimenter : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
   module ExperimentCommand = Cqrs_command.Experiment_command
@@ -229,30 +225,6 @@ end = struct
 
   let delete =
     [ ExperimentCommand.Delete.effects ]
-    |> experiment_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let addAssistant =
-    [ ExperimentCommand.AddAssistant.effects ]
-    |> experiment_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let divestAssistant =
-    [ ExperimentCommand.DivestAssistant.effects ]
-    |> experiment_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let addExperimenter =
-    [ ExperimentCommand.AddExperimenter.effects ]
-    |> experiment_effects
-    |> Middleware.Guardian.validate_generic
-  ;;
-
-  let divestExperimenter =
-    [ ExperimentCommand.DivestExperimenter.effects ]
     |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;

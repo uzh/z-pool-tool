@@ -53,6 +53,11 @@ let default_command
   }
 ;;
 
+type update_role =
+  { admin : Admin.t
+  ; experiment : Experiment.t
+  }
+
 module Create : sig
   include Common.CommandSig with type t = create
 
@@ -219,24 +224,18 @@ end = struct
   ;;
 end
 
-module AddExperimenter : sig
+module AssignExperimenter : sig
   include Common.CommandSig
 
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
-    Logs.info ~src (fun m -> m "Handle command AddExperimenter" ~tags);
+    Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
     Ok
       [ Experiment.ExperimenterAssigned (experiment, admin)
         |> Pool_event.experiment
@@ -253,18 +252,12 @@ end
 module DivestExperimenter : sig
   include Common.CommandSig
 
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command DivestExperimenter" ~tags);
@@ -281,24 +274,18 @@ end = struct
   ;;
 end
 
-module AddAssistant : sig
+module AssignAssistant : sig
   include Common.CommandSig
 
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
-    Logs.info ~src (fun m -> m "Handle command AddAssistant" ~tags);
+    Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
       [ Experiment.AssistantAssigned (experiment, admin)
         |> Pool_event.experiment
@@ -315,18 +302,12 @@ end
 module DivestAssistant : sig
   include Common.CommandSig
 
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { admin : Admin.t
-    ; experiment : Experiment.t
-    }
+  type t = update_role
 
   let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command DivestAssistant" ~tags);
