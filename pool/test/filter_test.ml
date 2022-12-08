@@ -9,6 +9,8 @@ let allowed_email_suffixes =
   |> CCResult.get_exn
 ;;
 
+let convert_id = CCFun.(Experiment.Id.value %> Pool_common.Id.of_string)
+
 module TestContacts = struct
   let all () =
     Seed.Contacts.contact_ids
@@ -216,7 +218,7 @@ let filter_contacts _ () =
     let%lwt filtered_contacts =
       Contact.find_filtered
         Test_utils.Data.database_label
-        experiment.Experiment.id
+        (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
       ||> CCResult.get_exn
     in
@@ -260,7 +262,7 @@ let filter_by_email _ () =
     let%lwt filtered_contacts =
       Contact.find_filtered
         Test_utils.Data.database_label
-        experiment.Experiment.id
+        (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
       ||> CCResult.get_exn
     in
@@ -359,7 +361,7 @@ let test_list_filter answer_index operator contact experiment expected =
     let%lwt filtered_contacts =
       Contact.find_filtered
         Test_utils.Data.database_label
-        experiment.Experiment.id
+        (experiment.Experiment.id |> convert_id)
         experiment.Experiment.filter
       ||> CCResult.get_exn
     in

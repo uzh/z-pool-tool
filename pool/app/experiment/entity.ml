@@ -1,4 +1,9 @@
-module Id = Pool_common.Id
+module Id = struct
+  include Pool_common.Id
+
+  let to_common m = m
+end
+
 module Common = Pool_common
 
 module Title = struct

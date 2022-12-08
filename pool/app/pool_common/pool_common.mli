@@ -191,11 +191,7 @@ module Model : sig
   end
 end
 
-module Id : sig
-  include Model.IdSig
-
-  val value : t -> string
-end
+module Id : Model.IdSig
 
 module Language : sig
   type t =

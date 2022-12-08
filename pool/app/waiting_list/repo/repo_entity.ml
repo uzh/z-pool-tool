@@ -9,7 +9,7 @@ end
 type t =
   { id : Pool_common.Id.t
   ; contact_id : Pool_common.Id.t
-  ; experiment_id : Pool_common.Id.t
+  ; experiment_id : Experiment.Id.t
   ; comment : Comment.t option
   ; created_at : Pool_common.CreatedAt.t
   ; updated_at : Pool_common.UpdatedAt.t
@@ -65,7 +65,7 @@ let t =
          (tup2
             Pool_common.Repo.Id.t
             (tup2
-               Pool_common.Repo.Id.t
+               Experiment.Repo.Id.t
                (tup2
                   (option Comment.t)
                   (tup2

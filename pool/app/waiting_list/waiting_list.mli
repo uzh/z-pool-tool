@@ -87,7 +87,7 @@ val user_is_enlisted
 
 val find_by_experiment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> (ExperimentList.t, Pool_common.Message.error) Lwt_result.t
 
 val find_by_contact_and_experiment
@@ -95,3 +95,20 @@ val find_by_contact_and_experiment
   -> Contact.t
   -> Experiment.Public.t
   -> (t option, Pool_common.Message.error) result Lwt.t
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `WaitingList ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

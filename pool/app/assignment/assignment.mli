@@ -1,3 +1,9 @@
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
+
 module ShowUp : sig
   include Pool_common.Model.BooleanSig
 
@@ -43,12 +49,12 @@ end
 
 val find
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_by_experiment_and_contact_opt
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> Contact.t
   -> Public.t option Lwt.t
 

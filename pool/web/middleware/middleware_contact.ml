@@ -4,16 +4,16 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
   let filter handler req =
     let%lwt confirmed_and_terms_agreed =
       let open Utils.Lwt_result.Infix in
-      let* { Pool_context.tenant_db; user; _ } =
+      let* { Pool_context.database_label; user; _ } =
         Pool_context.find req |> Lwt_result.lift
       in
       let* contact =
         let open Pool_context in
         let error = Pool_common.Message.(NotFound Field.User) in
         user
-        |> CCOption.map_or ~default:(Error error) (function
+        |> (function
              | Contact c -> Ok c
-             | Admin _ | Root _ -> Error error)
+             | Admin _ | Guest -> Error error)
         |> Lwt_result.lift
       in
       let is_confirmed contact =
@@ -23,7 +23,7 @@ let[@warning "-4"] confirmed_and_terms_agreed () =
            | false -> Error Pool_common.Message.ContactUnconfirmed)
       in
       let terms_agreed contact =
-        let%lwt accepted = Contact.has_terms_accepted tenant_db contact in
+        let%lwt accepted = Contact.has_terms_accepted database_label contact in
         match accepted with
         | true -> Lwt.return_ok contact
         | false ->

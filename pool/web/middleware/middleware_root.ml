@@ -6,7 +6,12 @@ let from_root_only () =
     | true -> handler req
     | false ->
       let html = Page.Utils.error_page_not_found language () in
-      Page.Layout.create_root_layout html Pool_common.Language.En None None ()
+      Page.Layout.create_root_layout
+        html
+        Pool_common.Language.En
+        None
+        Pool_context.Guest
+        ()
       |> Sihl.Web.Response.of_html
       |> Lwt.return
   in
@@ -24,8 +29,8 @@ let require_root () =
     | Error _ -> fail_action req
     | Ok { user; _ } ->
       (match user with
-       | None | Some (Contact _) | Some (Admin _) -> fail_action req
-       | Some (Root _) -> handler req)
+       | Contact _ | Guest -> fail_action req
+       | Admin _ -> handler req)
   in
   Rock.Middleware.create ~name:"user.require.root" ~filter
 ;;

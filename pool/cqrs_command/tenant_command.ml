@@ -8,7 +8,7 @@ module AssignOperator : sig
 
   val handle
     :  Id.t
-    -> Admin.operator Admin.t
+    -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : t -> Guard.Authorizer.effect list
@@ -38,7 +38,7 @@ module DivestOperator : sig
 
   val handle
     :  Id.t
-    -> Admin.operator Admin.t
+    -> Admin.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val can : t -> Guard.Authorizer.effect list

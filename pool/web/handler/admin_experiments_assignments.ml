@@ -1,29 +1,29 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
 
 let index req =
   let open Utils.Lwt_result.Infix in
   let id =
-    Pool_common.Message.Field.(Experiment |> show)
-    |> Sihl.Web.Router.param req
-    |> Pool_common.Id.of_string
+    let open Pool_common.Message.Field in
+    HttpUtils.find_id Experiment.Id.of_string Experiment req
   in
   let error_path =
-    Format.asprintf "/admin/experiments/%s" (Pool_common.Id.value id)
+    Format.asprintf "/admin/experiments/%s" (Experiment.Id.value id)
   in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let* experiment = Experiment.find tenant_db id in
+    @@ let* experiment = Experiment.find database_label id in
        let* sessions =
-         Session.find_all_for_experiment tenant_db experiment.Experiment.id
+         Session.find_all_for_experiment database_label experiment.Experiment.id
        in
        let* assignments =
          Lwt_list.map_s
            (fun session ->
              let* assignments =
-               Assignment.find_by_session tenant_db session.Session.id
+               Assignment.find_by_session database_label session.Session.id
              in
              Lwt_result.return (session, assignments))
            sessions
@@ -40,18 +40,17 @@ let cancel req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, id =
     let open Pool_common.Message.Field in
-    let open HttpUtils in
-    ( get_field_router_param req Experiment |> Pool_common.Id.of_string
-    , get_field_router_param req Assignment |> Pool_common.Id.of_string )
+    ( HttpUtils.find_id Experiment.Id.of_string Experiment req
+    , HttpUtils.find_id Assignment.Id.of_string Assignment req )
   in
   let redirect_path =
     Format.asprintf
       "/admin/experiments/%s/assignments"
-      (Pool_common.Id.value experiment_id)
+      (Experiment.Id.value experiment_id)
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
-    @@ let* assignment = Assignment.find tenant_db id in
+    @@ let* assignment = Assignment.find database_label id in
        let tags = Logger.req req in
        let events =
          Cqrs_command.Assignment_command.Cancel.handle ~tags assignment
@@ -59,7 +58,7 @@ let cancel req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path
@@ -71,3 +70,25 @@ let cancel req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+module Access : sig
+  val cancel : Rock.Middleware.t
+  val index : Rock.Middleware.t
+end = struct
+  module AssignmentCommand = Cqrs_command.Assignment_command
+
+  let assignment_effects =
+    Middleware.Guardian.id_effects Assignment.Id.of_string Field.Assignment
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity `Assignment ]
+  ;;
+
+  let cancel =
+    [ AssignmentCommand.Cancel.effects ]
+    |> assignment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

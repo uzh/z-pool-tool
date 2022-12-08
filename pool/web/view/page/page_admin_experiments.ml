@@ -31,7 +31,7 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
          ( label
          , Format.asprintf
              "/admin/experiments/%s/%s"
-             (Pool_common.Id.value experiment.Experiment.id)
+             (Experiment.Id.value experiment.Experiment.id)
              url ))
   in
   let title =
@@ -92,7 +92,7 @@ let index experiment_list Pool_context.{ language; _ } =
         [ txt (Title.value experiment.title)
         ; Format.asprintf
             "/admin/experiments/%s"
-            (experiment.id |> Pool_common.Id.value)
+            (experiment.id |> Experiment.Id.value)
           |> edit_link
         ])
       experiment_list
@@ -123,7 +123,7 @@ let experiment_form
     | Some experiment ->
       Format.asprintf
         "/admin/experiments/%s"
-        (experiment.id |> Pool_common.Id.value)
+        (experiment.id |> Experiment.Id.value)
   in
   let checkbox_element ?help ?(default = false) field fnc =
     checkbox_element
@@ -359,7 +359,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
               (Sihl.Web.externalize_path
                  (Format.asprintf
                     "/admin/experiments/%s/delete"
-                    (experiment.Experiment.id |> Pool_common.Id.value)))
+                    (experiment.Experiment.id |> Experiment.Id.value)))
           ; a_user_data
               "confirmable"
               Pool_common.(
@@ -477,7 +477,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
       ~control:(language, Message.(Edit (Some Field.Experiment)))
       (Format.asprintf
          "/admin/experiments/%s/edit"
-         (experiment.id |> Pool_common.Id.value))
+         (experiment.id |> Experiment.Id.value))
   in
   experiment_layout
     ~buttons:edit_button
@@ -503,7 +503,7 @@ let invitations
               ~a:
                 [ a_href
                     (experiment.Experiment.id
-                    |> Pool_common.Id.value
+                    |> Experiment.Id.value
                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
                     |> Sihl.Web.externalize_path)
                 ]
@@ -569,7 +569,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
             |> HttpUtils.add_line_breaks
           ; Format.asprintf
               "/admin/experiments/%s/waiting-list/%s"
-              (waiting_list.experiment.Experiment.id |> Pool_common.Id.value)
+              (waiting_list.experiment.Experiment.id |> Experiment.Id.value)
               (entry.id |> Pool_common.Id.value)
             |> edit_link
           ])

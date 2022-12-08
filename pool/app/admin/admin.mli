@@ -1,15 +1,16 @@
-type creatable_admin = Event.creatable_admin =
-  | Assistant
-  | Experimenter
-  | Recruiter
-  | LocationManager
-  | Operator
+module Id : module type of Pool_common.Id
 
-val equal_creatable_admin : creatable_admin -> creatable_admin -> bool
-val pp_creatable_admin : Format.formatter -> creatable_admin -> unit
-val show_creatable_admin : creatable_admin -> string
+type t
 
-type create = Event.create =
+val equal : t -> t -> bool
+val pp : Format.formatter -> t -> unit
+val show : t -> string
+val sexp_of_t : t -> Sexplib0.Sexp.t
+val user : t -> Sihl_user.t
+val create : Sihl_user.t -> t
+val id : t -> Id.t
+
+type create =
   { email : Pool_user.EmailAddress.t
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
@@ -20,7 +21,7 @@ val equal_create : create -> create -> bool
 val pp_create : Format.formatter -> create -> unit
 val show_create : create -> string
 
-type update = Event.update =
+type update =
   { firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
   }
@@ -29,84 +30,75 @@ val equal_update : update -> update -> bool
 val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
-type 'a person_event =
-  | DetailsUpdated of 'a Entity.t * update
-  | PasswordUpdated of
-      'a Entity.t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
-  | Disabled of 'a Entity.t
-  | Verified of 'a Entity.t
-
 type event =
-  | Created of creatable_admin * create
-  | AssistantEvents of Entity.assistant person_event
-  | ExperimenterEvents of Entity.experimenter person_event
-  | LocationManagerEvents of Entity.location_manager person_event
-  | RecruiterEvents of Entity.recruiter person_event
-  | OperatorEvents of Entity.operator person_event
+  | Created of create
+  | DetailsUpdated of t * update
+  | PasswordUpdated of t * Pool_user.Password.t * Pool_user.PasswordConfirmed.t
+  | Disabled of t
+  | Enabled of t
+  | Verified of t
 
-val handle_person_event : Pool_database.Label.t -> 'a person_event -> unit Lwt.t
-val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
-val equal_person_event : 'a person_event -> 'a person_event -> bool
-val pp_person_event : Format.formatter -> 'a person_event -> unit
+val handle_event
+  :  tags:Logs.Tag.set
+  -> Pool_tenant.Database.Label.t
+  -> event
+  -> unit Lwt.t
+
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
-
-type person = Entity.person =
-  { user : Sihl_user.t
-  ; created_at : Ptime.t
-  ; updated_at : Ptime.t
-  }
-
-val create_person : Sihl_user.t -> person
-val equal_person : person -> person -> bool
-val pp_person : Format.formatter -> person -> unit
-val show_person : person -> string
-
-type assistant = Entity.assistant
-type experimenter = Entity.experimenter
-type location_manager = Entity.location_manager
-type recruiter = Entity.recruiter
-type operator = Entity.operator
-
-type 'a t = 'a Entity.t =
-  | Assistant : person -> assistant t
-  | Experimenter : person -> experimenter t
-  | LocationManager : person -> location_manager t
-  | Recruiter : person -> recruiter t
-  | Operator : person -> operator t
-
-val equal : 'person t -> 'person t -> bool
-val pp : Format.formatter -> 'person t -> unit
-
-type any = Entity.any = Any : 'a t -> any
-
-val equal_any : any -> any -> bool
-val pp_any : Format.formatter -> any -> unit
-val user : 'person_function t -> Sihl_user.t
-
-module Duplicate = Admin__Entity.Duplicate
-
-val insert : Pool_database.Label.t -> 'a t -> unit Lwt.t
-
-val find_any_admin_by_user_id
-  :  Pool_database.Label.t
-  -> Pool_common.Id.t
-  -> (any, Pool_common.Message.error) Lwt_result.t
-
 val user_is_admin : Pool_database.Label.t -> Sihl_user.t -> bool Lwt.t
-val find_duplicates : 'a -> 'b
-val find_all : Pool_database.Label.t -> unit -> any list Lwt.t
 
-module Any : sig
-  val user : any -> Sihl_user.t
+val find
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
 
-  val role
-    :  any
-    -> [> `Assistant
-       | `Experimenter
-       | `LocationManager
-       | `Operator
-       | `Recruiter
-       ]
+val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
+
+module Duplicate : sig
+  type t
+
+  val equal : t -> t -> bool
+  val pp : Format.formatter -> t -> unit
+  val show : t -> string
+end
+
+module Guard : sig
+  module Actor : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Admin ] Guard.Authorizable.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> Role__Entity.Target.admins
+      -> t
+      -> ( [> `Admin of Role__Entity.Target.admins ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module RuleSet : sig
+    val assistant : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+    val experimenter : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+    val location_manager : Pool_common.Id.t -> Guard.Authorizer.auth_rule list
+  end
 end

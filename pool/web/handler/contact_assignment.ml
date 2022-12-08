@@ -6,39 +6,38 @@ let create req =
   let open Utils.Lwt_result.Infix in
   let experiment_id, id =
     let open Pool_common.Message.Field in
-    HttpUtils.(
-      ( get_field_router_param req Experiment |> Pool_common.Id.of_string
-      , get_field_router_param req Session |> Pool_common.Id.of_string ))
+    ( HttpUtils.find_id Experiment.Id.of_string Experiment req
+    , HttpUtils.find_id Pool_common.Id.of_string Session req )
   in
   let redirect_path =
-    Format.asprintf "/experiments/%s" (experiment_id |> Pool_common.Id.value)
+    Format.asprintf "/experiments/%s" (experiment_id |> Experiment.Id.value)
   in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, redirect_path)
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let* experiment =
-         Experiment.find_public tenant_db experiment_id contact
+         Experiment.find_public database_label experiment_id contact
        in
-       let* session = Session.find_public tenant_db id in
+       let* session = Session.find_public database_label id in
        let* waiting_list =
          Waiting_list.find_by_contact_and_experiment
-           tenant_db
+           database_label
            contact
            experiment
        in
        let* confirmation_email =
          let* language =
-           let* default = Settings.default_language tenant_db in
+           let* default = Settings.default_language database_label in
            contact.Contact.language
            |> CCOption.value ~default
            |> Lwt_result.return
          in
          let* subject =
-           I18n.find_by_key tenant_db I18n.Key.ConfirmationSubject language
+           I18n.find_by_key database_label I18n.Key.ConfirmationSubject language
            >|+ I18n.content
          in
          let* text =
-           I18n.find_by_key tenant_db I18n.Key.ConfirmationText language
+           I18n.find_by_key database_label I18n.Key.ConfirmationText language
            >|+ I18n.content
          in
          let session_text = Session.(public_to_email_text language session) in
@@ -50,7 +49,7 @@ let create req =
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in
          Assignment.find_by_experiment_and_contact_opt
-           tenant_db
+           database_label
            experiment.Experiment.Public.id
            contact
          ||> CCOption.is_some
@@ -67,7 +66,7 @@ let create req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            redirect_path

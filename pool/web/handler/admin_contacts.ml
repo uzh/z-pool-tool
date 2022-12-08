@@ -1,13 +1,14 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
+module Field = Pool_common.Message.Field
 
 let create_layout req = General.create_tenant_layout req
 
 let index req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/dashboard")
-    @@ let%lwt contacts = Contact.find_all tenant_db () in
+    @@ let%lwt contacts = Contact.find_all database_label () in
        Page.Admin.Contact.index context contacts
        |> create_layout req ~active_navigation:"/admin/contacts" context
        >|+ Sihl.Web.Response.of_html
@@ -18,12 +19,12 @@ let index req =
 let detail_view action req =
   (* TODO: Impelement authorization *)
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/contacts")
     @@ let* contact =
          HttpUtils.get_field_router_param req Pool_common.Message.Field.Contact
          |> Pool_common.Id.of_string
-         |> Contact.find tenant_db
+         |> Contact.find database_label
        in
        match action with
        | `Show ->
@@ -37,7 +38,7 @@ let detail_view action req =
          let%lwt custom_fields =
            Custom_field.find_all_by_contact
              ~is_admin:true
-             tenant_db
+             database_label
              (Contact.id contact)
          in
          Page.Admin.Contact.edit context tenant_languages contact custom_fields
@@ -57,11 +58,11 @@ let update req =
       ~actions:[ Message.set ~error:[ err ] ]
       ()
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     let%lwt contact =
       HttpUtils.get_field_router_param req Pool_common.Message.Field.Contact
       |> Pool_common.Id.of_string
-      |> Contact.find tenant_db
+      |> Contact.find database_label
     in
     match contact with
     | Ok contact -> Helpers.PartialUpdate.update ~contact req
@@ -72,3 +73,34 @@ let update req =
   | Ok context -> result context
   | Error err -> redirect err
 ;;
+
+module Access : Helpers.AccessSig = struct
+  module ContactCommand = Cqrs_command.Contact_command
+
+  let contact_effects =
+    Middleware.Guardian.id_effects Contact.Id.of_string Field.Contact
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity [ `Read, `TargetEntity `Contact ]
+  ;;
+
+  let create = Middleware.Guardian.denied
+  let delete = Middleware.Guardian.denied
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
+        ; `Read, `TargetEntity `Contact
+        ])
+    ]
+    |> contact_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    [ ContactCommand.Update.effects ]
+    |> contact_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

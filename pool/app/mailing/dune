@@ -1,6 +1,6 @@
 (library
  (name mailing)
- (libraries pool_common pool_context sihl tenant logger)
+ (libraries experiment pool_common sihl tenant)
  (preprocess
   (pps
    lwt_ppx

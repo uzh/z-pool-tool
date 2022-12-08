@@ -32,3 +32,7 @@ end
 module LogoMapping = struct
   include LogoMapping
 end
+
+module Guard = struct
+  include Entity_guard
+end

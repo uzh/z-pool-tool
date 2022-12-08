@@ -3,14 +3,12 @@ module Conformist = Pool_common.Utils.PoolConformist
 let src = Logs.Src.create "waiting_list.cqrs"
 
 module Create : sig
-  type t = Waiting_list.create
+  include Common.CommandSig with type t = Waiting_list.create
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Guard.Authorizer.effect list
 end = struct
   type t = Waiting_list.create
 
@@ -23,11 +21,11 @@ end = struct
     else Error Pool_common.Message.NotEligible
   ;;
 
-  let can = [ `Create, `TargetEntity `WaitingList ]
+  let effects = [ `Create, `TargetEntity `WaitingList ]
 end
 
 module Update : sig
-  type t = Waiting_list.update
+  include Common.CommandSig with type t = Waiting_list.update
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -39,7 +37,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val can : Waiting_list.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Waiting_list.update
 
@@ -64,24 +62,20 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let can waiting_list =
-    [ ( `Update
-      , `Target
-          (waiting_list.Waiting_list.id
-          |> Guard.Uuid.target_of Pool_common.Id.value) )
-    ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value) ]
   ;;
 end
 
 module Destroy : sig
-  type t = Waiting_list.t
+  include Common.CommandSig with type t = Waiting_list.t
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Waiting_list.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Waiting_list.t
 
@@ -90,12 +84,9 @@ end = struct
     Ok [ Waiting_list.Deleted m |> Pool_event.waiting_list ]
   ;;
 
-  let can waiting_list =
+  let effects id =
     [ `Manage, `TargetEntity `WaitingList
-    ; ( `Delete
-      , `Target
-          (waiting_list.Waiting_list.id
-          |> Guard.Uuid.target_of Pool_common.Id.value) )
+    ; `Delete, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
     ]
   ;;
 end

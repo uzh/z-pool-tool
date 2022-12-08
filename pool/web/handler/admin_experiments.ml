@@ -7,8 +7,8 @@ module Mailings = Admin_experiments_mailing
 
 let create_layout req = General.create_tenant_layout req
 
-let id req field encode =
-  Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
+let experiment_id =
+  HttpUtils.find_id Experiment.Id.of_string Pool_common.Message.Field.Experiment
 ;;
 
 let experiment_boolean_fields =
@@ -18,9 +18,9 @@ let experiment_boolean_fields =
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt expermient_list = Experiment.find_all tenant_db () in
+    @@ let%lwt expermient_list = Experiment.find_all database_label () in
        Page.Admin.Experiments.index expermient_list context
        |> create_layout ~active_navigation:"/admin/experiments" req context
        >|+ Sihl.Web.Response.of_html
@@ -52,7 +52,7 @@ let create req =
     ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
     ||> HttpUtils.remove_empty_values
   in
-  let result { Pool_context.tenant_db; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , "/admin/experiments/create"
@@ -68,7 +68,7 @@ let create req =
     in
     let handle events =
       let%lwt () =
-        Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+        Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
       Http_utils.redirect_to_with_actions
         "/admin/experiments"
@@ -83,14 +83,14 @@ let create req =
 
 let detail edit req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/admin/experiments")
     @@
-    let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
-    let* experiment = Experiment.find tenant_db id in
+    let id = experiment_id req in
+    let* experiment = Experiment.find database_label id in
     (match edit with
      | false ->
-       let* session_count = Experiment.session_count tenant_db id in
+       let* session_count = Experiment.session_count database_label id in
        Page.Admin.Experiments.detail experiment session_count context
        |> Lwt.return_ok
      | true ->
@@ -115,21 +115,21 @@ let edit = detail true
 
 let update req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; _ } =
-    let id = Pool_common.(id req Message.Field.Experiment Id.of_string) in
+  let result { Pool_context.database_label; _ } =
+    let id = experiment_id req in
     let%lwt urlencoded =
       Sihl.Web.Request.to_urlencoded req
       ||> HttpUtils.format_request_boolean_values experiment_boolean_fields
       ||> HttpUtils.remove_empty_values
     in
     let detail_path =
-      Format.asprintf "/admin/experiments/%s" (id |> Pool_common.Id.value)
+      Format.asprintf "/admin/experiments/%s" (id |> Experiment.Id.value)
     in
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , Format.asprintf "%s/edit" detail_path
       , [ HttpUtils.urlencoded_to_flash urlencoded ] ))
-    @@ let* experiment = Experiment.find tenant_db id in
+    @@ let* experiment = Experiment.find database_label id in
        let tags = Logger.req req in
        let events =
          let open CCResult.Infix in
@@ -138,7 +138,7 @@ let update req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            detail_path
@@ -153,18 +153,18 @@ let update req =
 
 let delete req =
   let open Utils.Lwt_result.Infix in
-  let result { Pool_context.tenant_db; _ } =
-    let experiment_id =
-      Pool_common.(id req Pool_common.Message.Field.Experiment Id.of_string)
-    in
+  let result { Pool_context.database_label; _ } =
+    let experiment_id = experiment_id req in
     let experiments_path = "/admin/experiments" in
     Utils.Lwt_result.map_error (fun err ->
       ( err
       , Format.asprintf
           "%s/%s"
           experiments_path
-          (Pool_common.Id.value experiment_id) ))
-    @@ let* session_count = Experiment.session_count tenant_db experiment_id in
+          (Experiment.Id.value experiment_id) ))
+    @@ let* session_count =
+         Experiment.session_count database_label experiment_id
+       in
        let tags = Logger.req req in
        let events =
          Cqrs_command.Experiment_command.Delete.(
@@ -173,7 +173,7 @@ let delete req =
        in
        let handle events =
          let%lwt () =
-           Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+           Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
          in
          Http_utils.redirect_to_with_actions
            experiments_path
@@ -185,3 +185,75 @@ let delete req =
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+module Access : sig
+  include Helpers.AccessSig
+
+  val addAssistant : Rock.Middleware.t
+  val divestAssistant : Rock.Middleware.t
+  val addExperimenter : Rock.Middleware.t
+  val divestExperimenter : Rock.Middleware.t
+end = struct
+  module Field = Pool_common.Message.Field
+  module ExperimentCommand = Cqrs_command.Experiment_command
+
+  let experiment_effects =
+    Middleware.Guardian.id_effects Experiment.Id.of_string Field.Experiment
+  ;;
+
+  let index =
+    Middleware.Guardian.validate_admin_entity
+      [ `Read, `TargetEntity `Experiment ]
+  ;;
+
+  let create =
+    ExperimentCommand.Create.effects
+    |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
+        ; `Read, `TargetEntity `Experiment
+        ])
+    ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    [ ExperimentCommand.Update.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let delete =
+    [ ExperimentCommand.Delete.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let addAssistant =
+    [ ExperimentCommand.AddAssistant.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let divestAssistant =
+    [ ExperimentCommand.DivestAssistant.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let addExperimenter =
+    [ ExperimentCommand.AddExperimenter.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let divestExperimenter =
+    [ ExperimentCommand.DivestExperimenter.effects ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+end

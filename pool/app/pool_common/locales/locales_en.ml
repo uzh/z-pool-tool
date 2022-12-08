@@ -207,6 +207,8 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AccessDenied -> "Access denied"
+  | AccessDeniedMessage -> "Access to the requested page is denied"
   | AllLanguagesRequired field ->
     field_message
       "Please provide '"

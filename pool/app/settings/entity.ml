@@ -180,6 +180,7 @@ type t =
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
+[@@deriving eq, show]
 
 module Write = struct
   type t = { value : Value.t }

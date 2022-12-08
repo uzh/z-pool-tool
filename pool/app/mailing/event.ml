@@ -9,14 +9,20 @@ type update =
 [@@deriving eq, show]
 
 type event =
-  | Created of (t * Pool_common.Id.t)
+  | Created of (t * Experiment.Id.t)
   | Updated of (update * t)
   | Deleted of t
   | Stopped of t
 [@@deriving eq, show]
 
-let handle_event pool = function
-  | Created (mailing, experiment_id) -> Repo.insert pool experiment_id mailing
+let handle_event pool =
+  let open Utils.Lwt_result.Infix in
+  function
+  | Created (mailing, experiment_id) ->
+    let%lwt () = Repo.insert pool experiment_id mailing in
+    Entity_guard.Target.to_authorizable ~ctx:(Pool_tenant.to_ctx pool) mailing
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | Updated ({ start_at; end_at; rate; distribution }, mailing) ->
     { mailing with start_at; end_at; rate; distribution } |> Repo.update pool
   | Deleted { id; _ } -> Repo.delete pool id

@@ -43,7 +43,7 @@ end
 
 type t =
   { id : Id.t
-  ; experiment_id : Pool_common.Id.t
+  ; experiment_id : Experiment.Id.t
   ; start_at : StartAt.t
   ; end_at : EndAt.t
   ; rate : Rate.t
@@ -60,7 +60,7 @@ let to_entity
 ;;
 
 let of_entity
-  (experiment_id : Pool_common.Id.t)
+  (experiment_id : Experiment.Id.t)
   { Entity.id; start_at; end_at; rate; distribution; created_at; updated_at }
   =
   { id
@@ -108,7 +108,7 @@ let t =
       (tup2
          Id.t
          (tup2
-            Pool_common.Repo.Id.t
+            Experiment.Repo.Id.t
             (tup2
                StartAt.t
                (tup2

@@ -5,8 +5,8 @@ let equal_operator_event (t1, o1) (t2, o2) =
 ;;
 
 type event =
-  | OperatorAssigned of Id.t * Admin.operator Admin.t
-  | OperatorDivested of Id.t * Admin.operator Admin.t
+  | OperatorAssigned of Id.t * Admin.t
+  | OperatorDivested of Id.t * Admin.t
   | StatusReportGenerated of unit
 [@@deriving variants]
 

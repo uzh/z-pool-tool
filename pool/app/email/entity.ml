@@ -146,6 +146,10 @@ let user_id : type state. state t -> Pool_common.Id.t = function
     user.Sihl.Contract.User.id |> Pool_common.Id.of_string
 ;;
 
+let user_is_confirmed : type state. state t -> bool = function
+  | Unverified { user; _ } | Verified { user; _ } -> user.Sihl_user.confirmed
+;;
+
 let address : type state. state t -> User.EmailAddress.t = function
   | Unverified { address; _ } | Verified { address; _ } -> address
 ;;

@@ -26,7 +26,7 @@ let public_overview sessions experiment language =
                [ a_href
                    (Format.asprintf
                       "/experiments/%s/sessions/%s"
-                      (experiment.id |> Pool_common.Id.value)
+                      (experiment.id |> Experiment.Id.value)
                       (session.Session.Public.id |> Pool_common.Id.value)
                    |> Sihl.Web.externalize_path)
                ]

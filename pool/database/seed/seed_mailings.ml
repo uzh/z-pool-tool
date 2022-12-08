@@ -18,7 +18,7 @@ let generate_rate delta =
   (delta + 1) * 100 |> Mailing.Rate.create |> get_or_failwith
 ;;
 
-let generate_events experiments =
+let generate_events (experiments : Experiment.Id.t list) =
   let mailings =
     CCList.range_by ~step:5 0 180
     |> CCList.map (fun delta ->

@@ -26,6 +26,25 @@ module Sql = struct
     Format.asprintf "%s %s" select_from where_fragment
   ;;
 
+  let find_request caqti_type =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE user_users.uuid = UNHEX(REPLACE(?, '-', ''))
+      AND user_users.confirmed = 1
+    |sql}
+    |> select_from_users_sql
+    |> Pool_common.Repo.Id.t ->! caqti_type
+  ;;
+
+  let find pool id =
+    let open Lwt.Infix in
+    Utils.Database.find_opt
+      (Pool_database.Label.value pool)
+      (find_request Pool_user.Repo.user_caqti)
+      id
+    >|= CCOption.to_result Pool_common.Message.(NotFound Field.Admin)
+  ;;
+
   let find_all_request =
     let open Caqti_request.Infix in
     {sql|
@@ -43,4 +62,7 @@ module Sql = struct
   ;;
 end
 
+let find = Sql.find
 let find_all = Sql.find_all
+
+module Id = Pool_common.Repo.Id

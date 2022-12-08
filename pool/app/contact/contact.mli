@@ -1,3 +1,5 @@
+module Id = Pool_common.Id
+
 module RecruitmentChannel : sig
   type t =
     | Friend
@@ -200,5 +202,42 @@ end
 module Repo : sig
   module Preview : sig
     val t : Preview.t Caqti_type.t
+  end
+end
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Contact ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+
+  module Actor : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Contact ] Guard.Authorizable.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    val authorizable_of_req
+      :  ?ctx:Guardian__Persistence.context
+      -> Rock.Request.t
+      -> ( [> `Contact ] Guard.Authorizable.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
   end
 end

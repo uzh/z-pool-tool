@@ -206,6 +206,9 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AccessDenied -> "Zugriff verweigert"
+  | AccessDeniedMessage ->
+    "Der Zugriff auf die gewünschte Seite ist nicht möglich."
   | AllLanguagesRequired field ->
     field_message
       "Bitte geben Sie '"

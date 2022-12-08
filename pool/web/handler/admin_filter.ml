@@ -11,10 +11,10 @@ let templates_disabled urlencoded =
   |> map_or ~default:false (CCString.equal "true")
 ;;
 
-let find_all_templates tenant_db templates_disabled =
+let find_all_templates database_label templates_disabled =
   if templates_disabled
   then Lwt.return []
-  else Filter.find_all_templates tenant_db ()
+  else Filter.find_all_templates database_label ()
 ;;
 
 let create_layout req = General.create_tenant_layout req
@@ -49,9 +49,9 @@ let get_id req field encode =
 let index req =
   let open Utils.Lwt_result.Infix in
   let error_path = Format.asprintf "/admin/filter" in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@ let%lwt filter_list = Filter.find_all_templates tenant_db () in
+    @@ let%lwt filter_list = Filter.find_all_templates database_label () in
        Page.Admin.Filter.index context filter_list
        |> create_layout ~active_navigation:"/admin/filter" req context
        >|+ Sihl.Web.Response.of_html
@@ -61,17 +61,17 @@ let index req =
 
 let form is_edit req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, Format.asprintf "/admin/filter")
     @@ let* filter =
          if is_edit
          then
            get_id req Field.Filter Pool_common.Id.of_string
-           |> Filter.find_template tenant_db
+           |> Filter.find_template database_label
            >|+ CCOption.pure
          else Lwt.return_none |> Lwt_result.ok
        in
-       let%lwt key_list = Filter.all_keys tenant_db in
+       let%lwt key_list = Filter.all_keys database_label in
        Page.Admin.Filter.edit context filter key_list
        |> create_layout req context
        >|+ Sihl.Web.Response.of_html
@@ -91,7 +91,7 @@ let create ?model req =
     |> get_or ~default:Pool_common.Language.En
   in
   let%lwt result =
-    let { Pool_context.tenant_db; _ } =
+    let { Pool_context.database_label; _ } =
       Pool_context.find req |> CCResult.get_exn
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
@@ -101,8 +101,10 @@ let create ?model req =
       >>= Filter.query_of_string
       |> Lwt_result.lift
     in
-    let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt template_list = Filter.find_templates_of_query tenant_db query in
+    let%lwt key_list = Filter.all_keys database_label in
+    let%lwt template_list =
+      Filter.find_templates_of_query database_label query
+    in
     let tags = Logger.req req in
     let events =
       let open Pool_common.Message in
@@ -112,17 +114,16 @@ let create ?model req =
       match model with
       | Some `Experiment ->
         let experiment_id =
-          get_field_router_param req Field.Experiment
-          |> Pool_common.Id.of_string
+          find_id Experiment.Id.of_string Field.Experiment req
         in
-        let* experiment = Experiment.find tenant_db experiment_id in
+        let* experiment = Experiment.find database_label experiment_id in
         let open Cqrs_command.Experiment_command.UpdateFilter in
         handle ~tags experiment key_list template_list query |> Lwt_result.lift
       | Some `Filter ->
         let filter_id =
           get_field_router_param req Field.Filter |> Pool_common.Id.of_string
         in
-        let* filter = Filter.find_template tenant_db filter_id in
+        let* filter = Filter.find_template database_label filter_id in
         let open Cqrs_command.Filter_command.Update in
         urlencoded
         |> decode
@@ -136,7 +137,7 @@ let create ?model req =
         >>= handle ~tags key_list template_list query %> lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events
+      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
     in
     events |>> handle
   in
@@ -177,13 +178,15 @@ let update_template req = create ~model:`Filter req
 let toggle_predicate_type req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
-    let* { Pool_context.language; tenant_db; _ } =
+    let* { Pool_context.language; database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
-    let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt template_list = find_all_templates tenant_db templates_disabled in
+    let%lwt key_list = Filter.all_keys database_label in
+    let%lwt template_list =
+      find_all_templates database_label templates_disabled
+    in
     let* query =
       let open CCResult in
       Lwt_result.lift
@@ -225,14 +228,14 @@ let toggle_predicate_type req =
 let toggle_key req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
-    let* { Pool_context.language; tenant_db; _ } =
+    let* { Pool_context.language; database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let* key =
       find_in_params urlencoded Pool_common.Message.Field.Key
       |> Lwt_result.lift
-      >>= Filter.key_of_string tenant_db
+      >>= Filter.key_of_string database_label
     in
     Component.Filter.predicate_value_form language ~key () |> Lwt.return_ok
   in
@@ -252,13 +255,15 @@ let toggle_key req =
 let add_predicate req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
-    let* { Pool_context.language; tenant_db; _ } =
+    let* { Pool_context.language; database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
-    let%lwt key_list = Filter.all_keys tenant_db in
-    let%lwt template_list = find_all_templates tenant_db templates_disabled in
+    let%lwt key_list = Filter.all_keys database_label in
+    let%lwt template_list =
+      find_all_templates database_label templates_disabled
+    in
     let* identifier = find_identifier urlencoded |> Lwt_result.lift in
     let rec increment_identifier identifier =
       match identifier with
@@ -299,20 +304,18 @@ let add_predicate req =
 
 let count_contacts req =
   let experiment_id =
-    let open Pool_common.Message.Field in
-    let open HttpUtils in
-    get_field_router_param req Experiment |> Pool_common.Id.of_string
+    HttpUtils.find_id Experiment.Id.of_string Field.Experiment req
   in
   let%lwt result =
     let open Utils.Lwt_result.Infix in
-    let* { Pool_context.language; tenant_db; _ } =
+    let* { Pool_context.language; database_label; _ } =
       req
       |> Pool_context.find
       |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
       |> Lwt_result.lift
     in
     Utils.Lwt_result.map_error Pool_common.(Utils.error_to_string language)
-    @@ let* experiment = Experiment.find tenant_db experiment_id in
+    @@ let* experiment = Experiment.find database_label experiment_id in
        let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
        let* query =
          let open CCResult in
@@ -326,7 +329,10 @@ let count_contacts req =
               (fun str -> str |> Filter.query_of_string >|= CCOption.pure)
          |> Lwt_result.lift
        in
-       Contact.count_filtered tenant_db experiment.Experiment.id query
+       Contact.count_filtered
+         database_label
+         (experiment.Experiment.id |> Experiment.Id.to_common)
+         query
   in
   let status, (json : Yojson.Safe.t) =
     match result with
@@ -336,3 +342,39 @@ let count_contacts req =
   HttpUtils.yojson_response ~status:(status |> Opium.Status.of_code) json
   |> Lwt.return
 ;;
+
+module Access : Helpers.AccessSig = struct
+  module ContactCommand = Cqrs_command.Contact_command
+
+  let filter_effects =
+    Middleware.Guardian.id_effects Filter.Id.of_string Field.Contact
+  ;;
+
+  let read =
+    [ (fun id ->
+        [ `Read, `Target (id |> Guard.Uuid.target_of Filter.Id.value)
+        ; `Read, `TargetEntity `Contact
+        ])
+    ]
+    |> filter_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let update =
+    [ ContactCommand.Update.effects ]
+    |> filter_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let create =
+    [ `Create, `TargetEntity `Filter ]
+    |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let index =
+    [ `Read, `TargetEntity `Filter ]
+    |> Middleware.Guardian.validate_admin_entity
+  ;;
+
+  let delete = Middleware.Guardian.denied
+end

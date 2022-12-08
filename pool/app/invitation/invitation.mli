@@ -56,7 +56,7 @@ val find
 
 val find_by_experiment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_by_contact
@@ -67,7 +67,7 @@ val find_by_contact
 val find_experiment_id_of_invitation
   :  Pool_database.Label.t
   -> t
-  -> (Pool_common.Id.t, Pool_common.Message.error) result Lwt.t
+  -> (Experiment.Id.t, Pool_common.Message.error) result Lwt.t
 
 val find_multiple_by_experiment_and_contacts
   :  Pool_database.Label.t
@@ -80,3 +80,20 @@ val contact_was_invited_to_experiment
   -> Experiment.t
   -> Contact.t
   -> bool Lwt.t
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Invitation ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

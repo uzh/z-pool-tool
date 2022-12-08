@@ -58,7 +58,7 @@ module Sql = struct
       ORDER BY pool_mailing.start
     |sql}
     |> Format.asprintf "%s\n%s" select_sql
-    |> Pool_common.Repo.Id.t ->* RepoEntity.t
+    |> Experiment.Repo.Id.t ->* RepoEntity.t
   ;;
 
   let find_by_experiment pool =

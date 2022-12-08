@@ -80,7 +80,7 @@ module DummyData = struct
   let experiment =
     let get_exn = CCResult.get_exn in
     Experiment.
-      { id = Pool_common.Id.create ()
+      { id = Id.create ()
       ; title = Title.create "The Wallet Game\t" |> get_exn
       ; public_title = PublicTitle.create "public_title" |> get_exn
       ; description = Description.create "A description for everyone" |> get_exn

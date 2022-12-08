@@ -28,11 +28,10 @@ module Partials = struct
   let overview_list Pool_context.{ language; csrf; _ } experiment_id assignments
     =
     let action assignment =
-      let value = Pool_common.Id.value in
       Format.asprintf
         "/admin/experiments/%s/assignments/%s/cancel"
-        (experiment_id |> value)
-        (assignment.Assignment.id |> value)
+        (experiment_id |> Experiment.Id.value)
+        (assignment.Assignment.id |> Pool_common.Id.value)
       |> Sihl.Web.externalize_path
     in
     match CCList.is_empty assignments with

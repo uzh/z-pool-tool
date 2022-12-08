@@ -113,7 +113,7 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_request
-      (id |> Pool_common.Id.value)
+      (id |> Entity.Id.value)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
@@ -198,7 +198,7 @@ module Sql = struct
     Utils.Database.exec
       (Pool_database.Label.value pool)
       destroy_request
-      (id |> Pool_common.Id.value)
+      (id |> Entity.Id.value)
   ;;
 end
 
@@ -209,3 +209,5 @@ let find_of_mailing = Sql.find_of_mailing
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy
+
+module Id = Pool_common.Repo.Id

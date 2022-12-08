@@ -5,6 +5,8 @@ module Id = Pool_common.Id
 let src = Logs.Src.create "contact.cqrs"
 
 module SignUp : sig
+  include Common.CommandSig
+
   type t =
     { email : User.EmailAddress.t
     ; password : User.Password.t
@@ -105,6 +107,8 @@ end = struct
 end
 
 module DeleteUnverified : sig
+  include Common.CommandSig
+
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
@@ -112,6 +116,8 @@ module DeleteUnverified : sig
 
   val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
+  type t
+
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command DeleteUnverified" ~tags);
     if contact.Contact.email_verified |> CCOption.is_some
@@ -128,6 +134,8 @@ end = struct
 end
 
 module Update : sig
+  include Common.CommandSig
+
   type t = Contact.PartialUpdate.t
 
   val handle
@@ -136,7 +144,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Contact.PartialUpdate.t
 
@@ -145,18 +153,16 @@ end = struct
     Ok [ Contact.Updated (field, contact) |> Pool_event.contact ]
   ;;
 
-  let effects pool subject =
-    [ ( `Update
-      , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ; ( `Update
-      , `Target
-          (Pool_tenant.id pool |> Guard.Uuid.target_of Pool_common.Id.value) )
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Contact.Id.value)
+    ; `Update, `TargetEntity `Contact
     ]
   ;;
 end
 
 module UpdatePassword : sig
+  include Common.CommandSig
+
   type t =
     { current_password : User.Password.t
     ; new_password : User.Password.t
@@ -172,11 +178,11 @@ module UpdatePassword : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Contact.t -> Guard.Authorizer.effect list
-
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
+
+  val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { current_password : User.Password.t
@@ -231,13 +237,10 @@ end = struct
       ]
   ;;
 
-  let effects tenant subject =
+  let effects subject =
     [ ( `Update
       , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
       )
-    ; ( `Update
-      , `Target
-          (Pool_tenant.id tenant |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 
@@ -248,6 +251,8 @@ end = struct
 end
 
 module RequestEmailValidation : sig
+  include Common.CommandSig
+
   type t = Pool_user.EmailAddress.t
 
   val handle
@@ -258,7 +263,7 @@ module RequestEmailValidation : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Pool_tenant.t -> Contact.t -> Guard.Authorizer.effect list
+  val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
   type t = Pool_user.EmailAddress.t
 
@@ -284,13 +289,10 @@ end = struct
       ]
   ;;
 
-  let effects tenant subject =
+  let effects subject =
     [ ( `Update
       , `Target (Contact.id subject |> Guard.Uuid.target_of Pool_common.Id.value)
       )
-    ; ( `Update
-      , `Target
-          (Pool_tenant.id tenant |> Guard.Uuid.target_of Pool_common.Id.value) )
     ]
   ;;
 end
@@ -334,6 +336,8 @@ end = struct
 end
 
 module AcceptTermsAndConditions : sig
+  include Common.CommandSig
+
   val handle
     :  ?tags:Logs.Tag.set
     -> Contact.t
@@ -341,6 +345,8 @@ module AcceptTermsAndConditions : sig
 
   val effects : Contact.t -> Guard.Authorizer.effect list
 end = struct
+  type t
+
   let handle ?(tags = Logs.Tag.empty) contact =
     Logs.info ~src (fun m -> m "Handle command AcceptTermsAndCondition" ~tags);
     Ok [ Contact.TermsAccepted contact |> Pool_event.contact ]
@@ -354,31 +360,9 @@ end = struct
   ;;
 end
 
-module VerifyEmail : sig
-  type t = { email : Email.unverified Email.t }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Contact.t
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Contact.t -> Guard.Authorizer.effect list
-end = struct
-  type t = { email : Email.unverified Email.t }
-
-  let handle ?(tags = Logs.Tag.empty) contact command =
-    Logs.info ~src (fun m -> m "Handle command VerifyEmail" ~tags);
-    Ok
-      [ Contact.EmailVerified contact |> Pool_event.contact
-      ; Email.EmailVerified command.email |> Pool_event.email_verification
-      ]
-  ;;
-
-  let effects _contact = Utils.todo [%here]
-end
-
 module SendProfileUpdateTrigger : sig
+  include Common.CommandSig
+
   type t =
     { contacts : Contact.t list
     ; emails : Sihl_email.t list
