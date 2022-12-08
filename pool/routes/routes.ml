@@ -43,10 +43,7 @@ module Public = struct
                   Pool_context.UserType.[ Guest; Contact; Admin ]
               ; CustomMiddleware.Logger.logger
               ]
-            [ get "/index" index
-            ; get "/denied" Handler.Public.denied
-            ; get "/custom/assets/index.css" index_css
-            ]
+            [ get "/index" index; get "/custom/assets/index.css" index_css ]
         ; choose
             ~middlewares:
               [ CustomMiddleware.Guardian.require_user_type_of
@@ -540,6 +537,7 @@ let router =
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
+    ; get "/denied" Handler.Public.denied
     ; get
         "/**"
         ~middlewares:[ CustomMiddleware.Context.context () ]

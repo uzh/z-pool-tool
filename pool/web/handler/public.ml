@@ -107,27 +107,22 @@ let not_found req =
   result |> Http_utils.extract_happy_path req
 ;;
 
-let denied req =
-  let result ({ Pool_context.language; query_language; _ } as context) =
-    let open Lwt_result.Infix in
-    let html =
-      Page.Utils.error_page_terminatory
-        ~lang:language
-        Pool_common.Message.AccessDenied
-        Pool_common.Message.AccessDeniedMessage
-        ()
-    in
-    Lwt_result.map_error (fun err ->
-      err, Http_utils.path_with_language query_language "/error")
-    @@
-    match Http_utils.is_req_from_root_host req with
-    | true ->
-      General.create_root_layout context html
-      |> Sihl.Web.Response.of_html
-      |> Lwt.return_ok
-    | false -> html |> create_layout req context >|= Sihl.Web.Response.of_html
+let denied _ =
+  let html =
+    Page.Utils.error_page_terminatory
+      ~lang:Pool_common.Language.En
+      Pool_common.Message.AccessDenied
+      Pool_common.Message.AccessDeniedMessage
+      ()
   in
-  result |> Http_utils.extract_happy_path req
+  Page.Layout.create_root_layout
+    html
+    Pool_common.Language.En
+    None
+    Pool_context.Guest
+    ()
+  |> Sihl.Web.Response.of_html
+  |> Lwt.return
 ;;
 
 let asset req =
