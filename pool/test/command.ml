@@ -215,7 +215,15 @@ let () =
             `Quick
             Session_test.update_min_eq_max
         ; test_case "delete session succeeds" `Quick Session_test.delete
-        ; test_case "cancel session succeeds" `Quick Session_test.cancel
+        ; test_case
+            "cancel session without reason fails"
+            `Quick
+            Session_test.cancel_no_reason
+        ; test_case
+            "cancel session without message channels fails"
+            `Quick
+            Session_test.cancel_no_message_channels
+        ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
         ; test_case
             "send reminders for session succeeds"
             `Quick

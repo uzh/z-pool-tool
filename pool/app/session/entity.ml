@@ -74,6 +74,19 @@ module AssignmentCount = struct
   ;;
 end
 
+module CancellationReason = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Reason
+  let create = create
+
+  let validate m =
+    if CCString.is_empty m then Error Pool_common.Message.NoValue else Ok m
+  ;;
+
+  let schema = schema ?validation:(Some validate) field
+end
+
 type t =
   { id : Pool_common.Id.t
   ; follow_up_to : Pool_common.Id.t option

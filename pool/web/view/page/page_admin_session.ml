@@ -22,9 +22,9 @@ let location_select options selected ?(attributes = []) () =
                  let is_selected =
                    selected
                    |> CCOption.map (fun selected ->
-                        if Pool_location.equal selected l
-                        then [ a_selected () ]
-                        else [])
+                          if Pool_location.equal selected l
+                          then [ a_selected () ]
+                          else [])
                    |> CCOption.value ~default:[]
                  in
                  option
@@ -37,14 +37,14 @@ let location_select options selected ?(attributes = []) () =
 ;;
 
 let session_form
-  csrf
-  language
-  (experiment : Experiment.t)
-  ?(session : Session.t option)
-  ?(follow_up_to : Session.t option)
-  locations
-  sys_languages
-  ~flash_fetcher
+    csrf
+    language
+    (experiment : Experiment.t)
+    ?(session : Session.t option)
+    ?(follow_up_to : Session.t option)
+    locations
+    sys_languages
+    ~flash_fetcher
   =
   let open CCFun in
   let open Session in
@@ -129,9 +129,9 @@ let session_form
             ~help:Pool_common.I18n.TimeSpanPickerHint
             ~value:
               (value (fun s ->
-                 s.duration
-                 |> Duration.value
-                 |> Pool_common.Utils.Time.timespan_spanpicker))
+                   s.duration
+                   |> Duration.value
+                   |> Pool_common.Utils.Time.timespan_spanpicker))
             ~flash_fetcher
             ~additional_attributes:
               (if has_assignments then [ a_disabled () ] else [])
@@ -141,7 +141,8 @@ let session_form
             Pool_common.Message.Field.Description
             ~value:
               (value (fun s ->
-                 s.description |> CCOption.map_or ~default:"" Description.value))
+                   s.description
+                   |> CCOption.map_or ~default:"" Description.value))
             ~flash_fetcher
         ; location_select locations None ()
         ; input_element
@@ -184,13 +185,13 @@ let session_form
                     ~flash_fetcher
                 ; experiment.Experiment.session_reminder_lead_time
                   |> CCOption.map_or ~default:(txt "") (fun leadtime ->
-                       Pool_common.(
-                         Utils.text_to_string
-                           language
-                           (I18n.SessionReminderDefaultLeadTime
-                              (leadtime |> Reminder.LeadTime.value)))
-                       |> txt
-                       |> to_default_value)
+                         Pool_common.(
+                           Utils.text_to_string
+                             language
+                             (I18n.SessionReminderDefaultLeadTime
+                                (leadtime |> Reminder.LeadTime.value)))
+                         |> txt
+                         |> to_default_value)
                 ]
             ; div
                 ~a:[ a_class [ "full-width" ] ]
@@ -206,39 +207,39 @@ let session_form
                 Pool_common.Message.Field.ReminderSubject
                 ~value:
                   (value (fun s ->
-                     s.reminder_subject
-                     |> CCOption.map_or
-                          ~default:""
-                          Pool_common.Reminder.Subject.value))
+                       s.reminder_subject
+                       |> CCOption.map_or
+                            ~default:""
+                            Pool_common.Reminder.Subject.value))
                 ~flash_fetcher
             ; experiment.Experiment.session_reminder_subject
               |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Pool_common.(
-                     Utils.text_to_string
-                       language
-                       (I18n.SessionReminderDefaultSubject
-                          (text |> Reminder.Subject.value)))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
+                     Pool_common.(
+                       Utils.text_to_string
+                         language
+                         (I18n.SessionReminderDefaultSubject
+                            (text |> Reminder.Subject.value)))
+                     |> Http_utils.add_line_breaks
+                     |> to_default_value)
             ; textarea_element
                 language
                 Pool_common.Message.Field.ReminderText
                 ~value:
                   (value (fun s ->
-                     s.reminder_text
-                     |> CCOption.map_or
-                          ~default:""
-                          Pool_common.Reminder.Text.value))
+                       s.reminder_text
+                       |> CCOption.map_or
+                            ~default:""
+                            Pool_common.Reminder.Text.value))
                 ~flash_fetcher
             ; experiment.Experiment.session_reminder_text
               |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Pool_common.(
-                     Utils.text_to_string
-                       language
-                       (I18n.SessionReminderDefaultText
-                          (text |> Reminder.Text.value)))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
+                     Pool_common.(
+                       Utils.text_to_string
+                         language
+                         (I18n.SessionReminderDefaultText
+                            (text |> Reminder.Text.value)))
+                     |> Http_utils.add_line_breaks
+                     |> to_default_value)
             ]
         ]
     ; div
@@ -248,10 +249,10 @@ let session_form
 ;;
 
 let reschedule_session
-  Pool_context.{ csrf; language; _ }
-  experiment
-  (session : Session.t)
-  flash_fetcher
+    Pool_context.{ csrf; language; _ }
+    experiment
+    (session : Session.t)
+    flash_fetcher
   =
   let open Session in
   let action =
@@ -304,10 +305,10 @@ let reschedule_session
 ;;
 
 let index
-  Pool_context.{ language; csrf; _ }
-  experiment
-  grouped_sessions
-  chronological
+    Pool_context.{ language; csrf; _ }
+    experiment
+    grouped_sessions
+    chronological
   =
   let experiment_id = experiment.Experiment.id in
   let add_session_btn =
@@ -325,33 +326,6 @@ let index
       (fun (parent, follow_ups) ->
         let open Session in
         let session_row session =
-          let cancel_form =
-            match CCOption.is_some session.Session.canceled_at with
-            | true ->
-              submit_element
-                ~submit_type:`Disabled
-                language
-                Message.(Cancel None)
-                ()
-            | false ->
-              form
-                ~a:
-                  [ a_method `Post
-                  ; a_action
-                      (Format.asprintf
-                         "/admin/experiments/%s/sessions/%s/cancel"
-                         (Pool_common.Id.value experiment_id)
-                         (Pool_common.Id.value session.id)
-                      |> Sihl.Web.externalize_path)
-                  ; a_user_data
-                      "confirmable"
-                      Pool_common.(
-                        Utils.confirmable_to_string language I18n.CancelSession)
-                  ]
-                [ csrf_element csrf ()
-                ; submit_element language Message.(Cancel None) ()
-                ]
-          in
           let delete_form =
             if session.Session.assignment_count
                |> Session.AssignmentCount.value
@@ -397,7 +371,7 @@ let index
                  |> Session.AssignmentCount.value))
           ; session.Session.canceled_at
             |> CCOption.map_or ~default:"" (fun t ->
-                 Pool_common.Utils.Time.formatted_date_time t)
+                   Pool_common.Utils.Time.formatted_date_time t)
             |> txt
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
@@ -406,7 +380,6 @@ let index
                   (Pool_common.Id.value experiment_id)
                   (Pool_common.Id.value session.id)
                 |> edit_link
-              ; cancel_form
               ; delete_form
               ]
           ]
@@ -459,11 +432,11 @@ let index
 ;;
 
 let new_form
-  Pool_context.{ language; csrf; _ }
-  experiment
-  locations
-  sys_languages
-  flash_fetcher
+    Pool_context.{ language; csrf; _ }
+    experiment
+    locations
+    sys_languages
+    flash_fetcher
   =
   Page_admin_experiments.experiment_layout
     language
@@ -480,10 +453,10 @@ let new_form
 ;;
 
 let detail
-  (Pool_context.{ language; _ } as context)
-  experiment
-  (session : Session.t)
-  assignments
+    (Pool_context.{ language; _ } as context)
+    experiment
+    (session : Session.t)
+    assignments
   =
   let open Session in
   let session_link (show, url, control) =
@@ -548,14 +521,14 @@ let detail
         let canceled =
           session.canceled_at
           |> CCOption.map (fun c ->
-               ( Field.CanceledAt
-               , Pool_common.Utils.Time.formatted_date_time c |> txt ))
+                 ( Field.CanceledAt
+                 , Pool_common.Utils.Time.formatted_date_time c |> txt ))
         in
         let closed =
           session.closed_at
           |> CCOption.map (fun c ->
-               ( Field.ClosedAt
-               , Pool_common.Utils.Time.formatted_date_time c |> txt ))
+                 ( Field.ClosedAt
+                 , Pool_common.Utils.Time.formatted_date_time c |> txt ))
         in
         rows @ ([ canceled; closed ] |> CCList.filter_map CCFun.id)
       in
@@ -571,6 +544,12 @@ let detail
             && CCOption.is_none session.closed_at
           , "reschedule"
           , Reschedule (Some Field.Session) )
+        ; ( CCOption.is_none session.canceled_at
+            && Ptime.is_later
+                 (session.start |> Start.value)
+                 ~than:Ptime_clock.(now ())
+          , "cancel"
+          , Cancel (Some Field.Session) )
         ; ( CCOption.is_none session.closed_at
             && Ptime.is_earlier
                  (session.start |> Start.value)
@@ -621,12 +600,12 @@ let detail
 ;;
 
 let edit
-  Pool_context.{ language; csrf; _ }
-  experiment
-  (session : Session.t)
-  locations
-  sys_languages
-  flash_fetcher
+    Pool_context.{ language; csrf; _ }
+    experiment
+    (session : Session.t)
+    locations
+    sys_languages
+    flash_fetcher
   =
   div
     [ p
@@ -652,12 +631,12 @@ let edit
 ;;
 
 let follow_up
-  Pool_context.{ language; csrf; _ }
-  experiment
-  (parent_session : Session.t)
-  locations
-  sys_languages
-  flash_fetcher
+    Pool_context.{ language; csrf; _ }
+    experiment
+    (parent_session : Session.t)
+    locations
+    sys_languages
+    flash_fetcher
   =
   div
     [ p
@@ -688,10 +667,10 @@ let follow_up
 ;;
 
 let close
-  Pool_context.{ language; csrf; _ }
-  experiment
-  (session : Session.t)
-  assignments
+    Pool_context.{ language; csrf; _ }
+    experiment
+    (session : Session.t)
+    assignments
   =
   let open Pool_common in
   let control = Message.(Close (Some Field.Session)) in
@@ -817,5 +796,64 @@ let close
   |> Page_admin_experiments.experiment_layout
        language
        (Page_admin_experiments.Control control)
+       experiment
+;;
+
+let cancel
+    Pool_context.{ language; csrf; _ }
+    experiment
+    (session : Session.t)
+    flash_fetcher
+  =
+  let action =
+    let open Pool_common.Id in
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/cancel"
+      (value experiment.Experiment.id)
+      (value session.Session.id)
+  in
+  (match session.Session.canceled_at with
+  | Some canceled_at ->
+    Pool_common.(
+      p
+        [ canceled_at
+          |> Utils.Time.formatted_date_time
+          |> Pool_common.Message.sessionalreadycanceled
+          |> Utils.error_to_string language
+          |> txt
+        ])
+  | None ->
+    form
+      ~a:
+        [ a_class [ "stack" ]
+        ; a_method `Post
+        ; a_action (action |> Sihl.Web.externalize_path)
+        ]
+      [ csrf_element csrf ()
+      ; textarea_element
+          ~flash_fetcher
+          language
+          Pool_common.Message.Field.Reason
+      ; span
+          Pool_common.
+            [ I18n.SessionCancelMessage |> Utils.hint_to_string language |> txt
+            ]
+      ; p Pool_common.[ I18n.NotifyVia |> Utils.text_to_string language |> txt ]
+      ; checkbox_element ~flash_fetcher language Pool_common.Message.Field.Email
+        (* TODO [aerben] should be hidden? *)
+      ; checkbox_element ~flash_fetcher language Pool_common.Message.Field.SMS
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element
+              ~classnames:[ "push" ]
+              language
+              Pool_common.Message.(Cancel (Some Field.Session))
+              ()
+          ]
+      ])
+  |> Page_admin_experiments.experiment_layout
+       language
+       (Page_admin_experiments.Control
+          Pool_common.Message.(Cancel (Some Field.Session)))
        experiment
 ;;

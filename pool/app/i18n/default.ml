@@ -72,6 +72,38 @@ let default_values =
     , [ "EN", "Herewith we remind you for the Experiment-Session"
       ; "DE", "Hiermit erinnern wir Sie an die Experiment-Session"
       ] )
+  ; ( "session_cancellation_subject"
+    , [ "EN", "Session canceled"; "DE", "Session abgesagt" ] )
+  ; ( "session_cancellation_text"
+    , [ ( "EN"
+        , {|Dear {name}
+
+Your session was canceled.
+
+Details:
+{sessionOverviewEN}
+
+Reason:
+{reason}
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ; ( "DE"
+        , {|Dear {name}
+
+Ihre Session wurde abgesagt.
+
+Details:
+{sessionOverviewDE}
+
+Grund:
+{reason}
+
+Yours sincerely,
+Pool Tool|}
+        )
+      ] )
   ; ( "session_finish_subject"
     , [ "EN", "Session statements incomplete."
       ; "DE", "Sessionabschluss unvollständig"
@@ -90,6 +122,7 @@ let default_values =
 
 Your session was rescheduled.
 
+Details:
 {sessionOverviewEN}
 
 Yours sincerely,
@@ -100,28 +133,7 @@ Pool Tool|}
 
 Ihre Session wurde verschoben.
 
-{sessionOverviewDE}
-
-Freundliche Grüsse,
-Pool Tool|}
-        )
-      ] )
-  ; ( "cancel_session_text"
-    , [ ( "EN"
-        , {|Dear {name}
-
-Your session was cancelled.
-
-{sessionOverviewEN}
-
-Yours sincerely,
-Pool Tool|}
-        )
-      ; ( "DE"
-        , {|Liebe*r {name},
-
-Ihre Session wurde abgesagt.
-
+Details:
 {sessionOverviewDE}
 
 Freundliche Grüsse,

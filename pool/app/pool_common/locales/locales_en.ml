@@ -42,7 +42,7 @@ let field_to_string =
   | Distribution -> "distribution"
   | DistributionField -> "field"
   | Duration -> "duration"
-  | Email -> "email address"
+  | Email -> "email"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
@@ -86,6 +86,7 @@ let field_to_string =
   | Mailing -> "mailing"
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
+  | MessageChannel -> "message channel"
   | MinParticipants -> "minimum participants"
   | Model -> "model"
   | Name -> "name"
@@ -110,6 +111,7 @@ let field_to_string =
   | PublishedAt -> "published"
   | Query -> "query"
   | Rate -> "rate limit"
+  | Reason -> "reason"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
@@ -124,6 +126,7 @@ let field_to_string =
   | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUp -> "show up"
+  | SMS -> "SMS"
   | SmtpAuthMethod -> "smtp authentication method"
   | SmtpAuthServer -> "smtp authentication server"
   | SmtpPassword -> "smtp password"
@@ -303,6 +306,8 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | PickMessageChannel ->
+    "No message channel has been selected for the notification of contacts."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
       "%s is not compatible with %s."
@@ -320,6 +325,8 @@ let rec error_to_string = function
     "Please enter both a subject and a text for the session reminder."
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
+  | SessionAlreadyCanceled date ->
+    CCFormat.asprintf "This session as already been canceled on %s." date
   | SessionAlreadyClosed -> "This session is already closed."
   | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->

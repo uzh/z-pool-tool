@@ -192,7 +192,7 @@ module Helper : sig
     :  CustomTemplate.t
     -> string
     -> (string * string) list
-    -> Sihl_email.t Lwt.t
+    -> Sihl_email.t
 
   module ConfirmationEmail : sig
     val create

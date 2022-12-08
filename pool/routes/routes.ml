@@ -191,6 +191,7 @@ module Admin = struct
             ; get "/edit" edit
             ; get "/follow-up" follow_up
             ; post "/follow-up" create_follow_up
+            ; get "/cancel" cancel_form
             ; post "/cancel" cancel
             ; post "/delete" delete
             ; get "/reschedule" reschedule_form

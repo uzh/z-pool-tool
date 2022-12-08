@@ -20,6 +20,8 @@ module Key : sig
     | ReminderText
     | RescheduleSessionSubject
     | RescheduleSessionText
+    | SessionCancellationSubject
+    | SessionCancellationText
     | SessionFinishSubject
     | SessionFinishText
     | TriggerProfileUpdateSubject

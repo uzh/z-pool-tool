@@ -65,6 +65,10 @@ module AssignmentCount : sig
   val create : int -> (t, Pool_common.Message.error) result
 end
 
+module CancellationReason : sig
+  include Pool_common.Model.StringSig
+end
+
 type t =
   { id : Pool_common.Id.t
   ; follow_up_to : Pool_common.Id.t option
@@ -183,8 +187,12 @@ val find_follow_ups
 val build_cancellation_messages
   :  Pool_database.Label.t
   -> Pool_common.Language.t
+  -> Pool_common.Language.t list
+  -> t
   -> Contact.t list
-  -> (Sihl_email.t list, Pool_common.Message.error) Lwt_result.t
+  -> ( CancellationReason.t -> Sihl_email.t list
+     , Pool_common.Message.error )
+     Lwt_result.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string

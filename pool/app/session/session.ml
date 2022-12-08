@@ -11,22 +11,38 @@ let find_experiment_id_and_title = Repo.find_experiment_id_and_title
 let find_sessions_to_remind = Repo.find_sessions_to_remind
 let find_follow_ups = Repo.find_follow_ups
 
-(* TODO [aerben] should building be in cqrs command or in event *)
-let build_cancellation_messages _tenant_db _language _contacts =
-  (*   let open Email in *)
-  (*   let%lwt template = *)
-  (*     Service.EmailTemplate.get_by_label *)
-  (*       ~ctx:(Pool_tenant.to_ctx tenant_db) *)
-  (*       ~language:(Pool_common.Language.show language) *)
-  (*       TemplateLabel.(show SessionCancellation) *)
-  (*   in *)
-  (*   let subject = *)
-  (* Pool_common.(Utils.text_to_string language
-     I18n.SessionCancellationSubject) *)
-  (*   in *)
-  (* let mail = Sihl_email.create *)
-  (* let mail = Sihl_email.Template.render_email_with_data *)
-  (* let open CCList.Infix in *)
-  (* let* contact = contacts in *)
-  Lwt_result.return []
+let build_cancellation_messages
+    tenant_db
+    language
+    system_languages
+    session
+    contacts
+  =
+  let open Utils.Lwt_result.Infix in
+  (* TODO [aerben] this language is probably wrong? dont take admin language,
+     take experiment language *)
+  let find = CCFun.flip (I18n.find_by_key tenant_db) language in
+  (* TODO [aerben] these should prob be exceptions... *)
+  let* subject = find I18n.Key.SessionCancellationSubject in
+  let* text = find I18n.Key.SessionCancellationText in
+  let template =
+    Email.CustomTemplate.
+      { subject = Subject.I18n subject; content = Content.I18n text }
+  in
+  let session_overview =
+    (CCList.map (fun lang ->
+         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+         , to_email_text lang session )))
+      system_languages
+  in
+  (fun reason ->
+    let create_message (contact : Contact.t) =
+      Email.Helper.prepare_boilerplate_email
+        template
+        (contact |> Contact.email_address |> Pool_user.EmailAddress.value)
+        ([ "name", Contact.fullname contact; "reason", reason ]
+        @ session_overview)
+    in
+    CCList.map create_message contacts)
+  |> Lwt_result.return
 ;;

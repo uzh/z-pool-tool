@@ -127,7 +127,8 @@ module Create : sig
   type t = Session.base
 
   val handle
-    :  ?parent_session:Session.t
+    :  ?tags:Logs.Tag.set
+    -> ?parent_session:Session.t
     -> Experiment.Id.t
     -> Pool_location.t
     -> t
@@ -380,29 +381,62 @@ end = struct
 end
 
 module Cancel : sig
+  type t
+
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
-    -> Sihl_email.t list
-    -> Contact.MessageChannel.t
+    -> (Session.CancellationReason.t -> Sihl_email.t list)
+    -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
+
+  val decode
+    :  (string * string list) list
+    -> (t, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
 end = struct
-  (* TODO issue #90 step 2 *)
-  (* notify_via: Email, SMS *)
-  (* TODO [aerben] use contacts *)
-  let handle ?(tags = Logs.Tag.empty) session emails notify_via =
+  type t =
+    { notify_email : bool
+    ; notify_sms : bool
+    ; reason : Session.CancellationReason.t
+    }
+
+  let handle ?(tags = Logs.Tag.empty) session messages_fn command =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    let open Contact.MessageChannel in
-    match notify_via with
-    | Email ->
-      Ok
-        [ Session.Canceled session |> Pool_event.session
-        ; Email.BulkSent emails |> Pool_event.email
-        ]
+    let open CCResult.Infix in
+    let* () =
+      if not (command.notify_email || command.notify_sms)
+      then Error Pool_common.Message.PickMessageChannel
+      else Ok ()
+    in
+    let email_event =
+      if command.notify_email
+      then [ Email.BulkSent (messages_fn command.reason) |> Pool_event.email ]
+      else []
+    in
     (* TODO issue #149 implement this and then fix test *)
-    | SMS -> Error Pool_common.Message.NoValue
+    let sms_event = if command.notify_sms then [] else [] in
+    let cancel_event = [ Session.Canceled session |> Pool_event.session ] in
+    [ email_event; sms_event; cancel_event ]
+    |> CCList.flatten
+    |> CCResult.return
+  ;;
+
+  let command notify_email notify_sms reason =
+    { notify_email; notify_sms; reason }
+  ;;
+
+  let schema =
+    Conformist.(
+      make
+        Field.[ bool "email"; bool "sms"; Session.CancellationReason.schema () ]
+        command)
+  ;;
+
+  let decode data =
+    Conformist.decode_and_validate schema data
+    |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
   let effects = [ `Manage, `TargetEntity `System ]

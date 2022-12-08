@@ -55,7 +55,8 @@ let reschedule_messages tenant_db sys_languages session =
       in
       match Hashtbl.find_opt i18n_texts message_language with
       | Some template ->
-        create_message sys_languages contact session template |> Lwt_result.ok
+        create_message sys_languages contact session template
+        |> Lwt_result.return
       | None ->
         let* subject =
           I18n.(
@@ -70,7 +71,8 @@ let reschedule_messages tenant_db sys_languages session =
             { subject = Subject.I18n subject; content = Content.I18n text }
         in
         let () = Hashtbl.add i18n_texts message_language template in
-        create_message sys_languages contact session template |> Lwt_result.ok)
+        create_message sys_languages contact session template
+        |> Lwt_result.return)
     assignments
   ||> CCResult.flatten_l
 ;;
@@ -175,6 +177,7 @@ let detail req page =
     let session_id = id req Pool_common.Message.Field.session in
     let* session = Session.find tenant_db session_id in
     let* experiment = Experiment.find tenant_db experiment_id in
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
     (match page with
     | `Detail ->
       let* assignments =
@@ -183,7 +186,6 @@ let detail req page =
       Page.Admin.Session.detail context experiment session assignments
       |> Lwt.return_ok
     | `Edit ->
-      let flash_fetcher key = Sihl.Web.Flash.find key req in
       let* experiment = Experiment.find tenant_db experiment_id in
       let%lwt locations = Pool_location.find_all tenant_db in
       let* sys_languages =
@@ -204,13 +206,15 @@ let detail req page =
       Page.Admin.Session.close context experiment session assignments
       |> Lwt.return_ok
     | `Reschedule ->
-      let flash_fetcher key = Sihl.Web.Flash.find key req in
       let* experiment = Experiment.find tenant_db experiment_id in
       Page.Admin.Session.reschedule_session
         context
         experiment
         session
         flash_fetcher
+      |> Lwt.return_ok
+    | `Cancel ->
+      Page.Admin.Session.cancel context experiment session flash_fetcher
       |> Lwt.return_ok)
     >>= create_layout req context
     >|+ Sihl.Web.Response.of_html
@@ -221,6 +225,7 @@ let detail req page =
 let show req = detail req `Detail
 let edit req = detail req `Edit
 let reschedule_form req = detail req `Reschedule
+let cancel_form req = detail req `Cancel
 let close req = detail req `Close
 
 let update_handler action req =
@@ -296,7 +301,63 @@ let update_handler action req =
 let update = update_handler `Update
 let reschedule = update_handler `Reschedule
 
-let disabler req command ctor =
+(* TODO [aerben] if already canceled, allow uncancel *)
+let cancel req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = id req Pool_common.Message.Field.Experiment in
+  let session_id = id req Pool_common.Message.Field.Session in
+  let success_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s"
+      (Pool_common.Id.value experiment_id)
+      (Pool_common.Id.value session_id)
+  in
+  let error_path = CCFormat.asprintf "%s/cancel" success_path in
+  let%lwt urlencoded =
+    Sihl.Web.Request.to_urlencoded req
+    ||> HttpUtils.remove_empty_values
+    ||> HttpUtils.format_request_boolean_values
+          Pool_common.Message.Field.[ show Email; show SMS ]
+  in
+  let result context =
+    Utils.Lwt_result.map_error (fun err ->
+        err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
+    @@
+    let tenant_db = context.Pool_context.tenant_db in
+    let* session = Session.find tenant_db session_id in
+    let tags = Logger.req req in
+    let* events =
+      let* contacts =
+        Assignment.find_by_session tenant_db session.Session.id
+        >|+ CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
+      in
+      let* system_languages =
+        Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+      in
+      let* messages_fn =
+        Session.build_cancellation_messages
+          tenant_db
+          context.Pool_context.language
+          system_languages
+          session
+          contacts
+      in
+      let open CCResult.Infix in
+      Cqrs_command.Session_command.Cancel.(
+        urlencoded |> decode >>= handle ~tags session messages_fn)
+      |> Lwt_result.lift
+    in
+    let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+    Http_utils.redirect_to_with_actions
+      success_path
+      [ Message.set ~success:[ Pool_common.Message.(Canceled Field.Session) ] ]
+    |> Lwt_result.ok
+  in
+  result |> HttpUtils.extract_happy_path_with_actions req
+;;
+
+(* TODO [aerben] add a confirmation before deleting *)
+let delete req =
   let experiment_id = id req Pool_common.Message.Field.Experiment in
   let error_path =
     Format.asprintf
@@ -312,44 +373,18 @@ let disabler req command ctor =
     let* session = Session.find tenant_db session_id in
     let tags = Logger.req req in
     let* events =
-      match command with
-      | `Cancel ->
-        let* contacts =
-          Assignment.find_by_session tenant_db session.Session.id
-          >|= CCList.map (fun (a : Assignment.t) -> a.Assignment.contact)
-        in
-        let* messages =
-          Session.build_cancellation_messages
-            tenant_db
-            context.Pool_context.language
-            contacts
-        in
-        Cqrs_command.Session_command.Cancel.handle
-          ~tags
-          session
-          messages
-          (* TODO issue #149 dont hardcode email *)
-          Contact.MessageChannel.Email
-        |> Lwt_result.lift
-      | `Delete ->
-        session
-        |> Cqrs_command.Session_command.Delete.handle ~tags
-        |> Lwt_result.lift
+      session
+      |> Cqrs_command.Session_command.Delete.handle ~tags
+      |> Lwt_result.lift
     in
     let%lwt () = Pool_event.handle_events ~tags tenant_db events in
     Http_utils.redirect_to_with_actions
       error_path
-      [ Message.set ~success:[ Pool_common.Message.(ctor Field.Session) ] ]
+      [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Session) ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path req
 ;;
-
-(* TODO [aerben] if already canceled, allow uncancel *)
-let cancel req = disabler req `Cancel (fun m -> Pool_common.Message.Canceled m)
-
-(* TODO [aerben] add a confirmation before deleting *)
-let delete req = disabler req `Delete (fun m -> Pool_common.Message.Deleted m)
 
 let follow_up req =
   let open Utils.Lwt_result.Infix in

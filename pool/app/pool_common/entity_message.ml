@@ -117,6 +117,7 @@ module Field = struct
     | MainSession [@name "main_session"] [@printer go "main_session"]
     | MaxParticipants
         [@name "max_participants"] [@printer go "max_participants"]
+    | MessageChannel [@name "message_channel"] [@printer go "message_channel"]
     | MinParticipants
         [@name "min_participants"] [@printer go "min_participants"]
     | Model [@name "model"] [@printer go "model"]
@@ -147,6 +148,7 @@ module Field = struct
     | PublishedAt [@name "published_at"] [@printer go "published_at"]
     | Query [@name "query"] [@printer go "query"]
     | Rate [@name "rate"] [@printer go "rate"]
+    | Reason [@name "reason"] [@printer go "reason"]
     | RecruitmentChannel
         [@name "recruitment_channel"] [@printer go "recruitment_channel"]
     | RegistrationDisabled
@@ -164,6 +166,7 @@ module Field = struct
     | Sessions [@name "sessions"] [@printer go "sessions"]
     | Setting [@name "setting"] [@printer go "setting"]
     | ShowUp [@name "show_up"] [@printer go "show_up"]
+    | SMS [@name "sms"] [@printer go "sms"]
     | SmtpAuthMethod [@name "smtp_auth_method"] [@printer go "smtp_auth_method"]
     | SmtpAuthServer [@name "smtp_auth_server"] [@printer go "smtp_auth_server"]
     | SmtpPassword [@name "smtp_password"] [@printer go "smtp_password"]
@@ -274,6 +277,7 @@ type error =
   | PasswordResetFailMessage
   | PasswordResetInvalidData
   | PoolContextNotFound
+  | PickMessageChannel
   | QueryNotCompatible of (Field.t * Field.t)
   | RegistrationDisabled
   | RequestRequiredFields
@@ -285,6 +289,7 @@ type error =
   | ReadOnlyModel
   | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
+  | SessionAlreadyCanceled of string
   | SessionAlreadyClosed
   | SessionNotStarted
   | Smaller of (Field.t * Field.t)

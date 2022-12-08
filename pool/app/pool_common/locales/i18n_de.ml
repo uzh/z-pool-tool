@@ -31,6 +31,7 @@ let to_string = function
     Format.asprintf
       "Es existiert noch keine %s."
       (Locales_de.field_to_string field)
+  | NotifyVia -> "Benachrichtigen via"
   | OurPartners -> "Unsere Partner"
   | ProfileCompletionTitle -> "Profilvervollständigung"
   | LocationFileNew -> "Neue Datei zu Standort hinzufügen"
@@ -47,7 +48,6 @@ let to_string = function
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
   | SentInvitations -> "Versendete Einladungen"
-  | SessionCancellationSubject -> "Session abgesagt"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
   | SessionReminderDefaultLeadTime leadtime ->
@@ -179,7 +179,7 @@ let hint_to_string = function
   | NumberIsDaysHint -> "Anzahl Tage"
   | NumberIsWeeksHint -> "Anzahl Wochen"
   | Overbook ->
-    "Anzahl Probanden, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
+    "Anzahl Kontakte, die sich zusätzlich zur maximalen Anzahl Teilnehmer, an \
      einer Session einschreiben können."
   | Rate -> "Generierte Einladungen pro Stunde"
   | RateDependencyWith ->
@@ -194,9 +194,11 @@ let hint_to_string = function
       per_n_minutes
       number
   | RegistrationDisabled ->
-    "Ist diese Option aktiviert, können sich Probanden weder anmelden noch auf \
+    "Ist diese Option aktiviert, können sich Kontakte weder anmelden noch auf \
      die Warteliste setzen. Das Experiment ist für die Kontakte nicht \
      ersichtlich."
+  | SessionCancelMessage ->
+    "Dieser Grund wird allen angemeldeten Kontakten gezeigt."
   | SessionClose ->
     {|S: Der Kontakt ist an der Session erschienen
     P: Der Kontakt hat am Experiment teilgenommen

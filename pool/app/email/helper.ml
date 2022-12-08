@@ -73,7 +73,7 @@ let prepare_boilerplate_email template email params =
         ; bcc = []
         }
     in
-    Sihl_email.Template.email_of_template mail params
+    Sihl_email.Template.render_email_with_data params mail
 ;;
 
 module PasswordReset = struct

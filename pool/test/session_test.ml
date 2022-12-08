@@ -522,7 +522,8 @@ let delete () =
   check_result (Ok [ Pool_event.Session (Session.Deleted session) ]) res
 ;;
 
-let cancel () =
+let cancel_no_reason () =
+  let open CCResult.Infix in
   let session = Test_utils.Model.create_session () in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
@@ -537,13 +538,107 @@ let cancel () =
       ()
   in
   let res =
-    SessionC.Cancel.handle
-      session
-      [ email1; email2 ]
-      Contact.MessageChannel.Email
+    SessionC.Cancel.(
+      [ "reason", [ "" ]; "email", [ "true" ]; "sms", [ "true" ] ]
+      |> decode
+      >>= handle session (fun reason ->
+              CCList.map
+                (reason
+                |> Session.CancellationReason.value
+                |> Sihl_email.set_text)
+                [ email1; email2 ]))
   in
-  (* TODO [aerben] extend test with email and sms *)
-  check_result (Ok [ Pool_event.Session (Session.Canceled session) ]) res
+  check_result
+    (Error
+       (let open Pool_common.Message in
+       Conformist [ Field.Reason, NoValue ]))
+    res
+;;
+
+let cancel_no_message_channels () =
+  let open CCResult.Infix in
+  let session = Test_utils.Model.create_session () in
+  let contact1 = Test_utils.Model.create_contact () in
+  let contact2 = Test_utils.Model.create_contact () in
+  let email1 =
+    Test_utils.Model.create_email
+      ~recipient:contact1.Contact.user.Sihl_user.email
+      ()
+  in
+  let email2 =
+    Test_utils.Model.create_email
+      ~recipient:contact2.Contact.user.Sihl_user.email
+      ()
+  in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ "Experimenter is ill" ]
+      ; "email", [ "false" ]
+      ; "sms", [ "false" ]
+      ]
+      |> decode
+      >>= handle session (fun reason ->
+              CCList.map
+                (reason
+                |> Session.CancellationReason.value
+                |> Sihl_email.set_text)
+                [ email1; email2 ]))
+  in
+  check_result (Error Pool_common.Message.PickMessageChannel) res
+;;
+
+let cancel_valid () =
+  let open CCResult.Infix in
+  let session = Test_utils.Model.create_session () in
+  let contact1 = Test_utils.Model.create_contact () in
+  let contact2 = Test_utils.Model.create_contact () in
+  let email1 =
+    Test_utils.Model.create_email
+      ~recipient:contact1.Contact.user.Sihl_user.email
+      ()
+  in
+  let email2 =
+    Test_utils.Model.create_email
+      ~recipient:contact2.Contact.user.Sihl_user.email
+      ()
+  in
+  let reason = "Experimenter is ill" in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
+      |> decode
+      >>= handle session (fun reason ->
+              CCList.map
+                (reason
+                |> Session.CancellationReason.value
+                |> Sihl_email.set_text)
+                [ email1; email2 ]))
+  in
+  check_result
+    (Ok
+       (* TODO issue #149 extend test with sms events *)
+       [ Pool_event.Email
+           (Email.BulkSent
+              (CCList.map (reason |> Sihl_email.set_text) [ email1; email2 ]))
+       ; Pool_event.Session (Session.Canceled session)
+       ])
+    res;
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
+      |> decode
+      >>= handle session (fun reason ->
+              CCList.map
+                (reason
+                |> Session.CancellationReason.value
+                |> Sihl_email.set_text)
+                [ email1; email2 ]))
+  in
+  check_result
+    (Ok
+       (* TODO issue #149 extend test with sms events *)
+       [ Pool_event.Session (Session.Canceled session) ])
+    res
 ;;
 
 let send_reminder () =
