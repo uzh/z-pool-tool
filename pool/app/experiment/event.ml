@@ -20,10 +20,10 @@ type event =
   | Created of t
   | Updated of t
   | Destroyed of Common.Id.t
-  | ExperimenterAssigned of t * Admin.t
-  | ExperimenterDivested of t * Admin.t
   | AssistantAssigned of t * Admin.t
   | AssistantDivested of t * Admin.t
+  | ExperimenterAssigned of t * Admin.t
+  | ExperimenterDivested of t * Admin.t
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
@@ -63,13 +63,13 @@ let handle_event pool : event -> unit Lwt.t =
     ||> fun (_ : [> `Experiment ] Guard.AuthorizableTarget.t) -> ()
   | Updated t -> Repo.update pool t
   | Destroyed experiment_id -> Repo.destroy pool experiment_id
-  | ExperimenterAssigned (experiment, admin) ->
-    grant_role (`Experimenter (experiment |> to_target)) admin
-  | ExperimenterDivested (experiment, admin) ->
-    revoke_role (`Experimenter (experiment |> to_target)) admin
   | AssistantAssigned (experiment, admin) ->
     grant_role (`Assistant (experiment |> to_target)) admin
   | AssistantDivested (experiment, admin) ->
     revoke_role (`Assistant (experiment |> to_target)) admin
+  | ExperimenterAssigned (experiment, admin) ->
+    grant_role (`Experimenter (experiment |> to_target)) admin
+  | ExperimenterDivested (experiment, admin) ->
+    revoke_role (`Experimenter (experiment |> to_target)) admin
   [@@deriving eq, show]
 ;;

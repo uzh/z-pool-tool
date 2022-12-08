@@ -1,5 +1,4 @@
 module Database = Pool_database
-module Dynparam = Utils.Database.Dynparam
 
 let select_sql where =
   Format.asprintf

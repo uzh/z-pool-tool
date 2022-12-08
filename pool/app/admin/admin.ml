@@ -5,6 +5,7 @@ module Repo = Repo
 
 let find = Repo.find
 let find_all = Repo.find_all
+let find_all_with_role = Repo.Actors.find_all_with_role
 
 let user_is_admin pool (user : Sihl_user.t) =
   if Sihl_user.is_admin user
