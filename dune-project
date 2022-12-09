@@ -66,7 +66,9 @@
   (containers
    (>= 3.6))
   (mariadb
-   (= 1.1.4))
+   (and
+    (>= 1.1.6)
+    (< 2.0.0)))
   (caqti-driver-mariadb
    (>= 1.8.0))
   (caqti

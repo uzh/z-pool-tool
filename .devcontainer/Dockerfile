@@ -1,7 +1,18 @@
+FROM node:lts AS node
 FROM hadolint/hadolint:latest-alpine AS hadolint
-FROM ocaml/opam:alpine-ocaml-4.12
+FROM ocaml/opam:debian-10-ocaml-4.12
 
 USER root
+
+# copy node from node container and link commands
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /opt /opt
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+  && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+  && ln -s /opt/yarn-v*/bin/yarn /usr/local/bin/yarn \
+  && ln -s /opt/yarn-v*/bin/yarnpkg /usr/local/bin/yarnpkg
 
 # copy hadolint
 COPY --from=hadolint /bin/hadolint /bin/hadolint
@@ -11,18 +22,26 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV SIHL_ENV development
 
 # install packages
-RUN apk update && apk add \
+RUN apt-get update -q && apt-get install -yqq --no-install-recommends \
   # development dependencies
   inotify-tools \
   zsh \
-  nodejs \
-  yarn \
-  # 
+  m4 \
+  wget \
+  #
   # build dependencies
-  openssl-libs-static \
-  mariadb-static \
-  sqlite-static \
-  zlib-static
+  #
+  # build dependencies (would also be installed by opam depext)
+  gcc \
+  libev-dev \
+  libgmp-dev \
+  libmariadb-dev \
+  libssl-dev \
+  pkg-config \
+  #
+  # cleanup installations
+  && apt-get autoremove -y \
+  && apt-get clean all
 
 # add timezone
 RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime

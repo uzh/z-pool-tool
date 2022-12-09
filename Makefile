@@ -12,7 +12,7 @@ all:
 .PHONY: deps
 deps: ## Install development dependencies
 	opam install -y dune-release ocamlformat ocaml-lsp-server
-	opam install --deps-only --with-test --with-doc -y .
+	opam install --deps-only --with-test --with-doc --working-dir --lock -y . 
 
 .PHONY: lock
 lock: ## Generate a lock file
@@ -95,4 +95,3 @@ db: ## Starts the database using docker-compose
 .PHONY: db_down
 db_down: ## Removes the database using docker-compose
 	docker-compose -f docker/docker-compose.dev.yml down
-

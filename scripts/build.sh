@@ -8,7 +8,22 @@ printTitle () {
 }
 
 printTitle "Installing system dependencies"
-sudo apk add openssl-libs-static mariadb-static sqlite-static zlib-static
+sudo apt-get update -q && sudo apt-get install -yqq --no-install-recommends \
+  # development dependencies
+  m4 \
+  #
+  # build dependencies (would also be installed by opam depext)
+  gcc \
+  libev-dev \
+  libgmp-dev \
+  libmariadb-dev \
+  libssl-dev \
+  pkg-config \
+  #
+  # cleanup installations
+  && apt-get autoremove -y \
+  && apt-get clean all
+
 
 printTitle "Mark source dir as save"
 git config --global --add safe.directory $(pwd)
@@ -18,7 +33,6 @@ printTitle "Setup project"
 
 printTitle "Install project dependencies"
 opam install --deps-only --with-test -y .
-eval $(opam env)
 
 printTitle "Build project"
 opam exec -- dune build --root .
