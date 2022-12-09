@@ -81,7 +81,7 @@ let error () =
       match%lwt
         reporter
           req
-          (Failure exc.Sihl__.Web_error.exn)
+          (Failure exc.Sihl.Web.Middleware.exn)
           (Printexc.get_backtrace ())
       with
       | Ok _ -> Lwt.return_unit
