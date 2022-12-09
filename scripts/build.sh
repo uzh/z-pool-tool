@@ -8,21 +8,19 @@ printTitle () {
 }
 
 printTitle "Installing system dependencies"
-sudo apt-get update -q && sudo apt-get install -yqq --no-install-recommends \
-  # development dependencies
+sudo apt-get update -q
+sudo apt-get install -yqq --no-install-recommends \
   m4 \
-  #
-  # build dependencies (would also be installed by opam depext)
   gcc \
   libev-dev \
   libgmp-dev \
   libmariadb-dev \
   libssl-dev \
-  pkg-config \
-  #
-  # cleanup installations
-  && apt-get autoremove -y \
-  && apt-get clean all
+  pkg-config
+
+# cleanup installations
+sudo apt-get autoremove -y
+sudo apt-get clean all
 
 
 printTitle "Mark source dir as save"
