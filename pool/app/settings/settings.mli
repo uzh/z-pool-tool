@@ -167,3 +167,4 @@ val find_default_reminder_lead_time
 
 val default_session_reminder_lead_time_key_yojson : Yojson.Safe.t
 val trigger_profile_update_after_key_yojson : Yojson.Safe.t
+val find_sender : Pool_database.Label.t -> string Lwt.t
