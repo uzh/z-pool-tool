@@ -68,6 +68,7 @@ RUN wget http://dist.schmorp.de/libev/libev-4.33.tar.gz -O libev.tar.gz \
   && ./autogen.sh \
   && ./configure \
   && make \
+  && make check \
   && sudo make install
 
 # we really don't want to build from source, why does 'yum install gmp-devel' not work?
@@ -88,8 +89,7 @@ COPY . /home/opam/app
 
 RUN repo_oxi=https://github.com/oxidizing \
   && repo_uzh=https://github.com/uzh \
-  # some temporary sihl issue
-  && opam pin add -yn sihl $repo_oxi/sihl.git#ad13e904c8d5e6dc9894b97495fe7ff1a45aeab8 \
+  && opam pin add -yn sihl $repo_oxi/sihl.git \
   && opam pin add -yn sihl-cache $repo_oxi/sihl.git \
   && opam pin add -yn sihl-email $repo_oxi/sihl.git \
   && opam pin add -yn sihl-queue $repo_oxi/sihl.git \
@@ -102,11 +102,11 @@ RUN repo_oxi=https://github.com/oxidizing \
   && opam pin add -ywn guardian $repo_uzh/guardian.git \
   && opam pin add -yn pool . 
 
-RUN eval $(opam env) && opam install --deps-only --with-test -y .
+RUN opam install --deps-only --with-test -y .
 
-RUN eval $(opam env) && opam exec -- dune build --root .
+RUN opam exec -- dune build --root .
 
-# it finds everything except for libev
-RUN ldd _build/default/pool/run/run.exe && exit 1
+RUN ldd _build/default/pool/run/run.exe
 
-RUN eval $(opam env) && opam config exec -- dune exec --root . pool/run/run.exe 
+# it finds everything except for libev, should work at runtime
+RUN opam config exec -- dune exec --root . pool/run/run.exe 
