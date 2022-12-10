@@ -18,7 +18,8 @@ ENV SIHL_ENV development
 
 # this is a port from the debian based ocaml 4.12 docker image
 RUN yum clean all
-# why is there no libev-devel, we need to install it here?
+# gmp-devel and libev-devel should be installed as well, but they don't seem to exist
+# maybe they can be installed by log in in?
 RUN yum -y install m4 wget gmp gcc mariadb-connector-c-devel openssl make patch unzip gcc diffutils git rsync zip tar nano curl wget sudo bzip2 pkgconf-pkg-config sqlite-devel
 RUN ln -fs /usr/share/zoneinfo/Europe/Zurich /etc/localtime 
 COPY --from=opam /usr/bin/opam-2.0 /usr/bin/opam-2.0 
@@ -58,7 +59,7 @@ RUN opam install -y opam-depext
 
 # we really don't want to build from source, why does 'yum install libev-devel' not work?
 # these dependencies are needed to build libev from source
-RUN sudo yum -y install autoconf automake libtool
+RUN sudo yum -y install autoconf automake libtool 
 RUN wget http://dist.schmorp.de/libev/libev-4.33.tar.gz -O libev.tar.gz \
   && tar -xvzf libev.tar.gz \
   && cd libev-4.33 \
@@ -103,5 +104,8 @@ RUN repo_oxi=https://github.com/oxidizing \
 RUN eval $(opam env) && opam install --deps-only --with-test -y .
 
 RUN eval $(opam env) && opam exec -- dune build --root .
+
+# it finds everything except for libev
+RUN ldd _build/default/pool/run/run.exe && exit 1
 
 RUN eval $(opam env) && opam config exec -- dune exec --root . pool/run/run.exe 
