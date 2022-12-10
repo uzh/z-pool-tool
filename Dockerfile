@@ -88,6 +88,7 @@ COPY . /home/opam/app
 
 RUN repo_oxi=https://github.com/oxidizing \
   && repo_uzh=https://github.com/uzh \
+  # some temporary sihl issue
   && opam pin add -yn sihl $repo_oxi/sihl.git#ad13e904c8d5e6dc9894b97495fe7ff1a45aeab8 \
   && opam pin add -yn sihl-cache $repo_oxi/sihl.git \
   && opam pin add -yn sihl-email $repo_oxi/sihl.git \
