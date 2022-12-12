@@ -222,7 +222,7 @@ let create_invalid_data () =
   check_result
     (Error
        (Conformist
-          [ Start, NotADatetime (start, "1-1: unexpected end of input")
+          [ Start, NotADatetime (start, "1: unexpected end of input")
           ; Duration, Invalid Duration
           ; Description, NoValue
           ; MaxParticipants, NotANumber max
@@ -390,7 +390,7 @@ let update_invalid_data () =
   check_result
     (Error
        (Conformist
-          [ Start, NotADatetime (start, "1-1: unexpected end of input")
+          [ Start, NotADatetime (start, "1: unexpected end of input")
           ; Duration, Invalid Duration
           ; Description, NoValue
           ; MaxParticipants, NotANumber max
