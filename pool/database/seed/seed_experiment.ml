@@ -11,6 +11,7 @@ let experiments pool =
       , "It was great fun."
       , None
       , None
+      , false
       , Some (60 * 60)
       , None
       , None )
@@ -19,8 +20,9 @@ let experiments pool =
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
-      , Some "Invitation subject"
-      , Some "Invitation text"
+      , None
+      , None
+      , false
       , None
       , None
       , None )
@@ -31,6 +33,7 @@ let experiments pool =
          economics."
       , None
       , None
+      , true
       , Some (60 * 60)
       , Some "Subject"
       , Some "Don't forget your session." )
@@ -43,6 +46,7 @@ let experiments pool =
            , description
            , invitation_subject
            , invitation_text
+           , direct_registration_disabled
            , session_reminder_lead_time
            , session_reminder_subject
            , session_reminder_text ) ->
@@ -75,7 +79,7 @@ let experiments pool =
             >|= Reminder.Subject.create %> get_or_failwith
           in
           let direct_registration_disabled =
-            DirectRegistrationDisabled.create false
+            DirectRegistrationDisabled.create direct_registration_disabled
           in
           let allow_uninvited_signup = AllowUninvitedSignup.create false in
           let registration_disabled = RegistrationDisabled.create false in
