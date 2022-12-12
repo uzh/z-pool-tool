@@ -68,17 +68,17 @@ let create pool =
   in
   let profession_options =
     Pool_common.Language.
-      [ [ En, "Other profession"; De, "Anderer Beruf" ]
-      ; [ En, "Bank clerk"; De, "Bankangestellter" ]
+      [ [ En, "Bank clerk"; De, "Bankangestellter" ]
       ; [ En, "Consultant"; De, "Berater" ]
       ; [ En, "Accountant"; De, "Buchhalter" ]
       ; [ En, "Management assistant"; De, "Büroangestellte" ]
       ; [ En, "Research"; De, "Forschung" ]
-      ; [ En, "No profession"; De, "Kein Beruf" ]
       ; [ En, "Nurse"; De, "Krankenpfleger-/schwester" ]
       ; [ En, "Apprenticeship"; De, "Lehre" ]
       ; [ En, "metalworker"; De, "Metallbauer" ]
       ; [ En, "Self-employeed"; De, "Selbständiger" ]
+      ; [ En, "No profession"; De, "Kein Beruf" ]
+      ; [ En, "Other profession"; De, "Anderer Beruf" ]
       ]
   in
   let data =
