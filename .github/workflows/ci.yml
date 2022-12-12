@@ -35,10 +35,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug
-        run: ping database-tenant
-
-
       - name: Build and test with Docker
         uses: addnab/docker-run-action@v3
         env:
@@ -49,10 +45,8 @@ jobs:
           TEST_EMAIL: test@econ.uzh.ch
         with:
           image: ocaml/opam:debian-10-ocaml-4.12
-          options: --network host -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
           run: |
-            ping database-tenant
-
             # Reclaim required directory permissions
             sudo chown -R opam .
 
