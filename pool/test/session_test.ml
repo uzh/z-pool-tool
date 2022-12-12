@@ -584,9 +584,86 @@ let cancel_no_message_channels () =
   check_result (Error Pool_common.Message.PickMessageChannel) res
 ;;
 
+let cancel_in_past () =
+  let open CCResult.Infix in
+  let twohours = Ptime.Span.of_int_s @@ (120 * 60) in
+  let session =
+    Session.
+      { (Test_utils.Model.create_session ()) with
+        start =
+          Ptime.sub_span (Ptime_clock.now ()) twohours
+          |> CCOption.get_exn_or "Invalid start"
+          |> Start.create
+      }
+  in
+  let contact1 = Test_utils.Model.create_contact () in
+  let contact2 = Test_utils.Model.create_contact () in
+  let email1 =
+    Test_utils.Model.create_email
+      ~recipient:contact1.Contact.user.Sihl_user.email
+      ()
+  in
+  let email2 =
+    Test_utils.Model.create_email
+      ~recipient:contact2.Contact.user.Sihl_user.email
+      ()
+  in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ "Experimenter is ill" ]
+      ; "email", [ "true" ]
+      ; "sms", [ "false" ]
+      ]
+      |> decode
+      >>= handle session (fun reason ->
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
+  in
+  check_result (Error Pool_common.Message.SessionInPast) res
+;;
+
+let cancel_already_canceled () =
+  let open CCResult.Infix in
+  let now = Ptime_clock.now () in
+  let session =
+    Session.{ (Test_utils.Model.create_session ()) with canceled_at = Some now }
+  in
+  let contact1 = Test_utils.Model.create_contact () in
+  let contact2 = Test_utils.Model.create_contact () in
+  let email1 =
+    Test_utils.Model.create_email
+      ~recipient:contact1.Contact.user.Sihl_user.email
+      ()
+  in
+  let email2 =
+    Test_utils.Model.create_email
+      ~recipient:contact2.Contact.user.Sihl_user.email
+      ()
+  in
+  let res =
+    SessionC.Cancel.(
+      [ "reason", [ "Experimenter is ill" ]
+      ; "email", [ "true" ]
+      ; "sms", [ "false" ]
+      ]
+      |> decode
+      >>= handle session (fun reason ->
+            CCList.map
+              (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
+              [ email1; email2 ]))
+  in
+  check_result
+    (now
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> Pool_common.Message.sessionalreadycanceled
+    |> CCResult.fail)
+    res
+;;
+
 let cancel_valid () =
   let open CCResult.Infix in
-  let session = Test_utils.Model.create_session () in
+  let session1 = Test_utils.Model.create_session () in
   let contact1 = Test_utils.Model.create_contact () in
   let contact2 = Test_utils.Model.create_contact () in
   let email1 =
@@ -604,7 +681,7 @@ let cancel_valid () =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "true" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session (fun reason ->
+      >>= handle session1 (fun reason ->
             CCList.map
               (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
               [ email1; email2 ]))
@@ -615,14 +692,25 @@ let cancel_valid () =
        [ Pool_event.Email
            (Email.BulkSent
               (CCList.map (reason |> Sihl_email.set_text) [ email1; email2 ]))
-       ; Pool_event.Session (Session.Canceled session)
+       ; Pool_event.Session (Session.Canceled session1)
        ])
     res;
+  let halfhour = Ptime.Span.of_int_s @@ (30 * 60) in
+  let session2 =
+    Session.
+      { session1 with
+        start =
+          (* Can still cancel ongoing session *)
+          Ptime.sub_span (Ptime_clock.now ()) halfhour
+          |> CCOption.get_exn_or "Invalid start"
+          |> Start.create
+      }
+  in
   let res =
     SessionC.Cancel.(
       [ "reason", [ reason ]; "email", [ "false" ]; "sms", [ "true" ] ]
       |> decode
-      >>= handle session (fun reason ->
+      >>= handle session2 (fun reason ->
             CCList.map
               (reason |> Session.CancellationReason.value |> Sihl_email.set_text)
               [ email1; email2 ]))
@@ -630,7 +718,7 @@ let cancel_valid () =
   check_result
     (Ok
        (* TODO issue #149 extend test with sms events *)
-       [ Pool_event.Session (Session.Canceled session) ])
+       [ Pool_event.Session (Session.Canceled session2) ])
     res
 ;;
 
@@ -931,6 +1019,3 @@ let reschedule_to_past () =
   let expected = Error Pool_common.Message.TimeInPast in
   Test_utils.check_result expected events
 ;;
-(* TODO [aerben] add notify via tests *)
-(* TODO [aerben] add duplication tests *)
-(* TODO [aerben] add assignment then cant edit start&duration test *)

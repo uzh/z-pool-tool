@@ -319,6 +319,11 @@ let rec error_to_string = function
   | NoValue -> "Kein Wert angegeben"
   | NumberMax i -> Format.asprintf "Darf nicht grösser als %i sein." i
   | NumberMin i -> Format.asprintf "Darf nicht kleiner als %i sein." i
+  | Or (err1, err2) ->
+    CCFormat.asprintf
+      "%s oder %s"
+      (error_to_string err1)
+      (err2 |> error_to_string |> CCString.uncapitalize_ascii)
   | PasswordConfirmationDoesNotMatch ->
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
@@ -356,7 +361,9 @@ let rec error_to_string = function
      kontaktieren."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "Diese Session wurde bereits abgesagt am %s." date
-  | SessionAlreadyClosed -> "Diese Session wurde bereits geschlossen."
+  | SessionAlreadyClosed date ->
+    CCFormat.asprintf "Diese Session wurde bereits geschlossen am %s." date
+  | SessionInPast -> "Diese Session ist beendet."
   | SessionNotStarted -> "Diese Session kann noch nicht geschlossen werden."
   | Smaller (field1, field2) ->
     Format.asprintf

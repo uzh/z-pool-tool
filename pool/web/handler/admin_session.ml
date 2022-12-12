@@ -118,7 +118,7 @@ let new_form req =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
        let%lwt locations = Pool_location.find_all database_label in
-       let flash_fetcher key = Sihl.Web.Flash.find key req in
+       let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
@@ -182,7 +182,7 @@ let detail req page =
     let database_label = context.Pool_context.database_label in
     let* session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
     (match page with
      | `Detail ->
        let* assignments =
@@ -346,6 +346,8 @@ let cancel req =
            Session.build_cancellation_messages
              tenant
              database_label
+             (* TODO this language is wrong, need experiment language
+                implemented, issue #190 *)
              language
              system_languages
              session
@@ -409,7 +411,7 @@ let follow_up req =
     let session_id = session_id req in
     let* parent_session = Session.find database_label session_id in
     let* experiment = Experiment.find database_label experiment_id in
-    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
     let* sys_languages =
       Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
     in

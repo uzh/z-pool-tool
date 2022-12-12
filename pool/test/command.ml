@@ -223,6 +223,14 @@ let () =
             "cancel session without message channels fails"
             `Quick
             Session_test.cancel_no_message_channels
+        ; test_case
+            "cancel session in past fails"
+            `Quick
+            Session_test.cancel_in_past
+        ; test_case
+            "cancel session already canceled fails"
+            `Quick
+            Session_test.cancel_already_canceled
         ; test_case "cancel session succeeds" `Quick Session_test.cancel_valid
         ; test_case
             "send reminders for session succeeds"

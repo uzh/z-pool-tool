@@ -147,7 +147,6 @@ module Content = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Translation
-  let create = create
   let schema = schema ?validation:None field
 end
 

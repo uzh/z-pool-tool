@@ -263,6 +263,7 @@ type error =
   | NoValue
   | NumberMax of int
   | NumberMin of int
+  | Or of (error * error)
   | PasswordConfirmationDoesNotMatch
   | PasswordPolicy
   | PasswordResetFailMessage
@@ -281,7 +282,8 @@ type error =
   | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
   | SessionAlreadyCanceled of string
-  | SessionAlreadyClosed
+  | SessionAlreadyClosed of string
+  | SessionInPast
   | SessionNotStarted
   | Smaller of (Field.t * Field.t)
   | TerminatoryRootError

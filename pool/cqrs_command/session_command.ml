@@ -361,18 +361,11 @@ end = struct
 end
 
 module Delete : sig
-  include Common.CommandSig
-
-  type t = { session : Session.t }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Session.t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+  include Common.CommandSig with type t = Session.t
 
   val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = { session : Session.t }
+  type t = Session.t
 
   let handle ?(tags = Logs.Tag.empty) session =
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
@@ -394,8 +387,6 @@ end
 module Cancel : sig
   include Common.CommandSig
 
-  type t
-
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
@@ -412,6 +403,8 @@ end = struct
     ; reason : Session.CancellationReason.t
     }
 
+  (* TODO [aerben] write tests! *)
+
   let handle ?(tags = Logs.Tag.empty) session messages_fn command =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult.Infix in
@@ -420,6 +413,7 @@ end = struct
       then Error Pool_common.Message.PickMessageChannel
       else Ok ()
     in
+    let* () = Session.is_cancellable session in
     let email_event =
       if command.notify_email
       then [ Email.BulkSent (messages_fn command.reason) |> Pool_event.email ]

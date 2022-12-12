@@ -21,8 +21,6 @@ let build_cancellation_messages
   contacts
   =
   let open Utils.Lwt_result.Infix in
-  (* TODO this language is wrong, need experiment language implemented, issue
-     #190*)
   let find = CCFun.flip (I18n.find_by_key tenant_db) language in
   (* TODO make these exceptions, reevaluate when to use them *)
   let* subject = find I18n.Key.SessionCancellationSubject in

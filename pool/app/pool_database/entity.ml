@@ -4,7 +4,6 @@ module Url = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.DatabaseUrl
-  let create = create
   let schema = schema ?validation:None field
 end
 
@@ -12,7 +11,6 @@ module Label = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.DatabaseLabel
-  let create = create
   let schema = schema ?validation:None field
   let of_string m = m
 end

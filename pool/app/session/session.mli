@@ -137,6 +137,8 @@ module Public : sig
 end
 
 val group_and_sort : t list -> (t * t list) list
+val is_cancellable : t -> (unit, Pool_common.Message.error) result
+val is_closable : t -> (unit, Pool_common.Message.error) result
 
 (* TODO [aerben] this should be experiment id type *)
 val find

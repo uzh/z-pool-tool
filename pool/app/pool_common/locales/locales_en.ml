@@ -301,6 +301,11 @@ let rec error_to_string = function
   | NoValue -> "No value provided."
   | NumberMax i -> Format.asprintf "Must not be larger than %i." i
   | NumberMin i -> Format.asprintf "Must not be smaller than %i." i
+  | Or (err1, err2) ->
+    CCFormat.asprintf
+      "%s or %s"
+      (error_to_string err1)
+      (err2 |> error_to_string |> CCString.uncapitalize_ascii)
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
@@ -328,8 +333,10 @@ let rec error_to_string = function
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
   | SessionAlreadyCanceled date ->
-    CCFormat.asprintf "This session as already been canceled on %s." date
-  | SessionAlreadyClosed -> "This session is already closed."
+    CCFormat.asprintf "This session has already been canceled on %s." date
+  | SessionAlreadyClosed date ->
+    CCFormat.asprintf "This session has already been closed at %s." date
+  | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \

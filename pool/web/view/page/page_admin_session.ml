@@ -525,16 +525,10 @@ let detail
             && CCOption.is_none session.closed_at
           , "reschedule"
           , Reschedule (Some Field.Session) )
-        ; ( CCOption.is_none session.canceled_at
-            && Ptime.is_later
-                 (session.start |> Start.value)
-                 ~than:Ptime_clock.(now ())
+        ; ( session |> is_cancellable |> CCResult.is_ok
           , "cancel"
           , Cancel (Some Field.Session) )
-        ; ( CCOption.is_none session.closed_at
-            && Ptime.is_earlier
-                 (session.start |> Start.value)
-                 ~than:Ptime_clock.(now ())
+        ; ( session |> is_closable |> CCResult.is_ok
           , "close"
           , Close (Some Field.Session) )
         ]
@@ -784,16 +778,9 @@ let cancel
       (Experiment.Id.value experiment.Experiment.id)
       (Id.value session.Session.id)
   in
-  (match session.Session.canceled_at with
-   | Some canceled_at ->
-     p
-       [ canceled_at
-         |> Utils.Time.formatted_date_time
-         |> Message.sessionalreadycanceled
-         |> Utils.error_to_string language
-         |> txt
-       ]
-   | None ->
+  (match Session.is_cancellable session with
+   | Error reason -> p [ reason |> Utils.error_to_string language |> txt ]
+   | Ok _ ->
      form
        ~a:
          [ a_class [ "stack" ]
