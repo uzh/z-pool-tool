@@ -21,6 +21,7 @@ module Field = struct
     | Assignments [@name "assignments"] [@printer go "assignments"]
     | AssignmentCount [@name "assignment_count"]
         [@printer go "assignment_count"]
+    | Assistants [@name "assistants"] [@printer go "assistants"]
     | Building [@name "building"] [@printer go "building"]
     | CanceledAt [@name "canceled_at"] [@printer go "canceled_at"]
     | City [@name "city"] [@printer go "city"]
@@ -70,6 +71,7 @@ module Field = struct
     | End [@name "end"] [@printer go "end"]
     | Experiment [@name "experiment"] [@printer go "experiment"]
     | ExperimentType [@name "experiment_type"] [@printer go "experiment_type"]
+    | Experimenter [@name "experimenter"] [@printer go "experimenter"]
     | FieldType [@name "field_type"] [@printer go "field_type"]
     | File [@name "file"] [@printer go "file"]
     | FileMapping [@name "file_mapping"] [@printer go "file_mapping"]
@@ -315,6 +317,8 @@ type success =
   | Published of Field.t
   | RemovedFromWaitingList
   | Rescheduled of Field.t
+  | RoleAssigned
+  | RoleDivested
   | SentList of Field.t
   | SettingsUpdated
   | Stopped of Field.t
@@ -355,6 +359,7 @@ type control =
   | Delete of Field.t option
   | Descending
   | Disable
+  | Divest of Field.t option
   | Edit of Field.t option
   | Enable
   | Enroll

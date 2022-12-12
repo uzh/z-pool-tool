@@ -46,6 +46,12 @@ let to_string = function
     Format.asprintf "Total generierter Einladungen: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Passwort zurücksetzen"
   | Reminder -> "Erinnerung"
+  | RoleApplicableToAssign -> "Zuweisbare Benutzer"
+  | RoleCurrentlyAssigned -> "Aktuell zugewiesen"
+  | RoleCurrentlyNoneAssigned field ->
+    Format.asprintf
+      "Aktuell sind keine %s zugewiesen."
+      (Locales_de.field_to_string field)
   | SentInvitations -> "Versendete Einladungen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
@@ -84,11 +90,12 @@ let to_string = function
 let nav_link_to_string = function
   | Admins -> "Administratoren"
   | Assignments -> "Anmeldungen"
-  | Contacts -> "Konktakte"
+  | Contacts -> "Kontakte"
   | CustomFields -> "Felder"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experimente"
   | Filter -> "Filter"
+  | Field field -> Locales_de.field_to_string field |> CCString.capitalize_ascii
   | I18n -> "Übersetzungen"
   | Invitations -> "Einladungen"
   | Locations -> "Standorte"

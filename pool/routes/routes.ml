@@ -195,6 +195,40 @@ module Admin = struct
       ]
     in
     let experiments =
+      let assistants =
+        let open Experiments.Users in
+        let specific =
+          [ post
+              "assign"
+              ~middlewares:[ Access.assign_assistant ]
+              assign_assistant
+          ; post
+              "divest"
+              ~middlewares:[ Access.divest_assistant ]
+              divest_assistant
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index_assistants ] index_assistants
+        ; choose ~scope:(url_key Admin) specific
+        ]
+      in
+      let experimenter =
+        let open Experiments.Users in
+        let specific =
+          [ post
+              "assign"
+              ~middlewares:[ Access.assign_experimenter ]
+              assign_experimenter
+          ; post
+              "divest"
+              ~middlewares:[ Access.divest_experimenter ]
+              divest_experimenter
+          ]
+        in
+        [ get "" ~middlewares:[ Access.index_experimenter ] index_experimenter
+        ; choose ~scope:(url_key Admin) specific
+        ]
+      in
       let invitations =
         Experiments.Invitations.
           [ get "" ~middlewares:[ Access.index ] index
@@ -282,6 +316,8 @@ module Admin = struct
               "/contact-count"
               ~middlewares:[ Access.read ]
               Handler.Admin.Filter.count_contacts
+          ; choose ~scope:"/assistants" assistants
+          ; choose ~scope:"/experimenter" experimenter
           ; choose ~scope:"/invitations" invitations
           ; choose ~scope:"/waiting-list" waiting_list
           ; choose ~scope:"/sessions" sessions

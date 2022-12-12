@@ -136,10 +136,10 @@ type event =
   | Created of t
   | Updated of t
   | Destroyed of Id.t
-  | ExperimenterAssigned of t * Admin.t
-  | ExperimenterDivested of t * Admin.t
   | AssistantAssigned of t * Admin.t
   | AssistantDivested of t * Admin.t
+  | ExperimenterAssigned of t * Admin.t
+  | ExperimenterDivested of t * Admin.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

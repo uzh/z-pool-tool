@@ -31,6 +31,9 @@ type t =
   | Reminder
   | ResetPasswordLink
   | ResetPasswordTitle
+  | RoleApplicableToAssign
+  | RoleCurrentlyAssigned
+  | RoleCurrentlyNoneAssigned of Entity_message.Field.t
   | SentInvitations
   | SessionDetailTitle of Ptime.t
   | SessionIndent
@@ -60,6 +63,7 @@ type nav_link =
   | CustomFields
   | Dashboard
   | Experiments
+  | Field of Entity_message.Field.t
   | Filter
   | I18n
   | Invitations

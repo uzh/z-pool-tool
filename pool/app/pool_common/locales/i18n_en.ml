@@ -43,6 +43,12 @@ let to_string = function
     Format.asprintf "Totally generated invitations: %d" number
   | ResetPasswordLink | ResetPasswordTitle -> "Reset password"
   | Reminder -> "Reminder"
+  | RoleApplicableToAssign -> "Applicable users"
+  | RoleCurrentlyAssigned -> "Currently assigned"
+  | RoleCurrentlyNoneAssigned field ->
+    Format.asprintf
+      "Currently there are no %s assigned."
+      (Locales_en.field_to_string field)
   | SentInvitations -> "Sent invitations"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
@@ -81,12 +87,13 @@ let nav_link_to_string = function
   | CustomFields -> "Fields"
   | Dashboard -> "Dashboard"
   | Experiments -> "Experiments"
+  | Field field -> Locales_en.field_to_string field |> CCString.capitalize_ascii
   | Filter -> "Filter"
   | I18n -> "Translations"
   | Invitations -> "Invitations"
-  | LoginInformation -> "Login information"
-  | Login -> "Login"
   | Locations -> "Locations"
+  | Login -> "Login"
+  | LoginInformation -> "Login information"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
   | Overview -> "Overview"
