@@ -100,7 +100,7 @@ let footer title =
   let version =
     Sihl.Configuration.read_string "VERSION"
     |> CCOption.map (fun v ->
-         v |> Format.asprintf "z-Root %s" |> txt |> CCList.pure |> span)
+         v |> Format.asprintf "Z-Pool-Tool %s" |> txt |> CCList.pure |> span)
   in
   let title = span [ txt title ] in
   let content =

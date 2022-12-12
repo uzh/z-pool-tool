@@ -108,7 +108,7 @@ let list req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let new_form req =
+let new_helper req page =
   let open Utils.Lwt_result.Infix in
   let id = experiment_id req in
   let error_path =
@@ -117,22 +117,51 @@ let new_form req =
   let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@ let* experiment = Experiment.find database_label id in
+       let%lwt duplicate_session =
+         match Sihl.Web.Request.query "duplicate_id" req with
+         | Some id ->
+           id
+           |> Pool_common.Id.of_string
+           |> Session.find database_label
+           ||> CCResult.to_opt
+         | None -> Lwt.return None
+       in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
-       Page.Admin.Session.new_form
-         context
-         experiment
-         locations
-         sys_languages
-         flash_fetcher
-       |> create_layout req context
-       >|+ Sihl.Web.Response.of_html
+       let html =
+         match page with
+         | `FollowUp ->
+           let session_id = session_id req in
+           let* parent_session = Session.find database_label session_id in
+           Page.Admin.Session.follow_up
+             context
+             experiment
+             duplicate_session
+             parent_session
+             locations
+             sys_languages
+             flash_fetcher
+           |> Lwt_result.return
+         | `Parent ->
+           Page.Admin.Session.new_form
+             context
+             experiment
+             duplicate_session
+             locations
+             sys_languages
+             flash_fetcher
+           |> Lwt_result.return
+       in
+       html >>= create_layout req context >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
+
+let new_form req = new_helper req `Parent
+let follow_up req = new_helper req `FollowUp
 
 let create req =
   let id = experiment_id req in
@@ -160,8 +189,7 @@ let create req =
     let%lwt () = Pool_event.handle_events ~tags database_label events in
     Http_utils.redirect_to_with_actions
       path
-      [ Message.set ~success:[ Pool_common.Message.(Created Field.Experiment) ]
-      ]
+      [ Message.set ~success:[ Pool_common.Message.(Created Field.Session) ] ]
     |> Lwt_result.ok
   in
   result |> HttpUtils.extract_happy_path_with_actions req
@@ -392,40 +420,6 @@ let delete req =
       error_path
       [ Message.set ~success:[ Pool_common.Message.(Deleted Field.Session) ] ]
     |> Lwt_result.ok
-  in
-  result |> HttpUtils.extract_happy_path req
-;;
-
-let follow_up req =
-  let open Utils.Lwt_result.Infix in
-  let experiment_id = experiment_id req in
-  let error_path =
-    Format.asprintf
-      "/admin/experiments/%s/sessions"
-      (Experiment.Id.value experiment_id)
-  in
-  let result context =
-    Utils.Lwt_result.map_error (fun err -> err, error_path)
-    @@
-    let database_label = context.Pool_context.database_label in
-    let session_id = session_id req in
-    let* parent_session = Session.find database_label session_id in
-    let* experiment = Experiment.find database_label experiment_id in
-    let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-    let* sys_languages =
-      Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-    in
-    let%lwt locations = Pool_location.find_all database_label in
-    Page.Admin.Session.follow_up
-      context
-      experiment
-      parent_session
-      locations
-      sys_languages
-      flash_fetcher
-    |> Lwt.return_ok
-    >>= create_layout req context
-    >|+ Sihl.Web.Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

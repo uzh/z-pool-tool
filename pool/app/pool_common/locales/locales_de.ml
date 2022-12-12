@@ -416,6 +416,7 @@ let control_to_string = function
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
   | Divest field -> format_submit "entziehen" field
+  | Duplicate field -> format_submit "duplizieren" field
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None
