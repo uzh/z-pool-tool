@@ -68,5 +68,5 @@ jobs:
 
       - name: Notify about failure
         if: failure()
-        uses: .github/actions/notify-failure
+        uses: ./.github/actions/notify-failure
 
