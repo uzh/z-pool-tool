@@ -38,6 +38,7 @@ jobs:
       - name: Debug
         run: ping database-tenant
 
+
       - name: Build and test with Docker
         uses: addnab/docker-run-action@v3
         env:
