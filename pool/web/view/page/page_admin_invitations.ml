@@ -5,7 +5,7 @@ let form_action ?path id =
   let base =
     Format.asprintf
       "/admin/experiments/%s/invitations"
-      (id |> Pool_common.Id.value)
+      (id |> Experiment.Id.value)
   in
   CCOption.map_or
     ~default:base

@@ -13,6 +13,7 @@ let field_to_string =
   | Assignment -> "Anmeldung"
   | AssignmentCount -> "Anz. Anmeldungen"
   | Assignments -> "Anmeldungen"
+  | Assistants -> "Assistenten"
   | Building -> "Gebäude"
   | CanceledAt -> "Abgesagt am"
   | City -> "Ort"
@@ -50,6 +51,7 @@ let field_to_string =
   | End -> "Ende"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
+  | Experimenter -> "Experimenter"
   | FieldType -> "Feldtyp"
   | File -> "Datei"
   | FileMapping -> "Datei zuweisung"
@@ -189,6 +191,8 @@ let success_to_string : success -> string = function
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
   | Rescheduled field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschoben."
+  | RoleAssigned -> "Rolle wurde zugewiesen."
+  | RoleDivested -> "Rolle wurde entzogen."
   | SentList field ->
     field_message "" (field_to_string field) "wurden erfolgreich verschickt."
   | SettingsUpdated -> "Die Einstellungen wurden erfolgreich gespeichert."
@@ -206,6 +210,9 @@ let warning_to_string : warning -> string = function
 ;;
 
 let rec error_to_string = function
+  | AccessDenied -> "Zugriff verweigert"
+  | AccessDeniedMessage ->
+    "Der Zugriff auf die gewünschte Seite ist nicht möglich."
   | AllLanguagesRequired field ->
     field_message
       "Bitte geben Sie '"
@@ -392,6 +399,7 @@ let control_to_string = function
   | Delete field -> format_submit "löschen" field
   | Descending -> "absteigend"
   | Disable -> format_submit "deaktivieren" None
+  | Divest field -> format_submit "entziehen" field
   | Edit field -> format_submit "bearbeiten" field
   | Enable -> format_submit "aktivieren" None
   | Enroll -> format_submit "einschreiben" None

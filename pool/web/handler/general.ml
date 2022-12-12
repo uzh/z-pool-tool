@@ -8,9 +8,7 @@ let admin_from_session db_pool req =
   user_from_session db_pool req
   ||> CCOption.to_result Pool_common.Message.(NotFound Field.User)
   >>= fun user ->
-  user.Sihl.Contract.User.id
-  |> Pool_common.Id.of_string
-  |> Admin.find_any_admin_by_user_id db_pool
+  user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
 ;;
 
 let dashboard_path tenant_db user =

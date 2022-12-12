@@ -1,33 +1,16 @@
 include Event
 include Entity
+module Guard = Entity_guard
+module Repo = Repo
+
+let find = Repo.find
+let find_all = Repo.find_all
+let find_all_with_role = Repo.Actors.find_all_with_role
 
 let user_is_admin pool (user : Sihl_user.t) =
   if Sihl_user.is_admin user
   then (
-    let%lwt admin = Repo.find_role_by_user pool user in
+    let%lwt admin = find pool (Pool_common.Id.of_string user.Sihl_user.id) in
     Lwt.return @@ CCResult.is_ok admin)
   else Lwt.return_false
-;;
-
-let insert = Repo.insert
-let find_any_admin_by_user_id = Repo.find_any_admin_by_user_id
-let find_duplicates = Utils.todo
-
-let find_all pool () =
-  let open Utils.Lwt_result.Infix in
-  let to_any results = CCList.map (fun m -> Any m) results in
-  Lwt_list.fold_left_s
-    (fun all status ->
-      let%lwt all_admins =
-        match status with
-        | `Assistant -> Repo.find_all_by_role pool AssistantC ||> to_any
-        | `Experimenter -> Repo.find_all_by_role pool ExperimenterC ||> to_any
-        | `LocationManager ->
-          Repo.find_all_by_role pool LocationManagerC ||> to_any
-        | `Recruiter -> Repo.find_all_by_role pool RecruiterC ||> to_any
-        | `Operator -> Repo.find_all_by_role pool OperatorC ||> to_any
-      in
-      Lwt.return (CCList.append all all_admins))
-    []
-    all_admin_roles
 ;;

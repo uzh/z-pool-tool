@@ -10,7 +10,7 @@ val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
 type event =
-  | Created of (Entity.t * Pool_common.Id.t)
+  | Created of (Entity.t * Experiment.Id.t)
   | Updated of (update * Entity.t)
   | Deleted of Entity.t
   | Stopped of Entity.t

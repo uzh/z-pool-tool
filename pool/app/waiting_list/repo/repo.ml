@@ -75,7 +75,7 @@ module Sql = struct
       (Pool_database.Label.value pool)
       user_is_enlisted_request
       ( contact |> Contact.id |> Pool_common.Id.value
-      , experiment.Experiment.Public.id |> Pool_common.Id.value )
+      , experiment.Experiment.Public.id |> Experiment.Id.value )
   ;;
 
   let find_multiple_sql where_fragment =
@@ -138,7 +138,7 @@ module Sql = struct
     Utils.Database.collect
       (Pool_database.Label.value pool)
       find_by_experiment_request
-      (Pool_common.Id.value id)
+      (Experiment.Id.value id)
   ;;
 
   let insert_request =
@@ -161,7 +161,7 @@ module Sql = struct
     let caqti =
       ( m.RepoEntity.id |> Pool_common.Id.value
       , m.RepoEntity.contact_id |> Pool_common.Id.value
-      , m.RepoEntity.experiment_id |> Pool_common.Id.value )
+      , m.RepoEntity.experiment_id |> Experiment.Id.value )
     in
     Utils.Database.exec (Pool_database.Label.value pool) insert_request caqti
   ;;
@@ -204,9 +204,8 @@ end
 let find pool id =
   let open Utils.Lwt_result.Infix in
   let* waiting_list = Sql.find pool id in
-  let* experiment =
-    Experiment.find pool waiting_list.RepoEntity.experiment_id
-  in
+  let experiment_id = waiting_list.RepoEntity.experiment_id in
+  let* experiment = Experiment.find pool experiment_id in
   let* contact = Contact.find pool waiting_list.RepoEntity.contact_id in
   RepoEntity.to_entity waiting_list contact experiment |> Lwt.return_ok
 ;;

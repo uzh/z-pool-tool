@@ -7,14 +7,14 @@ module PoolField = Pool_common.Message.Field
 let create_layout = Contact_general.create_layout
 
 let show usage req =
-  let result ({ Pool_context.tenant_db; language; _ } as context) =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        match usage with
        | `LoginInformation ->
          let* password_policy =
-           I18n.find_by_key tenant_db I18n.Key.PasswordPolicyText language
+           I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
          in
          Page.Contact.login_information contact context password_policy
          |> create_layout
@@ -29,7 +29,7 @@ let show usage req =
            >|+ fun c -> c.Pool_context.Tenant.tenant_languages
          in
          let%lwt custom_fields =
-           Custom_field.find_all_by_contact tenant_db (Contact.id contact)
+           Custom_field.find_all_by_contact database_label (Contact.id contact)
          in
          Page.Contact.personal_details
            contact
@@ -52,7 +52,7 @@ let update = Helpers.PartialUpdate.update
 let update_email req =
   let open Pool_common.Message in
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     Utils.Lwt_result.map_error (fun msg ->
       HttpUtils.(
@@ -60,7 +60,7 @@ let update_email req =
     @@ let* contact = Pool_context.find_contact context |> Lwt_result.lift in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
-         Settings.find_email_suffixes tenant_db
+         Settings.find_email_suffixes database_label
          ||> fun suffixes ->
          if CCList.is_empty suffixes then None else Some suffixes
        in
@@ -78,9 +78,9 @@ let update_email req =
            handle ?allowed_email_suffixes tenant contact new_email
            |> Lwt_result.lift)
        in
-       Utils.Database.with_transaction tenant_db (fun () ->
+       Utils.Database.with_transaction database_label (fun () ->
          let tags = Logger.req req in
-         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+         let%lwt () = Pool_event.handle_events ~tags database_label events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/email-confirmation")
@@ -92,7 +92,7 @@ let update_email req =
 
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.tenant_db; query_language; _ } as context) =
+  let result ({ Pool_context.database_label; query_language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -108,8 +108,8 @@ let update_password req =
            decode urlencoded >>= handle ~tags tenant contact)
          |> Lwt_result.lift
        in
-       Utils.Database.with_transaction tenant_db (fun () ->
-         let%lwt () = Pool_event.handle_events ~tags tenant_db events in
+       Utils.Database.with_transaction database_label (fun () ->
+         let%lwt () = Pool_event.handle_events ~tags database_label events in
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language "/user/login-information")
@@ -121,13 +121,15 @@ let update_password req =
 
 let completion req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.tenant_db; _ } as context) =
+  let result ({ Pool_context.database_label; _ } as context) =
     Utils.Lwt_result.map_error (fun err -> err, "/login")
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
     let%lwt custom_fields =
-      Custom_field.find_all_required_by_contact tenant_db (Contact.id contact)
+      Custom_field.find_all_required_by_contact
+        database_label
+        (Contact.id contact)
     in
     Page.Contact.completion context flash_fetcher custom_fields
     |> create_layout req ~active_navigation:"/user" context
@@ -144,7 +146,7 @@ let completion_post req =
     ||> HttpUtils.remove_empty_values
   in
   let result
-    ({ Pool_context.tenant_db; query_language; language; _ } as context)
+    ({ Pool_context.database_label; query_language; language; _ } as context)
     =
     Utils.Lwt_result.map_error (fun err ->
       HttpUtils.(
@@ -157,7 +159,9 @@ let completion_post req =
     let%lwt custom_fields =
       urlencoded
       |> CCList.map (fun pair -> pair |> fst |> Pool_common.Id.of_string)
-      |> Custom_field.find_multiple_by_contact tenant_db (Contact.id contact)
+      |> Custom_field.find_multiple_by_contact
+           database_label
+           (Contact.id contact)
     in
     let tags = Logger.req req in
     let events =
@@ -189,10 +193,10 @@ let completion_post req =
     in
     let handle events =
       let%lwt (_ : unit list) =
-        Lwt_list.map_s (Pool_event.handle_event ~tags tenant_db) events
+        Lwt_list.map_s (Pool_event.handle_event ~tags database_label) events
       in
       let%lwt required_answers_given =
-        Custom_field.all_required_answered tenant_db (Contact.id contact)
+        Custom_field.all_required_answered database_label (Contact.id contact)
       in
       match required_answers_given with
       | true ->

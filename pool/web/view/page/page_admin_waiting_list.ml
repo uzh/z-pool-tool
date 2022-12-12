@@ -18,12 +18,11 @@ let detail
             [ a_class [ "stack" ]
             ; a_method `Post
             ; a_action
-                (let open Pool_common.Id in
-                Sihl.Web.externalize_path
-                  (Format.asprintf
-                     "/admin/experiments/%s/waiting-list/%s"
-                     (value experiment.Experiment.id)
-                     (value id)))
+                (Sihl.Web.externalize_path
+                   (Format.asprintf
+                      "/admin/experiments/%s/waiting-list/%s"
+                      (Experiment.Id.value experiment.Experiment.id)
+                      (Pool_common.Id.value id)))
             ]
           [ csrf_element csrf ()
           ; textarea_element
@@ -124,7 +123,7 @@ let detail
               ; a_action
                   (Format.asprintf
                      "/admin/experiments/%s/waiting-list/%s/assign"
-                     (experiment_id |> Pool_common.Id.value)
+                     (experiment_id |> Experiment.Id.value)
                      (id |> Pool_common.Id.value)
                   |> Sihl.Web.externalize_path)
               ]

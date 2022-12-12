@@ -44,6 +44,8 @@ let invitation_template_elements
 ;;
 
 module Create : sig
+  include Common.CommandSig
+
   type t =
     { experiment : Experiment.t
     ; contacts : Contact.t list
@@ -57,8 +59,6 @@ module Create : sig
     -> Pool_common.Language.t list
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val can : Sihl_user.t -> t -> bool Lwt.t
 end = struct
   type t =
     { experiment : Experiment.t
@@ -121,10 +121,12 @@ end = struct
       | Error err -> Error err)
   ;;
 
-  let can _user _command = Utils.todo [%here]
+  let effects = [ `Create, `TargetEntity `Invitation ]
 end
 
 module Resend : sig
+  include Common.CommandSig
+
   type t =
     { invitation : Invitation.t
     ; experiment : Experiment.t
@@ -138,7 +140,7 @@ module Resend : sig
     -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val can : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t =
     { invitation : Invitation.t
@@ -175,5 +177,9 @@ end = struct
       ]
   ;;
 
-  let can _user { experiment = _; invitation = _ } = Utils.todo [%here]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Invitation
+    ]
+  ;;
 end

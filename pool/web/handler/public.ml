@@ -18,14 +18,14 @@ let index req =
   then Http_utils.redirect_to "/root"
   else (
     let result
-      ({ Pool_context.tenant_db; language; query_language; _ } as context)
+      ({ Pool_context.database_label; language; query_language; _ } as context)
       =
       let open Utils.Lwt_result.Infix in
       let error_path = Http_utils.path_with_language query_language "/error" in
       Utils.Lwt_result.map_error (fun err -> err, error_path)
-      @@ let* tenant = Pool_tenant.find_by_label tenant_db in
+      @@ let* tenant = Pool_tenant.find_by_label database_label in
          let* welcome_text =
-           I18n.find_by_key tenant_db I18n.Key.WelcomeText language
+           I18n.find_by_key database_label I18n.Key.WelcomeText language
          in
          Page.Public.index tenant context welcome_text
          |> create_layout req context
@@ -37,10 +37,10 @@ let index req =
 let index_css req =
   let%lwt result =
     let open Utils.Lwt_result.Infix in
-    let* { Pool_context.tenant_db; _ } =
+    let* { Pool_context.database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
     in
-    let* styles = Pool_tenant.find_styles tenant_db in
+    let* styles = Pool_tenant.find_styles database_label in
     let%lwt file =
       Service.Storage.find
         ~ctx:(Pool_tenant.to_ctx Database.root)
@@ -83,7 +83,7 @@ let email_confirmation_note req =
 
 let not_found req =
   let result
-    ({ Pool_context.language; query_language; tenant_db; _ } as context)
+    ({ Pool_context.language; query_language; database_label; _ } as context)
     =
     let open Utils.Lwt_result.Infix in
     let html = Page.Utils.error_page_not_found language () in
@@ -95,8 +95,8 @@ let not_found req =
     | false ->
       Utils.Lwt_result.map_error (fun err ->
         err, Http_utils.path_with_language query_language "/error")
-      @@ let* tenant = Pool_tenant.find_by_label tenant_db in
-         let%lwt tenant_languages = Settings.find_languages tenant_db in
+      @@ let* tenant = Pool_tenant.find_by_label database_label in
+         let%lwt tenant_languages = Settings.find_languages database_label in
          let req =
            Pool_context.Tenant.set
              req
@@ -104,7 +104,27 @@ let not_found req =
          in
          html |> create_layout req context >|+ Sihl.Web.Response.of_html
   in
-  result |> Http_utils.extract_happy_path req
+  result
+  |> Http_utils.extract_happy_path req
+  |> Lwt.map @@ Opium.Response.set_status `Not_found
+;;
+
+let denied _ =
+  let html =
+    Page.Utils.error_page_terminatory
+      ~lang:Pool_common.Language.En
+      Pool_common.Message.AccessDenied
+      Pool_common.Message.AccessDeniedMessage
+      ()
+  in
+  Page.Layout.create_root_layout
+    html
+    Pool_common.Language.En
+    None
+    Pool_context.Guest
+    ()
+  |> Sihl.Web.Response.of_html
+  |> Lwt.return
 ;;
 
 let asset req =

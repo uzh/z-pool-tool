@@ -10,8 +10,8 @@ let require_admin () =
     | Error _ -> fail_action req
     | Ok { user; _ } ->
       (match user with
-       | None | Some (Contact _) | Some (Root _) -> fail_action req
-       | Some (Admin _) -> handler req)
+       | Admin _ -> handler req
+       | Contact _ | Guest -> fail_action req)
   in
   Rock.Middleware.create ~name:"user.require.admin" ~filter
 ;;

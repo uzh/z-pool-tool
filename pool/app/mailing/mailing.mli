@@ -1,5 +1,5 @@
 module Id : sig
-  include Pool_common.Model.IdSig
+  include module type of Pool_common.Id
 
   val to_common : t -> Pool_common.Id.t
 end
@@ -128,7 +128,7 @@ val pp_update : Format.formatter -> update -> unit
 val show_update : update -> string
 
 type event =
-  | Created of (t * Pool_common.Id.t)
+  | Created of (t * Experiment.Id.t)
   | Updated of (update * t)
   | Deleted of t
   | Stopped of t
@@ -145,8 +145,25 @@ val find
 
 val find_by_experiment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> t list Lwt.t
 
 val find_overlaps : Pool_database.Label.t -> t -> t list Lwt.t
 val find_current : Pool_database.Label.t -> t list Lwt.t
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Mailing ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

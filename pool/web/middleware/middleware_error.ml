@@ -77,9 +77,14 @@ let reporter req =
 
 let error () =
   Sihl.Web.Middleware.error
-    (* TODO temporary, something wrong with a sihl change *)
-    (* ~reporter:(fun req exc -> match%lwt reporter req (Failure exc)
-       (Printexc.get_backtrace ()) with | Ok _ -> Lwt.return_unit | Error err ->
-       raise (Failure err)) *)
+    ~reporter:(fun req exc ->
+      match%lwt
+        reporter
+          req
+          (Failure exc.Sihl.Web.Middleware.exn)
+          (Printexc.get_backtrace ())
+      with
+      | Ok _ -> Lwt.return_unit
+      | Error err -> raise (Failure err))
     ()
 ;;

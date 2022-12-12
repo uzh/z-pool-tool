@@ -14,10 +14,20 @@ type event =
   | Deleted of Entity.t
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t = function
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
   | Created { experiment; contact } ->
-    Repo_entity.create (Contact.id contact) experiment.Experiment.Public.id None
-    |> Repo.insert pool
+    let experiment_id = experiment.Experiment.Public.id in
+    let waiting_list =
+      Repo_entity.create (Contact.id contact) experiment_id None
+    in
+    let%lwt () = Repo.insert pool waiting_list in
+    waiting_list
+    |> Entity_guard.Target.to_authorizable_of_repo
+         ~ctx:(Pool_tenant.to_ctx pool)
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : [> `WaitingList ] Guard.AuthorizableTarget.t) -> ()
   | Updated (command, waiting_list) ->
     { waiting_list with comment = command.comment } |> Repo.update pool
   | Deleted m -> Repo.delete pool m

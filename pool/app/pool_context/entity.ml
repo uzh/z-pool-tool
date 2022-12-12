@@ -4,34 +4,45 @@ open Sexplib.Conv
 (* TODO: Service.User.t for Admin and Root are placeholders and should be
    replaced, when guadrian is implemented *)
 type user =
-  | Admin of Service.User.t
+  | Admin of Admin.t
   | Contact of Contact.t
-  | Root of Service.User.t
-[@@deriving eq, sexp_of, variants]
+  | Guest
+[@@deriving eq, show, sexp_of, variants]
+
+module UserType = struct
+  type t =
+    | Admin
+    | Contact
+    | Guest
+
+  let user_in roles = function
+    | (Guest : user) -> CCList.mem (Guest : t) roles
+    | Contact _ -> CCList.mem (Contact : t) roles
+    | Admin _ -> CCList.mem (Admin : t) roles
+  ;;
+end
 
 type t =
   { query_language : Pool_common.Language.t option
   ; language : Pool_common.Language.t
-  ; tenant_db : Pool_database.Label.t
+  ; database_label : Pool_database.Label.t
   ; message : PoolError.Collection.t option
   ; csrf : string
-  ; user : user option
+  ; user : user
   }
-[@@deriving sexp_of]
+[@@deriving show, sexp_of]
 
-let create (query_language, language, tenant_db, message, csrf, user) =
-  { query_language; language; tenant_db; message; csrf; user }
+let create (query_language, language, database_label, message, csrf, user) =
+  { query_language; language; database_label; message; csrf; user }
 ;;
 
 let find_context key req =
   Opium.Context.find key req.Opium.Request.env
   |> CCOption.to_result Pool_common.Message.PoolContextNotFound
-  |> CCResult.map_err (fun err -> Pool_common.Utils.with_log_error err)
 ;;
 
 let set_context key req context =
-  let env = req.Opium.Request.env in
-  let env = Opium.Context.add key context env in
+  let env = Opium.Context.add key context req.Opium.Request.env in
   Opium.Request.{ req with env }
 ;;
 
@@ -51,9 +62,21 @@ let set = set_context key
 
 let find_contact { user; _ } =
   match user with
-  | Some (Contact c) -> Ok c
-  | None | Some (Admin _) | Some (Root _) ->
-    Error PoolError.(NotFound Field.User)
+  | Contact c -> Ok c
+  | Admin _ | Guest -> Error PoolError.(NotFound Field.User)
+;;
+
+let find_authenticatable { user; database_label; _ } =
+  let ctx = Pool_tenant.to_ctx database_label in
+  match user with
+  | Admin admin ->
+    admin
+    |> Admin.user
+    |> (fun { Sihl_user.id; _ } -> Guard.Uuid.Actor.of_string_exn id)
+    |> Guard.Persistence.Actor.find_authorizable ~ctx `Admin
+    |> Lwt_result.map_error PoolError.authorization
+  | Contact c -> Contact.Guard.Actor.to_authorizable ~ctx c
+  | Guest -> Lwt.return_error PoolError.(NotFound Field.User)
 ;;
 
 module Tenant = struct
@@ -61,7 +84,7 @@ module Tenant = struct
     { tenant : Pool_tenant.t
     ; tenant_languages : Pool_common.Language.t list
     }
-  [@@deriving sexp_of]
+  [@@deriving show, sexp_of]
 
   let create tenant tenant_languages = { tenant; tenant_languages }
 
@@ -80,13 +103,14 @@ end
 
 (* Logging *)
 let show_log_user = function
-  | Admin user | Root user -> user.Sihl_user.email
+  | Admin user -> user |> Admin.user |> fun user -> user.Sihl_user.email
   | Contact contact -> contact.Contact.user.Sihl_user.email
+  | Guest -> "anonymous"
 ;;
 
-let show_log (t : t) =
+let show_log ({ database_label; user; _ } : t) =
   Format.sprintf
     "%s %s"
-    (CCOption.value ~default:"anonymous" @@ CCOption.map show_log_user t.user)
-    (Pool_database.Label.show t.tenant_db)
+    (show_log_user user)
+    (Pool_database.Label.show database_label)
 ;;

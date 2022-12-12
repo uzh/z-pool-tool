@@ -458,7 +458,7 @@ let filter_form csrf language param key_list template_list =
       ( experiment.filter
       , Format.asprintf
           "/admin/experiments/%s/filter/create"
-          (Pool_common.Id.value experiment.Experiment.id) )
+          (Experiment.Id.value experiment.Experiment.id) )
     | FilterParam filter ->
       ( filter
       , (match filter with
@@ -485,7 +485,7 @@ let filter_form csrf language param key_list template_list =
               [ a_id "contact-counter"
               ; a_user_data
                   "experiment-id"
-                  (experiment.Experiment.id |> Pool_common.Id.value)
+                  (experiment.Experiment.id |> Experiment.Id.value)
               ]
             []
         ]

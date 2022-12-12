@@ -1,27 +1,41 @@
+let tenant_of_request req =
+  let open Utils.Lwt_result.Infix in
+  (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
+     host cannot be handled at the moment *)
+  let* host =
+    req
+    |> Sihl.Web.Request.header "host"
+    |> CCOption.to_result Pool_common.Message.(NotFound Field.Host)
+    |> Lwt_result.lift
+  in
+  let%lwt selections = Pool_tenant.Selection.find_all () in
+  CCList.assoc_opt
+    ~eq:(fun m -> CCString.prefix ~pre:m)
+    host
+    (selections
+    |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
+  |> CCOption.to_result Pool_common.Message.SessionTenantNotFound
+  |> Lwt_result.lift
+  >>= Pool_tenant.find_by_label
+;;
+
 let valid_tenant () =
+  let open Utils.Lwt_result.Infix in
   let filter handler req =
-    let%lwt result =
-      let open Utils.Lwt_result.Infix in
-      let* tenant_db =
-        let open CCResult.Infix in
-        req
-        |> Pool_context.find
-        >|= (fun { Pool_context.tenant_db; _ } -> tenant_db)
-        |> Lwt_result.lift
-      in
-      let* tenant = Pool_tenant.find_by_label tenant_db in
-      let%lwt tenant_languages = Settings.find_languages tenant_db in
-      match Pool_tenant.(Disabled.value tenant.disabled) with
-      | false ->
-        Lwt.return_ok (Pool_context.Tenant.create tenant tenant_languages)
-      | true -> Lwt.return_error Pool_common.Message.(Disabled Field.Tenant)
-    in
-    match result with
+    match Pool_context.Tenant.find req with
     | Ok context -> context |> Pool_context.Tenant.set req |> handler
     | Error _ ->
-      Logs.err (fun m ->
-        m "No pool context found in request" ~tags:(Logger.req req));
-      Http_utils.redirect_to "/not-found"
+      (match%lwt tenant_of_request req with
+       | Ok tenant ->
+         Settings.find_languages tenant.Pool_tenant.database_label
+         ||> Pool_context.Tenant.create tenant
+         ||> Pool_context.Tenant.set req
+         >|> handler
+       | Error err ->
+         let (_ : Pool_common.Message.error) =
+           Pool_common.Utils.with_log_error ~tags:(Logger.req req) err
+         in
+         Http_utils.redirect_to "/not-found")
   in
   Rock.Middleware.create ~name:"tenant.valid" ~filter
 ;;

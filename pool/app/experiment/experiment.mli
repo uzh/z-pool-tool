@@ -1,4 +1,8 @@
-module Id = Pool_common.Id
+module Id : sig
+  include module type of Pool_common.Id
+
+  val to_common : t -> Pool_common.Id.t
+end
 
 module Title : sig
   include Pool_common.Model.StringSig
@@ -131,11 +135,11 @@ end
 type event =
   | Created of t
   | Updated of t
-  | Destroyed of Pool_common.Id.t
-  | ExperimenterAssigned of t * Admin__Entity.experimenter Admin__Entity.t
-  | ExperimenterDivested of t * Admin__Entity.experimenter Admin__Entity.t
-  | AssistantAssigned of t * Admin__Entity.assistant Admin__Entity.t
-  | AssistantDivested of t * Admin__Entity.assistant Admin__Entity.t
+  | Destroyed of Id.t
+  | AssistantAssigned of t * Admin.t
+  | AssistantDivested of t * Admin.t
+  | ExperimenterAssigned of t * Admin.t
+  | ExperimenterDivested of t * Admin.t
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
@@ -145,7 +149,7 @@ val boolean_fields : Pool_common.Message.Field.t list
 
 val find
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val find_all : Pool_database.Label.t -> unit -> t list Lwt.t
@@ -173,7 +177,7 @@ val find_all_public_by_contact
 
 val session_count
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Id.t
   -> (int, Pool_common.Message.error) Lwt_result.t
 
 val possible_participant_count : t -> int Lwt.t
@@ -187,3 +191,28 @@ val session_reminder_lead_time_value : t -> Ptime.span option
 val direct_registration_disabled_value : t -> bool
 val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
+
+module Repo : sig
+  module Id : sig
+    type t = Id.t
+
+    val t : t Caqti_type.t
+  end
+end
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Experiment ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

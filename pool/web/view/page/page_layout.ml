@@ -261,43 +261,39 @@ module Tenant = struct
     in
     let nav_links mobile =
       match user with
-      | None -> [ not_logged_in mobile; language_switch mobile ]
-      | Some user ->
-        (match user with
-         | Admin _ ->
-           let settings_nav =
-             [ "/admin/custom-fields", CustomFields
-             ; "/admin/filter", Filter
-             ; "/admin/locations", Locations
-             ; "/admin/settings", SystemSettings
-             ; "/admin/i18n", I18n
-             ]
-             |> to_nav_elements
-             |> fun children ->
-             create_nav_element ~children "/admin/settings" Settings
-           in
-           let user_nav =
-             [ "/admin/contacts", Contacts; "/admin/admins", Admins ]
-             |> to_nav_elements
-             |> fun children ->
-             create_nav_element ~children "/admin/users" Users
-           in
-           ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
-           |> to_nav_elements)
-           @ [ settings_nav; user_nav ]
-           |> fun links ->
-           links @ [ logout_nav_link ] |> to_main_nav mobile |> CCList.pure
-         | Contact _ ->
-           [ [ "/experiments", Experiments, None, None
-             ; "/user", Profile, Some `Person, Some profile_dropdown
-             ]
-             |> CCList.map (fun (url, label, icon, children) ->
-                  create_nav_element ?icon ?children url label)
-             |> (fun links -> links @ [ logout_nav_link ])
-             |> to_main_nav mobile
-           ; language_switch mobile
-           ]
-         | Root _ -> [ not_logged_in mobile ])
+      | Guest -> [ not_logged_in mobile; language_switch mobile ]
+      | Contact _ ->
+        [ [ "/experiments", Experiments, None, None
+          ; "/user", Profile, Some `Person, Some profile_dropdown
+          ]
+          |> CCList.map (fun (url, label, icon, children) ->
+               create_nav_element ?icon ?children url label)
+          |> (fun links -> links @ [ logout_nav_link ])
+          |> to_main_nav mobile
+        ; language_switch mobile
+        ]
+      | Admin _ ->
+        let settings_nav =
+          [ "/admin/custom-fields", CustomFields
+          ; "/admin/filter", Filter
+          ; "/admin/locations", Locations
+          ; "/admin/settings", SystemSettings
+          ; "/admin/i18n", I18n
+          ]
+          |> to_nav_elements
+          |> fun children ->
+          create_nav_element ~children "/admin/settings" Settings
+        in
+        let user_nav =
+          [ "/admin/contacts", Contacts; "/admin/admins", Admins ]
+          |> to_nav_elements
+          |> fun children -> create_nav_element ~children "/admin/users" Users
+        in
+        ([ "/admin/dashboard", Dashboard; "/admin/experiments", Experiments ]
+        |> to_nav_elements)
+        @ [ settings_nav; user_nav ]
+        |> fun links ->
+        links @ [ logout_nav_link ] |> to_main_nav mobile |> CCList.pure
     in
     let desktop_nav =
       nav_links false
@@ -370,8 +366,8 @@ let create_root_layout children language message user ?active_navigation () =
     let open Pool_context in
     let not_logged_in = [ "/root/login", Login ] in
     (match user with
-     | None | Some (Contact _) | Some (Admin _) -> not_logged_in
-     | Some (Root _) -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
+     | Contact _ | Guest -> not_logged_in
+     | Admin _ -> [ "/root/tenants", Tenants; "/root/logout", Logout ])
     |> to_nav_elements
     |> to_main_nav
   in

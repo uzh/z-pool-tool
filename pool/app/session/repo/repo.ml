@@ -137,7 +137,7 @@ module Sql = struct
     Utils.Database.collect
       (Database.Label.value pool)
       find_all_for_experiment_request
-      (Pool_common.Id.value id)
+      (Experiment.Id.value id)
   ;;
 
   let find_public_request =
@@ -197,7 +197,7 @@ module Sql = struct
     Utils.Database.collect
       (Database.Label.value pool)
       find_all_public_for_experiment_request
-      (Pool_common.Id.value id)
+      (Experiment.Id.value id)
   ;;
 
   let find_all_public_by_location_request =
@@ -234,7 +234,7 @@ module Sql = struct
         ON pool_experiments.uuid = pool_sessions.experiment_uuid
       WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', ''))
     |sql}
-    |> Caqti_type.(string ->! tup2 Pool_common.Repo.Id.t string)
+    |> Caqti_type.(string ->! tup2 Experiment.Repo.Id.t string)
   ;;
 
   let find_experiment_id_and_title pool id =

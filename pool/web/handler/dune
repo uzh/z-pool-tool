@@ -16,4 +16,4 @@
   sihl
   waiting_list)
  (preprocess
-  (pps lwt_ppx)))
+  (pps lwt_ppx ppx_deriving.show)))

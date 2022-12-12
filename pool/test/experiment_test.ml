@@ -49,29 +49,28 @@ module Data = struct
 
   let experiment =
     let open CCResult in
-    let id = Pool_common.Id.create () in
-    let* title = title |> Experiment.Title.create in
-    let* public_title = public_title |> Experiment.PublicTitle.create in
-    let* description = description |> Experiment.Description.create in
+    let open Experiment in
+    let* title = title |> Title.create in
+    let* public_title = public_title |> PublicTitle.create in
+    let* description = description |> Description.create in
     Ok
-      Experiment.
-        { id
-        ; title
-        ; public_title
-        ; description
-        ; filter
-        ; direct_registration_disabled =
-            false |> DirectRegistrationDisabled.create
-        ; registration_disabled = false |> RegistrationDisabled.create
-        ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
-        ; experiment_type = Some Pool_common.ExperimentType.Lab
-        ; invitation_template = None
-        ; session_reminder_subject = None
-        ; session_reminder_text = None
-        ; session_reminder_lead_time = None
-        ; created_at = Common.CreatedAt.create ()
-        ; updated_at = Common.UpdatedAt.create ()
-        }
+      { id = Id.create ()
+      ; title
+      ; public_title
+      ; description
+      ; filter
+      ; direct_registration_disabled =
+          false |> DirectRegistrationDisabled.create
+      ; registration_disabled = false |> RegistrationDisabled.create
+      ; allow_uninvited_signup = false |> AllowUninvitedSignup.create
+      ; experiment_type = Some Pool_common.ExperimentType.Lab
+      ; invitation_template = None
+      ; session_reminder_subject = None
+      ; session_reminder_text = None
+      ; session_reminder_lead_time = None
+      ; created_at = Common.CreatedAt.create ()
+      ; updated_at = Common.UpdatedAt.create ()
+      }
   ;;
 end
 

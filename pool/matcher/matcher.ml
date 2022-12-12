@@ -116,7 +116,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       ?order_by
       ~limit:(max limit 0)
       pool
-      id
+      (id |> Experiment.Id.to_common)
       experiment.Experiment.filter
   in
   let%lwt i18n_templates =

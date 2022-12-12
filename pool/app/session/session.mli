@@ -98,7 +98,7 @@ val session_date_to_human : t -> string
 (* TODO [aerben] maybe Experiment.t Pool_common.Id.t *)
 type event =
   | Created of
-      (base * Pool_common.Id.t option * Pool_common.Id.t * Pool_location.t)
+      (base * Pool_common.Id.t option * Experiment.Id.t * Pool_location.t)
   | Canceled of t
   | Closed of t
   | Deleted of t
@@ -152,13 +152,13 @@ val find_all_public_by_location
 
 val find_all_for_experiment
   :  Pool_database.Label.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> (t list, Pool_common.Message.error) result Lwt.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
-  -> Pool_common.Id.t
+  -> Experiment.Id.t
   -> (Public.t list, Pool_common.Message.error) result Lwt.t
 
 val find_public_by_assignment
@@ -169,7 +169,7 @@ val find_public_by_assignment
 val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Pool_common.Id.t * string, Pool_common.Message.error) result Lwt.t
+  -> (Experiment.Id.t * string, Pool_common.Message.error) result Lwt.t
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
@@ -182,3 +182,20 @@ val find_follow_ups
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
+
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `Session ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end

@@ -138,7 +138,8 @@ module Sql = struct
     Utils.Database.find_opt
       (Pool_database.Label.value pool)
       find_by_experiment_and_contact_opt_request
-      Pool_common.Id.(value experiment_id, value (Contact.id contact))
+      ( Experiment.Id.value experiment_id
+      , Pool_common.Id.value (Contact.id contact) )
   ;;
 
   let insert_request =

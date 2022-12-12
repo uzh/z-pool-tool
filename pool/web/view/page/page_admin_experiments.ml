@@ -21,6 +21,8 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
   let tab_links =
     Pool_common.I18n.
       [ Overview, "/"
+      ; Field Message.Field.Assistants, "/assistants"
+      ; Field Message.Field.Experimenter, "/experimenter"
       ; Invitations, "/invitations"
       ; WaitingList, "/waiting-list"
       ; Sessions, "/sessions"
@@ -31,7 +33,7 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
          ( label
          , Format.asprintf
              "/admin/experiments/%s/%s"
-             (Pool_common.Id.value experiment.Experiment.id)
+             (Experiment.Id.value experiment.Experiment.id)
              url ))
   in
   let title =
@@ -92,7 +94,7 @@ let index experiment_list Pool_context.{ language; _ } =
         [ txt (Title.value experiment.title)
         ; Format.asprintf
             "/admin/experiments/%s"
-            (experiment.id |> Pool_common.Id.value)
+            (experiment.id |> Experiment.Id.value)
           |> edit_link
         ])
       experiment_list
@@ -123,7 +125,7 @@ let experiment_form
     | Some experiment ->
       Format.asprintf
         "/admin/experiments/%s"
-        (experiment.id |> Pool_common.Id.value)
+        (experiment.id |> Experiment.Id.value)
   in
   let checkbox_element ?help ?(default = false) field fnc =
     checkbox_element
@@ -359,7 +361,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
               (Sihl.Web.externalize_path
                  (Format.asprintf
                     "/admin/experiments/%s/delete"
-                    (experiment.Experiment.id |> Pool_common.Id.value)))
+                    (experiment.Experiment.id |> Experiment.Id.value)))
           ; a_user_data
               "confirmable"
               Pool_common.(
@@ -477,7 +479,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
       ~control:(language, Message.(Edit (Some Field.Experiment)))
       (Format.asprintf
          "/admin/experiments/%s/edit"
-         (experiment.id |> Pool_common.Id.value))
+         (experiment.id |> Experiment.Id.value))
   in
   experiment_layout
     ~buttons:edit_button
@@ -503,7 +505,7 @@ let invitations
               ~a:
                 [ a_href
                     (experiment.Experiment.id
-                    |> Pool_common.Id.value
+                    |> Experiment.Id.value
                     |> Format.asprintf "admin/experiments/%s/invitations/sent"
                     |> Sihl.Web.externalize_path)
                 ]
@@ -569,7 +571,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
             |> HttpUtils.add_line_breaks
           ; Format.asprintf
               "/admin/experiments/%s/waiting-list/%s"
-              (waiting_list.experiment.Experiment.id |> Pool_common.Id.value)
+              (waiting_list.experiment.Experiment.id |> Experiment.Id.value)
               (entry.id |> Pool_common.Id.value)
             |> edit_link
           ])
@@ -584,4 +586,39 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
     experiment
     ~active:Pool_common.I18n.WaitingList
     (waiting_list_entries ())
+;;
+
+let users
+  role
+  experiment
+  applicable_admins
+  currently_assigned
+  (Pool_context.{ language; _ } as context)
+  =
+  let base_url field admin =
+    Format.asprintf
+      "/admin/experiments/%s/%s/%s"
+      Experiment.(experiment.id |> Id.value)
+      (Pool_common.Message.Field.show field)
+      (Admin.id admin |> Admin.Id.value)
+  in
+  let field =
+    let open Pool_common.Message in
+    match role with
+    | `Assistants -> Field.Assistants
+    | `Experimenter -> Field.Experimenter
+  in
+  Page_admin_experiment_users.role_assignment
+    (base_url field)
+    field
+    context
+    ~assign:"assign"
+    ~divest:"divest"
+    ~applicable:applicable_admins
+    ~current:currently_assigned
+  |> experiment_layout
+       language
+       (NavLink Pool_common.(I18n.Field field))
+       experiment
+       ~active:Pool_common.(I18n.Field field)
 ;;

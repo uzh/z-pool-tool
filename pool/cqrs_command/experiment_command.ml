@@ -1,6 +1,6 @@
+module BaseGuard = Guard
 open Experiment
 module Conformist = Pool_common.Utils.PoolConformist
-module Id = Pool_common.Id
 
 let src = Logs.Src.create "experiment_command.cqrs"
 
@@ -53,19 +53,17 @@ let default_command
   }
 ;;
 
-module Create : sig
-  type t = create
+type update_role =
+  { admin : Admin.t
+  ; experiment : Experiment.t
+  }
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
+module Create : sig
+  include Common.CommandSig with type t = create
 
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
 end = struct
   type t = create
 
@@ -99,7 +97,7 @@ end = struct
 end
 
 module Update : sig
-  type t = create
+  include Common.CommandSig with type t = create
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -111,7 +109,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Experiment.t -> Guard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = create
 
@@ -142,14 +140,16 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects experiment =
-    [ ( `Update
-      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
+    ; `Update, `TargetEntity `Experiment
     ]
   ;;
 end
 
 module Delete : sig
+  include Common.CommandSig
+
   type t =
     { experiment_id : Id.t
     ; session_count : int
@@ -160,7 +160,7 @@ module Delete : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : t -> Guard.Authorizer.effect list
+  val effects : Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   (* Only when no sessions added *)
 
@@ -177,16 +177,15 @@ end = struct
       Ok [ Experiment.Destroyed experiment_id |> Pool_event.experiment ]
   ;;
 
-  let effects command =
-    [ ( `Delete
-      , `Target
-          (command.experiment_id |> Guard.Uuid.target_of Pool_common.Id.value) )
+  let effects id =
+    [ `Delete, `Target (id |> BaseGuard.Uuid.target_of Experiment.Id.value)
+    ; `Delete, `TargetEntity `Experiment
     ]
   ;;
 end
 
 module UpdateFilter : sig
-  type t = Filter.query
+  include Common.CommandSig with type t = Filter.query
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -196,7 +195,7 @@ module UpdateFilter : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Experiment.t -> Guard.Authorizer.effect list
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = Filter.query
 
@@ -218,147 +217,101 @@ end = struct
       Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 
-  let effects experiment =
-    [ ( `Update
-      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity `Experiment
     ]
   ;;
 end
 
-module AddExperimenter : sig
-  type t = { user_id : Id.t }
+module AssignAssistant : sig
+  include Common.CommandSig with type t = update_role
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Admin.experimenter Admin.t
-    -> (Pool_event.t list, 'a) result
-
-  val effects
-    :  Experiment.t
-    -> Admin.experimenter Admin.t
-    -> Guard.Authorizer.effect list
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t = { user_id : Id.t }
+  type t = update_role
 
-  let handle ?(tags = Logs.Tag.empty) experiment user =
-    Logs.info ~src (fun m -> m "Handle command AddExperimenter" ~tags);
+  let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
+    Logs.info ~src (fun m -> m "Handle command AssignAssistant" ~tags);
     Ok
-      [ Experiment.ExperimenterAssigned (experiment, user)
+      [ Experiment.AssistantAssigned (experiment, admin)
         |> Pool_event.experiment
       ]
   ;;
 
-  let effects experiment user =
-    [ ( `Update
-      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
-    ; ( `Update
-      , `Target (Guard.Uuid.Target.of_string_exn (Admin.user user).Sihl_user.id)
-      )
-    ]
-  ;;
-end
-
-module DivestExperimenter : sig
-  type t =
-    { user_id : Id.t
-    ; experiment_id : Id.t
-    }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Admin.experimenter Admin.t
-    -> (Pool_event.t list, 'a) result
-
-  val effects : t -> Guard.Authorizer.effect list
-end = struct
-  type t =
-    { user_id : Id.t
-    ; experiment_id : Id.t
-    }
-
-  let handle ?(tags = Logs.Tag.empty) experiment user =
-    Logs.info ~src (fun m -> m "Handle command DivestExperimenter" ~tags);
-    Ok
-      [ Experiment.ExperimenterDivested (experiment, user)
-        |> Pool_event.experiment
-      ]
-  ;;
-
-  let effects { user_id; experiment_id } =
-    [ ( `Update
-      , `Target (experiment_id |> Guard.Uuid.target_of Pool_common.Id.value) )
-    ; `Update, `Target (user_id |> Guard.Uuid.target_of Pool_common.Id.value)
-    ]
-  ;;
-end
-
-module AddAssistant : sig
-  type t = { user_id : Id.t }
-
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Admin.assistant Admin.t
-    -> (Pool_event.t list, 'a) result
-
-  val effects : Experiment.t -> t -> Guard.Authorizer.effect list
-end = struct
-  type t = { user_id : Id.t }
-
-  let handle ?(tags = Logs.Tag.empty) experiment user =
-    Logs.info ~src (fun m -> m "Handle command AddAssistant" ~tags);
-    Ok
-      [ Experiment.AssistantAssigned (experiment, user) |> Pool_event.experiment
-      ]
-  ;;
-
-  let effects experiment t =
-    [ ( `Update
-      , `Target
-          (experiment.Experiment.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ; `Update, `Target (t.user_id |> Guard.Uuid.target_of Pool_common.Id.value)
+  (* TODO[timhub]: Make sure both rules are true *)
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Assistant)
     ]
   ;;
 end
 
 module DivestAssistant : sig
-  type t =
-    { user_id : Id.t
-    ; experiment_id : Id.t
-    }
+  include Common.CommandSig with type t = update_role
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> Experiment.t
-    -> Admin.assistant Admin.t
-    -> (Pool_event.t list, 'a) result
-
-  val effects
-    :  Experiment.t
-    -> Admin.experimenter Admin.t
-    -> Guard.Authorizer.effect list
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { user_id : Id.t
-    ; experiment_id : Id.t
-    }
+  type t = update_role
 
-  let handle ?(tags = Logs.Tag.empty) experiment user =
+  let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
     Logs.info ~src (fun m -> m "Handle command DivestAssistant" ~tags);
     Ok
-      [ Experiment.AssistantDivested (experiment, user) |> Pool_event.experiment
+      [ Experiment.AssistantDivested (experiment, admin)
+        |> Pool_event.experiment
       ]
   ;;
 
-  let effects experiment user =
-    [ ( `Update
-      , `Target (experiment.id |> Guard.Uuid.target_of Pool_common.Id.value) )
-    ; ( `Update
-      , `Target (Guard.Uuid.Target.of_string_exn (Admin.user user).Sihl_user.id)
-      )
+  (* TODO[timhub]: Make sure both rules are true *)
+  let effects id =
+    [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Assistant)
+    ]
+  ;;
+end
+
+module AssignExperimenter : sig
+  include Common.CommandSig with type t = update_role
+
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t = update_role
+
+  let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
+    Logs.info ~src (fun m -> m "Handle command AssignExperimenter" ~tags);
+    Ok
+      [ Experiment.ExperimenterAssigned (experiment, admin)
+        |> Pool_event.experiment
+      ]
+  ;;
+
+  (* TODO[timhub]: Make sure both rules are true *)
+  let effects experiment_id =
+    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Experimenter)
+    ]
+  ;;
+end
+
+module DivestExperimenter : sig
+  include Common.CommandSig with type t = update_role
+
+  val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
+end = struct
+  type t = update_role
+
+  let handle ?(tags = Logs.Tag.empty) { admin; experiment } =
+    Logs.info ~src (fun m -> m "Handle command DivestExperimenter" ~tags);
+    Ok
+      [ Experiment.ExperimenterDivested (experiment, admin)
+        |> Pool_event.experiment
+      ]
+  ;;
+
+  (* TODO[timhub]: Make sure both rules are true *)
+  let effects experiment_id =
+    [ `Update, `Target (experiment_id |> BaseGuard.Uuid.target_of Id.value)
+    ; `Update, `TargetEntity (`Admin `Experimenter)
     ]
   ;;
 end

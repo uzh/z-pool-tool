@@ -27,8 +27,8 @@ let create_root () =
     let* password = password |> Password.create in
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in
-    let create = Root.{ email; password; firstname; lastname } in
-    Ok [ Root.Created create |> Pool_event.root ]
+    let create = { Admin.email; password; firstname; lastname } in
+    Ok [ Admin.Created create |> Pool_event.admin ]
   in
   Alcotest.(
     check

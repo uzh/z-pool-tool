@@ -1,34 +1,28 @@
-let context context () =
-  let tenant_db_of_request req
-    : (Pool_database.Label.t, Pool_common.Message.error) result Lwt.t
-    =
-    (* TODO handle PREFIX_PATH of Tenant URLs, multiple tenants behind the same
-       host cannot be handled at the moment *)
-    let open Utils.Lwt_result.Infix in
-    let* host =
-      req
-      |> Sihl.Web.Request.header "host"
-      |> CCOption.to_result Pool_common.Message.(NotFound Field.Host)
-      |> Lwt_result.lift
-    in
-    let%lwt selections = Pool_tenant.Selection.find_all () in
-    CCList.assoc_opt
-      ~eq:(fun m k -> CCString.prefix ~pre:m k)
-      host
-      (selections
-      |> CCList.map (fun sel -> Pool_tenant.Selection.(url sel, label sel)))
-    |> CCOption.to_result Pool_common.Message.(NotFound Field.TenantPool)
-    |> CCResult.map_err (CCFun.const Pool_common.Message.SessionTenantNotFound)
-    |> Lwt_result.lift
+let context ?(is_root = false) () =
+  let open Utils.Lwt_result.Infix in
+  let open Pool_context in
+  let find_query_language = Http_utils.find_query_lang in
+  let tenant_database_label_of_request req =
+    match Tenant.find req with
+    | Ok { Tenant.tenant; _ } -> Lwt.return_ok tenant.Pool_tenant.database_label
+    | Error _ ->
+      Middleware_tenant.tenant_of_request req
+      >|+ fun { Pool_tenant.database_label; _ } -> database_label
   in
-  let language_from_request ?contact req tenant_db =
+  let database_label_of_request req =
+    if Http_utils.is_req_from_root_host req
+    then Lwt.return_ok Pool_database.root
+    else tenant_database_label_of_request req
+  in
+  let languages_from_request ?contact req tenant_db =
     let%lwt tenant_languages = Settings.find_languages tenant_db in
-    let is_valid lang =
-      match CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages with
-      | true -> Some lang
-      | false -> None
+    let query_language = find_query_language req in
+    let bind_valid =
+      CCFun.flip CCOption.bind (fun lang ->
+        if CCList.mem ~eq:Pool_common.Language.equal lang tenant_languages
+        then Some lang
+        else None)
     in
-    let open Utils.Lwt_result.Infix in
     let user_language = function
       | Some (p : Contact.t) -> p.Contact.language |> Lwt.return
       | None ->
@@ -41,82 +35,55 @@ let context context () =
         in
         CCResult.get_or lang ~default:None |> Lwt.return
     in
-    let open CCOption in
-    let query_language = Http_utils.find_query_lang req >>= is_valid in
-    query_language
-    |> function
-    | Some lang -> Lwt.return lang
-    | None ->
-      user_language contact
-      ||> fun l ->
-      l
-      >>= is_valid
-      |> value
-           ~default:
-             (CCOption.get_exn_or
-                "Cannot determine language"
-                (CCList.head_opt tenant_languages))
+    (match query_language |> bind_valid with
+     | Some language -> Lwt.return language
+     | None ->
+       user_language contact
+       ||> bind_valid
+       ||> CCOption.value
+             ~default:
+               (CCOption.get_exn_or
+                  "Cannot determine language"
+                  (CCList.head_opt tenant_languages)))
+    ||> fun lang -> query_language, lang
   in
   let filter handler req =
-    let open Utils.Lwt_result.Infix in
-    let query_lang = Http_utils.find_query_lang req in
     let csrf = Sihl.Web.Csrf.find_exn req in
     let message =
       CCOption.bind
         (Sihl.Web.Flash.find_alert req)
         Pool_common.Message.Collection.of_string
     in
-    let find_tenant_user pool =
-      let open Utils.Lwt_result.Infix in
-      let%lwt user =
-        Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
-      in
-      match user with
-      | None -> Lwt.return_none
-      | Some user ->
-        let open Pool_context in
-        (match%lwt Admin.user_is_admin pool user with
-         | false ->
-           user
-           |> Contact.find_by_user pool
-           ||> CCResult.to_opt
-           ||> CCOption.map contact
-         | true -> user |> admin |> Lwt.return_some)
+    let find_user pool =
+      Http_utils.user_from_session pool req
+      >|> CCOption.map_or ~default:(Lwt.return Guest) (fun user ->
+            if Sihl_user.is_admin user
+            then user |> Admin.create |> admin |> Lwt.return
+            else
+              Contact.find_by_user pool user
+              ||> CCResult.to_opt
+              ||> CCOption.map_or ~default:Guest contact)
     in
-    let is_root_request = Http_utils.is_req_from_root_host req in
     let%lwt context =
-      match is_root_request with
-      | true ->
-        let pool = Pool_database.root in
-        let%lwt user =
-          let open Utils.Lwt_result.Infix in
-          Service.User.Web.user_from_session ~ctx:(Pool_tenant.to_ctx pool) req
-          ||> CCFun.flip CCOption.bind (fun user ->
-                if Sihl_user.is_admin user
-                then Some (Pool_context.root user)
-                else None)
-        in
-        Pool_context.create
-          (None, Pool_common.Language.En, pool, message, csrf, user)
-        |> Lwt_result.return
-      | false ->
-        let* tenant_db = tenant_db_of_request req in
-        let%lwt user = find_tenant_user tenant_db in
-        (match context with
-         | `Admin ->
-           Pool_context.create
-             (None, Pool_common.Language.En, tenant_db, message, csrf, user)
-           |> Lwt_result.return
-         | `Contact ->
-           let%lwt language = language_from_request req tenant_db in
-           Pool_context.create
-             (query_lang, language, tenant_db, message, csrf, user)
-           |> Lwt_result.return)
+      let* database_label = database_label_of_request req in
+      let%lwt user = find_user database_label in
+      let%lwt query_lang, language =
+        let admin = Lwt.return (None, Pool_common.Language.En) in
+        if is_root
+        then admin
+        else (
+          match user with
+          | Admin _ -> admin
+          | Contact _ | Guest -> languages_from_request req database_label)
+      in
+      create (query_lang, language, database_label, message, csrf, user)
+      |> Lwt.return_ok
     in
     match context with
-    | Ok context -> context |> Pool_context.set req |> handler
+    | Ok context -> context |> set req |> handler
     | Error _ ->
-      Http_utils.(path_with_language query_lang "/error" |> redirect_to)
+      let open Http_utils in
+      path_with_language (find_query_language req) "/error" |> redirect_to
   in
   Rock.Middleware.create ~name:"tenant.context" ~filter
 ;;

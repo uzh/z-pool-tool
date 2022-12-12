@@ -1,7 +1,7 @@
 let src = Logs.Src.create "custom_field_answer.cqrs"
 
 module UpdateMultiple : sig
-  type t = Custom_field.Public.t
+  include Common.CommandSig with type t = Custom_field.Public.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -9,7 +9,7 @@ module UpdateMultiple : sig
     -> t
     -> (Pool_event.t, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Custom_field.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.Public.t
 
@@ -18,5 +18,9 @@ end = struct
     Ok (Custom_field.AnswerUpserted (f, contact_id) |> Pool_event.custom_field)
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Custom_field.Id.value)
+    ; `Update, `TargetEntity `CustomField
+    ]
+  ;;
 end

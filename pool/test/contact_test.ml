@@ -383,13 +383,14 @@ let update_email () =
   in
   let events =
     let open CCResult in
+    let open Cqrs_command.User_command in
     let* allowed_email_suffixes =
       [ "gmail.com" ]
       |> CCList.map Settings.EmailSuffix.create
       |> CCResult.flatten_l
     in
-    Contact_command.UpdateEmail.(
-      email_unverified |> handle ~allowed_email_suffixes contact)
+    email_unverified
+    |> UpdateEmail.handle ~allowed_email_suffixes (Contact contact)
   in
   let expected =
     Ok
@@ -414,7 +415,8 @@ let verify_email () =
       }
   in
   let events =
-    Contact_command.VerifyEmail.({ email = email_unverified } |> handle contact)
+    let open Cqrs_command.User_command in
+    email_unverified |> VerifyEmail.handle (Contact contact)
   in
   let expected =
     Ok

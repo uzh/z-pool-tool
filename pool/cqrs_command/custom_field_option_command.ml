@@ -5,7 +5,7 @@ let src = Logs.Src.create "custom_field_option_command.cqrs"
 type command = (Pool_common.Language.t * string) list
 
 module Create : sig
-  type t = command
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -14,8 +14,6 @@ module Create : sig
     -> Custom_field.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
 end = struct
   type t = command
 
@@ -27,11 +25,11 @@ end = struct
     Ok Custom_field.[ OptionCreated (id field, m) |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects = [ `Create, `TargetEntity `CustomField ]
 end
 
 module Update : sig
-  type t = command
+  include Common.CommandSig with type t = command
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -40,7 +38,7 @@ module Update : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = command
 
@@ -53,17 +51,27 @@ end = struct
     Ok [ OptionUpdated m |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects id =
+    [ ( `Update
+      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
+      )
+    ; `Update, `TargetEntity `CustomField
+    ]
+  ;;
 end
 
 module Destroy : sig
+  include Common.CommandSig
+
   val handle
     :  ?tags:Logs.Tag.set
     -> Custom_field.SelectOption.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
 end = struct
+  type t
+
   let handle ?(tags = Logs.Tag.empty) option =
     Logs.info ~src (fun m -> m "Handle command Destroy" ~tags);
     match option.Custom_field.SelectOption.published_at with
@@ -73,18 +81,19 @@ end = struct
       Error Pool_common.Message.(AlreadyPublished Field.CustomFieldOption)
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects id =
+    [ ( `Delete
+      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
+      )
+    ; `Delete, `TargetEntity `CustomField
+    ]
+  ;;
 end
 
 module Publish : sig
-  type t = Custom_field.SelectOption.t
+  include Common.CommandSig with type t = Custom_field.SelectOption.t
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.SelectOption.t
 
@@ -93,18 +102,19 @@ end = struct
     Ok [ Custom_field.OptionPublished m |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects id =
+    [ ( `Update
+      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
+      )
+    ; `Update, `TargetEntity `CustomField
+    ]
+  ;;
 end
 
 module Sort : sig
-  type t = Custom_field.SelectOption.t list
+  include Common.CommandSig with type t = Custom_field.SelectOption.t list
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
+  val effects : Custom_field.SelectOption.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.SelectOption.t list
 
@@ -113,5 +123,11 @@ end = struct
     Ok [ Custom_field.OptionsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Admin ]
+  let effects id =
+    [ ( `Update
+      , `Target (id |> Guard.Uuid.target_of Custom_field.SelectOption.Id.value)
+      )
+    ; `Update, `TargetEntity `CustomField
+    ]
+  ;;
 end

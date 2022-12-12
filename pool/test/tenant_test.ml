@@ -446,10 +446,8 @@ let create_operator () =
     let* password = password |> Pool_user.Password.create in
     let* firstname = firstname |> Pool_user.Firstname.create in
     let* lastname = lastname |> Pool_user.Lastname.create in
-    let operator : Admin.create =
-      Admin.{ email; password; firstname; lastname }
-    in
-    Ok [ Admin.Created (Admin.Operator, operator) |> Pool_event.admin ]
+    let admin : Admin.create = { Admin.email; password; firstname; lastname } in
+    Ok [ Admin.Created admin |> Pool_event.admin ]
   in
   Alcotest.(
     check

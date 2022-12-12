@@ -3,14 +3,6 @@ module Common = Pool_common
 module Database = Pool_database
 open Entity
 
-type creatable_admin =
-  | Assistant
-  | Experimenter
-  | Recruiter
-  | LocationManager
-  | Operator
-[@@deriving eq, show]
-
 type create =
   { email : User.EmailAddress.t
   ; password : User.Password.t
@@ -26,163 +18,62 @@ type update =
 [@@deriving eq, show]
 
 let set_password
-  : type person.
-    Database.Label.t
-    -> person t
-    -> string
-    -> string
-    -> (unit, string) result Lwt.t
+  : Database.Label.t -> t -> string -> string -> (unit, string) result Lwt.t
   =
- fun pool person password password_confirmation ->
-  let open Utils.Lwt_result.Infix in
-  match person with
-  | Assistant { user; _ }
-  | Experimenter { user; _ }
-  | LocationManager { user; _ }
-  | Recruiter { user; _ }
-  | Operator { user; _ } ->
-    Service.User.set_password
-      ~ctx:(Pool_tenant.to_ctx pool)
-      user
-      ~password
-      ~password_confirmation
-    >|+ ignore
+ fun pool user password password_confirmation ->
+  let open Lwt_result.Infix in
+  Service.User.set_password
+    ~ctx:(Pool_tenant.to_ctx pool)
+    user
+    ~password
+    ~password_confirmation
+  >|= ignore
 ;;
 
-type 'a person_event =
-  | DetailsUpdated of 'a t * update
-  | PasswordUpdated of 'a t * User.Password.t * User.PasswordConfirmed.t
-  | Disabled of 'a t
-  | Verified of 'a t
-
 type event =
-  | Created of creatable_admin * create
-  | AssistantEvents of assistant person_event
-  | ExperimenterEvents of experimenter person_event
-  | LocationManagerEvents of location_manager person_event
-  | RecruiterEvents of recruiter person_event
-  | OperatorEvents of operator person_event
+  | Created of create
+  | DetailsUpdated of t * update
+  | PasswordUpdated of t * User.Password.t * User.PasswordConfirmed.t
+  | Disabled of t
+  | Enabled of t
+  | Verified of t
+[@@deriving eq, show]
 
-let handle_person_event pool : 'a person_event -> unit Lwt.t = function
+let handle_event ~tags pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  function
+  | Created admin ->
+    let ctx = Pool_tenant.to_ctx pool in
+    let%lwt user =
+      Service.User.create_admin
+        ~ctx
+        ~name:(admin.lastname |> User.Lastname.value)
+        ~given_name:(admin.firstname |> User.Firstname.value)
+        ~password:(admin.password |> User.Password.to_sihl)
+        (User.EmailAddress.value admin.email)
+    in
+    let%lwt (_
+              : ([> `Admin ] Guard.Authorizable.t, Common.Message.error) result)
+      =
+      Entity_guard.Actor.to_authorizable ~ctx user
+      |> Lwt_result.map_error Pool_common.Utils.with_log_error
+    in
+    Lwt.return_unit
   | DetailsUpdated (_, _) -> Lwt.return_unit
   | PasswordUpdated (person, password, confirmed) ->
-    let%lwt _ =
+    let%lwt (_ : (unit, string) result) =
       set_password
         pool
         person
         (password |> User.Password.to_sihl)
         (confirmed |> User.PasswordConfirmed.to_sihl)
+      ||> Pool_common.(Utils.with_log_result_error ~tags Message.nothandled)
     in
     Lwt.return_unit
   | Disabled _ -> Utils.todo ()
+  | Enabled _ -> Utils.todo ()
   | Verified _ -> Utils.todo ()
-;;
-
-let handle_event pool : event -> unit Lwt.t =
-  let open Utils.Lwt_result.Infix in
-  fun e ->
-    match e with
-    | Created (role, admin) ->
-      let%lwt user =
-        Service.User.create_admin
-          ~ctx:(Pool_tenant.to_ctx pool)
-          ~name:(admin.lastname |> User.Lastname.value)
-          ~given_name:(admin.firstname |> User.Firstname.value)
-          ~password:(admin.password |> User.Password.to_sihl)
-          (User.EmailAddress.value admin.email)
-      in
-      let person =
-        { user
-        ; created_at = Common.CreatedAt.create ()
-        ; updated_at = Common.UpdatedAt.create ()
-        }
-      in
-      let%lwt () =
-        match role with
-        | Assistant -> Repo.insert pool (Assistant person)
-        | Experimenter -> Repo.insert pool (Experimenter person)
-        | Recruiter -> Repo.insert pool (Recruiter person)
-        | LocationManager -> Repo.insert pool (LocationManager person)
-        | Operator -> Repo.insert pool (Operator person)
-      in
-      let%lwt role =
-        let%lwt tenant_id =
-          Pool_tenant.find_by_label pool
-          >|- Pool_common.Message.error_to_exn
-          |> Lwt_result.get_exn
-          ||> fun tenant ->
-          Guard.Uuid.Target.of_string_exn
-            (Common.Id.value tenant.Pool_tenant.id)
-        in
-        Lwt.return
-        @@
-        match role with
-        | Assistant -> `Assistant tenant_id
-        | Experimenter -> `Experimenter tenant_id
-        | Recruiter -> `Recruiter tenant_id
-        | LocationManager -> `LocationManager tenant_id
-        | Operator -> `Operator tenant_id
-      in
-      Guard.Persistence.Actor.grant_roles
-        (Guardian.Uuid.Actor.of_string_exn user.Sihl_user.id)
-        (Guard.ActorRoleSet.singleton role)
-      >|- (fun s -> Failure s)
-      |> Lwt_result.get_exn
-    | AssistantEvents event -> handle_person_event pool event
-    | ExperimenterEvents event -> handle_person_event pool event
-    | LocationManagerEvents event -> handle_person_event pool event
-    | RecruiterEvents event -> handle_person_event pool event
-    | OperatorEvents event -> handle_person_event pool event
-;;
-
-let[@warning "-4"] equal_person_event
-  (one : 'a person_event)
-  (two : 'a person_event)
-  : bool
-  =
-  match one, two with
-  | DetailsUpdated (p1, one), DetailsUpdated (p2, two) ->
-    equal p1 p2 && equal_update one two
-  | PasswordUpdated (p1, one, _), PasswordUpdated (p2, two, _) ->
-    equal p1 p2 && User.Password.equal one two
-  | Disabled p1, Disabled p2 | Verified p1, Verified p2 -> equal p1 p2
-  | _ -> false
-;;
-
-let pp_person_event formatter (event : 'a person_event) : unit =
-  let person_pp = pp formatter in
-  match event with
-  | DetailsUpdated (m, updated) ->
-    person_pp m;
-    pp_update formatter updated
-  | PasswordUpdated (m, p, _) ->
-    person_pp m;
-    User.Password.pp formatter p
-  | Disabled m | Verified m -> person_pp m
-;;
-
-let[@warning "-4"] equal_event event1 event2 : bool =
-  match event1, event2 with
-  | Created (role1, m), Created (role2, p) ->
-    equal_creatable_admin role1 role2 && equal_create m p
-  | AssistantEvents m, AssistantEvents p -> equal_person_event m p
-  | ExperimenterEvents m, ExperimenterEvents p -> equal_person_event m p
-  | LocationManagerEvents m, LocationManagerEvents p -> equal_person_event m p
-  | RecruiterEvents m, RecruiterEvents p -> equal_person_event m p
-  | OperatorEvents m, OperatorEvents p -> equal_person_event m p
-  | _ -> false
-;;
-
-let pp_event formatter event =
-  match event with
-  | Created (role, m) ->
-    pp_creatable_admin formatter role;
-    pp_create formatter m
-  | AssistantEvents m -> pp_person_event formatter m
-  | ExperimenterEvents m -> pp_person_event formatter m
-  | LocationManagerEvents m -> pp_person_event formatter m
-  | RecruiterEvents m -> pp_person_event formatter m
-  | OperatorEvents m -> pp_person_event formatter m
+  [@@deriving eq, show]
 ;;
 
 let show_event = Format.asprintf "%a" pp_event

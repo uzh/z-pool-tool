@@ -16,14 +16,29 @@ type event =
   | FileDeleted of Mapping.Id.t
 [@@deriving eq, show, variants]
 
-let handle_event pool : event -> unit Lwt.t = function
-  | Created ({ files; _ } as location) ->
+let handle_event pool : event -> unit Lwt.t =
+  let open Utils.Lwt_result.Infix in
+  let ctx = Pool_tenant.to_ctx pool in
+  function
+  | Created ({ id; files; _ } as location) ->
     let%lwt () =
       files
       |> CCList.map (Repo.RepoFileMapping.of_entity location)
       |> Repo.insert pool location
     in
-    Lwt.return_unit
+    let%lwt (_ : Guard.Authorizer.auth_rule list) =
+      Admin.Guard.RuleSet.location_manager id
+      |> Guard.Persistence.Actor.save_rules ~ctx
+      >|- (fun err ->
+            Pool_common.Message.nothandled
+            @@ Format.asprintf
+                 "Failed to save: %s"
+                 ([%show: Guard.Authorizer.auth_rule list] err))
+      ||> Pool_common.Utils.get_or_failwith
+    in
+    Entity_guard.Target.to_authorizable ~ctx location
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | FileUploaded file ->
     let open Entity.Mapping.Write in
     let%lwt () =
@@ -32,7 +47,11 @@ let handle_event pool : event -> unit Lwt.t = function
            create label language asset_id location_id)
       |> Repo.RepoFileMapping.insert pool
     in
-    Lwt.return_unit
+    Entity_guard.FileTarget.to_authorizable_of_write
+      ~ctx:(Pool_tenant.to_ctx pool)
+      file
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : [> `Mailing ] Guard.AuthorizableTarget.t) -> ()
   | Updated (location, m) ->
     let%lwt () =
       { location with

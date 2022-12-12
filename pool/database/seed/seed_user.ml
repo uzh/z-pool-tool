@@ -33,8 +33,7 @@ let create_rand_persons n_persons =
       (max min_allowed (min max_allowed n_persons))
   in
   let%lwt resp, body = Client.get (Uri.of_string api_url) in
-  let code = resp |> Response.status |> Code.code_of_status in
-  if code = 200
+  if resp |> Response.status |> Code.code_of_status |> CCInt.equal 200
   then (
     let%lwt json = Cohttp_lwt.Body.to_string body in
     json |> Yojson.Safe.from_string |> persons_of_yojson |> Lwt.return)
@@ -55,11 +54,17 @@ let create_persons n_persons =
 ;;
 
 let admins db_pool =
+  let open Utils.Lwt_result.Infix in
+  let%lwt experimenter_roles =
+    Experiment.find_all db_pool ()
+    ||> CCList.map (fun { Experiment.id; _ } ->
+          `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
+  in
   let data =
-    [ "The", "One", "admin@example.com", `Operator
-    ; "engineering", "admin", "engineering@econ.uzh.ch", `Operator
-    ; "Scooby", "Doo", "assistant@econ.uzh.ch", `Assistant
-    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", `Experimenter
+    [ "The", "One", "admin@example.com", [ `Admin ] @ experimenter_roles
+    ; "engineering", "admin", "engineering@econ.uzh.ch", [ `OperatorAll ]
+    ; "Scooby", "Doo", "assistant@econ.uzh.ch", [ `LocationManagerAll ]
+    ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `RecruiterAll ]
     ]
   in
   let ctx = Pool_tenant.to_ctx db_pool in
@@ -68,22 +73,25 @@ let admins db_pool =
     |> CCOption.value ~default:"admin"
   in
   Lwt_list.iter_s
-    (fun (given_name, name, email, role) ->
+    (fun (given_name, name, email, (role : Guard.ActorRoleSet.elt list)) ->
       let%lwt user = Service.User.find_by_email_opt ~ctx email in
       match user with
       | None ->
-        let%lwt user =
+        let%lwt admin =
           Service.User.create_admin ~ctx ~name ~given_name ~password email
         in
-        let person = Admin.create_person user in
+        let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
+          admin
+          |> Admin.create
+          |> Admin.Guard.Actor.to_authorizable ~ctx
+          |> Lwt.map Pool_common.Utils.get_or_failwith
+        in
         let%lwt () =
-          match role with
-          | `Assistant -> Admin.insert db_pool (Admin.Assistant person)
-          | `Experimenter -> Admin.insert db_pool (Admin.Experimenter person)
-          | `Recruiter -> Admin.insert db_pool (Admin.Recruiter person)
-          | `LocationManager ->
-            Admin.insert db_pool (Admin.LocationManager person)
-          | `Operator -> Admin.insert db_pool (Admin.Operator person)
+          Guard.Persistence.Actor.grant_roles
+            ~ctx
+            (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
+            Guard.ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty role)
+          |> Lwt.map CCResult.get_or_failwith
         in
         Lwt.return_unit
       | Some _ ->

@@ -20,71 +20,56 @@ type event =
   | Created of t
   | Updated of t
   | Destroyed of Common.Id.t
-  | ExperimenterAssigned of t * Admin.experimenter Admin.t
-  | ExperimenterDivested of t * Admin.experimenter Admin.t
-  | AssistantAssigned of t * Admin.assistant Admin.t
-  | AssistantDivested of t * Admin.assistant Admin.t
-[@@deriving variants]
+  | AssistantAssigned of t * Admin.t
+  | AssistantDivested of t * Admin.t
+  | ExperimenterAssigned of t * Admin.t
+  | ExperimenterDivested of t * Admin.t
+[@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
-  fun e ->
-    match e with
-    | Created t -> Repo.insert pool t
-    | Updated t -> Repo.update pool t
-    | Destroyed experiment_id -> Repo.destroy pool experiment_id
-    (* TODO: was placeholder *)
-    | ExperimenterAssigned (experiment, user)
-    | ExperimenterDivested (experiment, user) ->
-      let user_id =
-        Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
-      in
-      Guard.Persistence.Actor.revoke_roles
-        user_id
-        (Guard.ActorRoleSet.singleton
-           (`Experimenter (experiment.id |> Guard.Uuid.target_of Id.value)))
-      >|- (fun x -> Failure x)
-      |> Lwt_result.get_exn
-    | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
-      ->
-      let user_id =
-        Guard.Uuid.Actor.of_string_exn (Admin.user user).Sihl_user.id
-      in
-      Guard.Persistence.Actor.revoke_roles
-        user_id
-        (Guard.ActorRoleSet.singleton
-           (`Assistant (experiment.id |> Guard.Uuid.target_of Id.value)))
-      >|- (fun x -> Failure x)
-      |> Lwt_result.get_exn
+  let ctx = Pool_tenant.to_ctx pool in
+  let find_id = CCFun.(Admin.id %> Guard.Uuid.actor_of Admin.Id.value) in
+  let to_target { id; _ } = Guard.Uuid.target_of Id.value id in
+  let grant_role role admin =
+    Guard.Persistence.Actor.grant_roles
+      ~ctx
+      (admin |> find_id)
+      (Guard.ActorRoleSet.singleton role)
+    ||> CCResult.get_exn
+  in
+  let revoke_role role admin =
+    Guard.Persistence.Actor.revoke_roles
+      ~ctx
+      (admin |> find_id)
+      (Guard.ActorRoleSet.singleton role)
+    ||> CCResult.get_exn
+  in
+  function
+  | Created ({ id; _ } as t) ->
+    let%lwt () = Repo.insert pool t in
+    let%lwt (_ : Guard.Authorizer.auth_rule list) =
+      Admin.Guard.RuleSet.experimenter id @ Admin.Guard.RuleSet.assistant id
+      |> Guard.Persistence.Actor.save_rules ~ctx
+      >|- (fun err ->
+            Pool_common.Message.nothandled
+            @@ Format.asprintf
+                 "Failed to save: %s"
+                 ([%show: Guard.Authorizer.auth_rule list] err))
+      ||> Pool_common.Utils.get_or_failwith
+    in
+    Entity_guard.Target.to_authorizable ~ctx t
+    ||> Pool_common.Utils.get_or_failwith
+    ||> fun (_ : [> `Experiment ] Guard.AuthorizableTarget.t) -> ()
+  | Updated t -> Repo.update pool t
+  | Destroyed experiment_id -> Repo.destroy pool experiment_id
+  | AssistantAssigned (experiment, admin) ->
+    grant_role (`Assistant (experiment |> to_target)) admin
+  | AssistantDivested (experiment, admin) ->
+    revoke_role (`Assistant (experiment |> to_target)) admin
+  | ExperimenterAssigned (experiment, admin) ->
+    grant_role (`Experimenter (experiment |> to_target)) admin
+  | ExperimenterDivested (experiment, admin) ->
+    revoke_role (`Experimenter (experiment |> to_target)) admin
+  [@@deriving eq, show]
 ;;
-
-let[@warning "-4"] equal_event event1 event2 =
-  match event1, event2 with
-  | Created experiment_one, Created experiment_two
-  | Updated experiment_one, Updated experiment_two ->
-    equal experiment_one experiment_two
-  | Destroyed one, Destroyed two -> Id.equal one two
-  | ( ExperimenterAssigned (experiment_one, user_one)
-    , ExperimenterDivested (experiment_two, user_two) ) ->
-    equal experiment_one experiment_two
-    && CCString.equal
-         (Admin.user user_one).Sihl_user.id
-         (Admin.user user_two).Sihl_user.id
-  | _ -> false
-;;
-
-let pp_event formatter event =
-  match event with
-  | Created experiment | Updated experiment -> pp formatter experiment
-  | Destroyed m -> Id.pp formatter m
-  | ExperimenterAssigned (experiment, user)
-  | ExperimenterDivested (experiment, user) ->
-    pp formatter experiment;
-    Admin.pp formatter user
-  | AssistantAssigned (experiment, user) | AssistantDivested (experiment, user)
-    ->
-    pp formatter experiment;
-    Admin.pp formatter user
-;;
-
-let show_event = Variants_of_event.to_name

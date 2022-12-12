@@ -113,10 +113,21 @@ let validate_start follow_up_sessions parent_session start =
 ;;
 
 (* TODO [aerben] create sigs *)
-module Create = struct
+module Create : sig
+  include Common.CommandSig with type t = Session.base
+
+  val handle
+    :  ?tags:Logs.Tag.set
+    -> ?parent_session:Session.t
+    -> Experiment.Id.t
+    -> Pool_location.t
+    -> t
+    -> (Pool_event.t list, Conformist.error_msg) result
+
+  val decode : Conformist.input -> (t, Conformist.error_msg) result
+end = struct
   type t = Session.base
 
-  let command = create_command
   let schema = create_schema
 
   let handle
@@ -191,11 +202,11 @@ module Create = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `Entity `System ]
+  let effects = [ `Create, `TargetEntity `Session ]
 end
 
 module Update : sig
-  type t = Session.update
+  include Common.CommandSig with type t = Session.update
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -210,7 +221,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Sihl_user.t -> t -> bool Lwt.t
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Session.update
 
@@ -280,11 +291,15 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects _user _command = Utils.todo [%here]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Invitation
+    ]
+  ;;
 end
 
 module Reschedule : sig
-  type t = Session.reschedule
+  include Common.CommandSig with type t = Session.reschedule
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -299,7 +314,7 @@ module Reschedule : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Session.reschedule
 
@@ -341,10 +356,16 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Invitation
+    ]
+  ;;
 end
 
 module Delete : sig
+  include Common.CommandSig
+
   type t = { session : Session.t }
 
   val handle
@@ -352,7 +373,7 @@ module Delete : sig
     -> Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = { session : Session.t }
 
@@ -366,10 +387,16 @@ end = struct
     else Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects id =
+    [ `Delete, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Delete, `TargetEntity `Invitation
+    ]
+  ;;
 end
 
 module Cancel : sig
+  include Common.CommandSig
+
   type t =
     { session : Session.t
     ; notify_via : string
@@ -380,7 +407,7 @@ module Cancel : sig
     -> Session.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   (* TODO issue #90 step 2 *)
   (* notify_via: Email, SMS *)
@@ -394,18 +421,17 @@ end = struct
     Ok [ Session.Canceled session |> Pool_event.session ]
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Invitation
+    ]
+  ;;
 end
 
 module SendReminder : sig
-  type t = (Session.t * Sihl_email.t list) list
+  include Common.CommandSig with type t = (Session.t * Sihl_email.t list) list
 
-  val handle
-    :  ?tags:Logs.Tag.set
-    -> t
-    -> (Pool_event.t list, Pool_common.Message.error) result
-
-  val effects : Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
@@ -422,5 +448,9 @@ end = struct
          command)
   ;;
 
-  let effects = [ `Manage, `TargetEntity `System ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Invitation
+    ]
+  ;;
 end
