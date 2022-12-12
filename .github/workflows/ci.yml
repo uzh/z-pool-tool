@@ -1,6 +1,9 @@
 name: CI
 on:
+  pull_request:
   push:
+    branches: [main]
+    tags: ["v*"]
 
 jobs:
   build:
@@ -72,3 +75,66 @@ jobs:
         with:
           webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
+  assets:
+    name: Build assets
+    runs-on: ubuntu-latest
+    container:
+      image: node:lts
+      env:
+        ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: install yarn packages
+        run: yarn install
+
+      - name: build yarn package
+        run: yarn build
+
+      - name: move all assets to one folder
+        run: '[ "$(ls pool/public)" ] && cp -r pool/public/* public || exit 0'
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: assets
+          path: public
+
+      - name: Notify about failure
+        if: failure()
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
+
+  release:
+    name: Release a new version
+    runs-on: ubuntu-latest
+    needs: [build, assets]
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Set enviroment for github-release
+        run: |
+          CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')
+          echo "CHANGELOG=$(echo $CHANGELOG)" >> $GITHUB_ENV
+
+      - name: Create release
+        uses: meeDamian/github-release@2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          body: ${{ env.CHANGELOG }}
+          files: >
+            assets/
+            run.exe
+
+      - name: Notify about failure
+        if: failure()
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
