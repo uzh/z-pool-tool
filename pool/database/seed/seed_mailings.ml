@@ -20,7 +20,7 @@ let generate_rate delta =
 
 let generate_events (experiments : Experiment.Id.t list) =
   let mailings =
-    CCList.range_by ~step:5 0 180
+    CCList.range_by ~step:5 0 80
     |> CCList.map (fun delta ->
          let start =
            Ptime_clock.now ()
@@ -34,7 +34,7 @@ let generate_events (experiments : Experiment.Id.t list) =
          in
          start)
   in
-  let overlaps = CCList.take 5 mailings in
+  let overlaps = CCList.take 2 mailings in
   CCList.mapi
     (fun index start ->
       Mailing.Created
