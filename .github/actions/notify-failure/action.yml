@@ -1,10 +1,15 @@
 name: notify-failure
 decription: Send a notification to Econ MS Teams channel
 
+inputs:
+  webhook:
+    required: true
+
 runs:
   using: composite
   steps:
-    - run: |
+    - shell: bash
+      run: |
         pwd
         ls -la .
         whoami
@@ -16,4 +21,4 @@ runs:
         EOF
         
         ls -la .
-        curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
+        curl -X POST ${{ inputs.webhook }} --header 'Content-Type: application/json' -d @message.json
