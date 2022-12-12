@@ -35,8 +35,8 @@ jobs:
       - name: Build and test with Docker
         uses: addnab/docker-run-action@v3
         env:
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:${{ job.services.database-tenant.ports[3306] }}/${{ env.MYSQL_DATABASE }}
           DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-root:${{ job.services.database-root.ports[3306] }}/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:${{ job.services.database-tenant.ports[3306] }}/${{ env.MYSQL_DATABASE }}
           SIHL_ENV: test
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
@@ -47,8 +47,20 @@ jobs:
             ping -c 4 database-root
             ping -c 4 database-tenant
 
-            ls -la .
-            env
+            echo $DATABASE_URL_TENANT_TEST
+            echo "${{ env.MYSQL_ROOT_PASSWORD }}"
+
+            sudo apt-get -y update && sudo apt-get install -y netcat
+
+            nc database-root ${{ job.services.database-root.ports[3306] }}
+            nc database-tenant ${{ job.services.database-tenant.ports[3306] }}
+
+            sudo apt-get install -y mariadb-client
+            mysql -u root -p=${{ env.MYSQL_ROOT_PASSWORD }} -h database-root -e "show databases;"
+            mysql -u root -p=${{ env.MYSQL_ROOT_PASSWORD }} -h database-tenant -e "show databases;"
+            mysql -u root -p=password -h database-root -e "show databases;"
+            mysql -u root -p=password -h database-tenant -e "show databases;"
+
 
             # Reclaim required directory permissions
             sudo chown -R opam .
@@ -58,13 +70,6 @@ jobs:
 
             # Restore directory permissions to avoid conflicts
             sudo chown -R 1001:123 .
-
-      - name: Restore directory permissions to avoid conflicts
-        if: always()
-        run: |
-          ls -la .
-          whoami
-          chown -R 1001:123 .
 
       - uses: actions/upload-artifact@v3
         with:
@@ -80,11 +85,16 @@ jobs:
       - name: Notify about failure
         if: failure()
         run: |
+          # Restore directory permissions to avoid conflicts
+          ls -la .
+          whoami
+          chown -R 1001:123 .
+
           pwd
           cat << EOF > message.json
           {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
           EOF
           
-          ls -la
+          ls -la .
           curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
 
