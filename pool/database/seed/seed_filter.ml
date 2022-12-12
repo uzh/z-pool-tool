@@ -10,9 +10,9 @@ let test_filter =
   let p2 =
     Pred
       (Predicate.create
-         Key.(Hardcoded Name)
-         Operator.Like
-         (Single (Str "lastname%")))
+         Key.(Hardcoded NumAssignments)
+         Operator.Less
+         (Single (Nr 5.)))
   in
   Or [ p1; p2 ]
 ;;
