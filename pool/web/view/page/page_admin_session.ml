@@ -844,8 +844,9 @@ let cancel
            ~flash_fetcher
            language
            Pool_common.Message.Field.Email
-         (* TODO [aerben] should be hidden? *)
-       ; checkbox_element ~flash_fetcher language Pool_common.Message.Field.SMS
+         (* TODO issue #149 re-add this *)
+         (* ; checkbox_element ~flash_fetcher language
+            Pool_common.Message.Field.SMS *)
        ; div
            ~a:[ a_class [ "flexrow" ] ]
            [ submit_element

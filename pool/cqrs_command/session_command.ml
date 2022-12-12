@@ -454,8 +454,6 @@ module SendReminder : sig
 end = struct
   type t = (Session.t * Sihl_email.t list) list
 
-  (* TODO [aerben] sometimes we have this uncurried, sometimes curried, make it
-     consistent *)
   let handle ?(tags = Logs.Tag.empty) command =
     Logs.info ~src (fun m -> m "Handle command SendReminder" ~tags);
     Ok
