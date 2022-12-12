@@ -403,8 +403,6 @@ end = struct
     ; reason : Session.CancellationReason.t
     }
 
-  (* TODO [aerben] write tests! *)
-
   let handle ?(tags = Logs.Tag.empty) session messages_fn command =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
     let open CCResult.Infix in
