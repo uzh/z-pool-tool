@@ -46,6 +46,9 @@ jobs:
           run: |
             ping database-root
 
+            ls -la .
+            env
+
             # Reclaim required directory permissions
             sudo chown -R opam .
 
