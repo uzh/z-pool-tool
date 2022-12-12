@@ -29,7 +29,7 @@ let default_values =
       ] )
   ; ( "confirmation_text"
     , [ "EN", "We hereby confirm the mandatory assignment."
-      ; "DE", "Hiermit bestätigen wir verbindlich Experiment-Teilnahme."
+      ; "DE", "Hiermit bestätigen wir die verbindliche Experiment-Teilnahme."
       ] )
   ; ( "confirmation_without_self_registration_subject"
     , [ "EN", "Your expression of interest to the experiment."
