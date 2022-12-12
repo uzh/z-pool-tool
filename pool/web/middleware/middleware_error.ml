@@ -42,7 +42,7 @@ let before_start () =
   else ()
 ;;
 
-let reporter req =
+let reporter =
   let config = Sihl.Configuration.(read schema) in
   let module Gitlab_notify =
     Canary.Notifier.Gitlab (struct
@@ -52,19 +52,29 @@ let reporter req =
       let project_id = config.project_id
     end)
   in
-  fun exc backtrace ->
+  fun exc ->
+    let { Sihl.Web.Middleware.exn; req_id; req; _ } = exc in
+    let open Format in
+    let formatter = str_formatter in
     let additional =
-      let buffer = Buffer.create 4_096 in
-      let formatter = Format.formatter_of_buffer buffer in
-      Format.pp_print_string formatter "```\n";
-      Opium.Request.pp_hum formatter req;
-      Format.pp_print_string formatter "\n```\n\nTrace:\n\n```\n";
-      Format.pp_print_string formatter backtrace;
-      Format.pp_print_string formatter "\n```";
-      Format.pp_print_flush formatter ();
-      Buffer.contents buffer
+      let error =
+        pp_print_string formatter (asprintf "\n\nException:\n");
+        pp_print_text formatter (asprintf "\n```\n%s\n```\n" exn);
+        flush_str_formatter ()
+      in
+      let trace =
+        asprintf "\nTrace:\n```\n%s\n```\n" (Printexc.get_backtrace ())
+      in
+      let request =
+        pp_print_string formatter (asprintf "\nRequest: %s\n" req_id);
+        pp_print_string formatter (asprintf "\n```\n%s\n```\n" req);
+        flush_str_formatter ()
+      in
+      asprintf "%s\n\n%s\n\n%s\n" error trace request
     in
-    let%lwt res = Gitlab_notify.notify ~additional exc backtrace in
+    let%lwt res =
+      Gitlab_notify.notify ~additional (Failure exn) (Printexc.get_backtrace ())
+    in
     match res with
     | Ok iid ->
       Logs.info (fun m ->
@@ -77,13 +87,8 @@ let reporter req =
 
 let error () =
   Sihl.Web.Middleware.error
-    ~reporter:(fun req exc ->
-      match%lwt
-        reporter
-          req
-          (Failure exc.Sihl.Web.Middleware.exn)
-          (Printexc.get_backtrace ())
-      with
+    ~reporter:(fun _ exn ->
+      match%lwt reporter exn with
       | Ok _ -> Lwt.return_unit
       | Error err -> raise (Failure err))
     ()
