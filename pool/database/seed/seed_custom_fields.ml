@@ -4,11 +4,8 @@ let create pool =
   let open CCFun in
   let open Custom_field in
   let system_languages = Pool_common.Language.all in
-  let make_names value =
-    system_languages
-    |> CCList.map (fun lang -> lang, value)
-    |> Name.create system_languages
-    |> get_or_failwith
+  let make_names values =
+    values |> Name.create system_languages |> get_or_failwith
   in
   let admin =
     Admin.
@@ -22,34 +19,71 @@ let create pool =
     let name = make_names name in
     Custom_field.Group.create model name
   in
-  let education_group = (Model.Contact, "Education") |> create_group in
-  let language_group = (Model.Contact, "Languages") |> create_group in
+  let education_group =
+    (Model.Contact, Pool_common.Language.[ En, "Education"; De, "Bildung" ])
+    |> create_group
+  in
+  let language_group =
+    (Model.Contact, Pool_common.Language.[ En, "Languages"; De, "Sprachen" ])
+    |> create_group
+  in
   let groups = [ education_group; language_group ] in
-  let education_options = [ "Bachelor"; "Master"; "Phd" ] in
-  let languge_level_options = [ "Beginner"; "Intermediate"; "Advanced" ] in
+  let education_options =
+    [ "Bachelor"; "Master"; "Phd" ]
+    |> CCList.map (fun value ->
+         CCList.map (fun lang -> lang, value) system_languages)
+  in
+  let languge_level_options =
+    Pool_common.Language.
+      [ [ En, "No knowledge"; De, "Keine Kenntnisse" ]
+      ; [ En, "Beginner"; De, "Schlecht" ]
+      ; [ En, "Intermediate"; De, "Mittel" ]
+      ; [ En, "Fluent"; De, "Fliessend" ]
+      ; [ En, "Native speaker"; De, "Muttersprache" ]
+      ]
+  in
   let research_interest_options =
-    [ "Environmental Economics"
-    ; "Development Economics"
-    ; "Technological Change & Innovation"
-    ; "Neuroeconomics"
-    ; "Behavioral Economics"
-    ; "International Trade"
-    ; "Macroeconomics"
-    ; "Public Economics"
-    ; "Economic Theory"
-    ; "Organizational Economics"
-    ; "Political Economy"
-    ; "Econometrics"
-    ; "Economic History"
-    ; "Financial Markets"
-    ; "Industrial Organization"
-    ; "Labor Economics"
-    ; "Education & Health"
-    ; "Economics of Institutions"
-    ]
+    Pool_common.Language.
+      [ [ En, "Environmental Economics"; De, "Umweltökonomie" ]
+      ; [ En, "Development Economics"; De, "Entwicklungsökonomie" ]
+      ; [ En, "Technological Change & Innovation"
+        ; De, "Technologischer Wandel & Innovation"
+        ]
+      ; [ En, "Neuroeconomics"; De, "Neuroökonomie" ]
+      ; [ En, "Behavioral Economics"; De, "Verhaltensökonomie" ]
+      ; [ En, "International Trade"; De, "Internationaler Handel" ]
+      ; [ En, "Macroeconomics"; De, "Makroökonomie" ]
+      ; [ En, "Public Economics"; De, "Öffentlicher Sektor" ]
+      ; [ En, "Economic Theory"; De, "Wirtschaftstheorie" ]
+      ; [ En, "Organizational Economics"; De, "Organisationsökonomie" ]
+      ; [ En, "Political Economy"; De, "Politische Ökonomie" ]
+      ; [ En, "Econometrics"; De, "Ökonometrie" ]
+      ; [ En, "Economic History"; De, "Wirtschaftsgeschichte" ]
+      ; [ En, "Financial Markets"; De, "Finanzmärkte" ]
+      ; [ En, "Industrial Organization"; De, "Industrielle Organisation" ]
+      ; [ En, "Labor Economics"; De, "Arbeitsökonomie" ]
+      ; [ En, "Education & Health"; De, "Gesundheits- und Bildungsökonomie" ]
+      ; [ En, "Economics of Institutions"; De, "Institutionenökonomik" ]
+      ]
+  in
+  let profession_options =
+    Pool_common.Language.
+      [ [ En, "Other profession"; De, "Anderer Beruf" ]
+      ; [ En, "Bank clerk"; De, "Bankangestellter" ]
+      ; [ En, "Consultant"; De, "Berater" ]
+      ; [ En, "Accountant"; De, "Buchhalter" ]
+      ; [ En, "Management assistant"; De, "Büroangestellte" ]
+      ; [ En, "Research"; De, "Forschung" ]
+      ; [ En, "No profession"; De, "Kein Beruf" ]
+      ; [ En, "Nurse"; De, "Krankenpfleger-/schwester" ]
+      ; [ En, "Apprenticeship"; De, "Lehre" ]
+      ; [ En, "metalworker"; De, "Metallbauer" ]
+      ; [ En, "Self-employeed"; De, "Selbständiger" ]
+      ]
   in
   let data =
-    [ ( "Research interests"
+    [ ( Pool_common.Language.
+          [ En, "Research interests"; De, "Forschungsinteressen" ]
       , Model.Contact
       , None
       , []
@@ -58,34 +92,25 @@ let create pool =
       , FieldType.MultiSelect
       , research_interest_options
       , None )
-    ; ( "Mother tongue"
+    ; ( Pool_common.Language.[ En, "Level of english"; De, "Englischkenntnisse" ]
       , Model.Contact
-      , Some "Hint"
-      , []
-      , true
-      , false
-      , FieldType.Text
-      , []
-      , Some language_group )
-    ; ( "Level of english"
-      , Model.Contact
-      , Some "Hint"
+      , None
       , []
       , true
       , false
       , FieldType.Select
       , languge_level_options
       , Some language_group )
-    ; ( "Nr. of siblings"
+    ; ( Pool_common.Language.[ En, "Level of german"; De, "Deutschkenntnisse" ]
       , Model.Contact
-      , Some "Hint"
+      , None
       , []
       , true
       , false
-      , FieldType.Number
-      , []
-      , None )
-    ; ( "Degree"
+      , FieldType.Select
+      , languge_level_options
+      , Some language_group )
+    ; ( Pool_common.Language.[ En, "Highest degree"; De, "Höchster Abschluss" ]
       , Model.Contact
       , None
       , []
@@ -94,23 +119,14 @@ let create pool =
       , FieldType.Select
       , education_options
       , Some education_group )
-    ; ( "Year of studies"
+    ; ( Pool_common.Language.[ En, "Profession"; De, "Beruf" ]
       , Model.Contact
       , None
       , []
       , true
       , false
-      , FieldType.Number
-      , []
-      , Some education_group )
-    ; ( "Experiment Attribute"
-      , Model.Experiment
-      , Some "Hint"
-      , []
-      , true
-      , false
-      , FieldType.Text
-      , []
+      , FieldType.Select
+      , profession_options
       , None )
     ]
   in

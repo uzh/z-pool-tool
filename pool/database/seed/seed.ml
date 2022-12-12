@@ -15,6 +15,7 @@ module Tenant = struct
         let%lwt () = Seed_i18n.i18n pool in
         let%lwt () = Seed_emails.tenant pool in
         let%lwt () = Seed_experiment.experiments pool in
+        let%lwt () = Seed_custom_fields.create pool in
         let%lwt () = Seed_user.admins pool in
         let%lwt () = Seed_user.contacts pool in
         let%lwt () = Seed_i18n.i18n pool in
@@ -24,7 +25,6 @@ module Tenant = struct
         let%lwt () = Seed_waiting_list.waiting_list pool in
         let%lwt () = Seed_assignment.assignment pool in
         let%lwt () = Seed_mailings.create pool in
-        let%lwt () = Seed_custom_fields.create pool in
         let%lwt () = Seed_filter.filter pool in
         let%lwt () = Seed_guard.create pool in
         Lwt.return_unit)
