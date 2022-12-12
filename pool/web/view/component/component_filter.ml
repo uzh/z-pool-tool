@@ -19,7 +19,14 @@ let format_identifiers ?prefix identifiers =
   | Some prefix -> Format.asprintf "%s-%s" prefix ids
 ;;
 
-let form_action = Format.asprintf "/admin/filter/%s"
+let form_action experiment =
+  match experiment with
+  | None -> Format.asprintf "/admin/filter/%s"
+  | Some experiment ->
+    Format.asprintf
+      "/admin/experiments/%s/filter/%s"
+      Experiment.(experiment.Experiment.id |> Id.value)
+;;
 
 let htmx_attribs
   ~action
@@ -255,6 +262,7 @@ let predicate_value_form language ?key ?value ?operator () =
 
 let single_predicate_form
   language
+  experiment
   identifier
   key_list
   templates_disabled
@@ -270,7 +278,7 @@ let single_predicate_form
   let key_selector =
     let attributes =
       htmx_attribs
-        ~action:"/admin/filter/toggle-key"
+        ~action:(form_action experiment "toggle-key")
         ~trigger:"change"
         ~swap:"innerHTML"
         ~target:toggle_id
@@ -300,6 +308,7 @@ let single_predicate_form
 
 let predicate_type_select
   language
+  experiment
   target
   identifier
   templates_disabled
@@ -308,7 +317,7 @@ let predicate_type_select
   =
   let attributes =
     htmx_attribs
-      ~action:(form_action "toggle-predicate-type")
+      ~action:(form_action experiment "toggle-predicate-type")
       ~trigger:"change"
       ~target
       ~identifier
@@ -333,7 +342,7 @@ let predicate_type_select
     ()
 ;;
 
-let add_predicate_btn identifier templates_disabled =
+let add_predicate_btn experiment identifier templates_disabled =
   let id = format_identifiers ~prefix:"new" identifier in
   div
     ~a:[ a_id id; a_user_data "new-predicate" "" ]
@@ -341,7 +350,7 @@ let add_predicate_btn identifier templates_disabled =
         ~classnames:[ "success" ]
         ~attributes:
           (htmx_attribs
-             ~action:(form_action "add-predicate")
+             ~action:(form_action experiment "add-predicate")
              ~trigger:"click"
              ~target:id
              ~identifier
@@ -354,6 +363,7 @@ let add_predicate_btn identifier templates_disabled =
 
 let rec predicate_form
   language
+  experiment
   key_list
   template_list
   templates_disabled
@@ -380,7 +390,12 @@ let rec predicate_form
   in
   let predicate_form =
     let to_form =
-      predicate_form language key_list template_list templates_disabled
+      predicate_form
+        language
+        experiment
+        key_list
+        template_list
+        templates_disabled
     in
     let open Human in
     match query with
@@ -391,6 +406,7 @@ let rec predicate_form
           to_form query ~identifier:(identifier @ [ i ]) ())
         queries
       @ [ add_predicate_btn
+            experiment
             (identifier @ [ CCList.length queries ])
             templates_disabled
         ]
@@ -400,6 +416,7 @@ let rec predicate_form
       let ({ Predicate.key; operator; value } : Predicate.human) = predicate in
       single_predicate_form
         language
+        experiment
         identifier
         key_list
         templates_disabled
@@ -436,6 +453,7 @@ let rec predicate_form
       @ data_attr)
     ([ predicate_type_select
          language
+         experiment
          predicate_identifier
          identifier
          templates_disabled
@@ -451,20 +469,22 @@ type form_param =
   | FilterParam of Filter.t option
 
 let filter_form csrf language param key_list template_list =
-  let filter, action =
+  let filter, action, experiment =
     let open Experiment in
     match param with
     | ExperimentParam experiment ->
       ( experiment.filter
       , Format.asprintf
           "/admin/experiments/%s/filter/create"
-          (Experiment.Id.value experiment.Experiment.id) )
+          (Experiment.Id.value experiment.Experiment.id)
+      , Some experiment )
     | FilterParam filter ->
       ( filter
       , (match filter with
          | Some filter ->
            Format.asprintf "/admin/filter/%s" (filter.id |> Pool_common.Id.value)
-         | None -> "/admin/filter") )
+         | None -> "/admin/filter")
+      , None )
   in
   let filter_query =
     filter
@@ -498,6 +518,7 @@ let filter_form csrf language param key_list template_list =
   let predicates =
     predicate_form
       language
+      experiment
       key_list
       template_list
       templates_disabled

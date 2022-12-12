@@ -36,7 +36,7 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Filter.t -> Guard.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Filter.Title.t
 
@@ -53,12 +53,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects filter =
-    [ ( `Update
-      , `Target (filter.Filter.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
-  ;;
+  let effects = [ `Create, `TargetEntity `Filter ]
 end
 
 module Update : sig
@@ -77,7 +72,7 @@ module Update : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Filter.t -> Guard.Authorizer.effect list
+  val effects : Filter.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = Filter.Title.t
 
@@ -96,10 +91,7 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects filter =
-    [ ( `Update
-      , `Target (filter.Filter.id |> Guard.Uuid.target_of Pool_common.Id.value)
-      )
-    ]
+  let effects id =
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value) ]
   ;;
 end

@@ -194,6 +194,28 @@ module Admin = struct
       ; choose ~scope:(add_key Location) specific
       ]
     in
+    let filter_form (toggle_key, toggle_predicate_type, add_predicate) =
+      [ post "/toggle-key" toggle_key
+      ; post "/toggle-predicate-type" toggle_predicate_type
+      ; post "/add-predicate" add_predicate
+      ]
+    in
+    let filter =
+      let open Handler.Admin.Filter in
+      let specific =
+        [ get "edit" ~middlewares:[ Access.update ] edit
+        ; post "" ~middlewares:[ Access.update ] update_template
+        ]
+      in
+      [ get "" ~middlewares:[ Access.index ] index
+      ; post "" ~middlewares:[ Access.create ] create_template
+      ; get "/new" ~middlewares:[ Access.create ] new_form
+      ; choose
+          (filter_form (toggle_key, toggle_predicate_type, add_predicate))
+          ~middlewares:[ Access.update ]
+      ; choose ~scope:(Filter |> url_key) specific
+      ]
+    in
     let experiments =
       let assistants =
         let open Experiments.Users in
@@ -303,8 +325,16 @@ module Admin = struct
         ]
       in
       let filter =
-        Handler.Admin.Filter.
-          [ post "/create" ~middlewares:[ Access.create ] create_for_experiment
+        Handler.Admin.
+          [ post
+              "/create"
+              ~middlewares:[ Experiments.Access.create ]
+              Filter.create_for_experiment
+          ; choose
+              (filter_form
+                 Experiments.Filter.(
+                   toggle_key, toggle_predicate_type, add_predicate))
+              ~middlewares:[ Experiments.Access.update ]
           ]
       in
       let specific =
@@ -355,25 +385,6 @@ module Admin = struct
       in
       [ get "" ~middlewares:[ Access.index ] index
       ; choose ~scope:(Contact |> url_key) specific
-      ]
-    in
-    let filter =
-      let open Handler.Admin.Filter in
-      let specific =
-        [ get "edit" ~middlewares:[ Access.update ] edit
-        ; post "" ~middlewares:[ Access.update ] update_template
-        ]
-      in
-      [ get "" ~middlewares:[ Access.index ] index
-      ; post "" ~middlewares:[ Access.create ] create_template
-      ; get "/new" ~middlewares:[ Access.create ] new_form
-      ; post "/toggle-key" ~middlewares:[ Access.update ] toggle_key
-      ; post
-          "/toggle-predicate-type"
-          ~middlewares:[ Access.update ]
-          toggle_predicate_type
-      ; post "/add-predicate" ~middlewares:[ Access.update ] add_predicate
-      ; choose ~scope:(Filter |> url_key) specific
       ]
     in
     let custom_fields =
