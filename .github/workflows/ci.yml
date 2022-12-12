@@ -44,7 +44,8 @@ jobs:
           image: ocaml/opam:debian-10-ocaml-4.12
           options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
           run: |
-            ping database-root
+            ping -c 4 database-root
+            ping -c 4 database-tenant
 
             ls -la .
             env
