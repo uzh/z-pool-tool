@@ -65,7 +65,7 @@ let to_string = function
   | SessionIndent -> "Indentations group follow-up sessions."
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
-  | SignUpCTA -> "Register now to participate in economic experiments"
+  | SignUpCTA -> "Register now to participate in economic experiments."
   | SignUpTitle -> "Sign up"
   | SortUngroupedFields -> "Sort ungrouped fields"
   | SwitchChronological -> "Switch to chronological view"

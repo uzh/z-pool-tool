@@ -54,6 +54,32 @@ let index
   let aspect_ratio img =
     img |> Component.Image.aspect_ratio ~contain:true `R16x9
   in
+  let partner_html =
+    let open Pool_tenant in
+    let logos = tenant.partner_logo |> PartnerLogos.value in
+    let _ =
+      CCList.map
+        (fun l -> Logs.info (fun m -> m "%s" (Pool_common.File.show l)))
+        logos
+    in
+    if CCList.is_empty logos
+    then txt ""
+    else
+      div
+        ~a:[ a_class [ "gap-lg" ] ]
+        [ h2
+            ~a:[ a_class [ "heading-2" ] ]
+            [ txt (text_to_string Pool_common.I18n.OurPartners) ]
+        ; div
+            ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
+            (CCList.map
+               (fun logo ->
+                 img ~src:(Pool_common.File.path logo) ~alt:"" ()
+                 |> aspect_ratio)
+               (tenant.Pool_tenant.partner_logo
+               |> Pool_tenant.PartnerLogos.value))
+        ]
+  in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ div
@@ -76,25 +102,13 @@ let index
             ; p
                 Pool_common.
                   [ Utils.text_to_string language I18n.SignUpCTA |> txt ]
-            ; p
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
                 [ link_as_button
                     ~control:(language, Pool_common.Message.SignUp)
                     (HttpUtils.path_with_language query_language "/signup")
                 ]
-            ; div
-                ~a:[ a_class [ "gap-lg" ] ]
-                [ h2
-                    ~a:[ a_class [ "heading-2" ] ]
-                    [ txt (text_to_string Pool_common.I18n.OurPartners) ]
-                ; div
-                    ~a:[ a_class [ "flexrow"; "flex-gap" ] ]
-                    (CCList.map
-                       (fun logo ->
-                         img ~src:(Pool_common.File.path logo) ~alt:"" ()
-                         |> aspect_ratio)
-                       (tenant.Pool_tenant.partner_logo
-                       |> Pool_tenant.PartnerLogos.value))
-                ]
+            ; partner_html
             ]
         ; div
             ~a:[ a_class [ "flexcolumn"; "justify-center"; "stack" ] ]
