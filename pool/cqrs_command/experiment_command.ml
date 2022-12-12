@@ -227,7 +227,6 @@ end
 module AssignAssistant : sig
   include Common.CommandSig with type t = update_role
 
-  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = update_role
@@ -251,7 +250,6 @@ end
 module DivestAssistant : sig
   include Common.CommandSig with type t = update_role
 
-  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = update_role
@@ -275,7 +273,6 @@ end
 module AssignExperimenter : sig
   include Common.CommandSig with type t = update_role
 
-  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = update_role
@@ -299,7 +296,6 @@ end
 module DivestExperimenter : sig
   include Common.CommandSig with type t = update_role
 
-  val handle : ?tags:Logs.Tag.set -> t -> (Pool_event.t list, 'a) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
   type t = update_role
