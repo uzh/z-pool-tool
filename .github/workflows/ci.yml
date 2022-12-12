@@ -50,8 +50,6 @@ jobs:
             # Reclaim required directory permissions
             sudo chown -R opam .
 
-            exit 1
-
             # Build and test executable
             /app/scripts/build.sh
 
