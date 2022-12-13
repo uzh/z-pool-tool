@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# this script is used to build the project
+# it is setup to run in a ocaml/opam:debian-ocaml based Docker image
+
 # immediately when a command fails and print each command
 set -ex
 
@@ -21,7 +24,6 @@ sudo apt-get install -yqq --no-install-recommends \
 # cleanup installations
 sudo apt-get autoremove -y
 sudo apt-get clean all
-
 
 printTitle "Mark source dir as save"
 git config --global --add safe.directory $(pwd)
