@@ -65,6 +65,10 @@ module AssignmentCount : sig
   val create : int -> (t, Pool_common.Message.error) result
 end
 
+module CancellationReason : sig
+  include Pool_common.Model.StringSig
+end
+
 type t =
   { id : Pool_common.Id.t
   ; follow_up_to : Pool_common.Id.t option
@@ -133,6 +137,8 @@ module Public : sig
 end
 
 val group_and_sort : t list -> (t * t list) list
+val is_cancellable : t -> (unit, Pool_common.Message.error) result
+val is_closable : t -> (unit, Pool_common.Message.error) result
 
 (* TODO [aerben] this should be experiment id type *)
 val find
@@ -148,37 +154,48 @@ val find_public
 val find_all_public_by_location
   :  Pool_database.Label.t
   -> Pool_location.Id.t
-  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
 
 val find_all_for_experiment
   :  Pool_database.Label.t
   -> Experiment.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_all_public_for_experiment
   :  Pool_database.Label.t
   -> Contact.t
   -> Experiment.Id.t
-  -> (Public.t list, Pool_common.Message.error) result Lwt.t
+  -> (Public.t list, Pool_common.Message.error) Lwt_result.t
 
 val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Public.t, Pool_common.Message.error) result Lwt.t
+  -> (Public.t, Pool_common.Message.error) Lwt_result.t
 
 val find_experiment_id_and_title
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (Experiment.Id.t * string, Pool_common.Message.error) result Lwt.t
+  -> (Experiment.Id.t * string, Pool_common.Message.error) Lwt_result.t
 
 val find_sessions_to_remind
   :  Pool_database.Label.t
-  -> (t list, Pool_common__Entity_message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
 
 val find_follow_ups
   :  Pool_database.Label.t
   -> Pool_common.Id.t
-  -> (t list, Pool_common.Message.error) result Lwt.t
+  -> (t list, Pool_common.Message.error) Lwt_result.t
+
+val build_cancellation_messages
+  :  Pool_tenant.t
+  -> Pool_database.Label.t
+  -> Pool_common.Language.t
+  -> Pool_common.Language.t list
+  -> t
+  -> Contact.t list
+  -> ( CancellationReason.t -> Sihl_email.t list
+     , Pool_common.Message.error )
+     Lwt_result.t
 
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string

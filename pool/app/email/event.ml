@@ -220,15 +220,15 @@ let handle_event pool : event -> unit Lwt.t =
       template
       user.Sihl_user.email
       ([ "name", User.user_fullname user ] @ data)
-    >|> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
+    |> Service.Email.send ~ctx:(Pool_tenant.to_ctx pool)
   | InvitationBulkSent multi_data ->
     multi_data
-    |> Lwt_list.map_s (fun (user, data, template) ->
+    |> CCList.map (fun (user, data, template) ->
          Helper.prepare_boilerplate_email
            template
            user.Sihl_user.email
            ([ "name", User.user_fullname user ] @ data))
-    >|> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
+    |> Service.Email.bulk_send ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->

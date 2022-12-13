@@ -4,7 +4,6 @@ module Server = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpAuthServer
-  let create = create field
   let schema = schema ?validation:None field
 end
 
@@ -26,7 +25,6 @@ module Username = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpUsername
-  let create = create field
   let schema = schema ?validation:None field
 end
 
@@ -34,7 +32,6 @@ module Password = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpPassword
-  let create = create field
   let schema = schema ?validation:None field
   let show m = CCString.repeat "*" @@ CCString.length m
 end
@@ -43,7 +40,6 @@ module AuthenticationMethod = struct
   include Pool_common.Model.String
 
   let field = PoolError.Field.SmtpAuthMethod
-  let create = create field
   let schema = schema ?validation:None field
   let show m = CCString.repeat "*" @@ CCString.length m
 end

@@ -43,7 +43,7 @@ let field_to_string =
   | Distribution -> "distribution"
   | DistributionField -> "field"
   | Duration -> "duration"
-  | Email -> "email address"
+  | Email -> "email"
   | EmailAddress -> "email address"
   | EmailAddressUnverified -> "unverified email address"
   | EmailAddressVerified -> "verified email address"
@@ -88,6 +88,7 @@ let field_to_string =
   | Mailing -> "mailing"
   | MainSession -> "main session"
   | MaxParticipants -> "maximum participants"
+  | MessageChannel -> "message channel"
   | MinParticipants -> "minimum participants"
   | Model -> "model"
   | Name -> "name"
@@ -112,6 +113,7 @@ let field_to_string =
   | PublishedAt -> "published"
   | Query -> "query"
   | Rate -> "rate limit"
+  | Reason -> "reason"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
   | RecruitmentChannel -> "recruitment channel"
@@ -121,10 +123,12 @@ let field_to_string =
   | Role -> "role"
   | Room -> "room"
   | Root -> "root"
+  | SentAt -> "sent at"
   | Session -> "session"
   | Sessions -> "sessions"
   | Setting -> "setting"
   | ShowUp -> "show up"
+  | SMS -> "SMS"
   | SmtpAuthMethod -> "smtp authentication method"
   | SmtpAuthServer -> "smtp authentication server"
   | SmtpPassword -> "smtp password"
@@ -301,6 +305,11 @@ let rec error_to_string = function
   | NoValue -> "No value provided."
   | NumberMax i -> Format.asprintf "Must not be larger than %i." i
   | NumberMin i -> Format.asprintf "Must not be smaller than %i." i
+  | Or (err1, err2) ->
+    CCFormat.asprintf
+      "%s or %s"
+      (error_to_string err1)
+      (err2 |> error_to_string |> CCString.uncapitalize_ascii)
   | PasswordConfirmationDoesNotMatch -> "The provided passwords don't match."
   | PasswordPolicy -> "Password doesn't match the required policy!"
   | PasswordResetFailMessage ->
@@ -308,6 +317,8 @@ let rec error_to_string = function
      account with the provided email is existing."
   | PasswordResetInvalidData -> "Invalid token or password provided"
   | PoolContextNotFound -> "Context could not be found."
+  | PickMessageChannel ->
+    "No message channel has been selected for the notification of contacts."
   | QueryNotCompatible (f1, f2) ->
     Format.asprintf
       "%s is not compatible with %s."
@@ -325,7 +336,11 @@ let rec error_to_string = function
     "Please enter both a subject and a text for the session reminder."
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."
-  | SessionAlreadyClosed -> "This session is already closed."
+  | SessionAlreadyCanceled date ->
+    CCFormat.asprintf "This session has already been canceled on %s." date
+  | SessionAlreadyClosed date ->
+    CCFormat.asprintf "This session has already been closed at %s." date
+  | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \

@@ -12,7 +12,6 @@ module Name = struct
   include Pool_common.Model.String
 
   let field = Field.Name
-  let create = create field
   let schema = schema ?validation:None field
 end
 
@@ -20,7 +19,6 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Field.Description
-  let create = create field
   let schema = schema ?validation:None field
 end
 
@@ -28,7 +26,6 @@ module Link = struct
   include Pool_common.Model.String
 
   let field = Field.Link
-  let create = create field
   let schema = schema ?validation:None field
 end
 

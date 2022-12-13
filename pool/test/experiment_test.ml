@@ -97,9 +97,7 @@ let create_without_title () =
     |> ExperimentCommand.Create.decode
     >>= ExperimentCommand.Create.handle
   in
-  let expected =
-    Error Common.Message.(Conformist [ Field.Title, Invalid Field.Title ])
-  in
+  let expected = Error Common.Message.(Conformist [ Field.Title, NoValue ]) in
   Test_utils.check_result expected events
 ;;
 

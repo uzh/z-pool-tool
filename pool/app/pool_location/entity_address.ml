@@ -8,7 +8,6 @@ module Mail = struct
     include Pool_common.Model.String
 
     let field = Field.Room
-    let create = create field
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -17,7 +16,6 @@ module Mail = struct
     include Pool_common.Model.String
 
     let field = Field.Institution
-    let create = create field
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -26,7 +24,6 @@ module Mail = struct
     include Pool_common.Model.String
 
     let field = Field.Building
-    let create = create field
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -35,7 +32,6 @@ module Mail = struct
     include Pool_common.Model.String
 
     let field = Field.Street
-    let create = create field
     let schema = schema ?validation:None field
     let of_string m = m
   end
@@ -63,7 +59,6 @@ module Mail = struct
     include Pool_common.Model.String
 
     let field = Field.City
-    let create = create field
     let schema = schema ?validation:None field
     let of_string m = m
   end

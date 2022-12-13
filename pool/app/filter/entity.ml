@@ -10,7 +10,6 @@ module Title = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Title
-  let create = create field
   let schema = schema ?validation:None field
 end
 

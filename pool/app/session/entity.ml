@@ -2,7 +2,6 @@ module Description = struct
   include Pool_common.Model.String
 
   let field = Pool_common.Message.Field.Description
-  let create = create field
   let schema = schema ?validation:None field
 end
 
@@ -72,6 +71,18 @@ module AssignmentCount = struct
     then Error Pool_common.Message.(Invalid Field.AssignmentCount)
     else Ok m
   ;;
+end
+
+module CancellationReason = struct
+  include Pool_common.Model.String
+
+  let field = Pool_common.Message.Field.Reason
+
+  let validate m =
+    if CCString.is_empty m then Error Pool_common.Message.NoValue else Ok m
+  ;;
+
+  let schema = schema ?validation:(Some validate) field
 end
 
 type t =
@@ -257,4 +268,49 @@ let public_to_email_text
   (Public.{ start; duration; location; _ } : Public.t)
   =
   email_text language start duration location
+;;
+
+let get_session_end session =
+  Ptime.add_span session.start session.duration
+  |> CCOption.get_exn_or "Session end not in range"
+;;
+
+(* Cancellable if before session ends *)
+let is_cancellable session =
+  let open CCResult.Infix in
+  let open Pool_common.Message in
+  let* () =
+    match session.canceled_at with
+    | None -> Ok ()
+    | Some canceled_at ->
+      canceled_at
+      |> Pool_common.Utils.Time.formatted_date_time
+      |> sessionalreadycanceled
+      |> CCResult.fail
+  in
+  if Ptime.is_later
+       (session |> get_session_end |> Start.value)
+       ~than:Ptime_clock.(now ())
+  then Ok ()
+  else Error SessionInPast
+;;
+
+(* Closable if after session ends *)
+let is_closable session =
+  let open CCResult.Infix in
+  let open Pool_common.Message in
+  let* () =
+    match session.closed_at with
+    | None -> Ok ()
+    | Some closed_at ->
+      closed_at
+      |> Pool_common.Utils.Time.formatted_date_time
+      |> sessionalreadyclosed
+      |> CCResult.fail
+  in
+  if Ptime.is_earlier
+       (session |> get_session_end |> Start.value)
+       ~than:Ptime_clock.(now ())
+  then Ok ()
+  else Error SessionNotStarted
 ;;

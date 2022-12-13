@@ -23,6 +23,8 @@ module Key = struct
     | ReminderText
     | RescheduleSessionSubject
     | RescheduleSessionText
+    | SessionCancellationSubject
+    | SessionCancellationText
     | SessionFinishSubject
     | SessionFinishText
     | TriggerProfileUpdateSubject
@@ -62,6 +64,8 @@ module Key = struct
     | ReminderText -> "reminder_text"
     | RescheduleSessionSubject -> "reschedule_session_subject"
     | RescheduleSessionText -> "reschedule_session_text"
+    | SessionCancellationSubject -> "session_cancellation_subject"
+    | SessionCancellationText -> "session_cancellation_text"
     | SessionFinishSubject -> "session_finish_subject"
     | SessionFinishText -> "session_finish_text"
     | TriggerProfileUpdateSubject -> "trigger_profile_update_subject"
@@ -94,6 +98,8 @@ module Key = struct
     | "reminder_text" -> Ok ReminderText
     | "reschedule_session_subject" -> Ok RescheduleSessionSubject
     | "reschedule_session_text" -> Ok RescheduleSessionText
+    | "session_cancellation_subject" -> Ok SessionCancellationSubject
+    | "session_cancellation_text" -> Ok SessionCancellationText
     | "session_finish_subject" -> Ok SessionFinishSubject
     | "session_finish_text" -> Ok SessionFinishText
     | "trigger_profile_update_subject" -> Ok TriggerProfileUpdateSubject
@@ -115,6 +121,7 @@ module Key = struct
     | ReminderSmsText
     | ReminderText
     | RescheduleSessionText
+    | SessionCancellationText
     | SessionFinishText
     | TriggerProfileUpdateText
     | WelcomeText -> true
@@ -126,6 +133,7 @@ module Key = struct
     | ImportInvitationSubject
     | ReminderSubject
     | RescheduleSessionSubject
+    | SessionCancellationSubject
     | SessionFinishSubject
     | TriggerProfileUpdateSubject -> false
   ;;
@@ -139,7 +147,6 @@ module Content = struct
   include Pool_common.Model.String
 
   let field = Common.Message.Field.Translation
-  let create = create field
   let schema = schema ?validation:None field
 end
 

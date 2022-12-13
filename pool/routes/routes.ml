@@ -248,6 +248,7 @@ module Admin = struct
           ; get "/edit" ~middlewares:[ Access.update ] edit
           ; get "/follow-up" ~middlewares:[ Access.update ] follow_up
           ; post "/follow-up" ~middlewares:[ Access.update ] create_follow_up
+          ; get "/cancel" ~middlewares:[ Access.cancel ] cancel_form
           ; post "/cancel" ~middlewares:[ Access.cancel ] cancel
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; get "/reschedule" ~middlewares:[ Access.reschedule ] reschedule_form

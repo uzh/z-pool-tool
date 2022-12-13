@@ -130,18 +130,7 @@ end = struct
     let open CCResult in
     let open Assignment in
     let open Session in
-    let* () =
-      if CCOption.is_some session.closed_at
-      then Error Pool_common.Message.SessionAlreadyClosed
-      else Ok ()
-    in
-    let* () =
-      if Ptime.is_earlier
-           (session.start |> Start.value)
-           ~than:Ptime_clock.(now ())
-      then Ok ()
-      else Error Pool_common.Message.SessionNotStarted
-    in
+    let* () = Session.is_closable session in
     CCList.fold_left
       (fun events participation ->
         events
