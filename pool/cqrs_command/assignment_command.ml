@@ -99,7 +99,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Assignment.Id.value) ]
+    [ `Delete, `Target (id |> Guard.Uuid.target_of Assignment.Id.value)
+    ; `Delete, `TargetEntity `Assignment
+    ]
   ;;
 end
 
@@ -121,7 +123,7 @@ module SetAttendance : sig
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
-  val effects : Assignment.Id.t -> Guard.Authorizer.effect list
+  val effects : Pool_common.Id.t -> Guard.Authorizer.effect list
 end = struct
   type t = (Assignment.t * Assignment.ShowUp.t * Assignment.Participated.t) list
 
@@ -158,7 +160,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Assignment.Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `Assignment
+    ]
   ;;
 end
 

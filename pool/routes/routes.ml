@@ -281,8 +281,8 @@ module Admin = struct
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; get "/reschedule" ~middlewares:[ Access.reschedule ] reschedule_form
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
-          ; get "/close" ~middlewares:[ Access.stop ] close
-          ; post "/close" ~middlewares:[ Access.stop ] close_post
+          ; get "/close" ~middlewares:[ Access.close ] close
+          ; post "/close" ~middlewares:[ Access.close ] close_post
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list

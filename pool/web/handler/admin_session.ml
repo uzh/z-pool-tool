@@ -526,14 +526,10 @@ module Access : sig
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
   val send_reminder : Rock.Middleware.t
-  val stop : Rock.Middleware.t
+  val close : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
   module SessionCommand = Cqrs_command.Session_command
-
-  let assignment_effects =
-    Middleware.Guardian.id_effects Assignment.Id.of_string Field.Assignment
-  ;;
 
   let session_effects =
     Middleware.Guardian.id_effects Pool_common.Id.of_string Field.Session
@@ -587,9 +583,9 @@ end = struct
     |> Middleware.Guardian.validate_generic
   ;;
 
-  let stop =
+  let close =
     [ Cqrs_command.Assignment_command.SetAttendance.effects ]
-    |> assignment_effects
+    |> session_effects
     |> Middleware.Guardian.validate_generic
   ;;
 end
