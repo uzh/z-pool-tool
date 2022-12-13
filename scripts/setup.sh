@@ -23,7 +23,7 @@ opam pin add -yn letters $repo_oxi/letters.git
 
 # pin custom libraries
 opam pin add -yn canary $repo_uzh/canary.git
-opam pin add -ywn guardian $repo_uzh/guardian.git
+opam pin add -yn guardian $repo_uzh/guardian.git
 
 opam pin add -yn pool .
 OPAMSOLVERTIMEOUT=180 opam depext -y pool
