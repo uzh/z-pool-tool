@@ -35,7 +35,6 @@ module Create : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
 end = struct
   type t = Filter.Title.t
 
@@ -91,6 +90,6 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Filter.Id.value) ]
   ;;
 end

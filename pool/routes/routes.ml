@@ -212,7 +212,7 @@ module Admin = struct
       ; get "/new" ~middlewares:[ Access.create ] new_form
       ; choose
           (filter_form (toggle_key, toggle_predicate_type, add_predicate))
-          ~middlewares:[ Access.update ]
+          ~middlewares:[ Access.create ]
       ; choose ~scope:(Filter |> url_key) specific
       ]
     in
