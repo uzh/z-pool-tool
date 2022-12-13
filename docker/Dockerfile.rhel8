@@ -99,7 +99,7 @@ RUN repo_oxi=https://github.com/oxidizing \
   && opam pin add -yn conformist $repo_oxi/conformist.git \
   && opam pin add -yn letters $repo_oxi/letters.git \
   && opam pin add -yn canary $repo_uzh/canary.git \
-  && opam pin add -ywn guardian $repo_uzh/guardian.git \
+  && opam pin add -yn guardian $repo_uzh/guardian.git \
   && opam pin add -yn pool . 
 
 RUN opam install --deps-only --with-test -y .
