@@ -1,8 +1,0 @@
-node_modules
-.parcel_cache
-.git
-_build
-_opam
-logs
-.devcontainer
-Dockerfile
