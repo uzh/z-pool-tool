@@ -1,6 +1,6 @@
 open Tyxml.Html
 
-let icon icon_type =
+let icon ?(classnames = []) icon_type =
   (match icon_type with
    | `Add -> "add"
    | `CalendarOutline -> "calendar-outline"
@@ -33,5 +33,5 @@ let icon icon_type =
    | `Trash -> "trash"
    | `UploadOutline -> "upload-outline")
   |> fun icon_class ->
-  i ~a:[ a_class [ Format.asprintf "icon-%s" icon_class ] ] []
+  i ~a:[ a_class ([ Format.asprintf "icon-%s" icon_class ] @ classnames) ] []
 ;;
