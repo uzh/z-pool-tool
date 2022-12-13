@@ -29,6 +29,9 @@ services:
       - SMTP_START_TLS=true
       - SMTP_USERNAME=ecserv
       - VERSION=dev
+      - EMAIL_RATE_LIMIT=100
+      - MATCHER_MAX_CAPACITY=80
+      - MATCHER_RUN=false
       - ECON_PACKAGE_REGISTRY_READ_TOKEN
     depends_on:
       - database-root

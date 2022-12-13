@@ -38,6 +38,7 @@
 	"exiasr.hadolint",
 	"irongeek.vscode-env",
 	"ocamllabs.ocaml-platform",
-	"DavidAnson.vscode-markdownlint"
+	"DavidAnson.vscode-markdownlint",
+	"ms-vscode.makefile-tools"
 ]
 }

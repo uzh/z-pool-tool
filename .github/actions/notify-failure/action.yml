@@ -1,0 +1,20 @@
+name: notify-failure
+decription: Send a notification to Econ MS Teams channel
+
+inputs:
+  webhook:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        # Restore directory permissions to avoid conflicts
+        sudo chown -R 1001:123 .
+
+        # Prepare and send notification
+        cat << EOF > message.json
+        {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
+        EOF
+        curl -X POST ${{ inputs.webhook }} --header 'Content-Type: application/json' -d @message.json

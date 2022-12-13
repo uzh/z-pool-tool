@@ -8,24 +8,18 @@ on:
 jobs:
   build:
     name: Build and test
-
-    runs-on: ${{ matrix.os }}
-
+    runs-on: ubuntu-latest
     env:
       EMAIL_RATE_LIMIT: 3600
       MATCHER_MAX_CAPACITY: 80
       MYSQL_DATABASE: test_econ
       MYSQL_ROOT_PASSWORD: password
-      SIHL_ENV: test
-      TEST_EMAIL: test@econ.uzh.ch
-
     services:
       database-root:
         image: mariadb:10.6
         env:
           MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-        ports: ["3306:3306"]
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
       database-tenant:
@@ -33,73 +27,32 @@ jobs:
         env:
           MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-        ports: ["3307:3306"]
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        ocaml-compiler: [4.12.x]
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Use OCaml ${{ matrix.ocaml-version }}
-        uses: ocaml/setup-ocaml@v2
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          dune-cache: true
-          opam-pin: true
-          opam-depext: false
-
-      - name: Install system dependencies
-        run: sudo apt-get update -y && sudo apt-get install -y libmariadb-dev
-
-      - name: Pin Sihl and other custom libraries
-        run: |
-          opam pin add -yn sihl https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-cache https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-email https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-queue https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-storage https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-token https://github.com/oxidizing/sihl.git
-          opam pin add -yn sihl-user https://github.com/oxidizing/sihl.git
-          opam pin add -yn canary https://github.com/uzh/canary.git
-          opam pin add -yn conformist https://github.com/oxidizing/conformist.git
-          opam pin add -ywn guardian https://github.com/uzh/guardian.git
-
-      - name: Pin current pool tool
-        run: |
-          opam pin add -yn pool .
-          OPAMSOLVERTIMEOUT=180 opam depext -y pool
-
-      - name: Install dependencies
-        run: opam install --deps-only --with-test -y .
-
-      - name: Build
-        run: opam exec -- dune build --root .
-
-      - name: Check formatting
-        run: make format
-
-      - name: Migrate and seed test database
+      - name: Build and test with Docker
+        uses: addnab/docker-run-action@v3
         env:
-          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ env.MYSQL_DATABASE }}
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3307/${{ env.MYSQL_DATABASE }}
-        run: |
-          opam config exec -- dune exec --root . pool/run/run.exe migrate.root
-          opam config exec -- dune exec --root . pool/run/run.exe seed.root.clean
-          opam config exec -- dune exec --root . pool/run/run.exe migrate.tenant
-          opam config exec -- dune exec --root . pool/run/run.exe seed.tenant.clean
-
-      - name: Run tests
-        env:
-          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3306/${{ env.MYSQL_DATABASE }}
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@127.0.0.1:3307/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-root:3306/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:3306/${{ env.MYSQL_DATABASE }}
+          SIHL_ENV: test
           SMTP_SENDER: test@econ.uzh.ch
-        run: opam config exec -- make test
+          TEST_EMAIL: test@econ.uzh.ch
+        with:
+          image: ocaml/opam:debian-10-ocaml-4.12
+          options: -v ${{ github.workspace }}:/app -w /app -e DATABASE_URL -e DATABASE_URL_TENANT_TEST -e TEST_EMAIL -e SMTP_SENDER -e SIHL_ENV
+          run: |
+            # Reclaim required directory permissions
+            sudo chown -R opam .
+
+            # Build and test executable
+            /app/scripts/build.sh
+
+            # Restore directory permissions to avoid conflicts
+            sudo chown -R 1001:123 .
 
       - uses: actions/upload-artifact@v3
         with:
@@ -114,17 +67,15 @@ jobs:
 
       - name: Notify about failure
         if: failure()
-        run: |
-          cat << EOF > message.json
-          {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
-          EOF
-          curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
   assets:
     name: Build assets
     runs-on: ubuntu-latest
     container:
-      image: node:16
+      image: node:lts
       env:
         ECON_PACKAGE_REGISTRY_READ_TOKEN: ${{ secrets.ECON_PACKAGE_REGISTRY_READ_TOKEN }}
 
@@ -148,11 +99,9 @@ jobs:
 
       - name: Notify about failure
         if: failure()
-        run: |
-          cat << EOF > message.json
-          {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
-          EOF
-          curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
 
   release:
     name: Release a new version
@@ -182,8 +131,6 @@ jobs:
 
       - name: Notify about failure
         if: failure()
-        run: |
-          cat << EOF > message.json
-          {"@type":"MessageCard","@context":"https://schema.org/extensions","summary":"Pipeline failed!","themeColor":"ff0000","title":"$GITHUB_REPOSITORY pipeline failed 💢!","sections":[{"facts":[{"name":"Repository:","value":"$GITHUB_REPOSITORY"},{"name":"Branch:","value":"$GITHUB_REF_NAME"},{"name":"Commit:","value":"$GITHUB_SHA"}]}],"potentialAction":[{"@type":"OpenUri","name":"View on GitHub","targets":[{"os":"default","uri":"$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"}]}]}
-          EOF
-          curl -X POST ${{ secrets.ECON_TEAMS_WEBHOOK }} --header 'Content-Type: application/json' -d @message.json
+        uses: ./.github/actions/notify-failure
+        with:
+          webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}

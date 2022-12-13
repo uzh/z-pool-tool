@@ -10,11 +10,11 @@
     "version-opam": "sed -i \"s/^version: \".*\"/version: \\\"${npm_package_version}\\\"/g\" ./pool.opam && git add ./pool.opam"
   },
   "devDependencies": {
-    "@parcel/transformer-sass": "2.7.0",
+    "@parcel/transformer-sass": "^2.7.0",
     "parcel": "^2.0.0"
   },
   "dependencies": {
-    "@econ/frontend-framework": "^1.0.5",
+    "@econ/frontend-framework": "^1.0.6",
     "flatpickr": "^4.6.13",
     "htmx.org": "^1.6.0"
   }
