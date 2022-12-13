@@ -77,7 +77,13 @@ let validate_generic generic_fcn =
     in
     match%lwt result with
     | Ok _ -> handler req
-    | Error _ -> Http_utils.redirect_to "/denied"
+    | Error _ ->
+      let redirect =
+        match Http_utils.is_req_from_root_host req with
+        | false -> "/root/denied"
+        | true -> "/denied"
+      in
+      Http_utils.redirect_to redirect
   in
   Rock.Middleware.create ~name:"guardian.generic" ~filter
 ;;

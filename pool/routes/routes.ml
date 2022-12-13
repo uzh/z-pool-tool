@@ -62,6 +62,7 @@ module Public = struct
                   Pool_context.UserType.[ Contact; Admin ]
               ]
             [ get "/logout" Login.logout ]
+        ; get "/denied" Handler.Public.denied
         ])
   ;;
 end
@@ -79,8 +80,6 @@ module Contact = struct
     ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
     ; get "/email-verified" SignUp.email_verification
-    ; get "/termsandconditions" SignUp.terms
-    ; post "/terms-accepted/:id" SignUp.terms_accept
     ]
   ;;
 
@@ -142,9 +141,16 @@ module Contact = struct
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Contact ]
-            ; CustomMiddleware.Contact.confirmed_and_terms_agreed ()
             ]
-          locked_routes
+          [ choose
+              [ get "/termsandconditions" SignUp.terms
+              ; post "/terms-accepted/:id" SignUp.terms_accept
+              ; choose
+                  ~middlewares:
+                    [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
+                  locked_routes
+              ]
+          ]
       ]
   ;;
 end
@@ -496,6 +502,7 @@ module Root = struct
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get
     ; post "/reset-password" Login.reset_password_post
+    ; get "/denied" Handler.Public.denied
     ]
   ;;
 
@@ -581,7 +588,6 @@ let router =
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
-    ; get "/denied" Handler.Public.denied
     ; get
         "/**"
         ~middlewares:

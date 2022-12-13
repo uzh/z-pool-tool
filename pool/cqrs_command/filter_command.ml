@@ -90,6 +90,8 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Filter.Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Filter.Id.value)
+    ; `Update, `TargetEntity `Filter
+    ]
   ;;
 end

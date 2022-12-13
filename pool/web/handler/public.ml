@@ -109,22 +109,34 @@ let not_found req =
   |> Lwt.map @@ Opium.Response.set_status `Not_found
 ;;
 
-let denied _ =
-  let html =
-    Page.Utils.error_page_terminatory
-      ~lang:Pool_common.Language.En
-      Pool_common.Message.AccessDenied
-      Pool_common.Message.AccessDeniedMessage
-      ()
-  in
-  Page.Layout.create_root_layout
-    html
-    Pool_common.Language.En
-    None
-    Pool_context.Guest
-    ()
-  |> Sihl.Web.Response.of_html
-  |> Lwt.return
+let denied req =
+  let context = req |> Pool_context.find in
+  match context with
+  | Error (_ : Pool_common.Message.error) -> failwith ""
+  | Ok ({ Pool_context.language; query_language; message; user; _ } as context)
+    ->
+    let tenant = Pool_context.Tenant.find req in
+    let html =
+      Page.Utils.error_page_terminatory
+        ~lang:language
+        Pool_common.Message.AccessDenied
+        Pool_common.Message.AccessDeniedMessage
+        ()
+    in
+    (match Pool_context.is_from_root context, tenant with
+     | false, Ok tenant ->
+       Page.Layout.Tenant.create_layout
+         html
+         tenant
+         user
+         message
+         language
+         query_language
+         None
+     | false, Error _ | true, Ok _ | true, Error _ ->
+       Page.Layout.create_root_layout html language None Pool_context.Guest ())
+    |> Sihl.Web.Response.of_html
+    |> Lwt.return
 ;;
 
 let asset req =
