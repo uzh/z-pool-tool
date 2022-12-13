@@ -118,6 +118,8 @@ let session_form
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
         [ (let value =
+             (* Don't want start date filled out in form if creating with
+                duplication or follow up *)
              if CCOption.is_some duplicate || CCOption.is_some follow_up_to
              then None
              else
