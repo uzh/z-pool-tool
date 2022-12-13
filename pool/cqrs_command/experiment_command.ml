@@ -217,6 +217,7 @@ end = struct
       Ok [ Filter.Updated filter |> Pool_event.filter ]
   ;;
 
+  (* TODO: Make sure user has experiment AND filter permission *)
   let effects id =
     [ `Update, `Target (id |> BaseGuard.Uuid.target_of Id.value)
     ; `Update, `TargetEntity `Experiment

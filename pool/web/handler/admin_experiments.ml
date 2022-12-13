@@ -187,6 +187,20 @@ let delete req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+module Filter = struct
+  let toggle_predicate_type req =
+    let id = experiment_id req in
+    Admin_filter.handle_toggle_predicate_type ~experiment_id:id req
+  ;;
+
+  let add_predicate req =
+    let id = experiment_id req in
+    Admin_filter.handle_add_predicate ~experiment_id:id req
+  ;;
+
+  let toggle_key = Admin_filter.toggle_key
+end
+
 module Access : sig
   include Helpers.AccessSig
 end = struct
