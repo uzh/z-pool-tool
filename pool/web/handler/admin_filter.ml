@@ -175,7 +175,7 @@ let create_for_experiment req = create ~model:`Experiment req
 let create_template req = create req
 let update_template req = create ~model:`Filter req
 
-let toggle_predicate_type req =
+let handle_toggle_predicate_type ?experiment_id req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
@@ -186,6 +186,11 @@ let toggle_predicate_type req =
     let%lwt key_list = Filter.all_keys database_label in
     let%lwt template_list =
       find_all_templates database_label templates_disabled
+    in
+    let* experiment =
+      experiment_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Experiment.find database_label id >|+ CCOption.pure)
     in
     let* query =
       let open CCResult in
@@ -204,6 +209,7 @@ let toggle_predicate_type req =
     Component.Filter.(
       predicate_form
         language
+        experiment
         key_list
         template_list
         templates_disabled
@@ -224,6 +230,8 @@ let toggle_predicate_type req =
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
+
+let toggle_predicate_type req = handle_toggle_predicate_type req
 
 let toggle_key req =
   let open Utils.Lwt_result.Infix in
@@ -252,11 +260,16 @@ let toggle_key req =
   |> Lwt.return
 ;;
 
-let add_predicate req =
+let handle_add_predicate ?experiment_id req =
   let open Utils.Lwt_result.Infix in
   let%lwt result =
     let* { Pool_context.language; database_label; _ } =
       Pool_context.find req |> Lwt_result.lift
+    in
+    let* experiment =
+      experiment_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Experiment.find database_label id >|+ CCOption.pure)
     in
     let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
     let templates_disabled = templates_disabled urlencoded in
@@ -275,6 +288,7 @@ let add_predicate req =
     let filter_form =
       Component.Filter.predicate_form
         language
+        experiment
         key_list
         template_list
         templates_disabled
@@ -284,6 +298,7 @@ let add_predicate req =
     in
     let add_button =
       Component.Filter.add_predicate_btn
+        experiment
         (increment_identifier identifier)
         templates_disabled
     in
@@ -301,6 +316,8 @@ let add_predicate req =
   |> HttpUtils.multi_html_to_plain_text_response
   |> Lwt.return
 ;;
+
+let add_predicate req = handle_add_predicate req
 
 let count_contacts req =
   let experiment_id =
@@ -344,10 +361,10 @@ let count_contacts req =
 ;;
 
 module Access : Helpers.AccessSig = struct
-  module ContactCommand = Cqrs_command.Contact_command
+  module FilterCommand = Cqrs_command.Filter_command
 
   let filter_effects =
-    Middleware.Guardian.id_effects Filter.Id.of_string Field.Contact
+    Middleware.Guardian.id_effects Filter.Id.of_string Field.Filter
   ;;
 
   let read =
@@ -361,7 +378,7 @@ module Access : Helpers.AccessSig = struct
   ;;
 
   let update =
-    [ ContactCommand.Update.effects ]
+    [ FilterCommand.Update.effects ]
     |> filter_effects
     |> Middleware.Guardian.validate_generic
   ;;

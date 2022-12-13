@@ -2,35 +2,35 @@ open Tyxml.Html
 
 let concat_messages txts classnames =
   div
-    ~a:[ a_class classnames ]
-    [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii) ]
+    ~a:[ a_class ("notification" :: classnames) ]
+    [ txt (txts |> CCString.unlines |> CCString.capitalize_ascii)
+    ; Component.Icon.icon ~classnames:[ "notification-close" ] `Close
+    ]
 ;;
 
 let match_message message classname =
   match message with
-  | [] -> div []
-  | txts -> concat_messages txts classname
+  | [] -> None
+  | txts -> Some (concat_messages txts classname)
 ;;
 
 let create ?(attributes = []) message lang () =
   let open Http_utils.Message in
-  let notification_class = "notification" in
   match message with
-  | None -> div []
+  | None -> txt ""
   | Some message ->
-    let success =
-      match_message (get_success message lang) [ notification_class; "success" ]
-    in
-    let info =
-      match_message (get_info message lang) [ notification_class; "neutral" ]
-    in
-    let warning =
-      match_message (get_warning message lang) [ notification_class; "warning" ]
-    in
-    let error =
-      match_message (get_error message lang) [ notification_class; "error" ]
-    in
-    div
-      ~a:([ a_class [ "notification-fixed" ] ] @ attributes)
-      [ success; info; warning; error ]
+    let success = match_message (get_success message lang) [ "success" ] in
+    let info = match_message (get_info message lang) [ "neutral" ] in
+    let warning = match_message (get_warning message lang) [ "warning" ] in
+    let error = match_message (get_error message lang) [ "error" ] in
+    [ success; info; warning; error ]
+    |> CCList.filter_map (fun notification ->
+         match notification with
+         | None -> None
+         | Some notification ->
+           Some
+             (div
+                ~a:([ a_class [ "notification-fixed" ] ] @ attributes)
+                [ notification ]))
+    |> div
 ;;

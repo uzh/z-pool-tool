@@ -44,3 +44,13 @@ $icons-font-path: "../node_modules/@econ/frontend-framework/dist/font";
     margin: 0;
     cursor: pointer;
 }
+
+@supports (display: grid) {
+    .grid-col-4 {
+        grid-template-columns: repeat(4, 1fr);
+
+        @include until($tablet-breakpoint) {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}

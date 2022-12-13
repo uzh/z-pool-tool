@@ -1,49 +1,50 @@
 let get_or_failwith = Pool_common.Utils.get_or_failwith
 
+let sns_fmri_description =
+  {|Deutsch:
+Betreten Sie das UniversitätsSpital am Haupteingang (Vis-à-vis ETH Hauptgebäude beim goldenen Mann). Gehen Sie den Gang bis ganz hinten und fahren Sie mit einem der drei violetten Lifte (die Sie dann rechter Hand sehen) 2 Stockwerke nach unten in den Stock V. Hier ist bereits im Lift das SNS Labor gut sichtbar angeschrieben.
+Entsprechend der Beschilderung zum SNS Labor gehen Sie dann zweimal rechts, bis Sie am Ende eines etwas nach unten verlaufenden Korridors den Eingang des SNS-Lab/MR-Zentrum-Süd erreichen.
+
+Mit dem dort zugänglichen Telefon können Sie mittels der internen Nummer (546 82) Ihre Ankunft bekanntgeben.
+
+English:
+Enter the University Hospital through the main entrance (located opposite ETH’s main building on Rämistrasse). Continue down the hall until you see the stairs and purple elevators. Take the elevator down to floor “V”. Get off the elevator and follow the signs to the SNS Lab: turn right twice, the SNS-Lab/MR-Zentrum-Süd is at the end of the hall.
+
+Please call the in-house number (546 82) to announce your arrival.|}
+;;
+
+let sns_behavioural_description =
+  {|Deutsch:
+Betreten Sie das UniversitätsSpital am Haupteingang (Vis-à-vis ETH Hauptgebäude beim goldenen Mann). Gehen Sie den Gang bis ganz hinten und fahren Sie mit einem der drei violetten Lifte (die Sie dann rechter Hand sehen) 2 Stockwerke nach unten in den Stock V. Hier ist bereits im Lift das SNS Labor gut sichtbar angeschrieben.
+Entsprechend der Beschilderung zum SNS Labor gehen Sie dann zweimal rechts, bis Sie am Ende eines etwas nach unten verlaufenden Korridors den Eingang des SNS-Lab/MR-Zentrum-Süd erreichen.
+
+Mit dem dort zugänglichen Telefon können Sie mittels der internen Nummer (546 83) Ihre Ankunft bekanntgeben.
+
+English:
+Enter the University Hospital through the main entrance (located opposite ETH’s main building on Rämistrasse). Continue down the hall until you see the stairs and purple elevators. Take the elevator down to floor “V”. Get off the elevator and follow the signs to the SNS Lab: turn right twice, the SNS-Lab/MR-Zentrum-Süd is at the end of the hall.
+
+Please call the in-house number (546 83) to announce your arrival.
+|}
+;;
+
 let locations =
   let open Pool_location in
-  [ ( "Eiger"
-    , None
-    , Some (None, "Eiger", None, "Pfaffacherweg 93", "9054", "Schlatt-haslen")
-    , None
-    , Status.Active )
-  ; ( "Mönch"
-    , None
+  [ ( "ETH Decision Science Laboratory"
+    , Some "Tram 6, 7, 10 or 15 to Haldenegg"
     , Some
-        ( Some "Schweizer Alpen"
-        , "Mönch"
-        , None
-        , "Mülhauserstrasse 139"
-        , "3995"
-        , "Mühlebach" )
-    , None
+        (None, "Stockwerk A", Some "IFW", "Haldeneggsteig 4", "8092", "Zurich")
+    , Some "https://www.uast.uzh.ch/assets/map-descil.jpg"
     , Status.Active )
-  ; ( "Jungfrau"
-    , None
-    , Some (None, "Jungfrau", None, "Möhe 63", "8858", "Innerthal")
-    , None
-    , Status.Maintenance )
-  ; ( "Matterhorn"
-    , None
-    , Some
-        ( Some "Schweizer Alpen"
-        , "Matterhorn"
-        , None
-        , "Möhe 146"
-        , "6476"
-        , "Intschi" )
-    , None
+  ; ( "SNS Lab fMRI"
+    , Some sns_fmri_description
+    , Some (Some "USZ", "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
-  ; ( "Bernina"
-    , None
-    , Some (None, "Bernina", None, "Untere Bahnhofstrasse 132", "6965", "Cadro")
-    , None
+  ; ( "SNS Behavioral Lab"
+    , Some sns_behavioural_description
+    , Some (Some "USZ", "SNS Labor", None, "Rämistrasse 100", "8091", "Zürich")
+    , Some "https://www.uast.uzh.ch/assets/map-usz.jpg"
     , Status.Active )
-  ; ( "Calanda"
-    , None
-    , Some (None, "Calanda", None, "Hasenbühlstrasse 88", "8340", "Bossikon")
-    , None
-    , Status.Closed )
   ]
   |> CCList.map (fun (label, description, address, link, status) ->
        let address =

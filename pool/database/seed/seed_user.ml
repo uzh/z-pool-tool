@@ -15,6 +15,29 @@ type person =
 
 type persons = person list [@@deriving show, yojson]
 
+let answer_custom_fields fields contact =
+  let open Custom_field in
+  let open Public in
+  let select_random options =
+    Random.int (List.length options) |> CCList.nth options |> Answer.create
+  in
+  CCList.filter_map
+    (fun field ->
+      match (field : Public.t) with
+      | Select (public, options, _) ->
+        Public.Select (public, options, select_random options |> CCOption.pure)
+        |> CCOption.pure
+      | MultiSelect (public, options, _) ->
+        Public.MultiSelect
+          (public, options, select_random options |> CCList.pure)
+        |> CCOption.pure
+      | Boolean _ | Number _ | Text _ -> None)
+    fields
+  |> CCList.map (fun field ->
+       Contact.PartialUpdate.Custom field
+       |> fun update -> Contact.Updated (update, contact))
+;;
+
 let create_rand_persons n_persons =
   let open Cohttp in
   let open Cohttp_lwt_unix in
@@ -201,6 +224,14 @@ let contacts db_pool =
   Lwt_list.fold_left_s
     (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
       let%lwt contact = Contact.find db_pool user_id in
+      let%lwt custom_fields =
+        let open Custom_field in
+        find_all_by_contact db_pool user_id
+        ||> fun (grouped, ungrouped) ->
+        ungrouped
+        @ CCList.flatten
+            (CCList.map (fun { Group.Public.fields; _ } -> fields) grouped)
+      in
       match contact with
       | Ok contact ->
         [ Contact.Updated
@@ -210,7 +241,11 @@ let contacts db_pool =
             , contact )
         ]
         @ (if disabled then [ Contact.Disabled contact ] else [])
-        @ (if verified then [ Contact.EmailVerified contact ] else [])
+        @ (if verified
+          then
+            Contact.EmailVerified contact
+            :: answer_custom_fields custom_fields contact
+          else [])
         @ contacts
         |> Lwt.return
       | Error err ->
