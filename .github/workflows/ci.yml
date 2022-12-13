@@ -27,8 +27,6 @@ jobs:
         env:
           MYSQL_DATABASE: ${{ env.MYSQL_DATABASE }}
           MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
-          MYSQL_TCP_PORT: 3307
-          MYSQL_UNIX_PORT: 3307
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
@@ -39,7 +37,7 @@ jobs:
         uses: addnab/docker-run-action@v3
         env:
           DATABASE_URL: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-root:3306/${{ env.MYSQL_DATABASE }}
-          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:3307/${{ env.MYSQL_DATABASE }}
+          DATABASE_URL_TENANT_TEST: mariadb://root:${{ env.MYSQL_ROOT_PASSWORD }}@database-tenant:3306/${{ env.MYSQL_DATABASE }}
           SIHL_ENV: test
           SMTP_SENDER: test@econ.uzh.ch
           TEST_EMAIL: test@econ.uzh.ch
