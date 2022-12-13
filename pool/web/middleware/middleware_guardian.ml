@@ -80,8 +80,8 @@ let validate_generic generic_fcn =
     | Error _ ->
       let redirect =
         match Http_utils.is_req_from_root_host req with
-        | false -> "/root/denied"
-        | true -> "/denied"
+        | false -> "/denied"
+        | true -> "/root/denied"
       in
       Http_utils.redirect_to redirect
   in
