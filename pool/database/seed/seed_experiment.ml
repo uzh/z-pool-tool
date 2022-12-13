@@ -7,7 +7,7 @@ let experiments pool =
   let open CCOption.Infix in
   let data =
     [ ( "The Twenty pound auction"
-      , "the_twenty_pound_auction"
+      , "Trading experiment"
       , "It was great fun."
       , None
       , None
@@ -16,7 +16,7 @@ let experiments pool =
       , None
       , None )
     ; ( "The Wallet Game"
-      , "the_wallet_game"
+      , "Finance experiment"
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
@@ -27,7 +27,7 @@ let experiments pool =
       , None
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
-      , "the_ultimatum_and_the_dictator_bargaining_games"
+      , "Bidding experiment"
       , "The experiment illustrates the problem of public good provision as \
          discussed in most microeconomics lectures or lectures on public \
          economics."
