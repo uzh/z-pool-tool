@@ -36,7 +36,6 @@ module Create : sig
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
 
-  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Filter.Title.t
 
