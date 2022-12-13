@@ -22,7 +22,7 @@ let validate_query key_list template_list query =
 ;;
 
 module Create : sig
-  type t = Filter.Title.t
+  include Common.CommandSig with type t = Filter.Title.t
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -57,7 +57,7 @@ end = struct
 end
 
 module Update : sig
-  type t = Filter.Title.t
+  include Common.CommandSig with type t = Filter.Title.t
 
   val handle
     :  ?tags:Logs.Tag.set
