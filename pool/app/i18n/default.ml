@@ -68,17 +68,27 @@ let default_values =
     )
   ; ( "invitation_text"
     , [ ( "EN"
-        , {|We would like to invite you to an upcoming experiment.
+        , {|Dear {name},
+
+We would like to invite you to an upcoming experiment.
 
 {experimentPublicTitle}
 {experimentDescription}
+
+Yours sincerely,
+Pool Tool
     |}
         )
       ; ( "DE"
-        , {|Wir möchten Sie zu einem bevorstehenden Experiment einladen.
+        , {|Liebe*r {name},
+
+Wir möchten Sie zu einem bevorstehenden Experiment einladen.
 
 {experimentPublicTitle}
 {experimentDescription}
+
+Freundliche Grüsse
+Pool Tool
       |}
         )
       ] )
