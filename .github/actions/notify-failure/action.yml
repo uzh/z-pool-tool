@@ -1,9 +1,10 @@
 name: notify-failure
-decription: Send a notification to Econ MS Teams channel
+description: Send a notification to Econ MS Teams channel
 
 inputs:
   webhook:
     required: true
+    description: The webhook URL to be called
 
 runs:
   using: composite
