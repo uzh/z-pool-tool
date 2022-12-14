@@ -100,9 +100,11 @@ let email_verification req =
         |> CCResult.map (fun contact -> contact.Contact.user)
         |> CCOption.of_result
       in
-      CCOption.bind user (fun user ->
-        Some (General.dashboard_path database_label user))
-      |> CCOption.value ~default:("/login" |> Lwt.return)
+      match user with
+      | None -> "/login" |> Lwt.return
+      | Some user ->
+        Pool_context.user_of_sihl_user database_label user
+        ||> General.dashboard_path
     in
     (let* token =
        Sihl.Web.Request.query Field.(show Token) req

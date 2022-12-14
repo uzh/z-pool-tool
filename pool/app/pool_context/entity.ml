@@ -66,6 +66,16 @@ let find_contact { user; _ } =
   | Admin _ | Guest -> Error PoolError.(NotFound Field.User)
 ;;
 
+let user_of_sihl_user database_label user =
+  let open Utils.Lwt_result.Infix in
+  if Sihl_user.is_admin user
+  then user |> Admin.create |> admin |> Lwt.return
+  else
+    Contact.find_by_user database_label user
+    ||> CCResult.to_opt
+    ||> CCOption.map_or ~default:Guest contact
+;;
+
 let find_authenticatable { user; database_label; _ } =
   let ctx = Pool_tenant.to_ctx database_label in
   match user with

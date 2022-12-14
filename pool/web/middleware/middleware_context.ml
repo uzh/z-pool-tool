@@ -56,13 +56,7 @@ let context ?(is_root = false) () =
     in
     let find_user pool =
       Http_utils.user_from_session pool req
-      >|> CCOption.map_or ~default:(Lwt.return Guest) (fun user ->
-            if Sihl_user.is_admin user
-            then user |> Admin.create |> admin |> Lwt.return
-            else
-              Contact.find_by_user pool user
-              ||> CCResult.to_opt
-              ||> CCOption.map_or ~default:Guest contact)
+      >|> CCOption.map_or ~default:(Lwt.return Guest) (user_of_sihl_user pool)
     in
     let%lwt context =
       let* database_label = database_label_of_request req in

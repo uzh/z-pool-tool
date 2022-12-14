@@ -4,25 +4,19 @@ module Message = HttpUtils.Message
 let to_ctx = Pool_tenant.to_ctx
 let create_layout req = General.create_tenant_layout req
 
-let redirect_to_dashboard database_label user =
-  let open Utils.Lwt_result.Infix in
-  General.dashboard_path database_label user >|> HttpUtils.redirect_to
+let redirect_to_dashboard user =
+  General.dashboard_path user |> HttpUtils.redirect_to
 ;;
 
 let login_get req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
-    @@ let%lwt user =
-         Service.User.Web.user_from_session ~ctx:(to_ctx database_label) req
-       in
-       match user with
-       | Some user -> redirect_to_dashboard database_label user |> Lwt_result.ok
-       | None ->
-         let open Sihl.Web in
-         Page.Public.login context
-         |> create_layout req ~active_navigation:"/login" context
-         >|+ Response.of_html
+    @@
+    let open Sihl.Web in
+    Page.Public.login context
+    |> create_layout req ~active_navigation:"/login" context
+    >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -66,7 +60,11 @@ let login_post req =
          |> Lwt_result.ok
        in
        let success () =
-         let%lwt path = General.dashboard_path database_label user in
+         let%lwt path =
+           user
+           |> Pool_context.user_of_sihl_user database_label
+           ||> General.dashboard_path
+         in
          redirect path []
        in
        let contact user =
@@ -99,22 +97,14 @@ let login_post req =
 ;;
 
 let request_reset_password_get req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Service.User.Web.user_from_session ~ctx:(to_ctx database_label) req
-    >|> function
-    | Some user ->
-      General.dashboard_path database_label user
-      ||> externalize_path
-      ||> Response.redirect_to
-      >|> Lwt.return_ok
-    | None ->
-      Page.Public.request_reset_password context
-      |> create_layout req ~active_navigation:"/request-reset-password" context
-      >|+ Response.of_html
+    Page.Public.request_reset_password context
+    |> create_layout req ~active_navigation:"/request-reset-password" context
+    >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
