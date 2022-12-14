@@ -70,7 +70,7 @@ jobs:
 
       - name: Trigger staging deploy
         if: github.ref_type != 'tag'
-        uses: ./.github/actions/notify-failure
+        uses: ./.github/actions/trigger-deploy
         with:
           url: ${{ secrets.ECON_DEPLOY_TRIGGER_URL }}
           token: ${{ secrets.ECON_DEPLOY_TRIGGER_TOKEN }}
@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: release
     steps:
-      - uses: ./.github/actions/notify-failure
+      - uses: ./.github/actions/trigger-deploy
         with:
           url: ${{ secrets.ECON_DEPLOY_TRIGGER_URL }}
           token: ${{ secrets.ECON_DEPLOY_TRIGGER_TOKEN }}
