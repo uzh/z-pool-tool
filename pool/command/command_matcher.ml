@@ -16,9 +16,14 @@ Example: sihl matcher.run econ-uzh
      function
      | [ db_pool ] ->
        let () = Database.Root.setup () in
-       let%lwt (_ : Pool_database.Label.t list) = Database.Tenant.setup () in
+       let%lwt pools = Database.Tenant.setup () in
        let pool =
+         let open CCResult in
          Pool_database.Label.create db_pool
+         >>= (fun pool ->
+               if CCList.exists (Pool_database.Label.equal pool) pools
+               then Ok pool
+               else Error Pool_common.Message.(NotFound Field.Tenant))
          |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
          |> CCResult.get_or_failwith
        in
