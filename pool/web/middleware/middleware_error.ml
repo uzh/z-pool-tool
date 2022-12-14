@@ -42,7 +42,7 @@ let before_start () =
   else ()
 ;;
 
-let reporter =
+let reporter (_ : Rock.Request.t) =
   let config = Sihl.Configuration.(read schema) in
   let module Gitlab_notify =
     Canary.Notifier.Gitlab (struct
@@ -87,8 +87,8 @@ let reporter =
 
 let error () =
   Sihl.Web.Middleware.error
-    ~reporter:(fun _ exn ->
-      match%lwt reporter exn with
+    ~reporter:(fun req exn ->
+      match%lwt reporter req exn with
       | Ok _ -> Lwt.return_unit
       | Error err -> raise (Failure err))
     ()
