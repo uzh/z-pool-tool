@@ -49,7 +49,11 @@ let app_title query_language title =
   div
     ~a:[ a_class [ "app-title" ] ]
     [ a
-        ~a:[ a_href (Http_utils.path_with_language query_language "/index") ]
+        ~a:
+          [ a_href
+              (Sihl.Web.externalize_path
+                 (Http_utils.path_with_language query_language "/index"))
+          ]
         [ txt title ]
     ]
 ;;
