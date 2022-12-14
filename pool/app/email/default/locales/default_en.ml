@@ -180,6 +180,7 @@ let invitation =
     let open Tyxml.Html in
     [ salutation
     ; p [ txt "We would like to invite you to the following experiment:" ]
+    ; p [ txt "{experimentPublicTitle}" ]
     ; p [ txt "{experimentDescription}" ]
     ; p [ txt "The experiment is performed on the following dates:" ]
     ; p [ txt "Sessions......" ]
@@ -192,6 +193,7 @@ let invitation =
     {|
 We would like to invite you to the following experiment:
 
+{experimentPublicTitle}
 {experimentDescription}
 
 The experiment is performed on the following dates:

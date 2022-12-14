@@ -67,8 +67,30 @@ let default_values =
     , [ "EN", "Experiment invitation"; "DE", "Einladung zur Studienteilnahme" ]
     )
   ; ( "invitation_text"
-    , [ "EN", "We would like to invite you to an upcoming experiment."
-      ; "DE", "Wir möchten Sie zu einem bevorstehenden Experiment einladen."
+    , [ ( "EN"
+        , {|Dear {name},
+
+We would like to invite you to an upcoming experiment.
+
+{experimentPublicTitle}
+{experimentDescription}
+
+Yours sincerely,
+Pool Tool
+    |}
+        )
+      ; ( "DE"
+        , {|Liebe*r {name},
+
+Wir möchten Sie zu einem bevorstehenden Experiment einladen.
+
+{experimentPublicTitle}
+{experimentDescription}
+
+Freundliche Grüsse
+Pool Tool
+      |}
+        )
       ] )
   ; ( "invitation_without_self_registration_subject"
     , [ "EN", "Invitation to an experiment"

@@ -13,12 +13,7 @@ let expected_events experiment contacts i18n_templates =
           experiment
           language
         |> CCResult.map (fun template ->
-             ( user
-             , [ ( "experimentDescription"
-                 , experiment.Experiment.description
-                   |> Experiment.Description.value )
-               ]
-             , template )))
+             user, Invitation.email_experiment_elements experiment, template))
       contacts
     |> CCList.all_ok
     |> CCResult.get_exn
@@ -82,10 +77,7 @@ let create_invitations_repo _ () =
                     language
                   |> CCResult.map (fun template ->
                        ( user
-                       , [ ( "experimentDescription"
-                           , experiment.Experiment.description
-                             |> Experiment.Description.value )
-                         ]
+                       , Invitation.email_experiment_elements experiment
                        , template )))
                 contacts
               |> CCList.all_ok

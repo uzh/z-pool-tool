@@ -154,10 +154,10 @@ let session_reminder_help language sys_languages ?session () =
 
 let experiment_invitation_help language ?experiment () =
   let experiment = CCOption.value ~default:DummyData.experiment experiment in
-  let experiment_description =
-    ( "experimentDescription"
-    , div [ txt Experiment.(Description.value experiment.description) ] )
+  let text_elements =
+    Invitation.email_experiment_elements experiment
+    |> CCList.map (fun (label, content) -> label, div [ txt content ])
   in
-  [ DummyData.name_element; experiment_description ]
+  DummyData.name_element :: text_elements
   |> build_help language "experiment-invitation-help"
 ;;

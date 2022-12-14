@@ -38,3 +38,10 @@ type notification_history =
            |> CCList.for_all CCFun.id]
   }
 [@@deriving eq, show]
+
+let email_experiment_elements (experiment : Experiment.t) =
+  let open Experiment in
+  [ "experimentPublicTitle", experiment.public_title |> PublicTitle.value
+  ; "experimentDescription", experiment.description |> Description.value
+  ]
+;;

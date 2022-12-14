@@ -32,9 +32,7 @@ let create () =
       let subject, text = CCList.assoc ~eq:equal En i18n_templates in
       let layout = Email.Helper.layout_from_tenant tenant in
       ( contact.Contact.user
-      , [ ( "experimentDescription"
-          , experiment.Experiment.description |> Experiment.Description.value )
-        ]
+      , Invitation.email_experiment_elements experiment
       , Email.CustomTemplate.
           { subject = Subject.I18n subject
           ; content = Content.I18n text
@@ -75,10 +73,7 @@ let resend () =
       [ Invitation.(Resent invitation) |> Pool_event.invitation
       ; Email.InvitationSent
           ( invitation.Invitation.contact.Contact.user
-          , [ ( "experimentDescription"
-              , experiment.Experiment.description
-                |> Experiment.Description.value )
-            ]
+          , Invitation.email_experiment_elements experiment
           , email )
         |> Pool_event.email
       ]

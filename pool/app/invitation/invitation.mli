@@ -30,6 +30,7 @@ val equal_notification_history
   -> bool
 
 val pp_notification_history : Format.formatter -> notification_history -> unit
+val email_experiment_elements : Experiment.t -> (string * string) list
 
 type create =
   { experiment : Experiment.t
