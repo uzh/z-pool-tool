@@ -47,10 +47,32 @@ let login_form
 
 let index
   (tenant : Pool_tenant.t)
-  Pool_context.({ language; query_language; _ } as context)
+  Pool_context.({ language; query_language; user; _ } as context)
   welcome_text
   =
   let text_to_string = Pool_common.Utils.text_to_string language in
+  let is_logged_in =
+    let open Pool_context in
+    match user with
+    | Guest -> false
+    | Admin _ | Contact _ -> true
+  in
+  let sign_up_cta =
+    match is_logged_in with
+    | true -> []
+    | false ->
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
+      ; p Pool_common.[ Utils.text_to_string language I18n.SignUpCTA |> txt ]
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ link_as_button
+              ~control:(language, Pool_common.Message.SignUp)
+              (HttpUtils.path_with_language query_language "/signup")
+          ]
+      ]
+  in
   let aspect_ratio img =
     img |> Component.Image.aspect_ratio ~contain:true `R16x9
   in
@@ -63,22 +85,18 @@ let index
         logos
     in
     if CCList.is_empty logos
-    then txt ""
+    then []
     else
-      div
-        ~a:[ a_class [ "gap-lg" ] ]
-        [ h2
-            ~a:[ a_class [ "heading-2" ] ]
-            [ txt (text_to_string Pool_common.I18n.OurPartners) ]
-        ; div
-            ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
-            (CCList.map
-               (fun logo ->
-                 img ~src:(Pool_common.File.path logo) ~alt:"" ()
-                 |> aspect_ratio)
-               (tenant.Pool_tenant.partner_logo
-               |> Pool_tenant.PartnerLogos.value))
-        ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt (text_to_string Pool_common.I18n.OurPartners) ]
+      ; div
+          ~a:[ a_class [ "grid-col-4"; "flex-gap" ] ]
+          (CCList.map
+             (fun logo ->
+               img ~src:(Pool_common.File.path logo) ~alt:"" () |> aspect_ratio)
+             (tenant.Pool_tenant.partner_logo |> Pool_tenant.PartnerLogos.value))
+      ]
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
@@ -89,27 +107,16 @@ let index
               [ a_class
                   [ "bg-grey-light"; "border"; "border-radius"; "inset-lg" ]
               ]
-            [ h1
-                ~a:[ a_class [ "heading-1" ] ]
-                [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
-            ; div
-                [ I18n.content_to_string welcome_text
-                  |> HttpUtils.add_line_breaks
-                ]
-            ; h2
-                ~a:[ a_class [ "heading-2" ] ]
-                [ txt (text_to_string Pool_common.I18n.DontHaveAnAccount) ]
-            ; p
-                Pool_common.
-                  [ Utils.text_to_string language I18n.SignUpCTA |> txt ]
-            ; div
-                ~a:[ a_class [ "flexrow" ] ]
-                [ link_as_button
-                    ~control:(language, Pool_common.Message.SignUp)
-                    (HttpUtils.path_with_language query_language "/signup")
-                ]
-            ; partner_html
-            ]
+            ([ h1
+                 ~a:[ a_class [ "heading-1" ] ]
+                 [ txt (text_to_string Pool_common.I18n.HomeTitle) ]
+             ; div
+                 [ I18n.content_to_string welcome_text
+                   |> HttpUtils.add_line_breaks
+                 ]
+             ]
+            @ sign_up_cta
+            @ partner_html)
         ; div
             ~a:[ a_class [ "flexcolumn"; "justify-center"; "stack" ] ]
             (CCList.map
@@ -123,7 +130,10 @@ let index
                    ()
                  |> aspect_ratio)
                (tenant.Pool_tenant.logos |> Pool_tenant.Logos.value)
-            @ [ login_form ~hide_signup:true context ])
+            @ [ (if is_logged_in
+                then txt ""
+                else login_form ~hide_signup:true context)
+              ])
         ]
     ]
 ;;
