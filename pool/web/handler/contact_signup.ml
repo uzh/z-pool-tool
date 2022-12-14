@@ -103,8 +103,8 @@ let email_verification req =
       match user with
       | None -> "/login" |> Lwt.return
       | Some user ->
-        Pool_context.user_of_sihl_user database_label user
-        ||> General.dashboard_path
+        let open Pool_context in
+        user_of_sihl_user database_label user ||> dashboard_path
     in
     (let* token =
        Sihl.Web.Request.query Field.(show Token) req

@@ -5,7 +5,7 @@ let to_ctx = Pool_tenant.to_ctx
 let create_layout req = General.create_tenant_layout req
 
 let redirect_to_dashboard user =
-  General.dashboard_path user |> HttpUtils.redirect_to
+  Pool_context.dashboard_path user |> HttpUtils.redirect_to
 ;;
 
 let login_get req =
@@ -64,10 +64,9 @@ let login_post req =
          |> Lwt_result.ok
        in
        let success () =
+         let open Pool_context in
          let%lwt path =
-           user
-           |> Pool_context.user_of_sihl_user database_label
-           ||> General.dashboard_path
+           user |> user_of_sihl_user database_label ||> dashboard_path
          in
          login path []
        in

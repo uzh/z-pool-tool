@@ -11,14 +11,6 @@ let admin_from_session db_pool req =
   user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
 ;;
 
-let dashboard_path =
-  let open Pool_context in
-  function
-  | Admin _ -> "/admin/dashboard"
-  | Contact _ -> "/dashboard"
-  | Guest -> "/index"
-;;
-
 let create_tenant_layout
   req
   ?active_navigation

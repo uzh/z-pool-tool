@@ -76,6 +76,12 @@ let user_of_sihl_user database_label user =
     ||> CCOption.map_or ~default:Guest contact
 ;;
 
+let dashboard_path = function
+  | Admin _ -> "/admin/dashboard"
+  | Contact _ -> "/dashboard"
+  | Guest -> "/index"
+;;
+
 let find_authenticatable { user; database_label; _ } =
   let ctx = Pool_tenant.to_ctx database_label in
   match user with
