@@ -34,7 +34,7 @@ let viewport =
     ()
 ;;
 
-let favicon path = link ~rel:[ `Icon ] ~href:(Sihl.Web.externalize_path path) ()
+let favicon path = link ~rel:[ `Icon ] ~href:path ()
 
 let global_stylesheets =
   [ "/assets/index.css", true ]
