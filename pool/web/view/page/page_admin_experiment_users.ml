@@ -38,9 +38,7 @@ let role_assignment
       [ div [ admin |> Admin.email |> txt ]
       ; form
           ~a:
-            [ a_action
-                (Format.asprintf "%s/%s" (base_url admin) url
-                |> Sihl.Web.externalize_path)
+            [ a_action (Format.asprintf "%s/%s" (base_url admin) url)
             ; a_method `Post
             ]
           [ csrf_element csrf ()
