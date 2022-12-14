@@ -67,34 +67,54 @@ module Partials = struct
     template_list
     filtered_contacts
     =
-    let form_table =
-      let rows =
-        if CCList.is_empty filtered_contacts
-        then p [ txt "No results found" ]
-        else
-          CCList.map
-            (fun (contact : Contact.t) ->
-              let id = Contact.id contact |> Pool_common.Id.value in
-              [ div
-                  [ input
-                      ~a:
-                        [ a_input_type `Checkbox
-                        ; a_name
-                            Pool_common.Message.Field.(Contacts |> array_key)
-                        ; a_id id
-                        ; a_value id
-                        ]
-                      ()
-                  ; label
-                      ~a:[ a_label_for id ]
-                      [ txt (Contact.fullname contact) ]
-                  ]
-              ])
-            filtered_contacts
-          |> Table.horizontal_table `Striped
-      in
-      div
-        [ h4 ~a:[ a_class [ "heading-4" ] ] [ txt "Filtered contacts" ]; rows ]
+    let filtered_contacts_form =
+      match filtered_contacts with
+      | None -> txt ""
+      | Some filtered_contacts ->
+        let rows =
+          if CCList.is_empty filtered_contacts
+          then p [ txt "No results found" ]
+          else
+            CCList.map
+              (fun (contact : Contact.t) ->
+                let id = Contact.id contact |> Pool_common.Id.value in
+                [ div
+                    [ input
+                        ~a:
+                          [ a_input_type `Checkbox
+                          ; a_name
+                              Pool_common.Message.Field.(Contacts |> array_key)
+                          ; a_id id
+                          ; a_value id
+                          ]
+                        ()
+                    ; label
+                        ~a:[ a_label_for id ]
+                        [ txt (Contact.fullname contact) ]
+                    ]
+                ])
+              filtered_contacts
+            |> Table.horizontal_table `Striped
+        in
+        div
+          [ h4
+              ~a:[ a_class [ "heading-4" ] ]
+              [ txt "Filtered contacts (development only)" ]
+          ; form
+              ~a:
+                [ a_method `Post
+                ; a_action (form_action experiment.Experiment.id)
+                ; a_class [ "stack" ]
+                ]
+              [ Input.csrf_element csrf ()
+              ; rows
+              ; Input.submit_element
+                  language
+                  Pool_common.Message.(Send (Some Field.Invitation))
+                  ~submit_type:`Success
+                  ()
+              ]
+          ]
     in
     div
       [ h3
@@ -111,20 +131,7 @@ module Partials = struct
             (ExperimentParam experiment)
             key_list
             template_list)
-      ; form
-          ~a:
-            [ a_method `Post
-            ; a_action (form_action experiment.Experiment.id)
-            ; a_class [ "stack" ]
-            ]
-          [ Input.csrf_element csrf ()
-          ; form_table
-          ; Input.submit_element
-              language
-              Pool_common.Message.(Send (Some Field.Invitation))
-              ~submit_type:`Success
-              ()
-          ]
+      ; filtered_contacts_form
       ]
   ;;
 end

@@ -32,12 +32,15 @@ let index req =
     @@ let* experiment = Experiment.find database_label id in
        let%lwt key_list = Filter.all_keys database_label in
        let%lwt template_list = Filter.find_all_templates database_label () in
-       (* TODO: Remove contact list from ui *)
        let* filtered_contacts =
-         Contact.find_filtered
-           database_label
-           (experiment.Experiment.id |> Experiment.Id.to_common)
-           experiment.Experiment.filter
+         if Sihl.Configuration.is_production ()
+         then Lwt_result.return None
+         else
+           Contact.find_filtered
+             database_label
+             (experiment.Experiment.id |> Experiment.Id.to_common)
+             experiment.Experiment.filter
+           >|+ CCOption.pure
        in
        Page.Admin.Experiments.invitations
          experiment
