@@ -16,7 +16,6 @@ let mailings_path ?suffix experiment_id =
   ]
   @ CCOption.map_or ~default:[] CCList.pure suffix
   |> CCString.concat "/"
-  |> Sihl.Web.externalize_path
 ;;
 
 let detail_mailing_path ?suffix experiment_id mailing =
@@ -362,7 +361,8 @@ let form
                         "hx-post"
                         (mailings_path
                            ~suffix:"add-condition"
-                           experiment.Experiment.id)
+                           experiment.Experiment.id
+                        |> Sihl.Web.externalize_path)
                     ; a_user_data "hx-trigger" "click"
                     ; a_user_data "hx-target" "#distribution-list"
                     ; a_user_data "hx-swap" "beforeend"
@@ -388,7 +388,7 @@ let form
   let action, submit =
     match mailing with
     | None ->
-      ( mailings_path experiment.Experiment.id
+      ( mailings_path experiment.Experiment.id |> Sihl.Web.externalize_path
       , Message.(Create (Some Field.Mailing)) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
@@ -422,7 +422,8 @@ let form
                 ; hx_post
                     (mailings_path
                        ~suffix:"search-info"
-                       experiment.Experiment.id)
+                       experiment.Experiment.id
+                    |> Sihl.Web.externalize_path)
                 ]
               [ flatpicker_element
                   language

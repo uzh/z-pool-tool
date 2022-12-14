@@ -601,6 +601,7 @@ let users
       Experiment.(experiment.id |> Id.value)
       (Pool_common.Message.Field.show field)
       (Admin.id admin |> Admin.Id.value)
+    |> Sihl.Web.externalize_path
   in
   let field =
     let open Pool_common.Message in
