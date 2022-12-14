@@ -100,7 +100,7 @@ let index experiment_list Pool_context.{ language; _ } =
       experiment_list
   in
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
         [ txt
@@ -308,7 +308,7 @@ let experiment_form
 let create (Pool_context.{ language; _ } as context) sys_languages flash_fetcher
   =
   div
-    ~a:[ a_class [ "trim"; "safety-margin"; "measure"; "stack" ] ]
+    ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
     [ h1
         [ txt
             Pool_common.(
