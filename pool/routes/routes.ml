@@ -325,8 +325,11 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.create ] create
         ; get "/create" ~middlewares:[ Access.create ] new_form
-        ; post "/search-info" ~middlewares:[ Access.update ] search_info
-        ; post "/add-condition" ~middlewares:[ Access.update ] add_condition
+        ; post "/search-info" ~middlewares:[ Access.search_info ] search_info
+        ; post
+            "/add-condition"
+            ~middlewares:[ Access.add_condition ]
+            add_condition
         ; choose ~scope:(Mailing |> url_key) specific
         ]
       in

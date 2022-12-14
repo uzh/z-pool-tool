@@ -280,6 +280,8 @@ let delete =
 module Access : sig
   include Helpers.AccessSig
 
+  val add_condition : Rock.Middleware.t
+  val search_info : Rock.Middleware.t
   val stop : Rock.Middleware.t
   val overlaps : Rock.Middleware.t
 end = struct
@@ -322,6 +324,24 @@ end = struct
   let delete =
     [ MailingCommand.Delete.effects ]
     |> mailing_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let add_condition =
+    [ (fun id ->
+        [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
+        ; `Update, `TargetEntity `Experiment
+        ])
+    ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let search_info =
+    [ MailingCommand.Create.effects
+    ; (fun _ -> [ `Update, `TargetEntity `Mailing ])
+    ]
+    |> experiment_effects
     |> Middleware.Guardian.validate_generic
   ;;
 
