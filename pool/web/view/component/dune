@@ -5,6 +5,7 @@
   experiment
   filter
   http_utils
+  invitation
   pool_location
   service
   session

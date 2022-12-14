@@ -96,10 +96,7 @@ end = struct
             language
           |> CCResult.map (fun template ->
                ( user
-               , [ ( "experimentDescription"
-                   , command.experiment.Experiment.description
-                     |> Experiment.Description.value )
-                 ]
+               , Invitation.email_experiment_elements command.experiment
                , template )))
         contacts
     in
@@ -168,10 +165,7 @@ end = struct
       [ Invitation.Resent command.invitation |> Pool_event.invitation
       ; Email.InvitationSent
           ( command.invitation.Invitation.contact.Contact.user
-          , [ ( "experimentDescription"
-              , command.experiment.Experiment.description
-                |> Experiment.Description.value )
-            ]
+          , Invitation.email_experiment_elements command.experiment
           , email )
         |> Pool_event.email
       ]
