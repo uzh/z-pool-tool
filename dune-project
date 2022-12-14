@@ -4,7 +4,7 @@
 
 (name pool)
 
-(version 0.0.1-beta.2)
+(version 0.0.1-beta.3)
 
 (authors "Department of Economics, University of Zurich")
 
