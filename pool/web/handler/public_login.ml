@@ -42,7 +42,7 @@ let login_post req =
          Service.User.login ~ctx:(to_ctx database_label) email ~password
          >|- handle_sihl_login_error
        in
-       let redirect ?(set_completion_cookie = false) path actions =
+       let login ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
@@ -59,13 +59,17 @@ let login_post req =
                else res)
          |> Lwt_result.ok
        in
+       let redirect path =
+         HttpUtils.(redirect_to (path_with_language query_language path))
+         |> Lwt_result.ok
+       in
        let success () =
          let%lwt path =
            user
            |> Pool_context.user_of_sihl_user database_label
            ||> General.dashboard_path
          in
-         redirect path []
+         login path []
        in
        let contact user =
          Contact.find
@@ -77,21 +81,28 @@ let login_post req =
        >|> function
        | true -> success ()
        | false ->
-         let* contact = user |> contact in
-         let%lwt required_answers_given =
-           Custom_field.all_required_answered
-             database_label
-             (Contact.id contact)
-         in
-         (match required_answers_given with
-          | true -> success ()
+         (match user.Sihl_user.confirmed with
           | false ->
             redirect
-              ~set_completion_cookie:true
-              "/user/completion"
-              [ Message.set
-                  ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-              ])
+              (Http_utils.path_with_language
+                 query_language
+                 "/email-confirmation")
+          | true ->
+            let* contact = user |> contact in
+            let%lwt required_answers_given =
+              Custom_field.all_required_answered
+                database_label
+                (Contact.id contact)
+            in
+            (match required_answers_given with
+             | true -> success ()
+             | false ->
+               login
+                 ~set_completion_cookie:true
+                 "/user/completion"
+                 [ Message.set
+                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                 ]))
   in
   result |> HttpUtils.extract_happy_path req
 ;;
