@@ -42,6 +42,7 @@ let session_form
   (experiment : Experiment.t)
   ?(session : Session.t option)
   ?(follow_up_to : Session.t option)
+  ?(duplicate : Session.t option)
   locations
   sys_languages
   ~flash_fetcher
@@ -49,10 +50,15 @@ let session_form
   let open CCFun in
   let open Session in
   let open Pool_common in
-  let default_value_session = CCOption.(session <+> follow_up_to) in
   let has_assignments =
-    default_value_session
+    session
     |> CCOption.map_or ~default:false (fun s -> s |> Session.has_assignments)
+  in
+  let default_value_session =
+    (* Prefill the form with values if making a duplicate, editing a session or
+       creating a follow up to a parent. The importance is 1. duplicate, 2.
+       session editing, 3. follow_up_to *)
+    CCOption.(duplicate <+> session <+> follow_up_to)
   in
   let reschedule_hint () =
     match session, has_assignments with
@@ -111,16 +117,25 @@ let session_form
     [ csrf_element csrf ()
     ; div
         ~a:[ a_class [ "grid-col-2" ] ]
-        [ flatpicker_element
-            language
-            `Datetime_local
-            Message.Field.Start
-            ~required:true
-            ~flash_fetcher
-            ~value:(value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
-            ~warn_past:true
-            ~additional_attributes:
-              (if has_assignments then [ a_disabled () ] else [])
+        [ (let value =
+             (* Don't want start date filled out in form if creating with
+                duplication or follow up *)
+             if CCOption.is_some duplicate || CCOption.is_some follow_up_to
+             then None
+             else
+               Some
+                 (value (fun s -> s.start |> Start.value |> Ptime.to_rfc3339))
+           in
+           flatpicker_element
+             language
+             `Datetime_local
+             Message.Field.Start
+             ~required:true
+             ~flash_fetcher
+             ?value
+             ~warn_past:true
+             ~additional_attributes:
+               (if has_assignments then [ a_disabled () ] else []))
         ; flatpicker_element
             language
             ~required:true
@@ -417,6 +432,7 @@ let index
 let new_form
   Pool_context.{ language; csrf; _ }
   experiment
+  duplicate_session
   locations
   sys_languages
   flash_fetcher
@@ -429,6 +445,7 @@ let new_form
        csrf
        language
        experiment
+       ?duplicate:duplicate_session
        locations
        sys_languages
        ~flash_fetcher)
@@ -534,9 +551,31 @@ let detail
         ]
       |> CCList.filter_map session_link
     in
+    let duplicate =
+      let link =
+        match session.follow_up_to with
+        | Some parent_session ->
+          Format.asprintf
+            "/admin/experiments/%s/sessions/%s/follow-up?duplicate_id=%s"
+            (Experiment.Id.value experiment.Experiment.id)
+            (Pool_common.Id.value parent_session)
+            (Pool_common.Id.value session.id)
+        | None ->
+          Format.asprintf
+            "/admin/experiments/%s/sessions/create/?duplicate_id=%s"
+            (Experiment.Id.value experiment.Experiment.id)
+            (Pool_common.Id.value session.id)
+      in
+      link_as_button
+        ~control:(language, Message.Duplicate (Some Field.Session))
+        ~classnames:[ "small" ]
+        link
+    in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ table; p ~a:[ a_class [ "flexrow"; "flex-gap" ] ] links ]
+      [ table
+      ; p ~a:[ a_class [ "flexrow"; "flex-gap" ] ] (links @ [ duplicate ])
+      ]
   in
   let assignments_html =
     let assignment_list =
@@ -606,6 +645,7 @@ let edit
 let follow_up
   Pool_context.{ language; csrf; _ }
   experiment
+  duplicate_session
   (parent_session : Session.t)
   locations
   sys_languages
@@ -628,6 +668,7 @@ let follow_up
         language
         experiment
         ~follow_up_to:parent_session
+        ?duplicate:duplicate_session
         locations
         sys_languages
         ~flash_fetcher

@@ -368,6 +368,7 @@ type control =
   | Descending
   | Disable
   | Divest of Field.t option
+  | Duplicate of Field.t option
   | Edit of Field.t option
   | Enable
   | Enroll
