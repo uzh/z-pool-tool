@@ -53,7 +53,16 @@ module Partials = struct
             in
             let cancel assignment =
               form
-                ~a:[ a_action (action assignment); a_method `Post ]
+                ~a:
+                  [ a_action (action assignment)
+                  ; a_method `Post
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string
+                          language
+                          I18n.CancelAssignment)
+                  ]
                 [ csrf_element csrf ()
                 ; submit_element
                     language

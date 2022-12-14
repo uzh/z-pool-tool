@@ -228,6 +228,7 @@ let hint_to_string = function
 
 let confirmable_to_string confirmable =
   (match confirmable with
+   | CancelAssignment -> "die Anmeldungen", "löschen", None
    | CancelSession -> "die Session", "absagen", None
    | DeleteCustomField -> "das Feld", "löschen", None
    | DeleteCustomFieldOption -> "das Option", "löschen", None
