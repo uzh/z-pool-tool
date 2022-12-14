@@ -46,7 +46,7 @@ jobs:
             sudo chown -R opam .
 
             # Build and test executable
-            /app/scripts/build.sh
+            /app/scripts/build.sh || exit 1
 
             # Restore directory permissions to avoid conflicts
             sudo chown -R 1001:123 .
