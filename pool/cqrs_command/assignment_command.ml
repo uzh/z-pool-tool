@@ -81,19 +81,21 @@ end = struct
 end
 
 module Cancel : sig
-  include Common.CommandSig with type t = Assignment.t
+  include Common.CommandSig with type t = Assignment.t * Session.t
 
   val effects : Assignment.Id.t -> Guard.Authorizer.effect list
 end = struct
-  type t = Assignment.t
+  type t = Assignment.t * Session.t
 
-  let handle ?(tags = Logs.Tag.empty) (command : t)
+  let handle ?(tags = Logs.Tag.empty) (assignment, session)
     : (Pool_event.t list, Pool_common.Message.error) result
     =
+    let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
+    let* () = Session.assignments_cancelable session in
     Ok
-      [ Assignment.Canceled command |> Pool_event.assignment
-      ; Contact.NumAssignmentsDecreased command.Assignment.contact
+      [ Assignment.Canceled assignment |> Pool_event.assignment
+      ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
         |> Pool_event.contact
       ]
   ;;

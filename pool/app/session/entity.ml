@@ -275,42 +275,56 @@ let get_session_end session =
   |> CCOption.get_exn_or "Session end not in range"
 ;;
 
+let not_canceled session =
+  let open Pool_common.Message in
+  match session.canceled_at with
+  | None -> Ok ()
+  | Some canceled_at ->
+    canceled_at
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> sessionalreadycanceled
+    |> CCResult.fail
+;;
+
+let not_closed session =
+  let open Pool_common.Message in
+  match session.closed_at with
+  | None -> Ok ()
+  | Some closed_at ->
+    closed_at
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> sessionalreadyclosed
+    |> CCResult.fail
+;;
+
 (* Cancellable if before session ends *)
 let is_cancellable session =
   let open CCResult.Infix in
-  let open Pool_common.Message in
-  let* () =
-    match session.canceled_at with
-    | None -> Ok ()
-    | Some canceled_at ->
-      canceled_at
-      |> Pool_common.Utils.Time.formatted_date_time
-      |> sessionalreadycanceled
-      |> CCResult.fail
-  in
+  let* () = not_canceled session in
+  let* () = not_closed session in
   if Ptime.is_later
        (session |> get_session_end |> Start.value)
        ~than:Ptime_clock.(now ())
   then Ok ()
-  else Error SessionInPast
+  else Error Pool_common.Message.SessionInPast
 ;;
 
 (* Closable if after session ends *)
 let is_closable session =
   let open CCResult.Infix in
   let open Pool_common.Message in
-  let* () =
-    match session.closed_at with
-    | None -> Ok ()
-    | Some closed_at ->
-      closed_at
-      |> Pool_common.Utils.Time.formatted_date_time
-      |> sessionalreadyclosed
-      |> CCResult.fail
-  in
+  let* () = not_closed session in
+  let* () = not_canceled session in
   if Ptime.is_earlier
        (session |> get_session_end |> Start.value)
        ~than:Ptime_clock.(now ())
   then Ok ()
   else Error SessionNotStarted
+;;
+
+let assignments_cancelable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  Ok ()
 ;;

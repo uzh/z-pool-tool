@@ -582,6 +582,7 @@ let detail
       Page_admin_assignments.Partials.overview_list
         context
         experiment.Experiment.id
+        session
         assignments
     in
     div
