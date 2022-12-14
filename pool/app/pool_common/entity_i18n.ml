@@ -126,6 +126,7 @@ type hint =
   | TimeSpanPickerHint
 
 type confirmable =
+  | CancelAssignment
   | CancelSession
   | DeleteCustomField
   | DeleteCustomFieldOption

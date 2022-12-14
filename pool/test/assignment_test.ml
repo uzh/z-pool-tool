@@ -57,14 +57,39 @@ let create () =
 ;;
 
 let canceled () =
+  let session = Model.create_session () in
   let assignment = Model.create_assignment () in
-  let events = AssignmentCommand.Cancel.handle assignment in
+  let events = AssignmentCommand.Cancel.handle (assignment, session) in
   let expected =
     Ok
       [ Assignment.Canceled assignment |> Pool_event.assignment
       ; Contact.NumAssignmentsDecreased assignment.Assignment.contact
         |> Pool_event.contact
       ]
+  in
+  Test_utils.check_result expected events
+;;
+
+let canceled_with_closed_session () =
+  let hour = Ptime.Span.of_int_s @@ (60 * 60) in
+  let session = Model.create_session () in
+  let closed_at = Ptime_clock.now () in
+  let session =
+    Session.
+      { session with
+        start =
+          Ptime.sub_span (Ptime_clock.now ()) hour
+          |> CCOption.get_exn_or "Invalid start"
+          |> Start.create
+      ; closed_at = Some closed_at
+      }
+  in
+  let assignment = Model.create_assignment () in
+  let events = AssignmentCommand.Cancel.handle (assignment, session) in
+  let expected =
+    Error
+      (Pool_common.Message.SessionAlreadyClosed
+         (Pool_common.Utils.Time.formatted_date_time closed_at))
   in
   Test_utils.check_result expected events
 ;;

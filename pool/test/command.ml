@@ -87,6 +87,10 @@ let () =
             `Quick
             Assignment_test.canceled
         ; test_case
+            "mark assignment as canceled with closed session"
+            `Quick
+            Assignment_test.canceled_with_closed_session
+        ; test_case
             "set attendance on assignment"
             `Quick
             Assignment_test.set_attendance

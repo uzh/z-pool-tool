@@ -4,25 +4,19 @@ module Message = HttpUtils.Message
 let to_ctx = Pool_tenant.to_ctx
 let create_layout req = General.create_tenant_layout req
 
-let redirect_to_dashboard database_label user =
-  let open Utils.Lwt_result.Infix in
-  General.dashboard_path database_label user >|> HttpUtils.redirect_to
+let redirect_to_dashboard user =
+  Pool_context.dashboard_path user |> HttpUtils.redirect_to
 ;;
 
 let login_get req =
   let open Utils.Lwt_result.Infix in
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
-    @@ let%lwt user =
-         Service.User.Web.user_from_session ~ctx:(to_ctx database_label) req
-       in
-       match user with
-       | Some user -> redirect_to_dashboard database_label user |> Lwt_result.ok
-       | None ->
-         let open Sihl.Web in
-         Page.Public.login context
-         |> create_layout req ~active_navigation:"/login" context
-         >|+ Response.of_html
+    @@
+    let open Sihl.Web in
+    Page.Public.login context
+    |> create_layout req ~active_navigation:"/login" context
+    >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;
@@ -48,7 +42,7 @@ let login_post req =
          Service.User.login ~ctx:(to_ctx database_label) email ~password
          >|- handle_sihl_login_error
        in
-       let redirect ?(set_completion_cookie = false) path actions =
+       let login ?(set_completion_cookie = false) path actions =
          HttpUtils.(
            redirect_to_with_actions
              (path_with_language query_language path)
@@ -65,9 +59,16 @@ let login_post req =
                else res)
          |> Lwt_result.ok
        in
+       let redirect path =
+         HttpUtils.(redirect_to (path_with_language query_language path))
+         |> Lwt_result.ok
+       in
        let success () =
-         let%lwt path = General.dashboard_path database_label user in
-         redirect path []
+         let open Pool_context in
+         let%lwt path =
+           user |> user_of_sihl_user database_label ||> dashboard_path
+         in
+         login path []
        in
        let contact user =
          Contact.find
@@ -79,42 +80,41 @@ let login_post req =
        >|> function
        | true -> success ()
        | false ->
-         let* contact = user |> contact in
-         let%lwt required_answers_given =
-           Custom_field.all_required_answered
-             database_label
-             (Contact.id contact)
-         in
-         (match required_answers_given with
-          | true -> success ()
+         (match user.Sihl_user.confirmed with
           | false ->
             redirect
-              ~set_completion_cookie:true
-              "/user/completion"
-              [ Message.set
-                  ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
-              ])
+              (Http_utils.path_with_language
+                 query_language
+                 "/email-confirmation")
+          | true ->
+            let* contact = user |> contact in
+            let%lwt required_answers_given =
+              Custom_field.all_required_answered
+                database_label
+                (Contact.id contact)
+            in
+            (match required_answers_given with
+             | true -> success ()
+             | false ->
+               login
+                 ~set_completion_cookie:true
+                 "/user/completion"
+                 [ Message.set
+                     ~error:[ Pool_common.Message.(RequiredFieldsMissing) ]
+                 ]))
   in
   result |> HttpUtils.extract_happy_path req
 ;;
 
 let request_reset_password_get req =
-  let result ({ Pool_context.database_label; _ } as context) =
+  let result context =
     Utils.Lwt_result.map_error (fun err -> err, "/index")
     @@
     let open Utils.Lwt_result.Infix in
     let open Sihl.Web in
-    Service.User.Web.user_from_session ~ctx:(to_ctx database_label) req
-    >|> function
-    | Some user ->
-      General.dashboard_path database_label user
-      ||> externalize_path
-      ||> Response.redirect_to
-      >|> Lwt.return_ok
-    | None ->
-      Page.Public.request_reset_password context
-      |> create_layout req ~active_navigation:"/request-reset-password" context
-      >|+ Response.of_html
+    Page.Public.request_reset_password context
+    |> create_layout req ~active_navigation:"/request-reset-password" context
+    >|+ Response.of_html
   in
   result |> HttpUtils.extract_happy_path req
 ;;

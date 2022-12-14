@@ -11,14 +11,6 @@ let admin_from_session db_pool req =
   user.Sihl.Contract.User.id |> Admin.Id.of_string |> Admin.find db_pool
 ;;
 
-let dashboard_path tenant_db user =
-  let open Utils.Lwt_result.Infix in
-  Admin.user_is_admin tenant_db user
-  ||> function
-  | true -> "/admin/dashboard"
-  | false -> "/dashboard"
-;;
-
 let create_tenant_layout
   req
   ?active_navigation

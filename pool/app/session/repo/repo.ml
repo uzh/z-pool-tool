@@ -181,6 +181,26 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  let find_by_assignment_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_assignments
+        ON pool_assignments.session_id = pool_sessions.id
+      WHERE pool_assignments.uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> find_sql
+    |> Caqti_type.string ->! RepoEntity.t
+  ;;
+
+  let find_by_assignment pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_by_assignment_request
+      (Pool_common.Id.value id)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+  ;;
+
   let find_all_public_for_experiment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -440,6 +460,11 @@ let find_public_by_assignment pool assignment_id =
   let open Utils.Lwt_result.Infix in
   Sql.find_public_by_assignment pool assignment_id
   >>= location_to_public_repo_entity pool
+;;
+
+let find_by_assignment pool assignment_id =
+  let open Utils.Lwt_result.Infix in
+  Sql.find_by_assignment pool assignment_id >>= location_to_repo_entity pool
 ;;
 
 let find_follow_ups pool parent_session_id =

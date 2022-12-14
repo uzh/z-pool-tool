@@ -25,8 +25,13 @@ module Partials = struct
     |> txt
   ;;
 
-  let overview_list Pool_context.{ language; csrf; _ } experiment_id assignments
+  let overview_list
+    Pool_context.{ language; csrf; _ }
+    experiment_id
+    session
+    assignments
     =
+    let cancelable = Session.assignments_cancelable session |> CCResult.is_ok in
     let action assignment =
       Format.asprintf
         "/admin/experiments/%s/assignments/%s/cancel"
@@ -38,9 +43,11 @@ module Partials = struct
     | true -> p [ language |> empty ]
     | false ->
       let thead =
-        (Pool_common.Message.Field.[ Name; Email; CanceledAt ]
-        |> Component.Table.fields_to_txt language)
-        @ [ txt "" ]
+        let base =
+          Pool_common.Message.Field.[ Name; Email; CanceledAt ]
+          |> Component.Table.fields_to_txt language
+        in
+        if cancelable then base @ [ txt "" ] else base
       in
       let rows =
         CCList.map
@@ -53,7 +60,16 @@ module Partials = struct
             in
             let cancel assignment =
               form
-                ~a:[ a_action (action assignment); a_method `Post ]
+                ~a:
+                  [ a_action (action assignment)
+                  ; a_method `Post
+                  ; a_user_data
+                      "confirmable"
+                      Pool_common.(
+                        Utils.confirmable_to_string
+                          language
+                          I18n.CancelAssignment)
+                  ]
                 [ csrf_element csrf ()
                 ; submit_element
                     language
@@ -62,9 +78,12 @@ module Partials = struct
                     ()
                 ]
             in
-            match assignment.canceled_at with
-            | None -> base @ [ cancel assignment ]
-            | Some _ -> base @ [ txt "" ])
+            match cancelable with
+            | false -> base
+            | true ->
+              (match assignment.canceled_at with
+               | None -> base @ [ cancel assignment ]
+               | Some _ -> base @ [ txt "" ]))
           assignments
       in
       Component.Table.horizontal_table `Striped ~align_last_end:true ~thead rows
@@ -79,7 +98,11 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
           [ h3
               ~a:[ a_class [ "heading-3" ] ]
               [ txt (session |> Session.session_date_to_human) ]
-          ; Partials.overview_list context experiment.Experiment.id assignments
+          ; Partials.overview_list
+              context
+              experiment.Experiment.id
+              session
+              assignments
           ])
       assignments
     |> div ~a:[ a_class [ "stack-lg" ] ]

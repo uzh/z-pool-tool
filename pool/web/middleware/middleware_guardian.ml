@@ -5,14 +5,15 @@ let require_user_type_of (user_type : Pool_context.UserType.t list) =
       req
       |> Pool_context.find
       |> Lwt_result.lift
+      >|- (fun _ -> "/not-found")
       >== fun { Pool_context.user; _ } ->
       if Pool_context.UserType.user_in user_type user
       then Ok ()
-      else Error Pool_common.Message.(NotFound Field.Page)
+      else Error (Pool_context.dashboard_path user)
     in
     match result with
     | Ok _ -> handler req
-    | Error _ -> Http_utils.redirect_to "/not-found"
+    | Error path -> Http_utils.redirect_to path
   in
   Rock.Middleware.create ~name:"guardian.require_type" ~filter
 ;;
@@ -77,7 +78,13 @@ let validate_generic generic_fcn =
     in
     match%lwt result with
     | Ok _ -> handler req
-    | Error _ -> Http_utils.redirect_to "/denied"
+    | Error _ ->
+      let redirect =
+        match Http_utils.is_req_from_root_host req with
+        | false -> "/denied"
+        | true -> "/root/denied"
+      in
+      Http_utils.redirect_to redirect
   in
   Rock.Middleware.create ~name:"guardian.generic" ~filter
 ;;

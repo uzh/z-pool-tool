@@ -139,6 +139,7 @@ end
 val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result
+val assignments_cancelable : t -> (unit, Pool_common.Message.error) result
 
 (* TODO [aerben] this should be experiment id type *)
 val find
@@ -171,6 +172,11 @@ val find_public_by_assignment
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> (Public.t, Pool_common.Message.error) Lwt_result.t
+
+val find_by_assignment
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> (t, Pool_common.Message.error) Lwt_result.t
 
 val find_experiment_id_and_title
   :  Pool_database.Label.t

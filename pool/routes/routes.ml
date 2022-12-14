@@ -62,6 +62,7 @@ module Public = struct
                   Pool_context.UserType.[ Contact; Admin ]
               ]
             [ get "/logout" Login.logout ]
+        ; get "/denied" Handler.Public.denied
         ])
   ;;
 end
@@ -79,8 +80,6 @@ module Contact = struct
     ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
     ; get "/email-verified" SignUp.email_verification
-    ; get "/termsandconditions" SignUp.terms
-    ; post "/terms-accepted/:id" SignUp.terms_accept
     ]
   ;;
 
@@ -142,9 +141,16 @@ module Contact = struct
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Contact ]
-            ; CustomMiddleware.Contact.confirmed_and_terms_agreed ()
             ]
-          locked_routes
+          [ choose
+              [ get "/termsandconditions" SignUp.terms
+              ; post "/terms-accepted/:id" SignUp.terms_accept
+              ; choose
+                  ~middlewares:
+                    [ CustomMiddleware.Contact.confirmed_and_terms_agreed () ]
+                  locked_routes
+              ]
+          ]
       ]
   ;;
 end
@@ -212,7 +218,7 @@ module Admin = struct
       ; get "/new" ~middlewares:[ Access.create ] new_form
       ; choose
           (filter_form (toggle_key, toggle_predicate_type, add_predicate))
-          ~middlewares:[ Access.update ]
+          ~middlewares:[ Access.create ]
       ; choose ~scope:(Filter |> url_key) specific
       ]
     in
@@ -275,8 +281,8 @@ module Admin = struct
           ; post "/delete" ~middlewares:[ Access.delete ] delete
           ; get "/reschedule" ~middlewares:[ Access.reschedule ] reschedule_form
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
-          ; get "/close" ~middlewares:[ Access.stop ] close
-          ; post "/close" ~middlewares:[ Access.stop ] close_post
+          ; get "/close" ~middlewares:[ Access.close ] close
+          ; post "/close" ~middlewares:[ Access.close ] close_post
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list
@@ -319,8 +325,11 @@ module Admin = struct
         [ get "" ~middlewares:[ Access.index ] index
         ; post "" ~middlewares:[ Access.create ] create
         ; get "/create" ~middlewares:[ Access.create ] new_form
-        ; post "/search-info" ~middlewares:[ Access.update ] search_info
-        ; post "/add-condition" ~middlewares:[ Access.update ] add_condition
+        ; post "/search-info" ~middlewares:[ Access.search_info ] search_info
+        ; post
+            "/add-condition"
+            ~middlewares:[ Access.add_condition ]
+            add_condition
         ; choose ~scope:(Mailing |> url_key) specific
         ]
       in
@@ -496,6 +505,7 @@ module Root = struct
     ; post "/request-reset-password" Login.request_reset_password_post
     ; get "/reset-password" Login.reset_password_get
     ; post "/reset-password" Login.reset_password_post
+    ; get "/denied" Handler.Public.denied
     ]
   ;;
 
@@ -581,7 +591,6 @@ let router =
     ; choose ~scope:"/admin" [ Admin.routes ]
     ; choose ~scope:"/root" [ Root.routes ]
     ; Public.global_routes
-    ; get "/denied" Handler.Public.denied
     ; get
         "/**"
         ~middlewares:

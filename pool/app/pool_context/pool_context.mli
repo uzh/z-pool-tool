@@ -33,6 +33,8 @@ val find : Rock.Request.t -> (t, Pool_common.Message.error) result
 val find_exn : Rock.Request.t -> t
 val set : Rock.Request.t -> t -> Rock.Request.t
 val find_contact : t -> (Contact.t, Pool_common.Message.error) result
+val user_of_sihl_user : Pool_database.Label.t -> Sihl_user.t -> user Lwt.t
+val dashboard_path : user -> string
 
 val create
   :  Pool_common.Language.t option
@@ -70,3 +72,4 @@ end
 
 val sexp_of_t : t -> Sexplib.Sexp.t
 val show_log : t -> string
+val is_from_root : t -> bool
