@@ -1,0 +1,29 @@
+name: trigger-deploy
+description: Triggers a deploy in a remote location using cURL and payload
+
+inputs:
+  url:
+    required: true
+    description: The URL to trigger
+  token:
+    required: true
+    description: The auth token used for the trigger
+  ref:
+    default: main
+    description: The reference to trigger (commonly a branch name)
+  target:
+    default: staging
+    description: The deployment to trigger (staging or production)
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        curl -X POST \
+          --fail \
+          -F token=${{ inputs.token }} \
+          -F "ref=main" \
+          -F "variables[REF_NAME]=$GITHUB_REF_NAME" \
+          -F "variables[POOL_DEPLOY_TARGET]=${{ inputs.target }}" \
+          ${{ inputs.url }}

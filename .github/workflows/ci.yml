@@ -1,9 +1,6 @@
 name: CI
 on:
-  pull_request:
   push:
-    branches: [main]
-    tags: ["v*"]
 
 jobs:
   build:
@@ -102,6 +99,17 @@ jobs:
         uses: ./.github/actions/notify-failure
         with:
           webhook: ${{ secrets.ECON_TEAMS_WEBHOOK }}
+
+  deploy:
+    name: Trigger staging deploy
+    runs-on: ubuntu-latest
+    needs: [build, assets]
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: ./.github/actions/notify-failure
+        with:
+          url: ${{ secrets.ECON_DEPLOY_TRIGGER_URL }}
+          token: ${{ secrets.ECON_DEPLOY_TRIGGER_TOKEN }}
 
   release:
     name: Release a new version
