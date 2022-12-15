@@ -23,7 +23,7 @@ let create =
     <lastname>            : string
     <role>                : string
 
-Example: sihl contact.signup econ-uzh example@mail.com securePassword Max Muster
+Example: admin.create econ-uzh example@mail.com securePassword Max Muster
           |}
     in
     match args with
@@ -88,7 +88,7 @@ let grant_role =
     <email>               : string
     <role>                : string
 
-Example: sihl contact.signup econ-uzh example@mail.com securePassword Max Muster
+Example: admin.grant_role econ-uzh example@mail.com securePassword Max Muster
           |}
     in
     match args with
