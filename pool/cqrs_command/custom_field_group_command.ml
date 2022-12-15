@@ -87,7 +87,7 @@ end
 module Sort : sig
   include Common.CommandSig with type t = Custom_field.Group.t list
 
-  val effects : Custom_field.Group.Id.t -> Guard.Authorizer.effect list
+  val effects : Guard.Authorizer.effect list
 end = struct
   type t = Custom_field.Group.t list
 
@@ -96,9 +96,5 @@ end = struct
     Ok [ Custom_field.GroupsSorted t |> Pool_event.custom_field ]
   ;;
 
-  let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Custom_field.Group.Id.value)
-    ; `Update, `TargetEntity `CustomField
-    ]
-  ;;
+  let effects = [ `Create, `TargetEntity `CustomField ]
 end
