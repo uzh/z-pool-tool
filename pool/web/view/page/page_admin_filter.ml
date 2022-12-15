@@ -26,9 +26,10 @@ let index { Pool_context.language; _ } filter_list =
           ; a
               ~a:
                 [ a_href
-                    (Format.asprintf
-                       "/admin/filter/%s/edit"
-                       (Pool_common.Id.value filter.Filter.id))
+                    (filter.Filter.id
+                    |> Pool_common.Id.value
+                    |> Format.asprintf "/admin/filter/%s/edit"
+                    |> Sihl.Web.externalize_path)
                 ]
               [ txt
                   Pool_common.(

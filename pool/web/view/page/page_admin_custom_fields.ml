@@ -702,9 +702,7 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                CCFun.(
                  PublishedAt.value
                  %> Pool_common.Utils.Time.ptime_to_formatted_date))
-      ; Url.Field.edit_path (model field, id field)
-        |> Sihl.Web.externalize_path
-        |> edit_link
+      ; Url.Field.edit_path (model field, id field) |> edit_link
       ]
     in
     CCList.flat_map
@@ -837,7 +835,6 @@ let index field_list group_list current_model Pool_context.{ language; csrf; _ }
                               ()
                           ]
                       ; Url.Group.edit_path Group.(group.model, group.id)
-                        |> Sihl.Web.externalize_path
                         |> edit_link ~classnames:[ "small" ]
                       ])
                   group_list

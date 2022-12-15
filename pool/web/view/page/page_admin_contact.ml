@@ -20,10 +20,9 @@ let contact_overview language contacts =
     (fun contact ->
       [ txt (email_address contact |> Pool_user.EmailAddress.value)
       ; txt (fullname contact)
-      ; Sihl.Web.externalize_path
-          (Format.asprintf
-             "/admin/contacts/%s"
-             (id contact |> Pool_common.Id.value))
+      ; id contact
+        |> Pool_common.Id.value
+        |> Format.asprintf "/admin/contacts/%s"
         |> Component.Input.edit_link
       ])
     contacts
@@ -53,10 +52,10 @@ let detail Pool_context.{ language; _ } contact =
                 ~a:[ a_class [ "heading-1" ] ]
                 [ txt (Contact.fullname contact) ]
             ]
-        ; Sihl.Web.externalize_path
-            (Format.asprintf
-               "/admin/contacts/%s/edit"
-               (contact |> Contact.id |> Pool_common.Id.value))
+        ; contact
+          |> Contact.id
+          |> Pool_common.Id.value
+          |> Format.asprintf "/admin/contacts/%s/edit"
           |> Component.Input.link_as_button
                ~icon:`Create
                ~classnames:[ "small" ]

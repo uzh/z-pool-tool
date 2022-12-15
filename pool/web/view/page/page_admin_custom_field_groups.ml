@@ -88,7 +88,6 @@ let form
                             ()
                         ]
                     ; Url.Field.edit_path (model field, id field)
-                      |> Sihl.Web.externalize_path
                       |> edit_link ~classnames:[ "small" ]
                     ])
                 fields

@@ -17,8 +17,7 @@ let admin_overview language admins =
              (user.given_name |> default_empty)
              (user.name |> default_empty)
           |> CCString.trim)
-      ; Sihl.Web.externalize_path (Format.asprintf "/admin/admins/%s" user.id)
-        |> Component.Input.edit_link
+      ; Format.asprintf "/admin/admins/%s" user.id |> Component.Input.edit_link
       ])
     admins
   |> Component.Table.horizontal_table ~align_last_end:true `Striped ~thead
