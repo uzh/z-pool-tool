@@ -87,64 +87,73 @@ let show
       [ h2 ~a:[ a_class [ "heading-2" ] ] [ txt "Email Suffixes" ]
       ; div
           ~a:[ a_class [ "stack" ] ]
-          [ form
-              ~a:(form_attrs `UpdateTenantEmailSuffixes)
-              ([ csrf_element csrf () ]
-              @ CCList.map
-                  (fun suffix ->
-                    input_element
-                      language
-                      `Text
-                      Message.Field.EmailSuffix
-                      ~required:true
-                      ~value:(suffix |> Settings.EmailSuffix.value))
-                  email_suffixes
-              @ [ submit () ])
-          ; form
-              ~a:(form_attrs `CreateTenantEmailSuffix)
-              [ csrf_element csrf ()
-              ; input_element
-                  language
-                  `Text
-                  Message.Field.EmailSuffix
-                  ~required:true
-              ; submit ~control:Message.(Add None) ()
-              ]
-          ; div
-              (CCList.map
-                 (fun suffix ->
-                   [ txt (Settings.EmailSuffix.value suffix)
-                   ; form
-                       ~a:
-                         [ a_method `Post
-                         ; a_action (action_path `DeleteTenantEmailSuffix)
-                         ; a_user_data
-                             "confirmable"
-                             Pool_common.(
-                               Utils.confirmable_to_string
-                                 language
-                                 I18n.DeleteEmailSuffix)
-                         ]
-                       [ csrf_element csrf ()
-                       ; input
-                           ~a:
-                             [ a_input_type `Hidden
-                             ; a_name "email_suffix"
-                             ; a_value (Settings.EmailSuffix.value suffix)
-                             ; a_readonly ()
-                             ]
-                           ()
-                       ; submit_element
-                           language
-                           Message.(Delete None)
-                           ~submit_type:`Error
-                           ()
-                       ]
-                   ])
-                 email_suffixes
-              |> Component.Table.horizontal_table ~align_last_end:true `Striped
-              |> CCList.pure)
-          ]
+          (let constant =
+             [ form
+                 ~a:(form_attrs `CreateTenantEmailSuffix)
+                 [ csrf_element csrf ()
+                 ; input_element
+                     language
+                     `Text
+                     Message.Field.EmailSuffix
+                     ~required:true
+                 ; submit ~control:Message.(Add None) ()
+                 ]
+             ; div
+                 (CCList.map
+                    (fun suffix ->
+                      [ txt (Settings.EmailSuffix.value suffix)
+                      ; form
+                          ~a:
+                            [ a_method `Post
+                            ; a_action (action_path `DeleteTenantEmailSuffix)
+                            ; a_user_data
+                                "confirmable"
+                                Pool_common.(
+                                  Utils.confirmable_to_string
+                                    language
+                                    I18n.DeleteEmailSuffix)
+                            ]
+                          [ csrf_element csrf ()
+                          ; input
+                              ~a:
+                                [ a_input_type `Hidden
+                                ; a_name "email_suffix"
+                                ; a_value (Settings.EmailSuffix.value suffix)
+                                ; a_readonly ()
+                                ]
+                              ()
+                          ; submit_element
+                              language
+                              Message.(Delete None)
+                              ~submit_type:`Error
+                              ()
+                          ]
+                      ])
+                    email_suffixes
+                 |> Component.Table.horizontal_table
+                      ~align_last_end:true
+                      `Striped
+                 |> CCList.pure)
+             ]
+           in
+           let update =
+             form
+               ~a:(form_attrs `UpdateTenantEmailSuffixes)
+               ([ csrf_element csrf () ]
+               @ CCList.map
+                   (fun suffix ->
+                     input_element
+                       language
+                       `Text
+                       Message.Field.EmailSuffix
+                       ~required:true
+                       ~value:(suffix |> Settings.EmailSuffix.value))
+                   email_suffixes
+               @ [ submit () ])
+           in
+           if CCList.is_empty email_suffixes
+           then constant
+           else update :: constant)
       ]
   in
   let contact_email_html =
