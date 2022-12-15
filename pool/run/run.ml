@@ -18,6 +18,8 @@ let commands =
   ; Matcher.run_tenant
   ; Matcher.run_all
   ; Mail.send_mail
+  ; Admin.create
+  ; Admin.grant_role
   ]
 ;;
 
