@@ -504,8 +504,11 @@ let filter_form csrf language param key_list template_list =
             ~a:
               [ a_id "contact-counter"
               ; a_user_data
-                  "experiment-id"
-                  (experiment.Experiment.id |> Experiment.Id.value)
+                  "action"
+                  (experiment.Experiment.id
+                  |> Experiment.Id.value
+                  |> Format.asprintf "/admin/experiments/%s/contact-count"
+                  |> Sihl.Web.externalize_path)
               ]
             []
         ]
