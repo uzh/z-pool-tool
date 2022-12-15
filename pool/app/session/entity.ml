@@ -309,6 +309,15 @@ let is_cancellable session =
   else Error Pool_common.Message.SessionInPast
 ;;
 
+let is_deletable session =
+  let open CCResult.Infix in
+  let* () = not_canceled session in
+  let* () = not_closed session in
+  if session.assignment_count |> AssignmentCount.value > 0
+  then Error Pool_common.Message.SessionHasAssignments
+  else Ok ()
+;;
+
 (* Closable if after session ends *)
 let is_closable session =
   let open CCResult.Infix in

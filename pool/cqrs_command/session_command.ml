@@ -368,13 +368,12 @@ end = struct
   type t = Session.t
 
   let handle ?(tags = Logs.Tag.empty) session =
+    let open CCResult in
     Logs.info ~src (fun m -> m "Handle command Delete" ~tags);
     (* TODO [aerben] how to deal with follow-ups? currently they just
        disappear *)
-    if not
-         (session.Session.assignment_count |> Session.AssignmentCount.value == 0)
-    then Error Pool_common.Message.SessionHasAssignments
-    else Ok [ Session.Deleted session |> Pool_event.session ]
+    let* () = Session.is_deletable session in
+    Ok [ Session.Deleted session |> Pool_event.session ]
   ;;
 
   let effects id =

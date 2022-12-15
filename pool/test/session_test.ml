@@ -523,6 +523,31 @@ let delete () =
   check_result (Ok [ Pool_event.Session (Session.Deleted session) ]) res
 ;;
 
+let delete_closed_session () =
+  let closed_at = Ptime_clock.now () in
+  let session = Test_utils.Model.create_session () in
+  let session = Session.{ session with closed_at = Some closed_at } in
+  let res = SessionC.Delete.handle session in
+  check_result
+    (closed_at
+    |> Pool_common.Utils.Time.formatted_date_time
+    |> Pool_common.Message.sessionalreadyclosed
+    |> CCResult.fail)
+    res
+;;
+
+let delete_session_with_assignments () =
+  let session = Test_utils.Model.create_session () in
+  let session =
+    Session.
+      { session with
+        assignment_count = AssignmentCount.create 1 |> CCResult.get_exn
+      }
+  in
+  let res = SessionC.Delete.handle session in
+  check_result (Error Pool_common.Message.SessionHasAssignments) res
+;;
+
 let cancel_no_reason () =
   let open CCResult.Infix in
   let session = Test_utils.Model.create_session () in
