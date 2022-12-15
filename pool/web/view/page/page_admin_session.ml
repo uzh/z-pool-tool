@@ -375,6 +375,10 @@ let index
             |> CCOption.map_or ~default:"" (fun t ->
                  Utils.Time.formatted_date_time t)
             |> txt
+          ; session.Session.closed_at
+            |> CCOption.map_or ~default:"" (fun t ->
+                 Utils.Time.formatted_date_time t)
+            |> txt
           ; div
               ~a:[ a_class [ "flexrow"; "flex-gap"; "justify-end" ] ]
               [ Format.asprintf
@@ -391,7 +395,7 @@ let index
   in
   let thead =
     Message.(
-      [ Field.Date; Field.AssignmentCount; Field.CanceledAt ]
+      [ Field.Date; Field.AssignmentCount; Field.CanceledAt; Field.ClosedAt ]
       |> Table.fields_to_txt language)
     @ [ add_session_btn ]
   in
