@@ -347,6 +347,7 @@ module Access : sig
 
   val publish : Rock.Middleware.t
   val sort : Rock.Middleware.t
+  val sort_ungrouped : Rock.Middleware.t
 end = struct
   module CustomFieldCommand = Cqrs_command.Custom_field_command
   module Field = Pool_common.Message.Field
@@ -397,5 +398,10 @@ end = struct
     [ CustomFieldCommand.Sort.effects ]
     |> custom_field_effects
     |> Middleware.Guardian.validate_generic
+  ;;
+
+  let sort_ungrouped =
+    [ `Update, `TargetEntity `CustomField ]
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 end

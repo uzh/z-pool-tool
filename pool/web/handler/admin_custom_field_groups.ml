@@ -228,9 +228,7 @@ end = struct
   ;;
 
   let sort =
-    [ CustomFieldCommand.Sort.effects ]
-    |> custom_field_effects
-    |> Middleware.Guardian.validate_generic
+    CustomFieldCommand.Sort.effects |> Middleware.Guardian.validate_admin_entity
   ;;
 
   let delete =

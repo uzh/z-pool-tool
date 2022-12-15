@@ -3,20 +3,15 @@ const csrfToken = () => {
     return document.getElementById("filter-form").querySelector('[name="_csrf"]').value;
 }
 
-// TODO: let user close notification, maybe display somewhere else
-// Frontend framework issue #29
+
 const notifyUser = (classname, msg) => {
     const notificationId = "filter-notification";
-    const icon = document.createElement("i");
-    icon.classList.add("notification-close", "icon-close-outline");
-
     const inner = document.createElement("div")
     inner.classList.add("notification", classname);
     inner.innerHTML = msg;
-    inner.appendChild(icon);
 
     const wrapper = document.createElement("div");
-    wrapper.classList.add("notification-fixed");
+    wrapper.classList.add("notification-fixed", "fade-out");
     wrapper.id = notificationId
     wrapper.appendChild(inner);
 
@@ -47,9 +42,9 @@ const addRequiredError = (elm) => {
 const updateContactCount = async () => {
     const target = document.getElementById("contact-counter");
     if (target) {
-        const id = target.dataset.experimentId;
+        const action = target.dataset.action;
         try {
-            const response = await fetch(`/admin/experiments/${id}/contact-count`);
+            const response = await fetch(action);
             const data = await response.json();
             if (!response.ok) {
                 throw (data.message || response.statusText || "An Error occurred")
@@ -202,7 +197,11 @@ function configRequest(e, form) {
             e.detail.parameters.query = predicateToJson(elm, allowEmpty);
             const title = document.querySelector('#filter-form [name="title"]');
             if (title) {
-                e.detail.parameters.title = title.value;
+                if (!title.value) {
+                    throw "Please add a title.";
+                } else {
+                    e.detail.parameters.title = title.value;
+                }
             }
         } catch (error) {
             console.error(error)

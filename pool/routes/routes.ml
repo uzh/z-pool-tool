@@ -438,13 +438,16 @@ module Admin = struct
         in
         [ get "/new" ~middlewares:[ Access.create ] new_form
         ; post "" ~middlewares:[ Access.create ] create
-        ; post "/sort" ~middlewares:[ Access.update ] sort
+        ; post "/sort" ~middlewares:[ Access.sort ] sort
         ; choose ~scope:(CustomFieldGroup |> url_key) specific
         ]
       in
       let models =
         [ get "" ~middlewares:[ Access.index ] index
-        ; post "sort-fields" ~middlewares:[ Access.sort ] sort_ungrouped_fields
+        ; post
+            "sort-fields"
+            ~middlewares:[ Access.sort_ungrouped ]
+            sort_ungrouped_fields
         ; choose ~scope:"field" fields
         ; choose ~scope:"group" groups
         ]
