@@ -175,11 +175,7 @@ val find_all_public_by_contact
   -> Contact.t
   -> Public.t list Lwt.t
 
-val session_count
-  :  Pool_database.Label.t
-  -> Id.t
-  -> (int, Pool_common.Message.error) Lwt_result.t
-
+val session_count : Pool_database.Label.t -> Id.t -> int Lwt.t
 val possible_participant_count : t -> int Lwt.t
 val possible_participants : t -> Contact.t list Lwt.t
 val title_value : t -> string

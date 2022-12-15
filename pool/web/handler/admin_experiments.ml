@@ -91,7 +91,7 @@ let detail edit req =
     let* experiment = Experiment.find database_label id in
     (match edit with
      | false ->
-       let* session_count = Experiment.session_count database_label id in
+       let%lwt session_count = Experiment.session_count database_label id in
        Page.Admin.Experiments.detail experiment session_count context
        |> Lwt.return_ok
      | true ->
@@ -163,7 +163,7 @@ let delete req =
           "%s/%s"
           experiments_path
           (Experiment.Id.value experiment_id) ))
-    @@ let* session_count =
+    @@ let%lwt session_count =
          Experiment.session_count database_label experiment_id
        in
        let tags = Logger.req req in

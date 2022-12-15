@@ -343,6 +343,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
             language
             Message.(Delete (Some Field.Experiment))
             ~submit_type:`Disabled
+            ~classnames:[ "small" ]
             ()
         ; p
             [ small
