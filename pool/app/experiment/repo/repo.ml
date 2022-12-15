@@ -157,6 +157,21 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
+  let session_count_request =
+    let open Caqti_request.Infix in
+    {sql|
+      SELECT COUNT(1) FROM pool_sessions WHERE experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+    |sql}
+    |> Caqti_type.(string ->! int)
+  ;;
+
+  let session_count pool id =
+    Utils.Database.find
+      (Pool_database.Label.value pool)
+      session_count_request
+      (id |> Pool_common.Id.value)
+  ;;
+
   let update_request =
     let open Caqti_request.Infix in
     {sql|
@@ -206,6 +221,7 @@ let find = Sql.find
 let find_all = Sql.find_all
 let find_of_session = Sql.find_of_session
 let find_of_mailing = Sql.find_of_mailing
+let session_count = Sql.session_count
 let insert = Sql.insert
 let update = Sql.update
 let destroy = Sql.destroy

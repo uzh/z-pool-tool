@@ -330,9 +330,7 @@ let index
         let open Session in
         let session_row session =
           let delete_form =
-            if session.Session.assignment_count
-               |> Session.AssignmentCount.value
-               == 0
+            if Session.is_deletable session |> CCResult.is_ok
             then
               form
                 ~a:

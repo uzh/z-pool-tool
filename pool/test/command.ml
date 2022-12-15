@@ -220,6 +220,14 @@ let () =
             Session_test.update_min_eq_max
         ; test_case "delete session succeeds" `Quick Session_test.delete
         ; test_case
+            "delete closed session fails"
+            `Quick
+            Session_test.delete_closed_session
+        ; test_case
+            "delete session with assignments fails"
+            `Quick
+            Session_test.delete_session_with_assignments
+        ; test_case
             "cancel session without reason fails"
             `Quick
             Session_test.cancel_no_reason
