@@ -16,6 +16,7 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
+  ; roles : Guard.ActorRoleSet.t option
   }
 
 val equal_create : create -> create -> bool

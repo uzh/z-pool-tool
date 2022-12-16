@@ -102,18 +102,17 @@ let create_operator req =
       ||> CCOption.to_result EmailAddressMissingOperator
       >>= HttpUtils.validate_email_existance database_label
     in
-    let find_tenant () = Pool_tenant.find_full id in
     let tags = Logger.req req in
+    let ctx = Pool_tenant.to_ctx database_label in
     let events =
       let open Cqrs_command.Admin_command.CreateOperator in
       let* actor =
         let open Pool_context in
         match user with
-        | Guest ->
+        | Guest | Contact _ ->
           Lwt.return_error
           @@ Pool_common.Message.authorization "Permission denied"
-        | Admin user -> Admin.Guard.Actor.to_authorizable user
-        | Contact user -> Contact.Guard.Actor.to_authorizable user
+        | Admin user -> Admin.Guard.Actor.to_authorizable ~ctx user
       in
       let* () =
         Guard.Persistence.checker_of_effects
@@ -126,7 +125,10 @@ let create_operator req =
       CCResult.(urlencoded |> decode >>= handle ~tags) |> Lwt_result.lift
     in
     let handle events =
-      Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
+      let* { Pool_tenant.Write.database; _ } = Pool_tenant.find_full id in
+      Lwt_list.iter_s
+        (Pool_event.handle_event ~tags database.Database.label)
+        events
       |> Lwt_result.ok
     in
     let return_to_overview () =
@@ -136,7 +138,6 @@ let create_operator req =
     in
     ()
     |> validate_user
-    >>= find_tenant
     >> events
     >>= handle
     >|- (fun err -> err, Format.asprintf "%s/operator" redirect_path)

@@ -11,6 +11,7 @@
   cqrs_command
   database
   experiment
+  guard
   http_utils
   invitation
   matcher

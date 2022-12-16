@@ -62,12 +62,12 @@ end = struct
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     let admin : Admin.create =
-      Admin.
-        { email = command.email
-        ; password = command.password
-        ; firstname = command.firstname
-        ; lastname = command.lastname
-        }
+      { Admin.email = command.email
+      ; password = command.password
+      ; firstname = command.firstname
+      ; lastname = command.lastname
+      ; roles = Some (Guard.ActorRoleSet.singleton `Root)
+      }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
   ;;

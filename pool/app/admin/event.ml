@@ -5,9 +5,10 @@ open Entity
 
 type create =
   { email : User.EmailAddress.t
-  ; password : User.Password.t
+  ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
+  ; roles : Guard.ActorRoleSet.t option
   }
 [@@deriving eq, show]
 
@@ -52,11 +53,23 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~password:(admin.password |> User.Password.to_sihl)
         (User.EmailAddress.value admin.email)
     in
-    let%lwt (_
+    let%lwt (authorizable
               : ([> `Admin ] Guard.Authorizable.t, Common.Message.error) result)
       =
       Entity_guard.Actor.to_authorizable ~ctx user
       |> Lwt_result.map_error Pool_common.Utils.with_log_error
+    in
+    let%lwt _ =
+      match authorizable, admin.roles with
+      | Ok auth, Some roles ->
+        let%lwt _ =
+          Guard.Persistence.Actor.grant_roles
+            ~ctx
+            auth.Guard.Authorizable.uuid
+            roles
+        in
+        Lwt.return_unit
+      | Error _, Some _ | _, None -> Lwt.return_unit
     in
     Lwt.return_unit
   | DetailsUpdated (_, _) -> Lwt.return_unit
