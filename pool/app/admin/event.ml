@@ -53,23 +53,20 @@ let handle_event ~tags pool : event -> unit Lwt.t =
         ~password:(admin.password |> User.Password.to_sihl)
         (User.EmailAddress.value admin.email)
     in
-    let%lwt (authorizable
-              : ([> `Admin ] Guard.Authorizable.t, Common.Message.error) result)
-      =
+    let%lwt (authorizable : [> `Admin ] Guard.Authorizable.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
-      |> Lwt_result.map_error Pool_common.Utils.with_log_error
+      >|- Pool_common.Utils.with_log_error
+      ||> Pool_common.Utils.get_or_failwith
     in
-    let%lwt _ =
-      match authorizable, admin.roles with
-      | Ok auth, Some roles ->
-        let%lwt _ =
-          Guard.Persistence.Actor.grant_roles
-            ~ctx
-            auth.Guard.Authorizable.uuid
-            roles
-        in
-        Lwt.return_unit
-      | Error _, Some _ | _, None -> Lwt.return_unit
+    let%lwt () =
+      match admin.roles with
+      | Some roles ->
+        Guard.Persistence.Actor.grant_roles
+          ~ctx
+          authorizable.Guard.Authorizable.uuid
+          roles
+        ||> CCResult.get_or_failwith
+      | None -> Lwt.return_unit
     in
     Lwt.return_unit
   | DetailsUpdated (_, _) -> Lwt.return_unit

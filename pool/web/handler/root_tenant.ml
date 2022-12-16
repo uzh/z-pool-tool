@@ -91,7 +91,7 @@ let create_operator req =
     let open Utils.Lwt_result.Infix in
     let open Common.Message in
     let id =
-      HttpUtils.get_field_router_param req Pool_common.Message.Field.Tenant
+      HttpUtils.get_field_router_param req Field.Tenant
       |> Pool_common.Id.of_string
     in
     let redirect_path =
@@ -110,16 +110,12 @@ let create_operator req =
         let open Pool_context in
         match user with
         | Guest | Contact _ ->
-          Lwt.return_error
-          @@ Pool_common.Message.authorization "Permission denied"
+          Lwt.return_error @@ Authorization "Permission denied"
         | Admin user -> Admin.Guard.Actor.to_authorizable ~ctx user
       in
       let* () =
-        Guard.Persistence.checker_of_effects
-          ~ctx:(Pool_tenant.to_ctx database_label)
-          effects
-          actor
-        |> Lwt_result.map_error Pool_common.Message.authorization
+        Guard.Persistence.checker_of_effects ~ctx effects actor
+        >|- authorization
       in
       let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
       CCResult.(urlencoded |> decode >>= handle ~tags) |> Lwt_result.lift
