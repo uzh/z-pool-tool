@@ -27,7 +27,14 @@ let create_root () =
     let* password = password |> Password.create in
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in
-    let create = { Admin.email; password; firstname; lastname } in
+    let create =
+      { Admin.email
+      ; password
+      ; firstname
+      ; lastname
+      ; roles = Some (Guard.ActorRoleSet.singleton `Root)
+      }
+    in
     Ok [ Admin.Created create |> Pool_event.admin ]
   in
   Alcotest.(

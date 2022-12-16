@@ -64,12 +64,12 @@ end = struct
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)
     let admin : Admin.create =
-      Admin.
-        { email = command.email
-        ; password = command.password
-        ; firstname = command.firstname
-        ; lastname = command.lastname
-        }
+      { Admin.email = command.email
+      ; password = command.password
+      ; firstname = command.firstname
+      ; lastname = command.lastname
+      ; roles = Some (Guard.ActorRoleSet.singleton `OperatorAll)
+      }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
   ;;
