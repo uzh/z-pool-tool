@@ -1,4 +1,4 @@
-let context ?(is_root = false) () =
+let context () =
   let open Utils.Lwt_result.Infix in
   let open Pool_context in
   let find_query_language = Http_utils.find_query_lang in
@@ -9,8 +9,8 @@ let context ?(is_root = false) () =
       Middleware_tenant.tenant_of_request req
       >|+ fun { Pool_tenant.database_label; _ } -> database_label
   in
-  let database_label_of_request req =
-    if Http_utils.is_req_from_root_host req
+  let database_label_of_request is_root req =
+    if is_root
     then Lwt.return_ok Pool_database.root
     else tenant_database_label_of_request req
   in
@@ -48,6 +48,7 @@ let context ?(is_root = false) () =
     ||> fun lang -> query_language, lang
   in
   let filter handler req =
+    let is_root = Http_utils.is_req_from_root_host req in
     let csrf = Sihl.Web.Csrf.find_exn req in
     let message =
       CCOption.bind
@@ -59,7 +60,7 @@ let context ?(is_root = false) () =
       >|> CCOption.map_or ~default:(Lwt.return Guest) (user_of_sihl_user pool)
     in
     let%lwt context =
-      let* database_label = database_label_of_request req in
+      let* database_label = database_label_of_request is_root req in
       let%lwt user = find_user database_label in
       let%lwt query_lang, language =
         let admin = Lwt.return (None, Pool_common.Language.En) in
