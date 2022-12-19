@@ -40,6 +40,17 @@ let sign_up_create req =
          |> Lwt_result.lift
        in
        let* remove_contact_event =
+         let find_admin email =
+           Service.User.find_by_email_opt
+             ~ctx:(Pool_tenant.to_ctx database_label)
+             (Pool_user.EmailAddress.value email)
+           ||> CCOption.map Service.User.is_admin
+           ||> CCOption.value ~default:false
+           ||> fun is_admin ->
+           if is_admin
+           then Error Pool_common.Message.EmailAlreadyInUse
+           else Ok email
+         in
          let find_contact email =
            email
            |> Contact.find_by_email database_label
@@ -53,6 +64,7 @@ let sign_up_create req =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
+         >>= find_admin
          >>= find_contact
          >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
                Command.DeleteUnverified.handle ~tags p |> Lwt_result.lift)
