@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Added
 
-- Option to make the mailer select the contacts in ranom order
+- Option to make the matcher select the contacts in random order
 
 ### Fixed
 
