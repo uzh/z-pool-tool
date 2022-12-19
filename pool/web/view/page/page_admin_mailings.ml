@@ -247,6 +247,11 @@ let form
       CCOption.map_or
         ~default:false
         (fun dist ->
+          let dist =
+            match dist with
+            | Sorted dist -> dist
+            | Random -> []
+          in
           CCList.mem_assoc
             ~eq:Mailing.Distribution.equal_sortable_field
             field
@@ -254,7 +259,9 @@ let form
         distribution
     in
     let distribution_fncs =
-      {js|
+      let open Pool_common.Message.Field in
+      Format.asprintf
+        {js|
         function removeDistribution(e) {
           e.preventDefault();
           var field = e.currentTarget.dataset.field;
@@ -285,7 +292,19 @@ let form
           e.detail.shouldSwap = false
         }
       })
+
+      const random = document.querySelector('[name="%s"]');
+      random.addEventListener("change", (e) => {
+        const inputs = document.querySelectorAll('[name="%s"], [name="%s"], [name="%s"]');
+        inputs.forEach((elm) => {
+          elm.disabled = e.currentTarget.checked
+        })
+      })
     |js}
+        (show RandomOrder)
+        (show DistributionField)
+        (show SortOrder)
+        (array_key Distribution)
     in
     let field_select =
       let default_option =
@@ -336,6 +355,15 @@ let form
               |> CCString.capitalize_ascii)
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
+      ; checkbox_element
+          ?value:
+            (let open CCOption in
+            distribution
+            >|= function
+            | Random -> true
+            | Sorted _ -> false)
+          language
+          Pool_common.Message.Field.RandomOrder
       ; div
           ~a:
             [ a_class
@@ -345,6 +373,7 @@ let form
                 ; "vertical"
                 ; "flexrow"
                 ; "flex-gap"
+                ; "gap"
                 ]
             ]
           [ div
@@ -371,11 +400,12 @@ let form
               ]
           ]
       ; div
-          [ CCOption.map_or
-              ~default:[]
-              (fun distribution ->
-                CCList.map (distribution_form_field language) distribution)
-              distribution
+          [ Mailing.Distribution.(
+              match distribution with
+              | Some (Sorted dist) -> dist
+              | Some Random -> []
+              | None -> [])
+            |> CCList.map (distribution_form_field language)
             |> Component.Sortable.create
                  ~classnames:[ "flexcolumn" ]
                  ~attributes:[ a_id "distribution-list" ]

@@ -48,7 +48,10 @@ let create req =
   let experiment_id = experiment_id req in
   let result { Pool_context.database_label; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.remove_empty_values
+      ||> HttpUtils.format_request_boolean_values
+            Pool_common.Message.Field.[ RandomOrder |> show ]
     in
     Utils.Lwt_result.map_error (fun err ->
       ( err
@@ -135,7 +138,10 @@ let update req =
   in
   let result { Pool_context.database_label; _ } =
     let%lwt urlencoded =
-      Sihl.Web.Request.to_urlencoded req ||> HttpUtils.remove_empty_values
+      Sihl.Web.Request.to_urlencoded req
+      ||> HttpUtils.remove_empty_values
+      ||> HttpUtils.format_request_boolean_values
+            Pool_common.Message.Field.[ RandomOrder |> show ]
     in
     Utils.Lwt_result.map_error (fun err ->
       err, redirect_path, [ HttpUtils.urlencoded_to_flash urlencoded ])

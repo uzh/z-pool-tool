@@ -5,15 +5,31 @@ open Mailing
 
 let src = Logs.Src.create "mailing.cqrs"
 
-module Create : sig
-  include Common.CommandSig
+let default_command start_at end_at rate is_random distribution : update =
+  let distribution =
+    let open Distribution in
+    if is_random
+    then Some Random
+    else distribution |> CCOption.map (fun d -> Sorted d)
+  in
+  Mailing.{ start_at; end_at; rate; distribution }
+;;
 
-  type t =
-    { start_at : StartAt.t
-    ; end_at : EndAt.t
-    ; rate : Rate.t
-    ; distribution : Distribution.t option
-    }
+let defalt_schema =
+  Conformist.(
+    make
+      Field.
+        [ StartAt.schema ()
+        ; EndAt.schema ()
+        ; Rate.schema ()
+        ; Distribution.is_random_schema ()
+        ; Conformist.optional @@ Distribution.schema ()
+        ]
+      default_command)
+;;
+
+module Create : sig
+  include Common.CommandSig with type t = Mailing.update
 
   val handle
     :  ?tags:Logs.Tag.set
@@ -25,31 +41,10 @@ module Create : sig
   val decode : Conformist.input -> (t, Message.error) result
   val effects : Experiment.Id.t -> BaseGuard.Authorizer.effect list
 end = struct
-  type t =
-    { start_at : StartAt.t
-    ; end_at : EndAt.t
-    ; rate : Rate.t
-    ; distribution : Distribution.t option
-    }
-
-  let command start_at end_at rate distribution : t =
-    { start_at; end_at; rate; distribution }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.
-          [ StartAt.schema ()
-          ; EndAt.schema ()
-          ; Rate.schema ()
-          ; Conformist.optional @@ Distribution.schema ()
-          ]
-        command)
-  ;;
+  type t = Mailing.update
 
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate defalt_schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -90,24 +85,8 @@ module Update : sig
 end = struct
   type t = Mailing.update
 
-  let command start_at end_at rate distribution : t =
-    { start_at; end_at; rate; distribution }
-  ;;
-
-  let schema =
-    Conformist.(
-      make
-        Field.
-          [ StartAt.schema ()
-          ; EndAt.schema ()
-          ; Rate.schema ()
-          ; Conformist.optional @@ Distribution.schema ()
-          ]
-        command)
-  ;;
-
   let decode data =
-    Conformist.decode_and_validate schema data
+    Conformist.decode_and_validate defalt_schema data
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
@@ -198,7 +177,13 @@ end = struct
 
   type with_default_rate = bool
 
-  let command id start_at end_at rate distribution : t =
+  let command id start_at end_at rate is_random distribution : t =
+    let distribution =
+      let open Distribution in
+      if is_random
+      then Some Random
+      else distribution |> CCOption.map (fun d -> Sorted d)
+    in
     { id; start_at; end_at; rate; distribution }
   ;;
 
@@ -210,6 +195,7 @@ end = struct
           ; StartAt.schema ()
           ; EndAt.schema ()
           ; Conformist.optional @@ Rate.schema ()
+          ; Distribution.is_random_schema ()
           ; Conformist.optional @@ Distribution.schema ()
           ]
         command)

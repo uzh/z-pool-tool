@@ -72,20 +72,37 @@ module Distribution : sig
       -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
   end
 
-  type t = (sortable_field * SortOrder.t) list
+  type sorted = (sortable_field * SortOrder.t) list
+
+  val equal_sorted : sorted -> sorted -> bool
+  val pp_sorted : Format.formatter -> sorted -> unit
+  val show_sorted : sorted -> string
+  val sorted_of_yojson : Yojson.Safe.t -> sorted
+  val yojson_of_sorted : sorted -> Yojson.Safe.t
+
+  type t =
+    | Sorted of sorted
+    | Random
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
-  val create : (sortable_field * SortOrder.t) list -> t
-  val value : t -> (sortable_field * SortOrder.t) list
+  val create_sorted : (sortable_field * SortOrder.t) list -> t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t
   val get_order_element : t -> string
 
   val schema
     :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
+    -> ( Pool_common.Message.error
+       , sorted )
+       Pool_common.Utils.PoolConformist.Field.t
+
+  val is_random_schema
+    :  unit
+    -> ( Pool_common.Message.error
+       , bool )
+       Pool_common.Utils.PoolConformist.Field.t
 
   val of_urlencoded_list
     :  string list

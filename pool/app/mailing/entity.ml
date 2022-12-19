@@ -118,29 +118,54 @@ module Distribution = struct
     let schema () = Pool_common.Utils.schema_decoder create show field
   end
 
-  type t = (sortable_field * SortOrder.t) list [@@deriving eq, show, yojson]
+  type sorted = (sortable_field * SortOrder.t) list
+  [@@deriving eq, show, yojson]
+
+  type t =
+    | Sorted of sorted
+    | Random
+  [@@deriving eq, show { with_path = false }, yojson]
 
   let field = Pool_common.Message.Field.Distribution
-  let create m = m
+  let create_sorted m = Sorted m
   let value m = m
 
   let get_order_element m =
-    if CCList.is_empty m
-    then ""
-    else
-      m
-      |> CCList.map (fun (field, order) ->
-           CCString.concat
-             " "
-             [ field |> sortable_field_to_sql; order |> SortOrder.show ])
-      |> CCString.concat ", "
-      |> Format.asprintf "ORDER BY %s"
+    let order =
+      match m with
+      | Random -> Some "RAND()"
+      | Sorted distribution ->
+        if CCList.is_empty distribution
+        then None
+        else
+          distribution
+          |> CCList.map (fun (field, order) ->
+               CCString.concat
+                 " "
+                 [ field |> sortable_field_to_sql; order |> SortOrder.show ])
+          |> CCString.concat ", "
+          |> CCOption.pure
+    in
+    order |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+  ;;
+
+  let is_random_schema () =
+    let open Pool_common in
+    Utils.schema_decoder
+      (fun m ->
+        m
+        |> bool_of_string_opt
+        |> CCOption.get_or ~default:false
+        |> CCResult.pure)
+      string_of_bool
+      Pool_common.Message.Field.RandomOrder
   ;;
 
   let schema () =
-    let encode m = m |> yojson_of_t |> Yojson.Safe.to_string in
+    let encode m = m |> yojson_of_sorted |> Yojson.Safe.to_string in
     let decode =
-      CCResult.(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
+      CCResult.(
+        fun m -> m |> Yojson.Safe.from_string |> sorted_of_yojson |> pure)
     in
     Pool_common.Utils.schema_decoder decode encode field
   ;;
