@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 💥 The start of using the changelog. Preparations for our pilot version 0.1.0.
 
+### Added
+
+- Option to make the mailer select the contacts in ranom order
+
 ### Fixed
 
 - create operator via root UI
