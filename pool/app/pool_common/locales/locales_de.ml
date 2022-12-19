@@ -263,7 +263,7 @@ let rec error_to_string = function
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
-  | EmailAddressMissingOperator -> "Bitte Operator Email Adresse angeben."
+  | EmailAddressMissingAdmin -> "Bitte Admin Email Adresse angeben."
   | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
   | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
   | EmailDeleteAlreadyVerified ->

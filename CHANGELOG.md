@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - create operator via root UI
+- create admin via tenant UI
 
 ### Changed
 

@@ -105,14 +105,18 @@ let create_operator req =
        in
        let validate_user () =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
-         ||> CCOption.to_result EmailAddressMissingOperator
+         ||> CCOption.to_result EmailAddressMissingAdmin
          >>= HttpUtils.validate_email_existance tenant_db
        in
        let tags = Logger.req req in
        let events =
-         let open Cqrs_command.Admin_command.CreateOperator in
+         let open Cqrs_command.Admin_command.CreateAdmin in
          let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-         CCResult.(urlencoded |> decode >>= handle ~tags) |> Lwt_result.lift
+         CCResult.(
+           urlencoded
+           |> decode
+           >>= handle ~roles:(Guard.ActorRoleSet.singleton `OperatorAll) ~tags)
+         |> Lwt_result.lift
        in
        let handle events =
          Lwt_list.iter_s (Pool_event.handle_event ~tags tenant_db) events

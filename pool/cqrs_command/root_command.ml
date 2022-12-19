@@ -62,7 +62,8 @@ end = struct
       Pool_user.EmailAddress.validate allowed_email_suffixes command.email
     in
     let admin : Admin.create =
-      { Admin.email = command.email
+      { id = None
+      ; Admin.email = command.email
       ; password = command.password
       ; firstname = command.firstname
       ; lastname = command.lastname

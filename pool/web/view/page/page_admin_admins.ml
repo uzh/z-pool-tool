@@ -1,9 +1,17 @@
 open Tyxml.Html
+open Component
 
 let admin_overview language admins =
   let thead =
+    let add_admin =
+      Component.Input.link_as_button
+        ~style:`Success
+        ~icon:`Add
+        ~control:(language, Pool_common.Message.(Add (Some Field.Admin)))
+        "/admin/admins/new"
+    in
     let to_txt = Component.Table.field_to_txt language in
-    Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt; txt "" ]
+    Pool_common.Message.Field.[ Email |> to_txt; Name |> to_txt; add_admin ]
   in
   CCList.map
     (fun admin ->
@@ -17,16 +25,56 @@ let admin_overview language admins =
              (user.given_name |> default_empty)
              (user.name |> default_empty)
           |> CCString.trim)
-      ; Format.asprintf "/admin/admins/%s" user.id |> Component.Input.edit_link
+      ; Format.asprintf "/admin/admins/%s" user.id |> Input.edit_link
       ])
     admins
-  |> Component.Table.horizontal_table ~align_last_end:true `Striped ~thead
+  |> Table.horizontal_table ~align_last_end:true `Striped ~thead
+;;
+
+let new_form { Pool_context.language; csrf; _ } =
+  div
+    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        Pool_common.
+          [ Message.(create (Some Field.Admin))
+            |> Utils.control_to_string language
+            |> txt
+          ]
+    ; form
+        ~a:
+          [ a_action (Sihl.Web.externalize_path "/admin/admins")
+          ; a_method `Post
+          ; a_class [ "stack" ]
+          ]
+        ((Input.csrf_element csrf ()
+         :: CCList.map
+              (fun (field, input) ->
+                Input.input_element ~required:true language input field)
+              Pool_common.Message.Field.
+                [ Email, `Email
+                ; Password, `Password
+                ; Firstname, `Text
+                ; Lastname, `Text
+                ])
+        @ [ div
+              ~a:[ a_class [ "flexrow" ] ]
+              [ Input.submit_element
+                  ~classnames:[ "push" ]
+                  language
+                  Pool_common.Message.(Create (Some Field.admin))
+                  ()
+              ]
+          ])
+    ]
 ;;
 
 let index Pool_context.{ language; _ } admins =
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ h1 [ txt Pool_common.(Utils.nav_link_to_string language I18n.Admins) ]
+    [ h1
+        ~a:[ a_class [ "heading-1" ] ]
+        [ txt Pool_common.(Utils.nav_link_to_string language I18n.Admins) ]
     ; admin_overview language admins
     ]
 ;;

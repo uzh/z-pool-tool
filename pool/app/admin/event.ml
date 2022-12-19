@@ -4,7 +4,8 @@ module Database = Pool_database
 open Entity
 
 type create =
-  { email : User.EmailAddress.t
+  { id : Pool_common.Id.t option
+  ; email : User.EmailAddress.t
   ; password : User.Password.t [@opaque]
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
@@ -43,15 +44,16 @@ type event =
 let handle_event ~tags pool : event -> unit Lwt.t =
   let open Utils.Lwt_result.Infix in
   function
-  | Created admin ->
+  | Created { id; lastname; firstname; password; email; roles } ->
     let ctx = Pool_tenant.to_ctx pool in
     let%lwt user =
       Service.User.create_admin
         ~ctx
-        ~name:(admin.lastname |> User.Lastname.value)
-        ~given_name:(admin.firstname |> User.Firstname.value)
-        ~password:(admin.password |> User.Password.to_sihl)
-        (User.EmailAddress.value admin.email)
+        ?id:(id |> CCOption.map Pool_common.Id.value)
+        ~name:(lastname |> User.Lastname.value)
+        ~given_name:(firstname |> User.Firstname.value)
+        ~password:(password |> User.Password.to_sihl)
+        (User.EmailAddress.value email)
     in
     let%lwt (authorizable : [> `Admin ] Guard.Authorizable.t) =
       Entity_guard.Actor.to_authorizable ~ctx user
@@ -59,7 +61,7 @@ let handle_event ~tags pool : event -> unit Lwt.t =
       ||> Pool_common.Utils.get_or_failwith
     in
     let%lwt () =
-      match admin.roles with
+      match roles with
       | Some roles ->
         Guard.Persistence.Actor.grant_roles
           ~ctx

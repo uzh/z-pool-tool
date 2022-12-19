@@ -381,6 +381,8 @@ module Admin = struct
         ]
       in
       [ get "" ~middlewares:[ Access.index ] index
+      ; post "" ~middlewares:[ Access.create ] create_admin
+      ; get "/new" ~middlewares:[ Access.create ] new_form
       ; choose ~scope:(Admin |> url_key) specific
       ]
     in
