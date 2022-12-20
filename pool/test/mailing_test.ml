@@ -37,11 +37,8 @@ module Data = struct
     let rate = Mailing.Rate.create 200 |> get_or_failwith
 
     let distribution =
-      Mailing.Distribution.(
-        create
-          [ Lastname, SortOrder.Ascending
-          ; InvitationCount, SortOrder.Descending
-          ])
+      Mailing.Distribution.
+        [ Lastname, SortOrder.Ascending; InvitationCount, SortOrder.Descending ]
     ;;
 
     let create =
@@ -50,8 +47,10 @@ module Data = struct
       ; Field.(End |> show), [ end_at |> EndAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Rate |> show), [ rate |> Rate.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution |> Distribution.yojson_of_t |> Yojson.Safe.to_string ]
-        )
+        , [ distribution
+            |> Distribution.yojson_of_sorted
+            |> Yojson.Safe.to_string
+          ] )
       ]
     ;;
 
@@ -61,8 +60,10 @@ module Data = struct
       ; Field.(End |> show), [ start_at |> StartAt.value |> Ptime.to_rfc3339 ]
       ; Field.(Rate |> show), [ rate |> Rate.value |> CCInt.to_string ]
       ; ( Field.(Distribution |> show)
-        , [ distribution |> Distribution.yojson_of_t |> Yojson.Safe.to_string ]
-        )
+        , [ distribution
+            |> Distribution.yojson_of_sorted
+            |> Yojson.Safe.to_string
+          ] )
       ]
     ;;
   end
@@ -75,7 +76,7 @@ let create_mailing () =
     ; start_at
     ; end_at
     ; rate
-    ; distribution = Some distribution
+    ; distribution = Some (distribution |> Distribution.create_sorted)
     ; created_at = Pool_common.CreatedAt.create ()
     ; updated_at = Pool_common.UpdatedAt.create ()
     }
@@ -87,6 +88,7 @@ let create () =
   let mailing = create_mailing () in
   let events =
     Data.Mailing.create
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
@@ -112,7 +114,11 @@ let create_with_distribution () =
     ; AssignmentCount, Distribution.SortOrder.Descending
     ]
   in
-  let mailing = { mailing with distribution = Some distribution } in
+  let mailing =
+    { mailing with
+      distribution = Some (distribution |> Distribution.create_sorted)
+    }
+  in
   let experiment = Model.create_experiment () in
   let urlencoded () =
     distribution
@@ -130,6 +136,7 @@ let create_with_distribution () =
     ; show Field.Distribution, distribution
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
   in
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
@@ -148,6 +155,7 @@ let create_end_before_start () =
   let experiment = Model.create_experiment () in
   let events =
     Data.Mailing.create_end_before_start
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith

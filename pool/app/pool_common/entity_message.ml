@@ -142,6 +142,7 @@ module Field = struct
     | PublicTitle [@name "public_title"] [@printer go "public_title"]
     | PublishedAt [@name "published_at"] [@printer go "published_at"]
     | Query [@name "query"] [@printer go "query"]
+    | RandomOrder [@name "random_order"] [@printer go "random_order"]
     | Rate [@name "rate"] [@printer go "rate"]
     | Reason [@name "reason"] [@printer go "reason"]
     | RecruitmentChannel [@name "recruitment_channel"]

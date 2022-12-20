@@ -112,6 +112,7 @@ let field_to_string =
   | PublicTitle -> "public title"
   | PublishedAt -> "published"
   | Query -> "query"
+  | RandomOrder -> "select the contacts in random order."
   | Rate -> "rate limit"
   | Reason -> "reason"
   | ReminderText -> "reminder text"
