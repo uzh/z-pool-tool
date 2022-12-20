@@ -69,22 +69,18 @@ let sign_up_create req =
        let* events =
          match existing_user with
          | None -> Lwt_result.return create_contact_events
-         | Some user ->
-           (match Service.User.is_admin user with
-            | true -> Lwt_result.return []
-            | false ->
-              email_address
-              |> Contact.find_by_email database_label
-              ||> (function
-              | Ok contact ->
-                let open CCResult in
-                if contact.Contact.user.Sihl_user.confirmed
-                then Ok []
-                else
-                  contact
-                  |> Command.DeleteUnverified.handle ~tags
-                  >|= CCFun.flip CCList.append create_contact_events
-              | Error _ -> Ok []))
+         | Some user when Service.User.is_admin user -> Lwt_result.return []
+         | Some _ ->
+           email_address
+           |> Contact.find_by_email database_label
+           ||> (function
+           | Ok contact when contact.Contact.user.Sihl_user.confirmed -> Ok []
+           | Ok contact ->
+             let open CCResult in
+             contact
+             |> Command.DeleteUnverified.handle ~tags
+             >|= CCFun.flip CCList.append create_contact_events
+           | Error _ -> Ok [])
        in
        Utils.Database.with_transaction database_label (fun () ->
          let tags = Logger.req req in
