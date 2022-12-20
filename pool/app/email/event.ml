@@ -10,10 +10,11 @@ type confirmation_email =
 [@@deriving eq, show]
 
 let sender_of_pool pool =
+  let open Utils.Lwt_result.Infix in
   let%lwt sender_email =
-    Settings.find_contact_email pool |> Lwt.map Settings.ContactEmail.show
+    Settings.find_contact_email pool ||> Settings.ContactEmail.show
   in
-  let%lwt tenant = Pool_tenant.find_by_label pool |> Lwt.map CCResult.get_exn in
+  let%lwt tenant = Pool_tenant.find_by_label pool ||> CCResult.get_exn in
   Lwt.return
   @@ Format.sprintf
        "%s <%s>"

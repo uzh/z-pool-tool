@@ -35,7 +35,6 @@ module Create : sig
   val decode
     :  (string * string list) list
     -> (t, Pool_common.Message.error) result
-
 end = struct
   type t = Filter.Title.t
 
