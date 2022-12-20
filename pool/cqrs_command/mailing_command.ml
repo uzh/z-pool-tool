@@ -5,12 +5,10 @@ open Mailing
 
 let src = Logs.Src.create "mailing.cqrs"
 
-let default_command start_at end_at rate is_random distribution : update =
+let default_command start_at end_at rate random distribution : update =
   let distribution =
     let open Distribution in
-    if is_random
-    then Some Random
-    else distribution |> CCOption.map (fun d -> Sorted d)
+    if random then Some Random else distribution |> CCOption.map create_sorted
   in
   Mailing.{ start_at; end_at; rate; distribution }
 ;;
@@ -177,12 +175,10 @@ end = struct
 
   type with_default_rate = bool
 
-  let command id start_at end_at rate is_random distribution : t =
+  let command id start_at end_at rate random distribution : t =
     let distribution =
       let open Distribution in
-      if is_random
-      then Some Random
-      else distribution |> CCOption.map (fun d -> Sorted d)
+      if random then Some Random else distribution |> CCOption.map create_sorted
     in
     { id; start_at; end_at; rate; distribution }
   ;;

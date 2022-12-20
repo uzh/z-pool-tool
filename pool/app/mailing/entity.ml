@@ -130,23 +130,25 @@ module Distribution = struct
   let create_sorted m = Sorted m
   let value m = m
 
-  let get_order_element m =
-    let order =
-      match m with
-      | Random -> Some "RAND()"
-      | Sorted distribution ->
-        if CCList.is_empty distribution
-        then None
-        else
-          distribution
-          |> CCList.map (fun (field, order) ->
-               CCString.concat
-                 " "
-                 [ field |> sortable_field_to_sql; order |> SortOrder.show ])
-          |> CCString.concat ", "
-          |> CCOption.pure
-    in
-    order |> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
+  let is_random = function
+    | Random -> true
+    | Sorted _ -> false
+  ;;
+
+  let get_order_element =
+    let open CCFun in
+    (function
+     | Random -> Some "RAND()"
+     | Sorted [] -> None
+     | Sorted distribution ->
+       distribution
+       |> CCList.map (fun (field, order) ->
+            CCString.concat
+              " "
+              [ field |> sortable_field_to_sql; order |> SortOrder.show ])
+       |> CCString.concat ", "
+       |> CCOption.pure)
+    %> CCOption.map_or ~default:"" (Format.asprintf "ORDER BY %s")
   ;;
 
   let is_random_schema () =

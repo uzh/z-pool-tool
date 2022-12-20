@@ -87,6 +87,7 @@ module Distribution : sig
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
   val show : t -> string
+  val is_random : t -> bool
   val create_sorted : (sortable_field * SortOrder.t) list -> t
   val t_of_yojson : Yojson.Safe.t -> t
   val yojson_of_t : t -> Yojson.Safe.t

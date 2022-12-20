@@ -356,12 +356,7 @@ let form
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
-          ?value:
-            (let open CCOption in
-            distribution
-            >|= function
-            | Random -> true
-            | Sorted _ -> false)
+          ?value:(distribution |> CCOption.map Mailing.Distribution.is_random)
           language
           Pool_common.Message.Field.RandomOrder
       ; div
@@ -403,8 +398,7 @@ let form
           [ Mailing.Distribution.(
               match distribution with
               | Some (Sorted dist) -> dist
-              | Some Random -> []
-              | None -> [])
+              | Some Random | None -> [])
             |> CCList.map (distribution_form_field language)
             |> Component.Sortable.create
                  ~classnames:[ "flexcolumn" ]

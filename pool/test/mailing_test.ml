@@ -88,8 +88,7 @@ let create () =
   let mailing = create_mailing () in
   let events =
     Data.Mailing.create
-    |> Http_utils.format_request_boolean_values
-         Pool_common.Message.Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
@@ -137,8 +136,7 @@ let create_with_distribution () =
     ; show Field.Distribution, distribution
     ]
     |> CCList.map (fun (field, value) -> field, [ value ])
-    |> Http_utils.format_request_boolean_values
-         Pool_common.Message.Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
   in
   let events =
     () |> urlencoded >>= decode >>= handle ~id:Data.Mailing.id experiment
@@ -157,8 +155,7 @@ let create_end_before_start () =
   let experiment = Model.create_experiment () in
   let events =
     Data.Mailing.create_end_before_start
-    |> Http_utils.format_request_boolean_values
-         Pool_common.Message.Field.[ RandomOrder |> show ]
+    |> Http_utils.format_request_boolean_values Field.[ RandomOrder |> show ]
     |> Http_utils.remove_empty_values
     |> decode
     |> get_or_failwith
