@@ -434,6 +434,71 @@ let filter_by_list_contains_some _ () =
   Lwt.return_unit
 ;;
 
+let retrieve_fitleterd_and_ordered_contacts _ () =
+  let open Test_utils in
+  let pool = Data.database_label in
+  let%lwt () =
+    let%lwt () =
+      Seed.Contacts.(
+        [ 11; 12 ]
+        |> CCList.map create_contact
+        |> fun contact_data -> create ~contact_data Data.database_label)
+    in
+    let find_contact id =
+      id
+      |> Format.asprintf "contact-%i@econ.uzh.ch"
+      |> Pool_user.EmailAddress.of_string
+      |> Contact.find_by_email pool
+      |> Lwt.map CCResult.get_exn
+    in
+    let%lwt contact_one = find_contact 11 in
+    let%lwt contact_two = find_contact 12 in
+    let%lwt experiment =
+      Experiment.find_all Test_utils.Data.database_label () |> Lwt.map CCList.hd
+    in
+    let filter =
+      let open Filter in
+      Pred
+        (Predicate.create
+           Key.(Hardcoded ContactLanguage)
+           Operator.Equal
+           (Single (Language Pool_common.Language.En)))
+      |> create None
+    in
+    let%lwt () =
+      Contact.
+        [ NumInvitationsIncreased
+            { contact_one with num_invitations = NumberOfInvitations.of_int 3 }
+          |> Pool_event.contact
+        ]
+      |> Lwt_list.iter_s (Pool_event.handle_event Data.database_label)
+    in
+    let order_by =
+      let open Mailing.Distribution in
+      [ InvitationCount, SortOrder.Ascending ] |> get_order_element
+    in
+    let%lwt contacts =
+      Contact.find_filtered
+        ~order_by
+        Data.database_label
+        Experiment.(experiment.Experiment.id |> Id.to_common)
+        (Some filter)
+      |> Lwt.map CCResult.get_exn
+    in
+    let get_index contact =
+      CCList.find_idx (Contact.equal contact) contacts
+      |> CCOption.get_exn_or "Cannot find contact "
+      |> fst
+    in
+    let index_one = get_index contact_one in
+    let index_two = get_index contact_two in
+    let res = index_two < index_one in
+    let expected = true in
+    Alcotest.(check bool "succeeds" expected res) |> Lwt.return
+  in
+  Lwt.return_unit
+;;
+
 let create_filter_template_with_template _ () =
   let open Pool_common in
   let%lwt () =

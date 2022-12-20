@@ -1,41 +1,32 @@
 module User = Pool_user
 
-let range = CCList.range 0 10
+let defafult_range = CCList.range 0 10
 
-let data =
-  let create_contact i =
-    let open Pool_common in
-    let open Pool_user in
-    let get = CCResult.get_exn in
-    let id = Id.create () in
-    let first_name =
-      i |> Format.asprintf "firstname%i" |> Firstname.create |> get
-    in
-    let last_name =
-      i |> Format.asprintf "lastname%i" |> Lastname.create |> get
-    in
-    let email =
-      "contact-" ^ CCInt.to_string i ^ "@econ.uzh.ch"
-      |> EmailAddress.create
-      |> get
-    in
-    let lang = Pool_common.Language.En |> CCOption.pure in
-    let recruitment_channel = Contact.RecruitmentChannel.Friend in
-    let terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure in
-    ( id
-    , first_name
-    , last_name
-    , email
-    , lang
-    , recruitment_channel
-    , terms_accepted_at )
+let create_contact i =
+  let open Pool_common in
+  let open Pool_user in
+  let get = CCResult.get_exn in
+  let id = Id.create () in
+  let first_name =
+    i |> Format.asprintf "firstname%i" |> Firstname.create |> get
   in
-  range |> CCList.map create_contact
+  let last_name = i |> Format.asprintf "lastname%i" |> Lastname.create |> get in
+  let email =
+    "contact-" ^ CCInt.to_string i ^ "@econ.uzh.ch"
+    |> EmailAddress.create
+    |> get
+  in
+  let lang = Pool_common.Language.En |> CCOption.pure in
+  let recruitment_channel = Contact.RecruitmentChannel.Friend in
+  let terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure in
+  id, first_name, last_name, email, lang, recruitment_channel, terms_accepted_at
 ;;
 
+let data = defafult_range |> CCList.map create_contact
 let contact_ids = CCList.map (fun (id, _, _, _, _, _, _) -> id) data
 
-let create db_pool =
+let create ?contact_data db_pool =
+  let data = CCOption.value ~default:data contact_data in
   let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx db_pool in
   (* let error = CCList.map (fun (k, v) -> Format.asprintf "%s: %s" k v) ctx |>

@@ -75,6 +75,10 @@ let suite =
           ; test_case "filter contains none" `Slow filter_by_list_contains_none
           ; test_case "filter contains some" `Slow filter_by_list_contains_some
           ; test_case
+              "retrieve ordered contacts"
+              `Slow
+              retrieve_fitleterd_and_ordered_contacts
+          ; test_case
               "create filter template with template"
               `Slow
               create_filter_template_with_template
