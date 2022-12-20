@@ -247,15 +247,7 @@ let form
       CCOption.map_or
         ~default:false
         (fun dist ->
-          let dist =
-            match dist with
-            | Sorted dist -> dist
-            | Random -> []
-          in
-          CCList.mem_assoc
-            ~eq:Mailing.Distribution.equal_sortable_field
-            field
-            dist)
+          dist |> find_dist |> CCList.mem_assoc ~eq:equal_sortable_field field)
         distribution
     in
     let distribution_fncs =
@@ -396,9 +388,7 @@ let form
           ]
       ; div
           [ Mailing.Distribution.(
-              match distribution with
-              | Some (Sorted dist) -> dist
-              | Some Random | None -> [])
+              distribution |> CCOption.map_or ~default:[] find_dist)
             |> CCList.map (distribution_form_field language)
             |> Component.Sortable.create
                  ~classnames:[ "flexcolumn" ]

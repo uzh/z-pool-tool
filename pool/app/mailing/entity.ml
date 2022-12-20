@@ -135,6 +135,11 @@ module Distribution = struct
     | Sorted _ -> false
   ;;
 
+  let find_dist = function
+    | Random -> []
+    | Sorted dist -> dist
+  ;;
+
   let get_order_element =
     let open CCFun in
     (function
