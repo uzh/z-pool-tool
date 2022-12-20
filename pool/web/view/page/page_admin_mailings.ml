@@ -392,7 +392,7 @@ let form
       , Message.(Create (Some Field.Mailing)) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
-      , Message.(Edit (Some Field.Mailing)) )
+      , Message.(Save (Some Field.Mailing)) )
   in
   let html =
     let open Htmx in
