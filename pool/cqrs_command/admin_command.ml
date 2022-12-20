@@ -9,7 +9,7 @@ module CreateAdmin : sig
 
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t [@opaque]
+    ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -70,7 +70,7 @@ end = struct
     let admin : Admin.create =
       { id
       ; Admin.email = command.email
-      ; password = command.password [@opaque]
+      ; password = command.password
       ; firstname = command.firstname
       ; lastname = command.lastname
       ; roles
