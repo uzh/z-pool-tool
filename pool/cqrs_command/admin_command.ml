@@ -84,7 +84,6 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  (* TODO: How to test permission to create any admin? *)
   let effects =
     [ `Create, `TargetEntity (`Admin `Operator)
     ; `Create, `TargetEntity (`Admin `LocationManager)
