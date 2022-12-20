@@ -435,10 +435,13 @@ let update_tenant_database () =
 
 let create_operator () =
   let open Data in
+  let id = Pool_common.Id.create () in
   let events =
     let open CCResult.Infix in
-    let open Admin_command.CreateOperator in
-    Data.urlencoded |> decode >>= handle
+    let open Admin_command.CreateAdmin in
+    Data.urlencoded
+    |> decode
+    >>= handle ~id ~roles:(Guard.ActorRoleSet.singleton `OperatorAll)
   in
   let expected =
     let open CCResult in
@@ -447,7 +450,8 @@ let create_operator () =
     let* firstname = firstname |> Pool_user.Firstname.create in
     let* lastname = lastname |> Pool_user.Lastname.create in
     let admin : Admin.create =
-      { Admin.email
+      { id = Some id
+      ; Admin.email
       ; password
       ; firstname
       ; lastname

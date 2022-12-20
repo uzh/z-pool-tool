@@ -254,7 +254,7 @@ let rec error_to_string = function
     "You cannot assign yourself to this experiment."
   | DecodeAction -> "Cannot decode action."
   | Disabled field -> field_message "" (field_to_string field) "is disabled."
-  | EmailAddressMissingOperator -> "Please provide operator email address."
+  | EmailAddressMissingAdmin -> "Please provide admin email address."
   | EmailAddressMissingRoot -> "Please provide root email address."
   | EmailAlreadyInUse -> "Email address is already in use."
   | EmailDeleteAlreadyVerified ->

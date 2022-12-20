@@ -234,7 +234,7 @@ type error =
   | DecodeAction
   | DirectRegistrationIsDisabled
   | Disabled of Field.t
-  | EmailAddressMissingOperator
+  | EmailAddressMissingAdmin
   | EmailAddressMissingRoot
   | EmailAlreadyInUse
   | EmailDeleteAlreadyVerified

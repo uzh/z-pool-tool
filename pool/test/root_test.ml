@@ -28,7 +28,8 @@ let create_root () =
     let* firstname = firstname |> Firstname.create in
     let* lastname = lastname |> Lastname.create in
     let create =
-      { Admin.email
+      { id = None
+      ; Admin.email
       ; password
       ; firstname
       ; lastname

@@ -4,7 +4,7 @@ module Id = Pool_common.Id
 
 let src = Logs.Src.create "admin.cqrs"
 
-module CreateOperator : sig
+module CreateAdmin : sig
   include Common.CommandSig
 
   type t =
@@ -19,6 +19,8 @@ module CreateOperator : sig
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
+    -> ?id:Pool_common.Id.t
+    -> ?roles:Guard.ActorRoleSet.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -28,7 +30,7 @@ module CreateOperator : sig
 end = struct
   type t =
     { email : User.EmailAddress.t
-    ; password : User.Password.t
+    ; password : User.Password.t [@opaque]
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
     }
@@ -53,9 +55,11 @@ end = struct
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
     ?password_policy
+    ?id
+    ?roles
     command
     =
-    Logs.info ~src (fun m -> m "Handle command CreateOperator" ~tags);
+    Logs.info ~src (fun m -> m "Handle command CreateAdmin" ~tags);
     let open CCResult in
     let* () = User.Password.validate ?password_policy command.password in
     let* () =
@@ -64,11 +68,12 @@ end = struct
     (* TODO: pass Id or Tenant to Admin.Created function as option to further
        pass down to permissions *)
     let admin : Admin.create =
-      { Admin.email = command.email
+      { id
+      ; Admin.email = command.email
       ; password = command.password
       ; firstname = command.firstname
       ; lastname = command.lastname
-      ; roles = Some (Guard.ActorRoleSet.singleton `OperatorAll)
+      ; roles
       }
     in
     Ok [ Admin.Created admin |> Pool_event.admin ]
@@ -79,5 +84,12 @@ end = struct
     |> CCResult.map_err Pool_common.Message.to_conformist_error
   ;;
 
-  let effects = [ `Create, `TargetEntity (`Admin `Operator) ]
+  let effects =
+    [ `Create, `TargetEntity (`Admin `Operator)
+    ; `Create, `TargetEntity (`Admin `LocationManager)
+    ; `Create, `TargetEntity (`Admin `Recruiter)
+    ; `Create, `TargetEntity (`Admin `Experimenter)
+    ; `Create, `TargetEntity (`Admin `Assistant)
+    ]
+  ;;
 end
