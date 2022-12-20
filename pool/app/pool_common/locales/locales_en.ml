@@ -183,8 +183,8 @@ let success_to_string : success -> string = function
   | Deleted field ->
     field_message "" (field_to_string field) "was successfully deleted."
   | EmailConfirmationMessage ->
-    "Successfully created. An email has been sent to your email address for  \
-     verification."
+    "An email has been sent to your email address for verification if the \
+     given email address is still available."
   | EmailVerified -> "Email successfully verified."
   | FileDeleted -> "File was successfully deleted."
   | PasswordChanged -> "Password successfully changed."

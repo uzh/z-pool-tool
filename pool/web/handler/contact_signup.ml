@@ -39,24 +39,6 @@ let sign_up_create req =
          |> Utils.Bool.to_result TermsAndConditionsNotAccepted
          |> Lwt_result.lift
        in
-       let* remove_contact_event =
-         let find_contact email =
-           email
-           |> Contact.find_by_email database_label
-           ||> function
-           | Ok partitipant ->
-             if partitipant.Contact.user.Sihl_user.confirmed
-             then Error EmailAlreadyInUse
-             else Ok (Some partitipant)
-           | Error _ -> Ok None
-         in
-         Sihl.Web.Request.urlencoded Field.(Email |> show) req
-         ||> CCOption.to_result ContactSignupInvalidEmail
-         >== Pool_user.EmailAddress.create
-         >>= find_contact
-         >>= CCOption.map_or ~default:(Lwt_result.return []) (fun p ->
-               Command.DeleteUnverified.handle ~tags p |> Lwt_result.lift)
-       in
        let%lwt allowed_email_suffixes =
          let open Utils.Lwt_result.Infix in
          Settings.find_email_suffixes database_label
@@ -67,13 +49,38 @@ let sign_up_create req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
-       let* events =
+       let* create_contact_events =
          let open CCResult.Infix in
          Command.SignUp.(
            decode urlencoded
            >>= handle ~tags ?allowed_email_suffixes tenant preferred_language)
-         >>= (fun e -> Ok (remove_contact_event @ e))
          |> Lwt_result.lift
+       in
+       let* email_address =
+         Sihl.Web.Request.urlencoded Field.(Email |> show) req
+         ||> CCOption.to_result ContactSignupInvalidEmail
+         >== Pool_user.EmailAddress.create
+       in
+       let%lwt existing_user =
+         Service.User.find_by_email_opt
+           ~ctx:(Pool_tenant.to_ctx database_label)
+           (Pool_user.EmailAddress.value email_address)
+       in
+       let* events =
+         match existing_user with
+         | None -> Lwt_result.return create_contact_events
+         | Some user when Service.User.is_admin user -> Lwt_result.return []
+         | Some _ ->
+           email_address
+           |> Contact.find_by_email database_label
+           ||> (function
+           | Ok contact when contact.Contact.user.Sihl_user.confirmed -> Ok []
+           | Ok contact ->
+             let open CCResult in
+             contact
+             |> Command.DeleteUnverified.handle ~tags
+             >|= CCFun.flip CCList.append create_contact_events
+           | Error _ -> Ok [])
        in
        Utils.Database.with_transaction database_label (fun () ->
          let tags = Logger.req req in
