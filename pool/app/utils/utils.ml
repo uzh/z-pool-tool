@@ -7,7 +7,7 @@ let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure
 
 let pool_version =
-  let filename = Format.asprintf "pool.opam" in
+  let filename = Format.asprintf "app/pool.opam" in
   let in_channel = open_in filename in
   let rec read_line () =
     let line =
