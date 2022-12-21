@@ -144,7 +144,7 @@ module List = struct
     mailings
     =
     let base_head =
-      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
+      (Field.[ Start; End; Rate ] |> Table.fields_to_txt language) @ [ txt "" ]
     in
     let thead =
       let new_btn () =
@@ -406,7 +406,7 @@ let form
       , Message.(Create (Some Field.Mailing)) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
-      , Message.(Edit (Some Field.Mailing)) )
+      , Message.(Save (Some Field.Mailing)) )
   in
   let html =
     let open Htmx in
