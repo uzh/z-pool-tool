@@ -4,18 +4,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
-## [0.0.1](https://github.com/uzh/pool/tree/0.0.1) - 2022-12-16
-
-💥 The start of using the changelog. Preparations for our pilot version 0.1.0.
-
 ### Added
 
 - Option to make the matcher select the contacts in random order
 
 ### Fixed
 
-- create operator via root UI
 - create admin via tenant UI
+
+## [0.0.1](https://github.com/uzh/pool/tree/0.0.1) - 2022-12-16
+
+💥 The start of using the changelog. Preparations for our pilot version 0.1.0.
+
+### Fixed
+
+- create operator via root UI
 
 ### Changed
 
