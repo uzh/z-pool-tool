@@ -9,9 +9,9 @@ let fcn_ok fcn m = m |> fcn |> CCResult.pure
 let pool_version =
   let filepath =
     let name = "pool.opam" in
-    match Sys.file_exists name with
-    | true -> name
-    | false -> Format.asprintf "/app/%s" name
+    match Sihl.Configuration.read_string "ROOT_PATH" with
+    | None -> name
+    | Some path -> Format.asprintf "%s/%s" path name
   in
   let in_channel = open_in filepath in
   let rec read_line () =
