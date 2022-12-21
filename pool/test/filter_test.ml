@@ -475,7 +475,7 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
     in
     let order_by =
       let open Mailing.Distribution in
-      [ InvitationCount, SortOrder.Ascending ] |> get_order_element
+      Sorted [ InvitationCount, SortOrder.Ascending ] |> get_order_element
     in
     let%lwt contacts =
       Contact.find_filtered
@@ -486,8 +486,10 @@ let retrieve_fitleterd_and_ordered_contacts _ () =
       |> Lwt.map CCResult.get_exn
     in
     let get_index contact =
-      CCList.find_idx (Contact.equal contact) contacts
-      |> CCOption.get_exn_or "Cannot find contact "
+      CCList.find_idx
+        (fun c -> Contact.(Pool_common.Id.equal (id c) (id contact)))
+        contacts
+      |> CCOption.get_exn_or "Cannot find contact"
       |> fst
     in
     let index_one = get_index contact_one in
