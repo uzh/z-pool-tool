@@ -79,11 +79,6 @@ let index
   let partner_html =
     let open Pool_tenant in
     let logos = tenant.partner_logo |> PartnerLogos.value in
-    let _ =
-      CCList.map
-        (fun l -> Logs.info (fun m -> m "%s" (Pool_common.File.show l)))
-        logos
-    in
     if CCList.is_empty logos
     then []
     else
