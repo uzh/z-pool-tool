@@ -7,8 +7,13 @@ let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure
 
 let pool_version =
-  let filename = "/app/pool.opam" in
-  let in_channel = open_in filename in
+  let filepath =
+    let name = "pool.opam" in
+    match Sys.file_exists name with
+    | true -> name
+    | false -> Format.asprintf "/app/%s" name
+  in
+  let in_channel = open_in filepath in
   let rec read_line () =
     let line =
       try input_line in_channel with
