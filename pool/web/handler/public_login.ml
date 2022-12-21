@@ -122,24 +122,26 @@ let request_reset_password_get req =
 let request_reset_password_post req =
   let open HttpUtils in
   let open Cqrs_command.Common_command.ResetPassword in
+  let open Message_template in
   let result { Pool_context.database_label; query_language; language; _ } =
     let redirect_path =
       path_with_language query_language "/request-reset-password"
     in
+    Lwt_result.map_error (fun err ->
+      err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
+    @@
     let tags = Logger.req req in
     let open Utils.Lwt_result.Infix in
-    let open Lwt_result.Syntax in
     let* { Pool_context.Tenant.tenant; _ } =
-      Pool_context.Tenant.find req
-      |> CCResult.map_err (fun err ->
-           err, redirect_path, [ (fun res -> Message.set ~error:[ err ] res) ])
-      |> Lwt_result.lift
+      Pool_context.Tenant.find req |> Lwt_result.lift
     in
-    let layout = Email.Helper.layout_from_tenant tenant in
+    (* TODO: Make sure contact not found message is not displayed *)
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= Contact.find_by_email database_label
-    >== (fun { Contact.user; _ } -> handle layout language user)
+    >>= fun { Contact.user; _ } ->
+    PasswordReset.create database_label language (Tenant tenant) user
+    >== handle
     |>> Pool_event.handle_events ~tags database_label
     >|> function
     | Ok () | Error (_ : Pool_common.Message.error) ->
@@ -148,7 +150,7 @@ let request_reset_password_post req =
         [ Message.set
             ~success:[ Pool_common.Message.PasswordResetSuccessMessage ]
         ]
-      >|> Lwt.return_ok
+      >|> Lwt_result.return
   in
   result |> extract_happy_path_with_actions req
 ;;
@@ -177,6 +179,8 @@ let reset_password_get req =
 ;;
 
 let reset_password_post req =
+  (* TODO: Make sure Token gets deactivated and correct error messages are
+     displayed and PW hint is displayed *)
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in

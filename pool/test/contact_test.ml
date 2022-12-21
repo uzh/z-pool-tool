@@ -18,6 +18,26 @@ let contact_info email_address =
 
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
+let confirmation_mail contact =
+  let email =
+    Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
+  in
+  let open Message_template in
+  let sender = "test@econ.uzh.ch" in
+  let { email_subject; email_text; _ } =
+    Test_utils.Model.create_message_template ()
+  in
+  Sihl_email.
+    { sender
+    ; recipient = email
+    ; subject = email_subject |> EmailSubject.value
+    ; text = ""
+    ; html = Some (email_text |> EmailText.value)
+    ; cc = []
+    ; bcc = []
+    }
+;;
+
 let sign_up_contact contact_info =
   let email_address, password, firstname, lastname, _ = contact_info in
   [ Field.(Email |> show), [ email_address ]
@@ -186,11 +206,12 @@ let update_language () =
 ;;
 
 let update_password () =
-  let ((_, password, _, _, language) as contact_info) =
+  let ((_, password, _, _, _) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
   let new_password = "testing" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -199,10 +220,12 @@ let update_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
+      |> handle
+           ~password_policy:(CCFun.const (CCResult.pure ()))
+           contact
+           confirmation_mail)
   in
   let expected =
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.PasswordUpdated
           ( contact
@@ -214,11 +237,7 @@ let update_password () =
             |> Pool_common.Utils.get_or_failwith
           , new_password |> Pool_user.PasswordConfirmed.create )
         |> Pool_event.contact
-      ; Email.ChangedPassword
-          ( contact.Contact.user
-          , language |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email
+      ; Email.Sent confirmation_mail |> Pool_event.email
       ]
   in
   check_result expected events
@@ -228,6 +247,7 @@ let update_password_wrong_current_password () =
   let contact = "john@gmail.com" |> contact_info |> create_contact true in
   let current_password = "something else" in
   let new_password = "short" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ current_password ]
@@ -236,7 +256,7 @@ let update_password_wrong_current_password () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle tenant contact)
+      |> handle contact confirmation_mail)
   in
   let expected = Error Message.(Invalid Field.CurrentPassword) in
   check_result expected events
@@ -248,6 +268,7 @@ let update_password_wrong_policy () =
   in
   let contact = contact_info |> create_contact true in
   let new_password = "short" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -256,7 +277,7 @@ let update_password_wrong_policy () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle tenant contact)
+      |> handle contact confirmation_mail)
   in
   let expected = Error Message.PasswordPolicy in
   check_result expected events
@@ -269,6 +290,7 @@ let update_password_wrong_confirmation () =
   let contact = contact_info |> create_contact true in
   let new_password = "testing" in
   let confirmed_password = "something else" in
+  let confirmation_mail = confirmation_mail contact in
   let events =
     Contact_command.UpdatePassword.(
       [ Field.(CurrentPassword |> show), [ password ]
@@ -277,7 +299,10 @@ let update_password_wrong_confirmation () =
       ]
       |> decode
       |> Pool_common.Utils.get_or_failwith
-      |> handle ~password_policy:(CCFun.const (CCResult.pure ())) tenant contact)
+      |> handle
+           ~password_policy:(CCFun.const (CCResult.pure ()))
+           contact
+           confirmation_mail)
   in
   let expected = Error Pool_common.Message.PasswordConfirmationDoesNotMatch in
   check_result expected events

@@ -11,15 +11,19 @@ type confirmation_email =
 
 let sender_of_pool pool =
   let open Utils.Lwt_result.Infix in
-  let%lwt sender_email =
-    Settings.find_contact_email pool ||> Settings.ContactEmail.show
-  in
-  let%lwt tenant = Pool_tenant.find_by_label pool ||> CCResult.get_exn in
-  Lwt.return
-  @@ Format.sprintf
-       "%s <%s>"
-       (Pool_tenant.Title.value tenant.Pool_tenant.title)
-       sender_email
+  if Pool_database.(Label.equal pool root)
+  then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
+  else (
+    let%lwt sender_email =
+      Settings.find_contact_email pool ||> Settings.ContactEmail.show
+    in
+    let%lwt tenant = Pool_tenant.find_by_label pool ||> CCResult.get_exn in
+    Format.sprintf
+      "%s <%s>"
+      (Pool_tenant.Title.value tenant.Pool_tenant.title)
+      sender_email
+    |> CCOption.pure
+    |> Lwt.return)
 ;;
 
 let send_confirmation
@@ -49,7 +53,7 @@ let send_confirmation
       ]
   in
   let%lwt sender = sender_of_pool pool in
-  email_template |> Service.Email.send ~sender ~ctx:(Pool_tenant.to_ctx pool)
+  email_template |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 let create_token pool address =
@@ -75,7 +79,7 @@ let send_confirmation_email pool language tenant email firstname lastname event 
     firstname
     lastname
     event
-  >|> Service.Email.send ~sender ~ctx:(Pool_tenant.to_ctx pool)
+  >|> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
 type verification_event =
@@ -196,10 +200,6 @@ let pp_verification_event formatter (event : verification_event) : unit =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | AssignmentConfirmationSent of
-      Sihl_user.t * confirmation_email * email_layout
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
   | InvitationBulkSent of
       (Sihl_user.t * text_component list * CustomTemplate.t) list
@@ -207,42 +207,21 @@ type event =
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t =
-  let open Utils.Lwt_result.Infix in
   let ctx = Pool_tenant.to_ctx pool in
   function
   | Sent email ->
     let%lwt sender = sender_of_pool pool in
-    Service.Email.send ~sender ~ctx:(Pool_tenant.to_ctx pool) email
+    Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool) email
   | BulkSent emails ->
     let%lwt sender = sender_of_pool pool in
-    Service.Email.bulk_send ~sender ~ctx:(Pool_tenant.to_ctx pool) emails
-  | ResetPassword (user, language, layout) ->
-    Helper.PasswordReset.create pool language layout user
-    >|- Pool_common.Utils.with_log_error
-    >|> (function
-    | Ok email ->
-      let%lwt sender = sender_of_pool pool in
-      Service.Email.send ~sender ~ctx email
-    | Error (_ : PoolError.error) -> Lwt.return_unit)
-  | ChangedPassword (({ Sihl_user.email; _ } as user), language, layout) ->
-    let%lwt sender = sender_of_pool pool in
-    Helper.PasswordChange.create
-      pool
-      language
-      layout
-      (Pool_user.EmailAddress.of_string email)
-      (user |> User.user_firstname)
-      (user |> User.user_lastname)
-    >|> Service.Email.send ~sender ~ctx:(Pool_tenant.to_ctx pool)
-  | AssignmentConfirmationSent (user, confirmation_email, layout) ->
-    send_confirmation pool layout user confirmation_email
+    Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool) emails
   | InvitationSent (user, data, template) ->
     let%lwt sender = sender_of_pool pool in
     Helper.prepare_boilerplate_email
       template
       user.Sihl_user.email
       ([ "name", User.user_fullname user ] @ data)
-    |> Service.Email.send ~sender ~ctx:(Pool_tenant.to_ctx pool)
+    |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
   | InvitationBulkSent multi_data ->
     let%lwt sender = sender_of_pool pool in
     multi_data
@@ -251,7 +230,7 @@ let handle_event pool : event -> unit Lwt.t =
            template
            user.Sihl_user.email
            ([ "name", User.user_fullname user ] @ data))
-    |> Service.Email.bulk_send ~sender ~ctx:(Pool_tenant.to_ctx pool)
+    |> Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->

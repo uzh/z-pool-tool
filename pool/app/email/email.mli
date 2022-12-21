@@ -179,10 +179,6 @@ type confirmation_email =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | ResetPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | ChangedPassword of Sihl_user.t * Pool_common.Language.t * email_layout
-  | AssignmentConfirmationSent of
-      Sihl_user.t * confirmation_email * email_layout
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
   | InvitationBulkSent of
       (Sihl_user.t * text_component list * CustomTemplate.t) list

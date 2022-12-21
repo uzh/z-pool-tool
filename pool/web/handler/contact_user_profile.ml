@@ -92,7 +92,9 @@ let update_email req =
 
 let update_password req =
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
-  let result ({ Pool_context.database_label; query_language; _ } as context) =
+  let result
+    ({ Pool_context.database_label; query_language; language; _ } as context)
+    =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -102,10 +104,17 @@ let update_password req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
+       let* notification =
+         Message_template.PasswordChange.create
+           database_label
+           language
+           tenant
+           contact.Contact.user
+       in
        let* events =
          let open CCResult.Infix in
          Command.UpdatePassword.(
-           decode urlencoded >>= handle ~tags tenant contact)
+           decode urlencoded >>= handle ~tags contact notification)
          |> Lwt_result.lift
        in
        Utils.Database.with_transaction database_label (fun () ->

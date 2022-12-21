@@ -169,8 +169,8 @@ module UpdatePassword : sig
     :  ?tags:Logs.Tag.set
     -> ?password_policy:
          (User.Password.t -> (unit, Pool_common.Message.error) result)
-    -> Pool_tenant.t
     -> Contact.t
+    -> Sihl_email.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -202,7 +202,13 @@ end = struct
         command)
   ;;
 
-  let handle ?(tags = Logs.Tag.empty) ?password_policy tenant contact command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    ?password_policy
+    contact
+    notification
+    command
+    =
     Logs.info ~src (fun m -> m "Handle command UpdatePassword" ~tags);
     let open CCResult in
     let* () =
@@ -216,7 +222,6 @@ end = struct
         command.new_password
         command.password_confirmation
     in
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.PasswordUpdated
           ( contact
@@ -224,12 +229,7 @@ end = struct
           , command.new_password
           , command.password_confirmation )
         |> Pool_event.contact
-      ; Email.ChangedPassword
-          ( contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email
+      ; Email.Sent notification |> Pool_event.email
       ]
   ;;
 

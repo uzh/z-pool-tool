@@ -114,63 +114,6 @@ let prepare_boilerplate_email template email params =
     Sihl_email.Template.render_email_with_data params mail
 ;;
 
-module PasswordReset = struct
-  let create pool language layout ({ Sihl_user.email; _ } as user) =
-    let%lwt url = Pool_tenant.Url.of_pool pool in
-    let%lwt reset_token =
-      Service.PasswordReset.create_reset_token
-        ~ctx:(Pool_tenant.to_ctx pool)
-        email
-    in
-    match reset_token with
-    | None ->
-      Logs.err (fun m -> m "Reset token not found");
-      Lwt.return_error Pool_common.Message.PasswordResetFailMessage
-    | Some token ->
-      let subject = "Password reset" in
-      let reset_url =
-        Pool_common.
-          [ Message.Field.Token, token
-          ; ( Message.Field.Language
-            , language |> Pool_common.Language.show |> CCString.lowercase_ascii
-            )
-          ]
-        |> Pool_common.Message.add_field_query_params "/reset-password/"
-        |> prepend_root_directory pool
-        |> create_public_url url
-      in
-      prepare_email
-        pool
-        language
-        TemplateLabel.PasswordReset
-        subject
-        email
-        layout
-        [ "resetUrl", reset_url; "name", user |> User.user_fullname ]
-      |> Lwt_result.ok
-  ;;
-end
-
-module PasswordChange = struct
-  let create pool language layout email firstname lastname =
-    let name =
-      Format.asprintf
-        "%s %s"
-        (User.Firstname.value firstname)
-        (User.Lastname.value lastname)
-    in
-    let subject = "Password has been changed" in
-    prepare_email
-      pool
-      language
-      TemplateLabel.PasswordChange
-      subject
-      (email |> Pool_user.EmailAddress.value)
-      layout
-      [ "name", name ]
-  ;;
-end
-
 module ConfirmationEmail = struct
   let create pool language layout email firstname lastname label =
     let%lwt url = Pool_tenant.Url.of_pool pool in

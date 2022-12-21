@@ -3,6 +3,7 @@ module Root = struct
     let%lwt () = Seed_tenant.create () in
     let%lwt () = Seed_emails.root () in
     let%lwt () = Seed_guard.create Pool_database.root in
+    let%lwt () = Seed_message_templates.root () in
     Lwt.return_unit
   ;;
 end
@@ -25,7 +26,7 @@ module Tenant = struct
         let%lwt () = Seed_waiting_list.waiting_list pool in
         let%lwt () = Seed_assignment.assignment pool in
         let%lwt () = Seed_mailings.create pool in
-        let%lwt () = Seed_message_templates.template pool in
+        let%lwt () = Seed_message_templates.tenant pool in
         let%lwt () = Seed_filter.filter pool in
         let%lwt () = Seed_guard.create pool in
         Lwt.return_unit)

@@ -13,6 +13,12 @@ let create_public_url pool_url path =
   |> Format.asprintf "http://%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
+let prepend_root_directory pool url =
+  match Pool_database.Label.equal pool Pool_database.root with
+  | true -> Format.asprintf "/root%s" url
+  | false -> url
+;;
+
 let layout_from_tenant (tenant : Pool_tenant.t) =
   let open Pool_tenant in
   let logo_src =

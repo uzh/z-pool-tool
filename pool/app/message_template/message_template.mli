@@ -55,6 +55,7 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val default_values_tenant : t list
+val default_values_root : t list
 
 type layout =
   | Tenant of Pool_tenant.t
@@ -75,5 +76,23 @@ module AssignmentConfirmation : sig
     -> Pool_tenant.t
     -> Session.Public.t
     -> Contact.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module PasswordChange : sig
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Sihl_user.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module PasswordReset : sig
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> layout
+    -> Sihl_user.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
