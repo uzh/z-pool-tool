@@ -1,6 +1,14 @@
 (library
  (name message_template)
- (libraries pool_common pool_database pool_tenant service utils)
+ (libraries
+  contact
+  pool_common
+  pool_database
+  pool_tenant
+  pool_user
+  service
+  session
+  utils)
  (preprocess
   (pps
    lwt_ppx

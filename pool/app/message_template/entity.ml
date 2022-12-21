@@ -8,8 +8,8 @@ module Label = struct
   let go m fmt _ = Format.pp_print_string fmt m
 
   type t =
-    | AssignmentConfirmation [@name "assignment_verification"]
-        [@printer go "assignment_verification"]
+    | AssignmentConfirmation [@name "assignment_confirmation"]
+        [@printer go "assignment_confirmation"]
     | EmailVerification [@name "email_verification"]
         [@printer go "email_verification"]
     | ExperimentInvitation [@name "experiment_invitation"]
@@ -65,3 +65,7 @@ type t =
   ; sms_text : SmsText.t
   }
 [@@deriving eq, show]
+
+type layout =
+  | Tenant of Pool_tenant.t
+  | Root

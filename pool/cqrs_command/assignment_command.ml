@@ -16,7 +16,7 @@ module Create : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> Pool_tenant.t
-    -> Email.confirmation_email
+    -> Sihl_email.t
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
@@ -30,7 +30,7 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (command : t)
-    tenant
+    _ (* TODO: Remove *)
     confirmation_email
     already_enrolled
     =
@@ -65,15 +65,12 @@ end = struct
         | Some waiting_list ->
           [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list ]
       in
-      let layout = Email.Helper.layout_from_tenant tenant in
       Ok
         (delete_events
         @ [ Assignment.Created create |> Pool_event.assignment
           ; Contact.NumAssignmentsIncreased command.contact
             |> Pool_event.contact
-          ; Email.AssignmentConfirmationSent
-              (command.contact.Contact.user, confirmation_email, layout)
-            |> Pool_event.email
+          ; Email.Sent confirmation_email |> Pool_event.email
           ])
   ;;
 
@@ -179,7 +176,7 @@ module CreateFromWaitingList : sig
     :  ?tags:Logs.Tag.set
     -> t
     -> Pool_tenant.t
-    -> Email.confirmation_email
+    -> Sihl_email.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
   val effects : Guard.Authorizer.effect list
@@ -190,7 +187,12 @@ end = struct
     ; already_enrolled : bool
     }
 
-  let handle ?(tags = Logs.Tag.empty) (command : t) tenant confirmation_email =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    (command : t)
+    _
+    (* TODO: Remove *) confirmation_email
+    =
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if command.already_enrolled
@@ -215,15 +217,10 @@ end = struct
             ; session_id = command.session.Session.id
             }
         in
-        let layout = Email.Helper.layout_from_tenant tenant in
         Ok
           [ Waiting_list.Deleted command.waiting_list |> Pool_event.waiting_list
           ; Assignment.Created create |> Pool_event.assignment
-          ; Email.AssignmentConfirmationSent
-              ( command.waiting_list.Waiting_list.contact.Contact.user
-              , confirmation_email
-              , layout )
-            |> Pool_event.email
+          ; Email.Sent confirmation_email |> Pool_event.email
           ]
   ;;
 

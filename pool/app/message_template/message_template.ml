@@ -1,22 +1,69 @@
 include Entity
 include Event
 include Default
-(* let combine_html language html_title content = let open Tyxml.Html in let
-   email_header = let pool_title = "Pool Tool" in head (title (txt
-   ((CCOption.map_or ~default:pool_title (fun title -> CCString.concat " - " [
-   title; pool_title ])) html_title))) [ meta ~a: [ a_http_equiv "Content-Type"
-   ; a_content "text/html; charset=UTF-8" ] () ; meta ~a: [ a_name "viewport" ;
-   a_content "width=device-width, initial-scale=1" ] () ; meta ~a:[ a_http_equiv
-   "X-UA-Compatible"; a_content "IE=edge" ] () ; style ~a:[ a_mime_type
-   "text/css" ] [ Unsafe.data {css| body { font-family:
-   BlinkMacSystemFont,-apple-system,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira
-   Sans,Droid Sans,Helvetica Neue,Helvetica,Arial,sans-serif; line-height: 1.4;
-   } |css} ] ] in let email_body content = body ~a:[ a_style "margin:0;
-   padding:0;" ] [ div ~a:[ a_style "margin: 1em 1em 1em 1em; max-width: 50em;"
-   ] [ section ~a:[ a_style "margin-bottom: 1em;" ] [ a ~a:[ a_href "{logoHref}"
-   ] [ img ~src:"{logoSrc}" ~alt:"{logoAlt}" ~a: [ a_style "width: 300px;
-   height: auto; max-width: 100%;" ] () ] ] ; section ~a:[ a_style "padding-top:
-   1em; color: #383838;" ] content ; footer ~a:[ a_style "margin-top: 4em;" ] [
-   div ~a:[ a_style "text-align:center" ] [ p [ txt "Copyright" ] ] ] ] ] in
-   html ~a:[ a_lang (Pool_common.Language.show language) ] email_header
-   (email_body content) ;; *)
+
+let prepare_email template email layout params =
+  match Sihl.Configuration.read_string "SMTP_SENDER" with
+  | None -> failwith "SMTP_SENDER not found in configuration"
+  | Some sender ->
+    let { email_subject; email_text; _ } = template in
+    let mail =
+      Sihl_email.
+        { sender
+        ; recipient = email
+        ; subject = email_subject
+        ; text = "" (* TODO: Plaintext *)
+        ; html = Some email_text
+        ; cc = []
+        ; bcc = []
+        }
+    in
+    let params = params @ Message_utils.layout_params layout in
+    Sihl_email.Template.email_of_template mail params
+;;
+
+module AssignmentConfirmation = struct
+  let email_params languages session =
+    (CCList.map (fun lang ->
+       ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+       , Session.to_email_text lang session )))
+      languages
+  ;;
+
+  let email_params_public_session languages session =
+    (CCList.map (fun lang ->
+       ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
+       , Session.public_to_email_text lang session )))
+      languages
+  ;;
+
+  let template pool language =
+    Repo.find_by_label pool language Label.AssignmentConfirmation
+  ;;
+
+  let base_params contact = [ "name", contact |> Contact.fullname ]
+
+  let create pool language tenant session contact =
+    let open Utils.Lwt_result.Infix in
+    let* template = template pool language in
+    let params = base_params contact @ email_params [ language ] session in
+    let layout = Message_utils.layout_from_tenant tenant in
+    let email =
+      contact |> Contact.email_address |> Pool_user.EmailAddress.value
+    in
+    prepare_email template email layout params |> Lwt_result.ok
+  ;;
+
+  let create_from_public_session pool language tenant session contact =
+    let open Utils.Lwt_result.Infix in
+    let* template = template pool language in
+    let params =
+      base_params contact @ email_params_public_session [ language ] session
+    in
+    let layout = Message_utils.layout_from_tenant tenant in
+    let email =
+      contact |> Contact.email_address |> Pool_user.EmailAddress.value
+    in
+    prepare_email template email layout params |> Lwt_result.ok
+  ;;
+end

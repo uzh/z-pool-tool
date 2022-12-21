@@ -402,6 +402,19 @@ module Model = struct
       ; updated_at = Pool_common.UpdatedAt.create ()
       }
   ;;
+
+  let create_message_template () =
+    let exn = CCResult.get_exn in
+    let open Message_template in
+    { id = Id.create ()
+    ; label = Label.AssignmentConfirmation
+    ; language = Pool_common.Language.En
+    ; entity_uuid = None
+    ; email_subject = "Subject" |> EmailSubject.create |> exn
+    ; email_text = "<div>Hello</div>" |> EmailText.create |> exn
+    ; sms_text = "Hello" |> SmsText.create |> exn
+    }
+  ;;
 end
 
 module Repo = struct

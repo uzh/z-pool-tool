@@ -30,6 +30,9 @@ let create req =
            contact
            experiment
        in
+       let* { Pool_context.Tenant.tenant; _ } =
+         Pool_context.Tenant.find req |> Lwt_result.lift
+       in
        let* confirmation_email =
          let* language =
            let* default = Settings.default_language database_label in
@@ -37,16 +40,12 @@ let create req =
            |> CCOption.value ~default
            |> Lwt_result.return
          in
-         let* subject =
-           I18n.find_by_key database_label I18n.Key.ConfirmationSubject language
-           >|+ I18n.content
-         in
-         let* text =
-           I18n.find_by_key database_label I18n.Key.ConfirmationText language
-           >|+ I18n.content
-         in
-         let session_text = Session.(public_to_email_text language session) in
-         Lwt_result.return Email.{ subject; text; language; session_text }
+         Message_template.AssignmentConfirmation.create_from_public_session
+           database_label
+           language
+           tenant
+           session
+           contact
        in
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift

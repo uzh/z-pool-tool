@@ -55,3 +55,25 @@ val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val default_values_tenant : t list
+
+type layout =
+  | Tenant of Pool_tenant.t
+  | Root
+
+module AssignmentConfirmation : sig
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Session.t
+    -> Contact.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+
+  val create_from_public_session
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Session.Public.t
+    -> Contact.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end

@@ -16,12 +16,22 @@ let assignment_data () =
   { session; experiment; contact }
 ;;
 
-let confirmation_email =
-  let language = Pool_common.Language.En in
-  let subject = "Confirmation" |> I18n.Content.create |> CCResult.get_exn in
-  let text = "Text" |> I18n.Content.create |> CCResult.get_exn in
-  let session_text = "Session info" in
-  Email.{ subject; text; session_text; language }
+let confirmation_email contact =
+  let email =
+    Contact.(contact |> email_address |> Pool_user.EmailAddress.value)
+  in
+  let open Message_template in
+  let sender = "test@econ.uzh.ch" in
+  let { email_subject; email_text; _ } = Model.create_message_template () in
+  Sihl_email.
+    { sender
+    ; recipient = email
+    ; subject = email_subject |> EmailSubject.value
+    ; text = ""
+    ; html = Some (email_text |> EmailText.value)
+    ; cc = []
+    ; bcc = []
+    }
 ;;
 
 let create () =
@@ -36,21 +46,19 @@ let create () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle command tenant confirmation_email false
+    AssignmentCommand.Create.handle
+      command
+      tenant
+      (confirmation_email contact)
+      false
   in
   let expected =
-    let layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.(Created { contact; session_id = session.Session.Public.id })
         |> Pool_event.assignment
       ; Contact.NumAssignmentsIncreased contact |> Pool_event.contact
-      ; Email.(
-          AssignmentConfirmationSent
-            ( waiting_list.Waiting_list.contact.Contact.user
-            , confirmation_email
-            , layout ))
-        |> Pool_event.email
+      ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events
@@ -170,7 +178,11 @@ let assign_to_fully_booked_session () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle command tenant confirmation_email false
+    AssignmentCommand.Create.handle
+      command
+      tenant
+      (confirmation_email contact)
+      false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
   Test_utils.check_result expected events
@@ -196,7 +208,11 @@ let assign_to_experiment_with_direct_registration_disabled () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle command tenant confirmation_email false
+    AssignmentCommand.Create.handle
+      command
+      tenant
+      (confirmation_email contact)
+      false
   in
   let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
   Test_utils.check_result expected events
@@ -218,7 +234,7 @@ let assign_to_session_contact_is_already_assigned () =
     AssignmentCommand.Create.handle
       command
       tenant
-      confirmation_email
+      (confirmation_email contact)
       already_assigned
   in
   let expected = Error Pool_common.Message.(AlreadySignedUpForExperiment) in
@@ -230,6 +246,7 @@ let assign_contact_from_waiting_list () =
   let session = Model.create_session () in
   let waiting_list = Model.create_waiting_list () in
   let already_enrolled = false in
+  let contact = waiting_list.Waiting_list.contact in
   let events =
     let command =
       AssignmentCommand.CreateFromWaitingList.
@@ -238,9 +255,8 @@ let assign_contact_from_waiting_list () =
     AssignmentCommand.CreateFromWaitingList.handle
       command
       tenant
-      confirmation_email
+      (confirmation_email contact)
   in
-  let email_layout = Email.Helper.layout_from_tenant tenant in
   let expected =
     let create =
       Assignment.
@@ -251,12 +267,7 @@ let assign_contact_from_waiting_list () =
     Ok
       [ Waiting_list.Deleted waiting_list |> Pool_event.waiting_list
       ; Assignment.Created create |> Pool_event.assignment
-      ; Email.(
-          AssignmentConfirmationSent
-            ( waiting_list.Waiting_list.contact.Contact.user
-            , confirmation_email
-            , email_layout ))
-        |> Pool_event.email
+      ; Email.(Sent (confirmation_email contact)) |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events
@@ -274,6 +285,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
   in
   let waiting_list = Model.create_waiting_list () in
   let waiting_list = Waiting_list.{ waiting_list with experiment } in
+  let contact = waiting_list.Waiting_list.contact in
   let already_enrolled = false in
   let events =
     let command =
@@ -283,7 +295,7 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
     AssignmentCommand.CreateFromWaitingList.handle
       command
       tenant
-      confirmation_email
+      (confirmation_email contact)
   in
   let expected = Error Pool_common.Message.(RegistrationDisabled) in
   Test_utils.check_result expected events
