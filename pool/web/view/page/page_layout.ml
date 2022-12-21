@@ -101,17 +101,9 @@ let mobile_nav query_language title navigation =
 ;;
 
 let footer title =
-  let version =
-    Sihl.Configuration.read_string "VERSION"
-    |> CCOption.map (fun v ->
-         v |> Format.asprintf "Z-Pool-Tool %s" |> txt |> CCList.pure |> span)
-  in
+  let version = Utils.pool_version in
   let title = span [ txt title ] in
-  let content =
-    version
-    |> CCOption.map_or ~default:[ title ] (fun version ->
-         [ title; span [ txt "|" ]; version ])
-  in
+  let content = [ title; span [ txt "|" ]; txt version ] in
   footer
     ~a:
       [ a_class
