@@ -13,6 +13,7 @@
   guard
   i18n
   mailing
+  message_template
   pool_location
   pool_tenant
   pool_user

@@ -14,6 +14,7 @@ type t =
   | I18n of I18n.event
   | Invitation of Invitation.event
   | Mailing of Mailing.event
+  | MessageTemplate of Message_template.event
   | PoolLocation of Pool_location.event
   | PoolTenant of Pool_tenant.event
   | Session of Session.event
@@ -35,6 +36,7 @@ let guard events = Guard events
 let i18n events = I18n events
 let invitation events = Invitation events
 let mailing events = Mailing events
+let message_template events = MessageTemplate events
 let pool_location events = PoolLocation events
 let pool_tenant events = PoolTenant events
 let session events = Session events
@@ -106,6 +108,12 @@ let handle_event ?(tags = Logs.Tag.empty) pool event =
       (* TODO [josef] use event name *)
       m "Handle event %s" (Mailing.show_event event) ~tags);
     Mailing.handle_event pool event
+  | MessageTemplate event ->
+    let src = Logs.Src.create "mailing.events" in
+    Logs.info ~src (fun m ->
+      (* TODO [josef] use event name *)
+      m "Handle event %s" (Message_template.show_event event) ~tags);
+    Message_template.handle_event pool event
   | PoolLocation event ->
     let src = Logs.Src.create "pool_location.events" in
     Logs.info ~src (fun m ->

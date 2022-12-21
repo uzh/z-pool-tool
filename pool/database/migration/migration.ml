@@ -100,6 +100,7 @@ module Tenant = struct
       ; Migration_custom_field_options.migration ()
       ; Migration_custom_field_groups.migration ()
       ; Migration_custom_field_answer_versions.migration ()
+      ; Migration_message_templates.migration ()
       ]
   ;;
 
