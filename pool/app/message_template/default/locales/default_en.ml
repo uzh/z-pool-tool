@@ -1,21 +1,29 @@
 open Entity
-open Default_utils
+open Message_utils
+open Tyxml.Html
 
 let language = Pool_common.Language.En
 let entity_uuid = None
+let salutation = h4 [ txt "Dear {name}," ]
+let complimentary_close = p [ txt "Yours sincerely,"; br (); txt "Pool Tool" ]
+
+let add_salutation_to_text =
+  Format.asprintf "Dear {name},\n\n%s\n\nYours sincerely,\nPool Tool"
+;;
+
+let add_salutation html = div ((salutation :: html) @ [ complimentary_close ])
 
 let assignment_confirmation =
   let label = Label.AssignmentConfirmation in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt "You successfully registered to the following session:"
-          ; br ()
-          ; txt "{sessionOverview}"
-          ]
-      ; p [ txt "The participation in the session is compulsory." ]
-      ]
+    [ p
+        [ txt "You successfully registered to the following session:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ; p [ txt "The participation in the session is compulsory." ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -41,26 +49,25 @@ The participation in the session is compulsory.|}
 let email_verification =
   let label = Label.EmailVerification in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt "You recently added a new email address to your account."
-          ; br ()
-          ; txt "Follow this"
-          ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link " ]
-          ; txt "to activate it."
-          ]
-      ; p
-          [ txt
-              "If this action wasn`t performed by you, please ignore this \
-               email or reply to let us know."
-          ]
-      ; p
-          [ txt
-              "If the above link does not work, please copy the following link \
-               into your browser manually: {verificationUrl}"
-          ]
-      ]
+    [ p
+        [ txt "You recently added a new email address to your account."
+        ; br ()
+        ; txt "Follow this"
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link " ]
+        ; txt "to activate it."
+        ]
+    ; p
+        [ txt
+            "If this action wasn`t performed by you, please ignore this email \
+             or reply to let us know."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the following link \
+             into your browser manually: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -87,14 +94,13 @@ If this action wasn`t performed by you, please ignore this email or reply to let
 let experiment_invitation =
   let label = Label.ExperimentInvitation in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p [ txt "We would like to invite you to the following experiment:" ]
-      ; p [ txt "{experimentPublicTitle}" ]
-      ; p [ txt "{experimentDescription}" ]
-      ; p [ txt "The experiment is performed on the following dates:" ]
-      ; p [ txt "Sessions......" ]
-      ]
+    [ p [ txt "We would like to invite you to the following experiment:" ]
+    ; p [ txt "{experimentPublicTitle}" ]
+    ; p [ txt "{experimentDescription}" ]
+    ; p [ txt "The experiment is performed on the following dates:" ]
+    ; p [ txt "Sessions......" ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -123,15 +129,14 @@ Sessions......|}
 let password_change =
   let label = Label.PasswordChange in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p [ txt {|You recently changed your password for your account.|} ]
-      ; p
-          [ txt
-              "If you did not change your password, please get in contact with \
-               us."
-          ]
-      ]
+    [ p [ txt {|You recently changed your password for your account.|} ]
+    ; p
+        [ txt
+            "If you did not change your password, please get in contact with \
+             us."
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -155,28 +160,26 @@ If you did not change your password, please get in contact with us.|}
 let password_reset =
   let label = Label.PasswordReset in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt
-              "You recently requested to reset your password for your account."
-          ; br ()
-          ; txt "Follow this"
-          ; a ~a:[ a_href "{resetUrl}" ] [ txt " link " ]
-          ; txt "to reset it."
-          ]
-      ; p
-          [ txt
-              "If you did not request a password reset, please ignore this \
-               email or reply to let us know. This password reset is only \
-               valid for the next hour."
-          ]
-      ; p
-          [ txt
-              "If the above link doesn't work, please copy the following link \
-               into your browser manually: {resetUrl}"
-          ]
-      ]
+    [ p
+        [ txt "You recently requested to reset your password for your account."
+        ; br ()
+        ; txt "Follow this"
+        ; a ~a:[ a_href "{resetUrl}" ] [ txt " link " ]
+        ; txt "to reset it."
+        ]
+    ; p
+        [ txt
+            "If you did not request a password reset, please ignore this email \
+             or reply to let us know. This password reset is only valid for \
+             the next hour."
+        ]
+    ; p
+        [ txt
+            "If the above link doesn't work, please copy the following link \
+             into your browser manually: {resetUrl}"
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -205,26 +208,25 @@ hour.|}
 let signup_verification =
   let label = Label.SignUpVerification in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt "Thank your for sigin up for the Pool Tool."
-          ; br ()
-          ; txt "Follow this"
-          ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link " ]
-          ; txt "to activate your account."
-          ]
-      ; p
-          [ txt
-              "If this action wasn`t performed by you, please ignore this \
-               email or reply to let us know."
-          ]
-      ; p
-          [ txt
-              "If the above link does not work, please copy the following link \
-               into your browser manually: {verificationUrl}"
-          ]
-      ]
+    [ p
+        [ txt "Thank your for sigin up for the Pool Tool."
+        ; br ()
+        ; txt "Follow this"
+        ; a ~a:[ a_href "{verificationUrl}" ] [ txt " link " ]
+        ; txt "to activate your account."
+        ]
+    ; p
+        [ txt
+            "If this action wasn`t performed by you, please ignore this email \
+             or reply to let us know."
+        ]
+    ; p
+        [ txt
+            "If the above link does not work, please copy the following link \
+             into your browser manually: {verificationUrl}"
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -251,14 +253,13 @@ If this action wasn`t performed by you, please ignore this email or reply to let
 let session_cancellation =
   let label = Label.SessionCancellation in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt "The following session you have registered to was canceled:"
-          ; br ()
-          ; txt "{sessionOverview}"
-          ]
-      ]
+    [ p
+        [ txt "The following session you have registered to was canceled:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
@@ -282,14 +283,13 @@ let session_cancellation =
 let session_reminder =
   let label = Label.SessionReminder in
   let email_text =
-    let open Tyxml.Html in
-    div
-      [ p
-          [ txt "Herewith we remind you about your upcoming experiment session:"
-          ; br ()
-          ; txt "{sessionOverview}"
-          ]
-      ]
+    [ p
+        [ txt "Herewith we remind you about your upcoming experiment session:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ]
+    |> add_salutation
     |> html_to_string
     |> EmailText.of_string
   in
