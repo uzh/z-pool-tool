@@ -96,7 +96,7 @@ let create_contact verified contact_info =
   }
 ;;
 
-let verification_email (email_address, _, _, _, _, _) =
+let verification_email (email_address, _, _, _, _) =
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
   let { email_subject; email_text; _ } =

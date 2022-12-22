@@ -175,8 +175,6 @@ type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
-  | InvitationBulkSent of
-      (Sihl_user.t * text_component list * CustomTemplate.t) list
   | DefaultRestored of default
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t

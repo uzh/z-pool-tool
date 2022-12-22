@@ -15,7 +15,6 @@ module Create : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Pool_tenant.t
     -> Sihl_email.t
     -> bool
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -30,7 +29,6 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     (command : t)
-    _ (* TODO: Remove *)
     confirmation_email
     already_enrolled
     =
@@ -175,7 +173,6 @@ module CreateFromWaitingList : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Pool_tenant.t
     -> Sihl_email.t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -187,12 +184,7 @@ end = struct
     ; already_enrolled : bool
     }
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    (command : t)
-    _
-    (* TODO: Remove *) confirmation_email
-    =
+  let handle ?(tags = Logs.Tag.empty) (command : t) confirmation_email =
     Logs.info ~src (fun m -> m "Handle command CreateFromWaitingList" ~tags);
     let open CCResult in
     if command.already_enrolled

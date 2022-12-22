@@ -138,7 +138,6 @@ let match_invitations ?interval pools =
       (* TODO: Account based internal/external email count *)
       | Email (Email.Sent _) | Email (Email.InvitationSent _) -> Some 1
       | Email (Email.BulkSent mails) -> Some (CCList.length mails)
-      | Email (Email.InvitationBulkSent mails) -> Some (CCList.length mails)
       | _ -> None)
     %> sum
   in

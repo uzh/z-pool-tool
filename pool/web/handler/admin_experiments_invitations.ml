@@ -1,21 +1,6 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
-(* TODO: Remove *)
-let invitation_template_data database_label system_languages =
-  let open Utils.Lwt_result.Infix in
-  let%lwt res =
-    Lwt_list.map_s
-      (fun lang ->
-        let find = CCFun.flip (I18n.find_by_key database_label) lang in
-        let* subject = find I18n.Key.InvitationSubject in
-        let* text = find I18n.Key.InvitationText in
-        Lwt_result.return (lang, (subject, text)))
-      system_languages
-  in
-  CCList.all_ok res |> Lwt.return
-;;
-
 let create_layout req = General.create_tenant_layout req
 
 let experiment_id =

@@ -26,7 +26,6 @@ let prepare_email language template email layout params =
 
 (** TODO
 
-    - ExperimentInvitation
     - SessionCancellation
     - SessionReminder *)
 module AssignmentConfirmation = struct

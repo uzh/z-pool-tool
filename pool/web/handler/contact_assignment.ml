@@ -47,9 +47,6 @@ let create req =
            session
            contact
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
        let%lwt already_enrolled =
          let open Utils.Lwt_result.Infix in
          Assignment.find_by_experiment_and_contact_opt
@@ -60,13 +57,13 @@ let create req =
          ||> not
        in
        let events =
+         (* TODO: merge emails, one confirmation for all sessions *)
          let open Cqrs_command.Assignment_command.Create in
          CCList.map
            (fun (session, waiting_list) ->
              handle
                ~tags
                { contact; session; waiting_list; experiment }
-               tenant
                confirmation_email
                already_enrolled)
            ((session, waiting_list) :: CCList.map (fun m -> m, None) follow_ups)

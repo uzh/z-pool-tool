@@ -113,8 +113,6 @@ type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
   | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
-  | InvitationBulkSent of
-      (Sihl_user.t * text_component list * CustomTemplate.t) list
   | DefaultRestored of Default.default
 [@@deriving eq, show]
 
@@ -135,15 +133,6 @@ let handle_event pool : event -> unit Lwt.t =
       ([ "name", User.user_fullname user ] @ data)
     |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
     (* TODO: Remove *)
-  | InvitationBulkSent multi_data ->
-    let%lwt sender = sender_of_pool pool in
-    multi_data
-    |> CCList.map (fun (user, data, template) ->
-         Helper.prepare_boilerplate_email
-           template
-           user.Sihl_user.email
-           ([ "name", User.user_fullname user ] @ data))
-    |> Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->

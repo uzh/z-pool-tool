@@ -39,18 +39,13 @@ let create () =
   let waiting_list =
     Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let experiment = experiment |> Model.experiment_to_public_experiment in
   let events =
     let command =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle
-      command
-      tenant
-      (confirmation_email contact)
-      false
+    AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected =
     Ok
@@ -168,7 +163,6 @@ let set_invalid_attendance () =
 let assign_to_fully_booked_session () =
   let { session; experiment; contact } = assignment_data () in
   let session = session |> Model.fully_book_public_session in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let waiting_list =
     Model.create_waiting_list_from_experiment_and_contact experiment contact
   in
@@ -178,11 +172,7 @@ let assign_to_fully_booked_session () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle
-      command
-      tenant
-      (confirmation_email contact)
-      false
+    AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected = Error Pool_common.Message.(SessionFullyBooked) in
   Test_utils.check_result expected events
@@ -190,7 +180,6 @@ let assign_to_fully_booked_session () =
 
 let assign_to_experiment_with_direct_registration_disabled () =
   let { session; experiment; contact } = assignment_data () in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let session = session |> Model.fully_book_public_session in
   let waiting_list =
     Model.create_waiting_list_from_experiment_and_contact experiment contact
@@ -208,11 +197,7 @@ let assign_to_experiment_with_direct_registration_disabled () =
       AssignmentCommand.Create.
         { contact; session; waiting_list = Some waiting_list; experiment }
     in
-    AssignmentCommand.Create.handle
-      command
-      tenant
-      (confirmation_email contact)
-      false
+    AssignmentCommand.Create.handle command (confirmation_email contact) false
   in
   let expected = Error Pool_common.Message.(DirectRegistrationIsDisabled) in
   Test_utils.check_result expected events
@@ -220,7 +205,6 @@ let assign_to_experiment_with_direct_registration_disabled () =
 
 let assign_to_session_contact_is_already_assigned () =
   let { session; experiment; contact } = assignment_data () in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let already_assigned = true in
   let waiting_list =
     Model.create_waiting_list_from_experiment_and_contact experiment contact
@@ -233,7 +217,6 @@ let assign_to_session_contact_is_already_assigned () =
     in
     AssignmentCommand.Create.handle
       command
-      tenant
       (confirmation_email contact)
       already_assigned
   in
@@ -242,7 +225,6 @@ let assign_to_session_contact_is_already_assigned () =
 ;;
 
 let assign_contact_from_waiting_list () =
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let session = Model.create_session () in
   let waiting_list = Model.create_waiting_list () in
   let already_enrolled = false in
@@ -254,7 +236,6 @@ let assign_contact_from_waiting_list () =
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
-      tenant
       (confirmation_email contact)
   in
   let expected =
@@ -274,7 +255,6 @@ let assign_contact_from_waiting_list () =
 ;;
 
 let assign_contact_from_waiting_list_to_disabled_experiment () =
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let session = Model.create_session () in
   let experiment = Model.create_experiment () in
   let experiment =
@@ -294,7 +274,6 @@ let assign_contact_from_waiting_list_to_disabled_experiment () =
     in
     AssignmentCommand.CreateFromWaitingList.handle
       command
-      tenant
       (confirmation_email contact)
   in
   let expected = Error Pool_common.Message.(RegistrationDisabled) in

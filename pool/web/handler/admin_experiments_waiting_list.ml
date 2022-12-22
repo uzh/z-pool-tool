@@ -152,14 +152,10 @@ let assign_contact req =
            session
            contact
        in
-       let* { Pool_context.Tenant.tenant; _ } =
-         Pool_context.Tenant.find req |> Lwt_result.lift
-       in
        let tags = Logger.req req in
        let events =
          Cqrs_command.Assignment_command.CreateFromWaitingList.(
            handle ~tags { session; waiting_list; already_enrolled })
-           tenant
            confirmation_email
          |> Lwt_result.lift
        in
