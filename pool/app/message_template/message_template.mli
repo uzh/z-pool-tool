@@ -96,3 +96,15 @@ module PasswordReset : sig
     -> Sihl_user.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
+
+module SignUpVerification : sig
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> Pool_tenant.t
+    -> Pool_user.EmailAddress.t
+    -> Email.Token.t
+    -> Pool_user.Firstname.t
+    -> Pool_user.Lastname.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end

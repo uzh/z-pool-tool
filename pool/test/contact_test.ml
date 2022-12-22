@@ -89,21 +89,40 @@ let create_contact verified contact_info =
   }
 ;;
 
+let verification_email (email_address, _, _, _, _, _) =
+  let open Message_template in
+  let sender = "test@econ.uzh.ch" in
+  let { email_subject; email_text; _ } =
+    Test_utils.Model.create_message_template ()
+  in
+  Sihl_email.
+    { sender
+    ; recipient = email_address
+    ; subject = email_subject |> EmailSubject.value
+    ; text = ""
+    ; html = Some (email_text |> EmailText.value)
+    ; cc = []
+    ; bcc = []
+    }
+;;
+
 let sign_up_not_allowed_suffix () =
+  let open Contact_command.SignUp in
   let allowed_email_suffixes =
     [ "gmail.com" ]
     |> CCList.map Settings.EmailSuffix.create
     |> CCResult.flatten_l
     |> CCResult.get_exn
   in
+  let contact_info = "john@bluewin.com" |> contact_info in
+  let ({ email; _ } as decoded) =
+    contact_info |> sign_up_contact |> decode |> CCResult.get_exn
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let events =
-    let open Contact_command.SignUp in
-    "john@bluewin.com"
-    |> contact_info
-    |> sign_up_contact
-    |> decode
-    |> Pool_common.Utils.get_or_failwith
-    |> handle ~allowed_email_suffixes tenant None
+    decoded
+    |> handle ~allowed_email_suffixes token email verification_email None
   in
   let expected =
     Error
@@ -123,6 +142,11 @@ let sign_up () =
     =
     contact_info "john@gmail.com"
   in
+  let email =
+    "john@gmail.com" |> Pool_user.EmailAddress.create |> CCResult.get_exn
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let events =
     let open CCResult in
     let open Contact_command.SignUp in
@@ -139,7 +163,9 @@ let sign_up () =
          ~allowed_email_suffixes
          ~user_id
          ~terms_accepted_at
-         tenant
+         token
+         email
+         verification_email
          language
   in
   let expected =
@@ -161,14 +187,8 @@ let sign_up () =
     in
     Ok
       [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created
-          ( email
-          , user_id
-          , firstname
-          , lastname
-          , language |> CCOption.get_exn_or "Test failed"
-          , Email.Helper.layout_from_tenant tenant )
-        |> Pool_event.email_verification
+      ; Email.Created (email, token, user_id) |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   in
   check_result expected events

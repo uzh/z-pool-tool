@@ -22,12 +22,13 @@ let sign_up_create req =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
   let terms_key = Field.(TermsAccepted |> show) in
+  let user_id = Pool_common.Id.create () in
   let%lwt urlencoded =
     Sihl.Web.Request.to_urlencoded req
     ||> HttpUtils.remove_empty_values
     ||> HttpUtils.format_request_boolean_values [ terms_key ]
   in
-  let result { Pool_context.database_label; query_language; _ } =
+  let result { Pool_context.database_label; query_language; language; _ } =
     let open Utils.Lwt_result.Infix in
     let tags = Logger.req req in
     Utils.Lwt_result.map_error (fun msg ->
@@ -49,17 +50,37 @@ let sign_up_create req =
        let* { Pool_context.Tenant.tenant; _ } =
          Pool_context.Tenant.find req |> Lwt_result.lift
        in
-       let* create_contact_events =
-         let open CCResult.Infix in
-         Command.SignUp.(
-           decode urlencoded
-           >>= handle ~tags ?allowed_email_suffixes tenant preferred_language)
-         |> Lwt_result.lift
-       in
        let* email_address =
          Sihl.Web.Request.urlencoded Field.(Email |> show) req
          ||> CCOption.to_result ContactSignupInvalidEmail
          >== Pool_user.EmailAddress.create
+       in
+       let create_contact_events () =
+         let open Command.SignUp in
+         let* ({ firstname; lastname; _ } as decoded) =
+           decode urlencoded |> Lwt_result.lift
+         in
+         let%lwt token = Email.create_token database_label email_address in
+         let* verification_mail =
+           Message_template.SignUpVerification.create
+             database_label
+             (CCOption.value ~default:language preferred_language)
+             tenant
+             email_address
+             token
+             firstname
+             lastname
+         in
+         decoded
+         |> handle
+              ~tags
+              ?allowed_email_suffixes
+              ~user_id
+              token
+              email_address
+              verification_mail
+              preferred_language
+         |> Lwt_result.lift
        in
        let%lwt existing_user =
          Service.User.find_by_email_opt
@@ -68,19 +89,24 @@ let sign_up_create req =
        in
        let* events =
          match existing_user with
-         | None -> Lwt_result.return create_contact_events
+         | None -> create_contact_events ()
          | Some user when Service.User.is_admin user -> Lwt_result.return []
          | Some _ ->
-           email_address
-           |> Contact.find_by_email database_label
-           ||> (function
-           | Ok contact when contact.Contact.user.Sihl_user.confirmed -> Ok []
+           let%lwt contact =
+             email_address |> Contact.find_by_email database_label
+           in
+           contact
+           |> (function
+           | Ok contact when contact.Contact.user.Sihl_user.confirmed ->
+             Lwt_result.return []
            | Ok contact ->
+             let* create_contact_events = create_contact_events () in
              let open CCResult in
              contact
              |> Command.DeleteUnverified.handle ~tags
              >|= CCFun.flip CCList.append create_contact_events
-           | Error _ -> Ok [])
+             |> Lwt_result.lift
+           | Error _ -> Lwt_result.return [])
        in
        Utils.Database.with_transaction database_label (fun () ->
          let tags = Logger.req req in

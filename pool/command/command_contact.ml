@@ -36,20 +36,36 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
       when CCString.equal terms_accepted "accept" ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
-      let events =
-        let open CCResult.Infix in
+      let%lwt events =
         let open Cqrs_command.Contact_command.SignUp in
         let language =
           Pool_common.Language.create language |> CCResult.to_opt
         in
-        [ "email", [ email ]
-        ; "password", [ password ]
-        ; "firstname", [ firstname ]
-        ; "lastname", [ lastname ]
-        ]
-        |> decode
-        >>= handle tenant language
+        let ({ firstname; lastname; email; _ } as decoded) =
+          [ "email", [ email ]
+          ; "password", [ password ]
+          ; "firstname", [ firstname ]
+          ; "lastname", [ lastname ]
+          ]
+          |> decode
+          |> get_or_failwith
+        in
+        let%lwt token = Email.create_token pool email in
+        let%lwt verification_mail =
+          Message_template.SignUpVerification.create
+            pool
+            (CCOption.value ~default:Pool_common.Language.En language)
+            tenant
+            email
+            token
+            firstname
+            lastname
+          ||> get_or_failwith
+        in
+        decoded
+        |> handle token email verification_mail language
         |> get_or_failwith
+        |> Lwt.return
       in
       let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
       Lwt.return_some ()

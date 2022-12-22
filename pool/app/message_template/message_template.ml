@@ -19,7 +19,7 @@ let prepare_email language template email layout params =
         }
     in
     let params =
-      (("emailText", email_text) :: params) @ Message_utils.layout_params layout
+      [ "emailText", email_text ] @ Message_utils.layout_params layout @ params
     in
     Sihl_email.Template.email_of_template mail params
 ;;
@@ -110,6 +110,38 @@ module PasswordReset = struct
       email
       (create_layout layout)
       (email_params reset_url user)
+    |> Lwt_result.ok
+  ;;
+end
+
+module SignUpVerification = struct
+  let email_params validation_url firstname lastname =
+    let open Pool_user in
+    [ "verificationUrl", validation_url
+    ; ( "name"
+      , Format.asprintf
+          "%s %s"
+          (Firstname.value firstname)
+          (Lastname.value lastname) )
+    ]
+  ;;
+
+  let create pool language tenant email_address token firstname lastname =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* template = Repo.find_by_label pool language Label.SignUpVerification in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let validation_url =
+      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      |> Pool_common.Message.add_field_query_params "/email-verified"
+      |> create_public_url url
+    in
+    prepare_email
+      language
+      template
+      email_address
+      (layout_from_tenant tenant)
+      (email_params validation_url firstname lastname)
     |> Lwt_result.ok
   ;;
 end

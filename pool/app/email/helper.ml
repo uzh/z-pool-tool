@@ -113,32 +113,3 @@ let prepare_boilerplate_email template email params =
     in
     Sihl_email.Template.render_email_with_data params mail
 ;;
-
-module ConfirmationEmail = struct
-  let create pool language layout email firstname lastname label =
-    let%lwt url = Pool_tenant.Url.of_pool pool in
-    let name =
-      CCString.concat
-        " "
-        (CCList.filter_map
-           CCFun.id
-           [ firstname |> CCOption.map Pool_user.Firstname.value
-           ; lastname |> CCOption.map Pool_user.Lastname.value
-           ])
-    in
-    let subject = "Email verification" in
-    let validation_url =
-      Pool_common.[ Message.Field.Token, token email ]
-      |> Pool_common.Message.add_field_query_params "/email-verified"
-      |> create_public_url url
-    in
-    prepare_email
-      pool
-      language
-      label
-      subject
-      (address email |> Pool_user.EmailAddress.value)
-      layout
-      [ "verificationUrl", validation_url; "name", name ]
-  ;;
-end

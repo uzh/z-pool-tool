@@ -56,40 +56,12 @@ let send_confirmation
   email_template |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
 ;;
 
-let create_token pool address =
-  let open Utils.Lwt_result.Infix in
-  Service.Token.create
-    ~ctx:(Pool_tenant.to_ctx pool)
-    [ "email", User.EmailAddress.value address ]
-  ||> Token.create
-;;
-
 let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
 ;;
 
-let send_confirmation_email pool language tenant email firstname lastname event =
-  let open Utils.Lwt_result.Infix in
-  let%lwt sender = sender_of_pool pool in
-  Helper.ConfirmationEmail.create
-    pool
-    language
-    tenant
-    email
-    firstname
-    lastname
-    event
-  >|> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
-;;
-
 type verification_event =
-  | Created of
-      User.EmailAddress.t
-      * Pool_common.Id.t
-      * User.Firstname.t
-      * User.Lastname.t
-      * Pool_common.Language.t
-      * email_layout
+  | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
   | Updated of
       User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t * email_layout
   | EmailVerified of unverified t
@@ -100,56 +72,22 @@ let verification_event_name = function
   | EmailVerified _ -> "EmailVerified"
 ;;
 
-let handle_verification_event pool : verification_event -> unit Lwt.t =
-  let open Utils.Lwt_result.Infix in
-  let ctx = Pool_tenant.to_ctx pool in
-  let create_email language layout user_id address firstname lastname label
-    : unit Lwt.t
-    =
-    let%lwt token = create_token pool address in
-    user_id
-    |> Pool_common.Id.value
-    |> Service.User.find_opt ~ctx
-    >|> function
-    | None ->
-      let error = PoolError.(NotFound Field.User |> show_error) in
-      Logs.err (fun m -> m "Cannot create verification email: %s" error);
-      failwith error
-    | Some user ->
-      let email = create address user token in
-      let%lwt () = Repo.insert pool email in
-      send_confirmation_email
-        pool
-        language
-        layout
-        email
-        firstname
-        lastname
-        label
-  in
-  function
-  | Created (address, user_id, firstname, lastname, language, layout) ->
+let[@warning "-27"] handle_verification_event pool
+  : verification_event -> unit Lwt.t
+  = function
+  | Created (address, token, user_id) ->
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
-    create_email
-      language
-      layout
-      user_id
-      address
-      (Some firstname)
-      (Some lastname)
-      TemplateLabel.SignUpVerification
+    let%lwt user =
+      Service.User.find_by_email
+        ~ctx:(Pool_tenant.to_ctx pool)
+        (User.EmailAddress.value address)
+    in
+    let unverified_email = create address user token in
+    Repo.insert pool unverified_email
   | Updated (address, user, language, layout) ->
-    let open Sihl_user in
-    let user_id = user.id |> Pool_common.Id.of_string in
-    let%lwt () = Repo.delete_unverified_by_user pool user_id in
-    create_email
-      language
-      layout
-      user_id
-      address
-      (user.given_name |> CCOption.map Pool_user.Firstname.of_string)
-      (user.name |> CCOption.map Pool_user.Lastname.of_string)
-      TemplateLabel.EmailVerification
+    Repo.delete_unverified_by_user
+      pool
+      (user.Sihl_user.id |> Pool_common.Id.of_string)
   | EmailVerified (Unverified { token; _ } as email) ->
     let%lwt () = deactivate_token pool token in
     let%lwt () = Repo.verify pool @@ verify email in
@@ -162,14 +100,10 @@ let[@warning "-4"] equal_verification_event
   : bool
   =
   match one, two with
-  | ( Created (a1, id1, f1, l1, lang1, layout1)
-    , Created (a2, id2, f2, l2, lang2, layout2) ) ->
-    User.EmailAddress.equal a1 a2
+  | Created (e1, t1, id1), Created (e2, t2, id2) ->
+    User.EmailAddress.equal e1 e2
+    && Token.equal t1 t2
     && Pool_common.Id.equal id1 id2
-    && User.Firstname.equal f1 f2
-    && User.Lastname.equal l1 l2
-    && Pool_common.Language.equal lang1 lang2
-    && equal_email_layout layout1 layout2
   | Updated (a1, u1, lang1, layout1), Updated (a2, u2, lang2, layout2) ->
     User.EmailAddress.equal a1 a2
     && CCString.equal u1.Sihl_user.id u2.Sihl_user.id
@@ -182,13 +116,10 @@ let[@warning "-4"] equal_verification_event
 let pp_verification_event formatter (event : verification_event) : unit =
   let pp_address = User.EmailAddress.pp formatter in
   match event with
-  | Created (m, id, f, l, language, layout) ->
-    pp_address m;
-    Pool_common.Id.pp formatter id;
-    User.Firstname.pp formatter f;
-    User.Lastname.pp formatter l;
-    Pool_common.Language.pp formatter language;
-    pp_email_layout formatter layout
+  | Created (m, t, id) ->
+    Pool_user.EmailAddress.pp Format.std_formatter m;
+    Token.pp Format.std_formatter t;
+    Pool_common.Id.pp formatter id
   | Updated (m, u, language, layout) ->
     pp_address m;
     Sihl_user.pp formatter u;

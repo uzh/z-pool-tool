@@ -103,6 +103,7 @@ val verify : unverified t -> verified t
 val address : 'email t -> Pool_user.EmailAddress.t
 val user_id : 'email t -> Pool_common.Id.t
 val user_is_confirmed : 'email t -> bool
+val create : Pool_user.EmailAddress.t -> Sihl_user.t -> Token.t -> unverified t
 
 val find_unverified_by_user
   :  Pool_database.Label.t
@@ -123,6 +124,11 @@ val delete_unverified_by_user
   :  Pool_database.Label.t
   -> Pool_common.Id.t
   -> unit Lwt.t
+
+val create_token
+  :  Pool_database.Label.t
+  -> Pool_user.EmailAddress.t
+  -> Token.t Lwt.t
 
 module TemplateLabel : sig
   type t =
@@ -147,13 +153,7 @@ val default_values_root : default
 val default_values_tenant : default
 
 type verification_event =
-  | Created of
-      Pool_user.EmailAddress.t
-      * Pool_common.Id.t
-      * Pool_user.Firstname.t
-      * Pool_user.Lastname.t
-      * Pool_common.Language.t
-      * email_layout
+  | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
   | Updated of
       Pool_user.EmailAddress.t
       * Sihl_user.t
@@ -209,16 +209,4 @@ module Helper : sig
     -> string
     -> (string * string) list
     -> Sihl_email.t
-
-  module ConfirmationEmail : sig
-    val create
-      :  Pool_database.Label.t
-      -> Pool_common.Language.t
-      -> email_layout
-      -> unverified t
-      -> Pool_user.Firstname.t option
-      -> Pool_user.Lastname.t option
-      -> TemplateLabel.t
-      -> Sihl_email.t Lwt.t
-  end
 end

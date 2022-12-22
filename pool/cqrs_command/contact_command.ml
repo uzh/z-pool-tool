@@ -21,7 +21,9 @@ module SignUp : sig
          (User.Password.t -> (unit, Pool_common.Message.error) result)
     -> ?user_id:Id.t
     -> ?terms_accepted_at:User.TermsAccepted.t option
-    -> Pool_tenant.t
+    -> Email.Token.t
+    -> User.EmailAddress.t
+    -> Sihl_email.t
     -> Pool_common.Language.t option
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -61,7 +63,9 @@ end = struct
     ?password_policy
     ?(user_id = Id.create ())
     ?(terms_accepted_at = Some (User.TermsAccepted.create_now ()))
-    tenant
+    token
+    unverified_email
+    verification_email
     default_language
     command
     =
@@ -80,17 +84,11 @@ end = struct
         ; language = default_language
         }
     in
-    let email_layout = Email.Helper.layout_from_tenant tenant in
     Ok
       [ Contact.Created contact |> Pool_event.contact
-      ; Email.Created
-          ( command.email
-          , user_id
-          , command.firstname
-          , command.lastname
-          , default_language |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
+      ; Email.Created (unverified_email, token, user_id)
         |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   ;;
 
@@ -274,6 +272,7 @@ end = struct
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
     let layout = Email.Helper.layout_from_tenant tenant in
+    (* TODO: Fix *)
     Ok
       [ Email.Updated
           ( email
