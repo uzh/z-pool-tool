@@ -1,6 +1,7 @@
 module HttpUtils = Http_utils
 module Message = HttpUtils.Message
 
+(* TODO: Remove *)
 let invitation_template_data database_label system_languages =
   let open Utils.Lwt_result.Infix in
   let%lwt res =
@@ -169,21 +170,15 @@ let resend req =
        in
        let* invitation = Invitation.find database_label id in
        let* experiment = Experiment.find database_label experiment_id in
-       let* system_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
-       let* i18n_texts =
-         invitation_template_data database_label system_languages
+       let* invitation_mail =
+         Message_template.ExperimentInvitation.create
+           tenant
+           experiment
+           invitation.Invitation.contact
        in
        let events =
          let open Cqrs_command.Invitation_command.Resend in
-         handle
-           ~tags
-           { invitation; experiment }
-           tenant
-           system_languages
-           i18n_texts
-         |> Lwt.return
+         handle ~tags invitation_mail { invitation; experiment } |> Lwt.return
        in
        let handle events =
          let%lwt () =

@@ -70,38 +70,6 @@ let count_of_rate ?(interval = Sihl.Time.OneMinute) rate =
   |> CCInt.of_float
 ;;
 
-let i18n_templates pool { Experiment.invitation_template; _ } languages =
-  let open Utils.Lwt_result.Infix in
-  let open Experiment.InvitationTemplate in
-  let open I18n in
-  Lwt_list.map_s
-    (fun language ->
-      let%lwt subject =
-        find_by_key pool Key.InvitationSubject language ||> get_or_failwith
-      in
-      let%lwt text =
-        find_by_key pool Key.InvitationText language ||> get_or_failwith
-      in
-      let subject =
-        invitation_template
-        |> CCOption.map_or ~default:subject (fun { subject; _ } ->
-             subject
-             |> Subject.value
-             |> Content.of_string
-             |> create Key.InvitationSubject language)
-      in
-      let text =
-        invitation_template
-        |> CCOption.map_or ~default:text (fun { text; _ } ->
-             text
-             |> Text.value
-             |> Content.of_string
-             |> create Key.ImportInvitationText language)
-      in
-      (language, (subject, text)) |> Lwt.return)
-    languages
-;;
-
 let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
   let open Utils.Lwt_result.Infix in
   let%lwt ({ Experiment.id; _ } as experiment) =

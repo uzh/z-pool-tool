@@ -103,6 +103,14 @@ module ExperimentInvitation = struct
     ]
   ;;
 
+  let get_langauge sys (contact : Contact.t) default =
+    let open CCOption in
+    let open Pool_common in
+    contact.Contact.language
+    >>= (fun contact_lang -> CCList.find_opt (Language.equal contact_lang) sys)
+    |> value ~default
+  ;;
+
   let prepare_template_list tenant =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
@@ -127,9 +135,7 @@ module ExperimentInvitation = struct
     let fnc experiment (contact : Contact.t) =
       let open CCResult in
       let open Pool_common in
-      let language =
-        CCOption.value ~default:default_language contact.Contact.language
-      in
+      let language = get_langauge system_languages contact default_language in
       let* template =
         CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
         |> CCOption.to_result (Message.NotFound Field.Template)
@@ -145,6 +151,33 @@ module ExperimentInvitation = struct
       |> CCResult.pure
     in
     Lwt_result.return fnc
+  ;;
+
+  let create tenant experiment contact =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let pool = tenant.Pool_tenant.database_label in
+    let%lwt system_languages = Settings.find_languages pool in
+    let* default_language =
+      system_languages
+      |> CCList.head_opt
+      |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
+      |> Lwt_result.lift
+    in
+    let language = get_langauge system_languages contact default_language in
+    let* template =
+      Repo.find_by_label pool language Label.ExperimentInvitation
+    in
+    let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
+    let layout = layout_from_tenant tenant in
+    let params = email_params experiment tenant_url contact in
+    prepare_email
+      language
+      template
+      (Contact.email_address contact)
+      layout
+      params
+    |> Lwt_result.return
   ;;
 end
 

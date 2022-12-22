@@ -91,6 +91,12 @@ module EmailVerification : sig
 end
 
 module ExperimentInvitation : sig
+  val create
+    :  Pool_tenant.t
+    -> Experiment.t
+    -> Contact.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+
   val prepare_template_list
     :  Pool_tenant.t
     -> ( Experiment.t

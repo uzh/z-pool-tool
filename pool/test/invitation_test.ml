@@ -42,31 +42,15 @@ let create () =
 
 let resend () =
   let open InvitationCommand.Resend in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let invitation = create_invitation () in
   let experiment = Model.create_experiment () in
-  let languages = Pool_common.Language.all in
-  let i18n_templates = Test_utils.i18n_templates languages in
-  let events =
-    handle { invitation; experiment } tenant languages i18n_templates
-  in
+  let email = Test_utils.Model.create_email () in
+  let events = handle email { invitation; experiment } in
   let expected =
     let open CCResult in
-    let* email =
-      InvitationCommand.invitation_template_elements
-        tenant
-        languages
-        i18n_templates
-        experiment
-        invitation.Invitation.contact.Contact.language
-    in
     Ok
       [ Invitation.(Resent invitation) |> Pool_event.invitation
-      ; Email.InvitationSent
-          ( invitation.Invitation.contact.Contact.user
-          , Invitation.email_experiment_elements experiment
-          , email )
-        |> Pool_event.email
+      ; Email.Sent email |> Pool_event.email
       ]
   in
   Test_utils.check_result expected events
