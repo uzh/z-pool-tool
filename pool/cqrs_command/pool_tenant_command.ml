@@ -167,7 +167,8 @@ end = struct
       ; Database.Migrated command.database_label |> Pool_event.database
       ; Settings.(DefaultRestored default_values) |> Pool_event.settings
       ; I18n.(DefaultRestored default_values) |> Pool_event.i18n
-      ; Email.(DefaultRestored default_values_tenant |> Pool_event.email)
+      ; Message_template.(
+          DefaultRestored default_values_tenant |> Pool_event.message_template)
       ; Guard.(DefaultRestored root_permissions) |> Pool_event.guard
       ]
   ;;

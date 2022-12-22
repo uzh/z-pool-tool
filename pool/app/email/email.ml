@@ -1,7 +1,5 @@
 include Entity
 include Event
-include Default
-module Helper = Helper
 
 let find_unverified_by_user pool = Repo.find_by_user pool UnverifiedC
 let find_verified_by_user pool = Repo.find_by_user pool VerifiedC

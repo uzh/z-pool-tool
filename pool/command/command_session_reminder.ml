@@ -1,3 +1,5 @@
+let get_or_failwith = Pool_common.Utils.get_or_failwith
+
 let create_reminders pool tenant sys_languages session =
   let open Utils.Lwt_result.Infix in
   let* experiment = Experiment.find_of_session pool session.Session.id in

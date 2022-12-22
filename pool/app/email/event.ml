@@ -82,30 +82,13 @@ let pp_verification_event formatter (event : verification_event) : unit =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | DefaultRestored of Default.default
 [@@deriving eq, show]
 
-let handle_event pool : event -> unit Lwt.t =
-  let ctx = Pool_tenant.to_ctx pool in
-  function
+let handle_event pool : event -> unit Lwt.t = function
   | Sent email ->
     let%lwt sender = sender_of_pool pool in
     Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool) email
   | BulkSent emails ->
     let%lwt sender = sender_of_pool pool in
     Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool) emails
-  | DefaultRestored default_values ->
-    Lwt_list.iter_s
-      (fun { Default.label; language; text; html } ->
-        let%lwt () = Repo.delete_email_template pool label language in
-        let%lwt (_ : Sihl_email.Template.t) =
-          Service.EmailTemplate.create
-            ~ctx
-            ~label:(TemplateLabel.show label)
-            ~language:(Pool_common.Language.show language)
-            ~html
-            text
-        in
-        Lwt.return_unit)
-      default_values
 ;;

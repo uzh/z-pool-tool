@@ -147,10 +147,6 @@ module TemplateLabel : sig
 end
 
 type text_component = (string, string) CCPair.t
-type default
-
-val default_values_root : default
-val default_values_tenant : default
 
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
@@ -174,31 +170,9 @@ type confirmation_email =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | DefaultRestored of default (* TODO: Remove this event? *)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
 val show_event : event -> string
 val verification_event_name : verification_event -> string
-
-module Helper : sig
-  val layout_from_tenant : Pool_tenant.t -> email_layout
-  val root_layout : unit -> email_layout
-
-  val prepare_email
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
-    -> TemplateLabel.t
-    -> string
-    -> string
-    -> email_layout
-    -> (string * string) list
-    -> Sihl_email.t Lwt.t
-
-  val prepare_boilerplate_email
-    :  CustomTemplate.t
-    -> string
-    -> (string * string) list
-    -> Sihl_email.t
-end
