@@ -133,3 +133,18 @@ let combine_html language html_title =
     email_body
   |> html_to_string
 ;;
+
+let message_langauge sys (contact : Contact.t) =
+  let open Pool_common in
+  let open CCResult in
+  let* default =
+    sys
+    |> CCList.head_opt
+    |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
+  in
+  let open CCOption in
+  contact.Contact.language
+  >>= (fun contact_lang -> CCList.find_opt (Language.equal contact_lang) sys)
+  |> value ~default
+  |> CCResult.pure
+;;
