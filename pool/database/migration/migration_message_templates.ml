@@ -14,7 +14,8 @@ let create_pool_message_table =
         `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
-      UNIQUE KEY `unique_uuid` (`uuid`)
+      UNIQUE KEY `unique_uuid` (`uuid`),
+      UNIQUE KEY `unique_label_entity_id_language` (`label`, `entity_uuid`, `language`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     |sql}
 ;;
