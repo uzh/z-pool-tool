@@ -139,7 +139,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: changes.md
-          draft: true
           files: |
             assets/
             run.exe
