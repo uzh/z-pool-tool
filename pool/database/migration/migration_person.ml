@@ -14,6 +14,13 @@ let create_person_table =
     |sql}
 ;;
 
+let drop_person_table =
+  Sihl.Database.Migration.create_step
+    ~label:"drop person table"
+    {sql|DROP TABLE IF EXISTS pool_person|sql}
+;;
+
 let migration () =
-  Sihl.Database.Migration.(empty "person" |> add_step create_person_table)
+  Sihl.Database.Migration.(
+    empty "person" |> add_step create_person_table |> add_step drop_person_table)
 ;;
