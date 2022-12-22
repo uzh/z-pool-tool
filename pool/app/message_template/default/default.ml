@@ -25,9 +25,9 @@ let password_reset = function
   | En -> Default_en.password_reset
 ;;
 
-let signup_verification = function
-  | De -> Default_de.signup_verification
-  | En -> Default_en.signup_verification
+let profile_update_trigger = function
+  | De -> Default_de.profile_update_trigger
+  | En -> Default_en.profile_update_trigger
 ;;
 
 let session_cancellation = function
@@ -45,6 +45,11 @@ let session_reschedule = function
   | En -> Default_en.session_reschedule
 ;;
 
+let signup_verification = function
+  | De -> Default_de.signup_verification
+  | En -> Default_en.signup_verification
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -57,10 +62,11 @@ let default_values_tenant =
   ; experiment_invitation
   ; password_change
   ; password_reset
-  ; signup_verification
+  ; profile_update_trigger
   ; session_cancellation
   ; session_reminder
   ; session_reschedule
+  ; signup_verification
   ]
   @@@ [ En; De ]
 ;;

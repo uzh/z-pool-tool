@@ -168,6 +168,39 @@ Wenn du dein Passwort nicht geändert hast, dann kontaktiere uns bitte umgehend.
   }
 ;;
 
+let profile_update_trigger =
+  let label = Label.ProfileUpdateTrigger in
+  let email_text =
+    [ p [ txt "Ihr Profil wurde schon länger nicht aktualisiert." ]
+    ; p
+        [ txt "Bitte kotrollieren Sie die Angaben in Ihrem "
+        ; a ~a:[ a_href "{profileUrl}" ] [ txt " Profil " ]
+        ; txt "."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Bitte kontrollieren Sie Ihr Profil." |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Ihr Profil wurde schon länger nicht aktualisiert.
+
+Bitte kontrollieren Sie die Angaben in Ihrem Profil: {profileUrl}|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; sms_text
+  }
+;;
+
 let password_reset =
   let label = Label.PasswordReset in
   let email_text =

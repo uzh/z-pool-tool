@@ -174,8 +174,7 @@ type confirmation_email =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
-  | DefaultRestored of default
+  | DefaultRestored of default (* TODO: Remove this event? *)
 
 val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val equal_event : event -> event -> bool

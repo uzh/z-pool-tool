@@ -16,6 +16,8 @@ module Label = struct
         [@printer go "experiment_invitation"]
     | PasswordChange [@name "password_change"] [@printer go "password_change"]
     | PasswordReset [@name "password_reset"] [@printer go "password_reset"]
+    | ProfileUpdateTrigger [@name "profile_update_trigger"]
+        [@printer go "profile_update_trigger"]
     | SignUpVerification [@name "signup_verification"]
         [@printer go "signup_verification"]
     | SessionCancellation [@name "session_cancellation"]

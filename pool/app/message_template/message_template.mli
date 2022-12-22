@@ -9,6 +9,7 @@ module Label : sig
     | ExperimentInvitation
     | PasswordChange
     | PasswordReset
+    | ProfileUpdateTrigger
     | SignUpVerification
     | SessionCancellation
     | SessionReminder
@@ -115,6 +116,16 @@ module PasswordChange : sig
     -> Pool_tenant.t
     -> Sihl_user.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module ProfileUpdateTrigger : sig
+  val prepare_template_list
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> ( Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
+       , Pool_common.Message.error )
+       result
+       Lwt.t
 end
 
 module PasswordReset : sig

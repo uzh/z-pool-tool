@@ -187,7 +187,7 @@ end
 
 module PasswordReset = struct
   let email_params reset_url user =
-    [ "resetUrl", reset_url; "name", user |> Pool_user.user_fullname ]
+    [ "resetUrl", reset_url ] @ (user |> global_params)
   ;;
 
   let create pool language layout user =
@@ -223,6 +223,46 @@ module PasswordReset = struct
       (create_layout layout)
       (email_params reset_url user)
     |> Lwt_result.return
+  ;;
+end
+
+module ProfileUpdateTrigger = struct
+  let email_params contact profile_url =
+    ("profileUrl", profile_url) :: (contact.Contact.user |> global_params)
+  ;;
+
+  let prepare_template_list pool tenant =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let%lwt system_languages = Settings.find_languages pool in
+    let* templates =
+      Lwt_list.map_s
+        (fun lang ->
+          Repo.find_by_label pool lang Label.ExperimentInvitation
+          >|+ CCPair.make lang)
+        system_languages
+      ||> CCResult.flatten_l
+    in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let fnc contact =
+      let open CCResult in
+      let open Pool_common in
+      let* language = message_langauge system_languages contact in
+      let* template =
+        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+        |> CCOption.to_result (Message.NotFound Field.Template)
+        >|= snd
+      in
+      let profile_url = create_public_url url "/user/personal-details" in
+      prepare_email
+        language
+        template
+        (Contact.email_address contact)
+        (layout_from_tenant tenant)
+        (email_params contact profile_url)
+      |> CCResult.pure
+    in
+    fnc |> Lwt_result.return
   ;;
 end
 

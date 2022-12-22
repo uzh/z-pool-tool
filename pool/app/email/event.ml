@@ -26,36 +26,6 @@ let sender_of_pool pool =
     |> Lwt.return)
 ;;
 
-let send_confirmation
-  pool
-  layout
-  ({ Sihl_user.email; _ } as user)
-  { subject; text; language; session_text }
-  =
-  let%lwt email_template =
-    let content =
-      Format.asprintf "%s\n%s" (text |> I18n.Content.value) session_text
-    in
-    Helper.prepare_email
-      pool
-      language
-      TemplateLabel.Boilerplate
-      (subject |> I18n.Content.value)
-      email
-      layout
-      [ ( "name"
-        , CCString.concat
-            " "
-            [ user |> User.user_firstname |> User.Firstname.value
-            ; user |> User.user_lastname |> User.Lastname.value
-            ] )
-      ; "content", content
-      ]
-  in
-  let%lwt sender = sender_of_pool pool in
-  email_template |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
-;;
-
 let deactivate_token pool token =
   Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx pool) token
 ;;
@@ -112,7 +82,6 @@ let pp_verification_event formatter (event : verification_event) : unit =
 type event =
   | Sent of Sihl_email.t
   | BulkSent of Sihl_email.t list
-  | InvitationSent of Sihl_user.t * text_component list * CustomTemplate.t
   | DefaultRestored of Default.default
 [@@deriving eq, show]
 
@@ -125,14 +94,6 @@ let handle_event pool : event -> unit Lwt.t =
   | BulkSent emails ->
     let%lwt sender = sender_of_pool pool in
     Service.Email.bulk_send ?sender ~ctx:(Pool_tenant.to_ctx pool) emails
-  | InvitationSent (user, data, template) ->
-    let%lwt sender = sender_of_pool pool in
-    Helper.prepare_boilerplate_email
-      template
-      user.Sihl_user.email
-      ([ "name", User.user_fullname user ] @ data)
-    |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
-    (* TODO: Remove *)
   | DefaultRestored default_values ->
     Lwt_list.iter_s
       (fun { Default.label; language; text; html } ->

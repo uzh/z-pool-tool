@@ -157,6 +157,37 @@ If you did not change your password, please get in contact with us.|}
   }
 ;;
 
+let profile_update_trigger =
+  let label = Label.ProfileUpdateTrigger in
+  let email_text =
+    [ p [ txt "Your profile has not been updated in a while." ]
+    ; p
+        [ txt "Please check your "
+        ; a ~a:[ a_href "{profileUrl}" ] [ txt " profile" ]
+        ; txt "."
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Please check your profile." |> EmailSubject.of_string in
+  let sms_text =
+    {|Your profile has not been updated in a while.
+
+Please check your profile: {profileUrl}|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; sms_text
+  }
+;;
+
 let password_reset =
   let label = Label.PasswordReset in
   let email_text =
