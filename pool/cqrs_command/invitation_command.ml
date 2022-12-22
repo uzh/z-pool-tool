@@ -1,5 +1,6 @@
 let src = Logs.Src.create "invitation.cqrs"
 
+(* TODO: Remove *)
 let invitation_template_elements
   tenant
   system_languages
@@ -50,29 +51,28 @@ module Create : sig
     { experiment : Experiment.t
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
+    ; create_message :
+        Experiment.t
+        -> Contact.t
+        -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
   val handle
     :  ?tags:Logs.Tag.set
     -> t
-    -> Pool_tenant.t
-    -> Pool_common.Language.t list
-    -> (Pool_common.Language.t * (I18n.t * I18n.t)) list
     -> (Pool_event.t list, Pool_common.Message.error) result
 end = struct
   type t =
     { experiment : Experiment.t
     ; contacts : Contact.t list
     ; invited_contacts : Pool_common.Id.t list
+    ; create_message :
+        Experiment.t
+        -> Contact.t
+        -> (Sihl_email.t, Pool_common.Message.error) result
     }
 
-  let handle
-    ?(tags = Logs.Tag.empty)
-    (command : t)
-    tenant
-    system_languages
-    i18n_texts
-    =
+  let handle ?(tags = Logs.Tag.empty) (command : t) =
     Logs.info ~src (fun m -> m "Handle command Create" ~tags);
     let open CCResult in
     let errors, contacts =
@@ -87,17 +87,7 @@ end = struct
     let errors = CCList.map Contact.fullname errors in
     let emails =
       CCList.map
-        (fun { Contact.user; language; _ } ->
-          invitation_template_elements
-            tenant
-            system_languages
-            i18n_texts
-            command.experiment
-            language
-          |> CCResult.map (fun template ->
-               ( user
-               , Invitation.email_experiment_elements command.experiment
-               , template )))
+        (fun contact -> command.create_message command.experiment contact)
         contacts
     in
     if CCList.is_empty errors |> not
@@ -109,7 +99,7 @@ end = struct
         Ok
           ([ Invitation.Created (contacts, command.experiment)
              |> Pool_event.invitation
-           ; Email.InvitationBulkSent emails |> Pool_event.email
+           ; Email.BulkSent emails |> Pool_event.email
            ]
           @ CCList.map
               (fun contact ->

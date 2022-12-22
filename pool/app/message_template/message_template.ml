@@ -21,9 +21,14 @@ let prepare_email language template email layout params =
     let params =
       [ "emailText", email_text ] @ Message_utils.layout_params layout @ params
     in
-    Sihl_email.Template.email_of_template mail params
+    Sihl_email.Template.render_email_with_data params mail
 ;;
 
+(** TODO
+
+    - ExperimentInvitation
+    - SessionCancellation
+    - SessionReminder *)
 module AssignmentConfirmation = struct
   let email_params lang session =
     "sessionOverview", Session.to_email_text lang session
@@ -45,7 +50,7 @@ module AssignmentConfirmation = struct
     let params = email_params language session :: base_params contact in
     let layout = Message_utils.layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    prepare_email language template email layout params |> Lwt_result.ok
+    prepare_email language template email layout params |> Lwt_result.return
   ;;
 
   let create_from_public_session pool language tenant session contact =
@@ -56,7 +61,7 @@ module AssignmentConfirmation = struct
     in
     let layout = Message_utils.layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
-    prepare_email language template email layout params |> Lwt_result.ok
+    prepare_email language template email layout params |> Lwt_result.return
   ;;
 end
 
@@ -81,7 +86,65 @@ module EmailVerification = struct
       email_address
       (create_layout layout)
       (email_params validation_url contact)
-    |> Lwt_result.ok
+    |> Lwt_result.return
+  ;;
+end
+
+module ExperimentInvitation = struct
+  let email_params experiment public_url contact =
+    let open Experiment in
+    [ "experimentPublicTitle", public_title_value experiment
+    ; "experimentDescription", description_value experiment
+    ; ( "experimentUrl"
+      , Message_utils.create_public_url
+          public_url
+          (Format.asprintf "experiment/%s" (experiment.id |> Id.value)) )
+    ; "name", Contact.fullname contact
+    ]
+  ;;
+
+  let prepare_template_list tenant =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let pool = tenant.Pool_tenant.database_label in
+    let%lwt system_languages = Settings.find_languages pool in
+    let* default_language =
+      system_languages
+      |> CCList.head_opt
+      |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
+      |> Lwt_result.lift
+    in
+    let* templates =
+      Lwt_list.map_s
+        (fun lang ->
+          Repo.find_by_label pool lang Label.ExperimentInvitation
+          >|+ CCPair.make lang)
+        system_languages
+      ||> CCResult.flatten_l
+    in
+    let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
+    let layout = layout_from_tenant tenant in
+    let fnc experiment (contact : Contact.t) =
+      let open CCResult in
+      let open Pool_common in
+      let language =
+        CCOption.value ~default:default_language contact.Contact.language
+      in
+      let* template =
+        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+        |> CCOption.to_result (Message.NotFound Field.Template)
+        >|= snd
+      in
+      let params = email_params experiment tenant_url contact in
+      prepare_email
+        language
+        template
+        (Contact.email_address contact)
+        layout
+        params
+      |> CCResult.pure
+    in
+    Lwt_result.return fnc
   ;;
 end
 
@@ -94,7 +157,7 @@ module PasswordChange = struct
     let layout = Message_utils.layout_from_tenant tenant in
     let email = Pool_user.user_email_address user in
     prepare_email language template email layout (email_params user)
-    |> Lwt_result.ok
+    |> Lwt_result.return
   ;;
 end
 
@@ -135,7 +198,7 @@ module PasswordReset = struct
       email
       (create_layout layout)
       (email_params reset_url user)
-    |> Lwt_result.ok
+    |> Lwt_result.return
   ;;
 end
 
@@ -167,6 +230,6 @@ module SignUpVerification = struct
       email_address
       (layout_from_tenant tenant)
       (email_params validation_url firstname lastname)
-    |> Lwt_result.ok
+    |> Lwt_result.return
   ;;
 end

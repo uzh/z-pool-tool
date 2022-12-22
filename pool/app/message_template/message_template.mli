@@ -90,6 +90,17 @@ module EmailVerification : sig
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
 
+module ExperimentInvitation : sig
+  val prepare_template_list
+    :  Pool_tenant.t
+    -> ( Experiment.t
+         -> Contact.t
+         -> (Sihl_email.t, Pool_common.Message.error) result
+       , Pool_common.Message.error )
+       result
+       Lwt.t
+end
+
 module PasswordChange : sig
   val create
     :  Pool_database.Label.t

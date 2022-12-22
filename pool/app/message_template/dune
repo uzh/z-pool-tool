@@ -8,6 +8,7 @@
   pool_user
   service
   session
+  settings
   utils)
  (preprocess
   (pps

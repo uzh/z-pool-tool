@@ -119,10 +119,7 @@ let find_contacts_by_mailing pool { Mailing.id; distribution; _ } limit =
       (id |> Experiment.Id.to_common)
       experiment.Experiment.filter
   in
-  let%lwt i18n_templates =
-    i18n_templates pool experiment Pool_common.Language.all
-  in
-  (experiment, contacts, i18n_templates) |> Lwt_result.return
+  (experiment, contacts) |> Lwt_result.return
 ;;
 
 let calculate_mailing_limits ?interval pool_based_mailings =
@@ -220,8 +217,13 @@ let match_invitations ?interval pools =
         limited_mailings
         |> Lwt_list.map_s (fun (mailing, limit) ->
              find_contacts_by_mailing pool mailing limit
-             >|+ fun (experiment, contacts, i18n_templates) ->
-             { tenant; mailing; experiment; contacts; i18n_templates })
+             >>= fun (experiment, contacts) ->
+             let* create_message =
+               Message_template.ExperimentInvitation.prepare_template_list
+                 tenant
+             in
+             { mailing; experiment; contacts; create_message }
+             |> Lwt_result.return)
         ||> CCList.all_ok
       in
       let open CCResult in

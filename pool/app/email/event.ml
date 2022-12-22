@@ -134,6 +134,7 @@ let handle_event pool : event -> unit Lwt.t =
       user.Sihl_user.email
       ([ "name", User.user_fullname user ] @ data)
     |> Service.Email.send ?sender ~ctx:(Pool_tenant.to_ctx pool)
+    (* TODO: Remove *)
   | InvitationBulkSent multi_data ->
     let%lwt sender = sender_of_pool pool in
     multi_data

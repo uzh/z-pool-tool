@@ -8,11 +8,7 @@ val find_contacts_by_mailing
   :  Pool_database.Label.t
   -> Mailing.t
   -> int
-  -> ( Experiment.t
-       * Contact.t list
-       * (Pool_common.Language.t * (I18n.t * I18n.t)) list
-     , Pool_common.Message.error )
-     Lwt_result.t
+  -> (Experiment.t * Contact.t list, Pool_common.Message.error) Lwt_result.t
 
 val match_invitations
   :  ?interval:Sihl.Time.duration

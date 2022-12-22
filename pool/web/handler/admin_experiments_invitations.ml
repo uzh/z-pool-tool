@@ -118,27 +118,21 @@ let create req =
            |> fun ids ->
            Error Pool_common.Message.(NotFoundList (Field.Contacts, ids))
        in
-       let* system_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
-       in
-       let* i18n_texts =
-         invitation_template_data database_label system_languages
-       in
        let%lwt invited_contacts =
          Invitation.find_multiple_by_experiment_and_contacts
            database_label
            (CCList.map Contact.id contacts)
            experiment
        in
+       let* create_message =
+         Message_template.ExperimentInvitation.prepare_template_list tenant
+       in
        let tags = Logger.req req in
        let%lwt events =
          Cqrs_command.Invitation_command.Create.(
            handle
              ~tags
-             { experiment; contacts; invited_contacts }
-             tenant
-             system_languages
-             i18n_texts
+             { experiment; contacts; invited_contacts; create_message }
            |> Lwt_result.lift)
        in
        let handle events =

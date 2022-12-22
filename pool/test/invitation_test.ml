@@ -15,34 +15,25 @@ let create_invitation () =
 
 let create () =
   let experiment = Model.create_experiment () in
-  let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let contact = Model.create_contact () in
-  let languages = Pool_common.Language.all in
-  let i18n_templates = Test_utils.i18n_templates languages in
   let events =
     let command =
       InvitationCommand.Create.
-        { experiment; contacts = [ contact ]; invited_contacts = [] }
+        { experiment
+        ; contacts = [ contact ]
+        ; invited_contacts = []
+        ; create_message = Matcher_test.create_message
+        }
     in
-    InvitationCommand.Create.handle command tenant languages i18n_templates
+    InvitationCommand.Create.handle command
   in
   let expected =
     let email =
-      let open Pool_common.Language in
-      let subject, text = CCList.assoc ~eq:equal En i18n_templates in
-      let layout = Email.Helper.layout_from_tenant tenant in
-      ( contact.Contact.user
-      , Invitation.email_experiment_elements experiment
-      , Email.CustomTemplate.
-          { subject = Subject.I18n subject
-          ; content = Content.I18n text
-          ; layout
-          } )
-      |> CCList.pure
+      Matcher_test.create_message experiment contact |> CCResult.get_exn
     in
     Ok
       [ Invitation.(Created ([ contact ], experiment)) |> Pool_event.invitation
-      ; Email.InvitationBulkSent email |> Pool_event.email
+      ; Email.BulkSent [ email ] |> Pool_event.email
       ; Contact.NumInvitationsIncreased contact |> Pool_event.contact
       ]
   in
