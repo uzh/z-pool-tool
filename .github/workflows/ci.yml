@@ -132,16 +132,14 @@ jobs:
         uses: actions/download-artifact@v3
 
       - name: Set enviroment for github-release
-        run: |
-          CHANGELOG=$(sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d')
-          echo "CHANGELOG=$(echo $CHANGELOG)" >> $GITHUB_ENV
+        run: sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d' > changes.md
 
       - name: Create release
-        uses: meeDamian/github-release@2.0
+        uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          body: ${{ env.CHANGELOG }}
-          files: >
+          body_path: changes.md
+          files: |
             assets/
             run.exe
 
