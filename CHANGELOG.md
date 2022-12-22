@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.0.2](https://github.com/uzh/pool/tree/0.0.2) - 2022-12-22
+
 ### Added
 
 - Option to make the matcher select the contacts in random order
