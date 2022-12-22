@@ -20,6 +20,7 @@ let commands =
   ; Mail.send_mail
   ; Admin.create
   ; Admin.grant_role
+  ; Admin.list_roles
   ]
 ;;
 
