@@ -7,10 +7,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Added
 
 - Option to make the matcher select the contacts in random order
+- Display version in footer
+- CLI: create admin, grant roles and list roles
 
 ### Fixed
 
 - create admin via tenant UI
+- contact count for invitations
 
 ## [0.0.1](https://github.com/uzh/pool/tree/0.0.1) - 2022-12-16
 
