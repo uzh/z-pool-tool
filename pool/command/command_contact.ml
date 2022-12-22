@@ -1,29 +1,31 @@
+let get_or_failwith = Pool_common.Utils.get_or_failwith
+
 let sign_up =
+  let help =
+    {|<database_label> <email> <password> <firstname> <lastname>
+      <recruitment_channel> <language> <terms_accepted>
+
+Provide all fields to sign up a new contact:
+        <database_label>      : string
+        <email>               : string
+        <password>            : string
+        <firstname>           : string
+        <lastname>            : string
+        <recruitment_channel> : string of 'friend', 'online', 'lecture', 'mailing'
+        <language>            : string of 'DE', 'EN'
+        <terms_accepted>      : string 'accept' everything else is treated as declined
+
+Note: Make sure 'accept' is added as final argument, otherwise signup fails.
+
+Example: contact.signup econ-uzh example@mail.com securePassword Max Muster online
+       |}
+  in
   Sihl.Command.make
     ~name:"contact.signup"
     ~description:"New contact signup"
-    ~help:
-      "<Pool_database> <email> <password> <firstname> <lastname> \
-       <recruitment_channel> <terms_excepted>"
-    (fun args ->
-    let return = Lwt.return_some () in
-    let help_text =
-      {|Provide all fields to sign up a new contact:
-    <Pool_database>       : string
-    <email>               : string
-    <password>            : string
-    <firstname>           : string
-    <lastname>            : string
-    <recruitment_channel> : string of 'friend', 'online', 'lecture', 'mailing'
-    <language>            : string of 'DE', 'EN'
-    <terms_accepted>      : string 'accept' everything else is treated as declined
-
-Example: sihl contact.signup econ-uzh example@mail.com securePassword Max Muster online
-
-Note: Make sure 'accept' is added as final argument, otherwise signup fails.
-          |}
-    in
-    match args with
+    ~help
+    (let open Utils.Lwt_result.Infix in
+    function
     | [ db_pool
       ; email
       ; password
@@ -34,46 +36,27 @@ Note: Make sure 'accept' is added as final argument, otherwise signup fails.
       ; terms_accepted
       ]
       when CCString.equal terms_accepted "accept" ->
-      let db_pool =
-        Pool_database.Label.create db_pool
-        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-        |> CCResult.get_or_failwith
-      in
-      Database.Root.setup ();
-      let%lwt available_pools = Database.Tenant.setup () in
-      if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
-      then (
-        let%lwt events =
-          let open CCResult.Infix in
-          let open Lwt_result.Syntax in
-          let open Cqrs_command.Contact_command.SignUp in
-          let* tenant = Pool_tenant.find_by_label db_pool in
-          let language =
-            Pool_common.Language.create language |> CCResult.to_opt
-          in
-          [ "email", [ email ]
-          ; "password", [ password ]
-          ; "firstname", [ firstname ]
-          ; "lastname", [ lastname ]
-          ; "recruitment_channel", [ recruitment_channel ]
-          ]
-          |> decode
-          >>= handle tenant language
-          |> Lwt_result.lift
+      let%lwt pool = Command_utils.is_available_exn db_pool in
+      let%lwt tenant = Pool_tenant.find_by_label pool ||> get_or_failwith in
+      let events =
+        let open CCResult.Infix in
+        let open Cqrs_command.Contact_command.SignUp in
+        let language =
+          Pool_common.Language.create language |> CCResult.to_opt
         in
-        match events with
-        | Error err -> failwith (Pool_common.Message.show_error err)
-        | Ok events ->
-          let%lwt handle_event =
-            Lwt_list.iter_s (Pool_event.handle_event db_pool) events
-          in
-          Lwt.return_some handle_event)
-      else (
-        print_endline "The specified database pool is not available.";
-        return)
-    | _ ->
-      print_endline help_text;
-      return)
+        [ "email", [ email ]
+        ; "password", [ password ]
+        ; "firstname", [ firstname ]
+        ; "lastname", [ lastname ]
+        ; "recruitment_channel", [ recruitment_channel ]
+        ]
+        |> decode
+        >>= handle tenant language
+        |> get_or_failwith
+      in
+      let%lwt () = Lwt_list.iter_s (Pool_event.handle_event pool) events in
+      Lwt.return_some ()
+    | _ -> Command_utils.failwith_missmatch help)
 ;;
 
 let create_message contact template =
@@ -137,34 +120,26 @@ let trigger_profile_update_by_tenant pool =
 ;;
 
 let tenant_specific_profile_update_trigger =
-  Sihl.Command.make
-    ~name:"trigger_profile_update.send"
-    ~description:"Send profile update triggers of all tenants"
-    (fun args ->
-    match args with
-    | [ pool ] ->
-      let open Utils.Lwt_result.Infix in
-      let%lwt _ = Command_utils.setup_databases () in
-      pool
-      |> Pool_database.Label.create
-      |> Lwt_result.lift
-      >>= trigger_profile_update_by_tenant
-      ||> CCOption.of_result
-    | _ -> failwith "Argument missmatch")
+  Command_utils.make_pool_specific
+    "trigger_profile_update.send"
+    "Send profile update triggers of all tenants"
+    (fun pool ->
+    let open Utils.Lwt_result.Infix in
+    pool
+    |> trigger_profile_update_by_tenant
+    ||> get_or_failwith
+    ||> CCOption.some)
 ;;
 
 let all_profile_update_triggers =
-  Sihl.Command.make
-    ~name:"trigger_profile_update.send_all"
-    ~description:"Send profile update triggers of all tenants"
-    (fun args ->
-    match args with
-    | [] ->
-      let open CCFun in
-      let open Utils.Lwt_result.Infix in
-      Command_utils.setup_databases ()
-      >|> Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
-      ||> CCList.all_ok
-      ||> (fun _ -> Ok ()) %> CCOption.of_result
-    | _ -> failwith "Argument missmatch")
+  Command_utils.make_no_args
+    "trigger_profile_update.send_all"
+    "Send profile update triggers of all tenants"
+    (fun () ->
+    let open Utils.Lwt_result.Infix in
+    Command_utils.setup_databases ()
+    >|> Lwt_list.map_s trigger_profile_update_by_tenant
+    ||> CCList.all_ok
+    ||> get_or_failwith
+    ||> fun (_ : unit list) -> Some ())
 ;;

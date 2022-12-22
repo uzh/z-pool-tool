@@ -16,19 +16,43 @@ The project executable can be run via command line `make sihl` and shows the inf
 1. Migrate tenant database with `make sihl migrate.tenant`
 1. Seed tenant database `make sihl seed.tenant`
 1. Run development server `make dev`
-1. See `pool/database/seed/seed_user.ml` for default users or `make sihl user.admin engineering@econ.uzh.ch admin_secret` to generate one
+1. See `pool/database/seed/seed_user.ml` for default users or `make sihl user.admin it@econ.uzh.ch admin_secret` to generate one
 
 ### Commands
 
 - `make install` - to install all the dependencies. Under the hood, `dune` is used for package management.
-- `make sihl migrate.root` - runs all migrations for root database
-- `make sihl seed.root` - runs all seeds with development data for root database (use `make seed.root.clean` for a clean restart)
-- `make sihl migrate.tenant` - runs all migrations for tenant databases
-- `make sihl seed.tenant` - runs all seeds with development data for tenant database (use `make seed.tenant.clean` for a clean restart)
 - `make dev` - runs build in watch mode and the web application on port `3016` (default). You typically have that process running in one shell. Changing code will recompile and restart the server automatically. Changing JS code that is not embedded in `.ml` files (libraries) requires restarting the server.
 - `make test` to run all tests. This requires a running MariaDB instance for integration tests.
 - `make sihl` runs the executable and shows the list of commands
 - `make sihl <ARGS>` runs the executable with the provided arguments
+
+#### Application commands
+
+The following list shows only the most frequently used commands, for a complete list use `make sihl` as above.
+
+- `make sihl migrate.root` - runs all migrations for root database
+- `make sihl seed.root` - runs all seeds with development data for root database (use `make seed.root.clean` for a clean restart)
+- `make sihl migrate.tenant` - runs all migrations for tenant databases
+- `make sihl seed.tenant` - runs all seeds with development data for tenant database (use `make seed.tenant.clean` for a clean restart)
+- `make sihl admin.create` -  create a new administrator on a specific tenant
+- `make sihl admin.grant_role` -  grant a role to an existing administrator
+- `make sihl admin.list_roles` -  show a list of all possible role patterns
+
+Example commands to add an administrator for a specific role.
+
+```bash
+# list available roles (shows also patterns)
+run.exe admin.list_roles
+
+# Create an Operator
+run.exe admin.create tenant1 operator@mail.com password Firstname Lastname OperatorAll
+
+# Create an Experimenter with UUID
+run.exe admin.create tenant1 experimenter@mail.com password Firstname Lastname Experimenter 00000000-0000-0000-0000-000000000000
+
+# Grant additional role to some administrator
+run.exe admin.grant_role tenant1 experimenter@mail.com RecruiterAll
+```
 
 ### Environment files
 
@@ -64,12 +88,12 @@ _Source: <https://developer.mozilla.org/de/docs/Web/HTTP/Headers/Set-Cookie>_
 
 Alternatively, these options simulate a similar production environment (without `CHECK_CSRF`):
 
-```
+```bash
 QUEUE_FORCE_ASYNC=true EMAIL_BYPASS_INTERCEPT=true SMTP_SENDER=noreply@uast.uzh.ch SMTP_HOST=uzhxchange.uzh.ch SMTP_USERNAME=noreply@uast.uzh.ch SMTP_PORT=5587 SMTP_START_TLS=true SMTP_PASSWORD=<password> make dev
 ```
 
 Use this until new SMTP method is supported is resolved:
 
-```
+```bash
 SMTP_HOST=smtp.uzh.ch SMTP_PORT=25 SMTP_SENDER=info@uast.uzh.ch SMTP_START_TLS=true EMAIL_BYPASS_INTERCEPT=true make dev
 ```

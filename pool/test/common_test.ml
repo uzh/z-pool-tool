@@ -1,5 +1,5 @@
 module Data = struct
-  let sender = "engineering@econ.uzh.ch"
+  let sender = "test@econ.uzh.ch"
   let recipient = "it@econ.uzh.ch"
   let subject = "test interceptor"
 

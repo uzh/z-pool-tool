@@ -1,3 +1,5 @@
+let get_or_failwith = Pool_common.Utils.get_or_failwith
+
 let reminder_email sys_languages contact (session : Session.t) template =
   (* TODO[tinhub]: Sihl 4.0: add text elements to for subject *)
   let name = Contact.fullname contact in
@@ -108,34 +110,23 @@ let send_tenant_reminder pool =
 ;;
 
 let tenant_specific_session_reminder =
-  Sihl.Command.make
-    ~name:"session_reminder.send"
-    ~description:"Send session reminders of specified tenant"
-    (fun args ->
-    match args with
-    | [ pool ] ->
-      let open Utils.Lwt_result.Infix in
-      let%lwt _ = Command_utils.setup_databases () in
-      pool
-      |> Pool_database.Label.create
-      |> Lwt_result.lift
-      >>= send_tenant_reminder
-      ||> CCOption.of_result
-    | _ -> failwith "Argument missmatch")
+  Command_utils.make_pool_specific
+    "session_reminder.send"
+    "Send session reminders of specified tenant"
+    (fun pool ->
+    let open Utils.Lwt_result.Infix in
+    pool |> send_tenant_reminder ||> get_or_failwith ||> CCOption.some)
 ;;
 
 let all_tenants_session_reminder =
-  Sihl.Command.make
-    ~name:"session_reminder.send_all"
-    ~description:"Send session reminders of all tenants"
-    (fun args ->
-    match args with
-    | [] ->
-      let open CCFun in
-      let open Utils.Lwt_result.Infix in
-      Command_utils.setup_databases ()
-      >|> Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
-      ||> CCList.all_ok
-      ||> (fun _ -> Ok ()) %> CCOption.of_result
-    | _ -> failwith "Argument missmatch")
+  Command_utils.make_no_args
+    "session_reminder.send_all"
+    "Send session reminders of all tenants"
+    (fun () ->
+    let open Utils.Lwt_result.Infix in
+    Command_utils.setup_databases ()
+    >|> Lwt_list.map_s (fun pool -> send_tenant_reminder pool)
+    ||> CCList.all_ok
+    ||> get_or_failwith
+    ||> fun (_ : unit list) -> Some ())
 ;;

@@ -1,133 +1,131 @@
-let parse_role role =
-  role
-  |> Format.asprintf {|[["%s"]]|}
-  |> Yojson.Safe.from_string
-  |> Guard.ActorRoleSet.of_yojson
-  |> CCResult.get_or_failwith
-  |> Guard.ActorRoleSet.elements
+let role_of_string = CCFun.(Format.asprintf "`%s" %> Role.Actor.of_string)
+
+let role_uuid_of_string role uuid =
+  Format.asprintf "`%s (%s)" role uuid |> Role.Actor.of_string
+;;
+
+let role_to_string =
+  let open CCFun in
+  CCString.replace ~which:`Left ~sub:"`" ~by:"- "
+  %> CCString.replace ~which:`Right ~sub:"(" ~by:""
+  %> CCString.replace ~which:`Right ~sub:")" ~by:""
+;;
+
+let grant_role ctx admin role =
+  let open Utils.Lwt_result.Infix in
+  let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
+    admin
+    |> Admin.create
+    |> Admin.Guard.Actor.to_authorizable ~ctx
+    ||> Pool_common.Utils.get_or_failwith
+  in
+  let open Guard in
+  Persistence.Actor.grant_roles
+    ~ctx
+    (Uuid.Actor.of_string_exn admin.Sihl_user.id)
+    ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty [ role ])
+  >|- (fun (_ : string) ->
+        "Invalid Role: check possible role patterns (admin.list_roles)")
+  ||> CCResult.get_or_failwith
 ;;
 
 let create =
+  let create_and_grant_role_exn pool email password given_name name role =
+    let ctx = Pool_tenant.to_ctx pool in
+    match%lwt Service.User.find_by_email_opt ~ctx email with
+    | None ->
+      let%lwt admin =
+        Service.User.create_admin ~ctx ~name ~given_name ~password email
+      in
+      let%lwt () = grant_role ctx admin role in
+      Lwt.return_some ()
+    | Some user when Sihl_user.is_admin user ->
+      failwith "The user already exists as admin, use the 'grant_role' command."
+    | Some _ -> failwith "The user already exists as contact."
+  in
+  let help =
+    {|<database_label> <email> <password> <firstname> <lastname> <role>
+
+Provide all fields to sign up a new contact:
+        <database_label>      : string
+        <email>               : string
+        <password>            : string
+        <firstname>           : string
+        <lastname>            : string
+        <role>                : string
+
+Role: run command "admin.list_roles" to show all possible role patterns
+
+NOTE: There is NO check if the UUID of a role is correct for CLI commands.
+
+Example: admin.create econ-uzh example@mail.com securePassword Max Muster RecruiterAll
+        |}
+  in
   Sihl.Command.make
     ~name:"admin.create"
     ~description:"New admin"
-    ~help:"<Pool_database> <email> <password> <firstname> <lastname> <role>"
-    (fun args ->
-    let return = Lwt.return_some () in
-    let help_text =
-      {|Provide all fields to sign up a new contact:
-    <Pool_database>       : string
-    <email>               : string
-    <password>            : string
-    <firstname>           : string
-    <lastname>            : string
-    <role>                : string
-
-Example: admin.create econ-uzh example@mail.com securePassword Max Muster RecruiterAll
-          |}
-    in
-    match args with
+    ~help
+    (function
     | [ db_pool; email; password; given_name; name; role ] ->
-      let db_pool =
-        Pool_database.Label.create db_pool
-        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-        |> CCResult.get_or_failwith
-      in
-      Database.Root.setup ();
-      let%lwt available_pools = Database.Tenant.setup () in
-      if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
-      then (
-        let ctx = Pool_tenant.to_ctx db_pool in
-        let%lwt user = Service.User.find_by_email_opt ~ctx email in
-        let role = parse_role role in
-        match user with
-        | None ->
-          let%lwt admin =
-            Service.User.create_admin ~ctx ~name ~given_name ~password email
-          in
-          let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
-            admin
-            |> Admin.create
-            |> Admin.Guard.Actor.to_authorizable ~ctx
-            |> Lwt.map Pool_common.Utils.get_or_failwith
-          in
-          let%lwt () =
-            Guard.Persistence.Actor.grant_roles
-              ~ctx
-              (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
-              Guard.ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty role)
-            |> Lwt.map CCResult.get_or_failwith
-          in
-          return
-        | Some user when Sihl_user.is_admin user ->
-          print_endline "The user is already administrator.";
-          return
-        | Some _ -> return)
-      else (
-        print_endline
-          (Format.asprintf
-             "The specified database pool %s is not available (%s)."
-             ([%show: Pool_database.Label.t] db_pool)
-             ([%show: Pool_database.Label.t list] available_pools));
-        return)
-    | _ ->
-      print_endline help_text;
-      return)
+      let%lwt pool = Command_utils.is_available_exn db_pool in
+      role_of_string role
+      |> create_and_grant_role_exn pool email password given_name name
+    | [ db_pool; email; password; given_name; name; role; uuid ] ->
+      let%lwt pool = Command_utils.is_available_exn db_pool in
+      role_uuid_of_string role uuid
+      |> create_and_grant_role_exn pool email password given_name name
+    | _ -> Command_utils.failwith_missmatch help)
 ;;
 
 let grant_role =
+  let grant_if_admin pool email role =
+    let ctx = Pool_tenant.to_ctx pool in
+    match%lwt Service.User.find_by_email_opt ~ctx email with
+    | Some admin when Sihl_user.is_admin admin ->
+      let%lwt () = grant_role ctx admin role in
+      Lwt.return_some ()
+    | Some _ -> failwith "The user isn't administrator."
+    | None -> failwith "The user doesn't exist, use the 'create' command."
+  in
+  let help =
+    {|<database_label> <email> <role>
+
+Provide all fields to sign up a new contact:
+        <database_label>      : string
+        <email>               : string
+        <role>                : string
+
+Role: run command "admin.list_roles" to show all possible role patterns
+
+NOTE: There is NO check if the UUID of a role is correct for CLI commands.
+
+Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
+        |}
+  in
   Sihl.Command.make
     ~name:"admin.grant_role"
     ~description:"grant role to admin"
-    ~help:"<Pool_database> <email> <role>"
-    (fun args ->
-    let return = Lwt.return_some () in
-    let help_text =
-      {|Provide all fields to sign up a new contact:
-    <Pool_database>       : string
-    <email>               : string
-    <role>                : string
-
-Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
-          |}
-    in
-    match args with
+    ~help
+    (function
     | [ db_pool; email; role ] ->
-      let db_pool =
-        Pool_database.Label.create db_pool
-        |> CCResult.map_err Pool_common.(Utils.error_to_string Language.En)
-        |> CCResult.get_or_failwith
-      in
-      Database.Root.setup ();
-      let%lwt available_pools = Database.Tenant.setup () in
-      if CCList.mem ~eq:Pool_database.Label.equal db_pool available_pools
-      then (
-        let ctx = Pool_tenant.to_ctx db_pool in
-        let%lwt user = Service.User.find_by_email_opt ~ctx email in
-        let role = parse_role role in
-        match user with
-        | Some admin when Sihl_user.is_admin admin ->
-          let%lwt (_ : [> `Admin ] Guard.Authorizable.t) =
-            admin
-            |> Admin.create
-            |> Admin.Guard.Actor.to_authorizable ~ctx
-            |> Lwt.map Pool_common.Utils.get_or_failwith
-          in
-          let%lwt () =
-            Guard.Persistence.Actor.grant_roles
-              ~ctx
-              (Guard.Uuid.Actor.of_string_exn admin.Sihl_user.id)
-              Guard.ActorRoleSet.(CCList.fold_left (CCFun.flip add) empty role)
-            |> Lwt.map CCResult.get_or_failwith
-          in
-          return
-        | None | Some _ ->
-          print_endline "The user isn't administrator.";
-          return)
-      else (
-        print_endline "The specified database pool is not available.";
-        return)
-    | _ ->
-      print_endline help_text;
-      return)
+      let%lwt pool = Command_utils.is_available_exn db_pool in
+      role |> role_of_string |> grant_if_admin pool email
+    | [ db_pool; email; role; uuid ] ->
+      let%lwt pool = Command_utils.is_available_exn db_pool in
+      role_uuid_of_string role uuid |> grant_if_admin pool email
+    | _ -> Command_utils.failwith_missmatch help)
+;;
+
+let list_roles =
+  Command_utils.make_no_args
+    "admin.list_roles"
+    "Shows a list of possible administrator roles."
+    (fun () ->
+    Role.Actor.all
+    |> CCList.map [%show: Role.Actor.t]
+    |> CCList.map role_to_string
+    |> CCString.concat "\n  "
+    |> Format.asprintf "Possible roles:\n  %s"
+    |> print_endline;
+    Lwt.return_some ())
 ;;
