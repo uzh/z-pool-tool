@@ -62,32 +62,23 @@ let deactivate_token pool token =
 
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
-  | Updated of
-      User.EmailAddress.t * Sihl_user.t * Pool_common.Language.t * email_layout
   | EmailVerified of unverified t
 
 let verification_event_name = function
   | Created _ -> "Created"
-  | Updated _ -> "Updated"
   | EmailVerified _ -> "EmailVerified"
 ;;
 
-let[@warning "-27"] handle_verification_event pool
-  : verification_event -> unit Lwt.t
-  = function
+let handle_verification_event pool : verification_event -> unit Lwt.t = function
   | Created (address, token, user_id) ->
     let%lwt () = Repo.delete_unverified_by_user pool user_id in
     let%lwt user =
-      Service.User.find_by_email
+      Service.User.find
         ~ctx:(Pool_tenant.to_ctx pool)
-        (User.EmailAddress.value address)
+        (Pool_common.Id.value user_id)
     in
     let unverified_email = create address user token in
     Repo.insert pool unverified_email
-  | Updated (address, user, language, layout) ->
-    Repo.delete_unverified_by_user
-      pool
-      (user.Sihl_user.id |> Pool_common.Id.of_string)
   | EmailVerified (Unverified { token; _ } as email) ->
     let%lwt () = deactivate_token pool token in
     let%lwt () = Repo.verify pool @@ verify email in
@@ -104,11 +95,6 @@ let[@warning "-4"] equal_verification_event
     User.EmailAddress.equal e1 e2
     && Token.equal t1 t2
     && Pool_common.Id.equal id1 id2
-  | Updated (a1, u1, lang1, layout1), Updated (a2, u2, lang2, layout2) ->
-    User.EmailAddress.equal a1 a2
-    && CCString.equal u1.Sihl_user.id u2.Sihl_user.id
-    && Pool_common.Language.equal lang1 lang2
-    && equal_email_layout layout1 layout2
   | EmailVerified m, EmailVerified p -> equal m p
   | _ -> false
 ;;
@@ -117,14 +103,9 @@ let pp_verification_event formatter (event : verification_event) : unit =
   let pp_address = User.EmailAddress.pp formatter in
   match event with
   | Created (m, t, id) ->
-    Pool_user.EmailAddress.pp Format.std_formatter m;
+    pp_address m;
     Token.pp Format.std_formatter t;
     Pool_common.Id.pp formatter id
-  | Updated (m, u, language, layout) ->
-    pp_address m;
-    Sihl_user.pp formatter u;
-    Pool_common.Language.pp formatter language;
-    pp_email_layout formatter layout
   | EmailVerified m -> pp formatter m
 ;;
 

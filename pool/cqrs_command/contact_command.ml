@@ -252,7 +252,8 @@ module RequestEmailValidation : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> ?allowed_email_suffixes:Settings.EmailSuffix.t list
-    -> Pool_tenant.t
+    -> Email.Token.t
+    -> Sihl_email.t
     -> Contact.t
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
@@ -264,23 +265,18 @@ end = struct
   let handle
     ?(tags = Logs.Tag.empty)
     ?allowed_email_suffixes
-    tenant
+    token
+    verification_email
     (contact : Contact.t)
     email
     =
     Logs.info ~src (fun m -> m "Handle command RequestEmailValidation" ~tags);
     let open CCResult in
     let* () = User.EmailAddress.validate allowed_email_suffixes email in
-    let layout = Email.Helper.layout_from_tenant tenant in
-    (* TODO: Fix *)
     Ok
-      [ Email.Updated
-          ( email
-          , contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , layout )
+      [ Email.Created (email, token, Contact.id contact)
         |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
       ]
   ;;
 

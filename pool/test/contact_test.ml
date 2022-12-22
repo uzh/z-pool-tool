@@ -16,6 +16,13 @@ let contact_info email_address =
   email_address, "password", "Jane", "Doe", Some Language.En
 ;;
 
+let allowed_email_suffixes =
+  [ "gmail.com" ]
+  |> CCList.map Settings.EmailSuffix.create
+  |> CCResult.flatten_l
+  |> CCResult.get_exn
+;;
+
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
 let confirmation_mail contact =
@@ -329,39 +336,15 @@ let update_password_wrong_confirmation () =
 ;;
 
 let request_email_validation () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let new_email = "john.doe@gmail.com" in
-  let events =
-    let open CCResult in
-    let* allowed_email_suffixes =
-      [ "gmail.com" ]
-      |> CCList.map Settings.EmailSuffix.create
-      |> CCResult.flatten_l
-    in
-    Contact_command.RequestEmailValidation.(
-      new_email
-      |> Pool_user.EmailAddress.create
-      |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes tenant contact)
+  let contact_info = "john@gmail.com" |> contact_info in
+  let contact = contact_info |> create_contact true in
+  let new_email =
+    "john.doe@gmail.com"
+    |> Pool_user.EmailAddress.create
+    |> Pool_common.Utils.get_or_failwith
   in
-  let expected =
-    let email_layout = Email.Helper.layout_from_tenant tenant in
-    Ok
-      [ Email.Updated
-          ( new_email |> Pool_user.EmailAddress.of_string
-          , contact.Contact.user
-          , contact.Contact.language
-            |> CCOption.get_or ~default:Pool_common.Language.En
-          , email_layout )
-        |> Pool_event.email_verification
-      ]
-  in
-  check_result expected events
-;;
-
-let request_email_validation_wrong_suffix () =
-  let contact = "john@gmail.com" |> contact_info |> create_contact true in
-  let new_email = "john.doe@gmx.com" in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
   let allowed_email_suffixes =
     [ "gmail.com" ]
     |> CCList.map Settings.EmailSuffix.create
@@ -370,10 +353,37 @@ let request_email_validation_wrong_suffix () =
   in
   let events =
     Contact_command.RequestEmailValidation.(
-      new_email
-      |> Pool_user.EmailAddress.create
-      |> Pool_common.Utils.get_or_failwith
-      |> handle ~allowed_email_suffixes tenant contact)
+      handle ~allowed_email_suffixes token verification_email contact new_email)
+  in
+  let expected =
+    Ok
+      [ Email.Created (new_email, token, Contact.id contact)
+        |> Pool_event.email_verification
+      ; Email.Sent verification_email |> Pool_event.email
+      ]
+  in
+  check_result expected events
+;;
+
+let request_email_validation_wrong_suffix () =
+  let contact_info = "john@gmail.com" |> contact_info in
+  let contact = contact_info |> create_contact true in
+  let new_email =
+    "john.doe@gmx.ch"
+    |> Pool_user.EmailAddress.create
+    |> Pool_common.Utils.get_or_failwith
+  in
+  let token = Email.Token.create "testtoken" in
+  let verification_email = verification_email contact_info in
+  let allowed_email_suffixes =
+    [ "gmail.com" ]
+    |> CCList.map Settings.EmailSuffix.create
+    |> CCResult.flatten_l
+    |> CCResult.get_exn
+  in
+  let events =
+    Contact_command.RequestEmailValidation.(
+      handle ~allowed_email_suffixes token verification_email contact new_email)
   in
   let expected =
     Error

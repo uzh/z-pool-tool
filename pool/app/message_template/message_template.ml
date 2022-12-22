@@ -60,6 +60,31 @@ module AssignmentConfirmation = struct
   ;;
 end
 
+module EmailVerification = struct
+  let email_params validation_url contact =
+    [ "verificationUrl", validation_url; "name", Contact.fullname contact ]
+  ;;
+
+  let create pool language layout contact email_address token =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* template = Repo.find_by_label pool language Label.EmailVerification in
+    let%lwt url = Pool_tenant.Url.of_pool pool in
+    let validation_url =
+      Pool_common.[ Message.Field.Token, Email.Token.value token ]
+      |> Pool_common.Message.add_field_query_params "/email-verified"
+      |> create_public_url url
+    in
+    prepare_email
+      language
+      template
+      email_address
+      (create_layout layout)
+      (email_params validation_url contact)
+    |> Lwt_result.ok
+  ;;
+end
+
 module PasswordChange = struct
   let email_params user = [ "name", user |> Pool_user.user_fullname ]
 

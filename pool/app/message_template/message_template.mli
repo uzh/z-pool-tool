@@ -79,6 +79,17 @@ module AssignmentConfirmation : sig
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
 
+module EmailVerification : sig
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> layout
+    -> Contact.t
+    -> Pool_user.EmailAddress.t
+    -> Email.Token.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
 module PasswordChange : sig
   val create
     :  Pool_database.Label.t

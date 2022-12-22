@@ -154,11 +154,6 @@ val default_values_tenant : default
 
 type verification_event =
   | Created of Pool_user.EmailAddress.t * Token.t * Pool_common.Id.t
-  | Updated of
-      Pool_user.EmailAddress.t
-      * Sihl_user.t
-      * Pool_common.Language.t
-      * email_layout
   | EmailVerified of unverified t
 
 val handle_verification_event
