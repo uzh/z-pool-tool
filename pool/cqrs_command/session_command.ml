@@ -389,7 +389,10 @@ module Cancel : sig
   val handle
     :  ?tags:Logs.Tag.set
     -> Session.t
-    -> (Session.CancellationReason.t -> Sihl_email.t list)
+    -> Contact.t list
+    -> (Session.CancellationReason.t
+        -> Contact.t
+        -> (Sihl_email.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Pool_common.Message.error) result
 
@@ -402,18 +405,27 @@ end = struct
     ; reason : Session.CancellationReason.t
     }
 
-  let handle ?(tags = Logs.Tag.empty) session messages_fn command =
+  let handle
+    ?(tags = Logs.Tag.empty)
+    session
+    (contacts : Contact.t list)
+    messages_fn
+    command
+    =
     Logs.info ~src (fun m -> m "Handle command Cancel" ~tags);
-    let open CCResult.Infix in
+    let open CCResult in
     let* () =
       if not (command.notify_email || command.notify_sms)
       then Error Pool_common.Message.PickMessageChannel
       else Ok ()
     in
     let* () = Session.is_cancellable session in
+    let* emails =
+      contacts |> CCList.map (messages_fn command.reason) |> CCResult.flatten_l
+    in
     let email_event =
       if command.notify_email
-      then [ Email.BulkSent (messages_fn command.reason) |> Pool_event.email ]
+      then [ Email.BulkSent emails |> Pool_event.email ]
       else []
     in
     (* TODO issue #149 implement this and then fix test *)

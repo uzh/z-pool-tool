@@ -354,7 +354,7 @@ let cancel req =
     ||> HttpUtils.format_request_boolean_values
           Pool_common.Message.Field.[ show Email; show SMS ]
   in
-  let result { Pool_context.database_label; language; _ } =
+  let result { Pool_context.database_label; _ } =
     Utils.Lwt_result.map_error (fun err ->
       err, error_path, [ HttpUtils.urlencoded_to_flash urlencoded ])
     @@ let* session = Session.find database_label session_id in
@@ -370,20 +370,16 @@ let cancel req =
          let* { Pool_context.Tenant.tenant; _ } =
            Pool_context.Tenant.find req |> Lwt_result.lift
          in
-         let* messages_fn =
-           Session.build_cancellation_messages
-             tenant
+         let* create_message =
+           Message_template.SessionCancellation.prepare_template_list
              database_label
-             (* TODO this language is wrong, need experiment language
-                implemented, issue #190 *)
-             language
+             tenant
              system_languages
              session
-             contacts
          in
          let open CCResult.Infix in
          Cqrs_command.Session_command.Cancel.(
-           urlencoded |> decode >>= handle ~tags session messages_fn)
+           urlencoded |> decode >>= handle ~tags session contacts create_message)
          |> Lwt_result.lift
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in

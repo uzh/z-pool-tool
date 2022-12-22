@@ -125,6 +125,20 @@ module PasswordReset : sig
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
 
+module SessionCancellation : sig
+  val prepare_template_list
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> Pool_common.Language.t list
+    -> Session.t
+    -> ( Session.CancellationReason.t
+         -> Contact.t
+         -> (Sihl_email.t, Pool_common.Message.error) result
+       , Pool_common.Message.error )
+       result
+       Lwt.t
+end
+
 module SessionReminder : sig
   val create
     :  Pool_database.Label.t

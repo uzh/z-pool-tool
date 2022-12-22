@@ -195,17 +195,6 @@ val find_follow_ups
   -> Pool_common.Id.t
   -> (t list, Pool_common.Message.error) Lwt_result.t
 
-val build_cancellation_messages
-  :  Pool_tenant.t
-  -> Pool_database.Label.t
-  -> Pool_common.Language.t
-  -> Pool_common.Language.t list
-  -> t
-  -> Contact.t list
-  -> ( CancellationReason.t -> Sihl_email.t list
-     , Pool_common.Message.error )
-     Lwt_result.t
-
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 

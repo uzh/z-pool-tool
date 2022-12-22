@@ -34,7 +34,7 @@ let experiment_params experiment =
 
 (** TODO
 
-    - SessionCancellation
+    - reschedule sessions
 
     Maybe group email params by entity not email template?? *)
 module AssignmentConfirmation = struct
@@ -223,6 +223,48 @@ module PasswordReset = struct
       (create_layout layout)
       (email_params reset_url user)
     |> Lwt_result.return
+  ;;
+end
+
+module SessionCancellation = struct
+  let email_params lang session reason contact =
+    [ "sessionOverview", Session.to_email_text lang session
+    ; "reason", reason |> Session.CancellationReason.value
+    ]
+    @ global_params contact.Contact.user
+  ;;
+
+  let prepare_template_list pool tenant system_languages session =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* templates =
+      Lwt_list.map_s
+        (fun lang ->
+          Repo.find_by_label pool lang Label.SessionCancellation
+          >|+ CCPair.make lang)
+        system_languages
+      ||> CCResult.flatten_l
+    in
+    let layout = layout_from_tenant tenant in
+    let fnc reason (contact : Contact.t) =
+      let open CCResult in
+      let open Pool_common in
+      let* language = message_langauge system_languages contact in
+      let* template =
+        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+        |> CCOption.to_result (Message.NotFound Field.Template)
+        >|= snd
+      in
+      let params = email_params language session reason contact in
+      prepare_email
+        language
+        template
+        (Contact.email_address contact)
+        layout
+        params
+      |> CCResult.pure
+    in
+    Lwt_result.return fnc
   ;;
 end
 
