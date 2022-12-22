@@ -40,6 +40,11 @@ let session_reminder = function
   | En -> Default_en.session_reminder
 ;;
 
+let session_reschedule = function
+  | De -> Default_de.session_reschedule
+  | En -> Default_en.session_reschedule
+;;
+
 let ( @@@ ) constructors =
   CCList.flat_map (fun lang -> CCList.map (fun fcn -> fcn lang) constructors)
 ;;
@@ -55,6 +60,7 @@ let default_values_tenant =
   ; signup_verification
   ; session_cancellation
   ; session_reminder
+  ; session_reschedule
   ]
   @@@ [ En; De ]
 ;;

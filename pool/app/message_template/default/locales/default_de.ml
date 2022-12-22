@@ -321,3 +321,47 @@ let session_reminder =
   ; sms_text
   }
 ;;
+
+let session_reschedule =
+  let label = Label.SessionReschedule in
+  let email_text =
+    [ p
+        [ txt "Eine Session, zu der Sie angemeldet sind, wurde verschoben:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ; p
+        [ txt "Der neue Zeitpunkt ist:"
+        ; br ()
+        ; txt "{newSessionStart}"
+        ; br ()
+        ; txt "{newSessionDuration}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject =
+    "Eine Session wurde verschoben" |> EmailSubject.of_string
+  in
+  let sms_text =
+    {|Eine Session, zu der Sie angemeldet sind, wurde verschoben:
+
+{sessionOverview}
+
+Neu:
+{newSessionStart}
+{newSessionDuration}
+|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; sms_text
+  }
+;;

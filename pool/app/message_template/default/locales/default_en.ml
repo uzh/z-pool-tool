@@ -309,3 +309,45 @@ let session_reminder =
   ; sms_text
   }
 ;;
+
+let session_reschedule =
+  let label = Label.SessionReschedule in
+  let email_text =
+    [ p
+        [ txt "The following session you have registered to was rescheduled:"
+        ; br ()
+        ; txt "{sessionOverview}"
+        ]
+    ; p
+        [ txt "The new date and time is:"
+        ; br ()
+        ; txt "{newSessionStart}"
+        ; br ()
+        ; txt "{newSessionDuration}"
+        ]
+    ]
+    |> add_salutation
+    |> html_to_string
+    |> EmailText.of_string
+  in
+  let email_subject = "Session was rescheduled" |> EmailSubject.of_string in
+  let sms_text =
+    {|The following session you have registered to was rescheduled
+
+{sessionOverview}
+
+New:
+{newSessionStart}
+{newSessionDuration}
+|}
+    |> SmsText.of_string
+  in
+  { id = Id.create ()
+  ; label
+  ; language
+  ; entity_uuid
+  ; email_text
+  ; email_subject
+  ; sms_text
+  }
+;;

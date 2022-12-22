@@ -12,6 +12,7 @@ module Label : sig
     | SignUpVerification
     | SessionCancellation
     | SessionReminder
+    | SessionReschedule
 
   val equal : t -> t -> bool
   val pp : Format.formatter -> t -> unit
@@ -148,6 +149,21 @@ module SessionReminder : sig
     -> Session.t
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
+module SessionReschedule : sig
+  val prepare_template_list
+    :  Pool_database.Label.t
+    -> Pool_tenant.t
+    -> Pool_common.Language.t list
+    -> Session.t
+    -> ( Contact.t
+         -> Session.Start.t
+         -> Session.Duration.t
+         -> (Sihl_email.t, Pool_common.Message.error) result
+       , Pool_common.Message.error )
+       result
+       Lwt.t
 end
 
 module SignUpVerification : sig

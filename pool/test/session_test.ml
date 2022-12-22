@@ -988,6 +988,9 @@ let update_follow_ups_later () =
 
 let reschedule_to_past () =
   let session = Test_utils.Model.create_session () in
+  let create_message _ _ _ =
+    Test_utils.Model.create_email () |> CCResult.return
+  in
   let command =
     Session.
       { start =
@@ -997,7 +1000,9 @@ let reschedule_to_past () =
       ; duration = session.Session.duration
       }
   in
-  let events = SessionC.Reschedule.handle [] session [] command in
+  let events =
+    SessionC.Reschedule.handle [] session [] create_message command
+  in
   let expected = Error Pool_common.Message.TimeInPast in
   Test_utils.check_result expected events
 ;;

@@ -22,6 +22,8 @@ module Label = struct
         [@printer go "session_cancellation"]
     | SessionReminder [@name "session_reminder"]
         [@printer go "session_reminder"]
+    | SessionReschedule [@name "session_reschedule"]
+        [@printer go "session_reschedule"]
   [@@deriving eq, show { with_path = false }, yojson, variants]
 
   let read m =

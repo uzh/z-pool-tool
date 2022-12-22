@@ -19,72 +19,6 @@ let location urlencoded database_label =
   >>= Pool_location.find database_label
 ;;
 
-let reschedule_messages tenant database_label sys_languages session =
-  let open Utils.Lwt_result.Infix in
-  let create_message sys_languages contact (session : Session.t) template =
-    (* TODO[timhub]: What text element are required? Do we need custom
-       template? *)
-    let name = Contact.fullname contact in
-    let email = Contact.email_address contact in
-    let session_overview =
-      (CCList.map (fun lang ->
-         ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-         , Session.(to_email_text lang session) )))
-        sys_languages
-    in
-    Email.Helper.prepare_boilerplate_email
-      template
-      (email |> Pool_user.EmailAddress.value)
-      (("name", name) :: session_overview)
-  in
-  let* assignments =
-    Assignment.find_by_session database_label session.Session.id
-  in
-  let* default_language =
-    CCList.head_opt sys_languages
-    |> CCOption.to_result Pool_common.Message.(Retrieve Field.Language)
-    |> Lwt_result.lift
-  in
-  let i18n_texts = Hashtbl.create ~random:true (CCList.length sys_languages) in
-  Lwt_list.map_s
-    (fun (Assignment.{ contact; _ } : Assignment.t) ->
-      let message_language =
-        CCOption.value ~default:default_language contact.Contact.language
-      in
-      let email_layout = Email.Helper.layout_from_tenant tenant in
-      match Hashtbl.find_opt i18n_texts message_language with
-      | Some template ->
-        create_message sys_languages contact session template
-        |> Lwt_result.return
-      | None ->
-        let* subject =
-          I18n.(
-            find_by_key
-              database_label
-              Key.RescheduleSessionSubject
-              message_language)
-        in
-        let* text =
-          I18n.(
-            find_by_key
-              database_label
-              Key.RescheduleSessionText
-              message_language)
-        in
-        let template =
-          Email.CustomTemplate.
-            { subject = Subject.I18n subject
-            ; content = Content.I18n text
-            ; layout = email_layout
-            }
-        in
-        let () = Hashtbl.add i18n_texts message_language template in
-        create_message sys_languages contact session template
-        |> Lwt_result.return)
-    assignments
-  ||> CCResult.flatten_l
-;;
-
 let list req =
   let open Utils.Lwt_result.Infix in
   let error_path = "/admin/dashboard" in
@@ -310,20 +244,29 @@ let update_handler action req =
              |> Lwt_result.lift)
          | `Reschedule ->
            let open Cqrs_command.Session_command.Reschedule in
-           let* (decoded : Session.reschedule) =
-             urlencoded |> decode |> Lwt_result.lift
+           let* assignments =
+             Assignment.find_by_session database_label session.Session.id
            in
            let* system_languages =
              Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
            in
-           let (Session.{ start; duration } : Session.reschedule) = decoded in
-           let* messages =
-             Session.{ session with start; duration }
-             |> reschedule_messages tenant database_label system_languages
+           let* create_message =
+             Message_template.SessionReschedule.prepare_template_list
+               database_label
+               tenant
+               system_languages
+               session
            in
-           decoded
-           |> handle ~tags ?parent_session:parent follow_ups session messages
+           urlencoded
+           |> decode
            |> Lwt_result.lift
+           >== handle
+                 ~tags
+                 ?parent_session:parent
+                 follow_ups
+                 session
+                 assignments
+                 create_message
        in
        let%lwt () = Pool_event.handle_events ~tags database_label events in
        Http_utils.redirect_to_with_actions

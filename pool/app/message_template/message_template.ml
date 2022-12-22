@@ -294,6 +294,53 @@ module SessionReminder = struct
   ;;
 end
 
+module SessionReschedule = struct
+  let email_params lang session new_start new_duration contact =
+    let open Pool_common.Utils.Time in
+    let open Session in
+    [ "sessionOverview", to_email_text lang session
+    ; "newStart", new_start |> Start.value |> formatted_date_time
+    ; "newDuration", new_duration |> Duration.value |> formatted_timespan
+    ]
+    @ global_params contact.Contact.user
+  ;;
+
+  let prepare_template_list pool tenant system_languages session =
+    let open Message_utils in
+    let open Utils.Lwt_result.Infix in
+    let* templates =
+      Lwt_list.map_s
+        (fun lang ->
+          Repo.find_by_label pool lang Label.SessionReschedule
+          >|+ CCPair.make lang)
+        system_languages
+      ||> CCResult.flatten_l
+    in
+    let layout = layout_from_tenant tenant in
+    let fnc (contact : Contact.t) new_start new_duration =
+      let open CCResult in
+      let open Pool_common in
+      let* language = message_langauge system_languages contact in
+      let* template =
+        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+        |> CCOption.to_result (Message.NotFound Field.Template)
+        >|= snd
+      in
+      let params =
+        email_params language session new_start new_duration contact
+      in
+      prepare_email
+        language
+        template
+        (Contact.email_address contact)
+        layout
+        params
+      |> CCResult.pure
+    in
+    Lwt_result.return fnc
+  ;;
+end
+
 module SignUpVerification = struct
   let email_params validation_url firstname lastname =
     let open Pool_user in

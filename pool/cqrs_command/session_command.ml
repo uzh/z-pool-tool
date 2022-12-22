@@ -303,7 +303,11 @@ module Reschedule : sig
     -> ?parent_session:Session.t
     -> Session.t list
     -> Session.t
-    -> Sihl_email.t list
+    -> Assignment.t list
+    -> (Contact.t
+        -> Session.Start.t
+        -> Session.Duration.t
+        -> (Sihl_email.t, Pool_common.Message.error) result)
     -> t
     -> (Pool_event.t list, Conformist.error_msg) result
 
@@ -327,8 +331,9 @@ end = struct
     ?parent_session
     follow_up_sessions
     session
-    emails
-    (Session.{ start; _ } as reschedule : Session.reschedule)
+    assignments
+    create_message
+    (Session.{ start; duration } as reschedule : Session.reschedule)
     =
     Logs.info ~src (fun m -> m "Handle command Reschedule" ~tags);
     let open CCResult in
@@ -339,6 +344,12 @@ end = struct
            (start |> Session.Start.value)
       then Error Pool_common.Message.TimeInPast
       else Ok ()
+    in
+    let* emails =
+      assignments
+      |> CCList.map (fun ({ Assignment.contact; _ } : Assignment.t) ->
+           create_message contact start duration)
+      |> CCResult.flatten_l
     in
     Ok
       ((Session.Rescheduled (session, reschedule) |> Pool_event.session)
