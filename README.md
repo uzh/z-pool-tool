@@ -36,12 +36,22 @@ The following list shows only the most frequently used commands, for a complete 
 - `make sihl seed.tenant` - runs all seeds with development data for tenant database (use `make seed.tenant.clean` for a clean restart)
 - `make sihl admin.create` -  create a new administrator on a specific tenant
 - `make sihl admin.grant_role` -  grant a role to an existing administrator
+- `make sihl admin.list_roles` -  show a list of all possible role patterns
 
-Example commands to add an administrator and provide `OperatorAll` role.
+Example commands to add an administrator for a specific role.
 
 ```bash
-run.exe admin.create tenant1 it@econ.uzh.ch password Firstname Lastname Admin
-run.exe admin.grant_role tenant1 it@econ.uzh.ch OperatorAll
+# list available roles (shows also patterns)
+run.exe admin.list_roles
+
+# Create an Operator
+run.exe admin.create tenant1 operator@mail.com password Firstname Lastname OperatorAll
+
+# Create an Experimenter with UUID
+run.exe admin.create tenant1 experimenter@mail.com password Firstname Lastname Experimenter 00000000-0000-0000-0000-000000000000
+
+# Grant additional role to some administrator
+run.exe admin.grant_role tenant1 experimenter@mail.com RecruiterAll
 ```
 
 ### Environment files
