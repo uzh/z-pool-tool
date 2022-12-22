@@ -30,24 +30,28 @@ module NumberOfInvitations : sig
   type t
 
   val init : t
+  val of_int : int -> t
 end
 
 module NumberOfAssignments : sig
   type t
 
   val init : t
+  val of_int : int -> t
 end
 
 module NumberOfShowUps : sig
   type t
 
   val init : t
+  val of_int : int -> t
 end
 
 module NumberOfParticipations : sig
   type t
 
   val init : t
+  val of_int : int -> t
 end
 
 type t =
