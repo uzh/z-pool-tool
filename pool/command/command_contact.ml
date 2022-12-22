@@ -138,7 +138,7 @@ let all_profile_update_triggers =
     (fun () ->
     let open Utils.Lwt_result.Infix in
     Command_utils.setup_databases ()
-    >|> Lwt_list.map_s (fun pool -> trigger_profile_update_by_tenant pool)
+    >|> Lwt_list.map_s trigger_profile_update_by_tenant
     ||> CCList.all_ok
     ||> get_or_failwith
     ||> fun (_ : unit list) -> Some ())

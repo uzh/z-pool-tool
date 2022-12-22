@@ -30,7 +30,7 @@ let grant_role ctx admin role =
 ;;
 
 let create =
-  let grant_role_exn pool email password given_name name role =
+  let create_and_grant_role_exn pool email password given_name name role =
     let ctx = Pool_tenant.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | None ->
@@ -68,16 +68,17 @@ Example: admin.create econ-uzh example@mail.com securePassword Max Muster Recrui
     (function
     | [ db_pool; email; password; given_name; name; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role_of_string role |> grant_role_exn pool email password given_name name
+      role_of_string role
+      |> create_and_grant_role_exn pool email password given_name name
     | [ db_pool; email; password; given_name; name; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
       role_uuid_of_string role uuid
-      |> grant_role_exn pool email password given_name name
+      |> create_and_grant_role_exn pool email password given_name name
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 
 let grant_role =
-  let grant_role_exn pool email role =
+  let grant_if_admin pool email role =
     let ctx = Pool_tenant.to_ctx pool in
     match%lwt Service.User.find_by_email_opt ~ctx email with
     | Some admin when Sihl_user.is_admin admin ->
@@ -108,10 +109,10 @@ Example: admin.grant_role econ-uzh example@mail.com RecruiterAll
     (function
     | [ db_pool; email; role ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role |> role_of_string |> grant_role_exn pool email
+      role |> role_of_string |> grant_if_admin pool email
     | [ db_pool; email; role; uuid ] ->
       let%lwt pool = Command_utils.is_available_exn db_pool in
-      role_uuid_of_string role uuid |> grant_role_exn pool email
+      role_uuid_of_string role uuid |> grant_if_admin pool email
     | _ -> Command_utils.failwith_missmatch help)
 ;;
 
