@@ -131,8 +131,13 @@ jobs:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v3
 
-      - name: Set enviroment for github-release
+      - name: Extract version changelog
         run: sed -nr "/^## .?v?${GITHUB_REF_NAME}/,/^## /p" CHANGELOG.md | sed '1d;2d;$d' > changes.md
+
+      - name: Compress assets
+        run: |
+          tar -zcf assets.tar.gz assets
+          tar -zcf executable.tar.gz run.exe/run.exe
 
       - name: Create release
         uses: softprops/action-gh-release@v1
@@ -140,8 +145,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           body_path: changes.md
           files: |
-            assets/
-            run.exe
+            assets.tar.gz
+            executable.tar.gz
 
       - name: Notify about failure
         if: failure()
