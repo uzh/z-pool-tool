@@ -167,3 +167,4 @@ jobs:
         with:
           url: ${{ secrets.ECON_DEPLOY_TRIGGER_URL }}
           token: ${{ secrets.ECON_DEPLOY_TRIGGER_TOKEN }}
+          target: production
