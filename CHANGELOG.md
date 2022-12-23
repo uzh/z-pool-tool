@@ -4,20 +4,24 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.0.3](https://github.com/uzh/pool/tree/0.0.3) - 2022-12-23
+
 ### Removed
 
 - unused person table
 
 ### Fixed
 
+- display version in footer
 - verification note typo
+- deployment process
 
 ## [0.0.2](https://github.com/uzh/pool/tree/0.0.2) - 2022-12-22
 
 ### Added
 
-- Option to make the matcher select the contacts in random order
-- Display version in footer
+- option to make the matcher select the contacts in random order
+- display version in footer
 - CLI: create admin, grant roles and list roles
 
 ### Fixed
