@@ -101,7 +101,7 @@ let mobile_nav query_language title navigation =
 ;;
 
 let footer title =
-  let version = Utils.pool_version in
+  let version = Version.to_string in
   let title = span [ txt title ] in
   let content = [ title; span [ txt "|" ]; txt version ] in
   footer

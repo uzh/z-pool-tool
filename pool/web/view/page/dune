@@ -18,4 +18,5 @@
   tenant
   tyxml
   utils
+  version
   waiting_list))

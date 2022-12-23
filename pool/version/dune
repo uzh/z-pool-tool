@@ -1,0 +1,5 @@
+(library
+ (name version)
+ (libraries containers)
+ (preprocess
+  (pps lwt_ppx)))
