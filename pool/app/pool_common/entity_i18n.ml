@@ -74,6 +74,7 @@ type nav_link =
   | LoginInformation
   | Logout
   | Mailings
+  | MessageTemplates
   | Overview
   | PersonalDetails
   | Profile

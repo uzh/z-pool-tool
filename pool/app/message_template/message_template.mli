@@ -50,7 +50,15 @@ val equal : t -> t -> bool
 val pp : Format.formatter -> t -> unit
 val show : t -> string
 
-type event = DefaultRestored of t list
+type update =
+  { email_subject : EmailSubject.t
+  ; email_text : EmailText.t
+  ; sms_text : SmsText.t
+  }
+
+type event =
+  | DefaultRestored of t list
+  | Updated of t * update
 
 val equal_event : event -> event -> bool
 val pp_event : Format.formatter -> event -> unit
@@ -59,9 +67,18 @@ val handle_event : Pool_database.Label.t -> event -> unit Lwt.t
 val default_values_tenant : t list
 val default_values_root : t list
 
+val find
+  :  Pool_database.Label.t
+  -> Id.t
+  -> (t, Pool_common.Message.error) result Lwt.t
+
+val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
+
 type layout =
   | Tenant of Pool_tenant.t
   | Root
+
+val to_human_label : t -> string
 
 module AssignmentConfirmation : sig
   val create

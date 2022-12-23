@@ -73,3 +73,10 @@ type t =
 type layout =
   | Tenant of Pool_tenant.t
   | Root
+
+let to_human_label m =
+  m.label
+  |> Label.show
+  |> CCString.replace ~sub:"_" ~by:" "
+  |> CCString.capitalize_ascii
+;;

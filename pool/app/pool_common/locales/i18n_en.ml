@@ -102,6 +102,7 @@ let nav_link_to_string = function
   | LoginInformation -> "Login information"
   | Logout -> "Logout"
   | Mailings -> "Mailings"
+  | MessageTemplates -> "Message templates"
   | Overview -> "Overview"
   | PersonalDetails -> "Personal details"
   | Profile -> "Profile"

@@ -117,6 +117,8 @@ module Field = struct
     | MaxParticipants [@name "max_participants"]
         [@printer go "max_participants"]
     | MessageChannel [@name "message_channel"] [@printer go "message_channel"]
+    | MessageTemplate [@name "message_template"]
+        [@printer go "message_template"]
     | MinParticipants [@name "min_participants"]
         [@printer go "min_participants"]
     | Model [@name "model"] [@printer go "model"]

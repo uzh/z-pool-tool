@@ -222,6 +222,17 @@ module Admin = struct
       ; choose ~scope:(Filter |> url_key) specific
       ]
     in
+    let message_templates =
+      let open Handler.Admin.MessageTemplate in
+      let specific =
+        [ get "edit" ~middlewares:[ Access.update ] edit
+        ; post "" ~middlewares:[ Access.update ] update
+        ]
+      in
+      [ get "" ~middlewares:[ Access.index ] index
+      ; choose ~scope:(MessageTemplate |> url_key) specific
+      ]
+    in
     let experiments =
       let assistants =
         let open Experiments.Users in
@@ -484,6 +495,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
+      ; choose ~scope:"/message-templates" message_templates
       ]
   ;;
 end

@@ -92,6 +92,7 @@ module Target = struct
     | `Location
     | `LocationFile
     | `Mailing
+    | `MessageTemplate
     | `Session
     | `Setting
     | `System
@@ -153,6 +154,7 @@ module Target = struct
       ; `Invitation
       ; `Location
       ; `LocationFile
+      ; `MessageTemplate
       ; `Mailing
       ; `Session
       ; `Setting
@@ -176,6 +178,7 @@ module Target = struct
       ; `Invitation
       ; `Location
       ; `LocationFile
+      ; `MessageTemplate
       ; `Mailing
       ; `Session
       ; `Setting

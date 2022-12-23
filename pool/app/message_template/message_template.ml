@@ -3,11 +3,14 @@ include Event
 include Default
 open Message_utils
 
+let find = Repo.find
+let all_default = Repo.all_default
+
 let prepare_email language template email layout params =
   match Sihl.Configuration.read_string "SMTP_SENDER" with
   | None -> failwith "SMTP_SENDER not found in configuration"
   | Some sender ->
-    let { email_subject; email_text; _ } = template in
+    let { Entity.email_subject; email_text; _ } = template in
     let mail =
       Sihl_email.
         { sender
@@ -133,7 +136,7 @@ module ExperimentInvitation = struct
       let* language = message_langauge system_languages contact in
       let* template =
         CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.Template)
+        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
         >|= snd
       in
       let params = email_params experiment tenant_url contact in
@@ -250,7 +253,7 @@ module ProfileUpdateTrigger = struct
       let* language = message_langauge system_languages contact in
       let* template =
         CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.Template)
+        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
         >|= snd
       in
       let profile_url = create_public_url url "/user/personal-details" in
@@ -292,7 +295,7 @@ module SessionCancellation = struct
       let* language = message_langauge system_languages contact in
       let* template =
         CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.Template)
+        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
         >|= snd
       in
       let params = email_params language session reason contact in
@@ -363,7 +366,7 @@ module SessionReschedule = struct
       let* language = message_langauge system_languages contact in
       let* template =
         CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.Template)
+        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
         >|= snd
       in
       let params =

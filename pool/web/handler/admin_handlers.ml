@@ -8,6 +8,7 @@ module Filter = Admin_filter
 module I18n = Admin_i18n
 module Location = Admin_location
 module Message = Http_utils.Message
+module MessageTemplate = Admin_message_templates
 module Session = Admin_session
 module Settings = Admin_settings
 

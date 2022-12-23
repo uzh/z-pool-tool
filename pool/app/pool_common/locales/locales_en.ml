@@ -146,6 +146,7 @@ let field_to_string =
   | Street -> "street"
   | Styles -> "styles"
   | Template -> "template"
+  | MessageTemplate -> "message template"
   | Tenant -> "tenant"
   | TenantDisabledFlag -> "disabled"
   | TenantId -> "tenant identifier"

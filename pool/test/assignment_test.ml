@@ -22,7 +22,9 @@ let confirmation_email contact =
   in
   let open Message_template in
   let sender = "test@econ.uzh.ch" in
-  let { email_subject; email_text; _ } = Model.create_message_template () in
+  let ({ email_subject; email_text; _ } : Message_template.t) =
+    Model.create_message_template ()
+  in
   Sihl_email.
     { sender
     ; recipient = email
