@@ -6,34 +6,6 @@ module Lwt_result = Lwt_trace
 let todo _ = failwith "todo"
 let fcn_ok fcn m = m |> fcn |> CCResult.pure
 
-let pool_version =
-  let filepath =
-    let name = "pool.opam" in
-    match Sihl.Configuration.read_string "ROOT_PATH" with
-    | None -> name
-    | Some path -> Format.asprintf "%s/%s" path name
-  in
-  let in_channel = open_in filepath in
-  let rec read_line () =
-    let line =
-      try input_line in_channel with
-      | End_of_file ->
-        let error = "Cannot read version from pool.opam." in
-        Logs.err (fun m -> m "%s" error);
-        failwith error
-    in
-    let fragments = CCString.split_on_char ':' line in
-    match fragments with
-    | [ key; value ] ->
-      let open CCString in
-      if equal "version" (trim key)
-      then replace ~which:`All ~sub:"\"" ~by:"" value
-      else read_line ()
-    | _ -> read_line ()
-  in
-  read_line ()
-;;
-
 module Url = struct
   let public_host =
     let open CCOption in
