@@ -138,7 +138,7 @@ module ExperimentInvitation : sig
     -> Contact.t
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 
-  val prepare_template_list
+  val prepare
     :  Pool_tenant.t
     -> ( Experiment.t
          -> Contact.t
@@ -158,7 +158,7 @@ module PasswordChange : sig
 end
 
 module ProfileUpdateTrigger : sig
-  val prepare_template_list
+  val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
     -> ( Contact.t -> (Sihl_email.t, Pool_common.Message.error) result
@@ -177,7 +177,7 @@ module PasswordReset : sig
 end
 
 module SessionCancellation : sig
-  val prepare_template_list
+  val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list
@@ -202,7 +202,7 @@ module SessionReminder : sig
 end
 
 module SessionReschedule : sig
-  val prepare_template_list
+  val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
     -> Pool_common.Language.t list

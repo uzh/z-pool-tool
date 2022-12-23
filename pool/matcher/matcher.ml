@@ -186,8 +186,7 @@ let match_invitations ?interval pools =
              find_contacts_by_mailing pool mailing limit
              >>= fun (experiment, contacts) ->
              let* create_message =
-               Message_template.ExperimentInvitation.prepare_template_list
-                 tenant
+               Message_template.ExperimentInvitation.prepare tenant
              in
              { mailing; experiment; contacts; create_message }
              |> Lwt_result.return)

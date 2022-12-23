@@ -131,7 +131,7 @@ module ExperimentInvitation = struct
     @ global_params contact.Contact.user
   ;;
 
-  let prepare_template_list tenant =
+  let prepare tenant =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let pool = tenant.Pool_tenant.database_label in
@@ -234,7 +234,7 @@ module ProfileUpdateTrigger = struct
     ("profileUrl", profile_url) :: (contact.Contact.user |> global_params)
   ;;
 
-  let prepare_template_list pool tenant =
+  let prepare pool tenant =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let%lwt sys_langs = Settings.find_languages pool in
@@ -266,7 +266,7 @@ module SessionCancellation = struct
     @ global_params contact.Contact.user
   ;;
 
-  let prepare_template_list pool tenant sys_langs session =
+  let prepare pool tenant sys_langs session =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
@@ -321,7 +321,7 @@ module SessionReschedule = struct
     @ global_params contact.Contact.user
   ;;
 
-  let prepare_template_list pool tenant sys_langs session =
+  let prepare pool tenant sys_langs session =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =

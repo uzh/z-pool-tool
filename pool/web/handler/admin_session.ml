@@ -251,7 +251,7 @@ let update_handler action req =
              Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
            in
            let* create_message =
-             Message_template.SessionReschedule.prepare_template_list
+             Message_template.SessionReschedule.prepare
                database_label
                tenant
                system_languages
@@ -314,7 +314,7 @@ let cancel req =
            Pool_context.Tenant.find req |> Lwt_result.lift
          in
          let* create_message =
-           Message_template.SessionCancellation.prepare_template_list
+           Message_template.SessionCancellation.prepare
              database_label
              tenant
              system_languages

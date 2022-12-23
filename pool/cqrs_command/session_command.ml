@@ -346,8 +346,9 @@ end = struct
       else Ok ()
     in
     let* emails =
+      let open Assignment in
       assignments
-      |> CCList.map (fun ({ Assignment.contact; _ } : Assignment.t) ->
+      |> CCList.map (fun ({ contact; _ } : t) ->
            create_message contact start duration)
       |> CCResult.flatten_l
     in

@@ -49,8 +49,7 @@ let create_invitations_repo _ () =
   let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn in
   let%lwt () =
     let%lwt create_message =
-      Message_template.ExperimentInvitation.prepare_template_list tenant
-      ||> CCResult.get_exn
+      Message_template.ExperimentInvitation.prepare tenant ||> CCResult.get_exn
     in
     Mailing.find_current pool
     >|> Lwt_list.iter_s (fun ({ Mailing.rate; _ } as mailing : Mailing.t) ->

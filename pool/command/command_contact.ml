@@ -80,7 +80,7 @@ let trigger_profile_update_by_tenant pool =
   | [] -> Lwt_result.return ()
   | contacts ->
     let* create_message =
-      Message_template.ProfileUpdateTrigger.prepare_template_list pool tenant
+      Message_template.ProfileUpdateTrigger.prepare pool tenant
     in
     let* emails =
       CCList.map create_message contacts

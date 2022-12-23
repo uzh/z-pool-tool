@@ -29,16 +29,14 @@ end = struct
 
   let handle mailings =
     let open CCFun.Infix in
+    let open CCList in
     mailings
-    |> CCList.map (fun { experiment; contacts; create_message; _ } ->
-         let open Invitation_command in
-         let command =
-           Create.
-             { experiment; contacts; invited_contacts = []; create_message }
-         in
-         Create.handle command)
-       %> CCList.all_ok
-       %> CCResult.map CCList.flatten
+    |> map (fun { experiment; contacts; create_message; _ } ->
+         let open Invitation_command.Create in
+         { experiment; contacts; invited_contacts = []; create_message }
+         |> handle)
+       %> all_ok
+       %> CCResult.map flatten
   ;;
 
   let effects db_label =

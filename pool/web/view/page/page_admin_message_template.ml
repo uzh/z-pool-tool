@@ -63,6 +63,9 @@ let template_form
       let open Pool_common.Language in
       selector ~required:true language Field.Language show languages None ()
   in
+  let textarea_element ~value =
+    textarea_element language ~value ~flash_fetcher ~required:true
+  in
   form
     ~a:[ a_action (action |> externalize); a_method `Post; a_class [ "stack" ] ]
     [ csrf_element csrf ()
@@ -78,15 +81,9 @@ let template_form
         ; language_select
         ]
     ; textarea_element
-        language
-        ~flash_fetcher
-        ~required:true
         ~value:(value (fun t -> t.email_text |> EmailText.value))
         Field.EmailText
     ; textarea_element
-        language
-        ~flash_fetcher
-        ~required:true
         ~value:(value (fun t -> t.sms_text |> SmsText.value))
         Field.SmsText
     ; div
