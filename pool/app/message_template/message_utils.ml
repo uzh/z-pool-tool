@@ -13,6 +13,12 @@ let create_public_url pool_url path =
   |> Format.asprintf "http://%s%s" (Pool_tenant.Url.value pool_url)
 ;;
 
+let create_public_url_with_params pool_url path params =
+  params
+  |> Pool_common.Message.add_field_query_params path
+  |> create_public_url pool_url
+;;
+
 let prepend_root_directory pool url =
   match Pool_database.Label.equal pool Pool_database.root with
   | true -> Format.asprintf "/root%s" url
@@ -147,4 +153,19 @@ let message_langauge sys (contact : Contact.t) =
   >>= (fun contact_lang -> CCList.find_opt (Language.equal contact_lang) sys)
   |> value ~default
   |> CCResult.pure
+;;
+
+let search_by_language templates language =
+  let open CCResult in
+  let open Pool_common in
+  CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
+  |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
+  >|= snd
+;;
+
+let template_by_contact sys_langs templates contact =
+  let open CCResult in
+  let* language = message_langauge sys_langs contact in
+  let* template = search_by_language templates language in
+  Ok (language, template)
 ;;

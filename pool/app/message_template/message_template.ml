@@ -7,6 +7,14 @@ let find = Repo.find
 let all_default = Repo.all_default
 let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
 
+let find_all_by_label_and_languages pool languages label =
+  let open Utils.Lwt_result.Infix in
+  Lwt_list.map_s
+    (fun lang -> Repo.find_by_label pool lang label >|+ CCPair.make lang)
+    languages
+  ||> CCResult.flatten_l
+;;
+
 let filter_languages languages templates =
   languages
   |> CCList.filter (fun lang ->
@@ -100,8 +108,7 @@ module EmailVerification = struct
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
-      |> Pool_common.Message.add_field_query_params "/email-verified"
-      |> create_public_url url
+      |> create_public_url_with_params url "/email-verified"
     in
     prepare_email
       language
@@ -116,12 +123,9 @@ end
 module ExperimentInvitation = struct
   let email_params experiment public_url contact =
     let open Experiment in
+    let id = experiment.Experiment.id |> Id.value in
     [ ( "experimentUrl"
-      , create_public_url
-          public_url
-          (Format.asprintf
-             "experiment/%s"
-             (experiment.Experiment.id |> Id.value)) )
+      , create_public_url public_url (Format.asprintf "experiment/%s" id) )
     ]
     @ experiment_params experiment
     @ global_params contact.Contact.user
@@ -131,33 +135,17 @@ module ExperimentInvitation = struct
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let pool = tenant.Pool_tenant.database_label in
-    let%lwt system_languages = Settings.find_languages pool in
+    let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
-      Lwt_list.map_s
-        (fun lang ->
-          Repo.find_by_label pool lang Label.ExperimentInvitation
-          >|+ CCPair.make lang)
-        system_languages
-      ||> CCResult.flatten_l
+      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
     let%lwt tenant_url = Pool_tenant.Url.of_pool pool in
     let layout = layout_from_tenant tenant in
     let fnc experiment (contact : Contact.t) =
       let open CCResult in
-      let open Pool_common in
-      let* language = message_langauge system_languages contact in
-      let* template =
-        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-        >|= snd
-      in
+      let* lang, template = template_by_contact sys_langs templates contact in
       let params = email_params experiment tenant_url contact in
-      prepare_email
-        language
-        template
-        (Contact.email_address contact)
-        layout
-        params
+      prepare_email lang template (Contact.email_address contact) layout params
       |> CCResult.pure
     in
     Lwt_result.return fnc
@@ -211,6 +199,7 @@ module PasswordReset = struct
     let email = Pool_user.user_email_address user in
     let* template = Repo.find_by_label pool language Label.PasswordReset in
     let%lwt url = Pool_tenant.Url.of_pool pool in
+    let open Pool_common in
     let* reset_token =
       Service.PasswordReset.create_reset_token
         ~ctx:(Pool_tenant.to_ctx pool)
@@ -218,18 +207,17 @@ module PasswordReset = struct
       ||> function
       | None ->
         Logs.err (fun m -> m "Reset token not found");
-        Error Pool_common.Message.PasswordResetFailMessage
+        Error Message.PasswordResetFailMessage
       | Some token -> Ok token
     in
     let reset_url =
-      Pool_common.
-        [ Message.Field.Token, reset_token
-        ; ( Message.Field.Language
-          , language |> Pool_common.Language.show |> CCString.lowercase_ascii )
+      Message.
+        [ Field.Token, reset_token
+        ; Field.Language, language |> Language.show |> CCString.lowercase_ascii
         ]
-      |> Pool_common.Message.add_field_query_params "/reset-password/"
-      |> prepend_root_directory pool
-      |> create_public_url url
+      |> create_public_url_with_params
+           url
+           (prepend_root_directory pool "/reset-password/")
     in
     prepare_email
       language
@@ -249,28 +237,17 @@ module ProfileUpdateTrigger = struct
   let prepare_template_list pool tenant =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
-    let%lwt system_languages = Settings.find_languages pool in
+    let%lwt sys_langs = Settings.find_languages pool in
     let* templates =
-      Lwt_list.map_s
-        (fun lang ->
-          Repo.find_by_label pool lang Label.ExperimentInvitation
-          >|+ CCPair.make lang)
-        system_languages
-      ||> CCResult.flatten_l
+      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let fnc contact =
       let open CCResult in
-      let open Pool_common in
-      let* language = message_langauge system_languages contact in
-      let* template =
-        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-        >|= snd
-      in
+      let* lang, template = template_by_contact sys_langs templates contact in
       let profile_url = create_public_url url "/user/personal-details" in
       prepare_email
-        language
+        lang
         template
         (Contact.email_address contact)
         (layout_from_tenant tenant)
@@ -289,34 +266,18 @@ module SessionCancellation = struct
     @ global_params contact.Contact.user
   ;;
 
-  let prepare_template_list pool tenant system_languages session =
+  let prepare_template_list pool tenant sys_langs session =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      Lwt_list.map_s
-        (fun lang ->
-          Repo.find_by_label pool lang Label.SessionCancellation
-          >|+ CCPair.make lang)
-        system_languages
-      ||> CCResult.flatten_l
+      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
     let layout = layout_from_tenant tenant in
     let fnc reason (contact : Contact.t) =
       let open CCResult in
-      let open Pool_common in
-      let* language = message_langauge system_languages contact in
-      let* template =
-        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-        >|= snd
-      in
-      let params = email_params language session reason contact in
-      prepare_email
-        language
-        template
-        (Contact.email_address contact)
-        layout
-        params
+      let* lang, template = template_by_contact sys_langs templates contact in
+      let params = email_params lang session reason contact in
+      prepare_email lang template (Contact.email_address contact) layout params
       |> CCResult.pure
     in
     Lwt_result.return fnc
@@ -360,36 +321,18 @@ module SessionReschedule = struct
     @ global_params contact.Contact.user
   ;;
 
-  let prepare_template_list pool tenant system_languages session =
+  let prepare_template_list pool tenant sys_langs session =
     let open Message_utils in
     let open Utils.Lwt_result.Infix in
     let* templates =
-      Lwt_list.map_s
-        (fun lang ->
-          Repo.find_by_label pool lang Label.SessionReschedule
-          >|+ CCPair.make lang)
-        system_languages
-      ||> CCResult.flatten_l
+      find_all_by_label_and_languages pool sys_langs Label.SessionReschedule
     in
     let layout = layout_from_tenant tenant in
     let fnc (contact : Contact.t) new_start new_duration =
       let open CCResult in
-      let open Pool_common in
-      let* language = message_langauge system_languages contact in
-      let* template =
-        CCList.find_opt (fun t -> t |> fst |> Language.equal language) templates
-        |> CCOption.to_result (Message.NotFound Field.MessageTemplate)
-        >|= snd
-      in
-      let params =
-        email_params language session new_start new_duration contact
-      in
-      prepare_email
-        language
-        template
-        (Contact.email_address contact)
-        layout
-        params
+      let* lang, template = template_by_contact sys_langs templates contact in
+      let params = email_params lang session new_start new_duration contact in
+      prepare_email lang template (Contact.email_address contact) layout params
       |> CCResult.pure
     in
     Lwt_result.return fnc
@@ -415,8 +358,7 @@ module SignUpVerification = struct
     let%lwt url = Pool_tenant.Url.of_pool pool in
     let validation_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
-      |> Pool_common.Message.add_field_query_params "/email-verified"
-      |> create_public_url url
+      |> create_public_url_with_params url "/email-verified"
     in
     prepare_email
       language
