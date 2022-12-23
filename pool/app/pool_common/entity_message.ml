@@ -215,6 +215,7 @@ module Field = struct
 
   let url_key m = m |> show |> Format.asprintf ":%s"
   let array_key m = m |> show |> Format.asprintf "%s[]"
+  let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"
 end
 
 (* TODO [aerben] make these general, compare what fields exist already, whenever

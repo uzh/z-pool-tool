@@ -274,7 +274,7 @@ module Tenant = struct
           ; "/admin/filter", Filter
           ; "/admin/locations", Locations
           ; "/admin/settings", SystemSettings
-          ; "/admin/message-templates", MessageTemplates
+          ; "/admin/message-template", MessageTemplates
           ; "/admin/i18n", I18n
           ]
           |> to_nav_elements

@@ -307,5 +307,15 @@ let () =
             `Quick
             Matcher_test.create_invitations_model
         ] )
+    ; ( "message template"
+      , [ test_case
+            "create message template"
+            `Quick
+            Message_template_test.create
+        ; test_case
+            "create message template with invalid language"
+            `Quick
+            Message_template_test.create_with_unavailable_language
+        ] )
     ]
 ;;

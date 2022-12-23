@@ -145,6 +145,25 @@ let all_default pool =
     find_all_default_request
 ;;
 
+let find_all_of_entity_by_label_request =
+  let open Caqti_request.Infix in
+  Format.asprintf
+    {|
+  %s
+  WHERE pool_message_templates.entity_uuid = UNHEX(REPLACE($1, '-', ''))
+  AND pool_message_templates.label = $2
+    |}
+    select_sql
+  |> Caqti_type.(tup2 string string) ->* RepoEntity.t
+;;
+
+let find_all_of_entity_by_label pool entity_uuid label =
+  Utils.Database.collect
+    (Pool_database.Label.value pool)
+    find_all_of_entity_by_label_request
+    (Pool_common.Id.value entity_uuid, Label.show label)
+;;
+
 let find_request =
   let open Caqti_request.Infix in
   Format.asprintf

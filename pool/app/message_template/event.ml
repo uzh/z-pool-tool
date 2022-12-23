@@ -8,11 +8,13 @@ type update =
 [@@deriving eq, show]
 
 type event =
+  | Created of t
   | DefaultRestored of t list
   | Updated of t * update
 [@@deriving eq, show]
 
 let handle_event pool : event -> unit Lwt.t = function
+  | Created template -> Repo.insert pool template
   | DefaultRestored templates -> Lwt_list.iter_s (Repo.insert pool) templates
   | Updated (template, { email_subject; email_text; sms_text }) ->
     { template with email_subject; email_text; sms_text } |> Repo.update pool

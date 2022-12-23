@@ -4,6 +4,7 @@ module Invitations = Admin_experiments_invitations
 module WaitingList = Admin_experiments_waiting_list
 module Assignment = Admin_experiments_assignments
 module Mailings = Admin_experiments_mailing
+module MessageTemplates = Admin_experiments_message_templates
 module Users = Admin_experiments_users
 
 let create_layout req = General.create_tenant_layout req
@@ -95,14 +96,28 @@ let detail edit req =
        Page.Admin.Experiments.detail experiment session_count context
        |> Lwt.return_ok
      | true ->
+       let open Message_template in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       in
+       let find_templates =
+         find_all_of_entity_by_label
+           database_label
+           (id |> Experiment.Id.to_common)
+       in
+       let%lwt invitation_templates =
+         find_templates Label.ExperimentInvitation
+       in
+       let%lwt session_reminder_templates =
+         find_templates Label.SessionReminder
        in
        Page.Admin.Experiments.edit
          experiment
          context
          sys_languages
+         invitation_templates
+         session_reminder_templates
          flash_fetcher
        |> Lwt.return_ok)
     >>= create_layout req context

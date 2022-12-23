@@ -8,6 +8,7 @@ type title =
   | Control of Pool_common.Message.control
   | NavLink of Pool_common.I18n.nav_link
   | I18n of Pool_common.I18n.t
+  | String of string
 
 let title_to_string language text =
   let open Pool_common.Utils in
@@ -15,6 +16,7 @@ let title_to_string language text =
   | Control text -> control_to_string language text
   | NavLink text -> nav_link_to_string language text
   | I18n text -> text_to_string language text
+  | String str -> str
 ;;
 
 let experiment_layout ?buttons ?hint language title experiment ?active html =
@@ -324,12 +326,46 @@ let edit
   experiment
   (Pool_context.{ language; _ } as context)
   sys_languages
+  invitation_templates
+  session_reminder_templates
   flash_fetcher
   =
-  let html = experiment_form ~experiment context sys_languages flash_fetcher in
+  let open Message_template in
+  let form = experiment_form ~experiment context sys_languages flash_fetcher in
+  let experiment_path =
+    Format.asprintf
+      "/admin/experiments/%s/%s"
+      Experiment.(Id.value experiment.id)
+  in
+  let template_html label list =
+    let edit_path m =
+      Format.asprintf
+        "%s/%s/edit"
+        Pool_common.Message.Field.(human_url MessageTemplate)
+        (Message_template.Id.value m.id)
+      |> experiment_path
+    in
+    let new_path =
+      if CCList.is_empty (Message_template.filter_languages sys_languages list)
+      then None
+      else experiment_path Label.(prefixed_human_url label) |> CCOption.pure
+    in
+    div
+      [ h3 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      ; Page_admin_message_template.table language list new_path edit_path
+      ]
+  in
+  let html =
+    div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ form
+      ; template_html Label.ExperimentInvitation invitation_templates
+      ; template_html Label.SessionReminder session_reminder_templates
+      ]
+  in
   experiment_layout
     language
-    (Control Pool_common.Message.(Edit (Some Field.Experiment)))
+    (Control Message.(Edit (Some Field.Experiment)))
     experiment
     html
 ;;
@@ -623,4 +659,46 @@ let users
        (NavLink Pool_common.(I18n.Field field))
        experiment
        ~active:Pool_common.(I18n.Field field)
+;;
+
+let message_template_form
+  ({ Pool_context.language; _ } as context)
+  experiment
+  languages
+  label
+  template
+  flash_fetcher
+  =
+  let action =
+    let open Experiment in
+    let go =
+      Format.asprintf "/admin/experiments/%s/%s" (Id.value experiment.id)
+    in
+    match template with
+    | None -> go (Message_template.Label.prefixed_human_url label)
+    | Some template ->
+      Format.asprintf
+        "%s/%s"
+        Pool_common.Message.Field.(human_url MessageTemplate)
+        Message_template.(Id.value template.Message_template.id)
+      |> go
+  in
+  let title =
+    (match template with
+     | None -> "Create"
+     | Some _ -> "Edit")
+    |> fun control ->
+    String
+      (Format.asprintf
+         "%s %s"
+         control
+         (label |> Message_template.Label.to_human |> CCString.lowercase_ascii))
+  in
+  Page_admin_message_template.template_form
+    context
+    ?languages
+    template
+    action
+    flash_fetcher
+  |> experiment_layout language title experiment
 ;;

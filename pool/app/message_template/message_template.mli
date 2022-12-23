@@ -22,6 +22,9 @@ module Label : sig
   val yojson_of_t : t -> Yojson.Safe.t
   val read : string -> t
   val of_string : string -> (t, Pool_common.Message.error) result
+  val to_human : t -> string
+  val human_url : t -> string
+  val prefixed_human_url : t -> string
 end
 
 module EmailSubject : sig
@@ -57,6 +60,7 @@ type update =
   }
 
 type event =
+  | Created of t
   | DefaultRestored of t list
   | Updated of t * update
 
@@ -73,6 +77,24 @@ val find
   -> (t, Pool_common.Message.error) result Lwt.t
 
 val all_default : Pool_database.Label.t -> unit -> t list Lwt.t
+
+val find_all_of_entity_by_label
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Label.t
+  -> t list Lwt.t
+
+val filter_languages
+  :  Pool_common.Language.t list
+  -> t list
+  -> Pool_common.Language.t list
+
+val find_available_languages
+  :  Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Label.t
+  -> Pool_common.Language.t list
+  -> Pool_common.Language.t list Lwt.t
 
 type layout =
   | Tenant of Pool_tenant.t

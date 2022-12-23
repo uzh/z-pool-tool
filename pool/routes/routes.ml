@@ -1,11 +1,17 @@
 module CustomMiddleware = Middleware
 open Sihl.Web
+module Field = Pool_common.Message.Field
 
 let add_key ?(prefix = "") ?(suffix = "") field =
-  let open Pool_common.Message.Field in
+  let open Field in
   [ prefix; field |> url_key; suffix ]
   |> CCList.filter (fun m -> m |> CCString.is_empty |> not)
   |> CCString.concat "/"
+;;
+
+let add_human_field field =
+  let open Field in
+  field |> human_url |> Format.asprintf "/%s"
 ;;
 
 let global_middlewares =
@@ -87,22 +93,19 @@ module Contact = struct
     let locked =
       let experiments =
         let build_scope subdir =
-          Format.asprintf
-            "/%s/%s"
-            Pool_common.Message.Field.(Experiment |> url_key)
-            subdir
+          Format.asprintf "/%s/%s" Field.(Experiment |> url_key) subdir
         in
         let waiting_list =
           [ post "" WaitingList.create; post "/remove" WaitingList.delete ]
         in
         let sessions =
-          let open Pool_common.Message.Field in
+          let open Field in
           [ get (Session |> url_key) Session.show
           ; post (Session |> url_key) Assignment.create
           ]
         in
         [ get "" Experiment.index
-        ; get Pool_common.Message.Field.(Experiment |> url_key) Experiment.show
+        ; get Field.(Experiment |> url_key) Experiment.show
         ; choose ~scope:(build_scope "waiting-list") waiting_list
         ; choose ~scope:(build_scope "sessions") sessions
         ]
@@ -172,7 +175,7 @@ module Admin = struct
   ;;
 
   let routes =
-    let open Pool_common.Message.Field in
+    let open Field in
     let open Handler.Admin in
     let location =
       let open Location in
@@ -357,6 +360,26 @@ module Admin = struct
               ~middlewares:[ Experiments.Access.update ]
           ]
       in
+      let message_templates =
+        let open Message_template.Label in
+        let open Handler.Admin.Experiments.MessageTemplates in
+        let add_label label = label |> human_url |> Format.asprintf "/%s" in
+        let specific =
+          [ get "/edit" ~middlewares:[ Access.invitation ] edit_invitation
+          ; post "" ~middlewares:[ Access.invitation ] update_invitation
+          ]
+        in
+        [ get
+            (add_label ExperimentInvitation)
+            ~middlewares:[ Access.invitation ]
+            new_invitation
+        ; post
+            (add_label ExperimentInvitation)
+            ~middlewares:[ Access.invitation ]
+            new_invitation_post
+        ; choose ~scope:(MessageTemplate |> url_key) specific
+        ]
+      in
       let specific =
         Experiments.
           [ get "" ~middlewares:[ Access.read ] show
@@ -375,6 +398,7 @@ module Admin = struct
           ; choose ~scope:"/assignments" assignments
           ; choose ~scope:"/mailings" mailings
           ; choose ~scope:"/filter" filter
+          ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
       in
       Experiments.
@@ -495,7 +519,7 @@ module Admin = struct
       ; choose ~scope:"/contacts" contacts
       ; choose ~scope:"/admins" admins
       ; choose ~scope:"/custom-fields" custom_fields
-      ; choose ~scope:"/message-templates" message_templates
+      ; choose ~scope:(add_human_field MessageTemplate) message_templates
       ]
   ;;
 end
@@ -529,7 +553,7 @@ module Root = struct
   let locked_middlewares = [ CustomMiddleware.Root.require_root () ]
 
   let locked_routes =
-    let open Pool_common.Message.Field in
+    let open Field in
     let open Handler.Root in
     let build_route appendix =
       Format.asprintf "%s/%s" (Tenant |> url_key) appendix

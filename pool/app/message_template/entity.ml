@@ -36,6 +36,20 @@ module Label = struct
     try Ok (read str) with
     | _ -> Error Pool_common.Message.(Invalid Field.Label)
   ;;
+
+  let to_human m =
+    m |> show |> CCString.replace ~sub:"_" ~by:" " |> CCString.capitalize_ascii
+  ;;
+
+  let human_url m = m |> show |> CCString.replace ~sub:"_" ~by:"-"
+
+  let prefixed_human_url m =
+    m
+    |> human_url
+    |> Format.asprintf
+         "%s/%s"
+         Pool_common.Message.Field.(human_url MessageTemplate)
+  ;;
 end
 
 module EmailSubject = struct
@@ -74,9 +88,4 @@ type layout =
   | Tenant of Pool_tenant.t
   | Root
 
-let to_human_label m =
-  m.label
-  |> Label.show
-  |> CCString.replace ~sub:"_" ~by:" "
-  |> CCString.capitalize_ascii
-;;
+let to_human_label m = m.label |> Label.to_human

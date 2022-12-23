@@ -5,6 +5,23 @@ open Message_utils
 
 let find = Repo.find
 let all_default = Repo.all_default
+let find_all_of_entity_by_label = Repo.find_all_of_entity_by_label
+
+let filter_languages languages templates =
+  languages
+  |> CCList.filter (fun lang ->
+       CCList.find_opt
+         (fun template -> Pool_common.Language.equal template.language lang)
+         templates
+       |> CCOption.is_none)
+;;
+
+let find_available_languages database_label entity_id label languages =
+  let%lwt existing =
+    find_all_of_entity_by_label database_label entity_id label
+  in
+  filter_languages languages existing |> Lwt.return
+;;
 
 let prepare_email language template email layout params =
   match Sihl.Configuration.read_string "SMTP_SENDER" with
@@ -35,11 +52,6 @@ let experiment_params experiment =
   ]
 ;;
 
-(** TODO
-
-    - reschedule sessions
-
-    Maybe group email params by entity not email template?? *)
 module AssignmentConfirmation = struct
   let email_params lang session =
     "sessionOverview", Session.to_email_text lang session
