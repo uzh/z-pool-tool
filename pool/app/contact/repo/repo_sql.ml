@@ -46,32 +46,34 @@ let select_fields =
     |sql}
 ;;
 
+let where_prefix str = Format.asprintf "WHERE %s" str
+
 let find_request_sql where_fragment =
   Format.asprintf "%s\n%s" select_fields where_fragment
 ;;
 
 let find_filtered_request_sql ?limit where_fragment =
-  let base = Format.asprintf "%s\n%s" select_fields where_fragment in
+  let base = find_request_sql where_fragment in
   match limit with
   | None -> base
-  | Some limit -> Format.asprintf "%s LIMIT %i" base limit
+  | Some limit -> Format.asprintf "%s\nLIMIT %i" base limit
 ;;
 
 let count_filtered_request_sql where_fragment =
   let select =
     {sql|
-    SELECT COUNT(*)
-    FROM pool_contacts
-      LEFT JOIN user_users
-      ON pool_contacts.user_uuid = user_users.uuid
-  |sql}
+      SELECT COUNT(*)
+      FROM pool_contacts
+        LEFT JOIN user_users
+        ON pool_contacts.user_uuid = user_users.uuid
+    |sql}
   in
   Format.asprintf "%s\n%s" select where_fragment
 ;;
 
 let join_custom_field_answers =
   {sql|
-  LEFT JOIN pool_custom_field_answers ON pool_custom_field_answers.entity_uuid = user_users.uuid
+    LEFT JOIN pool_custom_field_answers ON pool_custom_field_answers.entity_uuid = user_users.uuid
   |sql}
 ;;
 
@@ -205,14 +207,14 @@ let filter_to_sql template_list dyn query =
           let sql =
             Format.asprintf
               {sql|
-              SELECT (1) FROM pool_custom_field_answers
-                WHERE
-                  pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
-                AND
-                  pool_custom_field_answers.entity_uuid = user_users.uuid
-                AND
-                  value %s %s
-            |sql}
+                SELECT (1) FROM pool_custom_field_answers
+                  WHERE
+                    pool_custom_field_answers.custom_field_uuid = UNHEX(REPLACE(?, '-', ''))
+                  AND
+                    pool_custom_field_answers.entity_uuid = user_users.uuid
+                  AND
+                    value %s %s
+              |sql}
               (Operator.to_sql operator)
               param
           in
@@ -265,34 +267,35 @@ let filter_to_sql template_list dyn query =
 
 let filtered_base_condition =
   {sql|
-    WHERE
-      user_users.admin = 0
-      AND user_users.confirmed = 1
-      AND pool_contacts.paused = 0
-      AND pool_contacts.disabled = 0
-      AND NOT EXISTS
-        (SELECT 1
-        FROM pool_invitations
-        WHERE
-            pool_invitations.contact_id = pool_contacts.id
-          AND
-            pool_invitations.experiment_id IN (
-              SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', '')))
+    user_users.admin = 0
+    AND user_users.confirmed = 1
+    AND pool_contacts.paused = 0
+    AND pool_contacts.disabled = 0
+    AND NOT EXISTS
+      (SELECT 1
+      FROM pool_invitations
+      WHERE
+          pool_invitations.contact_id = pool_contacts.id
+        AND
+          pool_invitations.experiment_id IN (
+            SELECT id FROM pool_experiments WHERE pool_experiments.uuid = UNHEX(REPLACE(?, '-', ''))
             )
-        AND NOT EXISTS
-        (SELECT 1
-        FROM pool_assignments
-        WHERE
-            pool_assignments.contact_id = pool_contacts.id
-          AND
-            pool_assignments.session_id IN (
-              SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', '')))
-            )
+      )
+    AND NOT EXISTS
+      (SELECT 1
+      FROM pool_assignments
+      WHERE
+          pool_assignments.contact_id = pool_contacts.id
+        AND
+          pool_assignments.session_id IN (
+            SELECT id FROM pool_sessions WHERE pool_sessions.experiment_uuid = UNHEX(REPLACE(?, '-', ''))
+          )
+      )
     |sql}
 ;;
 
 let filtered_params ?group_by ?order_by template_list experiment_id filter =
-  let open CCResult in
+  let open CCResult.Infix in
   let id_param =
     let id = experiment_id |> Pool_common.Id.value in
     Dynparam.(empty |> add Caqti_type.string id |> add Caqti_type.string id)
@@ -339,12 +342,62 @@ let find_filtered pool ?order_by ?limit experiment_id filter =
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
   let request =
-    sql |> find_filtered_request_sql ?limit |> pt ->* Repo_model.t
+    sql
+    |> where_prefix
+    |> find_filtered_request_sql ?limit
+    |> pt ->* Repo_model.t
   in
   let%lwt contacts =
     Utils.Database.collect (pool |> Pool_database.Label.value) request pv
   in
   Lwt_result.return contacts
+;;
+
+let matches_filter ?(default = false) pool experiment_id filter contact =
+  let open Utils.Lwt_result.Infix in
+  let query = filter |> CCOption.map (fun f -> f.Filter.query) in
+  let find_sql where_fragment =
+    Format.asprintf
+      {sql|
+        SELECT 1
+        FROM pool_contacts
+          LEFT JOIN user_users
+          ON pool_contacts.user_uuid = user_users.uuid
+        WHERE
+        %s
+        AND pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', ''))
+      |sql}
+      where_fragment
+  in
+  let%lwt template_list =
+    match query with
+    | None -> Lwt.return []
+    | Some query -> Filter.find_templates_of_query pool query
+  in
+  filtered_params template_list experiment_id query
+  |> CCResult.map_err (fun err ->
+       let () =
+         Logs.info (fun m ->
+           m
+             "%s\n%s"
+             ([%show: Entity.t] contact)
+             ([%show: Pool_common.Id.t] experiment_id))
+       in
+       Pool_common.Utils.with_log_error ~level:Logs.Warning err)
+  |> CCResult.get_or
+       ~default:(Dynparam.empty, if default then "TRUE" else "FALSE")
+  |> fun (dyn, sql) ->
+  let dyn =
+    Dynparam.(dyn |> add Caqti_type.string contact.Entity.user.Sihl_user.id)
+  in
+  let (Dynparam.Pack (pt, pv)) = dyn in
+  let open Caqti_request.Infix in
+  let request = sql |> find_sql |> pt ->? Caqti_type.int in
+  let%lwt contacts =
+    Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
+    ||> CCOption.map_or ~default (CCInt.equal 1)
+  in
+  Lwt.return contacts
 ;;
 
 let count_filtered pool experiment_id query =
@@ -359,7 +412,9 @@ let count_filtered pool experiment_id query =
   >>= fun (dyn, sql) ->
   let (Dynparam.Pack (pt, pv)) = dyn in
   let open Caqti_request.Infix in
-  let request = sql |> count_filtered_request_sql |> pt ->! Caqti_type.int in
+  let request =
+    sql |> where_prefix |> count_filtered_request_sql |> pt ->! Caqti_type.int
+  in
   let%lwt count =
     Utils.Database.find_opt (pool |> Pool_database.Label.value) request pv
   in

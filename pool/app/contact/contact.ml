@@ -8,6 +8,7 @@ let count_filtered = Repo.count_filtered
 let find_by_email = Repo.find_by_email
 let find_all = Repo.find_all
 let find_to_trigger_profile_update = Repo.find_to_trigger_profile_update
+let matches_filter = Repo.matches_filter
 
 let find_by_user pool (user : Sihl_user.t) =
   user.Sihl_user.id |> Pool_common.Id.of_string |> Repo.find pool

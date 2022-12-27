@@ -151,7 +151,7 @@ let description_value (m : t) = Description.value m.description
 
 module Public = struct
   type t =
-    { id : Pool_common.Id.t
+    { id : Id.t
     ; public_title : PublicTitle.t
     ; description : Description.t
     ; direct_registration_disabled : DirectRegistrationDisabled.t
@@ -159,6 +159,24 @@ module Public = struct
     }
   [@@deriving eq, show]
 end
+
+let to_public
+  { id
+  ; public_title
+  ; description
+  ; direct_registration_disabled
+  ; experiment_type
+  ; _
+  }
+  =
+  Public.
+    { id
+    ; public_title
+    ; description
+    ; direct_registration_disabled
+    ; experiment_type
+    }
+;;
 
 let session_reminder_subject_value m =
   m.session_reminder_subject |> CCOption.map Pool_common.Reminder.Subject.value
