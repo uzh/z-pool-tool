@@ -227,5 +227,8 @@ end = struct
           ]
   ;;
 
-  let effects = [ `Create, `TargetEntity `Assignment ]
+  let effects =
+    (* TODO: make sure effects are "AND" and not "OR" *)
+    [ `Update, `TargetEntity `WaitingList; `Create, `TargetEntity `Assignment ]
+  ;;
 end
