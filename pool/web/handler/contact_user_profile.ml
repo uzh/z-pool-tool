@@ -205,8 +205,11 @@ let completion_post req =
             "/dashboard"
             [ Message.set
                 ~success:[ Pool_common.Message.(Updated Field.Profile) ]
-            ; Sihl.Web.Session.set [ Contact.profile_completion_cookie, "" ]
             ])
+        ||> Sihl.Web.Session.set_value
+              ~key:Contact.profile_completion_cookie
+              ""
+              req
       | false ->
         Http_utils.(
           redirect_to_with_actions
