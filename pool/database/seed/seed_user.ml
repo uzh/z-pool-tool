@@ -128,13 +128,11 @@ let contacts db_pool =
   let ctx = Pool_tenant.to_ctx db_pool in
   let combinations =
     let open CCList in
-    let channels = Contact.RecruitmentChannel.all in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
     let terms_accepted_at = [ Some (Ptime_clock.now ()); None ] in
     let booleans = [ true; false ] in
-    (fun a b c d e f -> a, b, c, d, e, f)
-    <$> channels
-    <*> languages
+    (fun a b c d e -> a, b, c, d, e)
+    <$> languages
     <*> terms_accepted_at
     <*> booleans
     <*> booleans
@@ -154,7 +152,7 @@ let contacts db_pool =
   let users =
     persons
     |> CCList.mapi (fun idx person ->
-         let channel, language, terms_accepted_at, paused, disabled, verified =
+         let language, terms_accepted_at, paused, disabled, verified =
            CCList.get_at_idx_exn
              (idx mod CCList.length combinations)
              combinations
@@ -164,7 +162,6 @@ let contacts db_pool =
          , person.last_name |> User.Lastname.of_string
          , person.email |> User.EmailAddress.of_string
          , language
-         , channel
          , terms_accepted_at |> CCOption.map User.TermsAccepted.create
          , paused
          , disabled
@@ -185,7 +182,6 @@ let contacts db_pool =
            , lastname
            , email
            , language
-           , recruitment_channel
            , terms_accepted_at
            , _
            , _
@@ -203,7 +199,6 @@ let contacts db_pool =
               ; password
               ; firstname
               ; lastname
-              ; recruitment_channel = Some recruitment_channel
               ; terms_accepted_at
               ; language
               }
@@ -222,7 +217,7 @@ let contacts db_pool =
   in
   let open Utils.Lwt_result.Infix in
   Lwt_list.fold_left_s
-    (fun contacts (user_id, _, _, _, _, _, _, paused, disabled, verified) ->
+    (fun contacts (user_id, _, _, _, _, _, paused, disabled, verified) ->
       let%lwt contact = Contact.find db_pool user_id in
       let%lwt custom_fields =
         let open Custom_field in

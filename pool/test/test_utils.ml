@@ -124,7 +124,6 @@ module Model = struct
             ; created_at = Pool_common.CreatedAt.create ()
             ; updated_at = Pool_common.UpdatedAt.create ()
             }
-      ; recruitment_channel = Some RecruitmentChannel.Friend
       ; terms_accepted_at =
           (if with_terms_accepted
           then Pool_user.TermsAccepted.create_now () |> CCOption.pure
@@ -425,7 +424,6 @@ module Repo = struct
                 |> get_or_failwith_pool_error
             ; firstname = Contact.firstname contact
             ; lastname = Contact.lastname contact
-            ; recruitment_channel = contact.recruitment_channel
             ; terms_accepted_at = None
             ; language = contact.language
             })

@@ -9,7 +9,6 @@ type create =
   ; password : User.Password.t
   ; firstname : User.Firstname.t
   ; lastname : User.Lastname.t
-  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }
@@ -78,7 +77,6 @@ let handle_event pool : event -> unit Lwt.t =
     in
     let contact =
       { user
-      ; recruitment_channel = contact.recruitment_channel
       ; terms_accepted_at = contact.terms_accepted_at
       ; language = contact.language
       ; experiment_type_preference = None

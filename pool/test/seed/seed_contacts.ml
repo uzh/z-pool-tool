@@ -17,13 +17,12 @@ let create_contact i =
     |> get
   in
   let lang = Pool_common.Language.En |> CCOption.pure in
-  let recruitment_channel = Contact.RecruitmentChannel.Friend in
   let terms_accepted_at = TermsAccepted.create_now () |> CCOption.pure in
-  id, first_name, last_name, email, lang, recruitment_channel, terms_accepted_at
+  id, first_name, last_name, email, lang, terms_accepted_at
 ;;
 
 let data = defafult_range |> CCList.map create_contact
-let contact_ids = CCList.map (fun (id, _, _, _, _, _, _) -> id) data
+let contact_ids = CCList.map (fun (id, _, _, _, _, _) -> id) data
 
 let create ?contact_data db_pool =
   let data = CCOption.value ~default:data contact_data in
@@ -40,13 +39,7 @@ let create ?contact_data db_pool =
   let%lwt () =
     Lwt_list.fold_left_s
       (fun contacts
-           ( user_id
-           , firstname
-           , lastname
-           , email
-           , language
-           , recruitment_channel
-           , terms_accepted_at ) ->
+           (user_id, firstname, lastname, email, language, terms_accepted_at) ->
         let%lwt user =
           Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
         in
@@ -60,7 +53,6 @@ let create ?contact_data db_pool =
               ; password
               ; firstname
               ; lastname
-              ; recruitment_channel = Some recruitment_channel
               ; terms_accepted_at
               ; language
               }
@@ -78,7 +70,7 @@ let create ?contact_data db_pool =
     >|> Lwt_list.iter_s (Contact.handle_event db_pool)
   in
   Lwt_list.map_s
-    (fun (id, _, _, _, _, _, _) ->
+    (fun (id, _, _, _, _, _) ->
       let%lwt contact = Contact.find db_pool id in
       match contact with
       | Ok contact ->

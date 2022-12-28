@@ -22,7 +22,6 @@ let select_fields =
       user_users.confirmed,
       user_users.created_at,
       user_users.updated_at,
-      pool_contacts.recruitment_channel,
       pool_contacts.terms_accepted_at,
       pool_contacts.language,
       pool_contacts.experiment_type_preference,
@@ -370,9 +369,9 @@ let count_filtered pool experiment_id query =
 let find_multiple_request ids =
   Format.asprintf
     {sql|
-    WHERE user_uuid IN ( %s )
-    AND user_users.admin = 0
-   |sql}
+      WHERE user_uuid IN ( %s )
+      AND user_users.admin = 0
+    |sql}
     (CCList.mapi
        (fun i _ -> Format.asprintf "UNHEX(REPLACE($%n, '-', ''))" (i + 1))
        ids
@@ -408,7 +407,6 @@ let insert_request =
   {sql|
       INSERT INTO pool_contacts (
         user_uuid,
-        recruitment_channel,
         terms_accepted_at,
         language,
         experiment_type_preference,
@@ -446,8 +444,7 @@ let insert_request =
         $16,
         $17,
         $18,
-        $19,
-        $20
+        $19
       )
     |sql}
   |> Repo_model.contact ->. Caqti_type.unit
@@ -461,23 +458,22 @@ let update_request =
       UPDATE
         pool_contacts
       SET
-        recruitment_channel = $2,
-        terms_accepted_at = $3,
-        language = $4,
-        experiment_type_preference = $5,
-        paused = $6,
-        disabled = $7,
-        verified = $8,
-        email_verified = $9,
-        num_invitations = $10,
-        num_assignments = $11,
-        num_show_ups = $12,
-        num_participations = $13,
-        firstname_version = $14,
-        lastname_version = $15,
-        paused_version = $16,
-        language_version = $17,
-        experiment_type_preference_version = $18
+        terms_accepted_at = $2,
+        language = $3,
+        experiment_type_preference = $4,
+        paused = $5,
+        disabled = $6,
+        verified = $7,
+        email_verified = $8,
+        num_invitations = $9,
+        num_assignments = $10,
+        num_show_ups = $11,
+        num_participations = $12,
+        firstname_version = $13,
+        lastname_version = $14,
+        paused_version = $15,
+        language_version = $16,
+        experiment_type_preference_version = $17
       WHERE
         user_uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

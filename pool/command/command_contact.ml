@@ -3,7 +3,7 @@ let get_or_failwith = Pool_common.Utils.get_or_failwith
 let sign_up =
   let help =
     {|<database_label> <email> <password> <firstname> <lastname>
-      <recruitment_channel> <language> <terms_accepted>
+      <language> <terms_accepted>
 
 Provide all fields to sign up a new contact:
         <database_label>      : string
@@ -11,7 +11,6 @@ Provide all fields to sign up a new contact:
         <password>            : string
         <firstname>           : string
         <lastname>            : string
-        <recruitment_channel> : string of 'friend', 'online', 'lecture', 'mailing'
         <language>            : string of 'DE', 'EN'
         <terms_accepted>      : string 'accept' everything else is treated as declined
 
@@ -31,7 +30,6 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
       ; password
       ; firstname
       ; lastname
-      ; recruitment_channel
       ; language
       ; terms_accepted
       ]
@@ -48,7 +46,6 @@ Example: contact.signup econ-uzh example@mail.com securePassword Max Muster onli
         ; "password", [ password ]
         ; "firstname", [ firstname ]
         ; "lastname", [ lastname ]
-        ; "recruitment_channel", [ recruitment_channel ]
         ]
         |> decode
         >>= handle tenant language

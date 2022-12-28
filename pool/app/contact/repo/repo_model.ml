@@ -1,18 +1,5 @@
 open Entity
 
-module RecruitmentChannel = struct
-  include RecruitmentChannel
-
-  let t =
-    let open CCResult in
-    Caqti_type.(
-      custom
-        ~encode:(fun m -> m |> yojson_of_t |> Yojson.Safe.to_string |> pure)
-        ~decode:(fun m -> m |> Yojson.Safe.from_string |> t_of_yojson |> pure)
-        string)
-  ;;
-end
-
 module NumberOfInvitations = struct
   include NumberOfInvitations
 
@@ -42,53 +29,50 @@ let t =
     let open Pool_user in
     Ok
       ( m.user
-      , ( m.recruitment_channel
-        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
-          , ( m.language
-            , ( m.experiment_type_preference
-              , ( Paused.value m.paused
-                , ( Disabled.value m.disabled
-                  , ( CCOption.map Verified.value m.verified
-                    , ( CCOption.map EmailVerified.value m.email_verified
-                      , ( NumberOfInvitations.value m.num_invitations
-                        , ( NumberOfAssignments.value m.num_assignments
-                          , ( NumberOfShowUps.value m.num_show_ups
-                            , ( NumberOfParticipations.value m.num_participations
-                              , ( m.firstname_version
-                                , ( m.lastname_version
-                                  , ( m.paused_version
-                                    , ( m.language_version
-                                      , ( m.experiment_type_preference_version
-                                        , (m.created_at, m.updated_at) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+      , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+        , ( m.language
+          , ( m.experiment_type_preference
+            , ( Paused.value m.paused
+              , ( Disabled.value m.disabled
+                , ( CCOption.map Verified.value m.verified
+                  , ( CCOption.map EmailVerified.value m.email_verified
+                    , ( NumberOfInvitations.value m.num_invitations
+                      , ( NumberOfAssignments.value m.num_assignments
+                        , ( NumberOfShowUps.value m.num_show_ups
+                          , ( NumberOfParticipations.value m.num_participations
+                            , ( m.firstname_version
+                              , ( m.lastname_version
+                                , ( m.paused_version
+                                  , ( m.language_version
+                                    , ( m.experiment_type_preference_version
+                                      , (m.created_at, m.updated_at) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode
     ( user
-    , ( recruitment_channel
-      , ( terms_accepted_at
-        , ( language
-          , ( experiment_type_preference
-            , ( paused
-              , ( disabled
-                , ( verified
-                  , ( email_verified
-                    , ( num_invitations
-                      , ( num_assignments
-                        , ( num_show_ups
-                          , ( num_participations
-                            , ( firstname_version
-                              , ( lastname_version
-                                , ( paused_version
-                                  , ( language_version
-                                    , ( experiment_type_preference_version
-                                      , (created_at, updated_at) ) ) ) ) ) ) )
-                        ) ) ) ) ) ) ) ) ) ) )
+    , ( terms_accepted_at
+      , ( language
+        , ( experiment_type_preference
+          , ( paused
+            , ( disabled
+              , ( verified
+                , ( email_verified
+                  , ( num_invitations
+                    , ( num_assignments
+                      , ( num_show_ups
+                        , ( num_participations
+                          , ( firstname_version
+                            , ( lastname_version
+                              , ( paused_version
+                                , ( language_version
+                                  , ( experiment_type_preference_version
+                                    , (created_at, updated_at) ) ) ) ) ) ) ) )
+                    ) ) ) ) ) ) ) ) )
     =
     let open Pool_user in
     let open CCResult in
     Ok
       { user
-      ; recruitment_channel
       ; terms_accepted_at = CCOption.map TermsAccepted.create terms_accepted_at
       ; language
       ; experiment_type_preference
@@ -118,29 +102,29 @@ let t =
       (tup2
          Pool_user.Repo.user_caqti
          (tup2
-            (option RecruitmentChannel.t)
+            (option TermsAccepted.t)
             (tup2
-               (option TermsAccepted.t)
+               (option Language.t)
                (tup2
-                  (option Language.t)
+                  (option Pool_common.Repo.ExperimentType.t)
                   (tup2
-                     (option Pool_common.Repo.ExperimentType.t)
+                     Paused.t
                      (tup2
-                        Paused.t
+                        Disabled.t
                         (tup2
-                           Disabled.t
+                           (option Verified.t)
                            (tup2
-                              (option Verified.t)
+                              (option EmailVerified.t)
                               (tup2
-                                 (option EmailVerified.t)
+                                 NumberOfInvitations.t
                                  (tup2
-                                    NumberOfInvitations.t
+                                    NumberOfAssignments.t
                                     (tup2
-                                       NumberOfAssignments.t
+                                       NumberOfShowUps.t
                                        (tup2
-                                          NumberOfShowUps.t
+                                          NumberOfParticipations.t
                                           (tup2
-                                             NumberOfParticipations.t
+                                             Pool_common.Repo.Version.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
                                                 (tup2
@@ -152,12 +136,8 @@ let t =
                                                          .Version
                                                          .t
                                                          (tup2
-                                                            Pool_common.Repo
-                                                            .Version
-                                                            .t
-                                                            (tup2
-                                                               CreatedAt.t
-                                                               UpdatedAt.t))))))))))))))))))))
+                                                            CreatedAt.t
+                                                            UpdatedAt.t)))))))))))))))))))
 ;;
 
 let contact =
@@ -165,25 +145,24 @@ let contact =
     let open Pool_user in
     Ok
       ( m.user.Sihl_user.id
-      , ( m.recruitment_channel
-        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
-          , ( m.language
-            , ( m.experiment_type_preference
-              , ( Paused.value m.paused
-                , ( Disabled.value m.disabled
-                  , ( CCOption.map Verified.value m.verified
-                    , ( CCOption.map EmailVerified.value m.email_verified
-                      , ( NumberOfInvitations.value m.num_invitations
-                        , ( NumberOfAssignments.value m.num_assignments
-                          , ( NumberOfShowUps.value m.num_show_ups
-                            , ( NumberOfParticipations.value m.num_participations
-                              , ( m.firstname_version
-                                , ( m.lastname_version
-                                  , ( m.paused_version
-                                    , ( m.language_version
-                                      , ( m.experiment_type_preference_version
-                                        , (m.created_at, m.updated_at) ) ) ) )
-                                ) ) ) ) ) ) ) ) ) ) ) ) ) )
+      , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+        , ( m.language
+          , ( m.experiment_type_preference
+            , ( Paused.value m.paused
+              , ( Disabled.value m.disabled
+                , ( CCOption.map Verified.value m.verified
+                  , ( CCOption.map EmailVerified.value m.email_verified
+                    , ( NumberOfInvitations.value m.num_invitations
+                      , ( NumberOfAssignments.value m.num_assignments
+                        , ( NumberOfShowUps.value m.num_show_ups
+                          , ( NumberOfParticipations.value m.num_participations
+                            , ( m.firstname_version
+                              , ( m.lastname_version
+                                , ( m.paused_version
+                                  , ( m.language_version
+                                    , ( m.experiment_type_preference_version
+                                      , (m.created_at, m.updated_at) ) ) ) ) )
+                            ) ) ) ) ) ) ) ) ) ) ) )
   in
   let decode _ =
     failwith
@@ -198,29 +177,29 @@ let contact =
       (tup2
          string
          (tup2
-            (option RecruitmentChannel.t)
+            (option TermsAccepted.t)
             (tup2
-               (option TermsAccepted.t)
+               (option Language.t)
                (tup2
-                  (option Language.t)
+                  (option Pool_common.Repo.ExperimentType.t)
                   (tup2
-                     (option Pool_common.Repo.ExperimentType.t)
+                     Paused.t
                      (tup2
-                        Paused.t
+                        Disabled.t
                         (tup2
-                           Disabled.t
+                           (option Verified.t)
                            (tup2
-                              (option Verified.t)
+                              (option EmailVerified.t)
                               (tup2
-                                 (option EmailVerified.t)
+                                 NumberOfInvitations.t
                                  (tup2
-                                    NumberOfInvitations.t
+                                    NumberOfAssignments.t
                                     (tup2
                                        NumberOfAssignments.t
                                        (tup2
-                                          NumberOfAssignments.t
+                                          NumberOfShowUps.t
                                           (tup2
-                                             NumberOfShowUps.t
+                                             Pool_common.Repo.Version.t
                                              (tup2
                                                 Pool_common.Repo.Version.t
                                                 (tup2
@@ -232,12 +211,8 @@ let contact =
                                                          .Version
                                                          .t
                                                          (tup2
-                                                            Pool_common.Repo
-                                                            .Version
-                                                            .t
-                                                            (tup2
-                                                               CreatedAt.t
-                                                               UpdatedAt.t))))))))))))))))))))
+                                                            CreatedAt.t
+                                                            UpdatedAt.t)))))))))))))))))))
 ;;
 
 module Write = struct
@@ -248,25 +223,23 @@ module Write = struct
       let open Pool_user in
       Ok
         ( m.user_id
-        , ( m.recruitment_channel
-          , ( CCOption.map TermsAccepted.value m.terms_accepted_at
-            , ( m.language
-              , ( m.experiment_type_preference
-                , ( Paused.value m.paused
-                  , ( Disabled.value m.disabled
-                    , ( CCOption.map Verified.value m.verified
-                      , ( CCOption.map EmailVerified.value m.email_verified
-                        , ( NumberOfInvitations.value m.num_invitations
-                          , ( NumberOfAssignments.value m.num_assignments
-                            , ( NumberOfShowUps.value m.num_show_ups
-                              , ( NumberOfParticipations.value
-                                    m.num_participations
-                                , ( m.firstname_version
+        , ( CCOption.map TermsAccepted.value m.terms_accepted_at
+          , ( m.language
+            , ( m.experiment_type_preference
+              , ( Paused.value m.paused
+                , ( Disabled.value m.disabled
+                  , ( CCOption.map Verified.value m.verified
+                    , ( CCOption.map EmailVerified.value m.email_verified
+                      , ( NumberOfInvitations.value m.num_invitations
+                        , ( NumberOfAssignments.value m.num_assignments
+                          , ( NumberOfShowUps.value m.num_show_ups
+                            , ( NumberOfParticipations.value m.num_participations
+                              , ( m.firstname_version
+                                , ( m.lastname_version
                                   , ( m.lastname_version
-                                    , ( m.lastname_version
-                                      , ( m.paused_version
-                                        , m.experiment_type_preference_version
-                                        ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
+                                    , ( m.paused_version
+                                      , m.experiment_type_preference_version )
+                                    ) ) ) ) ) ) ) ) ) ) ) ) ) ) )
     in
     let decode _ =
       failwith
@@ -282,29 +255,29 @@ module Write = struct
         (tup2
            Id.t
            (tup2
-              (option RecruitmentChannel.t)
+              (option TermsAccepted.t)
               (tup2
-                 (option TermsAccepted.t)
+                 (option Language.t)
                  (tup2
-                    (option Language.t)
+                    (option Pool_common.Repo.ExperimentType.t)
                     (tup2
-                       (option Pool_common.Repo.ExperimentType.t)
+                       Paused.t
                        (tup2
-                          Paused.t
+                          Disabled.t
                           (tup2
-                             Disabled.t
+                             (option Verified.t)
                              (tup2
-                                (option Verified.t)
+                                (option EmailVerified.t)
                                 (tup2
-                                   (option EmailVerified.t)
+                                   NumberOfInvitations.t
                                    (tup2
-                                      NumberOfInvitations.t
+                                      NumberOfAssignments.t
                                       (tup2
                                          NumberOfAssignments.t
                                          (tup2
-                                            NumberOfAssignments.t
+                                            NumberOfShowUps.t
                                             (tup2
-                                               NumberOfShowUps.t
+                                               Pool_common.Repo.Version.t
                                                (tup2
                                                   Pool_common.Repo.Version.t
                                                   (tup2
@@ -312,13 +285,8 @@ module Write = struct
                                                      (tup2
                                                         Pool_common.Repo.Version
                                                         .t
-                                                        (tup2
-                                                           Pool_common.Repo
-                                                           .Version
-                                                           .t
-                                                           Pool_common.Repo
-                                                           .Version
-                                                           .t))))))))))))))))))
+                                                        Pool_common.Repo.Version
+                                                        .t)))))))))))))))))
   ;;
 end
 

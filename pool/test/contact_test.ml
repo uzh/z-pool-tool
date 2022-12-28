@@ -13,38 +13,22 @@ let check_result expected generated =
 ;;
 
 let contact_info email_address =
-  ( email_address
-  , "password"
-  , "Jane"
-  , "Doe"
-  , Contact.RecruitmentChannel.(Friend |> show)
-  , Some Language.En )
+  email_address, "password", "Jane", "Doe", Some Language.En
 ;;
 
 let tenant = Tenant_test.Data.full_tenant |> CCResult.get_exn
 
 let sign_up_contact contact_info =
-  let email_address, password, firstname, lastname, recruitment_channel, _ =
-    contact_info
-  in
+  let email_address, password, firstname, lastname, _ = contact_info in
   [ Field.(Email |> show), [ email_address ]
   ; Field.(Password |> show), [ password ]
   ; Field.(Firstname |> show), [ firstname ]
   ; Field.(Lastname |> show), [ lastname ]
-  ; Field.(RecruitmentChannel |> show), [ recruitment_channel ]
   ]
 ;;
 
 let create_contact verified contact_info =
-  let ( email_address
-      , password
-      , firstname
-      , lastname
-      , recruitment_channel
-      , language )
-    =
-    contact_info
-  in
+  let email_address, password, firstname, lastname, language = contact_info in
   { Contact.user =
       Sihl_user.
         { id = Pool_common.Id.(create () |> value)
@@ -61,8 +45,6 @@ let create_contact verified contact_info =
         ; created_at = Pool_common.CreatedAt.create ()
         ; updated_at = Pool_common.UpdatedAt.create ()
         }
-  ; recruitment_channel =
-      Contact.RecruitmentChannel.read recruitment_channel |> CCOption.pure
   ; terms_accepted_at = Pool_user.TermsAccepted.create_now () |> CCOption.pure
   ; language
   ; experiment_type_preference = None
@@ -117,12 +99,7 @@ let sign_up () =
   let terms_accepted_at =
     Pool_user.TermsAccepted.create_now () |> CCOption.pure
   in
-  let (( email_address
-       , password
-       , firstname
-       , lastname
-       , recruitment_channel
-       , language ) as contact_info)
+  let ((email_address, password, firstname, lastname, language) as contact_info)
     =
     contact_info "john@gmail.com"
   in
@@ -158,10 +135,6 @@ let sign_up () =
           |> Pool_common.Utils.get_or_failwith
       ; firstname
       ; lastname
-      ; recruitment_channel =
-          recruitment_channel
-          |> Contact.RecruitmentChannel.read
-          |> CCOption.pure
       ; terms_accepted_at
       ; language
       }
@@ -213,7 +186,7 @@ let update_language () =
 ;;
 
 let update_password () =
-  let ((_, password, _, _, _, language) as contact_info) =
+  let ((_, password, _, _, language) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
@@ -270,7 +243,7 @@ let update_password_wrong_current_password () =
 ;;
 
 let update_password_wrong_policy () =
-  let ((_, password, _, _, _, _) as contact_info) =
+  let ((_, password, _, _, _) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
@@ -290,7 +263,7 @@ let update_password_wrong_policy () =
 ;;
 
 let update_password_wrong_confirmation () =
-  let ((_, password, _, _, _, _) as contact_info) =
+  let ((_, password, _, _, _) as contact_info) =
     "john@gmail.com" |> contact_info
   in
   let contact = contact_info |> create_contact true in
