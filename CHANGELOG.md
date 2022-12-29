@@ -4,6 +4,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- pause sending invitations when no spots in sessions are available and add note on create mailing page
+
 ### Removed
 
 - Recruitment channel from contact module (add as custom field)

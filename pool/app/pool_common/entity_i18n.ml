@@ -23,6 +23,7 @@ type t =
   | LocationNoSessions
   | LoginTitle
   | MailingDetailTitle of Ptime.t
+  | MailingExperimentSessionFullyBooked
   | MailingNewTitle
   | NoEntries of Entity_message.Field.t
   | NotifyVia

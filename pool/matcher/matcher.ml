@@ -179,7 +179,25 @@ let match_invitations ?interval pools =
   in
   let%lwt pool_based_mailings =
     Lwt_list.map_s
-      (fun pool -> Mailing.find_current pool ||> fun m -> pool, m)
+      (fun pool ->
+        Mailing.find_current pool
+        >|> Lwt_list.filter_map_s (fun mailing ->
+              let find_experiment { Mailing.id; _ } =
+                Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
+              in
+              let is_fully_booked { Experiment.id; _ } =
+                Session.has_bookable_spots_for_experiments pool id
+              in
+              let validate = function
+                | false -> Ok mailing
+                | true -> Error Pool_common.Message.SessionFullyBooked
+              in
+              mailing
+              |> find_experiment
+              >>= is_fully_booked
+              >== validate
+              ||> CCResult.to_opt)
+        ||> fun m -> pool, m)
       pools
   in
   let create_events =
