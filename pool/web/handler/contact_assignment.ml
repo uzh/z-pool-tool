@@ -4,6 +4,7 @@ let create_layout = Contact_general.create_layout
 
 let create req =
   let open Utils.Lwt_result.Infix in
+  let tags = Logger.req req in
   let experiment_id, id =
     let open Pool_common.Message.Field in
     ( HttpUtils.find_id Experiment.Id.of_string Experiment req
@@ -19,6 +20,10 @@ let create req =
          Experiment.find_public database_label experiment_id contact
        in
        let* session = Session.find_public database_label id in
+       let* follow_ups =
+         Session.find_follow_ups database_label id
+         >|+ CCList.map Session.to_public
+       in
        let* waiting_list =
          Waiting_list.find_by_contact_and_experiment
            database_label
@@ -52,16 +57,22 @@ let create req =
            database_label
            experiment.Experiment.Public.id
            contact
-         ||> CCOption.is_some
+         ||> CCList.is_empty
+         ||> not
        in
-       let tags = Logger.req req in
        let events =
-         Cqrs_command.Assignment_command.Create.(
-           handle
-             { contact; session; waiting_list; experiment }
-             tenant
-             confirmation_email
-             already_enrolled)
+         let open Cqrs_command.Assignment_command.Create in
+         CCList.map
+           (fun (session, waiting_list) ->
+             handle
+               ~tags
+               { contact; session; waiting_list; experiment }
+               tenant
+               confirmation_email
+               already_enrolled)
+           ((session, waiting_list) :: CCList.map (fun m -> m, None) follow_ups)
+         |> CCResult.flatten_l
+         |> CCResult.map CCList.flatten
          |> Lwt_result.lift
        in
        let handle events =

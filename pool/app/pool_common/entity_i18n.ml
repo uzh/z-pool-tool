@@ -122,6 +122,7 @@ type hint =
   | SessionClose
   | SessionReminderLanguageHint
   | SessionRegistrationHint
+  | SessionRegistrationFollowUpHint
   | SignUpForWaitingList
   | TemplateTextElementsHint
   | TimeSpanPickerHint

@@ -130,7 +130,8 @@ let assign_contact req =
            database_label
            experiment_id
            waiting_list.Waiting_list.contact
-         ||> CCOption.is_some
+         ||> CCList.is_empty
+         ||> not
        in
        let* language =
          let* default = Settings.default_language database_label in

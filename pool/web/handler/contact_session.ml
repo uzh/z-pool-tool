@@ -24,12 +24,20 @@ let show req =
            experiment.Experiment.Public.id
            contact
          >|> function
-         | Some _ ->
+         | [] -> Lwt.return_ok ()
+         | _ ->
            Lwt.return_error Pool_common.Message.AlreadySignedUpForExperiment
-         | None -> Lwt.return_ok ()
        in
        let* session = Session.find_public database_label id in
-       Page.Contact.Experiment.Assignment.detail session experiment context
+       let* follow_ups =
+         Session.find_follow_ups database_label id
+         >|+ CCList.map Session.to_public
+       in
+       Page.Contact.Experiment.Assignment.detail
+         session
+         follow_ups
+         experiment
+         context
        |> Lwt.return_ok
        >>= create_layout req context
        >|+ Sihl.Web.Response.of_html

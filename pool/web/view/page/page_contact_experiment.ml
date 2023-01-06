@@ -65,6 +65,7 @@ let show
   Pool_context.{ language; csrf; _ }
   =
   let open Experiment.Public in
+  let open Pool_common in
   let form_action =
     Format.asprintf
       "/experiments/%s/waiting-list/"
@@ -75,29 +76,23 @@ let show
   in
   let form_control, submit_class =
     match user_is_enlisted with
-    | true -> Pool_common.Message.(RemoveFromWaitingList), "error"
-    | false -> Pool_common.Message.(AddToWaitingList), "primary"
+    | true -> Message.RemoveFromWaitingList, "error"
+    | false -> Message.AddToWaitingList, "primary"
   in
   let session_list sessions =
     if CCList.is_empty sessions
     then
       p
-        [ Pool_common.(
-            Utils.text_to_string
-              language
-              (I18n.EmtpyList Message.Field.Sessions))
+        [ Utils.text_to_string language (I18n.EmtpyList Message.Field.Sessions)
           |> txt
         ]
     else
       div
         [ h2
             ~a:[ a_class [ "heading-2" ] ]
-            [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions)
-            ]
+            [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
         ; p
-            [ txt
-                Pool_common.(
-                  Utils.hint_to_string language I18n.ExperimentSessionsPublic)
+            [ txt (Utils.hint_to_string language I18n.ExperimentSessionsPublic)
             ]
         ; div [ Session.public_overview sessions experiment language ]
         ]
@@ -107,23 +102,11 @@ let show
       ~a:[ a_class [ "stack" ] ]
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.ExperimentWaitingListTitle)
+          [ txt (Utils.text_to_string language I18n.ExperimentWaitingListTitle)
           ]
       ; (if user_is_enlisted
-        then
-          p
-            [ txt
-                Pool_common.(
-                  Utils.hint_to_string language I18n.ContactOnWaitingList)
-            ]
-        else
-          p
-            [ txt
-                Pool_common.(
-                  Utils.hint_to_string language I18n.SignUpForWaitingList)
-            ])
+        then p [ txt (Utils.hint_to_string language I18n.ContactOnWaitingList) ]
+        else p [ txt (Utils.hint_to_string language I18n.SignUpForWaitingList) ])
       ; form
           ~a:[ a_method `Post; a_action form_action ]
           [ csrf_element csrf ()
@@ -138,26 +121,24 @@ let show
           ]
       ]
   in
-  let enrolled_html session =
+  let enrolled_html sessions =
     div
-      [ p
-          [ txt
-              Pool_common.(
-                Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
-          ]
-      ; Page_contact_sessions.public_detail session language
-      ]
+      (p
+         [ txt
+             (Utils.text_to_string language I18n.ExperimentContactEnrolledNote)
+         ]
+      :: Page_contact_sessions.public_detail language sessions)
   in
   let html =
     match session_user_is_assigned with
-    | Some session -> enrolled_html session
-    | None ->
+    | [] ->
       (match
          Experiment.DirectRegistrationDisabled.value
            experiment.direct_registration_disabled
        with
        | false -> session_list sessions
        | true -> div [ waiting_list_form () ])
+    | sessions -> enrolled_html sessions
   in
   div
     ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]

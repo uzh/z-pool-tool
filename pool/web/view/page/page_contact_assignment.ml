@@ -1,43 +1,44 @@
 open Tyxml.Html
 open Component.Input
 
-let detail session experiment Pool_context.{ language; csrf; _ } =
+let detail session follow_ups experiment Pool_context.{ language; csrf; _ } =
+  let open Pool_common in
   let form_action =
     Format.asprintf
       "/experiments/%s/sessions/%s"
       (experiment.Experiment.Public.id |> Experiment.Id.value)
-      (session.Session.Public.id |> Pool_common.Id.value)
+      (session.Session.Public.id |> Id.value)
     |> Sihl.Web.externalize_path
   in
   div
     ~a:[ a_class [ "trim"; "narrow"; "safety-margin" ] ]
     [ h1
         ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(
-              Utils.text_to_string language I18n.SessionRegistrationTitle)
-        ]
+        [ txt (Utils.text_to_string language I18n.SessionRegistrationTitle) ]
     ; div
         ~a:[ a_class [ "stack" ] ]
-        [ Page_contact_sessions.public_detail session language
-        ; p
-            Pool_common.
-              [ Utils.hint_to_string language I18n.SessionRegistrationHint
+        (Page_contact_sessions.public_detail language (session :: follow_ups)
+        @ [ p
+              [ Utils.hint_to_string
+                  language
+                  (if CCList.is_empty follow_ups
+                  then I18n.SessionRegistrationHint
+                  else I18n.SessionRegistrationFollowUpHint)
                 |> txt
               ]
-        ; form
-            ~a:[ a_action form_action; a_method `Post ]
-            [ csrf_element csrf ()
-            ; div
-                ~a:[ a_class [ "flexrow" ] ]
-                [ submit_element
-                    ~classnames:[ "push" ]
-                    language
-                    Pool_common.Message.Register
-                    ~submit_type:`Primary
-                    ()
-                ]
-            ]
-        ]
+          ; form
+              ~a:[ a_action form_action; a_method `Post ]
+              [ csrf_element csrf ()
+              ; div
+                  ~a:[ a_class [ "flexrow" ] ]
+                  [ submit_element
+                      ~classnames:[ "push" ]
+                      language
+                      Message.Register
+                      ~submit_type:`Primary
+                      ()
+                  ]
+              ]
+          ])
     ]
 ;;

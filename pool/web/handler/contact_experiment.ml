@@ -29,34 +29,25 @@ let show req =
       HttpUtils.find_id Experiment.Id.of_string Experiment req
     in
     let* contact = Pool_context.find_contact context |> Lwt_result.lift in
-    let* experiment = Experiment.find_public database_label id contact in
-    let* sessions =
-      Session.find_all_public_for_experiment
-        database_label
-        contact
-        experiment.Experiment.Public.id
+    let* ({ Experiment.Public.id; _ } as experiment) =
+      Experiment.find_public database_label id contact
+    in
+    let* grouped_sessions =
+      Session.find_all_public_for_experiment database_label contact id
+      >|+ Session.Public.group_and_sort
     in
     let* session_user_is_assigned =
-      let%lwt existing_assignment =
-        Assignment.find_by_experiment_and_contact_opt
-          database_label
-          experiment.Experiment.Public.id
-          contact
-      in
-      match existing_assignment with
-      | None -> Lwt.return_ok None
-      | Some assignment ->
-        Session.find_public_by_assignment
-          database_label
-          assignment.Assignment.Public.id
-        |> Lwt_result.map (fun session -> Some session)
+      Assignment.find_by_experiment_and_contact_opt database_label id contact
+      >|> Lwt_list.map_s (fun { Assignment.Public.id; _ } ->
+            Session.find_public_by_assignment database_label id)
+      ||> CCResult.flatten_l
     in
     let%lwt user_is_on_waiting_list =
       Waiting_list.user_is_enlisted database_label contact experiment
     in
     Page.Contact.Experiment.show
       experiment
-      sessions
+      grouped_sessions
       session_user_is_assigned
       user_is_on_waiting_list
       context

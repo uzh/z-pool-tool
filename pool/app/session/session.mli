@@ -134,8 +134,10 @@ module Public : sig
   val pp : Format.formatter -> t -> unit
   val show : t -> string
   val is_fully_booked : t -> bool
+  val group_and_sort : t list -> (t * t list) list
 end
 
+val to_public : t -> Public.t
 val group_and_sort : t list -> (t * t list) list
 val is_cancellable : t -> (unit, Pool_common.Message.error) result
 val is_closable : t -> (unit, Pool_common.Message.error) result

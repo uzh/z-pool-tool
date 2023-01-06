@@ -15,7 +15,7 @@ let to_string = function
       "Es sind keine %s vorhanden."
       (Locales_de.field_to_string field)
   | ExperimentContactEnrolledNote ->
-    "Sie sind an der folgenden Session angemeldet:"
+    "Sie sind an der/den folgenden Session(s) angemeldet:"
   | Files -> "Dateien"
   | FilterNrOfContacts ->
     "Anzahl der Kontakte, die den Kriterien dieses Filters entsprechen:"
@@ -60,6 +60,7 @@ let to_string = function
   | SentInvitations -> "Versendete Einladungen"
   | SessionDetailTitle start ->
     Format.asprintf "Session am %s" (Utils_time.formatted_date_time start)
+  | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionReminderDefaultLeadTime leadtime ->
     Format.asprintf
       "Die Standardvorlaufzeit dieses Experiments ist: %s"
@@ -73,7 +74,6 @@ let to_string = function
       "Der Standarderinnerungsbetreff dieses Experiments ist:\n %s"
       text
   | SessionReminder -> "Sessionerinnerung"
-  | SessionIndent -> "Einrückungen groupieren Folgesessions."
   | SessionRegistrationTitle -> "Für diese Session anmelden"
   | SignUpAcceptTermsAndConditions -> "Ich akzeptiere die Nutzungsbedingungen."
   | SignUpCTA -> "Jetzt anmelden und an Experimenten teilnehmen."
@@ -221,6 +221,9 @@ let hint_to_string = function
      Sprache hier."
   | SessionRegistrationHint ->
     "Die Registrierung für eine Session ist verbindlich."
+  | SessionRegistrationFollowUpHint ->
+    "Die Registrierung für eine Session inlk. allen Folgesessions ist \
+     verbindlich."
   | SelectedDateIsPast -> "Das gewählte Datum liegt in der Vergangenheit."
   | SignUpForWaitingList ->
     "Das Rekrutierungsteam wird sich mit Ihnen in Verbindung setzen, um Ihnen \
