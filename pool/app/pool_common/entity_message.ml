@@ -278,6 +278,7 @@ type error =
   | SessionFullyBooked
   | SessionHasAssignments
   | SessionInvalid
+  | SessionRegistrationViaParent
   | SessionTenantNotFound
   | ReadOnlyModel
   | ReminderSubjectAndTextRequired

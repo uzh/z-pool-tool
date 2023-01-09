@@ -347,7 +347,12 @@ let rec error_to_string = function
       (field_to_string f2)
   | ReadOnlyModel -> "Model ausschliesslich um von der Datenbank zu lesen!"
   | RegistrationDisabled -> "Registrierung ist deaktiviert."
+  | ReminderSubjectAndTextRequired ->
+    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
+     Erinnerung an."
   | RequestRequiredFields -> "Bitte alle notwendigen Felder ausfüllen."
+  | RequiredFieldsMissing ->
+    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
   | Retrieve field ->
     field_message "" (field_to_string field) "konnte nicht gefunden werden."
   | SessionHasAssignments ->
@@ -355,11 +360,7 @@ let rec error_to_string = function
      gelöscht werden."
   | SessionFullyBooked -> "Session ist ausgebucht"
   | SessionInvalid -> "Ungültige Session, bitte erneut einloggen."
-  | ReminderSubjectAndTextRequired ->
-    "Bitte geben Sie sowohl den Betreff als auch den Text für die Session \
-     Erinnerung an."
-  | RequiredFieldsMissing ->
-    "Bitte beantworten Sie die folgenden Fragen um fortzufahren."
+  | SessionRegistrationViaParent -> "Einschreibung via Hauptsession."
   | SessionTenantNotFound ->
     "Auf unserer Seite ist etwas schief gegangen, bitte später nochmals  \
      versuchen. Falls der Fehler mehrmals auftritt, bitte den Adminstrator  \

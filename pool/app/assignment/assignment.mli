@@ -56,7 +56,7 @@ val find_by_experiment_and_contact_opt
   :  Pool_database.Label.t
   -> Experiment.Id.t
   -> Contact.t
-  -> Public.t option Lwt.t
+  -> Public.t list Lwt.t
 
 val find_by_session
   :  Pool_database.Label.t

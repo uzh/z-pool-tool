@@ -31,6 +31,7 @@ module Start = struct
 
   let create m = m
   let value m = m
+  let compare = Ptime.compare
 
   let schema () =
     let decode str =
@@ -181,6 +182,34 @@ let session_date_to_human (session : t) =
   session.start |> Start.value |> Pool_common.Utils.Time.formatted_date_time
 ;;
 
+let compare_start s1 s2 = Start.compare s1.start s2.start
+
+let add_follow_ups_to_parents groups (parent, session) =
+  CCList.Assoc.update
+    ~eq:Pool_common.Id.equal
+    ~f:(fun s ->
+      match s with
+      | None -> None
+      | Some (parent, ls) -> Some (parent, ls @ [ session ]))
+    parent
+    groups
+;;
+
+(* Group follow ups into main sessions and sort by start date *)
+let group_and_sort sessions =
+  let parents, follow_ups =
+    sessions
+    |> CCList.partition_filter_map (fun session ->
+         match session.follow_up_to with
+         | None -> `Left (session.id, (session, []))
+         | Some parent -> `Right (parent, session))
+  in
+  follow_ups
+  |> CCList.fold_left add_follow_ups_to_parents parents
+  |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
+  |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+;;
+
 module Public = struct
   type t =
     { id : Pool_common.Id.t
@@ -200,37 +229,54 @@ module Public = struct
   let is_fully_booked (m : t) =
     m.assignment_count >= m.max_participants + m.overbook
   ;;
+
+  let compare_start (s1 : t) (s2 : t) = Start.compare s1.start s2.start
+
+  (* Group follow ups into main sessions and sort by start date *)
+  let group_and_sort sessions =
+    let parents, follow_ups =
+      sessions
+      |> CCList.partition_filter_map (fun (session : t) ->
+           match session.follow_up_to with
+           | None -> `Left (session.id, (session, []))
+           | Some parent -> `Right (parent, session))
+    in
+    follow_ups
+    |> CCList.fold_left add_follow_ups_to_parents parents
+    |> CCList.map (fun (_, (p, fs)) -> p, CCList.sort compare_start fs)
+    |> CCList.sort (fun (f1, _) (f2, _) -> compare_start f1 f2)
+  ;;
 end
 
-(* Group follow ups into main sessions and sort by start date *)
-let group_and_sort sessions =
-  let parents, follow_ups =
-    sessions
-    |> CCList.partition_filter_map (fun session ->
-         match session.follow_up_to with
-         | None -> `Left (session.id, (session, []))
-         | Some parent -> `Right (parent, session))
-  in
-  follow_ups
-  |> CCList.fold_left
-       (fun groups (parent, session) ->
-         CCList.Assoc.update
-           ~eq:Pool_common.Id.equal
-           ~f:(fun s ->
-             match s with
-             | None -> None
-             | Some (parent, ls) -> Some (parent, ls @ [ session ]))
-           parent
-           groups)
-       parents
-  |> CCList.map (fun (_, (p, fs)) ->
-       ( p
-       , CCList.sort
-           (fun (f1 : t) (f2 : t) ->
-             Ptime.compare (Start.value f1.start) (Start.value f2.start))
-           fs ))
-  |> CCList.sort (fun ((f1 : t), _) ((f2 : t), _) ->
-       Ptime.compare (Start.value f1.start) (Start.value f2.start))
+let to_public
+  ({ id
+   ; follow_up_to
+   ; start
+   ; duration
+   ; description
+   ; location
+   ; max_participants
+   ; min_participants
+   ; overbook
+   ; assignment_count
+   ; canceled_at
+   ; _
+   } :
+    t)
+  =
+  Public.
+    { id
+    ; follow_up_to
+    ; start
+    ; duration
+    ; description
+    ; location
+    ; max_participants
+    ; min_participants
+    ; overbook
+    ; assignment_count
+    ; canceled_at
+    }
 ;;
 
 let email_text language start duration location =

@@ -326,22 +326,23 @@ let rec error_to_string = function
       (field_to_string f2)
   | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
+  | ReminderSubjectAndTextRequired ->
+    "Please enter both a subject and a text for the session reminder."
   | RequestRequiredFields -> "Please provide necessary fields"
+  | RequiredFieldsMissing ->
+    "To continue, you need to answer the following questions."
   | Retrieve field -> field_message "Cannot retrieve" (field_to_string field) ""
   | SessionHasAssignments ->
     "There are already assignments for this session. It cannot be deleted."
   | SessionFullyBooked -> "Session is fully booked"
   | SessionInvalid -> "Invalid session, please login."
-  | ReminderSubjectAndTextRequired ->
-    "Please enter both a subject and a text for the session reminder."
-  | RequiredFieldsMissing ->
-    "To continue, you need to answer the following questions."
   | SessionAlreadyCanceled date ->
     CCFormat.asprintf "This session has already been canceled on %s." date
   | SessionAlreadyClosed date ->
     CCFormat.asprintf "This session has already been closed at %s." date
   | SessionInPast -> "This session has already finished."
   | SessionNotStarted -> "This session cannot be closed, yet."
+  | SessionRegistrationViaParent -> "Registration via main session."
   | SessionTenantNotFound ->
     "Something on our side went wrong, please try again later or on multi  \
      occurrences please contact the Administrator."

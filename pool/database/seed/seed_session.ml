@@ -101,9 +101,9 @@ let create pool =
                 |> CCOption.get_exn_or "Invalid time")
           ; duration = Duration.create halfhour |> get_or_failwith
           ; description = Some "MRI Study" >>= Description.create %> of_result
-          ; max_participants = ParticipantAmount.create 10 |> get_or_failwith
-          ; min_participants = ParticipantAmount.create 2 |> get_or_failwith
-          ; overbook = ParticipantAmount.create 3 |> get_or_failwith
+          ; max_participants = parent.max_participants
+          ; min_participants = parent.min_participants
+          ; overbook = parent.overbook
           ; reminder_lead_time = None
           ; reminder_subject = None
           ; reminder_text = None

@@ -13,24 +13,22 @@ let assignment pool =
           >|+ CCList.hd
           ||> CCResult.get_exn
         in
-        Lwt.return (session, experiment_invitations))
+        let%lwt follow_ups =
+          Session.find_follow_ups pool session.Session.id ||> CCResult.get_exn
+        in
+        Lwt.return (session, follow_ups, experiment_invitations))
       experiments
   in
   let events =
     CCList.flat_map
-      (fun (session, invitations) ->
-        let invitations =
-          CCList.take (CCList.length invitations / 2) invitations
-        in
-        CCList.flat_map
-          (fun (invitation : Invitation.t) ->
-            [ Assignment.Created
-                Assignment.
-                  { contact = invitation.Invitation.contact
-                  ; session_id = session.Session.id
-                  }
-            ])
-          invitations)
+      (fun (session, follow_ups, invitations) ->
+        invitations
+        |> CCList.take (CCList.length invitations / 2)
+        |> CCList.flat_map (fun ({ Invitation.contact; _ } : Invitation.t) ->
+             let assign { Session.id; _ } =
+               Assignment.Created { Assignment.contact; session_id = id }
+             in
+             assign session :: CCList.map assign follow_ups))
       session_invitations
   in
   let%lwt () = Lwt_list.iter_s (Assignment.handle_event pool) events in

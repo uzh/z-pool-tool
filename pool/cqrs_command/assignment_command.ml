@@ -47,7 +47,7 @@ end = struct
         | true -> Error Pool_common.Message.(DirectRegistrationIsDisabled)
         | false -> Ok ()
       in
-      let* _ =
+      let* () =
         Session.Public.is_fully_booked command.session
         |> function
         | true -> Error Pool_common.Message.(SessionFullyBooked)

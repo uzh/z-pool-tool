@@ -94,10 +94,22 @@ let list assignments experiment (Pool_context.{ language; _ } as context) =
   let html =
     CCList.map
       (fun (session, assignments) ->
+        let attrs, to_title =
+          if CCOption.is_some session.Session.follow_up_to
+          then
+            ( [ a_class [ "inset"; "left" ] ]
+            , fun session ->
+                Format.asprintf
+                  "%s (%s)"
+                  (session |> Session.session_date_to_human)
+                  (Pool_common.Utils.field_to_string
+                     language
+                     Field.FollowUpSession) )
+          else [], Session.session_date_to_human
+        in
         div
-          [ h3
-              ~a:[ a_class [ "heading-3" ] ]
-              [ txt (session |> Session.session_date_to_human) ]
+          ~a:attrs
+          [ h3 ~a:[ a_class [ "heading-3" ] ] [ txt (session |> to_title) ]
           ; Partials.overview_list
               context
               experiment.Experiment.id

@@ -131,11 +131,11 @@ module Sql = struct
         pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
     |sql}
     |> Format.asprintf "%s\n%s" select_public_sql
-    |> Caqti_type.(tup2 string string) ->! RepoEntity.Public.t
+    |> Caqti_type.(tup2 string string) ->* RepoEntity.Public.t
   ;;
 
   let find_by_experiment_and_contact_opt pool experiment_id contact =
-    Utils.Database.find_opt
+    Utils.Database.collect
       (Pool_database.Label.value pool)
       find_by_experiment_and_contact_opt_request
       ( Experiment.Id.value experiment_id

@@ -10,7 +10,8 @@ let to_string = function
     Format.asprintf
       "Currently, there are no %s available."
       (Locales_en.field_to_string field)
-  | ExperimentContactEnrolledNote -> "You signed up for the following session:"
+  | ExperimentContactEnrolledNote ->
+    "You signed up for the following session(s):"
   | ExperimentNewTitle -> "Create new experiment"
   | ExperimentListTitle -> "Experiments"
   | ExperimentListEmpty ->
@@ -57,6 +58,7 @@ let to_string = function
   | SentInvitations -> "Sent invitations"
   | SessionDetailTitle start ->
     Format.asprintf "Session at %s" (Utils_time.formatted_date_time start)
+  | SessionIndent -> "Indentations group follow-up sessions."
   | SessionReminderDefaultLeadTime leadtime ->
     Format.asprintf
       "The experiment default lead time is: %s"
@@ -66,7 +68,6 @@ let to_string = function
   | SessionReminderDefaultSubject text ->
     Format.asprintf "The experiment default subject is:\n\n %s" text
   | SessionReminder -> "Session reminder"
-  | SessionIndent -> "Indentations group follow-up sessions."
   | SessionRegistrationTitle -> "Register for this session"
   | SignUpAcceptTermsAndConditions -> "I accept the terms and conditions."
   | SignUpCTA -> "Register now to participate in economic experiments."
@@ -211,6 +212,8 @@ let hint_to_string = function
   | SessionReminderLanguageHint ->
     "If you provide a custom reminder text, select its language here."
   | SessionRegistrationHint -> "The registration for a session is binding."
+  | SessionRegistrationFollowUpHint ->
+    "The registration for a session incl. all follow up sessions is binding."
   | SignUpForWaitingList ->
     "The recruitment team will contact you, to assign you to a session, if \
      there is a free place."
