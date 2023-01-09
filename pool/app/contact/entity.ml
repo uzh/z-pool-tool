@@ -1,38 +1,5 @@
 module User = Pool_user
 
-module RecruitmentChannel = struct
-  let go m fmt _ = Format.pp_print_string fmt m
-
-  type t =
-    | Friend [@name "friend"] [@printer go "friend"]
-    | Online [@name "online"] [@printer go "online"]
-    | Lecture [@name "lecture"] [@printer go "lecture"]
-    | Mailing [@name "mailing"] [@printer go "mailing"]
-  (* @name: used by yojson as key *)
-  (* @printer: used by show as key/string (removing @printer would change to
-     Field as written -> Capital case) *)
-  [@@deriving eq, show { with_path = false }, enum, yojson]
-
-  let read m =
-    m |> Format.asprintf "[\"%s\"]" |> Yojson.Safe.from_string |> t_of_yojson
-  ;;
-
-  let all : t list =
-    CCList.range min max
-    |> CCList.map of_enum
-    |> CCList.all_some
-    |> CCOption.get_exn_or "I18n Keys: Could not create list of all keys!"
-  ;;
-
-  let schema () =
-    Pool_common.(
-      Utils.schema_decoder
-        (fun m -> m |> read |> CCResult.pure)
-        show
-        Message.Field.RecruitmentChannel)
-  ;;
-end
-
 module MessageChannel = struct
   type t =
     | Email
@@ -80,7 +47,6 @@ end
 
 type t =
   { user : Sihl_user.t
-  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : User.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -105,7 +71,6 @@ type t =
 module Write = struct
   type t =
     { user_id : Pool_common.Id.t
-    ; recruitment_channel : RecruitmentChannel.t option
     ; terms_accepted_at : User.TermsAccepted.t option
     ; language : Pool_common.Language.t option
     ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -127,7 +92,6 @@ module Write = struct
 
   let create m =
     { user_id = Pool_common.Id.of_string m.user.Sihl.Contract.User.id
-    ; recruitment_channel = m.recruitment_channel
     ; terms_accepted_at = m.terms_accepted_at
     ; language = m.language
     ; experiment_type_preference = m.experiment_type_preference

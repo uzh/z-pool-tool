@@ -114,7 +114,6 @@ let field_to_string =
   | RandomOrder -> "Wähle die Kontakte in zufälliger Reihenfolge."
   | Rate -> "Höchstrate"
   | Reason -> "Grund"
-  | RecruitmentChannel -> "Rekrutierungs Kanal"
   | RegistrationDisabled -> "Registrierung deaktiviert"
   | ReminderText -> "Erinnerungstext"
   | ReminderSubject -> "Erinnerungsbetreff"

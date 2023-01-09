@@ -145,8 +145,6 @@ module Field = struct
     | RandomOrder [@name "random_order"] [@printer go "random_order"]
     | Rate [@name "rate"] [@printer go "rate"]
     | Reason [@name "reason"] [@printer go "reason"]
-    | RecruitmentChannel [@name "recruitment_channel"]
-        [@printer go "recruitment_channel"]
     | RegistrationDisabled [@name "registration_disabled"]
         [@printer go "registration_disabled"]
     | ReminderText [@name "reminder_text"] [@printer go "reminder_text"]

@@ -12,7 +12,6 @@ module SignUp : sig
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Contact.RecruitmentChannel.t option
     }
 
   val handle
@@ -38,11 +37,10 @@ end = struct
     ; password : User.Password.t
     ; firstname : User.Firstname.t
     ; lastname : User.Lastname.t
-    ; recruitment_channel : Contact.RecruitmentChannel.t option
     }
 
-  let command email password firstname lastname recruitment_channel =
-    { email; password; firstname; lastname; recruitment_channel }
+  let command email password firstname lastname =
+    { email; password; firstname; lastname }
   ;;
 
   let schema =
@@ -53,7 +51,6 @@ end = struct
           ; User.Password.schema ()
           ; User.Firstname.schema ()
           ; User.Lastname.schema ()
-          ; Conformist.optional @@ Contact.RecruitmentChannel.schema ()
           ]
         command)
   ;;
@@ -79,7 +76,6 @@ end = struct
         ; password = command.password
         ; firstname = command.firstname
         ; lastname = command.lastname
-        ; recruitment_channel = command.recruitment_channel
         ; terms_accepted_at
         ; language = default_language
         }

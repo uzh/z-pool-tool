@@ -22,10 +22,10 @@ let add_field_versioning =
   Sihl.Database.Migration.create_step
     ~label:"add field versioning for participants"
     {sql|
-     ALTER TABLE pool_participants
-     ADD COLUMN firstname_version bigint(20) NOT NULL DEFAULT 0 AFTER verified,
-     ADD COLUMN lastname_version bigint(20) NOT NULL DEFAULT 0 AFTER firstname_version,
-     ADD COLUMN paused_version bigint(20) NOT NULL DEFAULT 0 AFTER lastname_version
+      ALTER TABLE pool_participants
+      ADD COLUMN firstname_version bigint(20) NOT NULL DEFAULT 0 AFTER verified,
+      ADD COLUMN lastname_version bigint(20) NOT NULL DEFAULT 0 AFTER firstname_version,
+      ADD COLUMN paused_version bigint(20) NOT NULL DEFAULT 0 AFTER lastname_version
     |sql}
 ;;
 
@@ -33,8 +33,8 @@ let add_user_language =
   Sihl.Database.Migration.create_step
     ~label:"add field versioning for participants"
     {sql|
-     ALTER TABLE pool_participants
-     ADD COLUMN language varchar(128) AFTER terms_accepted_at
+      ALTER TABLE pool_participants
+      ADD COLUMN language varchar(128) AFTER terms_accepted_at
     |sql}
 ;;
 
@@ -42,8 +42,8 @@ let add_user_language_version =
   Sihl.Database.Migration.create_step
     ~label:"add field versioning for participant language"
     {sql|
-     ALTER TABLE pool_participants
-     ADD COLUMN language_version bigint(20) NOT NULL DEFAULT 0 AFTER paused_version
+      ALTER TABLE pool_participants
+      ADD COLUMN language_version bigint(20) NOT NULL DEFAULT 0 AFTER paused_version
     |sql}
 ;;
 
@@ -52,10 +52,10 @@ let add_user_email_verified_counts =
     ~label:
       "add field for email verification, assignment inclusive show up count"
     {sql|
-     ALTER TABLE pool_participants
-     ADD COLUMN email_verified timestamp NULL AFTER verified,
-     ADD COLUMN num_invitations SMALLINT(3) UNSIGNED NOT NULL AFTER email_verified,
-     ADD COLUMN num_assignments SMALLINT(3) UNSIGNED NOT NULL AFTER num_invitations
+      ALTER TABLE pool_participants
+      ADD COLUMN email_verified timestamp NULL AFTER verified,
+      ADD COLUMN num_invitations SMALLINT(3) UNSIGNED NOT NULL AFTER email_verified,
+      ADD COLUMN num_assignments SMALLINT(3) UNSIGNED NOT NULL AFTER num_invitations
     |sql}
 ;;
 
@@ -81,9 +81,9 @@ let add_experiment_type_preference =
   Sihl.Database.Migration.create_step
     ~label:"add experiment_type_preference"
     {sql|
-     ALTER TABLE pool_contacts
-     ADD COLUMN experiment_type_preference varchar(128) DEFAULT NULL AFTER language,
-     ADD COLUMN experiment_type_preference_version bigint(20) NOT NULL DEFAULT 0 AFTER language_version
+      ALTER TABLE pool_contacts
+      ADD COLUMN experiment_type_preference varchar(128) DEFAULT NULL AFTER language,
+      ADD COLUMN experiment_type_preference_version bigint(20) NOT NULL DEFAULT 0 AFTER language_version
     |sql}
 ;;
 
@@ -101,8 +101,8 @@ let make_recruitment_channel_optional =
   Sihl.Database.Migration.create_step
     ~label:"make recruitment channel optional"
     {sql|
-     ALTER TABLE pool_contacts
-     MODIFY COLUMN recruitment_channel varchar(128) NULL
+      ALTER TABLE pool_contacts
+      MODIFY COLUMN recruitment_channel varchar(128) NULL
     |sql}
 ;;
 
@@ -110,11 +110,20 @@ let add_contact_participation_counts =
   Sihl.Database.Migration.create_step
     ~label:"add contact participation counts"
     {sql|
-     ALTER TABLE pool_contacts
-     ADD COLUMN num_show_ups INT UNSIGNED NOT NULL AFTER num_assignments,
-     ADD COLUMN num_participations INT UNSIGNED NOT NULL AFTER num_show_ups,
-     MODIFY COLUMN num_invitations INT UNSIGNED,
-     MODIFY COLUMN num_assignments INT UNSIGNED
+      ALTER TABLE pool_contacts
+      ADD COLUMN num_show_ups INT UNSIGNED NOT NULL AFTER num_assignments,
+      ADD COLUMN num_participations INT UNSIGNED NOT NULL AFTER num_show_ups,
+      MODIFY COLUMN num_invitations INT UNSIGNED,
+      MODIFY COLUMN num_assignments INT UNSIGNED
+    |sql}
+;;
+
+let remove_recruitment_channel =
+  Sihl.Database.Migration.create_step
+    ~label:"remove recruitment channel"
+    {sql|
+      ALTER TABLE pool_contacts
+      DROP COLUMN recruitment_channel
     |sql}
 ;;
 
@@ -131,5 +140,6 @@ let migration () =
     |> add_step add_experiment_type_preference
     |> add_step add_profile_update_triggered_timestamp
     |> add_step make_recruitment_channel_optional
-    |> add_step add_contact_participation_counts)
+    |> add_step add_contact_participation_counts
+    |> add_step remove_recruitment_channel)
 ;;

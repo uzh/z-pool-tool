@@ -13,19 +13,6 @@ let signup
     Http_utils.externalize_path_with_lang query_language "/signup"
   in
   let txt_to_string m = [ txt (Utils.text_to_string language m) ] in
-  let channel_select =
-    let open Contact.RecruitmentChannel in
-    let field = Message.Field.RecruitmentChannel in
-    let selected =
-      field
-      |> Message.Field.show
-      |> flash_fetcher
-      |> CCFun.flip CCOption.bind (fun field ->
-           try Some (read field) with
-           | _ -> None)
-    in
-    selector language field show all selected ~add_empty:true ~flash_fetcher ()
-  in
   let terms_accepted_name = Pool_common.Message.Field.(show TermsAccepted) in
   let modal_id = "terms-modal" in
   let open Component in
@@ -59,7 +46,6 @@ let signup
             Field.Password
             ~required:true
             ~value:""
-        ; channel_select
         ; div
             [ Settings.TermsAndConditions.Terms.value terms
               |> HttpUtils.add_line_breaks

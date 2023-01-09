@@ -1,22 +1,5 @@
 module Id = Pool_common.Id
 
-module RecruitmentChannel : sig
-  type t =
-    | Friend
-    | Online
-    | Lecture
-    | Mailing
-
-  val schema
-    :  unit
-    -> (Pool_common.Message.error, t) Pool_common.Utils.PoolConformist.Field.t
-
-  val show : t -> string
-  val equal : t -> t -> bool
-  val read : string -> t
-  val all : t list
-end
-
 module MessageChannel : sig
   type t =
     | Email
@@ -56,7 +39,6 @@ end
 
 type t =
   { user : Service.User.t
-  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   ; experiment_type_preference : Pool_common.ExperimentType.t option
@@ -158,7 +140,6 @@ type create =
   ; password : Pool_user.Password.t
   ; firstname : Pool_user.Firstname.t
   ; lastname : Pool_user.Lastname.t
-  ; recruitment_channel : RecruitmentChannel.t option
   ; terms_accepted_at : Pool_user.TermsAccepted.t option
   ; language : Pool_common.Language.t option
   }

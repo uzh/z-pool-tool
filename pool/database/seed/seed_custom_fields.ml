@@ -32,6 +32,13 @@ let create pool =
     |> CCList.map (fun value ->
          CCList.map (fun lang -> lang, value) system_languages)
   in
+  let recruitment_channel_options =
+    [ [ En, "Friend"; De, "Freund" ]
+    ; [ En, "Online"; De, "Online" ]
+    ; [ En, "Lecture"; De, "Vorlesung" ]
+    ; [ En, "Mailing"; De, "E-Mail" ]
+    ]
+  in
   let languge_level_options =
     [ [ En, "No knowledge"; De, "Keine Kenntnisse" ]
     ; [ En, "Beginner"; De, "Schlecht" ]
@@ -78,7 +85,16 @@ let create pool =
     ]
   in
   let data =
-    [ ( [ En, "Research interests"; De, "Forschungsinteressen" ]
+    [ ( [ En, "Recruitment Channel"; De, "Rekrutierungskanal" ]
+      , Model.Contact
+      , None
+      , []
+      , true
+      , false
+      , FieldType.Select
+      , recruitment_channel_options
+      , None )
+    ; ( [ En, "Research interests"; De, "Forschungsinteressen" ]
       , Model.Contact
       , None
       , []

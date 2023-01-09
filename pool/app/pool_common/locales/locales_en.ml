@@ -117,7 +117,6 @@ let field_to_string =
   | Reason -> "reason"
   | ReminderText -> "reminder text"
   | ReminderSubject -> "reminder subject"
-  | RecruitmentChannel -> "recruitment channel"
   | RegistrationDisabled -> "registration disabled"
   | ResentAt -> "resent at"
   | Required -> "required"
