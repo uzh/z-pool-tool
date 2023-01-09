@@ -63,7 +63,9 @@ end = struct
   ;;
 
   let effects id =
-    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value) ]
+    [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+    ; `Update, `TargetEntity `WaitingList
+    ]
   ;;
 end
 
@@ -85,7 +87,7 @@ end = struct
   ;;
 
   let effects id =
-    [ `Manage, `TargetEntity `WaitingList
+    [ `Delete, `TargetEntity `WaitingList
     ; `Delete, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
     ]
   ;;

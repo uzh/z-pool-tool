@@ -182,7 +182,11 @@ let assign_contact req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-module Access : Helpers.AccessSig = struct
+module Access : sig
+  include Helpers.AccessSig
+
+  val assign : Rock.Middleware.t
+end = struct
   module WaitingListCommand = Cqrs_command.Waiting_list_command
   module Field = Pool_common.Message.Field
 
@@ -220,5 +224,10 @@ module Access : Helpers.AccessSig = struct
     [ WaitingListCommand.Destroy.effects ]
     |> waiting_list_effects
     |> Middleware.Guardian.validate_generic
+  ;;
+
+  let assign =
+    Cqrs_command.Assignment_command.CreateFromWaitingList.effects
+    |> Middleware.Guardian.validate_admin_entity
   ;;
 end
