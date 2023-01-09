@@ -42,6 +42,10 @@ let to_string = function
   | LoginTitle -> "Login"
   | MailingDetailTitle start ->
     Format.asprintf "Versand vom %s" (Utils_time.formatted_date_time start)
+  | MailingExperimentSessionFullyBooked ->
+    "Alle Sessions sind ausgebucht. Es werden keine Einladungen versendet \
+     (unabhängig ob z.Z. Mailings aktiv sind).\n\n\
+     Füge zusätzliche Sessions zum Experiment hinzu."
   | MailingNewTitle -> "Neuen Versand erstellen"
   | RateTotalSent number ->
     Format.asprintf "Total generierter Einladungen: %d" number

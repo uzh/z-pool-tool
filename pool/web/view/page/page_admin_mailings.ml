@@ -151,7 +151,7 @@ module List = struct
         link_as_button
           ~style:`Success
           ~icon:`Add
-          ~control:(language, Message.(Add (Some Field.Mailing)))
+          ~control:(language, Message.Add (Some Field.Mailing))
           (mailings_path ~suffix:"create" experiment_id)
       in
       if with_link then base_head @ [ new_btn () ] else base_head
@@ -166,7 +166,7 @@ let index (Pool_context.{ language; _ } as context) experiment mailings =
   let open Pool_common in
   let html = List.create true context experiment_id mailings in
   Page_admin_experiments.experiment_layout
-    ~hint:Pool_common.I18n.ExperimentMailings
+    ~hint:I18n.ExperimentMailings
     language
     (Page_admin_experiments.NavLink I18n.Mailings)
     experiment
@@ -209,7 +209,7 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
       link_as_button
         ~icon:`Create
         ~classnames:[ "small" ]
-        ~control:(language, Message.(Edit (Some Field.Mailing)))
+        ~control:(language, Message.Edit (Some Field.Mailing))
         (detail_mailing_path ~suffix:"edit" experiment.Experiment.id mailing)
     else txt ""
   in
@@ -224,6 +224,7 @@ let detail Pool_context.{ language; _ } experiment (mailing : Mailing.t) =
 
 let form
   ?(mailing : Mailing.t option)
+  ?(fully_booked = false)
   Pool_context.{ language; csrf; _ }
   experiment
   flash_fetcher
@@ -251,7 +252,7 @@ let form
         distribution
     in
     let distribution_fncs =
-      let open Pool_common.Message.Field in
+      let open Field in
       Format.asprintf
         {js|
         function removeDistribution(e) {
@@ -320,10 +321,7 @@ let form
         all_sortable_fields
       |> fun options ->
       select
-        ~a:
-          [ a_id "distribution-select"
-          ; a_name Pool_common.Message.Field.(show DistributionField)
-          ]
+        ~a:[ a_id "distribution-select"; a_name Field.(show DistributionField) ]
         (default_option :: options)
     in
     let sort_select = distribution_sort_select language SortOrder.default in
@@ -342,15 +340,14 @@ let form
       ~a:[ a_class [ "flexcolumn" ] ]
       [ h3
           [ txt
-              (Pool_common.(
-                 Utils.field_to_string language Message.Field.Distribution)
+              (Pool_common.(Utils.field_to_string language Field.Distribution)
               |> CCString.capitalize_ascii)
           ]
       ; p [ txt Pool_common.(Utils.hint_to_string language I18n.Distribution) ]
       ; checkbox_element
           ?value:(distribution |> CCOption.map Mailing.Distribution.is_random)
           language
-          Pool_common.Message.Field.RandomOrder
+          Field.RandomOrder
       ; div
           ~a:
             [ a_class
@@ -365,8 +362,8 @@ let form
             ]
           [ div
               ~a:[ a_class [ "switcher"; "flex-gap"; "grow" ] ]
-              [ form_group field_select Message.Field.DistributionField
-              ; form_group sort_select Message.Field.SortOrder
+              [ form_group field_select Field.DistributionField
+              ; form_group sort_select Field.SortOrder
               ]
           ; div
               ~a:[ a_class [ "form-group"; "justify-end" ] ]
@@ -399,101 +396,118 @@ let form
           ]
       ]
   in
+  let fully_booked_note =
+    if fully_booked
+    then
+      [ div
+          ~a:
+            [ a_class [ "bg-grey-light"; "border"; "border-radius"; "inset-md" ]
+            ]
+          [ Pool_common.Utils.text_to_string
+              language
+              I18n.MailingExperimentSessionFullyBooked
+            |> HttpUtils.add_line_breaks
+          ]
+      ]
+    else []
+  in
   let action, submit =
     match mailing with
     | None ->
       ( mailings_path experiment.Experiment.id |> Sihl.Web.externalize_path
-      , Message.(Create (Some Field.Mailing)) )
+      , Message.Create (Some Field.Mailing) )
     | Some m ->
       ( m |> detail_mailing_path experiment.Experiment.id
-      , Message.(Save (Some Field.Mailing)) )
+      , Message.Save (Some Field.Mailing) )
   in
   let html =
     let open Htmx in
     div
       ~a:[ a_class [ "stack" ] ]
-      [ form
-          ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
-          [ csrf_element csrf ()
-          ; input
-              ~a:
-                [ a_input_type `Hidden
-                ; a_name "id"
-                ; a_value
-                    (CCOption.map_or
-                       ~default:""
-                       (fun m -> m.Mailing.id |> Mailing.Id.value)
-                       mailing)
+      (fully_booked_note
+      @ [ form
+            ~a:[ a_class [ "stack" ]; a_method `Post; a_action action ]
+            [ csrf_element csrf ()
+            ; input
+                ~a:
+                  [ a_input_type `Hidden
+                  ; a_name "id"
+                  ; a_value
+                      (CCOption.map_or
+                         ~default:""
+                         (fun m -> m.Mailing.id |> Mailing.Id.value)
+                         mailing)
+                  ]
+                ()
+            ; div
+                ~a:
+                  [ a_id "mailings"
+                  ; a_class [ "grid-col-2" ]
+                  ; hx_target "#overlaps"
+                  ; hx_trigger "change"
+                  ; hx_swap "innerHTML"
+                  ; hx_post
+                      (mailings_path
+                         ~suffix:"search-info"
+                         experiment.Experiment.id
+                      |> Sihl.Web.externalize_path)
+                  ]
+                [ flatpicker_element
+                    language
+                    `Datetime_local
+                    Field.Start
+                    ~flash_fetcher
+                    ~required:true
+                    ~disable_past:true
+                    ?value:
+                      (CCOption.map
+                         (fun (m : Mailing.t) ->
+                           m.Mailing.start_at
+                           |> Mailing.StartAt.value
+                           |> Ptime.to_rfc3339 ~space:true)
+                         mailing)
+                ; flatpicker_element
+                    language
+                    `Datetime_local
+                    Field.End
+                    ~flash_fetcher
+                    ~disable_past:true
+                    ~required:true
+                    ?value:
+                      (CCOption.map
+                         (fun (m : Mailing.t) ->
+                           m.Mailing.end_at
+                           |> Mailing.EndAt.value
+                           |> Ptime.to_rfc3339 ~space:true)
+                         mailing)
+                ; input_element
+                    language
+                    `Number
+                    Field.Rate
+                    ~flash_fetcher
+                    ~required:true
+                    ~help:I18n.Rate
+                    ~value:
+                      (mailing
+                      |> CCOption.map_or
+                           ~default:Mailing.Rate.default
+                           (fun (m : Mailing.t) -> m.Mailing.rate)
+                      |> Mailing.Rate.value
+                      |> CCInt.to_string)
+                    ~additional_attributes:[ a_input_min (`Number 1) ]
                 ]
-              ()
-          ; div
-              ~a:
-                [ a_id "mailings"
-                ; a_class [ "grid-col-2" ]
-                ; hx_target "#overlaps"
-                ; hx_trigger "change"
-                ; hx_swap "innerHTML"
-                ; hx_post
-                    (mailings_path
-                       ~suffix:"search-info"
-                       experiment.Experiment.id
-                    |> Sihl.Web.externalize_path)
-                ]
-              [ flatpicker_element
-                  language
-                  `Datetime_local
-                  Field.Start
-                  ~flash_fetcher
-                  ~required:true
-                  ~disable_past:true
-                  ?value:
-                    (CCOption.map
-                       (fun (m : Mailing.t) ->
-                         m.Mailing.start_at
-                         |> Mailing.StartAt.value
-                         |> Ptime.to_rfc3339 ~space:true)
-                       mailing)
-              ; flatpicker_element
-                  language
-                  `Datetime_local
-                  Field.End
-                  ~flash_fetcher
-                  ~disable_past:true
-                  ~required:true
-                  ?value:
-                    (CCOption.map
-                       (fun (m : Mailing.t) ->
-                         m.Mailing.end_at
-                         |> Mailing.EndAt.value
-                         |> Ptime.to_rfc3339 ~space:true)
-                       mailing)
-              ; input_element
-                  language
-                  `Number
-                  Field.Rate
-                  ~flash_fetcher
-                  ~required:true
-                  ~help:I18n.Rate
-                  ~value:
-                    (mailing
-                    |> CCOption.map_or
-                         ~default:Mailing.Rate.default
-                         (fun (m : Mailing.t) -> m.Mailing.rate)
-                    |> Mailing.Rate.value
-                    |> CCInt.to_string)
-                  ~additional_attributes:[ a_input_min (`Number 1) ]
-              ]
-          ; distribution_select
-              (CCOption.bind mailing (fun (m : Mailing.t) ->
-                 m.Mailing.distribution))
-            (* TODO: Add detailed description how distribution element works *)
-          ; div
-              ~a:[ a_class [ "flexrow" ] ]
-              [ submit_element ~classnames:[ "push" ] language submit () ]
-          ]
-      ; div ~a:[ a_id "overlaps" ] []
-      ; script (Unsafe.data functions)
-      ]
+            ; distribution_select
+                (CCOption.bind mailing (fun (m : Mailing.t) ->
+                   m.Mailing.distribution))
+              (* TODO: Add detailed description how distribution element
+                 works *)
+            ; div
+                ~a:[ a_class [ "flexrow" ] ]
+                [ submit_element ~classnames:[ "push" ] language submit () ]
+            ]
+        ; div ~a:[ a_id "overlaps" ] []
+        ; script (Unsafe.data functions)
+        ])
   in
   Page_admin_experiments.experiment_layout
     language
@@ -522,9 +536,8 @@ let overlaps
     | None -> []
     | Some average ->
       [ p
-          [ Pool_common.(
-              I18n.RateNumberPerMinutes (5, average)
-              |> Utils.hint_to_string language)
+          [ I18n.RateNumberPerMinutes (5, average)
+            |> Pool_common.Utils.hint_to_string language
             |> txt
           ]
       ]

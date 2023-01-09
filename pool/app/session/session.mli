@@ -207,6 +207,11 @@ val build_cancellation_messages
 val to_email_text : Pool_common.Language.t -> t -> string
 val public_to_email_text : Pool_common.Language.t -> Public.t -> string
 
+val has_bookable_spots_for_experiments
+  :  Pool_database.Label.t
+  -> Experiment.Id.t
+  -> (bool, Pool_common.Message.error) result Lwt.t
+
 module Guard : sig
   module Target : sig
     val to_authorizable
