@@ -9,6 +9,7 @@ let detail
   Pool_context.{ language; csrf; _ }
   flash_fetcher
   =
+  let open Pool_common in
   let waiting_list_detail =
     div
       ~a:[ a_class [ "stack" ] ]
@@ -22,12 +23,12 @@ let detail
                    (Format.asprintf
                       "/admin/experiments/%s/waiting-list/%s"
                       (Experiment.Id.value experiment.Experiment.id)
-                      (Pool_common.Id.value id)))
+                      (Id.value id)))
             ]
           [ csrf_element csrf ()
           ; textarea_element
               language
-              Pool_common.Message.Field.Comment
+              Message.Field.Comment
               ~value:
                 (CCOption.map_or ~default:"" Waiting_list.Comment.value comment)
               ~flash_fetcher
@@ -36,7 +37,7 @@ let detail
               [ submit_element
                   ~classnames:[ "push" ]
                   language
-                  Pool_common.Message.(Save (Some Field.Comment))
+                  Message.(Save (Some Field.Comment))
                   ()
               ]
           ]
@@ -48,49 +49,62 @@ let detail
       then
         div
           [ txt
-              Pool_common.(
-                Utils.text_to_string
-                  language
-                  (I18n.EmtpyList Message.Field.Sessions))
+              (Utils.text_to_string
+                 language
+                 (I18n.EmtpyList Message.Field.Sessions))
           ]
       else (
         let thead =
-          Pool_common.Message.
+          Message.
             [ Field.Date |> Component.Table.field_to_txt language; txt "" ]
         in
-        let rows =
-          CCList.map
-            (fun (session : Session.t) ->
+        let to_row (session : Session.t) =
+          let attrs =
+            if CCOption.is_some session.Session.follow_up_to
+            then [ a_class [ "inset"; "left" ] ]
+            else []
+          in
+          [ div
+              ~a:attrs
               [ txt
                   Session.(
                     session.Session.start
                     |> Start.value
-                    |> Pool_common.Utils.Time.formatted_date_time)
-              ; (match Session.is_fully_booked session with
-                 | false ->
-                   input
-                     ~a:
-                       [ a_input_type `Radio
-                       ; a_name Pool_common.Message.Field.(show Session)
-                       ; a_value Session.(session.id |> Pool_common.Id.value)
-                       ]
-                     ()
-                 | true ->
-                   span
-                     [ txt
-                         Pool_common.(
-                           Utils.error_to_string
-                             language
-                             Message.SessionFullyBooked)
-                     ])
-              ])
-            sessions
+                    |> Utils.Time.formatted_date_time)
+              ]
+          ; (match
+               Session.is_fully_booked session, session.Session.follow_up_to
+             with
+             | false, None ->
+               input
+                 ~a:
+                   [ a_input_type `Radio
+                   ; a_name Message.Field.(show Session)
+                   ; a_value Session.(session.id |> Id.value)
+                   ]
+                 ()
+             | false, Some _ ->
+               span
+                 [ txt
+                     (Utils.error_to_string
+                        language
+                        Message.SessionRegistrationViaParent)
+                 ]
+             | true, _ ->
+               span
+                 [ txt
+                     (Utils.error_to_string language Message.SessionFullyBooked)
+                 ])
+          ]
+        in
+        let to_rows (session, follow_ups) =
+          session :: follow_ups |> CCList.flat_map to_row
         in
         Component.Table.horizontal_table
           ~align_last_end:true
           `Striped
           ~thead
-          rows
+          (sessions |> CCList.map to_rows)
         |> fun content ->
         match experiment |> Experiment.registration_disabled_value with
         | true ->
@@ -103,16 +117,15 @@ let detail
                     [ submit_element
                         language
                         ~classnames:[ "disabled"; "push" ]
-                        Pool_common.Message.(Assign (Some Field.Contact))
+                        (Message.Assign (Some Field.Contact))
                         ()
                     ]
                 ; p
                     ~a:[ a_class [ "help" ] ]
                     [ txt
-                        Pool_common.(
-                          Utils.error_to_string
-                            language
-                            Message.RegistrationDisabled)
+                        (Utils.error_to_string
+                           language
+                           Message.RegistrationDisabled)
                     ]
                 ]
             ]
@@ -124,7 +137,7 @@ let detail
                   (Format.asprintf
                      "/admin/experiments/%s/waiting-list/%s/assign"
                      (experiment_id |> Experiment.Id.value)
-                     (id |> Pool_common.Id.value)
+                     (id |> Id.value)
                   |> Sihl.Web.externalize_path)
               ]
             [ csrf_element csrf ()
@@ -134,7 +147,7 @@ let detail
                 [ submit_element
                     ~classnames:[ "push" ]
                     language
-                    Pool_common.Message.(Assign (Some Field.Contact))
+                    (Message.Assign (Some Field.Contact))
                     ()
                 ]
             ])
@@ -142,12 +155,11 @@ let detail
     div
       [ h2
           ~a:[ a_class [ "heading-2" ] ]
-          [ txt Pool_common.(Utils.nav_link_to_string language I18n.Sessions) ]
+          [ txt (Utils.nav_link_to_string language I18n.Sessions) ]
       ; p
           [ txt
-              Pool_common.(
-                I18n.AssignContactFromWaitingList
-                |> Utils.hint_to_string language)
+              (I18n.AssignContactFromWaitingList
+              |> Utils.hint_to_string language)
           ]
       ; content
       ]
@@ -157,7 +169,7 @@ let detail
   in
   Page_admin_experiments.experiment_layout
     language
-    (Page_admin_experiments.NavLink Pool_common.I18n.WaitingList)
+    (Page_admin_experiments.NavLink I18n.WaitingList)
     experiment
     html
 ;;

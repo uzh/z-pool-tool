@@ -40,6 +40,7 @@ let detail req =
     @@ let* waiting_list = Waiting_list.find database_label id in
        let* sessions =
          Session.find_all_for_experiment database_label experiment_id
+         >|+ Session.group_and_sort
        in
        let flash_fetcher key = Sihl.Web.Flash.find key req in
        Page.Admin.WaitingList.detail
