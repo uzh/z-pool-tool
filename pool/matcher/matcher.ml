@@ -185,7 +185,7 @@ let match_invitations ?interval pools =
               let find_experiment { Mailing.id; _ } =
                 Experiment.find_of_mailing pool (id |> Mailing.Id.to_common)
               in
-              let is_fully_booked { Experiment.id; _ } =
+              let is_not_fully_booked { Experiment.id; _ } =
                 Session.has_bookable_spots_for_experiments pool id
               in
               let validate = function
@@ -194,7 +194,7 @@ let match_invitations ?interval pools =
               in
               mailing
               |> find_experiment
-              >>= is_fully_booked
+              >>= is_not_fully_booked
               >== validate
               ||> CCResult.to_opt)
         ||> fun m -> pool, m)

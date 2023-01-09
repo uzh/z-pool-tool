@@ -40,8 +40,8 @@ let to_string = function
   | MailingDetailTitle start ->
     Format.asprintf "Mailing at %s" (Utils_time.formatted_date_time start)
   | MailingExperimentSessionFullyBooked ->
-    "No available spots for session registration. No invitations will be sent \
-     (independent if mailings are active at the moment).\n\n\
+    "All sessions are fully booked. No invitations will be sent (independent \
+     if mailings are active at the moment).\n\n\
      Add additional sessions to the experiment."
   | MailingNewTitle -> "Create new mailing"
   | RateTotalSent number ->
