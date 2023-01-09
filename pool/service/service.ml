@@ -35,13 +35,14 @@ module Email = struct
   ;;
 
   let handle
-    ?(without_email_fcn = CCFun.const Lwt.return_unit)
+    ?ctx
+    ?(without_email_fcn = fun ?ctx:_ _ -> Lwt.return_unit)
     production_fcn
     else_fcn
     email
     =
     match Sihl.Configuration.is_production () with
-    | true -> production_fcn email
+    | true -> production_fcn ?ctx email
     | false ->
       (match Sihl.Configuration.read_string "TEST_EMAIL" with
        | None ->
@@ -51,14 +52,14 @@ module Email = struct
              "Sending email intercepted! As no redirect email is specified \
               it/they wont be sent. Please define environment variable \
               'TEST_EMAIL'.");
-         without_email_fcn email
+         without_email_fcn ?ctx email
        | Some new_recipient ->
          Logs.info (fun m ->
            m
              "Sending email intercepted. Sending email(s) to new recipient \
               ('%s')"
              new_recipient);
-         else_fcn email new_recipient)
+         else_fcn ?ctx email new_recipient)
   ;;
 
   let set_email_sender ?sender (email : Sihl_email.t) =
@@ -72,8 +73,9 @@ module Email = struct
     let email = set_email_sender ?sender email in
     let%lwt () =
       handle
-        (send ?ctx)
-        (fun email new_recipient ->
+        ?ctx
+        send
+        (fun ?ctx email new_recipient ->
           email |> redirected_email new_recipient |> send ?ctx)
         email
     in
@@ -86,8 +88,9 @@ module Email = struct
     Logs.info (fun m -> m "Send %d emails" (CCList.length emails));
     let%lwt () =
       handle
-        (bulk_send ?ctx)
-        (fun emails new_recipient ->
+        ?ctx
+        bulk_send
+        (fun ?ctx emails new_recipient ->
           emails
           |> CCList.map (redirected_email new_recipient)
           |> bulk_send ?ctx)

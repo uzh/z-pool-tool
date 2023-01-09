@@ -37,7 +37,7 @@ let services =
   ; Service.BlockingEmail.register ()
   ; Service.Email.register ()
   ; Service.EmailTemplate.register ()
-  ; Service.Queue.register ()
+  ; Service.Queue.register ~ctx:(Pool_tenant.to_ctx Pool_database.root) ()
   ; Service.Storage.register ()
   ; Matcher.register ()
   ; Sihl.Web.Http.register ~middlewares:Routes.global_middlewares Routes.router

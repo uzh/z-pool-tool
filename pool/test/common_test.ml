@@ -18,8 +18,8 @@ let validate_email _ () =
   let* () =
     let msg = "Missing 'TEST_EMAIL' env variable." in
     Service.Email.handle
-      ~without_email_fcn:(fun _ -> failwith msg)
-      (fun email ->
+      ~without_email_fcn:(fun ?ctx:_ _ -> failwith msg)
+      (fun ?ctx:_ email ->
         Alcotest.(
           check
             string
@@ -27,7 +27,7 @@ let validate_email _ () =
             email.Sihl_email.subject
             Data.subject);
         Lwt.return_unit)
-      (fun email new_recipient ->
+      (fun ?ctx:_ email new_recipient ->
         let email = Service.Email.redirected_email new_recipient email in
         Alcotest.(
           check
