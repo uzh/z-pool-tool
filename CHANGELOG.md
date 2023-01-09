@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 
 - don't logout contacts when answering required fields
+- experiments with active uninvited registration handle the experiment filter
 
 ## [0.0.3](https://github.com/uzh/pool/tree/0.0.3) - 2022-12-23
 

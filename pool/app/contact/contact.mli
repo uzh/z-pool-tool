@@ -132,6 +132,14 @@ val find_to_trigger_profile_update
   :  Pool_database.Label.t
   -> (t list, 'a) Lwt_result.t
 
+val matches_filter
+  :  ?default:bool
+  -> Pool_database.Label.t
+  -> Pool_common.Id.t
+  -> Filter.t option
+  -> t
+  -> bool Lwt.t
+
 val has_terms_accepted : Pool_database.Label.t -> t -> bool Lwt.t
 
 type create =

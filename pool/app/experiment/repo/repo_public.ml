@@ -48,16 +48,21 @@ let find_all_public_by_contact_request =
        pool_invitations_left_join
        condition_registration_not_disabled
        condition_allow_uninvited_signup
-  |> select_from_experiments_sql
-  |> Caqti_type.string ->* RepoEntity.Public.t
+  |> Repo.Sql.select_from_experiments_sql
+  |> Pool_common.Repo.Id.t ->* RepoEntity.t
 ;;
 
 let find_all_public_by_contact pool contact =
-  (* TODO [timhub]: filter experiments *)
+  let open Utils.Lwt_result.Infix in
   Utils.Database.collect
     (Pool_database.Label.value pool)
     find_all_public_by_contact_request
-    (Contact.id contact |> Pool_common.Id.value)
+    (Contact.id contact)
+  >|> Lwt_list.filter_s (fun { Entity.id; filter; allow_uninvited_signup; _ } ->
+        if allow_uninvited_signup
+        then Contact.matches_filter pool id filter contact
+        else Lwt.return_true)
+  ||> CCList.map Entity.to_public
 ;;
 
 let find_request =

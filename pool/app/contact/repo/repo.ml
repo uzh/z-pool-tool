@@ -10,3 +10,4 @@ let update = Repo_sql.update
 let partial_update = Repo_partial_update.partial_update
 let delete_unverified = Repo_sql.delete_unverified
 let update_profile_updated_triggered = Repo_sql.update_profile_updated_triggered
+let matches_filter = Repo_sql.matches_filter
