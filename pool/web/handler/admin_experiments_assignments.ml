@@ -18,6 +18,9 @@ let index req =
     @@ let* experiment = Experiment.find database_label id in
        let* sessions =
          Session.find_all_for_experiment database_label experiment.Experiment.id
+         >|+ Session.group_and_sort
+         >|+ CCList.flat_map (fun (session, follow_ups) ->
+               session :: follow_ups)
        in
        let* assignments =
          Lwt_list.map_s
