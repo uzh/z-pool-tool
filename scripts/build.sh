@@ -6,7 +6,7 @@
 # immediately when a command fails and print each command
 set -ex
 
-printTitle () {
+printTitle() {
   echo -e "\e[1;33m~~~ $1: ~~~\e[0m"
 }
 
@@ -32,7 +32,7 @@ printTitle "Setup project"
 ./scripts/setup.sh
 
 printTitle "Install project dependencies"
-opam install --deps-only --with-test -y .
+opam install --deps-only --with-test --locked -y .
 
 printTitle "Build project"
 opam exec -- dune build --root .
