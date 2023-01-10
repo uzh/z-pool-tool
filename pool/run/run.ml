@@ -26,7 +26,7 @@ let commands =
 
 let services =
   [ Database.register ()
-  ; Service.User.register ()
+  ; Service.User.register ~commands:[] ()
   ; Service.Token.register ()
   ; Service.BlockingEmail.register ()
   ; Service.Email.register ()
