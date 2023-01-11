@@ -285,6 +285,29 @@ module Admin = struct
       let sessions =
         let open Session in
         let specific =
+          let message_templates =
+            let open Message_template.Label in
+            let open Handler.Admin.Session in
+            let add_label label = label |> human_url |> Format.asprintf "/%s" in
+            let specific =
+              [ get
+                  "/edit"
+                  ~middlewares:[ Access.session_reminder ]
+                  edit_template
+              ; post "" ~middlewares:[ Access.session_reminder ] update_template
+              ]
+            in
+            [ get
+                (add_label SessionReminder)
+                ~middlewares:[ Access.session_reminder ]
+                new_session_reminder
+            ; post
+                (add_label SessionReminder)
+                ~middlewares:[ Access.session_reminder ]
+                new_session_reminder_post
+            ; choose ~scope:(MessageTemplate |> url_key) specific
+            ]
+          in
           [ get "" ~middlewares:[ Access.read ] show
           ; post "" ~middlewares:[ Access.update ] update
           ; get "/edit" ~middlewares:[ Access.update ] edit
@@ -297,6 +320,7 @@ module Admin = struct
           ; post "/reschedule" ~middlewares:[ Access.reschedule ] reschedule
           ; get "/close" ~middlewares:[ Access.close ] close
           ; post "/close" ~middlewares:[ Access.close ] close_post
+          ; choose ~scope:(add_human_field MessageTemplate) message_templates
           ]
         in
         [ get "" ~middlewares:[ Access.index ] list
@@ -365,8 +389,9 @@ module Admin = struct
         let open Handler.Admin.Experiments.MessageTemplates in
         let add_label label = label |> human_url |> Format.asprintf "/%s" in
         let specific =
-          [ get "/edit" ~middlewares:[ Access.invitation ] edit_invitation
-          ; post "" ~middlewares:[ Access.invitation ] update_invitation
+          (* TODO[timhub]: Separate access *)
+          [ get "/edit" ~middlewares:[ Access.invitation ] edit_template
+          ; post "" ~middlewares:[ Access.invitation ] update_template
           ]
         in
         [ get
@@ -377,6 +402,14 @@ module Admin = struct
             (add_label ExperimentInvitation)
             ~middlewares:[ Access.invitation ]
             new_invitation_post
+        ; get
+            (add_label SessionReminder)
+            ~middlewares:[ Access.session_reminder ]
+            new_session_reminder
+        ; post
+            (add_label SessionReminder)
+            ~middlewares:[ Access.session_reminder ]
+            new_session_reminder_post
         ; choose ~scope:(MessageTemplate |> url_key) specific
         ]
       in

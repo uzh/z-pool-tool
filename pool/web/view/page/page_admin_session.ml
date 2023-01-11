@@ -7,6 +7,13 @@ let session_title (s : Session.t) =
   Pool_common.I18n.SessionDetailTitle (s.Session.start |> Session.Start.value)
 ;;
 
+let session_path experiment session =
+  Format.asprintf
+    "/admin/experiments/%s/sessions/%s"
+    Experiment.(Id.value experiment.id)
+    (Pool_common.Id.value session.Session.id)
+;;
+
 let location_select options selected ?(attributes = []) () =
   let open Pool_location in
   let name = Message.Field.(show Location) in
@@ -620,25 +627,58 @@ let edit
   experiment
   (session : Session.t)
   locations
+  session_reminder_templates
   sys_languages
   flash_fetcher
   =
-  div
-    [ p
-        [ txt
-            (session
-            |> session_title
-            |> Pool_common.Utils.text_to_string language)
-        ]
-    ; session_form
-        csrf
-        language
-        experiment
-        ~session
-        locations
-        sys_languages
-        ~flash_fetcher
-    ]
+  let open Message_template in
+  let session_path =
+    Format.asprintf "%s/%s" (session_path experiment session)
+  in
+  let form =
+    div
+      [ p
+          [ txt
+              (session
+              |> session_title
+              |> Pool_common.Utils.text_to_string language)
+          ]
+      ; session_form
+          csrf
+          language
+          experiment
+          ~session
+          locations
+          sys_languages
+          ~flash_fetcher
+      ]
+  in
+  let message_templates_html label list =
+    let edit_path m =
+      Format.asprintf
+        "%s/%s/edit"
+        Message.Field.(human_url MessageTemplate)
+        (Message_template.Id.value m.id)
+      |> session_path
+    in
+    let new_path =
+      if CCList.is_empty (Message_template.filter_languages sys_languages list)
+      then None
+      else session_path Label.(prefixed_human_url label) |> CCOption.pure
+    in
+    div
+      [ h3 ~a:[ a_class [ "heading-2" ] ] [ txt (Label.to_human label) ]
+      ; Page_admin_message_template.table language list new_path edit_path
+      ]
+  in
+  let html =
+    div
+      ~a:[ a_class [ "stack-lg" ] ]
+      [ form
+      ; message_templates_html Label.SessionReminder session_reminder_templates
+      ]
+  in
+  html
   |> Page_admin_experiments.experiment_layout
        language
        (Page_admin_experiments.Control Message.(Edit (Some Field.Session)))
@@ -852,4 +892,51 @@ let cancel
        language
        (Page_admin_experiments.Control Message.(Cancel (Some Field.Session)))
        experiment
+;;
+
+let message_template_form
+  ({ Pool_context.language; _ } as context)
+  experiment
+  session
+  languages
+  label
+  template
+  flash_fetcher
+  =
+  let open Message_template in
+  let action =
+    let go =
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s/%s"
+        Experiment.(Id.value experiment.Experiment.id)
+        (Pool_common.Id.value session.Session.id)
+    in
+    match template with
+    | None -> go (Label.prefixed_human_url label)
+    | Some template ->
+      Format.asprintf
+        "%s/%s"
+        Message.Field.(human_url MessageTemplate)
+        (Id.value template.id)
+      |> go
+  in
+  let title =
+    let open Pool_common in
+    (match template with
+     | None -> Message.(Create None)
+     | Some _ -> Message.(Edit None))
+    |> fun control ->
+    Page_admin_experiments.String
+      (Format.asprintf
+         "%s %s"
+         (control |> Utils.control_to_string language)
+         (label |> Label.to_human |> CCString.lowercase_ascii))
+  in
+  Page_admin_message_template.template_form
+    context
+    ?languages
+    template
+    action
+    flash_fetcher
+  |> Page_admin_experiments.experiment_layout language title experiment
 ;;

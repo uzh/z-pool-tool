@@ -6,6 +6,12 @@ let create_layout req = General.create_tenant_layout req
 let experiment_id = HttpUtils.find_id Experiment.Id.of_string Field.Experiment
 let session_id = HttpUtils.find_id Pool_common.Id.of_string Field.Session
 
+let template_id =
+  HttpUtils.find_id
+    Message_template.Id.of_string
+    Pool_common.Message.Field.MessageTemplate
+;;
+
 let location urlencoded database_label =
   let open Utils.Lwt_result.Infix in
   let open Pool_common.Message in
@@ -154,6 +160,12 @@ let detail req page =
        |> Lwt.return_ok
      | `Edit ->
        let%lwt locations = Pool_location.find_all database_label in
+       let%lwt session_reminder_templates =
+         Message_template.find_all_of_entity_by_label
+           database_label
+           session_id
+           Message_template.Label.SessionReminder
+       in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
@@ -162,6 +174,7 @@ let detail req page =
          experiment
          session
          locations
+         session_reminder_templates
          sys_languages
          flash_fetcher
        |> Lwt.return_ok
@@ -459,11 +472,112 @@ let close_post req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
+let message_template_form ?template_id label req =
+  let open Utils.Lwt_result.Infix in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let result ({ Pool_context.database_label; _ } as context) =
+    Utils.Lwt_result.map_error (fun err ->
+      ( err
+      , experiment_id
+        |> Experiment.Id.value
+        |> Format.asprintf "/admin/experiments/%s/edit" ))
+    @@
+    let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let* experiment = Experiment.find database_label experiment_id in
+    let* session = Session.find database_label session_id in
+    let* template =
+      template_id
+      |> CCOption.map_or ~default:(Lwt_result.return None) (fun id ->
+           Message_template.find database_label id >|+ CCOption.pure)
+    in
+    let* available_languages =
+      match template_id with
+      | None ->
+        Pool_context.Tenant.get_tenant_languages req
+        |> Lwt_result.lift
+        |>> Message_template.find_available_languages
+              database_label
+              session_id
+              label
+        >|+ CCOption.pure
+      | Some _ -> Lwt_result.return None
+    in
+    Page.Admin.Session.message_template_form
+      context
+      experiment
+      session
+      available_languages
+      label
+      template
+      flash_fetcher
+    |> create_layout req context
+    >|+ Sihl.Web.Response.of_html
+  in
+  result |> HttpUtils.extract_happy_path req
+;;
+
+let new_session_reminder req =
+  message_template_form Message_template.Label.SessionReminder req
+;;
+
+let new_session_reminder_post req =
+  let open Admin_message_templates in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let label = Message_template.Label.SessionReminder in
+  let redirect =
+    let base =
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s/%s"
+        (Experiment.Id.value experiment_id)
+        (Pool_common.Id.value session_id)
+    in
+    { success = base "edit"
+    ; error = base (Message_template.Label.prefixed_human_url label)
+    }
+  in
+  (write (Create (session_id, label, redirect))) req
+;;
+
+let edit_template req =
+  let template_id = template_id req in
+  message_template_form
+    ~template_id
+    Message_template.Label.ExperimentInvitation
+    req
+;;
+
+let update_template req =
+  let open Admin_message_templates in
+  let experiment_id = experiment_id req in
+  let session_id = session_id req in
+  let template_id = template_id req in
+  let redirect =
+    let base =
+      Format.asprintf
+        "/admin/experiments/%s/sessions/%s/%s"
+        (Experiment.Id.value experiment_id)
+        (Pool_common.Id.value session_id)
+    in
+    { success = base "edit"
+    ; error =
+        base
+          (Format.asprintf
+             "%s/%s/edit"
+             Pool_common.Message.Field.(human_url MessageTemplate)
+             (Message_template.Id.value template_id))
+    }
+  in
+  (write (Update (template_id, redirect))) req
+;;
+
 module Access : sig
   include Helpers.AccessSig
 
   val reschedule : Rock.Middleware.t
   val cancel : Rock.Middleware.t
+  val session_reminder : Rock.Middleware.t
   val send_reminder : Rock.Middleware.t
   val close : Rock.Middleware.t
 end = struct
@@ -512,6 +626,16 @@ end = struct
 
   let cancel =
     [ SessionCommand.Cancel.effects ]
+    |> session_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let session_reminder =
+    [ (fun id ->
+        [ `Update, `Target (id |> Guard.Uuid.target_of Pool_common.Id.value)
+        ; `Update, `TargetEntity `Session
+        ])
+    ]
     |> session_effects
     |> Middleware.Guardian.validate_generic
   ;;

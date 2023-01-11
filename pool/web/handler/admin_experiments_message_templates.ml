@@ -13,6 +13,16 @@ let template_id =
     Pool_common.Message.Field.MessageTemplate
 ;;
 
+let form_redirects experiment_id error_path =
+  let open Admin_message_templates in
+  let base =
+    experiment_id
+    |> Pool_common.Id.value
+    |> Format.asprintf "/admin/experiments/%s/%s"
+  in
+  { success = base "edit"; error = base error_path }
+;;
+
 let form ?template_id label req =
   let open Utils.Lwt_result.Infix in
   let experiment_id = experiment_id req in
@@ -57,51 +67,55 @@ let form ?template_id label req =
 
 let new_invitation req = form Message_template.Label.ExperimentInvitation req
 
-let edit_invitation req =
-  let template_id = template_id req in
-  form ~template_id Message_template.Label.ExperimentInvitation req
-;;
-
 let new_invitation_post req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req |> Experiment.Id.to_common in
   let label = Message_template.Label.ExperimentInvitation in
   let redirect =
-    let base =
+    form_redirects
       experiment_id
-      |> Pool_common.Id.value
-      |> Format.asprintf "/admin/experiments/%s/%s"
-    in
-    { success = base "edit"
-    ; error = base (Message_template.Label.prefixed_human_url label)
-    }
+      (Message_template.Label.prefixed_human_url label)
   in
   (write (Create (experiment_id, label, redirect))) req
 ;;
 
-let update_invitation req =
+let new_session_reminder req = form Message_template.Label.SessionReminder req
+
+let new_session_reminder_post req =
+  let open Admin_message_templates in
+  let experiment_id = experiment_id req |> Experiment.Id.to_common in
+  let label = Message_template.Label.SessionReminder in
+  let redirect =
+    form_redirects
+      experiment_id
+      (Message_template.Label.prefixed_human_url label)
+  in
+  (write (Create (experiment_id, label, redirect))) req
+;;
+
+let update_template req =
   let open Admin_message_templates in
   let experiment_id = experiment_id req |> Experiment.Id.to_common in
   let template_id = template_id req in
   let redirect =
-    let open Pool_common in
-    let base =
-      experiment_id |> Id.value |> Format.asprintf "/admin/experiments/%s/%s"
-    in
-    { success = base "edit"
-    ; error =
-        base
-          (Format.asprintf
-             "%s/%s/edit"
-             Message.Field.(human_url MessageTemplate)
-             (Message_template.Id.value template_id))
-    }
+    form_redirects
+      experiment_id
+      (Format.asprintf
+         "%s/%s/edit"
+         Pool_common.Message.Field.(human_url MessageTemplate)
+         (Message_template.Id.value template_id))
   in
   (write (Update (template_id, redirect))) req
 ;;
 
+let edit_template req =
+  let template_id = template_id req in
+  form ~template_id Message_template.Label.ExperimentInvitation req
+;;
+
 module Access : sig
   val invitation : Rock.Middleware.t
+  val session_reminder : Rock.Middleware.t
 end = struct
   module Field = Pool_common.Message.Field
 
@@ -110,6 +124,16 @@ end = struct
   ;;
 
   let invitation =
+    [ (fun id ->
+        [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
+        ; `Update, `TargetEntity `Experiment
+        ])
+    ]
+    |> experiment_effects
+    |> Middleware.Guardian.validate_generic
+  ;;
+
+  let session_reminder =
     [ (fun id ->
         [ `Update, `Target (id |> Guard.Uuid.target_of Experiment.Id.value)
         ; `Update, `TargetEntity `Experiment

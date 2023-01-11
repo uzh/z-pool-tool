@@ -84,7 +84,6 @@ let write action req =
       let%lwt () =
         Lwt_list.iter_s (Pool_event.handle_event ~tags database_label) events
       in
-      Logs.info (fun m -> m "%s" redirect.success);
       Http_utils.redirect_to_with_actions
         redirect.success
         [ HttpUtils.Message.set ~success:[ success ] ]

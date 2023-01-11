@@ -327,7 +327,7 @@ let edit
       "/admin/experiments/%s/%s"
       Experiment.(Id.value experiment.id)
   in
-  let template_html label list =
+  let message_templates_html label list =
     let edit_path m =
       Format.asprintf
         "%s/%s/edit"
@@ -349,8 +349,8 @@ let edit
     div
       ~a:[ a_class [ "stack-lg" ] ]
       [ form
-      ; template_html Label.ExperimentInvitation invitation_templates
-      ; template_html Label.SessionReminder session_reminder_templates
+      ; message_templates_html Label.ExperimentInvitation invitation_templates
+      ; message_templates_html Label.SessionReminder session_reminder_templates
       ]
   in
   experiment_layout
@@ -668,14 +668,15 @@ let message_template_form
       |> go
   in
   let title =
+    let open Pool_common in
     (match template with
-     | None -> "Create"
-     | Some _ -> "Edit")
+     | None -> Message.(Create None)
+     | Some _ -> Message.(Edit None))
     |> fun control ->
     String
       (Format.asprintf
          "%s %s"
-         control
+         (control |> Utils.control_to_string language)
          (label |> Label.to_human |> CCString.lowercase_ascii))
   in
   Page_admin_message_template.template_form
