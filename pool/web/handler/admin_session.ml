@@ -550,26 +550,35 @@ let edit_template req =
 
 let update_template req =
   let open Admin_message_templates in
+  let open Utils.Lwt_result.Infix in
+  let open Message_template in
   let experiment_id = experiment_id req in
   let session_id = session_id req in
   let template_id = template_id req in
-  let redirect =
-    let base =
-      Format.asprintf
-        "/admin/experiments/%s/sessions/%s/%s"
-        (Experiment.Id.value experiment_id)
-        (Pool_common.Id.value session_id)
-    in
-    { success = base "edit"
-    ; error =
-        base
-          (Format.asprintf
-             "%s/%s/edit"
-             Pool_common.Message.Field.(human_url MessageTemplate)
-             (Message_template.Id.value template_id))
-    }
+  let session_path =
+    Format.asprintf
+      "/admin/experiments/%s/sessions/%s/%s"
+      (Experiment.Id.value experiment_id)
+      (Pool_common.Id.value session_id)
   in
-  (write (Update (template_id, redirect))) req
+  let%lwt template =
+    req
+    |> database_label_of_req
+    |> Lwt_result.lift
+    >>= CCFun.flip find template_id
+  in
+  match template with
+  | Ok template ->
+    let redirect =
+      { success = session_path "edit"
+      ; error = session_path (prefixed_template_url ~append:"edit" template)
+      }
+    in
+    (write (Update (template_id, redirect))) req
+  | Error err ->
+    HttpUtils.redirect_to_with_actions
+      (session_path "edit")
+      [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
 module Access : sig

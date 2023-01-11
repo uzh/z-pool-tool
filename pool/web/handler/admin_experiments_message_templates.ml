@@ -65,7 +65,7 @@ let form ?template_id label req =
   result |> HttpUtils.extract_happy_path req
 ;;
 
-let new_invitation req = form Message_template.Label.ExperimentInvitation req
+let new_invitation = form Message_template.Label.ExperimentInvitation
 
 let new_invitation_post req =
   let open Admin_message_templates in
@@ -79,7 +79,7 @@ let new_invitation_post req =
   (write (Create (experiment_id, label, redirect))) req
 ;;
 
-let new_session_reminder req = form Message_template.Label.SessionReminder req
+let new_session_reminder = form Message_template.Label.SessionReminder
 
 let new_session_reminder_post req =
   let open Admin_message_templates in
@@ -94,18 +94,31 @@ let new_session_reminder_post req =
 ;;
 
 let update_template req =
+  let open Utils.Lwt_result.Infix in
   let open Admin_message_templates in
+  let open Message_template in
   let experiment_id = experiment_id req |> Experiment.Id.to_common in
   let template_id = template_id req in
-  let redirect =
-    form_redirects
-      experiment_id
-      (Format.asprintf
-         "%s/%s/edit"
-         Pool_common.Message.Field.(human_url MessageTemplate)
-         (Message_template.Id.value template_id))
+  let%lwt template =
+    req
+    |> database_label_of_req
+    |> Lwt_result.lift
+    >>= CCFun.flip find template_id
   in
-  (write (Update (template_id, redirect))) req
+  match template with
+  | Ok template ->
+    let redirect =
+      form_redirects
+        experiment_id
+        (prefixed_template_url ~append:"edit" template)
+    in
+    (write (Update (template_id, redirect))) req
+  | Error err ->
+    HttpUtils.redirect_to_with_actions
+      (Format.asprintf
+         "/admin/experiments/%s/edit"
+         (Pool_common.Id.value experiment_id))
+      [ HttpUtils.Message.set ~error:[ err ] ]
 ;;
 
 let edit_template req =

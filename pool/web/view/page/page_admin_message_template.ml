@@ -66,6 +66,13 @@ let template_form
   let textarea_element ~value =
     textarea_element language ~value ~flash_fetcher ~required:true
   in
+  let submit =
+    let open Pool_common.Message in
+    let field = Field.MessageTemplate |> CCOption.pure in
+    match template with
+    | None -> Create field
+    | Some _ -> Update field
+  in
   form
     ~a:[ a_action (action |> externalize); a_method `Post; a_class [ "stack" ] ]
     [ csrf_element csrf ()
@@ -88,12 +95,7 @@ let template_form
         Field.SmsText
     ; div
         ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element
-            ~classnames:[ "push" ]
-            language
-            Pool_common.Message.(Update (Some Field.MessageTemplate))
-            ()
-        ]
+        [ submit_element ~classnames:[ "push" ] language submit () ]
     ]
 ;;
 

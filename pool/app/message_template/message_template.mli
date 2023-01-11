@@ -101,6 +101,7 @@ type layout =
   | Root
 
 val to_human_label : t -> string
+val prefixed_template_url : ?append:string -> t -> string
 
 module AssignmentConfirmation : sig
   val create

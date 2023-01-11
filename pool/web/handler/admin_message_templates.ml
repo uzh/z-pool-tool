@@ -8,6 +8,11 @@ let id req field encode =
   Sihl.Web.Router.param req @@ Field.show field |> encode
 ;;
 
+let database_label_of_req req =
+  let open CCResult in
+  Pool_context.(req |> find >|= fun { database_label; _ } -> database_label)
+;;
+
 let index req =
   let open Utils.Lwt_result.Infix in
   let result ({ Pool_context.database_label; _ } as context) =

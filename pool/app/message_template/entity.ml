@@ -89,3 +89,10 @@ type layout =
   | Root
 
 let to_human_label m = m.label |> Label.to_human
+
+let prefixed_template_url ?append m =
+  let base =
+    Format.asprintf "%s/%s" (Label.prefixed_human_url m.label) (Id.value m.id)
+  in
+  append |> CCOption.map_or ~default:base (Format.asprintf "%s/%s" base)
+;;

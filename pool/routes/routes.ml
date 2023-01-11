@@ -177,6 +177,17 @@ module Admin = struct
   let routes =
     let open Field in
     let open Handler.Admin in
+    let label_specific_template edit update new_get new_post =
+      let specific = [ get "/edit" edit; post "" update ] in
+      [ get "" new_get
+      ; post "" new_post
+      ; choose ~scope:(MessageTemplate |> url_key) specific
+      ]
+    in
+    let add_template_label label =
+      let open Message_template.Label in
+      label |> human_url |> Format.asprintf "/%s"
+    in
     let location =
       let open Location in
       let files =
@@ -288,24 +299,13 @@ module Admin = struct
           let message_templates =
             let open Message_template.Label in
             let open Handler.Admin.Session in
-            let add_label label = label |> human_url |> Format.asprintf "/%s" in
-            let specific =
-              [ get
-                  "/edit"
-                  ~middlewares:[ Access.session_reminder ]
-                  edit_template
-              ; post "" ~middlewares:[ Access.session_reminder ] update_template
-              ]
+            let label_specific =
+              label_specific_template edit_template update_template
             in
-            [ get
-                (add_label SessionReminder)
+            [ choose
+                ~scope:(add_template_label SessionReminder)
                 ~middlewares:[ Access.session_reminder ]
-                new_session_reminder
-            ; post
-                (add_label SessionReminder)
-                ~middlewares:[ Access.session_reminder ]
-                new_session_reminder_post
-            ; choose ~scope:(MessageTemplate |> url_key) specific
+                (label_specific new_session_reminder new_session_reminder_post)
             ]
           in
           [ get "" ~middlewares:[ Access.read ] show
@@ -387,30 +387,17 @@ module Admin = struct
       let message_templates =
         let open Message_template.Label in
         let open Handler.Admin.Experiments.MessageTemplates in
-        let add_label label = label |> human_url |> Format.asprintf "/%s" in
-        let specific =
-          (* TODO[timhub]: Separate access *)
-          [ get "/edit" ~middlewares:[ Access.invitation ] edit_template
-          ; post "" ~middlewares:[ Access.invitation ] update_template
-          ]
+        let label_specific =
+          label_specific_template edit_template update_template
         in
-        [ get
-            (add_label ExperimentInvitation)
+        [ choose
+            ~scope:(add_template_label ExperimentInvitation)
             ~middlewares:[ Access.invitation ]
-            new_invitation
-        ; post
-            (add_label ExperimentInvitation)
-            ~middlewares:[ Access.invitation ]
-            new_invitation_post
-        ; get
-            (add_label SessionReminder)
+            (label_specific new_invitation new_invitation_post)
+        ; choose
+            ~scope:(add_template_label SessionReminder)
             ~middlewares:[ Access.session_reminder ]
-            new_session_reminder
-        ; post
-            (add_label SessionReminder)
-            ~middlewares:[ Access.session_reminder ]
-            new_session_reminder_post
-        ; choose ~scope:(MessageTemplate |> url_key) specific
+            (label_specific new_session_reminder new_session_reminder_post)
         ]
       in
       let specific =

@@ -328,15 +328,12 @@ let edit
       Experiment.(Id.value experiment.id)
   in
   let message_templates_html label list =
+    let open Message_template in
     let edit_path m =
-      Format.asprintf
-        "%s/%s/edit"
-        Message.Field.(human_url MessageTemplate)
-        (Message_template.Id.value m.id)
-      |> experiment_path
+      prefixed_template_url ~append:"edit" m |> experiment_path
     in
     let new_path =
-      if CCList.is_empty (Message_template.filter_languages sys_languages list)
+      if CCList.is_empty (filter_languages sys_languages list)
       then None
       else experiment_path Label.(prefixed_human_url label) |> CCOption.pure
     in
@@ -660,12 +657,7 @@ let message_template_form
     in
     match template with
     | None -> go (Label.prefixed_human_url label)
-    | Some template ->
-      Format.asprintf
-        "%s/%s"
-        Message.Field.(human_url MessageTemplate)
-        (Id.value template.id)
-      |> go
+    | Some template -> prefixed_template_url template |> go
   in
   let title =
     let open Pool_common in
