@@ -49,6 +49,7 @@ let index { Pool_context.language; _ } templates =
 let template_form
   { Pool_context.language; query_language; csrf; _ }
   ?languages
+  ?text_elements
   (template : Message_template.t option)
   action
   flash_fetcher
@@ -73,43 +74,80 @@ let template_form
     | None -> Create field
     | Some _ -> Update field
   in
-  form
-    ~a:[ a_action (action |> externalize); a_method `Post; a_class [ "stack" ] ]
-    [ csrf_element csrf ()
-    ; div
-        ~a:[ a_class [ "switcher"; "flex-gap" ] ]
-        [ input_element
-            language
-            ~flash_fetcher
-            ~required:true
-            ~value:(value (fun t -> t.email_subject |> EmailSubject.value))
-            `Text
-            Field.EmailSubject
-        ; language_select
+  let text_elements_html =
+    match text_elements with
+    | None -> txt ""
+    | Some elements ->
+      div
+        ~a:[ a_class [ "inset"; "border"; "border-radius"; "bg-grey-light" ] ]
+        [ p
+            [ txt
+                Pool_common.(
+                  Utils.hint_to_string language I18n.TemplateTextElementsHint)
+            ]
+        ; elements
+          |> CCList.map (fun (label, text) ->
+               [ txt (Format.asprintf "{%s}" label)
+               ; text |> Http_utils.add_line_breaks
+               ])
+          |> Component.Table.horizontal_table `Simple ~align_top:true
         ]
-    ; textarea_element
-        ~value:(value (fun t -> t.email_text |> EmailText.value))
-        Field.EmailText
-    ; textarea_element
-        ~value:(value (fun t -> t.sms_text |> SmsText.value))
-        Field.SmsText
-    ; div
-        ~a:[ a_class [ "flexrow" ] ]
-        [ submit_element ~classnames:[ "push" ] language submit () ]
-    ]
+  in
+  let form =
+    form
+      ~a:
+        [ a_action (action |> externalize)
+        ; a_method `Post
+        ; a_class [ "stack-lg" ]
+        ]
+      [ csrf_element csrf ()
+      ; div
+          ~a:[ a_class [ "switcher"; "flex-gap" ] ]
+          [ input_element
+              language
+              ~flash_fetcher
+              ~required:true
+              ~value:(value (fun t -> t.email_subject |> EmailSubject.value))
+              `Text
+              Field.EmailSubject
+          ; language_select
+          ]
+      ; textarea_element
+          ~value:(value (fun t -> t.email_text |> EmailText.value))
+          Field.EmailText
+      ; textarea_element
+          ~value:(value (fun t -> t.sms_text |> SmsText.value))
+          Field.SmsText
+      ; div
+          ~a:[ a_class [ "flexrow" ] ]
+          [ submit_element ~classnames:[ "push" ] language submit () ]
+      ]
+  in
+  div ~a:[ a_class [ "stack" ] ] [ text_elements_html; form ]
 ;;
 
-let edit ({ Pool_context.language; _ } as context) template flash_fetcher =
+let edit
+  ({ Pool_context.language; _ } as context)
+  template
+  (tenant : Pool_tenant.t)
+  flash_fetcher
+  =
   let open Message_template in
   let action =
-    match template with
-    | None -> "/admin/message-template/"
-    | Some template ->
-      template.id |> Id.value |> Format.asprintf "/admin/message-template/%s/"
+    template.id |> Id.value |> Format.asprintf "/admin/message-template/%s/"
+  in
+  let text_elements =
+    Component.MessageTextElements.message_template_help
+      language
+      tenant
+      template.label
   in
   div
     ~a:[ a_class [ "trim"; "safety-margin" ] ]
-    [ Component.Partials.form_title language Field.MessageTemplate template
-    ; template_form context template action flash_fetcher
+    [ Component.Partials.form_title
+        language
+        Field.MessageTemplate
+        (Some template)
+    ; template_form context ~text_elements (Some template) action flash_fetcher
     ]
 ;;

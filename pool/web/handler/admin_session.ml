@@ -484,6 +484,9 @@ let message_template_form ?template_id label req =
         |> Format.asprintf "/admin/experiments/%s/edit" ))
     @@
     let flash_fetcher key = Sihl.Web.Flash.find key req in
+    let* { Pool_context.Tenant.tenant; _ } =
+      Pool_context.Tenant.find req |> Lwt_result.lift
+    in
     let* experiment = Experiment.find database_label experiment_id in
     let* session = Session.find database_label session_id in
     let* template =
@@ -505,6 +508,7 @@ let message_template_form ?template_id label req =
     in
     Page.Admin.Session.message_template_form
       context
+      tenant
       experiment
       session
       available_languages

@@ -103,7 +103,19 @@ type layout =
 val to_human_label : t -> string
 val prefixed_template_url : ?append:string -> t -> string
 
+val create_public_url_with_params
+  :  Pool_tenant.Url.t
+  -> string
+  -> (Pool_common.Message.Field.t * string) list
+  -> string
+
 module AssignmentConfirmation : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> Session.t
+    -> Contact.t
+    -> (string * string) list
+
   val create
     :  Pool_database.Label.t
     -> Pool_common.Language.t
@@ -122,6 +134,8 @@ module AssignmentConfirmation : sig
 end
 
 module EmailVerification : sig
+  val email_params : string -> Contact.t -> (string * string) list
+
   val create
     :  Pool_database.Label.t
     -> Pool_common.Language.t
@@ -133,6 +147,12 @@ module EmailVerification : sig
 end
 
 module ExperimentInvitation : sig
+  val email_params
+    :  Experiment.t
+    -> Pool_tenant.Url.t
+    -> Contact.t
+    -> (string * string) list
+
   val create
     :  Pool_tenant.t
     -> Experiment.t
@@ -150,6 +170,8 @@ module ExperimentInvitation : sig
 end
 
 module PasswordChange : sig
+  val email_params : Sihl_user.t -> (string * string) list
+
   val create
     :  Pool_database.Label.t
     -> Pool_common.Language.t
@@ -158,7 +180,20 @@ module PasswordChange : sig
     -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
 end
 
+module PasswordReset : sig
+  val email_params : string -> Sihl_user.t -> (string * string) list
+
+  val create
+    :  Pool_database.Label.t
+    -> Pool_common.Language.t
+    -> layout
+    -> Sihl_user.t
+    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
+end
+
 module ProfileUpdateTrigger : sig
+  val email_params : Pool_tenant.Url.t -> Contact.t -> (string * string) list
+
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
@@ -168,16 +203,14 @@ module ProfileUpdateTrigger : sig
        Lwt.t
 end
 
-module PasswordReset : sig
-  val create
-    :  Pool_database.Label.t
-    -> Pool_common.Language.t
-    -> layout
-    -> Sihl_user.t
-    -> (Sihl_email.t, Pool_common.Message.error) result Lwt.t
-end
-
 module SessionCancellation : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> Session.t
+    -> Session.CancellationReason.t
+    -> Contact.t
+    -> (string * string) list
+
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
@@ -192,6 +225,13 @@ module SessionCancellation : sig
 end
 
 module SessionReminder : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> Experiment.t
+    -> Session.t
+    -> Contact.t
+    -> (string * string) list
+
   val create
     :  Pool_database.Label.t
     -> Pool_tenant.t
@@ -203,6 +243,14 @@ module SessionReminder : sig
 end
 
 module SessionReschedule : sig
+  val email_params
+    :  Pool_common.Language.t
+    -> Session.t
+    -> Session.Start.t
+    -> Session.Duration.t
+    -> Contact.t
+    -> (string * string) list
+
   val prepare
     :  Pool_database.Label.t
     -> Pool_tenant.t
@@ -218,6 +266,12 @@ module SessionReschedule : sig
 end
 
 module SignUpVerification : sig
+  val email_params
+    :  string
+    -> Pool_user.Firstname.t
+    -> Pool_user.Lastname.t
+    -> (string * string) list
+
   val create
     :  Pool_database.Label.t
     -> Pool_common.Language.t

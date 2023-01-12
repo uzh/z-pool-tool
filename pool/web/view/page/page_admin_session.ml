@@ -892,6 +892,7 @@ let cancel
 
 let message_template_form
   ({ Pool_context.language; _ } as context)
+  tenant
   experiment
   session
   languages
@@ -923,8 +924,17 @@ let message_template_form
          (control |> Utils.control_to_string language)
          (label |> Label.to_human |> CCString.lowercase_ascii))
   in
+  let text_elements =
+    Component.MessageTextElements.message_template_help
+      ~experiment
+      ~session
+      language
+      tenant
+      label
+  in
   Page_admin_message_template.template_form
     context
+    ~text_elements
     ?languages
     template
     action

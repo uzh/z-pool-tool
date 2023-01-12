@@ -1,7 +1,7 @@
 include Entity
 include Event
 include Default
-open Message_utils
+include Message_utils
 
 let find = Repo.find
 let all_default = Repo.all_default
@@ -61,24 +61,26 @@ let experiment_params experiment =
 ;;
 
 module AssignmentConfirmation = struct
-  let email_params lang session =
-    "sessionOverview", Session.to_email_text lang session
+  let base_params contact = contact.Contact.user |> global_params
+
+  let email_params lang session contact =
+    base_params contact
+    @ [ "sessionOverview", Session.to_email_text lang session ]
   ;;
 
-  let email_params_public_session lang session =
-    "sessionOverview", Session.public_to_email_text lang session
+  let email_params_public_session lang session contact =
+    base_params contact
+    @ [ "sessionOverview", Session.public_to_email_text lang session ]
   ;;
 
   let template pool language =
     Repo.find_by_label pool language Label.AssignmentConfirmation
   ;;
 
-  let base_params contact = contact.Contact.user |> global_params
-
   let create pool language tenant session contact =
     let open Utils.Lwt_result.Infix in
     let* template = template pool language in
-    let params = email_params language session :: base_params contact in
+    let params = email_params language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     prepare_email language template email layout params |> Lwt_result.return
@@ -87,9 +89,7 @@ module AssignmentConfirmation = struct
   let create_from_public_session pool language tenant session contact =
     let open Utils.Lwt_result.Infix in
     let* template = template pool language in
-    let params =
-      email_params_public_session language session :: base_params contact
-    in
+    let params = email_params_public_session language session contact in
     let layout = layout_from_tenant tenant in
     let email = contact |> Contact.email_address in
     prepare_email language template email layout params |> Lwt_result.return
@@ -98,7 +98,7 @@ end
 
 module EmailVerification = struct
   let email_params validation_url contact =
-    [ "verificationUrl", validation_url ] @ global_params contact.Contact.user
+    global_params contact.Contact.user @ [ "verificationUrl", validation_url ]
   ;;
 
   let create pool language layout contact email_address token =
@@ -124,11 +124,11 @@ module ExperimentInvitation = struct
   let email_params experiment public_url contact =
     let open Experiment in
     let id = experiment.Experiment.id |> Id.value in
-    [ ( "experimentUrl"
-      , create_public_url public_url (Format.asprintf "experiment/%s" id) )
-    ]
+    global_params contact.Contact.user
+    @ [ ( "experimentUrl"
+        , create_public_url public_url (Format.asprintf "experiment/%s" id) )
+      ]
     @ experiment_params experiment
-    @ global_params contact.Contact.user
   ;;
 
   let prepare tenant =
@@ -190,7 +190,7 @@ end
 
 module PasswordReset = struct
   let email_params reset_url user =
-    [ "resetUrl", reset_url ] @ (user |> global_params)
+    (user |> global_params) @ [ "resetUrl", reset_url ]
   ;;
 
   let create pool language layout user =
@@ -230,8 +230,9 @@ module PasswordReset = struct
 end
 
 module ProfileUpdateTrigger = struct
-  let email_params contact profile_url =
-    ("profileUrl", profile_url) :: (contact.Contact.user |> global_params)
+  let email_params tenant_url contact =
+    let profile_url = create_public_url tenant_url "/user/personal-details" in
+    (contact.Contact.user |> global_params) @ [ "profileUrl", profile_url ]
   ;;
 
   let prepare pool tenant =
@@ -245,13 +246,12 @@ module ProfileUpdateTrigger = struct
     let fnc contact =
       let open CCResult in
       let* lang, template = template_by_contact sys_langs templates contact in
-      let profile_url = create_public_url url "/user/personal-details" in
       prepare_email
         lang
         template
         (Contact.email_address contact)
         (layout_from_tenant tenant)
-        (email_params contact profile_url)
+        (email_params url contact)
       |> CCResult.pure
     in
     fnc |> Lwt_result.return
@@ -260,10 +260,10 @@ end
 
 module SessionCancellation = struct
   let email_params lang session reason contact =
-    [ "sessionOverview", Session.to_email_text lang session
-    ; "reason", reason |> Session.CancellationReason.value
-    ]
-    @ global_params contact.Contact.user
+    global_params contact.Contact.user
+    @ [ "sessionOverview", Session.to_email_text lang session
+      ; "reason", reason |> Session.CancellationReason.value
+      ]
   ;;
 
   let prepare pool tenant sys_langs session =
@@ -286,9 +286,9 @@ end
 
 module SessionReminder = struct
   let email_params lang experiment session contact =
-    (("sessionOverview", Session.to_email_text lang session)
-    :: experiment_params experiment)
-    @ global_params contact.Contact.user
+    global_params contact.Contact.user
+    @ (("sessionOverview", Session.to_email_text lang session)
+      :: experiment_params experiment)
   ;;
 
   let create pool tenant system_languages experiment session contact =
@@ -314,11 +314,11 @@ module SessionReschedule = struct
   let email_params lang session new_start new_duration contact =
     let open Pool_common.Utils.Time in
     let open Session in
-    [ "sessionOverview", to_email_text lang session
-    ; "newStart", new_start |> Start.value |> formatted_date_time
-    ; "newDuration", new_duration |> Duration.value |> formatted_timespan
-    ]
-    @ global_params contact.Contact.user
+    global_params contact.Contact.user
+    @ [ "sessionOverview", to_email_text lang session
+      ; "newStart", new_start |> Start.value |> formatted_date_time
+      ; "newDuration", new_duration |> Duration.value |> formatted_timespan
+      ]
   ;;
 
   let prepare pool tenant sys_langs session =
@@ -340,14 +340,14 @@ module SessionReschedule = struct
 end
 
 module SignUpVerification = struct
-  let email_params validation_url firstname lastname =
+  let email_params verification_url firstname lastname =
     let open Pool_user in
-    [ "verificationUrl", validation_url
-    ; ( "name"
+    [ ( "name"
       , Format.asprintf
           "%s %s"
           (Firstname.value firstname)
           (Lastname.value lastname) )
+    ; "verificationUrl", verification_url
     ]
   ;;
 
@@ -356,7 +356,7 @@ module SignUpVerification = struct
     let open Utils.Lwt_result.Infix in
     let* template = Repo.find_by_label pool language Label.SignUpVerification in
     let%lwt url = Pool_tenant.Url.of_pool pool in
-    let validation_url =
+    let verification_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]
       |> create_public_url_with_params url "/email-verified"
     in
@@ -365,7 +365,7 @@ module SignUpVerification = struct
       template
       email_address
       (layout_from_tenant tenant)
-      (email_params validation_url firstname lastname)
+      (email_params verification_url firstname lastname)
     |> Lwt_result.return
   ;;
 end
