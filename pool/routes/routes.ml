@@ -78,13 +78,14 @@ module Contact = struct
   module Session = Handler.Contact.Session
   module Assignment = Handler.Contact.Assignment
 
-  let public =
+  let public_not_logged_in =
     [ get "/signup" SignUp.sign_up
     ; post "/signup" SignUp.sign_up_create
     ; get "/email-confirmation" Handler.Public.email_confirmation_note
-    ; get "/email-verified" SignUp.email_verification
     ]
   ;;
+
+  let public = [ get "/email-verified" SignUp.email_verification ]
 
   let locked_routes =
     let locked =
@@ -135,6 +136,12 @@ module Contact = struct
           ~middlewares:
             [ CustomMiddleware.Guardian.require_user_type_of
                 Pool_context.UserType.[ Guest ]
+            ]
+          public_not_logged_in
+      ; choose
+          ~middlewares:
+            [ CustomMiddleware.Guardian.require_user_type_of
+                Pool_context.UserType.[ Guest; Contact ]
             ]
           public
       ; choose
