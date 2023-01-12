@@ -103,6 +103,23 @@ type layout =
 val to_human_label : t -> string
 val prefixed_template_url : ?append:string -> t -> string
 
+module Guard : sig
+  module Target : sig
+    val to_authorizable
+      :  ?ctx:Guardian__Persistence.context
+      -> t
+      -> ( [> `MessageTemplate ] Guard.AuthorizableTarget.t
+         , Pool_common.Message.error )
+         Lwt_result.t
+
+    type t
+
+    val equal : t -> t -> bool
+    val pp : Format.formatter -> t -> unit
+    val show : t -> string
+  end
+end
+
 val create_public_url_with_params
   :  Pool_tenant.Url.t
   -> string

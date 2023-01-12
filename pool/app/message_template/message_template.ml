@@ -2,6 +2,7 @@ include Entity
 include Event
 include Default
 include Message_utils
+module Guard = Entity_guard
 
 let find = Repo.find
 let all_default = Repo.all_default
