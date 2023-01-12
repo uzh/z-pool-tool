@@ -122,7 +122,6 @@ let sign_up_create req =
   result |> HttpUtils.extract_happy_path_with_actions req
 ;;
 
-(* TODO: Make sure it works when logged in as well (PW update) *)
 let email_verification req =
   let open Utils.Lwt_result.Infix in
   let tags = Logger.req req in

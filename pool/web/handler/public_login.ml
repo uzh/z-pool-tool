@@ -155,13 +155,16 @@ let request_reset_password_post req =
 ;;
 
 let reset_password_get req =
-  let result context =
+  let result ({ Pool_context.database_label; language; _ } as context) =
     let open Utils.Lwt_result.Infix in
     let error_path = "/request-reset-password/" in
     Utils.Lwt_result.map_error (fun err -> err, error_path)
     @@
     let token =
       Sihl.Web.Request.query Pool_common.Message.Field.(Token |> show) req
+    in
+    let* password_policy =
+      I18n.find_by_key database_label I18n.Key.PasswordPolicyText language
     in
     match token with
     | None ->
@@ -170,7 +173,7 @@ let reset_password_get req =
         [ Message.set ~error:[ Pool_common.Message.(NotFound Field.Token) ] ]
       |> Lwt_result.ok
     | Some token ->
-      Page.Public.reset_password token context
+      Page.Public.reset_password token context password_policy
       |> create_layout req ~active_navigation:"/reset-password" context
       >|+ Sihl.Web.Response.of_html
   in
@@ -178,37 +181,52 @@ let reset_password_get req =
 ;;
 
 let reset_password_post req =
-  (* TODO: Make sure Token gets deactivated and correct error messages are
-     displayed and PW hint is displayed *)
   let%lwt urlencoded = Sihl.Web.Request.to_urlencoded req in
   let result { Pool_context.database_label; query_language; _ } =
     let open Utils.Lwt_result.Infix in
     let open Pool_common.Message in
+    let redirect = "/reset-password/" in
     let* params =
       Field.[ Token; Password; PasswordConfirmation ]
       |> CCList.map Field.show
       |> HttpUtils.urlencoded_to_params urlencoded
-      |> CCOption.to_result (PasswordResetInvalidData, "/reset-password/")
+      |> CCOption.to_result (PasswordResetInvalidData, redirect)
       |> Lwt_result.lift
     in
     let go field = field |> Field.show |> CCFun.flip List.assoc params in
     let token = go Field.Token in
+    let redirect_with_param =
+      add_field_query_params redirect [ Field.Token, token ]
+    in
     let* () =
+      let open CCResult.Infix in
+      let open Pool_user.Password in
+      Field.Password
+      |> go
+      |> create
+      >>= validate
+      |> Lwt_result.lift
+      >|- fun err -> err, redirect_with_param
+    in
+    let%lwt reset =
       Service.PasswordReset.reset_password
         ~ctx:(to_ctx database_label)
         ~token
         (go Field.Password)
         (go Field.PasswordConfirmation)
-      >|- CCFun.const
-            ( passwordresetinvaliddata
-            , [ Field.Token, token ]
-              |> add_field_query_params "/reset-password/" )
+      >|- CCFun.const (passwordresetinvaliddata, redirect_with_param)
     in
-    HttpUtils.(
-      redirect_to_with_actions
-        (path_with_language query_language "/login")
-        [ Message.set ~success:[ PasswordReset ] ])
-    |> Lwt_result.ok
+    match reset with
+    | Ok () ->
+      let%lwt () =
+        Service.Token.deactivate ~ctx:(Pool_tenant.to_ctx database_label) token
+      in
+      HttpUtils.(
+        redirect_to_with_actions
+          (path_with_language query_language "/login")
+          [ Message.set ~success:[ PasswordReset ] ])
+      |> Lwt_result.ok
+    | Error err -> err |> Lwt_result.fail
   in
   result |> HttpUtils.extract_happy_path req
 ;;
