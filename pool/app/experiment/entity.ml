@@ -45,40 +45,6 @@ module AllowUninvitedSignup = struct
   let schema = schema Common.Message.Field.AllowUninvitedSignup
 end
 
-module InvitationTemplate = struct
-  module Subject = struct
-    include Pool_common.Model.String
-
-    let field = Common.Message.Field.InvitationSubject
-    let schema = schema ?validation:None field
-    let of_string m = m
-  end
-
-  module Text = struct
-    include Pool_common.Model.String
-
-    let field = Common.Message.Field.InvitationText
-    let schema = schema ?validation:None field
-    let of_string m = m
-  end
-
-  type t =
-    { subject : Subject.t
-    ; text : Text.t
-    }
-  [@@deriving eq, show]
-
-  let create subject text : (t, Common.Message.error) result =
-    let open CCResult in
-    let* subject = Subject.create subject in
-    let* text = Subject.create text in
-    Ok { subject; text }
-  ;;
-
-  let subject_value (m : t) = m.subject |> Subject.value
-  let text_value (m : t) = m.text |> Text.value
-end
-
 type t =
   { id : Id.t
   ; title : Title.t
@@ -89,10 +55,7 @@ type t =
   ; registration_disabled : RegistrationDisabled.t
   ; allow_uninvited_signup : AllowUninvitedSignup.t
   ; experiment_type : Pool_common.ExperimentType.t option
-  ; invitation_template : InvitationTemplate.t option
   ; session_reminder_lead_time : Pool_common.Reminder.LeadTime.t option
-  ; session_reminder_subject : Pool_common.Reminder.Subject.t option
-  ; session_reminder_text : Pool_common.Reminder.Text.t option
   ; created_at : Ptime.t
   ; updated_at : Ptime.t
   }
@@ -107,25 +70,9 @@ let create
   registration_disabled
   allow_uninvited_signup
   experiment_type
-  invitation_subject
-  invitation_text
   session_reminder_lead_time
-  session_reminder_subject
-  session_reminder_text
   =
   let open CCResult in
-  let* () =
-    match session_reminder_subject, session_reminder_text with
-    | Some _, Some _ | None, None -> Ok ()
-    | _ -> Error Pool_common.Message.ReminderSubjectAndTextRequired
-  in
-  let* invitation_template =
-    match invitation_subject, invitation_text with
-    | Some subject, Some text ->
-      InvitationTemplate.create subject text |> CCResult.map CCOption.pure
-    | None, None -> Ok None
-    | _ -> Error Pool_common.Message.InvitationSubjectAndTextRequired
-  in
   Ok
     { id = id |> CCOption.value ~default:(Id.create ())
     ; title
@@ -136,10 +83,7 @@ let create
     ; registration_disabled
     ; allow_uninvited_signup
     ; experiment_type
-    ; invitation_template
     ; session_reminder_lead_time
-    ; session_reminder_subject
-    ; session_reminder_text
     ; created_at = Ptime_clock.now ()
     ; updated_at = Ptime_clock.now ()
     }
@@ -176,14 +120,6 @@ let to_public
     ; direct_registration_disabled
     ; experiment_type
     }
-;;
-
-let session_reminder_subject_value m =
-  m.session_reminder_subject |> CCOption.map Pool_common.Reminder.Subject.value
-;;
-
-let session_reminder_text_value m =
-  m.session_reminder_text |> CCOption.map Pool_common.Reminder.Text.value
 ;;
 
 let session_reminder_lead_time_value m =

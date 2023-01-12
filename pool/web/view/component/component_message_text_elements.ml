@@ -113,9 +113,7 @@ module DummyData = struct
           ParticipantAmount.create 1 |> Pool_common.Utils.get_or_failwith
       ; overbook =
           ParticipantAmount.create 4 |> Pool_common.Utils.get_or_failwith
-      ; reminder_subject = None
       ; reminder_lead_time = None
-      ; reminder_text = None
       ; reminder_sent_at = None
       ; assignment_count =
           0 |> AssignmentCount.create |> Pool_common.Utils.get_or_failwith
@@ -134,9 +132,6 @@ module DummyData = struct
       ; public_title = PublicTitle.create "public_title" |> get_exn
       ; description = Description.create "A description for everyone" |> get_exn
       ; filter = None
-      ; invitation_template = None
-      ; session_reminder_subject = None
-      ; session_reminder_text = None
       ; session_reminder_lead_time = None
       ; direct_registration_disabled =
           false |> DirectRegistrationDisabled.create
@@ -272,28 +267,4 @@ let message_template_help
       verification_url
       (Contact.firstname contact)
       (Contact.lastname contact)
-;;
-
-let session_reminder_help language sys_languages ?session () =
-  let session = CCOption.value ~default:(DummyData.create_session ()) session in
-  let session_overview =
-    (CCList.map (fun lang ->
-       ( Format.asprintf "sessionOverview%s" (Pool_common.Language.show lang)
-       , Session.(to_email_text lang session) |> Http_utils.add_line_breaks )))
-      sys_languages
-  in
-  DummyData.name_element :: session_overview
-  |> build_help language "session-reminder-help"
-;;
-
-let experiment_invitation_help language ?experiment () =
-  let experiment =
-    CCOption.value ~default:DummyData.(create_experiment ()) experiment
-  in
-  let text_elements =
-    Invitation.email_experiment_elements experiment
-    |> CCList.map (fun (label, content) -> label, div [ txt content ])
-  in
-  DummyData.name_element :: text_elements
-  |> build_help language "experiment-invitation-help"
 ;;

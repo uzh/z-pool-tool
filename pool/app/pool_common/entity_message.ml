@@ -254,7 +254,6 @@ type error =
   | InvalidEmailSuffix of string list
   | InvalidOptionSelected
   | InvalidHtmxRequest
-  | InvitationSubjectAndTextRequired
   | LoginProvideDetails
   | MeantimeUpdate of Field.t
   | NegativeAmount
@@ -287,7 +286,6 @@ type error =
   | SessionRegistrationViaParent
   | SessionTenantNotFound
   | ReadOnlyModel
-  | ReminderSubjectAndTextRequired
   | RequiredFieldsMissing
   | SessionAlreadyCanceled of string
   | SessionAlreadyClosed of string

@@ -9,34 +9,22 @@ let experiments pool =
     [ ( "The Twenty pound auction"
       , "Trading experiment"
       , "It was great fun."
-      , None
-      , None
       , false
-      , Some (60 * 60)
-      , None
-      , None )
+      , Some (60 * 60) )
     ; ( "The Wallet Game"
       , "Finance experiment"
       , "Students bid for an object in a first-price auction. Each receives an \
          independently drawn signal of the value of the object. The actual \
          value is the sum of the signal."
-      , None
-      , None
       , false
-      , None
-      , None
       , None )
     ; ( "The Ultimatum and the Dictator Bargaining Games"
       , "Bidding experiment"
       , "The experiment illustrates the problem of public good provision as \
          discussed in most microeconomics lectures or lectures on public \
          economics."
-      , None
-      , None
       , true
-      , Some (60 * 60)
-      , Some "Subject"
-      , Some "Don't forget your session." )
+      , Some (60 * 60) )
     ]
   in
   let events =
@@ -44,12 +32,8 @@ let experiments pool =
       (fun ( title
            , public_title
            , description
-           , invitation_subject
-           , invitation_text
            , direct_registration_disabled
-           , session_reminder_lead_time
-           , session_reminder_subject
-           , session_reminder_text ) ->
+           , session_reminder_lead_time ) ->
         let experiment =
           let open Experiment in
           let title = Title.create title |> get_or_failwith in
@@ -57,26 +41,11 @@ let experiments pool =
             PublicTitle.create public_title |> get_or_failwith
           in
           let description = Description.create description |> get_or_failwith in
-          let invitation_subject =
-            invitation_subject
-            >|= InvitationTemplate.Subject.create %> get_or_failwith
-          in
-          let invitation_text =
-            invitation_text
-            >|= InvitationTemplate.Text.create %> get_or_failwith
-          in
           let session_reminder_lead_time =
             session_reminder_lead_time
             >|= Ptime.Span.of_int_s
                 %> Reminder.LeadTime.create
                 %> get_or_failwith
-          in
-          let session_reminder_text =
-            session_reminder_text >|= Reminder.Text.create %> get_or_failwith
-          in
-          let session_reminder_subject =
-            session_reminder_subject
-            >|= Reminder.Subject.create %> get_or_failwith
           in
           let direct_registration_disabled =
             DirectRegistrationDisabled.create direct_registration_disabled
@@ -91,11 +60,7 @@ let experiments pool =
             registration_disabled
             allow_uninvited_signup
             (Some Pool_common.ExperimentType.Lab)
-            invitation_subject
-            invitation_text
             session_reminder_lead_time
-            session_reminder_subject
-            session_reminder_text
           |> get_or_failwith
         in
         Experiment.Created experiment)

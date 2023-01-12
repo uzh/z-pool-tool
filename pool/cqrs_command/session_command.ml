@@ -9,8 +9,6 @@ let create_command
   max_participants
   min_participants
   overbook
-  reminder_subject
-  reminder_text
   reminder_lead_time
   : Session.base
   =
@@ -21,8 +19,6 @@ let create_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_subject
-    ; reminder_text
     ; reminder_lead_time
     }
 ;;
@@ -39,8 +35,6 @@ let create_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       create_command)
@@ -53,8 +47,6 @@ let update_command
   max_participants
   min_participants
   overbook
-  reminder_subject
-  reminder_text
   reminder_lead_time
   : Session.update
   =
@@ -65,8 +57,6 @@ let update_command
     ; max_participants
     ; min_participants
     ; overbook
-    ; reminder_subject
-    ; reminder_text
     ; reminder_lead_time
     }
 ;;
@@ -83,8 +73,6 @@ let update_schema =
         ; Session.ParticipantAmount.schema
             Pool_common.Message.Field.MinParticipants
         ; Session.ParticipantAmount.schema Pool_common.Message.Field.Overbook
-        ; Conformist.optional @@ Pool_common.Reminder.Subject.schema ()
-        ; Conformist.optional @@ Pool_common.Reminder.Text.schema ()
         ; Conformist.optional @@ Pool_common.Reminder.LeadTime.schema ()
         ]
       update_command)
@@ -154,8 +142,6 @@ end = struct
        ; min_participants
        ; (* TODO [aerben] find a better name *)
          overbook
-       ; reminder_subject
-       ; reminder_text
        ; reminder_lead_time
        } :
       Session.base)
@@ -179,8 +165,6 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_subject
-        ; reminder_text
         ; reminder_lead_time
         }
     in
@@ -235,8 +219,6 @@ end = struct
        ; max_participants
        ; min_participants
        ; overbook
-       ; reminder_subject
-       ; reminder_text
        ; reminder_lead_time
        } :
       Session.update)
@@ -274,8 +256,6 @@ end = struct
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_subject
-        ; reminder_text
         ; reminder_lead_time
         }
     in

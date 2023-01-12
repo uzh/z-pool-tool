@@ -8,8 +8,6 @@ let session_data =
     , 30
     , 4
     , 4
-    , None
-    , None
     , Some 3600 )
   ; ( Ptime.add_span (Ptime_clock.now ()) halfhour
       |> CCOption.get_exn_or "Invalid time"
@@ -18,8 +16,6 @@ let session_data =
     , 28
     , 20
     , 0
-    , None
-    , None
     , None )
   ; ( Ptime.add_span (Ptime_clock.now ()) hour
       |> CCOption.get_exn_or "Invalid time"
@@ -28,8 +24,6 @@ let session_data =
     , 30
     , 2
     , 5
-    , None
-    , None
     , Some 7200 )
   ]
 ;;
@@ -50,8 +44,6 @@ let create pool =
                  , max
                  , min
                  , overbook
-                 , reminder_subject
-                 , reminder_text
                  , reminder_lead_time ) ->
               let open CCOption in
               let (session : Session.base) =
@@ -66,10 +58,6 @@ let create pool =
                       ParticipantAmount.create min |> get_or_failwith
                   ; overbook =
                       ParticipantAmount.create overbook |> get_or_failwith
-                  ; reminder_subject
-                  ; reminder_text =
-                      reminder_text
-                      >|= Pool_common.Reminder.Text.create %> get_or_failwith
                   ; reminder_lead_time =
                       reminder_lead_time
                       >|= Ptime.Span.of_int_s
@@ -105,8 +93,6 @@ let create pool =
           ; min_participants = parent.min_participants
           ; overbook = parent.overbook
           ; reminder_lead_time = None
-          ; reminder_subject = None
-          ; reminder_text = None
           }
       in
       let location = CCList.hd locations in

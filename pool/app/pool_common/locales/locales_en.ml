@@ -285,8 +285,6 @@ let rec error_to_string = function
       (CCString.concat ", " suffixes)
   | InvalidOptionSelected -> "Invalid option selected."
   | InvalidHtmxRequest -> "Invalid request."
-  | InvitationSubjectAndTextRequired ->
-    "Please enter both a subject and a text for the session invitation."
   | LoginProvideDetails -> "Please provide email and password"
   | MeantimeUpdate field ->
     field_message "" (field_to_string field) "was updated in the meantime!"
@@ -330,8 +328,6 @@ let rec error_to_string = function
       (field_to_string f2)
   | ReadOnlyModel -> "Read only model!"
   | RegistrationDisabled -> "registration is disabled."
-  | ReminderSubjectAndTextRequired ->
-    "Please enter both a subject and a text for the session reminder."
   | RequestRequiredFields -> "Please provide necessary fields"
   | RequiredFieldsMissing ->
     "To continue, you need to answer the following questions."

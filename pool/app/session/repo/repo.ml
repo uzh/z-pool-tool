@@ -46,8 +46,6 @@ module Sql = struct
           pool_sessions.max_participants,
           pool_sessions.min_participants,
           pool_sessions.overbook,
-          pool_sessions.reminder_subject,
-          pool_sessions.reminder_text,
           pool_sessions.reminder_lead_time,
           pool_sessions.reminder_sent_at,
           (SELECT count(pool_assignments.id) FROM pool_assignments WHERE session_id=pool_sessions.id),
@@ -326,8 +324,6 @@ module Sql = struct
         max_participants,
         min_participants,
         overbook,
-        reminder_subject,
-        reminder_text,
         reminder_lead_time,
         reminder_sent_at,
         closed_at,
@@ -346,9 +342,7 @@ module Sql = struct
         $11,
         $12,
         $13,
-        $14,
-        $15,
-        $16
+        $14
       )
     |sql}
     |> Caqti_type.(tup2 string RepoEntity.Write.t ->. unit)
@@ -374,12 +368,10 @@ module Sql = struct
         max_participants = $7,
         min_participants = $8,
         overbook = $9,
-        reminder_subject = $10,
-        reminder_text = $11,
-        reminder_lead_time = $12,
-        reminder_sent_at = $13,
-        closed_at = $14,
-        canceled_at = $15
+        reminder_lead_time = $10,
+        reminder_sent_at = $11,
+        closed_at = $12,
+        canceled_at = $13
       WHERE
         uuid = UNHEX(REPLACE($1, '-', ''))
     |sql}

@@ -61,6 +61,16 @@ let add_closed_at_column =
      |sql}
 ;;
 
+let remove_message_columns =
+  Sihl.Database.Migration.create_step
+    ~label:"rename filter column"
+    {sql|
+      ALTER TABLE pool_sessions
+      DROP COLUMN reminder_subject,
+      DROP COLUMN reminder_text
+    |sql}
+;;
+
 let migration () =
   Sihl.Database.Migration.(
     empty "session"

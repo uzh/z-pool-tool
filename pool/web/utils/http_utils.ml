@@ -295,3 +295,8 @@ let invalid_session_redirect ?(login_path = "/login") req query_lang =
 let find_id encode field req =
   Sihl.Web.Router.param req @@ Pool_common.Message.Field.show field |> encode
 ;;
+
+let default_value_style elms =
+  let open Tyxml.Html in
+  div ~a:[ a_class [ "gap-sm"; "inset-sm"; "border-left" ] ] [ elms ]
+;;

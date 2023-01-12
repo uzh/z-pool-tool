@@ -7,8 +7,6 @@ type base =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_subject : Pool_common.Reminder.Subject.t option
-  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
@@ -20,8 +18,6 @@ type update =
   ; max_participants : ParticipantAmount.t
   ; min_participants : ParticipantAmount.t
   ; overbook : ParticipantAmount.t
-  ; reminder_subject : Pool_common.Reminder.Subject.t option
-  ; reminder_text : Pool_common.Reminder.Text.t option
   ; reminder_lead_time : Pool_common.Reminder.LeadTime.t option
   }
 [@@deriving eq, show]
@@ -58,8 +54,6 @@ let handle_event pool =
         session.max_participants
         session.min_participants
         session.overbook
-        session.reminder_subject
-        session.reminder_text
         session.reminder_lead_time
     in
     let%lwt () = Repo.insert pool (Experiment.Id.value experiment_id, sess) in
@@ -80,8 +74,6 @@ let handle_event pool =
         ; max_participants
         ; min_participants
         ; overbook
-        ; reminder_subject
-        ; reminder_text
         ; reminder_lead_time
         }
       , location
@@ -96,8 +88,6 @@ let handle_event pool =
       ; max_participants
       ; min_participants
       ; overbook
-      ; reminder_subject
-      ; reminder_text
       ; reminder_lead_time
       }
   | ReminderSent session ->

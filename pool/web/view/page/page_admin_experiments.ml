@@ -112,7 +112,7 @@ let index experiment_list Pool_context.{ language; _ } =
 let experiment_form
   ?experiment
   Pool_context.{ language; csrf; _ }
-  sys_languages
+  default_reminder_lead_time
   flash_fetcher
   =
   let open Experiment in
@@ -191,47 +191,7 @@ let experiment_form
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
         [ h3
-            ~a:[ a_class [ "heading-2" ] ]
-            [ txt
-                (Utils.field_to_string language Message.Field.Invitation
-                |> CCString.capitalize_ascii)
-            ]
-        ; div
-            ~a:[ a_class [ "stack" ] ]
-            [ MessageTextElements.experiment_invitation_help
-                language
-                ?experiment
-                ()
-            ; div
-                ~a:[ a_class [ "grid-col-2" ] ]
-                [ input_element
-                    language
-                    `Text
-                    Message.Field.InvitationSubject
-                    ~value:
-                      (value (fun e ->
-                         e.invitation_template
-                         |> CCOption.map_or
-                              ~default:""
-                              InvitationTemplate.subject_value))
-                    ~flash_fetcher
-                ; textarea_element
-                    language
-                    Message.Field.InvitationText
-                    ~value:
-                      (value (fun e ->
-                         e.invitation_template
-                         |> CCOption.map_or
-                              ~default:""
-                              InvitationTemplate.text_value))
-                    ~flash_fetcher
-                ]
-            ]
-        ]
-    ; div
-        ~a:[ a_class [ "gap-lg" ] ]
-        [ h3
-            ~a:[ a_class [ "heading-2" ] ]
+            ~a:[ a_class [ "heading-3" ] ]
             [ txt (Utils.text_to_string language I18n.SessionReminder) ]
         ; div
             ~a:[ a_class [ "stack" ] ]
@@ -243,42 +203,27 @@ let experiment_form
                 ]
             ; div
                 ~a:[ a_class [ "grid-col-2" ] ]
-                [ flatpicker_element
-                    language
-                    `Time
-                    Message.Field.LeadTime
-                    ~help:I18n.TimeSpanPickerHint
-                    ~value:
-                      (value (fun e ->
-                         session_reminder_lead_time_value e
-                         |> CCOption.map_or
-                              ~default:""
-                              Utils.Time.timespan_spanpicker))
-                    ~flash_fetcher
-                ; div
-                    ~a:[ a_class [ "full-width" ] ]
-                    [ MessageTextElements.session_reminder_help
+                [ div
+                    [ flatpicker_element
                         language
-                        sys_languages
-                        ()
+                        `Time
+                        Message.Field.LeadTime
+                        ~help:I18n.TimeSpanPickerHint
+                        ~value:
+                          (value (fun e ->
+                             session_reminder_lead_time_value e
+                             |> CCOption.map_or
+                                  ~default:""
+                                  Utils.Time.timespan_spanpicker))
+                        ~flash_fetcher
+                    ; Utils.text_to_string
+                        language
+                        (I18n.SessionReminderDefaultLeadTime
+                           (default_reminder_lead_time
+                           |> Reminder.LeadTime.value))
+                      |> txt
+                      |> HttpUtils.default_value_style
                     ]
-                ; input_element
-                    language
-                    `Text
-                    Message.Field.ReminderSubject
-                    ~value:
-                      (value (fun e ->
-                         session_reminder_subject_value e
-                         |> CCOption.value ~default:""))
-                    ~flash_fetcher
-                ; textarea_element
-                    language
-                    Message.Field.ReminderText
-                    ~value:
-                      (value (fun e ->
-                         session_reminder_text_value e
-                         |> CCOption.value ~default:""))
-                    ~flash_fetcher
                 ]
             ]
         ]
@@ -298,7 +243,10 @@ let experiment_form
     ]
 ;;
 
-let create (Pool_context.{ language; _ } as context) sys_languages flash_fetcher
+let create
+  (Pool_context.{ language; _ } as context)
+  default_reminder_lead_time
+  flash_fetcher
   =
   div
     ~a:[ a_class [ "trim"; "safety-margin"; "stack" ] ]
@@ -308,7 +256,7 @@ let create (Pool_context.{ language; _ } as context) sys_languages flash_fetcher
                language
                Message.(Create (Some Field.Experiment)))
         ]
-    ; experiment_form context sys_languages flash_fetcher
+    ; experiment_form context default_reminder_lead_time flash_fetcher
     ]
 ;;
 
@@ -316,12 +264,15 @@ let edit
   experiment
   (Pool_context.{ language; _ } as context)
   sys_languages
+  default_reminder_lead_time
   invitation_templates
   session_reminder_templates
   flash_fetcher
   =
   let open Message_template in
-  let form = experiment_form ~experiment context sys_languages flash_fetcher in
+  let form =
+    experiment_form ~experiment context default_reminder_lead_time flash_fetcher
+  in
   let experiment_path =
     Format.asprintf
       "/admin/experiments/%s/%s"
@@ -430,67 +381,7 @@ let detail experiment session_count Pool_context.{ language; csrf; _ } =
         ]
       |> vertical_table
     in
-    let invitation_rows InvitationTemplate.{ subject; text } =
-      let open InvitationTemplate in
-      let table =
-        Message.
-          [ Field.InvitationSubject, subject |> Subject.value |> txt
-          ; ( Field.InvitationText
-            , text |> Text.value |> HttpUtils.add_line_breaks )
-          ]
-        |> vertical_table
-      in
-      div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            [ txt
-                (Utils.field_to_string language Message.Field.Invitation
-                |> CCString.capitalize_ascii)
-            ]
-        ; table
-        ]
-    in
-    let session_reminder_rows =
-      let open Reminder in
-      let open CCFun in
-      let table =
-        Message.
-          [ ( Field.LeadTime
-            , experiment.session_reminder_lead_time
-              |> CCOption.map_or
-                   ~default:""
-                   (LeadTime.value %> Utils.Time.formatted_timespan)
-              |> txt )
-          ; ( Field.ReminderSubject
-            , experiment.session_reminder_subject
-              |> CCOption.map_or ~default:"" Subject.value
-              |> txt )
-          ; ( Field.ReminderText
-            , experiment.session_reminder_text
-              |> CCOption.map_or
-                   ~default:(txt "")
-                   (Text.value %> HttpUtils.add_line_breaks) )
-          ]
-        |> vertical_table
-      in
-      div
-        [ h3
-            ~a:[ a_class [ "heading-3" ] ]
-            [ txt
-                (Utils.text_to_string language I18n.SessionReminder
-                |> CCString.capitalize_ascii)
-            ]
-        ; table
-        ]
-    in
-    div
-      ~a:[ a_class [ "stack-lg" ] ]
-      [ experiment_table
-      ; experiment.invitation_template
-        |> CCOption.map_or ~default:(txt "") invitation_rows
-      ; session_reminder_rows
-      ; delete_form
-      ]
+    div ~a:[ a_class [ "stack-lg" ] ] [ experiment_table; delete_form ]
   in
   let edit_button =
     link_as_button

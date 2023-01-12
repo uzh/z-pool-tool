@@ -31,8 +31,6 @@ module Data = struct
     let max_participants = 24
     let min_participants = 5
     let overbook = 0
-    let subject = "Subject"
-    let text = "Text"
     let lead_time = Ptime.Span.of_int_s 1800
 
     let sent_at =
@@ -60,8 +58,6 @@ module Data = struct
     let max_participants = Raw.max_participants |> string_of_int
     let min_participants = Raw.min_participants |> string_of_int
     let overbook = Raw.overbook |> string_of_int
-    let subject = Raw.subject
-    let text = Raw.text
 
     let lead_time =
       Raw.lead_time
@@ -101,12 +97,6 @@ module Data = struct
       Session.ParticipantAmount.create Raw.overbook |> CCResult.get_exn
     ;;
 
-    let subject =
-      Pool_common.Reminder.Subject.create Raw.subject |> CCResult.get_exn
-    ;;
-
-    let text = Pool_common.Reminder.Text.create Raw.text |> CCResult.get_exn
-
     let lead_time =
       Pool_common.Reminder.LeadTime.create Raw.lead_time |> CCResult.get_exn
     ;;
@@ -141,8 +131,6 @@ module Data = struct
     ; show MaxParticipants, [ String.max_participants ]
     ; show MinParticipants, [ String.min_participants ]
     ; show Overbook, [ String.overbook ]
-    ; show ReminderSubject, [ String.subject ]
-    ; show ReminderText, [ String.text ]
     ; show LeadTime, [ String.lead_time ]
     ; show SentAt, [ String.sent_at ]
     ; show AssignmentCount, [ String.assignment_count ]
@@ -158,8 +146,6 @@ module Data = struct
     ; show MaxParticipants, [ max ]
     ; show MinParticipants, [ min ]
     ; show Overbook, [ overbook ]
-    ; show ReminderSubject, [ subject ]
-    ; show ReminderText, [ text ]
     ; show LeadTime, [ lead_time ]
     ]
   ;;
@@ -228,8 +214,6 @@ let create_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; ReminderSubject, NoValue
-          ; ReminderText, NoValue
           ; LeadTime, NegativeAmount
           ]))
     res
@@ -257,14 +241,7 @@ let create_no_optional () =
   let open Pool_common.Message.Field in
   let input =
     let open Data in
-    delete_from_input
-      [ Description
-      ; ReminderSubject
-      ; ReminderText
-      ; LeadTime
-      ; SentAt
-      ; AssignmentCount
-      ]
+    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
   in
   let experiment_id = Experiment.Id.create () in
   let location = Location_test.create_location () in
@@ -282,8 +259,6 @@ let create_no_optional () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = None
-                ; reminder_text = None
                 ; reminder_lead_time = None
                 }
               , None
@@ -311,8 +286,6 @@ let create_full () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , None
@@ -345,8 +318,6 @@ let create_min_eq_max () =
                 ; max_participants = max_participants2
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , None
@@ -396,8 +367,6 @@ let update_invalid_data () =
           ; MaxParticipants, NotANumber max
           ; MinParticipants, NotANumber min
           ; Overbook, NotANumber overbook
-          ; ReminderSubject, NoValue
-          ; ReminderText, NoValue
           ; LeadTime, NegativeAmount
           ]))
     res
@@ -423,14 +392,7 @@ let update_no_optional () =
   let open Pool_common.Message.Field in
   let input =
     let open Data in
-    delete_from_input
-      [ Description
-      ; ReminderSubject
-      ; ReminderText
-      ; LeadTime
-      ; SentAt
-      ; AssignmentCount
-      ]
+    delete_from_input [ Description; LeadTime; SentAt; AssignmentCount ]
   in
   let session = Test_utils.Model.create_session () in
   let location = Location_test.create_location () in
@@ -446,8 +408,6 @@ let update_no_optional () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = None
-                ; reminder_text = None
                 ; reminder_lead_time = None
                 }
               , location
@@ -476,8 +436,6 @@ let update_full () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -507,8 +465,6 @@ let update_min_eq_max () =
                 ; max_participants = max_participants2
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -782,8 +738,6 @@ let create_follow_up_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , Some session.Session.id
@@ -838,8 +792,6 @@ let update_follow_up_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -940,8 +892,6 @@ let update_follow_ups_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location
@@ -976,8 +926,6 @@ let update_follow_ups_later () =
                 ; max_participants
                 ; min_participants
                 ; overbook
-                ; reminder_subject = Some subject
-                ; reminder_text = Some text
                 ; reminder_lead_time = Some lead_time
                 }
               , location

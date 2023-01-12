@@ -68,8 +68,8 @@ let new_helper req page =
        in
        let%lwt locations = Pool_location.find_all database_label in
        let flash_fetcher = CCFun.flip Sihl.Web.Flash.find req in
-       let* sys_languages =
-         Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
        in
        let html =
          match page with
@@ -79,19 +79,19 @@ let new_helper req page =
            Page.Admin.Session.follow_up
              context
              experiment
+             default_reminder_lead_time
              duplicate_session
              parent_session
              locations
-             sys_languages
              flash_fetcher
            |> Lwt_result.return
          | `Parent ->
            Page.Admin.Session.new_form
              context
              experiment
+             default_reminder_lead_time
              duplicate_session
              locations
-             sys_languages
              flash_fetcher
            |> Lwt_result.return
        in
@@ -166,12 +166,16 @@ let detail req page =
            session_id
            Message_template.Label.SessionReminder
        in
+       let%lwt default_reminder_lead_time =
+         Settings.find_default_reminder_lead_time database_label
+       in
        let* sys_languages =
          Pool_context.Tenant.get_tenant_languages req |> Lwt_result.lift
        in
        Page.Admin.Session.edit
          context
          experiment
+         default_reminder_lead_time
          session
          locations
          session_reminder_templates

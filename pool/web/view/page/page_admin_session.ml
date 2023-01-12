@@ -47,11 +47,11 @@ let session_form
   csrf
   language
   (experiment : Experiment.t)
+  default_reminder_lead_time
   ?(session : Session.t option)
   ?(follow_up_to : Session.t option)
   ?(duplicate : Session.t option)
   locations
-  sys_languages
   ~flash_fetcher
   =
   let open CCFun in
@@ -92,9 +92,6 @@ let session_form
     |> CCOption.map_or
          ~default:""
          (Reminder.LeadTime.value %> Utils.Time.timespan_spanpicker)
-  in
-  let to_default_value html =
-    div ~a:[ a_class [ "gap"; "inset-sm"; "border-left" ] ] [ html ]
   in
   let action, submit =
     let open Pool_common in
@@ -202,56 +199,16 @@ let session_form
                     ~value:
                       (value (fun s -> s.reminder_lead_time |> lead_time_value))
                     ~flash_fetcher
-                ; experiment.Experiment.session_reminder_lead_time
-                  |> CCOption.map_or ~default:(txt "") (fun leadtime ->
-                       Utils.text_to_string
-                         language
-                         (I18n.SessionReminderDefaultLeadTime
-                            (leadtime |> Reminder.LeadTime.value))
-                       |> txt
-                       |> to_default_value)
-                ]
-            ; div
-                ~a:[ a_class [ "full-width" ] ]
-                [ MessageTextElements.session_reminder_help
+                ; (experiment.Experiment.session_reminder_lead_time
+                  |> CCOption.value ~default:default_reminder_lead_time
+                  |> fun t ->
+                  Utils.text_to_string
                     language
-                    sys_languages
-                    ?session:default_value_session
-                    ()
+                    (I18n.SessionReminderDefaultLeadTime
+                       (t |> Reminder.LeadTime.value))
+                  |> txt
+                  |> HttpUtils.default_value_style)
                 ]
-            ; input_element
-                language
-                `Text
-                Message.Field.ReminderSubject
-                ~value:
-                  (value (fun s ->
-                     s.reminder_subject
-                     |> CCOption.map_or ~default:"" Reminder.Subject.value))
-                ~flash_fetcher
-            ; experiment.Experiment.session_reminder_subject
-              |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Utils.text_to_string
-                     language
-                     (I18n.SessionReminderDefaultSubject
-                        (text |> Reminder.Subject.value))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
-            ; textarea_element
-                language
-                Message.Field.ReminderText
-                ~value:
-                  (value (fun s ->
-                     s.reminder_text
-                     |> CCOption.map_or ~default:"" Reminder.Text.value))
-                ~flash_fetcher
-            ; experiment.Experiment.session_reminder_text
-              |> CCOption.map_or ~default:(txt "") (fun text ->
-                   Utils.text_to_string
-                     language
-                     (I18n.SessionReminderDefaultText
-                        (text |> Reminder.Text.value))
-                   |> Http_utils.add_line_breaks
-                   |> to_default_value)
             ]
         ]
     ; div
@@ -441,9 +398,9 @@ let index
 let new_form
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   duplicate_session
   locations
-  sys_languages
   flash_fetcher
   =
   Page_admin_experiments.experiment_layout
@@ -454,9 +411,9 @@ let new_form
        csrf
        language
        experiment
+       default_reminder_lead_time
        ?duplicate:duplicate_session
        locations
-       sys_languages
        ~flash_fetcher)
 ;;
 
@@ -625,6 +582,7 @@ let detail
 let edit
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   (session : Session.t)
   locations
   session_reminder_templates
@@ -647,9 +605,9 @@ let edit
           csrf
           language
           experiment
+          default_reminder_lead_time
           ~session
           locations
-          sys_languages
           ~flash_fetcher
       ]
   in
@@ -684,10 +642,10 @@ let edit
 let follow_up
   Pool_context.{ language; csrf; _ }
   experiment
+  default_reminder_lead_time
   duplicate_session
   (parent_session : Session.t)
   locations
-  sys_languages
   flash_fetcher
   =
   let open Pool_common in
@@ -706,10 +664,10 @@ let follow_up
         csrf
         language
         experiment
+        default_reminder_lead_time
         ~follow_up_to:parent_session
         ?duplicate:duplicate_session
         locations
-        sys_languages
         ~flash_fetcher
     ]
   |> Page_admin_experiments.experiment_layout
