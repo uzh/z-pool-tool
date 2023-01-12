@@ -4,7 +4,7 @@ module Model = Test_utils.Model
 
 let expected_events experiment contacts create_message =
   let emails =
-    CCList.map (fun contact -> create_message experiment contact) contacts
+    CCList.map (create_message experiment) contacts
     |> CCResult.flatten_l
     |> CCResult.get_exn
   in
@@ -68,9 +68,7 @@ let create_invitations_repo _ () =
           in
           let expected =
             let emails =
-              CCList.map
-                (fun contact -> create_message experiment contact)
-                contacts
+              CCList.map (create_message experiment) contacts
               |> CCList.all_ok
               |> CCResult.get_exn
             in

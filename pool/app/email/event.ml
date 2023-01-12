@@ -11,7 +11,7 @@ type confirmation_email =
 
 let sender_of_pool pool =
   let open Utils.Lwt_result.Infix in
-  if Pool_database.(Label.equal pool root)
+  if Pool_database.is_root pool
   then Lwt.return (Sihl.Configuration.read_string "SMTP_SENDER")
   else (
     let%lwt sender_email =

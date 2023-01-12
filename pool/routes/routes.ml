@@ -5,14 +5,11 @@ module Field = Pool_common.Message.Field
 let add_key ?(prefix = "") ?(suffix = "") field =
   let open Field in
   [ prefix; field |> url_key; suffix ]
-  |> CCList.filter (fun m -> m |> CCString.is_empty |> not)
+  |> CCList.filter CCFun.(CCString.is_empty %> not)
   |> CCString.concat "/"
 ;;
 
-let add_human_field field =
-  let open Field in
-  field |> human_url |> Format.asprintf "/%s"
-;;
+let add_human_field = CCFun.(Field.human_url %> Format.asprintf "/%s")
 
 let global_middlewares =
   [ Middleware.id ~id:(fun () -> CCString.sub (Sihl.Random.base64 12) 0 10) ()
@@ -177,10 +174,10 @@ module Admin = struct
   let routes =
     let open Field in
     let open Handler.Admin in
-    let label_specific_template edit update new_get new_post =
+    let label_specific_template edit update new_form create =
       let specific = [ get "/edit" edit; post "" update ] in
-      [ get "" new_get
-      ; post "" new_post
+      [ get "" new_form
+      ; post "" create
       ; choose ~scope:(MessageTemplate |> url_key) specific
       ]
     in

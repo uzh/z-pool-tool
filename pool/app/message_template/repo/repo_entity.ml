@@ -76,7 +76,6 @@ let t =
     , (label, (entity_uuid, (language, (email_subject, (email_text, sms_text)))))
     )
     =
-    let open CCResult in
     Ok { id; label; entity_uuid; language; email_subject; email_text; sms_text }
   in
   Caqti_type.(

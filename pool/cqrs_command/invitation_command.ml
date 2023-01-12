@@ -43,7 +43,7 @@ end = struct
             invited_contacts)
         contacts
     in
-    let errors = CCList.map Contact.fullname errors in
+    let errors = CCList.map CCFun.(Contact.id %> Pool_common.Id.value) errors in
     let emails = CCList.map (create_message experiment) contacts in
     if CCList.is_empty errors |> not
     then Error Pool_common.Message.(AlreadyInvitedToExperiment errors)

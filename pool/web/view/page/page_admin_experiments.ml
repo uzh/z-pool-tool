@@ -3,6 +3,7 @@ open Component
 open Input
 open Pool_common
 module HttpUtils = Http_utils
+module Field = Message.Field
 
 type title =
   | Control of Message.control
@@ -23,8 +24,8 @@ let experiment_layout ?buttons ?hint language title experiment ?active html =
   let tab_links =
     I18n.
       [ Overview, "/"
-      ; Field Message.Field.Assistants, "/assistants"
-      ; Field Message.Field.Experimenter, "/experimenter"
+      ; Field Field.Assistants, "/assistants"
+      ; Field Field.Experimenter, "/experimenter"
       ; Invitations, "/invitations"
       ; WaitingList, "/waiting-list"
       ; Sessions, "/sessions"
@@ -137,7 +138,7 @@ let experiment_form
     let open ExperimentType in
     selector
       language
-      Message.Field.ExperimentType
+      Field.ExperimentType
       show
       all
       (CCOption.bind experiment (fun (e : Experiment.t) -> e.experiment_type))
@@ -157,20 +158,20 @@ let experiment_form
         [ input_element
             language
             `Text
-            Message.Field.Title
+            Field.Title
             ~value:(value title_value)
             ~required:true
             ~flash_fetcher
         ; input_element
             language
             `Text
-            Message.Field.PublicTitle
+            Field.PublicTitle
             ~value:(value public_title_value)
             ~required:true
             ~flash_fetcher
         ; textarea_element
             language
-            Message.Field.Description
+            Field.Description
             ~value:(value description_value)
             ~required:true
             ~flash_fetcher
@@ -178,15 +179,15 @@ let experiment_form
         ]
     ; checkbox_element
         ~help:I18n.DirectRegistrationDisbled
-        Message.Field.DirectRegistrationDisabled
+        Field.DirectRegistrationDisabled
         direct_registration_disabled_value
     ; checkbox_element
         ~help:I18n.RegistrationDisabled
-        Message.Field.RegistrationDisabled
+        Field.RegistrationDisabled
         registration_disabled_value
     ; checkbox_element
         ~help:I18n.AllowUninvitedSignup
-        Message.Field.AllowUninvitedSignup
+        Field.AllowUninvitedSignup
         allow_uninvited_signup_value
     ; div
         ~a:[ a_class [ "gap-lg" ] ]
@@ -207,7 +208,7 @@ let experiment_form
                     [ flatpicker_element
                         language
                         `Time
-                        Message.Field.LeadTime
+                        Field.LeadTime
                         ~help:I18n.TimeSpanPickerHint
                         ~value:
                           (value (fun e ->
@@ -458,8 +459,7 @@ let waiting_list waiting_list experiment Pool_context.{ language; _ } =
   let open Waiting_list.ExperimentList in
   let waiting_list_entries () =
     let thead =
-      (Message.Field.[ Name; Email; CreatedAt; Comment ]
-      |> Table.fields_to_txt language)
+      (Field.[ Name; Email; CreatedAt; Comment ] |> Table.fields_to_txt language)
       @ [ txt "" ]
     in
     let rows =
@@ -506,7 +506,7 @@ let users
     Format.asprintf
       "/admin/experiments/%s/%s/%s"
       Experiment.(experiment.id |> Id.value)
-      (Message.Field.show field)
+      (Field.show field)
       (Admin.id admin |> Admin.Id.value)
     |> Sihl.Web.externalize_path
   in

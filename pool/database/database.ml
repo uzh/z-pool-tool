@@ -103,7 +103,7 @@ let handle_event _ : event -> unit Lwt.t = function
     Lwt.return_unit
   | Migrated label ->
     let%lwt () =
-      match Pool_database.Label.equal Pool_database.root label with
+      match Pool_database.is_root label with
       | true -> Migration.Root.run ()
       | false -> Migration.Tenant.run [ label ] ()
     in

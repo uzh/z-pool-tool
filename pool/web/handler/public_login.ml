@@ -135,7 +135,6 @@ let request_reset_password_post req =
     let* { Pool_context.Tenant.tenant; _ } =
       Pool_context.Tenant.find req |> Lwt_result.lift
     in
-    (* TODO: Make sure contact not found message is not displayed *)
     Sihl.Web.Request.to_urlencoded req
     ||> decode
     >>= Contact.find_by_email database_label

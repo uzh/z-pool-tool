@@ -41,7 +41,7 @@ let prepare_email language template email layout params =
         { sender
         ; recipient = Pool_user.EmailAddress.value email
         ; subject = email_subject
-        ; text = "" (* TODO: Plaintext *)
+        ; text = "" (* TODO: Plaintext, #305 *)
         ; html = Some (combine_html language (Some email_subject))
         ; cc = []
         ; bcc = []

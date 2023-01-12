@@ -101,7 +101,7 @@ let sign_up_create req =
              Lwt_result.return []
            | Ok contact ->
              let* create_contact_events = create_contact_events () in
-             let open CCResult in
+             let open CCResult.Infix in
              contact
              |> Command.DeleteUnverified.handle ~tags
              >|= CCFun.flip CCList.append create_contact_events

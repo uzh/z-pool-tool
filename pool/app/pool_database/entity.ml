@@ -23,6 +23,7 @@ type t =
 
 let create label url = Ok { url; label }
 let root = Label.of_string "root"
+let is_root = Label.equal root
 
 module MariaConfig = struct
   include Guardian_backend.Pools.DefaultConfig

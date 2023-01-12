@@ -217,7 +217,7 @@ let message_template_help
       (create_experiment ())
       tenant.Pool_tenant.url
       (create_contact ())
-  | PasswordChange -> PasswordChange.email_params (() |> create_sihl_user)
+  | PasswordChange -> PasswordChange.email_params (create_sihl_user ())
   | PasswordReset ->
     let reset_url =
       Pool_common.[ Message.Field.Token, Email.Token.value token ]

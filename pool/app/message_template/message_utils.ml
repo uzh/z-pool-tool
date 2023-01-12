@@ -20,7 +20,7 @@ let create_public_url_with_params pool_url path params =
 ;;
 
 let prepend_root_directory pool url =
-  match Pool_database.Label.equal pool Pool_database.root with
+  match Pool_database.is_root pool with
   | true -> Format.asprintf "/root%s" url
   | false -> url
 ;;
