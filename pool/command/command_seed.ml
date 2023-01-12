@@ -31,7 +31,7 @@ let tenant_data =
 let tenant_data_clean =
   let name = "seed.tenant.clean" in
   let description =
-    "Clean database and seed development data to tenant database"
+    "Clean database and seed development data to all tenant databases"
   in
   Command_utils.make_no_args name description (fun () ->
     let%lwt db_pools = Command_utils.setup_databases () in
@@ -41,6 +41,17 @@ let tenant_data_clean =
         db_pools
     in
     let%lwt () = Database.Tenant.Seed.create db_pools () in
+    Lwt.return_some ())
+;;
+
+let tenant_data_clean_specific =
+  let name = "seed.tenant.specific.clean" in
+  let description =
+    "Clean database and seed development data to specific tenant database"
+  in
+  Command_utils.make_pool_specific name description (fun pool ->
+    let%lwt () = Utils.Database.clean_all (Pool_database.Label.value pool) in
+    let%lwt () = Database.Tenant.Seed.create [ pool ] () in
     Lwt.return_some ())
 ;;
 

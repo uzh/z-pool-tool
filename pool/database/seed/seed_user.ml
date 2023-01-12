@@ -63,23 +63,51 @@ let create_rand_persons n_persons =
   else failwith "Could not find or decode any person data."
 ;;
 
-let create_persons n_persons =
+let create_persons db_label n_persons =
+  let open CCFun in
+  let open CCList in
+  let open Utils.Lwt_result.Infix in
   let chunk_size = 100 in
-  let sum = CCList.fold_left ( + ) 0 in
-  let%lwt persons_chunked =
-    n_persons
-    |> CCFun.flip CCList.repeat [ 1 ]
-    |> CCList.chunks chunk_size
-    |> CCList.map sum
-    |> Lwt_list.map_s create_rand_persons
+  let sum = fold_left ( + ) 0 in
+  let%lwt contacts =
+    Contact.find_all db_label ()
+    ||> map (Contact.email_address %> User.EmailAddress.value)
   in
-  CCList.flatten persons_chunked |> Lwt.return
+  let%lwt admins = Admin.find_all db_label () ||> map Admin.email in
+  let flatten_filter_combine a b =
+    let filter_existing =
+      filter (fun { email; _ } -> mem email (admins @ contacts) |> not)
+    in
+    (flatten b |> filter_existing) @ a
+    |> uniq ~eq:(fun p1 p2 -> CCString.equal p1.email p2.email)
+  in
+  let generate_persons =
+    flip repeat [ 1 ]
+    %> chunks chunk_size
+    %> map sum
+    %> Lwt_list.map_s create_rand_persons
+  in
+  let rec persons_chunked acc n_persons =
+    let current_count = length acc in
+    if current_count < n_persons
+    then (
+      Logs.info (fun m ->
+        m "Seed: generating person data (%i/%i)" current_count n_persons);
+      let%lwt iter =
+        n_persons - current_count
+        |> generate_persons
+        ||> flatten_filter_combine acc
+      in
+      persons_chunked iter n_persons)
+    else take_drop n_persons acc |> fst |> Lwt.return
+  in
+  persons_chunked [] n_persons
 ;;
 
-let admins db_pool =
+let admins db_label =
   let open Utils.Lwt_result.Infix in
   let%lwt experimenter_roles =
-    Experiment.find_all db_pool ()
+    Experiment.find_all db_label ()
     ||> CCList.map (fun { Experiment.id; _ } ->
           `Experimenter (Guard.Uuid.target_of Experiment.Id.value id))
   in
@@ -90,7 +118,7 @@ let admins db_pool =
     ; "Winnie", "Pooh", "experimenter@econ.uzh.ch", [ `RecruiterAll ]
     ]
   in
-  let ctx = Pool_tenant.to_ctx db_pool in
+  let ctx = Pool_tenant.to_ctx db_label in
   let password =
     Sys.getenv_opt "POOL_ADMIN_DEFAULT_PASSWORD"
     |> CCOption.value ~default:"admin"
@@ -123,9 +151,10 @@ let admins db_pool =
     data
 ;;
 
-let contacts db_pool =
+let contacts db_label =
+  let open Utils.Lwt_result.Infix in
   let n_contacts = 200 in
-  let ctx = Pool_tenant.to_ctx db_pool in
+  let ctx = Pool_tenant.to_ctx db_label in
   let combinations =
     let open CCList in
     let languages = Pool_common.Language.[ Some En; Some De; None ] in
@@ -138,7 +167,8 @@ let contacts db_pool =
     <*> booleans
     <*> booleans
   in
-  let%lwt persons = create_persons n_contacts in
+  Logs.info (fun m -> m "Seed: start generate contacts");
+  let%lwt persons = create_persons db_label n_contacts in
   let () =
     if n_contacts < CCList.length combinations
     then
@@ -174,9 +204,9 @@ let contacts db_pool =
     |> Pool_common.Utils.get_or_failwith
   in
   let%lwt () =
-    let open Utils.Lwt_result.Infix in
-    Lwt_list.fold_left_s
-      (fun contacts
+    users
+    |> Lwt_list.filter_map_s
+         (fun
            ( user_id
            , firstname
            , lastname
@@ -185,43 +215,40 @@ let contacts db_pool =
            , terms_accepted_at
            , _
            , _
-           , _ ) ->
-        let%lwt user =
-          Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
-        in
-        Lwt.return
-        @@
-        match user with
-        | None ->
-          [ Contact.Created
-              { Contact.user_id
-              ; email
-              ; password
-              ; firstname
-              ; lastname
-              ; terms_accepted_at
-              ; language
-              }
-          ]
-          @ contacts
-        | Some { Sihl_user.id; _ } ->
-          Logs.debug (fun m ->
-            m
-              "Contact already exists (%s): %s"
-              (db_pool |> Pool_database.Label.value)
-              id);
-          contacts)
-      []
-      users
-    >|> Lwt_list.iter_s (Contact.handle_event db_pool)
+           , _ )
+         ->
+         match%lwt
+           Service.User.find_by_email_opt ~ctx (User.EmailAddress.value email)
+         with
+         | None ->
+           Lwt.return_some
+             [ Contact.Created
+                 { Contact.user_id
+                 ; email
+                 ; password
+                 ; firstname
+                 ; lastname
+                 ; terms_accepted_at
+                 ; language
+                 }
+             ]
+         | Some { Sihl_user.id; _ } ->
+           Logs.debug (fun m ->
+             m
+               "Contact already exists (%s): %s"
+               (db_label |> Pool_database.Label.value)
+               id);
+           Lwt.return_none)
+    ||> CCList.flatten
+    >|> Lwt_list.iter_s (Contact.handle_event db_label)
   in
-  let open Utils.Lwt_result.Infix in
+  Logs.info (fun m -> m "Seed: add additional infos to contacts");
   Lwt_list.fold_left_s
     (fun contacts (user_id, _, _, _, _, _, paused, disabled, verified) ->
-      let%lwt contact = Contact.find db_pool user_id in
+      let%lwt contact = Contact.find db_label user_id in
       let%lwt custom_fields =
         let open Custom_field in
-        find_all_by_contact db_pool user_id
+        find_all_by_contact db_label user_id
         ||> fun (grouped, ungrouped) ->
         ungrouped
         @ CCList.flatten
@@ -248,5 +275,5 @@ let contacts db_pool =
         contacts |> Lwt.return)
     []
     users
-  >|> Lwt_list.iter_s (Contact.handle_event db_pool)
+  >|> Lwt_list.iter_s (Contact.handle_event db_label)
 ;;
