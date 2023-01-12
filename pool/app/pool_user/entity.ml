@@ -113,7 +113,7 @@ module EmailAddress = struct
 
   let validate = validate_suffix
   let value m = m
-  let create email = email |> remove_whitespaces |> validate_characters
+  let create = CCFun.(remove_whitespaces %> validate_characters)
   let of_string m = m
 
   let schema () =

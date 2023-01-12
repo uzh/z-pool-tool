@@ -36,7 +36,7 @@ let create pool =
     [ [ En, "Friend"; De, "Freund" ]
     ; [ En, "Online"; De, "Online" ]
     ; [ En, "Lecture"; De, "Vorlesung" ]
-    ; [ En, "Mailing"; De, "E-Mail" ]
+    ; [ En, "Email"; De, "E-Mail" ]
     ]
   in
   let languge_level_options =

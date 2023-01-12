@@ -5,7 +5,7 @@ let to_string = function
   | DontHaveAnAccount -> "Noch kein Zugang?"
   | EmailConfirmationNote ->
     "Bitte prüfen Sie zunächst Ihre E-Mails und bestätigen Sie Ihre Adresse."
-  | EmailConfirmationTitle -> "Bestätigung Ihrer Email Adresse"
+  | EmailConfirmationTitle -> "Bestätigung Ihrer E-Mail Adresse"
   | ExperimentNewTitle -> "Neues Experiment erstellen"
   | ExperimentSessionReminderHint ->
     "Dies sind Standardeinstellungen für die Sessions dieses Experiment. Diese \

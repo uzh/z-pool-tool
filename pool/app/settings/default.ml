@@ -55,7 +55,7 @@ Studien im Computerlabor finden in einem Labor mit mehreren Computerarbeitsplät
 
 Regeln für Studien im Computerlabor
 - Für jede Studie erhält eine bestimmte Zahl registrierter Personen eine Einladung per E-Mail. Nur eingeladene Personen sind zur Teilnahme an der Studie berechtigt.
-- Über den in der Email enthaltenen Link können Sie sich direkt im System für einen konkreten Termin registrieren. Diese Anmeldung ist eine verbindliche Zusage, an dieser Studie teilzunehmen.
+- Über den in der E-Mail enthaltenen Link können Sie sich direkt im System für einen konkreten Termin registrieren. Diese Anmeldung ist eine verbindliche Zusage, an dieser Studie teilzunehmen.
 - Alle Teilnehmenden erhalten am Ende der Studie eine Entschädigung. Diese wird in bar in Schweizerfranken ausbezahlt. Die Höhe des ausbezahlten Betrages hängt von den eigenen Entscheidungen, sowie von den Entscheidungen der anderen Studienteilnehmenden ab.
 - Versuchspersonenscheine werden nicht unterschrieben.
 - Teilnehmende, die sich für eine bestimmte Studie angemeldet haben und nicht bzw. zu spät erscheinen, müssen sich der Tatsache bewusst sein, dass sie damit die Durchführung der Studie wegen Mangel an Teilnehmenden gefährden. Die Absage einer Studie kann uns Kosten in der Höhe von mehreren tausend Franken verursachen. Aus diesem Grund sehen wir uns leider gezwungen, Personen, die unentschuldigt nicht erscheinen, von sämtlichen weiteren Studien auszuschliessen.

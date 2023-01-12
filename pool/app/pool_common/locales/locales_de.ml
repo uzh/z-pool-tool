@@ -20,7 +20,7 @@ let field_to_string =
   | ClosedAt -> "Geschlossen am"
   | Comment -> "Kommentar"
   | Contact -> "Kontakt"
-  | ContactEmail -> "Kontakt Email Adresse"
+  | ContactEmail -> "Kontakt E-Mail Adresse"
   | Contacts -> "Kontakte"
   | CustomField -> "Feld"
   | CustomFields -> "Felder"
@@ -43,11 +43,11 @@ let field_to_string =
   | Distribution -> "Verteilung"
   | DistributionField -> "Feld"
   | Duration -> "Dauer"
-  | Email -> "Email"
-  | EmailAddress -> "Email Adresse"
-  | EmailAddressUnverified -> "Unverifizierte Email Adresse"
-  | EmailAddressVerified -> "Verifizierte Email Adresse"
-  | EmailSuffix -> "Email Endung"
+  | Email -> "E-Mail"
+  | EmailAddress -> "E-Mail Adresse"
+  | EmailAddressUnverified -> "Unverifizierte E-Mail Adresse"
+  | EmailAddressVerified -> "Verifizierte E-Mail Adresse"
+  | EmailSuffix -> "E-Mail Endung"
   | End -> "Ende"
   | Experiment -> "Experiment"
   | ExperimentType -> "Experimenttyp"
@@ -182,15 +182,15 @@ let success_to_string : success -> string = function
   | Deleted field ->
     field_message "" (field_to_string field) "wurde erfolgreich gelöscht."
   | EmailConfirmationMessage ->
-    "Eine Email wurde an deine Email Adresse zur Verifizierung gesendet, falls \
-     die angegebene Email Adresse noch verfügbar ist."
-  | EmailVerified -> "Email erfolgreich verifiziert."
+    "Eine E-Mail wurde an deine E-Mail Adresse zur Verifizierung gesendet, \
+     falls die angegebene E-Mail Adresse noch verfügbar ist."
+  | EmailVerified -> "E-Mail erfolgreich verifiziert."
   | FileDeleted -> "File wurde erfolgreich gelöscht."
   | PasswordChanged -> "Passwort wurde geändert."
   | PasswordReset -> "Passwort ist zurückgesetzt, du kannst dich nun einloggen."
   | PasswordResetSuccessMessage ->
-    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
-     wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+    "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
+     wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | Published field ->
     field_message "" (field_to_string field) "wurde erfolgreich veröffentlicht."
   | RemovedFromWaitingList -> "Sie wurden von der Warteliste entfernt."
@@ -252,7 +252,7 @@ let rec error_to_string = function
     |> CCString.concat "\n"
   | ConformistModuleErrorType -> failwith "Do not use"
   | ContactSignupInvalidEmail ->
-    "Bitte eine valide und nicht bereits verwendete Email Adresse verwenden."
+    "Bitte eine valide und nicht bereits verwendete E-Mail Adresse verwenden."
   | ContactUnconfirmed -> "Teilnehmer noch nicht verifiziert!"
   | Decode field ->
     field_message
@@ -264,12 +264,12 @@ let rec error_to_string = function
     "Sie können sich nicht selbst für dieses Experiment anmelden."
   | Disabled field ->
     field_message "" (field_to_string field) "ist deaktiviert."
-  | EmailAddressMissingAdmin -> "Bitte Admin Email Adresse angeben."
-  | EmailAddressMissingRoot -> "Bitte Root Email Adresse angeben."
-  | EmailAlreadyInUse -> "Email Adresse wird bereits verwendet."
+  | EmailAddressMissingAdmin -> "Bitte Admin E-Mail Adresse angeben."
+  | EmailAddressMissingRoot -> "Bitte Root E-Mail Adresse angeben."
+  | EmailAlreadyInUse -> "E-Mail Adresse wird bereits verwendet."
   | EmailDeleteAlreadyVerified ->
-    "Email Adresse ist bereits verifiziert, kann nicht gelöscht werden."
-  | EmailMalformed -> "Fehlerhafte Email Adresse"
+    "E-Mail Adresse ist bereits verifiziert, kann nicht gelöscht werden."
+  | EmailMalformed -> "Fehlerhafte E-Mail Adresse"
   | EndBeforeStart -> "Das Ende liegt vor oder dem Start."
   | ExperimentSessionCountNotZero ->
     "Es existieren Sessions zu diesem Experiment. Es kann nicht gelöscht  \
@@ -287,14 +287,14 @@ let rec error_to_string = function
   | Invalid field -> field_message "" (field_to_string field) "ist ungültig!"
   | InvalidEmailSuffix suffixes ->
     Format.asprintf
-      "%s Die folgenden Emailendungen sind erlaubt: %s"
+      "%s Die folgenden E-Mail-Endungen sind erlaubt: %s"
       (error_to_string (Invalid Field.EmailSuffix))
       (CCString.concat ", " suffixes)
   | InvalidOptionSelected -> "Ungültige Option ausgewählt."
   | InvalidHtmxRequest -> "Ungültige Anfrage."
   | InvitationSubjectAndTextRequired ->
     "Bitte geben Sie sowohl den Betreff als auch den Text der Einladung an."
-  | LoginProvideDetails -> "Bitte Email Adresse und Passwort eintragen."
+  | LoginProvideDetails -> "Bitte E-Mail Adresse und Passwort eintragen."
   | MeantimeUpdate field ->
     field_message
       ""
@@ -333,8 +333,8 @@ let rec error_to_string = function
     "Passwortbestätigung stimmt nicht mit dem neuen Passwort überein."
   | PasswordPolicy -> "Passwort stimmt nicht mit der benötigten Policy überein!"
   | PasswordResetFailMessage ->
-    "Falls ein Account zu der von dir eingegebenen Email Adresse existiert,  \
-     wird dir ein Email mit einem Link zur Passwort zurücksetzung gesendet."
+    "Falls ein Account zu der von dir eingegebenen E-Mail Adresse existiert,  \
+     wird dir ein E-Mail mit einem Link zur Passwort zurücksetzung gesendet."
   | PasswordResetInvalidData -> "Ungültiges Token oder Passwort."
   | PoolContextNotFound -> "Kontext konnte nicht gefunden werden."
   | PickMessageChannel ->
