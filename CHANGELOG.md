@@ -4,6 +4,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+## [0.0.4](https://github.com/uzh/pool/tree/0.0.3) - 2023-01-13
+
 ### Added
 
 - pause sending invitations when no spots in sessions are available and add note on create mailing page
@@ -18,6 +20,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - experiments with active uninvited registration handle the experiment filter
 - effects for waiting list session registration (admin)
 - signup for follow up sessions is handled within the main session signup
+- consistent email naming
+- mailing schema handle correct default value
 
 ## [0.0.3](https://github.com/uzh/pool/tree/0.0.3) - 2022-12-23
 
