@@ -456,7 +456,8 @@ module Utils : sig
   end
 
   val schema_decoder
-    :  (string -> ('b, Message.error) result)
+    :  ?default:'b
+    -> (string -> ('b, Message.error) result)
     -> ('b -> string)
     -> Entity_message.Field.t
     -> (Message.error, 'b) PoolConformist.Field.t

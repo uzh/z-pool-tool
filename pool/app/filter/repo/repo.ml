@@ -43,10 +43,11 @@ module Sql = struct
 
   let component_base_query =
     {sql|
-    LEFT JOIN pool_experiments
-    ON pool_filter.uuid = pool_experiments.filter_uuid
-    WHERE pool_experiments.filter_uuid IS NULL
-   |sql}
+      LEFT JOIN pool_experiments
+        ON pool_filter.uuid = pool_experiments.filter_uuid
+      WHERE pool_experiments.filter_uuid IS NULL
+        AND pool_filter.title IS NOT NULL
+    |sql}
   ;;
 
   let find_template_request =

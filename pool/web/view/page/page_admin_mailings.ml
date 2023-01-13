@@ -144,7 +144,7 @@ module List = struct
     mailings
     =
     let base_head =
-      (Field.[ Start; End; Rate ] |> Table.fields_to_txt language) @ [ txt "" ]
+      Field.[ Start; End; Rate ] |> Table.fields_to_txt language
     in
     let thead =
       let new_btn () =

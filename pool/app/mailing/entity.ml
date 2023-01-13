@@ -158,12 +158,10 @@ module Distribution = struct
 
   let is_random_schema () =
     let open Pool_common in
+    let default = false in
     Utils.schema_decoder
-      (fun m ->
-        m
-        |> bool_of_string_opt
-        |> CCOption.get_or ~default:false
-        |> CCResult.pure)
+      ~default
+      CCFun.(bool_of_string_opt %> CCOption.get_or ~default %> CCResult.pure)
       string_of_bool
       Pool_common.Message.Field.RandomOrder
   ;;
