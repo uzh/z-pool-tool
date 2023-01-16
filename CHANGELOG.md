@@ -4,6 +4,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [unreleased](https://github.com/uzh/pool/tree/HEAD)
 
+### Added
+
+- Handling of entity based email templates (e.g. Experiment Invitation, Experiment - Session Reminder, Session - Session Reminder)
+- Detailed email template form description, show available text elements
+
+### Fixed
+
+- development seed - don't generate duplicate persons
+
 ## [0.0.4](https://github.com/uzh/pool/tree/0.0.3) - 2023-01-13
 
 ### Added
