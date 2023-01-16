@@ -189,6 +189,14 @@ val registration_disabled_value : t -> bool
 val allow_uninvited_signup_value : t -> bool
 
 module Repo : sig
+  module Public : sig
+    val select_from_experiments_sql : string -> string
+
+    module Entity : sig
+      val t : Public.t Caqti_type.t
+    end
+  end
+
   module Id : sig
     type t = Id.t
 

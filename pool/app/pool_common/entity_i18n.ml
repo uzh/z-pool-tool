@@ -52,6 +52,8 @@ type t =
   | SwitchGrouped
   | TermsAndConditionsTitle
   | TextTemplates
+  | UpcomingSessionsListEmpty
+  | UpcomingSessionsTitle
   | UserProfileDetailsSubtitle
   | UserProfileLoginSubtitle
   | UserProfilePausedNote

@@ -77,6 +77,9 @@ let to_string = function
   | SwitchGrouped -> "Switch to grouped view"
   | TermsAndConditionsTitle -> "Terms and Conditions"
   | TextTemplates -> "text templates"
+  | UpcomingSessionsListEmpty ->
+    "You are not currently enrolled in any upcoming sessions."
+  | UpcomingSessionsTitle -> "Your upcoming sessions"
   | UserProfileDetailsSubtitle -> "Personal details"
   | UserProfileLoginSubtitle -> "Login information"
   | UserProfilePausedNote ->

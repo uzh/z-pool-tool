@@ -9,62 +9,67 @@ let session_title language (s : Session.Public.t) =
   |> Pool_common.Utils.text_to_string language
 ;;
 
-let public_overview sessions experiment language =
+let session_item layout language experiment session =
   let open Experiment.Public in
   let open Pool_common in
-  let thead = Field.[ Some Start; Some Duration; Some Location; None ] in
-  CCList.flat_map
-    (fun ((session, follow_ups) : Session.Public.t * Session.Public.t list) ->
-      let session_row session =
-        let attrs =
-          if CCOption.is_some session.Session.Public.follow_up_to
-          then [ a_class [ "inset"; "left" ] ]
-          else []
-        in
-        [ div
-            ~a:attrs
-            [ txt
-                Session.(
-                  session.Session.Public.start
-                  |> Start.value
-                  |> Time.formatted_date_time)
-            ]
-        ; txt
-            Session.(
-              session.Session.Public.duration
-              |> Duration.value
-              |> Time.formatted_timespan)
-        ; txt
-            (session.Session.Public.location |> Pool_location.to_string language)
-        ; (match
-             ( Session.Public.is_fully_booked session
-             , session.Session.Public.follow_up_to )
-           with
-           | false, None ->
-             a
-               ~a:
-                 [ a_href
-                     (Format.asprintf
-                        "/experiments/%s/sessions/%s"
-                        (experiment.id |> Experiment.Id.value)
-                        (session.Session.Public.id |> Id.value)
-                     |> Sihl.Web.externalize_path)
-                 ]
-               [ txt (Utils.control_to_string language Message.register) ]
-           | false, Some _ ->
-             span
-               [ txt
-                   (Utils.error_to_string
-                      language
-                      Message.SessionRegistrationViaParent)
-               ]
-           | true, _ ->
-             span
-               [ txt (Utils.error_to_string language Message.SessionFullyBooked)
-               ])
+  let link =
+    match
+      ( Session.Public.is_fully_booked session
+      , session.Session.Public.follow_up_to )
+    with
+    | false, None ->
+      a
+        ~a:
+          [ a_href
+              (Format.asprintf
+                 "/experiments/%s/sessions/%s"
+                 (experiment.id |> Experiment.Id.value)
+                 (session.Session.Public.id |> Id.value)
+              |> Sihl.Web.externalize_path)
+          ]
+        [ txt (Utils.control_to_string language Message.register) ]
+    | false, Some _ ->
+      span
+        [ txt
+            (Utils.error_to_string
+               language
+               Message.SessionRegistrationViaParent)
         ]
-      in
-      session_row session :: CCList.map session_row follow_ups)
+    | true, _ ->
+      span [ txt (Utils.error_to_string language Message.SessionFullyBooked) ]
+  in
+  let attrs =
+    if CCOption.is_some session.Session.Public.follow_up_to
+    then [ a_class [ "inset"; "left" ] ]
+    else []
+  in
+  [ div
+      ~a:attrs
+      [ txt
+          Session.(
+            session.Session.Public.start
+            |> Start.value
+            |> Time.formatted_date_time)
+      ]
+  ; txt
+      Session.(
+        session.Session.Public.duration
+        |> Duration.value
+        |> Time.formatted_timespan)
+  ; session.Session.Public.location |> Component.Location.preview language
+  ]
+  |> fun cells ->
+  match layout with
+  | `Upcoming -> cells
+  | `Register -> cells @ [ link ]
+;;
+
+let public_overview sessions experiment language =
+  let thead = Field.[ Some Start; Some Duration; Some Location; None ] in
+  let session_item = session_item `Register language experiment in
+  CCList.flat_map
+    (fun (session, follow_ups) ->
+      session_item session :: CCList.map session_item follow_ups)
     sessions
   |> Component.Table.responsive_horizontal_table
        `Striped

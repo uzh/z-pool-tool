@@ -83,6 +83,9 @@ let to_string = function
   | SwitchGrouped -> "Zu gruppierter Ansicht wechseln"
   | TermsAndConditionsTitle -> "Nutzungsbedingungen"
   | TextTemplates -> "Textelemente"
+  | UpcomingSessionsListEmpty ->
+    "Sie sind aktuell an keine kommenden Sessions angemeldet."
+  | UpcomingSessionsTitle -> "Ihre nächsten Sessions"
   | UserProfileDetailsSubtitle -> "Persönliche Angaben"
   | UserProfileLoginSubtitle -> "Anmeldeinformationen"
   | UserProfilePausedNote ->

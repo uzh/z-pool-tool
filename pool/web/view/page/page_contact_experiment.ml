@@ -4,56 +4,86 @@ module Session = Page_contact_sessions
 module Assignment = Page_contact_assignment
 module HttpUtils = Http_utils
 
-let index experiment_list Pool_context.{ language; _ } =
-  let experiment_item (experiment : Experiment.Public.t) =
-    let open Experiment.Public in
+let index experiment_list upcoming_sessions Pool_context.{ language; _ } =
+  let list_html title empty classnames list =
     div
-      ~a:[ a_class [ "stack-sm"; "inset-sm" ] ]
-      [ p
-          ~a:[ a_class [ "word-wrap-break" ] ]
-          [ strong
-              [ txt (Experiment.PublicTitle.value experiment.public_title) ]
-          ]
-      ; div
-          ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
-          [ div
-              ~a:[ a_class [ "grow" ] ]
-              [ txt (Experiment.Description.value experiment.description) ]
-          ; div
-              ~a:[ a_class [ "text-align-right" ] ]
-              [ a
-                  ~a:
-                    [ a_href
-                        (Sihl.Web.externalize_path
-                           (Format.asprintf
-                              "/experiments/%s"
-                              (experiment.id |> Experiment.Id.value)))
-                    ]
-                  [ txt
-                      Pool_common.(
-                        Message.More |> Utils.control_to_string language)
-                  ]
-              ]
-          ]
+      [ h2
+          ~a:[ a_class [ "heading-2" ] ]
+          [ txt Pool_common.(Utils.text_to_string language title) ]
+      ; (if CCList.is_empty list
+        then p Pool_common.[ Utils.text_to_string language empty |> txt ]
+        else div ~a:[ a_class classnames ] list)
       ]
   in
-  div
-    ~a:[ a_class [ "trim"; "measure"; "safety-margin" ] ]
-    [ h1
-        ~a:[ a_class [ "heading-1" ] ]
-        [ txt
-            Pool_common.(
-              Utils.text_to_string language I18n.ExperimentListPublicTitle)
+  let experiment_html =
+    let experiment_item (experiment : Experiment.Public.t) =
+      let open Experiment.Public in
+      div
+        ~a:[ a_class [ "stack-sm"; "inset-sm" ] ]
+        [ p
+            ~a:[ a_class [ "word-wrap-break" ] ]
+            [ strong
+                [ txt (Experiment.PublicTitle.value experiment.public_title) ]
+            ]
+        ; div
+            ~a:[ a_class [ "flexrow"; "flex-gap"; "flexcolumn-mobile" ] ]
+            [ div
+                ~a:[ a_class [ "grow" ] ]
+                [ txt (Experiment.Description.value experiment.description) ]
+            ; div
+                ~a:[ a_class [ "flexrow"; "align-end"; "justify-end" ] ]
+                [ a
+                    ~a:
+                      [ a_href
+                          (Sihl.Web.externalize_path
+                             (Format.asprintf
+                                "/experiments/%s"
+                                (experiment.id |> Experiment.Id.value)))
+                      ]
+                    [ txt
+                        Pool_common.(
+                          Message.More |> Utils.control_to_string language)
+                    ]
+                ]
+            ]
         ]
-    ; (if CCList.is_empty experiment_list
-      then
-        p
-          Pool_common.
-            [ Utils.text_to_string language I18n.ExperimentListEmpty |> txt ]
-      else
-        div
-          ~a:[ a_class [ "striped" ] ]
-          (CCList.map experiment_item experiment_list))
+    in
+    let open Pool_common.I18n in
+    experiment_list
+    |> CCList.map experiment_item
+    |> list_html ExperimentListPublicTitle ExperimentListEmpty [ "striped" ]
+  in
+  let session_html =
+    let experiment_overview (exp, parent, follow_ups) =
+      let thead = Field.[ Some Start; Some Duration; Some Location ] in
+      let session_item = Session.session_item `Upcoming language exp in
+      let session_table =
+        session_item parent :: CCList.map session_item follow_ups
+        |> Component.Table.responsive_horizontal_table
+             `Striped
+             language
+             ~align_last_end:true
+             ~align_top:true
+             thead
+      in
+      div
+        [ h3
+            ~a:[ a_class [ "heading-4" ] ]
+            [ txt Experiment.(exp.Public.public_title |> PublicTitle.value) ]
+        ; session_table
+        ]
+    in
+    let open Pool_common.I18n in
+    upcoming_sessions
+    |> CCList.map experiment_overview
+    |> list_html UpcomingSessionsTitle UpcomingSessionsListEmpty [ "stack-lg" ]
+  in
+  div
+    ~a:[ a_class [ "trim"; "safety-margin" ] ]
+    [ h1 ~a:[ a_class [ "heading-1" ] ] [ txt "Dashboard TODO" ]
+    ; div
+        ~a:[ a_class [ "switcher"; "flex-gap-lg" ] ]
+        [ experiment_html; session_html ]
     ]
 ;;
 

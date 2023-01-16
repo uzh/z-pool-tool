@@ -11,7 +11,12 @@ let index req =
        let%lwt experiment_list =
          Experiment.find_all_public_by_contact database_label contact
        in
-       Page.Contact.Experiment.index experiment_list context
+       let* upcoming_sessions =
+         Session.find_upcoming_public_by_contact
+           database_label
+           (Contact.id contact)
+       in
+       Page.Contact.Experiment.index experiment_list upcoming_sessions context
        |> create_layout ~active_navigation:"/experiments" req context
        >|+ Sihl.Web.Response.of_html
   in

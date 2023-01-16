@@ -1,7 +1,18 @@
 include Entity
 include Event
 module Guard = Entity_guard
-module Repo = Repo
+
+module Repo = struct
+  module Public = struct
+    include Repo_public
+
+    module Entity = struct
+      include Repo_entity.Public
+    end
+  end
+
+  include Repo
+end
 
 let find = Repo.find
 let find_all = Repo.find_all

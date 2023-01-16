@@ -181,6 +181,30 @@ module Sql = struct
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
   ;;
 
+  (* TODO[timhub]: Filter only by closed at or add start > now? *)
+  let find_public_upcoming_by_contact_request =
+    let open Caqti_request.Infix in
+    {sql|
+      INNER JOIN pool_assignments
+        ON pool_assignments.session_id = pool_sessions.id
+      WHERE
+        pool_sessions.closed_at IS NULL
+      AND
+        pool_assignments.contact_id = (SELECT id FROM pool_contacts WHERE pool_contacts.user_uuid = UNHEX(REPLACE(?, '-', '')))
+      ORDER BY
+        pool_sessions.start ASC
+    |sql}
+    |> find_public_sql
+    |> Caqti_type.string ->* RepoEntity.Public.t
+  ;;
+
+  let find_public_upcoming_by_contact pool contact_id =
+    Utils.Database.collect
+      (Database.Label.value pool)
+      find_public_upcoming_by_contact_request
+      (Pool_common.Id.value contact_id)
+  ;;
+
   let find_by_assignment_request =
     let open Caqti_request.Infix in
     {sql|
@@ -264,6 +288,24 @@ module Sql = struct
       find_experiment_id_and_title_request
       (Pool_common.Id.value id)
     ||> CCOption.to_result Pool_common.Message.(NotFound Field.Session)
+  ;;
+
+  let find_public_experiment_request =
+    let open Caqti_request.Infix in
+    {sql|
+      WHERE pool_experiments.uuid = (SELECT pool_sessions.experiment_uuid FROM pool_sessions WHERE pool_sessions.uuid = UNHEX(REPLACE(?, '-', '')))
+    |sql}
+    |> Experiment.Repo.Public.select_from_experiments_sql
+    |> Caqti_type.(string ->! Experiment.Repo.Public.Entity.t)
+  ;;
+
+  let find_public_experiment pool id =
+    let open Utils.Lwt_result.Infix in
+    Utils.Database.find_opt
+      (Database.Label.value pool)
+      find_public_experiment_request
+      (Pool_common.Id.value id)
+    ||> CCOption.to_result Pool_common.Message.(NotFound Field.Experiment)
   ;;
 
   let find_sessions_to_remind_request =
@@ -475,6 +517,21 @@ let find_follow_ups pool parent_session_id =
 ;;
 
 let find_experiment_id_and_title = Sql.find_experiment_id_and_title
+
+let find_upcoming_public_by_contact pool contact_id =
+  let open Utils.Lwt_result.Infix in
+  let open Entity.Public in
+  Sql.find_public_upcoming_by_contact pool contact_id
+  >|> Lwt_list.map_s (location_to_public_repo_entity pool)
+  ||> CCResult.flatten_l
+  >|+ group_and_sort
+  >>= fun lst ->
+  lst
+  |> Lwt_list.map_s (fun (parent, follow_ups) ->
+       Sql.find_public_experiment pool parent.id
+       >|+ fun exp -> exp, parent, follow_ups)
+  ||> CCResult.flatten_l
+;;
 
 let find_sessions_to_remind pool =
   let open Utils.Lwt_result.Infix in
